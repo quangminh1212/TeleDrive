@@ -585,24 +585,58 @@ document.addEventListener('DOMContentLoaded', () => {
               const data = JSON.parse(xhr.responseText);
               if (data.success) {
                 progressBar.classList.add('bg-success');
+                statusText.textContent = 'Đã lưu cục bộ';
                 
-                // Cập nhật trạng thái dựa trên kết quả upload lên Telegram
-                if (data.file.savedToTelegram) {
-                  statusText.textContent = 'Đã lưu trên Telegram';
+                // Hiển thị thông báo đồng bộ với Telegram
+                if (data.file.webClientUpload && data.file.showTelegramGuide) {
+                  // Kiểm tra nếu người dùng đã đăng nhập vào Telegram
+                  const isTelegramLoggedIn = localStorage.getItem('telegramWebLoggedIn') === 'true';
                   
-                  // Thêm icon Telegram vào item để chỉ ra đã lưu trên Telegram
-                  const statusContainer = uploadItem.querySelector('.d-flex');
-                  const telegramIcon = document.createElement('i');
-                  telegramIcon.className = 'bi bi-telegram text-primary ms-2';
-                  telegramIcon.title = 'Đã lưu trên Telegram';
-                  statusContainer.appendChild(telegramIcon);
-                } else {
-                  statusText.textContent = 'Lưu cục bộ';
+                  // Cập nhật giao diện uploadItem để thêm nút đồng bộ với Telegram
+                  const uploadItemContainer = uploadItem.querySelector('.d-flex');
                   
-                  // Hiển thị hướng dẫn đồng bộ nếu cần
-                  if (data.file.webClientUpload && useWebClientUpload) {
+                  // Tạo biểu tượng Telegram
+                  const telegramIcon = document.createElement('button');
+                  telegramIcon.className = 'ms-2 btn btn-sm btn-outline-primary';
+                  telegramIcon.innerHTML = '<i class="bi bi-telegram"></i>';
+                  telegramIcon.title = 'Đồng bộ lên Telegram';
+                  
+                  // Sự kiện click mở hướng dẫn đồng bộ lên Telegram
+                  telegramIcon.addEventListener('click', () => {
+                    const telegramUploadGuideModal = new bootstrap.Modal(document.getElementById('telegramUploadGuideModal'));
+                    
+                    // Cập nhật đường dẫn file cần upload trong modal
+                    const uploadFolderPath = document.getElementById('uploadFolderPath');
+                    if (uploadFolderPath) {
+                      uploadFolderPath.textContent = data.file.path;
+                    }
+                    
+                    telegramUploadGuideModal.show();
+                  });
+                  
+                  uploadItemContainer.appendChild(telegramIcon);
+                  
+                  // Nếu chưa đăng nhập Telegram, hiện modal hướng dẫn đăng nhập
+                  if (!isTelegramLoggedIn) {
+                    setTimeout(() => {
+                      const shouldOpenTelegram = confirm('Bạn chưa đăng nhập Telegram Web. Đăng nhập ngay để đồng bộ file lên Telegram?');
+                      if (shouldOpenTelegram) {
+                        openTelegramLogin();
+                      } else {
+                        showNotification('Bạn có thể đồng bộ file lên Telegram bằng cách nhấp vào biểu tượng Telegram bên cạnh file', 'info');
+                      }
+                    }, 500);
+                  } else {
+                    // Đã đăng nhập, hiện modal hướng dẫn đồng bộ file
                     setTimeout(() => {
                       const telegramUploadGuideModal = new bootstrap.Modal(document.getElementById('telegramUploadGuideModal'));
+                      
+                      // Cập nhật đường dẫn file cần upload trong modal
+                      const uploadFolderPath = document.getElementById('uploadFolderPath');
+                      if (uploadFolderPath) {
+                        uploadFolderPath.textContent = data.file.path;
+                      }
+                      
                       telegramUploadGuideModal.show();
                     }, 500);
                   }
