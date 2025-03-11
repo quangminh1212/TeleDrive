@@ -45,12 +45,14 @@ if (process.env.BOT_TOKEN && process.env.BOT_TOKEN.includes(':') && !process.env
   console.log('Telegram bot initialized');
 } else {
   console.warn('BOT_TOKEN không hợp lệ hoặc chưa được cấu hình đúng. Chức năng Telegram sẽ bị hạn chế.');
-  if (useWebUpload) {
-    console.log('Đã bật chế độ upload qua Web Client. Các file sẽ được lưu cả cục bộ và có hướng dẫn upload lên Telegram.');
-  } else {
-    console.warn('Sẽ chỉ lưu file cục bộ. Để kích hoạt upload qua Web Client, thiết lập USE_WEB_CLIENT_UPLOAD=true trong file .env');
-  }
-  console.warn('Hướng dẫn nhận token: Mở Telegram, chat với @BotFather và làm theo hướng dẫn.');
+  // Luôn bật chế độ Web Client Upload nếu không có bot
+  useWebUpload = true;
+  console.log('Đã bật chế độ upload qua Web Client. Các file sẽ được lưu cả cục bộ và có hướng dẫn upload lên Telegram.');
+}
+
+// Hiển thị hướng dẫn lấy token nếu không có token hợp lệ
+if (!bot) {
+  console.log('Hướng dẫn nhận token: Mở Telegram, chat với @BotFather và làm theo hướng dẫn.');
 }
 
 // Saved Sessions (simulated database)

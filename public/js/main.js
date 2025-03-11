@@ -39,8 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let sessionId = localStorage.getItem('sessionId');
   let username = localStorage.getItem('username');
   let currentUser = null;
-  let uploadItems;
-  let uploadProgress;
   let useWebClientUpload = false; // Mặc định là false, sẽ được cập nhật từ API
   let useTelegramBot = false;
 

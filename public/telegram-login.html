@@ -97,7 +97,7 @@
                     <div class="step-content">
                         <strong>Mở Telegram Web</strong>
                         <p>Nhấn vào nút bên dưới để mở Telegram Web trong tab mới</p>
-                        <a href="https://web.telegram.org/" target="_blank" class="btn btn-telegram">
+                        <a href="https://web.telegram.org/" target="_blank" class="btn btn-telegram" id="openTelegramBtn">
                             <i class="bi bi-telegram"></i> Mở Telegram Web
                         </a>
                     </div>
@@ -114,8 +114,19 @@
                 <div class="step">
                     <div class="step-number">3</div>
                     <div class="step-content">
+                        <strong>Xác nhận đăng nhập thành công</strong>
+                        <p>Sau khi đăng nhập thành công, nhấn vào nút bên dưới:</p>
+                        <button id="confirmLoginBtn" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Tôi đã đăng nhập thành công
+                        </button>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
                         <strong>Quay lại TeleDrive</strong>
-                        <p>Sau khi đăng nhập thành công, quay lại TeleDrive để tiếp tục sử dụng</p>
+                        <p>Quay lại TeleDrive để tiếp tục sử dụng</p>
                         <a href="/" class="btn btn-primary">
                             <i class="bi bi-house-door"></i> Quay lại TeleDrive
                         </a>
@@ -135,27 +146,53 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Kiểm tra trạng thái đăng nhập Telegram Web
-        function checkTelegramWebLogin() {
-            // Kiểm tra cookie hoặc localStorage của Telegram Web
-            // Đây chỉ là ví dụ, cần điều chỉnh theo cách Telegram Web thực tế lưu trữ phiên đăng nhập
-            try {
-                // Kiểm tra xem người dùng đã đăng nhập vào Telegram Web chưa
-                // Trong thực tế, cần triển khai logic phù hợp
+        // Khi người dùng mở Telegram Web
+        document.getElementById('openTelegramBtn').addEventListener('click', function() {
+            // Bắt đầu kiểm tra cookie Telegram sau khi mở Telegram Web
+            setTimeout(checkTelegramWebLogin, 5000);
+        });
+        
+        // Khi người dùng xác nhận đã đăng nhập
+        document.getElementById('confirmLoginBtn').addEventListener('click', function() {
+            // Gửi thông báo đến cửa sổ cha (TeleDrive)
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({ type: 'telegram_login_success' }, '*');
+                
+                // Hiển thị thông báo
                 const statusContainer = document.getElementById('statusContainer');
                 const statusMessage = document.getElementById('statusMessage');
                 
-                // Hiển thị thông báo
                 statusContainer.style.display = 'block';
                 statusContainer.className = 'status-container status-success';
-                statusMessage.innerHTML = '<i class="bi bi-check-circle"></i> Bạn đã đăng nhập vào Telegram Web. Có thể quay lại TeleDrive để tiếp tục.';
+                statusMessage.innerHTML = '<i class="bi bi-check-circle"></i> Đăng nhập thành công! Cửa sổ này sẽ tự động đóng sau 3 giây.';
+                
+                // Đóng cửa sổ sau 3 giây
+                setTimeout(function() {
+                    window.close();
+                }, 3000);
+            } else {
+                // Nếu không có cửa sổ cha, chuyển hướng về trang chủ
+                window.location.href = '/';
+            }
+        });
+
+        // Kiểm tra trạng thái đăng nhập Telegram Web
+        function checkTelegramWebLogin() {
+            try {
+                // Cố gắng phát hiện đăng nhập Telegram Web từ cookie hoặc localStorage
+                // Trong thực tế, cần tìm hiểu cách Telegram Web lưu trữ thông tin đăng nhập
+                
+                const statusContainer = document.getElementById('statusContainer');
+                const statusMessage = document.getElementById('statusMessage');
+                
+                // Hiển thị thông báo gợi ý
+                statusContainer.style.display = 'block';
+                statusContainer.className = 'status-container status-info';
+                statusMessage.innerHTML = 'Sau khi đăng nhập vào Telegram Web, hãy nhấn nút "Tôi đã đăng nhập thành công" để tiếp tục.';
             } catch (error) {
                 console.error('Error checking Telegram Web login:', error);
             }
         }
-
-        // Kiểm tra khi trang được tải
-        window.addEventListener('load', checkTelegramWebLogin);
     </script>
 </body>
 </html> 
