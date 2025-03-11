@@ -145,7 +145,22 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       } catch (error) {
         console.error('Error sending file to Telegram:', error);
         fileData.savedToTelegram = false;
+        
+        // Thêm hướng dẫn chi tiết về lỗi
+        if (error.message && error.message.includes('Unauthorized')) {
+          console.warn('[Telegram] Lỗi ủy quyền. Vui lòng kiểm tra lại BOT_TOKEN trong file .env');
+          console.warn('[Telegram] Hướng dẫn nhận token: Mở Telegram, chat với @BotFather và làm theo hướng dẫn.');
+        } else if (error.message && error.message.includes('chat not found')) {
+          console.warn('[Telegram] Không tìm thấy chat. Vui lòng kiểm tra lại TELEGRAM_CHAT_ID trong file .env');
+          console.warn('[Telegram] Đảm bảo bot đã được thêm vào chat/channel cần lưu trữ file.');
+        } else {
+          console.warn('[Telegram] Có lỗi xảy ra. File sẽ chỉ được lưu cục bộ.');
+          console.warn('[Telegram] Thử khởi động lại ứng dụng sau khi cập nhật cấu hình .env');
+        }
       }
+    } else {
+      console.log(`[Local] File lưu cục bộ: ${fileData.path} (Telegram không được cấu hình)`);
+      fileData.savedToTelegram = false;
     }
     
     files.push(fileData);
