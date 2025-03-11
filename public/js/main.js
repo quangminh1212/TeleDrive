@@ -218,43 +218,69 @@ document.addEventListener('DOMContentLoaded', () => {
     const left = (window.innerWidth - width) / 2;
     const top = (window.innerHeight - height) / 2;
     
-    window.open('/telegram-login', 'telegram-login', 
+    const loginWindow = window.open('/telegram-login', 'telegram-login', 
       `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`);
+    
+    // Focus vào cửa sổ mới
+    if (loginWindow) loginWindow.focus();
   }
 
   // Đăng xuất khỏi Telegram
   function logoutTelegram() {
-    telegramLoggedIn = false;
+    // Đóng dropdown
+    document.querySelector('.user-dropdown').classList.add('d-none');
+    
+    // Xóa trạng thái đăng nhập
     localStorage.removeItem('telegramLoggedIn');
+    
+    // Cập nhật giao diện
     checkTelegramAuthStatus();
+    
+    // Hiển thị thông báo
     showNotification('Đã đăng xuất khỏi Telegram', 'info');
   }
 
   // Hiển thị thông báo
   function showNotification(message, type = 'info') {
-    const toastContainer = document.getElementById('toast-container') || createToastContainer();
+    // Tạo container nếu chưa có
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+      toastContainer = document.createElement('div');
+      toastContainer.id = 'toast-container';
+      toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+      document.body.appendChild(toastContainer);
+    }
     
+    // Tạo toast
     const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.className = `toast align-items-center text-white bg-${type}`;
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'assertive');
     toast.setAttribute('aria-atomic', 'true');
     
+    // Nội dung toast
     toast.innerHTML = `
       <div class="d-flex">
         <div class="toast-body">
+          <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'info' ? 'info-circle' : 'exclamation-circle'}"></i> 
           ${message}
         </div>
         <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
     `;
     
+    // Thêm vào container
     toastContainer.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 3000 });
+    
+    // Sử dụng Bootstrap để hiển thị toast
+    const bsToast = new bootstrap.Toast(toast, {
+      autohide: true,
+      delay: 5000
+    });
     bsToast.show();
     
-    // Tự động xóa toast sau khi ẩn
-    toast.addEventListener('hidden.bs.toast', () => {
+    // Xóa toast sau khi ẩn
+    toast.addEventListener('hidden.bs.toast', function() {
       toast.remove();
     });
   }
@@ -271,19 +297,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Load user files
   async function loadUserFiles() {
-    if (!telegramLoggedIn) return;
-    
     const filesGrid = document.querySelector('.files-grid');
-    filesGrid.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3">Đang tải danh sách tệp...</p></div>';
+    if (!filesGrid) return;
+    
+    // Hiển thị trạng thái đang tải
+    filesGrid.innerHTML = `
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3">Đang tải danh sách tệp...</p>
+      </div>
+    `;
     
     try {
+      // Gọi API để lấy danh sách tệp
       const response = await fetch('/api/files');
-      
       const data = await response.json();
-      renderFiles(data.files || []);
+      
+      // Nếu không có tệp nào
+      if (!data.files || data.files.length === 0) {
+        filesGrid.innerHTML = `
+          <div class="text-center py-5">
+            <i class="bi bi-cloud-upload fs-1 text-muted"></i>
+            <p class="mt-3">Bạn chưa có tệp nào. Hãy tải lên tệp đầu tiên!</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Hiển thị danh sách tệp
+      renderFiles(data.files);
     } catch (error) {
       console.error('Error loading files:', error);
-      filesGrid.innerHTML = '<div class="text-center py-5"><i class="bi bi-exclamation-triangle fs-1 text-warning"></i><p class="mt-3">Không thể tải danh sách tệp. Vui lòng thử lại sau.</p></div>';
+      filesGrid.innerHTML = `
+        <div class="text-center py-5">
+          <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+          <p class="mt-3">Không thể tải danh sách tệp. Vui lòng thử lại sau.</p>
+        </div>
+      `;
     }
   }
 
