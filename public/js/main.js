@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let uploadItems;
   let uploadProgress;
   let useWebClientUpload = false; // Mặc định là false, sẽ được cập nhật từ API
+  let useTelegramBot = false;
 
   // Check authentication status
   async function checkAuthStatus() {
@@ -523,9 +524,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Thêm biến để theo dõi trạng thái sử dụng bot Telegram
-  let useTelegramBot = false;
-
   // Kiểm tra cấu hình Telegram khi trang được tải
   async function checkTelegramConfig() {
     try {
@@ -535,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Telegram config:', config);
       
       // Cập nhật biến toàn cục
+      useTelegramBot = config.useTelegramBot;
       useWebClientUpload = config.useWebClientUpload;
       
       // Hiển thị thông tin cấu hình trong giao diện nếu cần
@@ -547,6 +546,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           configInfo.innerHTML = '<div class="alert alert-warning">Chưa cấu hình Telegram Bot</div>';
         }
+      }
+      
+      // Cập nhật đường dẫn upload folder
+      const uploadFolderPath = document.getElementById('uploadFolderPath');
+      if (uploadFolderPath && config.uploadPath) {
+        uploadFolderPath.textContent = config.uploadPath;
       }
     } catch (error) {
       console.error('Error checking Telegram config:', error);
@@ -702,5 +707,94 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Chạy kiểm tra đăng nhập Telegram
     checkTelegramAuthStatus();
+  });
+
+  // Kiểm tra trạng thái đăng nhập Telegram Web
+  function checkTelegramWebLoginStatus() {
+    // Thử đọc cookie hoặc localStorage từ Telegram Web
+    // Đây là phương pháp đơn giản, cần cải thiện để phát hiện chính xác
+    const isTelegramWebLoggedIn = localStorage.getItem('telegramWebLoggedIn') === 'true';
+    
+    if (isTelegramWebLoggedIn) {
+      // Cập nhật giao diện nếu đã đăng nhập
+      updateUIForTelegramLogin();
+    } else {
+      // Hiển thị nút đăng nhập Telegram
+      const loginBtn = document.querySelector('.telegram-login-btn');
+      if (loginBtn) {
+        loginBtn.classList.remove('d-none');
+      }
+    }
+  }
+
+  // Cập nhật giao diện sau khi đăng nhập Telegram Web thành công
+  function updateUIForTelegramLogin() {
+    const loginBtn = document.querySelector('.telegram-login-btn');
+    const userInfo = document.querySelector('.user-info');
+    
+    if (loginBtn && userInfo) {
+      loginBtn.classList.add('d-none');
+      userInfo.classList.remove('d-none');
+    }
+    
+    // Hiển thị thông báo thành công
+    showNotification('Đã kết nối với Telegram Web thành công!', 'success');
+  }
+
+  // Mở cửa sổ đăng nhập Telegram Web
+  function openTelegramLogin() {
+    const width = 800;
+    const height = 600;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    
+    const telegramLoginWindow = window.open('/telegram-login', 'telegram-login', 
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`);
+    
+    // Kiểm tra cửa sổ đóng
+    const checkWindowClosed = setInterval(function() {
+      if (telegramLoginWindow.closed) {
+        clearInterval(checkWindowClosed);
+        // Sau khi cửa sổ đóng, kiểm tra lại trạng thái đăng nhập
+        setTimeout(checkTelegramAfterWindowClosed, 1000);
+      }
+    }, 1000);
+  }
+
+  // Kiểm tra trạng thái sau khi cửa sổ Telegram đóng
+  function checkTelegramAfterWindowClosed() {
+    // Giả định đăng nhập thành công sau khi cửa sổ đóng
+    // Trong thực tế, cần cơ chế kiểm tra tốt hơn
+    localStorage.setItem('telegramWebLoggedIn', 'true');
+    updateUIForTelegramLogin();
+    
+    // Tải lại danh sách file
+    loadUserFiles();
+  }
+
+  // Đăng xuất khỏi Telegram
+  function logoutTelegram() {
+    localStorage.removeItem('telegramWebLoggedIn');
+    
+    const loginBtn = document.querySelector('.telegram-login-btn');
+    const userInfo = document.querySelector('.user-info');
+    
+    if (loginBtn && userInfo) {
+      loginBtn.classList.remove('d-none');
+      userInfo.classList.add('d-none');
+    }
+    
+    showNotification('Đã đăng xuất khỏi Telegram', 'info');
+  }
+
+  // Lắng nghe thông báo từ cửa sổ đăng nhập Telegram
+  window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'telegram_login_success') {
+      localStorage.setItem('telegramWebLoggedIn', 'true');
+      updateUIForTelegramLogin();
+      
+      // Tải lại danh sách file
+      loadUserFiles();
+    }
   });
 }); 
