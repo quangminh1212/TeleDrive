@@ -43,6 +43,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 let bot;
 let useWebUpload = process.env.USE_WEB_CLIENT_UPLOAD === 'true';
 
+// Khởi tạo telegramWebUploader nếu sử dụng web client upload
+if (useWebUpload) {
+  console.log('Đang khởi tạo telegramWebUploader...');
+  telegramWebUploader.initBrowser()
+    .then(() => {
+      console.log('Đã khởi tạo telegramWebUploader thành công');
+    })
+    .catch(error => {
+      console.error('Lỗi khởi tạo telegramWebUploader:', error);
+      console.log('Tiếp tục sử dụng chế độ hướng dẫn upload thủ công');
+    });
+}
+
 if (process.env.BOT_TOKEN && process.env.BOT_TOKEN.includes(':') && !process.env.BOT_TOKEN.includes('1234567890')) {
   bot = new Telegraf(process.env.BOT_TOKEN);
   console.log('Telegram bot initialized');

@@ -585,26 +585,39 @@ document.addEventListener('DOMContentLoaded', () => {
               const data = JSON.parse(xhr.responseText);
               if (data.success) {
                 progressBar.classList.add('bg-success');
-                statusText.textContent = 'Upload completed';
                 
-                // Hiển thị hướng dẫn đồng bộ nếu cần
-                if (!data.file.savedToTelegram && data.file.webClientUpload && useWebClientUpload) {
-                  setTimeout(() => {
-                    const telegramUploadGuideModal = new bootstrap.Modal(document.getElementById('telegramUploadGuideModal'));
-                    telegramUploadGuideModal.show();
-                  }, 500);
+                // Cập nhật trạng thái dựa trên kết quả upload lên Telegram
+                if (data.file.savedToTelegram) {
+                  statusText.textContent = 'Đã lưu trên Telegram';
+                  
+                  // Thêm icon Telegram vào item để chỉ ra đã lưu trên Telegram
+                  const statusContainer = uploadItem.querySelector('.d-flex');
+                  const telegramIcon = document.createElement('i');
+                  telegramIcon.className = 'bi bi-telegram text-primary ms-2';
+                  telegramIcon.title = 'Đã lưu trên Telegram';
+                  statusContainer.appendChild(telegramIcon);
+                } else {
+                  statusText.textContent = 'Lưu cục bộ';
+                  
+                  // Hiển thị hướng dẫn đồng bộ nếu cần
+                  if (data.file.webClientUpload && useWebClientUpload) {
+                    setTimeout(() => {
+                      const telegramUploadGuideModal = new bootstrap.Modal(document.getElementById('telegramUploadGuideModal'));
+                      telegramUploadGuideModal.show();
+                    }, 500);
+                  }
                 }
                 
                 // Cập nhật danh sách file
                 loadUserFiles();
                 
-                // Xóa item sau 3 giây
+                // Xóa item sau 5 giây
                 setTimeout(() => {
                   uploadItem.classList.add('fade-out');
                   setTimeout(() => {
                     uploadItem.remove();
                   }, 500);
-                }, 3000);
+                }, 5000);
                 
                 resolve(data);
               } else {
