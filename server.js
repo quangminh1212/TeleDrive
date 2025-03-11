@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { Telegraf } = require('telegraf');
+const fetch = require('node-fetch');
 require('dotenv').config();
 
 // Tạo thư mục uploads nếu chưa tồn tại
