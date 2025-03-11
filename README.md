@@ -1,51 +1,83 @@
 # TeleDrive
 
-TeleDrive is an application that uses Telegram as a cloud storage service, allowing you to store and manage files similar to Google Drive or OneDrive.
+TeleDrive là ứng dụng cho phép sử dụng Telegram làm dịch vụ lưu trữ đám mây. Tương tự như Google Drive, nhưng lưu trữ trên Telegram.
 
-## Features
+## Tính năng
 
-- Upload files to Telegram and use it as cloud storage
-- Download files from your Telegram storage
-- Organize files with folders and tags
-- Search through your stored files
-- Secure authentication via Telegram
-- Web and desktop interfaces
+- Đăng nhập bằng Telegram
+- Upload file lên Telegram
+- Xem và tải xuống file
+- Giao diện người dùng thân thiện
+- Hỗ trợ dark/light mode
+- Responsive design cho mobile
 
-## Setup
+## Yêu cầu
 
-### Prerequisites
+- Docker và Docker Compose
+- Hoặc Node.js 16+
 
-- Node.js (v14 or newer)
-- Telegram API credentials (API ID and API Hash)
+## Cách sử dụng với Docker
 
-### Installation
-
-1. Clone this repository
+1. Sao chép dự án:
 ```bash
 git clone https://github.com/yourusername/TeleDrive.git
 cd TeleDrive
 ```
 
-2. Install dependencies
+2. Cấu hình biến môi trường:
+```bash
+cp .env.example .env
+```
+
+3. Chỉnh sửa file `.env` với thông tin Telegram Bot của bạn:
+```bash
+BOT_TOKEN=<your_telegram_bot_token>
+TELEGRAM_API_ID=<your_telegram_api_id>
+TELEGRAM_API_HASH=<your_telegram_api_hash>
+TELEGRAM_CHAT_ID=<your_telegram_chat_id>
+```
+
+4. Chạy ứng dụng với Docker:
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+5. Dừng ứng dụng:
+```bash
+chmod +x stop.sh
+./stop.sh
+```
+
+## Cách sử dụng không có Docker
+
+1. Cài đặt dependencies:
 ```bash
 npm install
 ```
 
-3. Create a `.env` file in the root directory with the following content:
-```
-TELEGRAM_API_ID=your_api_id
-TELEGRAM_API_HASH=your_api_hash
-```
-
-4. Start the application
+2. Chạy ứng dụng:
 ```bash
 npm start
 ```
 
-## How It Works
+3. Hoặc chạy ở chế độ development:
+```bash
+npm run dev
+```
 
-TeleDrive uses Telegram's cloud storage capabilities to store your files. Files are uploaded to Telegram and indexed in a local database for quick access and searching. The application provides a user-friendly interface to manage your files while leveraging Telegram's robust infrastructure for actual storage.
+## Cách lấy Telegram API credentials
+
+1. Đăng ký ứng dụng tại [my.telegram.org](https://my.telegram.org/)
+2. Tạo Telegram bot qua [BotFather](https://t.me/botfather)
+3. Lấy Telegram Chat ID bằng cách:
+   - Thêm bot [@userinfobot](https://t.me/userinfobot) vào chat
+   - Gửi tin nhắn `/start` để lấy Chat ID
+
+## Đóng góp
+
+Các pull request được chào đón. Đối với những thay đổi lớn, vui lòng mở issue trước để thảo luận về những gì bạn muốn thay đổi.
 
 ## License
 
-MIT
+[MIT](https://choosealicense.com/licenses/mit/)
