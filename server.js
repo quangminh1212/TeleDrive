@@ -314,4 +314,39 @@ app.get('*', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Cleanup function for graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('Shutting down server...');
+  
+  // Close telegramWebUploader browser if it's running
+  if (useWebUpload && telegramWebUploader) {
+    try {
+      console.log('Closing telegramWebUploader browser...');
+      await telegramWebUploader.closeBrowser();
+      console.log('telegramWebUploader browser closed successfully');
+    } catch (error) {
+      console.error('Error closing telegramWebUploader browser:', error);
+    }
+  }
+  
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('Shutting down server...');
+  
+  // Close telegramWebUploader browser if it's running
+  if (useWebUpload && telegramWebUploader) {
+    try {
+      console.log('Closing telegramWebUploader browser...');
+      await telegramWebUploader.closeBrowser();
+      console.log('telegramWebUploader browser closed successfully');
+    } catch (error) {
+      console.error('Error closing telegramWebUploader browser:', error);
+    }
+  }
+  
+  process.exit(0);
 }); 
