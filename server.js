@@ -236,6 +236,11 @@ app.get('/api/files/:fileId', async (req, res) => {
   }
 });
 
+// Endpoint cho đăng nhập Telegram Web
+app.get('/telegram-login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'telegram-login.html'));
+});
+
 // Serve the React app for any other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
