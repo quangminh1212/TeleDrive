@@ -1,0 +1,40 @@
+{
+  "name": "teledrive",
+  "version": "0.1.0",
+  "description": "Use Telegram as a cloud storage service like Google Drive",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "telegram",
+    "storage",
+    "drive",
+    "cloud",
+    "files"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "express-fileupload": "^1.2.1",
+    "lowdb": "^1.0.0",
+    "mime-types": "^2.1.35",
+    "moment": "^2.29.1",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.4",
+    "node-telegram-bot-api": "^0.58.0",
+    "shortid": "^2.2.16",
+    "telegraf": "^4.7.0",
+    "telegram-mtproto": "^2.2.2",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+} 
