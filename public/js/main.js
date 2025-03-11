@@ -38,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let isAuthenticated = false;
   let currentUser = null;
   let sessionId = localStorage.getItem('sessionId');
+  let username = localStorage.getItem('username');
+  let uploadItems = document.getElementById('uploadItems');
+  let uploadProgress = document.getElementById('uploadProgress');
+  let useWebClientUpload = false; // Mặc định là false, sẽ được cập nhật từ API
 
   // Check authentication status
   async function checkAuthStatus() {
@@ -521,19 +525,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Thêm biến để theo dõi trạng thái sử dụng bot Telegram
   let useTelegramBot = false;
-  let useWebClientUpload = true;
 
-  // Hàm kiểm tra cấu hình Telegram từ server
+  // Kiểm tra cấu hình Telegram khi trang được tải
   async function checkTelegramConfig() {
     try {
       const response = await fetch('/api/telegram/config');
-      const data = await response.json();
+      const config = await response.json();
       
-      useTelegramBot = data.useTelegramBot;
-      useWebClientUpload = data.useWebClientUpload;
+      console.log('Telegram config:', config);
       
-      if (data.uploadPath) {
-        document.getElementById('uploadFolderPath').textContent = data.uploadPath;
+      // Cập nhật biến toàn cục
+      useWebClientUpload = config.useWebClientUpload;
+      
+      // Hiển thị thông tin cấu hình trong giao diện nếu cần
+      const configInfo = document.getElementById('configInfo');
+      if (configInfo) {
+        if (config.useTelegramBot) {
+          configInfo.innerHTML = '<div class="alert alert-success">Đã kết nối với Telegram Bot</div>';
+        } else if (config.useWebClientUpload) {
+          configInfo.innerHTML = '<div class="alert alert-info">Sử dụng Web Client để upload file lên Telegram</div>';
+        } else {
+          configInfo.innerHTML = '<div class="alert alert-warning">Chưa cấu hình Telegram Bot</div>';
+        }
       }
     } catch (error) {
       console.error('Error checking Telegram config:', error);
