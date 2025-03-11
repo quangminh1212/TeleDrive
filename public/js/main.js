@@ -36,11 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Authentication State
   let isAuthenticated = false;
-  let currentUser = null;
   let sessionId = localStorage.getItem('sessionId');
   let username = localStorage.getItem('username');
-  let uploadItems = document.getElementById('uploadItems');
-  let uploadProgress = document.getElementById('uploadProgress');
+  let currentUser = null;
+  let uploadItems;
+  let uploadProgress;
   let useWebClientUpload = false; // Mặc định là false, sẽ được cập nhật từ API
 
   // Check authentication status
