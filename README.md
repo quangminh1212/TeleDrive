@@ -17,7 +17,9 @@ TeleDrive là ứng dụng cho phép sử dụng Telegram làm dịch vụ lưu 
 
 ## Cài đặt và sử dụng
 
-TeleDrive cung cấp một file thực thi duy nhất (`runapp.bat`) để quản lý tất cả các chức năng. Chạy lệnh sau để xem hướng dẫn:
+TeleDrive cung cấp một file thực thi duy nhất (`runapp.bat`) để quản lý tất cả các chức năng:
+
+### Hiển thị trợ giúp
 
 ```
 runapp help
@@ -31,29 +33,23 @@ runapp setup
 
 ### Chạy ứng dụng
 
-**Chạy bình thường:**
 ```
 runapp run
 ```
 
-**Chạy ở chế độ development:**
+### Chạy ở chế độ development
+
 ```
 runapp dev
 ```
 
-**Chạy với Docker:**
-```
-runapp docker start
-```
+### Sử dụng Docker
 
-**Dừng Docker container:**
 ```
-runapp docker stop
-```
-
-**Xem logs Docker:**
-```
-runapp docker logs
+runapp docker start    # Khởi động container
+runapp docker stop     # Dừng container
+runapp docker restart  # Khởi động lại container
+runapp docker logs     # Xem logs
 ```
 
 ## Cấu hình Telegram API
@@ -85,7 +81,7 @@ TELEGRAM_CHAT_ID=<your_telegram_chat_id>
    - Thêm bot [@userinfobot](https://t.me/userinfobot) vào kênh
    - Gửi tin nhắn bất kỳ và copy Chat ID
 
-## Cấu trúc thư mục
+## Cấu trúc thư mục tinh gọn
 
 ```
 TeleDrive/
@@ -93,12 +89,14 @@ TeleDrive/
 │   ├── css/             # CSS styles
 │   ├── js/              # JavaScript files
 │   └── index.html       # Main HTML file
-├── uploads/             # Temporary uploads directory
+├── src/                 # Mã nguồn
+├── uploads/             # Temporary uploads directory (tự động tạo)
+├── .env                 # Cấu hình môi trường
 ├── Dockerfile           # Docker configuration
 ├── docker-compose.yml   # Docker Compose configuration
 ├── server.js            # Node.js server
 ├── package.json         # Dependencies and scripts
-└── runapp.bat           # Main executable script
+└── runapp.bat           # Main executable script (duy nhất)
 ```
 
 ## Đóng góp

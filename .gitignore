@@ -58,4 +58,11 @@ public/downloads/
 # Project specific
 data/
 uploads/
-downloads/ 
+downloads/
+
+# Chrome profile
+chrome_profile/
+user-data-dir/
+
+# Docker volumes
+docker-volumes/ 
