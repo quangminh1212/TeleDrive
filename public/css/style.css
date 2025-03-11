@@ -303,4 +303,56 @@ body {
   .files-grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
+}
+
+/* Telegram Login Button */
+.telegram-login-btn {
+  background-color: #0088cc;
+  border-color: #0088cc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+}
+
+.telegram-login-btn:hover, .telegram-login-btn:focus {
+  background-color: #0077b3;
+  border-color: #0077b3;
+}
+
+.telegram-login-btn i {
+  font-size: 1.2rem;
+}
+
+.user-login-status {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Responsive Login */
+@media (max-width: 768px) {
+  .telegram-login-btn span {
+    display: none;
+  }
+  
+  .telegram-login-btn {
+    padding: 8px;
+  }
+  
+  .user-name {
+    display: none;
+  }
 } 
