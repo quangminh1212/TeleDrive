@@ -38,11 +38,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Kiểm tra xem BOT_TOKEN đã được cấu hình chưa
 let bot;
-if (process.env.BOT_TOKEN) {
+if (process.env.BOT_TOKEN && process.env.BOT_TOKEN.includes(':') && !process.env.BOT_TOKEN.includes('1234567890')) {
   bot = new Telegraf(process.env.BOT_TOKEN);
   console.log('Telegram bot initialized');
 } else {
-  console.warn('BOT_TOKEN not found in environment variables. Telegram functionality will be limited.');
+  console.warn('BOT_TOKEN không hợp lệ hoặc chưa được cấu hình đúng. Chức năng Telegram sẽ bị hạn chế.');
+  console.warn('Vui lòng cấu hình BOT_TOKEN thật trong file .env để sử dụng đầy đủ chức năng Telegram.');
+  console.warn('Hướng dẫn nhận token: Mở Telegram, chat với @BotFather và làm theo hướng dẫn.');
 }
 
 // Saved Sessions (simulated database)
