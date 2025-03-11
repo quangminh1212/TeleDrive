@@ -59,10 +59,20 @@ public/downloads/
 data/
 uploads/
 downloads/
+.telegram-sessions/
+telegram-data/
 
 # Chrome profile
 chrome_profile/
 user-data-dir/
+.chrome-profile/
+.chrome-cache/
+Default/
+GrShaderCache/
+ScriptCache/
+Cache/
+CacheStorage/
+Code Cache/
 
 # Docker volumes
 docker-volumes/ 
