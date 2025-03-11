@@ -38,12 +38,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Kiểm tra xem BOT_TOKEN đã được cấu hình chưa
 let bot;
+let useWebUpload = process.env.USE_WEB_CLIENT_UPLOAD === 'true';
+
 if (process.env.BOT_TOKEN && process.env.BOT_TOKEN.includes(':') && !process.env.BOT_TOKEN.includes('1234567890')) {
   bot = new Telegraf(process.env.BOT_TOKEN);
   console.log('Telegram bot initialized');
 } else {
   console.warn('BOT_TOKEN không hợp lệ hoặc chưa được cấu hình đúng. Chức năng Telegram sẽ bị hạn chế.');
-  console.warn('Vui lòng cấu hình BOT_TOKEN thật trong file .env để sử dụng đầy đủ chức năng Telegram.');
+  if (useWebUpload) {
+    console.log('Đã bật chế độ upload qua Web Client. Các file sẽ được lưu cả cục bộ và có hướng dẫn upload lên Telegram.');
+  } else {
+    console.warn('Sẽ chỉ lưu file cục bộ. Để kích hoạt upload qua Web Client, thiết lập USE_WEB_CLIENT_UPLOAD=true trong file .env');
+  }
   console.warn('Hướng dẫn nhận token: Mở Telegram, chat với @BotFather và làm theo hướng dẫn.');
 }
 
@@ -158,6 +164,16 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
           console.warn('[Telegram] Thử khởi động lại ứng dụng sau khi cập nhật cấu hình .env');
         }
       }
+    } else if (useWebUpload) {
+      // Web client upload
+      console.log(`[Telegram Web] File lưu cục bộ: ${fileData.path}`);
+      console.log(`[Telegram Web] Để đồng bộ file này lên Telegram:`);
+      console.log(`[Telegram Web] 1. Mở Telegram Web: https://web.telegram.org/`);
+      console.log(`[Telegram Web] 2. Chọn Saved Messages (tin nhắn đã lưu) hoặc chat/channel mong muốn`);
+      console.log(`[Telegram Web] 3. Nhấn vào biểu tượng đính kèm và chọn file từ: ${fileData.path}`);
+      
+      fileData.webClientUpload = true;
+      fileData.savedToTelegram = false;
     } else {
       console.log(`[Local] File lưu cục bộ: ${fileData.path} (Telegram không được cấu hình)`);
       fileData.savedToTelegram = false;
