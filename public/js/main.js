@@ -617,4 +617,31 @@ document.addEventListener('DOMContentLoaded', () => {
       logoutTelegram();
     }
   });
+
+  // Xử lý menu dropdown khi click vào avatar
+  document.addEventListener('DOMContentLoaded', function() {
+    const userInfo = document.querySelector('.user-info');
+    const userDropdown = document.querySelector('.user-dropdown');
+    
+    if (userInfo && userDropdown) {
+      // Mở/đóng dropdown khi click vào avatar
+      userInfo.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userDropdown.classList.toggle('d-none');
+      });
+      
+      // Đóng dropdown khi click bên ngoài
+      document.addEventListener('click', function() {
+        userDropdown.classList.add('d-none');
+      });
+      
+      // Ngăn dropdown đóng khi click vào nó
+      userDropdown.addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
+    }
+    
+    // Chạy kiểm tra đăng nhập Telegram
+    checkTelegramAuthStatus();
+  });
 }); 
