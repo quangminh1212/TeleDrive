@@ -355,4 +355,67 @@ body {
   .user-name {
     display: none;
   }
+}
+
+/* User Dropdown Menu */
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1000;
+  min-width: 200px;
+  padding: 0.5rem 0;
+  margin: 0.125rem 0 0;
+  font-size: 14px;
+  background-color: var(--bs-body-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  color: var(--bs-body-color);
+  text-decoration: none;
+  background-color: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.dropdown-divider {
+  height: 0;
+  margin: 0.5rem 0;
+  overflow: hidden;
+  border-top: 1px solid var(--border-color);
+}
+
+.user-info {
+  position: relative;
+  cursor: pointer;
+}
+
+.telegram-status {
+  color: var(--bs-success);
+  cursor: default;
+}
+
+.telegram-status:hover {
+  background-color: transparent;
+}
+
+/* Spinner animation untuk loading */
+.spinner-grow-sm {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+/* Notification toast */
+.toast-container {
+  z-index: 1070;
 } 
