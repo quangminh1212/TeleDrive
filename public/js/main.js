@@ -182,21 +182,108 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Telegram Web Integration
+  let telegramLoggedIn = localStorage.getItem('telegramLoggedIn') === 'true';
+
+  // Kiểm tra trạng thái đăng nhập Telegram
+  function checkTelegramAuthStatus() {
+    if (telegramLoggedIn) {
+      document.querySelector('.telegram-login-btn').classList.add('d-none');
+      document.querySelector('.user-info').classList.remove('d-none');
+      loadUserFiles();
+    } else {
+      document.querySelector('.telegram-login-btn').classList.remove('d-none');
+      document.querySelector('.user-info').classList.add('d-none');
+    }
+  }
+
+  // Xử lý khi người dùng đăng nhập bằng Telegram Web
+  window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'telegram_login_success') {
+      telegramLoggedIn = true;
+      localStorage.setItem('telegramLoggedIn', 'true');
+      
+      // Cập nhật giao diện
+      checkTelegramAuthStatus();
+      
+      // Thông báo thành công
+      showNotification('Đăng nhập thành công!', 'success');
+    }
+  });
+
+  // Mở cửa sổ đăng nhập Telegram Web
+  function openTelegramLogin() {
+    const width = 800;
+    const height = 600;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    
+    window.open('/telegram-login', 'telegram-login', 
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`);
+  }
+
+  // Đăng xuất khỏi Telegram
+  function logoutTelegram() {
+    telegramLoggedIn = false;
+    localStorage.removeItem('telegramLoggedIn');
+    checkTelegramAuthStatus();
+    showNotification('Đã đăng xuất khỏi Telegram', 'info');
+  }
+
+  // Hiển thị thông báo
+  function showNotification(message, type = 'info') {
+    const toastContainer = document.getElementById('toast-container') || createToastContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">
+          ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 3000 });
+    bsToast.show();
+    
+    // Tự động xóa toast sau khi ẩn
+    toast.addEventListener('hidden.bs.toast', () => {
+      toast.remove();
+    });
+  }
+
+  // Tạo container cho toast nếu chưa có
+  function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+    container.style.zIndex = '1050';
+    document.body.appendChild(container);
+    return container;
+  }
+
   // Load user files
   async function loadUserFiles() {
-    if (!isAuthenticated || !sessionId) return;
+    if (!telegramLoggedIn) return;
+    
+    const filesGrid = document.querySelector('.files-grid');
+    filesGrid.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3">Đang tải danh sách tệp...</p></div>';
     
     try {
-      const response = await fetch('/api/files', {
-        headers: {
-          'Authorization': sessionId
-        }
-      });
+      const response = await fetch('/api/files');
       
       const data = await response.json();
-      renderFiles(data.files);
+      renderFiles(data.files || []);
     } catch (error) {
       console.error('Error loading files:', error);
+      filesGrid.innerHTML = '<div class="text-center py-5"><i class="bi bi-exclamation-triangle fs-1 text-warning"></i><p class="mt-3">Không thể tải danh sách tệp. Vui lòng thử lại sau.</p></div>';
     }
   }
 
@@ -472,4 +559,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize
   checkAuthStatus();
+  checkTelegramAuthStatus();
+
+  // Xử lý đăng xuất
+  document.querySelector('.user-info')?.addEventListener('click', () => {
+    if (confirm('Bạn có muốn đăng xuất khỏi TeleDrive không?')) {
+      logoutTelegram();
+    }
+  });
 }); 
