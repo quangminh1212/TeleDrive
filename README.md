@@ -10,10 +10,12 @@ TeleDrive là ứng dụng cho phép sử dụng Telegram làm dịch vụ lưu 
 - Giao diện người dùng thân thiện
 - Hỗ trợ dark/light mode
 - Responsive design cho mobile
+- **Mới**: Tích hợp với Telegram Desktop cho đăng nhập nhanh chóng
 
 ## Yêu cầu
 
 - Node.js 16+ hoặc Docker
+- Telegram Desktop (tùy chọn, để đăng nhập nhanh)
 
 ## Cài đặt và sử dụng
 
@@ -52,6 +54,22 @@ runapp docker restart  # Khởi động lại container
 runapp docker logs     # Xem logs
 ```
 
+## Đăng nhập Telegram
+
+### Cách 1: Đăng nhập thủ công
+Khi chạy ứng dụng lần đầu, bạn sẽ được yêu cầu nhập số điện thoại và mã xác thực để đăng nhập vào Telegram.
+
+### Cách 2: Đăng nhập tự động với Telegram Desktop
+TeleDrive có thể sử dụng Telegram Desktop đã đăng nhập sẵn để tăng tốc quá trình đăng nhập:
+
+1. Đảm bảo Telegram Desktop đã được cài đặt và đăng nhập trên máy tính của bạn
+2. Mở file `.env` và thêm các dòng sau:
+   ```
+   USE_TELEGRAM_DESKTOP=true
+   # TELEGRAM_DESKTOP_PATH= (tùy chọn, để trống để tự động phát hiện)
+   ```
+3. Khi chạy TeleDrive, ứng dụng sẽ tự động phát hiện và sử dụng tài khoản Telegram Desktop.
+
 ## Cấu hình Telegram API
 
 Trước khi sử dụng, bạn cần cập nhật file `.env` với các thông tin Telegram API:
@@ -61,6 +79,7 @@ BOT_TOKEN=<your_telegram_bot_token>
 TELEGRAM_API_ID=<your_telegram_api_id>
 TELEGRAM_API_HASH=<your_telegram_api_hash>
 TELEGRAM_CHAT_ID=<your_telegram_chat_id>
+USE_TELEGRAM_DESKTOP=true  # Bật tính năng đăng nhập với Telegram Desktop
 ```
 
 ### Cách lấy thông tin Telegram API:
