@@ -78,4 +78,6 @@ echo.
 start http://localhost:3000
 
 :: Chạy ứng dụng ở chế độ development
-npm run dev 
+npm run dev
+
+call runapp dev 

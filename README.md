@@ -1,6 +1,6 @@
 # TeleDrive
 
-TeleDrive là ứng dụng cho phép sử dụng Telegram làm dịch vụ lưu trữ đám mây. Tương tự như Google Drive, nhưng lưu trữ trên Telegram.
+TeleDrive là ứng dụng cho phép sử dụng Telegram làm dịch vụ lưu trữ đám mây, tương tự như Google Drive.
 
 ## Tính năng
 
@@ -13,66 +13,93 @@ TeleDrive là ứng dụng cho phép sử dụng Telegram làm dịch vụ lưu 
 
 ## Yêu cầu
 
-- Docker và Docker Compose
-- Hoặc Node.js 16+
+- Node.js 16+ hoặc Docker
 
-## Cách sử dụng với Docker
+## Cài đặt và sử dụng
 
-1. Sao chép dự án:
-```bash
-git clone https://github.com/yourusername/TeleDrive.git
-cd TeleDrive
+TeleDrive cung cấp một file thực thi duy nhất (`runapp.bat`) để quản lý tất cả các chức năng. Chạy lệnh sau để xem hướng dẫn:
+
+```
+runapp help
 ```
 
-2. Cấu hình biến môi trường:
-```bash
-cp .env.example .env
+### Cài đặt ban đầu
+
+```
+runapp setup
 ```
 
-3. Chỉnh sửa file `.env` với thông tin Telegram Bot của bạn:
-```bash
+### Chạy ứng dụng
+
+**Chạy bình thường:**
+```
+runapp run
+```
+
+**Chạy ở chế độ development:**
+```
+runapp dev
+```
+
+**Chạy với Docker:**
+```
+runapp docker start
+```
+
+**Dừng Docker container:**
+```
+runapp docker stop
+```
+
+**Xem logs Docker:**
+```
+runapp docker logs
+```
+
+## Cấu hình Telegram API
+
+Trước khi sử dụng, bạn cần cập nhật file `.env` với các thông tin Telegram API:
+
+```env
 BOT_TOKEN=<your_telegram_bot_token>
 TELEGRAM_API_ID=<your_telegram_api_id>
 TELEGRAM_API_HASH=<your_telegram_api_hash>
 TELEGRAM_CHAT_ID=<your_telegram_chat_id>
 ```
 
-4. Chạy ứng dụng với Docker:
-```bash
-chmod +x start.sh
-./start.sh
+### Cách lấy thông tin Telegram API:
+
+1. **Telegram Bot Token**:
+   - Mở Telegram, tìm [@BotFather](https://t.me/botfather)
+   - Gửi `/newbot` để tạo bot mới
+   - Làm theo hướng dẫn và nhận BOT_TOKEN
+
+2. **API ID và API Hash**:
+   - Vào [my.telegram.org](https://my.telegram.org/auth)
+   - Đăng nhập vào tài khoản Telegram của bạn
+   - Chọn "API development tools"
+   - Điền thông tin và lấy API_ID và API_HASH
+
+3. **Chat ID**:
+   - Tạo một kênh chat với bot của bạn
+   - Thêm bot [@userinfobot](https://t.me/userinfobot) vào kênh
+   - Gửi tin nhắn bất kỳ và copy Chat ID
+
+## Cấu trúc thư mục
+
 ```
-
-5. Dừng ứng dụng:
-```bash
-chmod +x stop.sh
-./stop.sh
+TeleDrive/
+├── public/              # Static files
+│   ├── css/             # CSS styles
+│   ├── js/              # JavaScript files
+│   └── index.html       # Main HTML file
+├── uploads/             # Temporary uploads directory
+├── Dockerfile           # Docker configuration
+├── docker-compose.yml   # Docker Compose configuration
+├── server.js            # Node.js server
+├── package.json         # Dependencies and scripts
+└── runapp.bat           # Main executable script
 ```
-
-## Cách sử dụng không có Docker
-
-1. Cài đặt dependencies:
-```bash
-npm install
-```
-
-2. Chạy ứng dụng:
-```bash
-npm start
-```
-
-3. Hoặc chạy ở chế độ development:
-```bash
-npm run dev
-```
-
-## Cách lấy Telegram API credentials
-
-1. Đăng ký ứng dụng tại [my.telegram.org](https://my.telegram.org/)
-2. Tạo Telegram bot qua [BotFather](https://t.me/botfather)
-3. Lấy Telegram Chat ID bằng cách:
-   - Thêm bot [@userinfobot](https://t.me/userinfobot) vào chat
-   - Gửi tin nhắn `/start` để lấy Chat ID
 
 ## Đóng góp
 
