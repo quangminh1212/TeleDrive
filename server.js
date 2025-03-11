@@ -257,6 +257,17 @@ app.get('/telegram-login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'telegram-login.html'));
 });
 
+// API endpoint để kiểm tra cấu hình Telegram
+app.get('/api/telegram/config', (req, res) => {
+  const uploadPath = path.join(__dirname, 'uploads');
+  
+  res.json({
+    useTelegramBot: !!bot,
+    useWebClientUpload: useWebUpload,
+    uploadPath: uploadPath.replace(/\\/g, '/')
+  });
+});
+
 // Serve the React app for any other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

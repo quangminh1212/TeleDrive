@@ -519,68 +519,72 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Upload single file
+  // Thêm biến để theo dõi trạng thái sử dụng bot Telegram
+  let useTelegramBot = false;
+  let useWebClientUpload = true;
+
+  // Hàm kiểm tra cấu hình Telegram từ server
+  async function checkTelegramConfig() {
+    try {
+      const response = await fetch('/api/telegram/config');
+      const data = await response.json();
+      
+      useTelegramBot = data.useTelegramBot;
+      useWebClientUpload = data.useWebClientUpload;
+      
+      if (data.uploadPath) {
+        document.getElementById('uploadFolderPath').textContent = data.uploadPath;
+      }
+    } catch (error) {
+      console.error('Error checking Telegram config:', error);
+    }
+  }
+
+  // Hàm xử lý upload file
   async function uploadFile(file, uploadItem) {
     const formData = new FormData();
     formData.append('file', file);
     
-    try {
-      const xhr = new XMLHttpRequest();
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': sessionId || '',
+      },
+      body: formData
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Cập nhật tiến trình
+      uploadItem.querySelector('.progress-bar').style.width = '100%';
+      uploadItem.querySelector('small').textContent = 'Upload completed';
       
-      // Setup progress tracking
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = Math.round((event.loaded / event.total) * 100);
+      // Nếu không sử dụng bot Telegram nhưng có bật web client upload, hiển thị hướng dẫn
+      if (!data.file.savedToTelegram && data.file.webClientUpload && useWebClientUpload) {
+        setTimeout(() => {
+          const telegramUploadGuideModal = new bootstrap.Modal(document.getElementById('telegramUploadGuideModal'));
+          telegramUploadGuideModal.show();
+        }, 500);
+      }
+      
+      // Thêm file vào danh sách
+      loadUserFiles();
+      
+      setTimeout(() => {
+        uploadItem.classList.add('fade-out');
+        setTimeout(() => {
+          uploadItem.remove();
           
-          uploadItem.querySelector('.progress-bar').style.width = `${percentComplete}%`;
-          uploadItem.querySelector('small').textContent = `${percentComplete}%`;
-        }
-      });
-      
-      // Handle completion
-      xhr.onload = function() {
-        if (xhr.status === 200) {
-          // Success
-          uploadItem.querySelector('.progress-bar').classList.add('bg-success');
-          
-          // Remove item after delay
-          setTimeout(() => {
-            uploadItem.classList.add('fade-out');
-            setTimeout(() => {
-              uploadItem.remove();
-              
-              // Hide container if empty
-              if (!uploadItems.children.length) {
-                uploadProgress.style.display = 'none';
-              }
-            }, 500);
-          }, 1000);
-        } else {
-          // Error
-          uploadItem.querySelector('.progress-bar').classList.add('bg-danger');
-          uploadItem.querySelector('small').textContent = 'Error';
-        }
-      };
-      
-      // Handle error
-      xhr.onerror = function() {
-        uploadItem.querySelector('.progress-bar').classList.add('bg-danger');
-        uploadItem.querySelector('small').textContent = 'Failed';
-      };
-      
-      // Send request
-      xhr.open('POST', '/api/upload', true);
-      xhr.setRequestHeader('Authorization', sessionId);
-      xhr.send(formData);
-      
-      // Wait for completion
-      return new Promise((resolve) => {
-        xhr.onloadend = resolve;
-      });
-    } catch (error) {
-      console.error('Upload error:', error);
+          // Hide container if empty
+          if (!uploadItems.children.length) {
+            uploadProgress.style.display = 'none';
+          }
+        }, 500);
+      }, 3000);
+    } else {
       uploadItem.querySelector('.progress-bar').classList.add('bg-danger');
-      uploadItem.querySelector('small').textContent = 'Failed';
+      uploadItem.querySelector('small').textContent = data.error || 'Upload failed';
     }
   }
 
@@ -610,6 +614,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize
   checkAuthStatus();
   checkTelegramAuthStatus();
+
+  // Kiểm tra cấu hình Telegram
+  checkTelegramConfig();
 
   // Xử lý đăng xuất
   document.querySelector('.user-info')?.addEventListener('click', () => {
