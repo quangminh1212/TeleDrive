@@ -128,18 +128,17 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     // If Telegram bot is configured, send file to Telegram
     if (bot) {
       try {
-        // Simulating sending to Telegram
         console.log(`[Telegram] Uploading file: ${fileData.name}`);
         
-        // In a real implementation, you would upload to Telegram here
-        // Example (commented out as it requires an actual bot token):
-        // const message = await bot.telegram.sendDocument(process.env.TELEGRAM_CHAT_ID, {
-        //   source: fs.readFileSync(fileData.path),
-        //   filename: fileData.name
-        // });
-        // fileData.telegramMessageId = message.message_id;
+        // Thực hiện upload file lên Telegram
+        const message = await bot.telegram.sendDocument(process.env.TELEGRAM_CHAT_ID, {
+          source: fs.readFileSync(fileData.path),
+          filename: fileData.name
+        });
         
+        fileData.telegramMessageId = message.message_id;
         fileData.savedToTelegram = true;
+        console.log(`[Telegram] Upload completed. Message ID: ${message.message_id}`);
       } catch (error) {
         console.error('Error sending file to Telegram:', error);
         fileData.savedToTelegram = false;
