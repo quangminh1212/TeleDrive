@@ -155,7 +155,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 });
 
 // Download file
-app.get('/api/files/:fileId', (req, res) => {
+app.get('/api/files/:fileId', async (req, res) => {
   const sessionId = req.headers.authorization;
   if (!sessionId || !sessions[sessionId]) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -168,7 +168,54 @@ app.get('/api/files/:fileId', (req, res) => {
     return res.status(404).json({ error: 'File not found' });
   }
   
-  res.download(file.path, file.name);
+  // Nếu file được lưu trên Telegram và có message ID
+  if (file.savedToTelegram && file.telegramMessageId && bot) {
+    try {
+      console.log(`[Telegram] Downloading file: ${file.name}`);
+      
+      // Tạo đường dẫn tạm thời cho file
+      const tempPath = path.join(uploadDir, `temp_${Date.now()}_${file.name}`);
+      
+      // Tải file từ Telegram
+      const fileStream = await bot.telegram.getFileLink(
+        await bot.telegram.getFile(
+          (await bot.telegram.getMessages(process.env.TELEGRAM_CHAT_ID, [file.telegramMessageId]))[0].document.file_id
+        )
+      );
+      
+      // Lưu file vào đường dẫn tạm thời
+      const response = await fetch(fileStream.href);
+      const buffer = await response.buffer();
+      fs.writeFileSync(tempPath, buffer);
+      
+      // Gửi file cho người dùng
+      res.download(tempPath, file.name, (err) => {
+        if (err) {
+          console.error('Error sending downloaded file:', err);
+        }
+        // Xóa file tạm sau khi gửi
+        try {
+          fs.unlinkSync(tempPath);
+        } catch (e) {
+          console.error('Error deleting temp file:', e);
+        }
+      });
+      
+      console.log(`[Telegram] Download completed for: ${file.name}`);
+    } catch (error) {
+      console.error('Error downloading file from Telegram:', error);
+      
+      // Nếu không thể tải từ Telegram, thử với file cục bộ
+      if (fs.existsSync(file.path)) {
+        res.download(file.path, file.name);
+      } else {
+        res.status(500).json({ error: 'Failed to download file' });
+      }
+    }
+  } else {
+    // Nếu không có trên Telegram, gửi file cục bộ
+    res.download(file.path, file.name);
+  }
 });
 
 // Serve the React app for any other routes
