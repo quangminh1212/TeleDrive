@@ -545,46 +545,85 @@ document.addEventListener('DOMContentLoaded', () => {
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      headers: {
-        'Authorization': sessionId || '',
-      },
-      body: formData
-    });
+    const progressBar = uploadItem.querySelector('.progress-bar');
+    const statusText = uploadItem.querySelector('small');
     
-    const data = await response.json();
-    
-    if (data.success) {
-      // Cập nhật tiến trình
-      uploadItem.querySelector('.progress-bar').style.width = '100%';
-      uploadItem.querySelector('small').textContent = 'Upload completed';
-      
-      // Nếu không sử dụng bot Telegram nhưng có bật web client upload, hiển thị hướng dẫn
-      if (!data.file.savedToTelegram && data.file.webClientUpload && useWebClientUpload) {
-        setTimeout(() => {
-          const telegramUploadGuideModal = new bootstrap.Modal(document.getElementById('telegramUploadGuideModal'));
-          telegramUploadGuideModal.show();
-        }, 500);
-      }
-      
-      // Thêm file vào danh sách
-      loadUserFiles();
-      
-      setTimeout(() => {
-        uploadItem.classList.add('fade-out');
-        setTimeout(() => {
-          uploadItem.remove();
-          
-          // Hide container if empty
-          if (!uploadItems.children.length) {
-            uploadProgress.style.display = 'none';
+    try {
+      // Sử dụng XMLHttpRequest để theo dõi tiến trình
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        // Theo dõi tiến trình
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            progressBar.style.width = `${percentComplete}%`;
+            statusText.textContent = `${percentComplete}%`;
           }
-        }, 500);
-      }, 3000);
-    } else {
-      uploadItem.querySelector('.progress-bar').classList.add('bg-danger');
-      uploadItem.querySelector('small').textContent = data.error || 'Upload failed';
+        });
+        
+        // Xử lý khi hoàn thành
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              if (data.success) {
+                progressBar.classList.add('bg-success');
+                statusText.textContent = 'Upload completed';
+                
+                // Hiển thị hướng dẫn đồng bộ nếu cần
+                if (!data.file.savedToTelegram && data.file.webClientUpload && useWebClientUpload) {
+                  setTimeout(() => {
+                    const telegramUploadGuideModal = new bootstrap.Modal(document.getElementById('telegramUploadGuideModal'));
+                    telegramUploadGuideModal.show();
+                  }, 500);
+                }
+                
+                // Cập nhật danh sách file
+                loadUserFiles();
+                
+                // Xóa item sau 3 giây
+                setTimeout(() => {
+                  uploadItem.classList.add('fade-out');
+                  setTimeout(() => {
+                    uploadItem.remove();
+                  }, 500);
+                }, 3000);
+                
+                resolve(data);
+              } else {
+                progressBar.classList.add('bg-danger');
+                statusText.textContent = data.error || 'Upload failed';
+                reject(new Error(data.error || 'Upload failed'));
+              }
+            } catch (error) {
+              progressBar.classList.add('bg-danger');
+              statusText.textContent = 'Error parsing response';
+              reject(error);
+            }
+          } else {
+            progressBar.classList.add('bg-danger');
+            statusText.textContent = `Error: ${xhr.status}`;
+            reject(new Error(`HTTP error ${xhr.status}`));
+          }
+        };
+        
+        // Xử lý lỗi
+        xhr.onerror = function() {
+          progressBar.classList.add('bg-danger');
+          statusText.textContent = 'Network error';
+          reject(new Error('Network error'));
+        };
+        
+        // Gửi request
+        xhr.open('POST', '/api/upload', true);
+        xhr.setRequestHeader('Authorization', sessionId || '');
+        xhr.send(formData);
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      progressBar.classList.add('bg-danger');
+      statusText.textContent = 'Error';
     }
   }
 
