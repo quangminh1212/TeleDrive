@@ -7,6 +7,9 @@ const { Telegraf } = require('telegraf');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
+// Import telegramWebUploader
+const telegramWebUploader = require('./telegramWebUploader');
+
 // Tạo thư mục uploads nếu chưa tồn tại
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -167,15 +170,35 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         }
       }
     } else if (useWebUpload) {
-      // Web client upload
-      console.log(`[Telegram Web] File lưu cục bộ: ${fileData.path}`);
-      console.log(`[Telegram Web] Để đồng bộ file này lên Telegram:`);
-      console.log(`[Telegram Web] 1. Mở Telegram Web: https://web.telegram.org/`);
-      console.log(`[Telegram Web] 2. Chọn Saved Messages (tin nhắn đã lưu) hoặc chat/channel mong muốn`);
-      console.log(`[Telegram Web] 3. Nhấn vào biểu tượng đính kèm và chọn file từ: ${fileData.path}`);
+      // Web client upload - Sử dụng telegramWebUploader để tự động upload
+      console.log(`[Telegram Web] Đang tự động upload file: ${fileData.path}`);
+      
+      try {
+        // Sử dụng telegramWebUploader để tự động upload file lên Telegram
+        const uploadResult = await telegramWebUploader.uploadFile(fileData.path);
+        
+        if (uploadResult) {
+          console.log(`[Telegram Web] Đã upload file thành công lên Telegram: ${fileData.name}`);
+          fileData.savedToTelegram = true;
+        } else {
+          console.log(`[Telegram Web] Không thể tự động upload file. File đã được lưu cục bộ: ${fileData.path}`);
+          console.log(`[Telegram Web] Để đồng bộ file này lên Telegram:`);
+          console.log(`[Telegram Web] 1. Mở Telegram Web: https://web.telegram.org/`);
+          console.log(`[Telegram Web] 2. Chọn Saved Messages (tin nhắn đã lưu) hoặc chat/channel mong muốn`);
+          console.log(`[Telegram Web] 3. Nhấn vào biểu tượng đính kèm và chọn file từ: ${fileData.path}`);
+          fileData.savedToTelegram = false;
+        }
+      } catch (error) {
+        console.error(`[Telegram Web] Lỗi khi tự động upload file:`, error);
+        console.log(`[Telegram Web] File lưu cục bộ: ${fileData.path}`);
+        console.log(`[Telegram Web] Để đồng bộ file này lên Telegram:`);
+        console.log(`[Telegram Web] 1. Mở Telegram Web: https://web.telegram.org/`);
+        console.log(`[Telegram Web] 2. Chọn Saved Messages (tin nhắn đã lưu) hoặc chat/channel mong muốn`);
+        console.log(`[Telegram Web] 3. Nhấn vào biểu tượng đính kèm và chọn file từ: ${fileData.path}`);
+        fileData.savedToTelegram = false;
+      }
       
       fileData.webClientUpload = true;
-      fileData.savedToTelegram = false;
     } else {
       console.log(`[Local] File lưu cục bộ: ${fileData.path} (Telegram không được cấu hình)`);
       fileData.savedToTelegram = false;
