@@ -7,9 +7,6 @@ const { Telegraf } = require('telegraf');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
-// Import telegramWebUploader
-const telegramWebUploader = require('./telegramWebUploader');
-
 // Tạo thư mục uploads nếu chưa tồn tại
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -42,19 +39,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Kiểm tra xem BOT_TOKEN đã được cấu hình chưa
 let bot;
 let useWebUpload = process.env.USE_WEB_CLIENT_UPLOAD === 'true';
-
-// Khởi tạo telegramWebUploader nếu sử dụng web client upload
-if (useWebUpload) {
-  console.log('Đang khởi tạo telegramWebUploader...');
-  telegramWebUploader.initBrowser()
-    .then(() => {
-      console.log('Đã khởi tạo telegramWebUploader thành công');
-    })
-    .catch(error => {
-      console.error('Lỗi khởi tạo telegramWebUploader:', error);
-      console.log('Tiếp tục sử dụng chế độ hướng dẫn upload thủ công');
-    });
-}
 
 if (process.env.BOT_TOKEN && process.env.BOT_TOKEN.includes(':') && !process.env.BOT_TOKEN.includes('1234567890')) {
   bot = new Telegraf(process.env.BOT_TOKEN);
@@ -114,20 +98,9 @@ app.post('/api/auth/telegram', (req, res) => {
   };
   
   res.json({
-    success: true,
     sessionId,
     user
   });
-});
-
-// Lấy danh sách files
-app.get('/api/files', (req, res) => {
-  const sessionId = req.headers.authorization;
-  if (!sessionId || !sessions[sessionId]) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  
-  res.json({ files });
 });
 
 // Upload file
@@ -183,35 +156,15 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         }
       }
     } else if (useWebUpload) {
-      // Web client upload - Sử dụng telegramWebUploader để tự động upload
-      console.log(`[Telegram Web] Đang tự động upload file: ${fileData.path}`);
-      
-      try {
-        // Sử dụng telegramWebUploader để tự động upload file lên Telegram
-        const uploadResult = await telegramWebUploader.uploadFile(fileData.path);
-        
-        if (uploadResult) {
-          console.log(`[Telegram Web] Đã upload file thành công lên Telegram: ${fileData.name}`);
-          fileData.savedToTelegram = true;
-        } else {
-          console.log(`[Telegram Web] Không thể tự động upload file. File đã được lưu cục bộ: ${fileData.path}`);
-          console.log(`[Telegram Web] Để đồng bộ file này lên Telegram:`);
-          console.log(`[Telegram Web] 1. Mở Telegram Web: https://web.telegram.org/`);
-          console.log(`[Telegram Web] 2. Chọn Saved Messages (tin nhắn đã lưu) hoặc chat/channel mong muốn`);
-          console.log(`[Telegram Web] 3. Nhấn vào biểu tượng đính kèm và chọn file từ: ${fileData.path}`);
-          fileData.savedToTelegram = false;
-        }
-      } catch (error) {
-        console.error(`[Telegram Web] Lỗi khi tự động upload file:`, error);
-        console.log(`[Telegram Web] File lưu cục bộ: ${fileData.path}`);
-        console.log(`[Telegram Web] Để đồng bộ file này lên Telegram:`);
-        console.log(`[Telegram Web] 1. Mở Telegram Web: https://web.telegram.org/`);
-        console.log(`[Telegram Web] 2. Chọn Saved Messages (tin nhắn đã lưu) hoặc chat/channel mong muốn`);
-        console.log(`[Telegram Web] 3. Nhấn vào biểu tượng đính kèm và chọn file từ: ${fileData.path}`);
-        fileData.savedToTelegram = false;
-      }
+      // Web client upload
+      console.log(`[Telegram Web] File lưu cục bộ: ${fileData.path}`);
+      console.log(`[Telegram Web] Người dùng sẽ tự đồng bộ lên Telegram bằng tài khoản web đã đăng nhập`);
       
       fileData.webClientUpload = true;
+      fileData.savedToTelegram = false;
+      
+      // Tự động mở modal hướng dẫn upload lên Telegram
+      fileData.showTelegramGuide = true;
     } else {
       console.log(`[Local] File lưu cục bộ: ${fileData.path} (Telegram không được cấu hình)`);
       fileData.savedToTelegram = false;
@@ -226,66 +179,87 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// Download file
-app.get('/api/files/:fileId', async (req, res) => {
+// Get user files
+app.get('/api/files', (req, res) => {
   const sessionId = req.headers.authorization;
   if (!sessionId || !sessions[sessionId]) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   
-  const fileId = parseInt(req.params.fileId);
-  const file = files.find(f => f.id === fileId);
+  const userId = sessions[sessionId].user.id;
+  const userFiles = files.filter(file => file.userId === userId);
+  
+  res.json(userFiles);
+});
+
+// Delete file
+app.delete('/api/files/:id', (req, res) => {
+  const sessionId = req.headers.authorization;
+  if (!sessionId || !sessions[sessionId]) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  const fileId = parseInt(req.params.id);
+  const fileIndex = files.findIndex(file => file.id === fileId);
+  
+  if (fileIndex === -1) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  const file = files[fileIndex];
+  
+  // Kiểm tra quyền xóa file
+  if (file.userId !== sessions[sessionId].user.id) {
+    return res.status(403).json({ error: 'Permission denied' });
+  }
+  
+  // Xóa file trên disk
+  try {
+    fs.unlinkSync(file.path);
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    // Ignore errors (file might not exist)
+  }
+  
+  // Xóa file từ Telegram nếu cần (Telegram không hỗ trợ xóa file)
+  if (file.savedToTelegram) {
+    console.log(`[Telegram] Warning: Cannot delete file ${file.name} from Telegram.`);
+  }
+  
+  // Xóa file từ danh sách
+  files.splice(fileIndex, 1);
+  
+  res.json({ success: true });
+});
+
+// Download file
+app.get('/api/download/:id', (req, res) => {
+  const sessionId = req.headers.authorization;
+  if (!sessionId || !sessions[sessionId]) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  const fileId = parseInt(req.params.id);
+  const file = files.find(file => file.id === fileId);
   
   if (!file) {
     return res.status(404).json({ error: 'File not found' });
   }
   
-  // Nếu file được lưu trên Telegram và có message ID
-  if (file.savedToTelegram && file.telegramMessageId && bot) {
-    try {
-      console.log(`[Telegram] Downloading file: ${file.name}`);
-      
-      // Tạo đường dẫn tạm thời cho file
-      const tempPath = path.join(uploadDir, `temp_${Date.now()}_${file.name}`);
-      
-      // Tải file từ Telegram
-      const fileStream = await bot.telegram.getFileLink(
-        await bot.telegram.getFile(
-          (await bot.telegram.getMessages(process.env.TELEGRAM_CHAT_ID, [file.telegramMessageId]))[0].document.file_id
-        )
-      );
-      
-      // Lưu file vào đường dẫn tạm thời
-      const response = await fetch(fileStream.href);
-      const buffer = await response.buffer();
-      fs.writeFileSync(tempPath, buffer);
-      
-      // Gửi file cho người dùng
-      res.download(tempPath, file.name, (err) => {
-        if (err) {
-          console.error('Error sending downloaded file:', err);
-        }
-        // Xóa file tạm sau khi gửi
-        try {
-          fs.unlinkSync(tempPath);
-        } catch (e) {
-          console.error('Error deleting temp file:', e);
-        }
-      });
-      
-      console.log(`[Telegram] Download completed for: ${file.name}`);
-    } catch (error) {
-      console.error('Error downloading file from Telegram:', error);
-      
-      // Nếu không thể tải từ Telegram, thử với file cục bộ
-      if (fs.existsSync(file.path)) {
-        res.download(file.path, file.name);
-      } else {
-        res.status(500).json({ error: 'Failed to download file' });
-      }
-    }
+  // Kiểm tra quyền truy cập file
+  if (file.userId !== sessions[sessionId].user.id) {
+    return res.status(403).json({ error: 'Permission denied' });
+  }
+  
+  // Phân tích file path
+  const tempPath = path.join(uploadDir, `temp_${Date.now()}_${file.name}`);
+  
+  // Nếu file có trên Telegram, download từ Telegram
+  if (file.savedToTelegram && bot) {
+    // TODO: Implement Telegram file download
+    res.download(file.path, file.name);
   } else {
-    // Nếu không có trên Telegram, gửi file cục bộ
+    // File chỉ lưu cục bộ
     res.download(file.path, file.name);
   }
 });
@@ -317,36 +291,12 @@ app.listen(PORT, () => {
 });
 
 // Cleanup function for graceful shutdown
-process.on('SIGINT', async () => {
+process.on('SIGINT', () => {
   console.log('Shutting down server...');
-  
-  // Close telegramWebUploader browser if it's running
-  if (useWebUpload && telegramWebUploader) {
-    try {
-      console.log('Closing telegramWebUploader browser...');
-      await telegramWebUploader.closeBrowser();
-      console.log('telegramWebUploader browser closed successfully');
-    } catch (error) {
-      console.error('Error closing telegramWebUploader browser:', error);
-    }
-  }
-  
   process.exit(0);
 });
 
-process.on('SIGTERM', async () => {
+process.on('SIGTERM', () => {
   console.log('Shutting down server...');
-  
-  // Close telegramWebUploader browser if it's running
-  if (useWebUpload && telegramWebUploader) {
-    try {
-      console.log('Closing telegramWebUploader browser...');
-      await telegramWebUploader.closeBrowser();
-      console.log('telegramWebUploader browser closed successfully');
-    } catch (error) {
-      console.error('Error closing telegramWebUploader browser:', error);
-    }
-  }
-  
   process.exit(0);
 }); 
