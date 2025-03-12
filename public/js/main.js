@@ -39,17 +39,28 @@ document.addEventListener('DOMContentLoaded', () => {
   let sessionId = localStorage.getItem('sessionId');
   let username = localStorage.getItem('username');
   let currentUser = null;
-  let useWebClientUpload = false; // Mặc định là false, sẽ được cập nhật từ API
+  let useWebClientUpload = true; // Đặt mặc định là true khi mở trực tiếp
   let useTelegramBot = false;
+  
+  // Biến để nhận biết khi nào đang mở trực tiếp
+  const isDirectOpen = window.location.protocol === 'file:';
 
   // Check authentication status
   async function checkAuthStatus() {
     try {
+      // Nếu mở trực tiếp, hiển thị UI mặc định thay vì gọi API
+      if (isDirectOpen) {
+        console.log('Mở file trực tiếp, hiển thị UI mặc định');
+        updateUIForDirectOpen();
+        return;
+      }
+
       const response = await fetch('/api/auth/status', {
         headers: {
           'Authorization': sessionId || ''
         }
       });
+      
       const data = await response.json();
       
       if (data.authenticated) {
@@ -57,12 +68,71 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUser = data.user;
         updateUIForAuthenticatedUser();
       } else {
-        showLoginModal();
+        checkTelegramAuthStatus();
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
-      showLoginModal();
+      // Xử lý khi không thể kết nối đến máy chủ
+      updateUIForDirectOpen();
     }
+  }
+  
+  // Cập nhật UI khi mở trực tiếp không có máy chủ
+  function updateUIForDirectOpen() {
+    const loginStatus = document.getElementById('loginStatus');
+    if (!loginStatus) return;
+    
+    // Hiển thị nút login và thông báo
+    loginStatus.innerHTML = `
+      <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <strong>Mở trực tiếp:</strong> Một số tính năng sẽ không hoạt động. Hãy chạy server Node.js để có trải nghiệm đầy đủ.
+      </div>
+      <button class="btn btn-primary telegram-login-btn" onclick="openTelegramLogin()">
+        <i class="bi bi-telegram"></i> <span>Đăng nhập Web</span>
+      </button>
+      <button class="btn btn-info telegram-api-login-btn ms-2" onclick="openTelegramApiLogin()">
+        <i class="bi bi-shield-lock"></i> <span>API Đăng nhập</span>
+      </button>
+    `;
+    
+    // Thêm dữ liệu mẫu để hiển thị giao diện
+    const filesContainer = document.querySelector('.files-grid');
+    if (filesContainer) {
+      renderSampleFiles();
+    }
+  }
+  
+  // Hiển thị dữ liệu mẫu để demo giao diện
+  function renderSampleFiles() {
+    const filesContainer = document.querySelector('.files-grid');
+    if (!filesContainer) return;
+    
+    const sampleFiles = [
+      { name: 'document.pdf', type: 'application/pdf', size: 1.2 * 1024 * 1024, modifiedAt: new Date() - 86400000 * 7 },
+      { name: 'image.jpg', type: 'image/jpeg', size: 2.5 * 1024 * 1024, modifiedAt: new Date() - 86400000 * 2 },
+      { name: 'video.mp4', type: 'video/mp4', size: 15 * 1024 * 1024, modifiedAt: new Date() - 86400000 * 5 },
+      { name: 'spreadsheet.xlsx', type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', size: 0.8 * 1024 * 1024, modifiedAt: new Date() - 86400000 },
+      { name: 'presentation.pptx', type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', size: 3.2 * 1024 * 1024, modifiedAt: new Date() - 86400000 * 10 },
+    ];
+    
+    filesContainer.innerHTML = '';
+    
+    sampleFiles.forEach(file => {
+      const fileItem = document.createElement('div');
+      fileItem.className = 'file-item';
+      fileItem.dataset.type = file.type.split('/')[0];
+      
+      const modifiedDaysAgo = Math.round((new Date() - file.modifiedAt) / (1000 * 60 * 60 * 24));
+      
+      fileItem.innerHTML = `
+        <i class="bi ${getFileIcon(file.type)} file-icon"></i>
+        <p class="file-name">${file.name}</p>
+        <p class="file-info">${formatFileSize(file.size)} • ${modifiedDaysAgo} ngày trước</p>
+      `;
+      
+      filesContainer.appendChild(fileItem);
+    });
   }
 
   // Update UI for authenticated user
@@ -395,32 +465,35 @@ document.addEventListener('DOMContentLoaded', () => {
     attachFileEvents();
   }
 
-  // Get appropriate icon for file type
-  function getFileIcon(mimeType) {
-    if (!mimeType) return 'bi bi-file';
+  // Hàm lấy icon dựa vào loại file
+  function getFileIcon(fileType) {
+    const type = fileType.split('/')[0];
+    const extension = fileType.split('/')[1];
     
-    if (mimeType.startsWith('image/')) {
-      return 'bi bi-file-image';
-    } else if (mimeType.startsWith('video/')) {
-      return 'bi bi-file-play';
-    } else if (mimeType.startsWith('audio/')) {
-      return 'bi bi-file-music';
-    } else if (mimeType.includes('pdf')) {
-      return 'bi bi-file-pdf';
-    } else if (mimeType.includes('word') || mimeType.includes('document')) {
-      return 'bi bi-file-word';
-    } else if (mimeType.includes('excel') || mimeType.includes('sheet')) {
-      return 'bi bi-file-excel';
-    } else if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) {
-      return 'bi bi-file-ppt';
-    } else if (mimeType.includes('zip') || mimeType.includes('compressed')) {
-      return 'bi bi-file-zip';
-    } else {
-      return 'bi bi-file-earmark';
+    switch (type) {
+      case 'image':
+        return 'bi-file-earmark-image';
+      case 'video':
+        return 'bi-file-earmark-play';
+      case 'audio':
+        return 'bi-file-earmark-music';
+      case 'application':
+        if (fileType.includes('pdf')) return 'bi-file-earmark-pdf';
+        if (fileType.includes('spreadsheet') || fileType.includes('excel') || fileType.includes('sheet')) 
+          return 'bi-file-earmark-excel';
+        if (fileType.includes('presentation') || fileType.includes('powerpoint')) 
+          return 'bi-file-earmark-slides';
+        if (fileType.includes('document') || fileType.includes('word')) 
+          return 'bi-file-earmark-word';
+        if (fileType.includes('zip') || fileType.includes('compressed') || fileType.includes('archive')) 
+          return 'bi-file-earmark-zip';
+        return 'bi-file-earmark';
+      default:
+        return 'bi-file-earmark';
     }
   }
-
-  // Format file size
+  
+  // Hàm format kích thước file
   function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
     
