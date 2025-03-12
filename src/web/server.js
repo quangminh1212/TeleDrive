@@ -1,328 +1,482 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const path = require('path');
-const fileManager = require('../utils/fileManager');
-const fs = require('fs-extra');
+const fs = require('fs');
 const multer = require('multer');
-const mime = require('mime-types');
 const logger = require('../utils/logger');
-const { formatSize, formatDate } = require('../utils/helpers');
+const fileManager = require('../utils/fileManager');
+const helpers = require('../utils/helpers');
 
 // Khởi tạo Express app
 const app = express();
-const PORT = process.env.WEB_PORT || 3000;
+const port = process.env.WEB_PORT || 3000;
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Thiết lập middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 
-// Cấu hình multer để upload file
+// Thiết lập view engine
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+// Cấu hình multer cho việc tải file lên
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const userId = req.params.userId || '000000000'; // ID mặc định nếu không có
-    const currentPath = fileManager.getCurrentPath(userId);
-    const { fullPath } = fileManager.getAbsolutePath(userId);
-    fs.ensureDirSync(fullPath);
-    cb(null, fullPath);
+  destination: function (req, file, cb) {
+    const userId = req.params.userId;
+    const currentPath = req.query.path || '/';
+    const absolutePath = fileManager.getAbsolutePath(userId, currentPath);
+    
+    // Đảm bảo thư mục tồn tại
+    if (!fs.existsSync(absolutePath)) {
+      fs.mkdirSync(absolutePath, { recursive: true });
+    }
+    
+    cb(null, absolutePath);
   },
-  filename: (req, file, cb) => {
+  filename: function (req, file, cb) {
+    // Giữ nguyên tên file gốc
     cb(null, file.originalname);
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({ storage: storage });
 
-// Routes
+// Hàm helper để định dạng dung lượng file
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
-// Trang chủ
-app.get('/', (req, res) => {
-  res.render('index', {
-    title: 'TeleDrive - Home'
-  });
-});
-
-// Đăng nhập/Đăng ký
-app.get('/login', (req, res) => {
-  res.render('login', {
-    title: 'TeleDrive - Login'
-  });
-});
-
-// Trang Dashboard
-app.get('/drive/:userId?', (req, res) => {
-  const userId = req.params.userId || '000000000'; // ID mặc định nếu không có
-  const path = req.query.path || '/';
-  
-  try {
-    // Đảm bảo thư mục người dùng tồn tại
-    fileManager.ensureUserDirectory(userId);
-    
-    // Thiết lập đường dẫn hiện tại
-    if (path !== fileManager.getCurrentPath(userId)) {
-      fileManager.changeDirectory(userId, path);
-    }
-    
-    // Lấy danh sách file/thư mục
-    const result = fileManager.listDirectory(userId);
-    
-    if (!result.success) {
-      return res.status(404).render('error', {
-        title: 'Error',
-        error: result.error
-      });
-    }
-    
-    // Phân loại items
-    const folders = result.contents.filter(item => item.isDirectory);
-    const files = result.contents.filter(item => !item.isDirectory);
-    
-    // Sắp xếp theo tên
-    folders.sort((a, b) => a.name.localeCompare(b.name));
-    files.sort((a, b) => a.name.localeCompare(b.name));
-    
-    // Tạo breadcrumb
-    const breadcrumbs = [];
-    if (path !== '/') {
-      const parts = path.split('/').filter(Boolean);
-      let currentPath = '';
-      
-      // Thêm Home
-      breadcrumbs.push({ name: 'Home', path: '/' });
-      
-      // Thêm các thư mục con
-      parts.forEach(part => {
-        currentPath += '/' + part;
-        breadcrumbs.push({ name: part, path: currentPath });
-      });
-    } else {
-      breadcrumbs.push({ name: 'Home', path: '/' });
-    }
-    
-    res.render('drive', {
-      title: 'TeleDrive - My Drive',
-      userId,
-      currentPath: path,
-      breadcrumbs,
-      folders,
-      files,
-      formatSize,
-      formatDate
-    });
-  } catch (error) {
-    logger.error(`Web error: ${error.message}`);
-    res.status(500).render('error', {
-      title: 'Error',
-      error: 'Internal server error'
-    });
-  }
-});
-
-// API Endpoints
-
-// Lấy danh sách file
-app.get('/api/files/:userId', (req, res) => {
-  const userId = req.params.userId;
-  const path = req.query.path || '/';
-  
-  try {
-    // Đảm bảo thư mục người dùng tồn tại
-    fileManager.ensureUserDirectory(userId);
-    
-    // Thiết lập đường dẫn hiện tại nếu cần
-    if (path !== fileManager.getCurrentPath(userId)) {
-      fileManager.changeDirectory(userId, path);
-    }
-    
-    // Lấy danh sách file/thư mục
-    const result = fileManager.listDirectory(userId);
-    
-    if (!result.success) {
-      return res.status(404).json({ success: false, error: result.error });
-    }
-    
-    return res.json({
-      success: true,
-      path: result.path,
-      contents: result.contents.map(item => ({
-        ...item,
-        sizeFormatted: formatSize(item.size),
-        modifiedFormatted: formatDate(item.modified)
-      }))
-    });
-  } catch (error) {
-    logger.error(`API error: ${error.message}`);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// Tạo thư mục mới
-app.post('/api/folders/:userId', (req, res) => {
-  const userId = req.params.userId;
-  const { folderName } = req.body;
-  
-  if (!folderName || folderName.trim() === '') {
-    return res.status(400).json({ success: false, error: 'Folder name is required' });
-  }
-  
-  try {
-    const result = fileManager.createDirectory(userId, folderName);
-    
-    if (!result.success) {
-      return res.status(400).json({ success: false, error: result.error });
-    }
-    
-    return res.json({ success: true, path: result.path });
-  } catch (error) {
-    logger.error(`API error: ${error.message}`);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// Upload file
-app.post('/api/upload/:userId', upload.single('file'), (req, res) => {
-  const userId = req.params.userId;
-  const file = req.file;
-  
-  if (!file) {
-    return res.status(400).json({ success: false, error: 'No file uploaded' });
-  }
-  
-  try {
-    const filePath = file.path;
-    const stats = fs.statSync(filePath);
-    
-    return res.json({
-      success: true,
-      file: {
-        name: file.originalname,
-        path: filePath,
-        size: stats.size,
-        sizeFormatted: formatSize(stats.size),
-        mimeType: mime.lookup(filePath) || 'application/octet-stream'
-      }
-    });
-  } catch (error) {
-    logger.error(`API error: ${error.message}`);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// Tải file
-app.get('/api/download/:userId', (req, res) => {
-  const userId = req.params.userId;
-  const filePath = req.query.path;
-  
-  if (!filePath) {
-    return res.status(400).json({ success: false, error: 'File path is required' });
-  }
-  
-  try {
-    const result = fileManager.getFileForSending(userId, filePath);
-    
-    if (!result.success) {
-      return res.status(404).json({ success: false, error: result.error });
-    }
-    
-    const mimeType = mime.lookup(result.path) || 'application/octet-stream';
-    
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.name}"`);
-    
-    result.stream.pipe(res);
-  } catch (error) {
-    logger.error(`API error: ${error.message}`);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// Xóa file hoặc thư mục
-app.delete('/api/items/:userId', (req, res) => {
-  const userId = req.params.userId;
-  const { path } = req.body;
-  
-  if (!path) {
-    return res.status(400).json({ success: false, error: 'Path is required' });
-  }
-  
-  try {
-    const result = fileManager.deleteItem(userId, path);
-    
-    if (!result.success) {
-      return res.status(400).json({ success: false, error: result.error });
-    }
-    
-    return res.json({ success: true, path: result.path });
-  } catch (error) {
-    logger.error(`API error: ${error.message}`);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// Đổi tên file hoặc thư mục
-app.put('/api/items/:userId', (req, res) => {
-  const userId = req.params.userId;
-  const { oldPath, newName } = req.body;
-  
-  if (!oldPath || !newName) {
-    return res.status(400).json({ success: false, error: 'Old path and new name are required' });
-  }
-  
-  try {
-    const result = fileManager.renameItem(userId, oldPath, newName);
-    
-    if (!result.success) {
-      return res.status(400).json({ success: false, error: result.error });
-    }
-    
-    return res.json({ 
-      success: true, 
-      oldPath: result.oldPath,
-      newPath: result.newPath
-    });
-  } catch (error) {
-    logger.error(`API error: ${error.message}`);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// Tìm kiếm file hoặc thư mục
-app.get('/api/search/:userId', (req, res) => {
-  const userId = req.params.userId;
-  const query = req.query.q;
-  
-  if (!query || query.trim() === '') {
-    return res.status(400).json({ success: false, error: 'Search query is required' });
-  }
-  
-  try {
-    const result = fileManager.searchItems(userId, query);
-    
-    if (!result.success) {
-      return res.status(400).json({ success: false, error: result.error });
-    }
-    
-    return res.json({
-      success: true,
-      query: result.searchTerm,
-      results: result.results.map(item => ({
-        ...item,
-        sizeFormatted: formatSize(item.size),
-        modifiedFormatted: formatDate(item.modified)
-      }))
-    });
-  } catch (error) {
-    logger.error(`API error: ${error.message}`);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// Khởi động server
-function startWebServer() {
-  app.listen(PORT, () => {
-    logger.info(`Web Server đang chạy tại địa chỉ http://localhost:${PORT}`);
+// Hàm helper để định dạng ngày tháng
+function formatDate(timestamp) {
+  const date = new Date(timestamp);
+  return date.toLocaleString('vi-VN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
   });
 }
 
-module.exports = { startWebServer }; 
+// Hàm lấy breadcrumbs từ đường dẫn
+function getBreadcrumbs(currentPath) {
+  const parts = currentPath.split('/').filter(Boolean);
+  const breadcrumbs = [{ name: 'Home', path: '/' }];
+  
+  let currentBuildPath = '';
+  for (const part of parts) {
+    currentBuildPath += '/' + part;
+    breadcrumbs.push({
+      name: part,
+      path: currentBuildPath
+    });
+  }
+  
+  return breadcrumbs;
+}
+
+// Endpoint trang chủ
+app.get('/', (req, res) => {
+  res.render('index', { title: 'TeleDrive - Telegram Cloud Storage Solution' });
+});
+
+// Endpoint đăng nhập
+app.get('/login', (req, res) => {
+  res.render('login', { title: 'Đăng nhập - TeleDrive' });
+});
+
+// Endpoint drive chính
+app.get('/drive/:userId?', async (req, res) => {
+  try {
+    const userId = req.params.userId || 'guest';
+    const currentPath = req.query.path || '/';
+    
+    // Lấy danh sách thư mục và file
+    const absolutePath = fileManager.getAbsolutePath(userId, currentPath);
+    
+    // Kiểm tra thư mục tồn tại
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).render('error', {
+        title: 'Lỗi 404',
+        message: 'Thư mục không tồn tại'
+      });
+    }
+    
+    // Lấy breadcrumbs
+    const breadcrumbs = getBreadcrumbs(currentPath);
+    
+    // Đọc nội dung thư mục
+    const dirContent = fs.readdirSync(absolutePath);
+    const folders = [];
+    const files = [];
+    
+    for (const item of dirContent) {
+      const itemPath = path.join(absolutePath, item);
+      const stats = fs.statSync(itemPath);
+      const relativePath = path.join(currentPath, item).replace(/\\/g, '/');
+      
+      if (stats.isDirectory()) {
+        folders.push({
+          name: item,
+          relativePath: relativePath,
+          modified: stats.mtime
+        });
+      } else {
+        files.push({
+          name: item,
+          relativePath: relativePath,
+          size: stats.size,
+          modified: stats.mtime
+        });
+      }
+    }
+    
+    // Sắp xếp: thư mục trước, file sau
+    folders.sort((a, b) => a.name.localeCompare(b.name));
+    files.sort((a, b) => a.name.localeCompare(b.name));
+    
+    res.render('drive', {
+      title: 'TeleDrive - My Files',
+      userId,
+      currentPath,
+      breadcrumbs,
+      folders,
+      files,
+      formatSize: formatFileSize,
+      formatDate
+    });
+  } catch (error) {
+    logger.error(`Error loading drive: ${error.message}`);
+    res.status(500).render('error', {
+      title: 'Lỗi 500',
+      message: 'Đã xảy ra lỗi khi tải dữ liệu.'
+    });
+  }
+});
+
+// API endpoint để lấy danh sách file
+app.get('/api/files/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const currentPath = req.query.path || '/';
+    const absolutePath = fileManager.getAbsolutePath(userId, currentPath);
+    
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).json({ success: false, error: 'Thư mục không tồn tại' });
+    }
+    
+    const dirContent = fs.readdirSync(absolutePath);
+    const items = [];
+    
+    for (const item of dirContent) {
+      const itemPath = path.join(absolutePath, item);
+      const stats = fs.statSync(itemPath);
+      const relativePath = path.join(currentPath, item).replace(/\\/g, '/');
+      
+      items.push({
+        name: item,
+        path: relativePath,
+        isDirectory: stats.isDirectory(),
+        size: stats.size,
+        modified: stats.mtime
+      });
+    }
+    
+    items.sort((a, b) => {
+      // Thư mục trước
+      if (a.isDirectory && !b.isDirectory) return -1;
+      if (!a.isDirectory && b.isDirectory) return 1;
+      
+      // Sau đó sắp xếp theo tên
+      return a.name.localeCompare(b.name);
+    });
+    
+    res.json({ success: true, items });
+  } catch (error) {
+    logger.error(`Error listing files: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// API endpoint để tạo thư mục mới
+app.post('/api/folders/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const currentPath = req.query.path || '/';
+    const { folderName } = req.body;
+    
+    if (!folderName) {
+      return res.status(400).json({ success: false, error: 'Tên thư mục không được để trống' });
+    }
+    
+    const absolutePath = fileManager.getAbsolutePath(userId, currentPath);
+    const newFolderPath = path.join(absolutePath, folderName);
+    
+    if (fs.existsSync(newFolderPath)) {
+      return res.status(400).json({ success: false, error: 'Thư mục đã tồn tại' });
+    }
+    
+    fs.mkdirSync(newFolderPath);
+    
+    res.json({ success: true, message: 'Tạo thư mục thành công' });
+  } catch (error) {
+    logger.error(`Error creating folder: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// API endpoint để tải file lên
+app.post('/api/upload/:userId', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'Không có file nào được tải lên' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Tải file lên thành công',
+      file: {
+        name: req.file.originalname,
+        size: req.file.size
+      }
+    });
+  } catch (error) {
+    logger.error(`Error uploading file: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// API endpoint để tải file xuống
+app.get('/api/download/:userId', (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const filePath = req.query.path;
+    
+    if (!filePath) {
+      return res.status(400).json({ success: false, error: 'Đường dẫn file không hợp lệ' });
+    }
+    
+    const absolutePath = fileManager.getAbsolutePath(userId, filePath);
+    
+    if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
+      return res.status(404).json({ success: false, error: 'File không tồn tại' });
+    }
+    
+    const fileName = path.basename(absolutePath);
+    
+    res.download(absolutePath, fileName, (err) => {
+      if (err) {
+        logger.error(`Error downloading file: ${err.message}`);
+        res.status(500).json({ success: false, error: 'Lỗi khi tải file xuống' });
+      }
+    });
+  } catch (error) {
+    logger.error(`Error preparing download: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// API endpoint để xóa item (file hoặc thư mục)
+app.delete('/api/items/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { path: itemPath } = req.body;
+    
+    if (!itemPath) {
+      return res.status(400).json({ success: false, error: 'Đường dẫn không hợp lệ' });
+    }
+    
+    const absolutePath = fileManager.getAbsolutePath(userId, itemPath);
+    
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).json({ success: false, error: 'Item không tồn tại' });
+    }
+    
+    const stats = fs.statSync(absolutePath);
+    
+    if (stats.isDirectory()) {
+      // Xóa thư mục và tất cả nội dung bên trong
+      fs.rmdirSync(absolutePath, { recursive: true });
+    } else {
+      // Xóa file
+      fs.unlinkSync(absolutePath);
+    }
+    
+    res.json({ success: true, message: 'Xóa thành công' });
+  } catch (error) {
+    logger.error(`Error deleting item: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// API endpoint để đổi tên item
+app.put('/api/items/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { oldPath, newName } = req.body;
+    
+    if (!oldPath || !newName) {
+      return res.status(400).json({ success: false, error: 'Thông tin không đầy đủ' });
+    }
+    
+    const absolutePath = fileManager.getAbsolutePath(userId, oldPath);
+    
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).json({ success: false, error: 'Item không tồn tại' });
+    }
+    
+    const directory = path.dirname(absolutePath);
+    const newAbsolutePath = path.join(directory, newName);
+    
+    if (fs.existsSync(newAbsolutePath)) {
+      return res.status(400).json({ success: false, error: 'Đã tồn tại item với tên này' });
+    }
+    
+    fs.renameSync(absolutePath, newAbsolutePath);
+    
+    res.json({ success: true, message: 'Đổi tên thành công' });
+  } catch (error) {
+    logger.error(`Error renaming item: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// API endpoint tìm kiếm
+app.get('/api/search/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const searchTerm = req.query.q;
+    
+    if (!searchTerm) {
+      return res.status(400).json({ success: false, error: 'Từ khóa tìm kiếm không được để trống' });
+    }
+    
+    // Tìm kiếm file và thư mục
+    const results = await fileManager.searchFilesByName(userId, searchTerm);
+    
+    res.json({ success: true, results });
+  } catch (error) {
+    logger.error(`Error searching: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// Trang tìm kiếm
+app.get('/drive/:userId/search', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const searchTerm = req.query.q;
+    
+    if (!searchTerm) {
+      return res.redirect(`/drive/${userId}`);
+    }
+    
+    // Tìm kiếm file và thư mục
+    const results = await fileManager.searchFilesByName(userId, searchTerm);
+    
+    // Phân loại kết quả
+    const folders = [];
+    const files = [];
+    
+    results.forEach(item => {
+      if (item.isDirectory) {
+        folders.push(item);
+      } else {
+        files.push(item);
+      }
+    });
+    
+    res.render('search', {
+      title: `Kết quả tìm kiếm: ${searchTerm}`,
+      userId,
+      searchTerm,
+      folders,
+      files,
+      formatSize: formatFileSize,
+      formatDate
+    });
+  } catch (error) {
+    logger.error(`Error handling search: ${error.message}`);
+    res.status(500).render('error', {
+      title: 'Lỗi 500',
+      message: 'Đã xảy ra lỗi khi tìm kiếm.'
+    });
+  }
+});
+
+// Cập nhật fileManager.js để thêm các hàm mới
+fileManager.getAbsolutePath = function(userId, relativePath) {
+  const basePath = path.join(process.cwd(), 'storage', userId);
+  
+  // Đảm bảo thư mục người dùng tồn tại
+  if (!fs.existsSync(basePath)) {
+    fs.mkdirSync(basePath, { recursive: true });
+  }
+  
+  // Nếu là đường dẫn root
+  if (!relativePath || relativePath === '/') {
+    return basePath;
+  }
+  
+  // Chuẩn hóa đường dẫn: loại bỏ dấu '/' đầu tiên nếu có
+  let normalizedPath = relativePath;
+  if (normalizedPath.startsWith('/')) {
+    normalizedPath = normalizedPath.substring(1);
+  }
+  
+  return path.join(basePath, normalizedPath);
+};
+
+fileManager.searchFilesByName = async function(userId, keyword) {
+  const basePath = path.join(process.cwd(), 'storage', userId);
+  const results = [];
+  
+  if (!fs.existsSync(basePath)) {
+    return results;
+  }
+  
+  async function searchRecursively(dir, basePath) {
+    const items = fs.readdirSync(dir);
+    
+    for (const item of items) {
+      const itemPath = path.join(dir, item);
+      const stats = fs.statSync(itemPath);
+      const relativePath = path.relative(basePath, itemPath).replace(/\\/g, '/');
+      
+      // Kiểm tra nếu tên file/thư mục chứa từ khóa
+      if (item.toLowerCase().includes(keyword.toLowerCase())) {
+        results.push({
+          name: item,
+          relativePath: relativePath,
+          isDirectory: stats.isDirectory(),
+          size: stats.size,
+          modified: stats.mtime
+        });
+      }
+      
+      // Nếu là thư mục, tiếp tục tìm kiếm đệ quy bên trong
+      if (stats.isDirectory()) {
+        await searchRecursively(itemPath, basePath);
+      }
+    }
+  }
+  
+  await searchRecursively(basePath, basePath);
+  return results;
+};
+
+// Khởi động server
+function startServer() {
+  app.listen(port, () => {
+    logger.info(`TeleDrive Web Interface is running on http://localhost:${port}`);
+  });
+}
+
+module.exports = {
+  startServer
+}; 
