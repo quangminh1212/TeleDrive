@@ -40,6 +40,125 @@ let lastConnectionStatus = false;
 let mainWindow;
 let client;
 
+// Kiểm tra kết nối và tự động thử lại khi mất kết nối
+async function checkAndHandleConnection(showNotification = true) {
+    try {
+        log.debug("Checking connection status");
+        const window = await mainWindow;
+        const isConnected = await checkConnectionStatus(window);
+        
+        // Cập nhật trạng thái kết nối
+        window.webContents.send('connectionStatus', { connected: isConnected });
+        
+        // Xử lý thay đổi trạng thái kết nối
+        if (isConnected !== lastConnectionStatus) {
+            log.info(`Connection status changed: ${lastConnectionStatus} -> ${isConnected}`);
+            
+            if (isConnected) {
+                // Kết nối đã được khôi phục
+                log.info("Connection restored");
+                connectionRetryCount = 0;
+                
+                // Dừng quá trình thử lại kết nối
+                if (reconnectInterval) {
+                    clearInterval(reconnectInterval);
+                    reconnectInterval = null;
+                }
+                
+                // Thông báo cho người dùng
+                if (showNotification) {
+                    window.webContents.send('notification', {
+                        type: 'success',
+                        message: 'Kết nối đã được khôi phục'
+                    });
+                }
+                
+                // Đồng bộ hóa lại dữ liệu nếu cần
+                window.webContents.send('syncStatus', { canSync: true });
+            } else {
+                // Mất kết nối
+                log.warn("Connection lost, scheduling reconnection attempts");
+                
+                // Thông báo cho người dùng
+                if (showNotification) {
+                    window.webContents.send('notification', {
+                        type: 'error',
+                        message: 'Mất kết nối đến Telegram'
+                    });
+                }
+                
+                // Tắt tính năng đồng bộ
+                window.webContents.send('syncStatus', { canSync: false });
+                
+                // Bắt đầu thử lại kết nối
+                if (!reconnectInterval) {
+                    startReconnectionAttempts();
+                }
+            }
+            
+            lastConnectionStatus = isConnected;
+        }
+        
+        return isConnected;
+    } catch (error) {
+        log.error("Error in checkAndHandleConnection:", error);
+        return false;
+    }
+}
+
+// Bắt đầu quá trình thử lại kết nối
+function startReconnectionAttempts() {
+    log.info("Starting reconnection attempts");
+    connectionRetryCount = 0;
+    
+    // Dừng interval hiện tại nếu có
+    if (reconnectInterval) {
+        clearInterval(reconnectInterval);
+    }
+    
+    // Tạo interval mới để thử lại kết nối
+    reconnectInterval = setInterval(async () => {
+        if (connectionRetryCount >= MAX_RECONNECT_ATTEMPTS) {
+            log.warn(`Reached maximum reconnection attempts (${MAX_RECONNECT_ATTEMPTS}), stopping automatic reconnection`);
+            clearInterval(reconnectInterval);
+            reconnectInterval = null;
+            
+            // Thông báo cho người dùng
+            const window = await mainWindow;
+            window.webContents.send('notification', {
+                type: 'warning',
+                message: 'Không thể tự động khôi phục kết nối. Vui lòng thử lại thủ công.'
+            });
+            
+            return;
+        }
+        
+        connectionRetryCount++;
+        log.info(`Reconnection attempt ${connectionRetryCount}/${MAX_RECONNECT_ATTEMPTS}`);
+        
+        // Thông báo đang thử kết nối lại
+        const window = await mainWindow;
+        window.webContents.send('connectionStatus', { connected: false, reconnecting: true });
+        
+        // Thử kết nối lại
+        const isConnected = await checkAndHandleConnection(false);
+        
+        if (isConnected) {
+            log.info("Reconnection successful");
+            clearInterval(reconnectInterval);
+            reconnectInterval = null;
+            
+            // Thông báo kết nối thành công
+            window.webContents.send('notification', {
+                type: 'success',
+                message: `Kết nối thành công sau ${connectionRetryCount} lần thử.`
+            });
+        } else {
+            log.warn(`Reconnection attempt ${connectionRetryCount} failed`);
+        }
+    }, 10000); // Thử lại sau mỗi 10 giây
+}
+
 // Nếu không chạy trong Electron, export các hàm cần thiết và thoát
 if (!isRunningInElectron) {
     log.info("Not running in Electron environment, exporting functions only");
@@ -227,125 +346,6 @@ if (!isRunningInElectron) {
                 (await mainWindow).webContents.send('error', {
                     message: 'Lỗi trong quá trình xác thực: ' + error.message
                 });
-            }
-
-            // Kiểm tra kết nối và tự động thử lại khi mất kết nối
-            async function checkAndHandleConnection(showNotification = true) {
-                try {
-                    log.debug("Checking connection status");
-                    const window = await mainWindow;
-                    const isConnected = await checkConnectionStatus(window);
-                    
-                    // Cập nhật trạng thái kết nối
-                    window.webContents.send('connectionStatus', { connected: isConnected });
-                    
-                    // Xử lý thay đổi trạng thái kết nối
-                    if (isConnected !== lastConnectionStatus) {
-                        log.info(`Connection status changed: ${lastConnectionStatus} -> ${isConnected}`);
-                        
-                        if (isConnected) {
-                            // Kết nối đã được khôi phục
-                            log.info("Connection restored");
-                            connectionRetryCount = 0;
-                            
-                            // Dừng quá trình thử lại kết nối
-                            if (reconnectInterval) {
-                                clearInterval(reconnectInterval);
-                                reconnectInterval = null;
-                            }
-                            
-                            // Thông báo cho người dùng
-                            if (showNotification) {
-                                window.webContents.send('notification', {
-                                    type: 'success',
-                                    message: 'Kết nối đã được khôi phục'
-                                });
-                            }
-                            
-                            // Đồng bộ hóa lại dữ liệu nếu cần
-                            window.webContents.send('syncStatus', { canSync: true });
-                        } else {
-                            // Mất kết nối
-                            log.warn("Connection lost, scheduling reconnection attempts");
-                            
-                            // Thông báo cho người dùng
-                            if (showNotification) {
-                                window.webContents.send('notification', {
-                                    type: 'error',
-                                    message: 'Mất kết nối đến Telegram'
-                                });
-                            }
-                            
-                            // Tắt tính năng đồng bộ
-                            window.webContents.send('syncStatus', { canSync: false });
-                            
-                            // Bắt đầu thử lại kết nối
-                            if (!reconnectInterval) {
-                                startReconnectionAttempts();
-                            }
-                        }
-                        
-                        lastConnectionStatus = isConnected;
-                    }
-                    
-                    return isConnected;
-                } catch (error) {
-                    log.error("Error in checkAndHandleConnection:", error);
-                    return false;
-                }
-            }
-
-            // Bắt đầu quá trình thử lại kết nối
-            function startReconnectionAttempts() {
-                log.info("Starting reconnection attempts");
-                connectionRetryCount = 0;
-                
-                // Dừng interval hiện tại nếu có
-                if (reconnectInterval) {
-                    clearInterval(reconnectInterval);
-                }
-                
-                // Tạo interval mới để thử lại kết nối
-                reconnectInterval = setInterval(async () => {
-                    if (connectionRetryCount >= MAX_RECONNECT_ATTEMPTS) {
-                        log.warn(`Reached maximum reconnection attempts (${MAX_RECONNECT_ATTEMPTS}), stopping automatic reconnection`);
-                        clearInterval(reconnectInterval);
-                        reconnectInterval = null;
-                        
-                        // Thông báo cho người dùng
-                        const window = await mainWindow;
-                        window.webContents.send('notification', {
-                            type: 'warning',
-                            message: 'Không thể tự động khôi phục kết nối. Vui lòng thử lại thủ công.'
-                        });
-                        
-                        return;
-                    }
-                    
-                    connectionRetryCount++;
-                    log.info(`Reconnection attempt ${connectionRetryCount}/${MAX_RECONNECT_ATTEMPTS}`);
-                    
-                    // Thông báo đang thử kết nối lại
-                    const window = await mainWindow;
-                    window.webContents.send('connectionStatus', { connected: false, reconnecting: true });
-                    
-                    // Thử kết nối lại
-                    const isConnected = await checkAndHandleConnection(false);
-                    
-                    if (isConnected) {
-                        log.info("Reconnection successful");
-                        clearInterval(reconnectInterval);
-                        reconnectInterval = null;
-                        
-                        // Thông báo kết nối thành công
-                        window.webContents.send('notification', {
-                            type: 'success',
-                            message: `Kết nối thành công sau ${connectionRetryCount} lần thử.`
-                        });
-                    } else {
-                        log.warn(`Reconnection attempt ${connectionRetryCount} failed`);
-                    }
-                }, 10000); // Thử lại sau mỗi 10 giây
             }
 
             // Thiết lập kiểm tra kết nối định kỳ
