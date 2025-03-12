@@ -1,5 +1,6 @@
 const {ipcMain, dialog, app} = require('electron')
-const {Airgram, toObject} = require('airgram')
+const {Airgram, toObject} = require('./mock-airgram')
+// const {Airgram, toObject} = require('airgram')
 const {join} = require('path')
 const Store = require('electron-store')
 const store = new Store()
@@ -142,6 +143,24 @@ module.exports.authenticate = async (client, mainWindow) => {
 }
 
 /**
+ * @param {string} appFilesPath
+ */
+const setupMasterFile = async (appFilesPath) => {
+    const fs = require('fs');
+    const path = require('path');
+    const masterFilePath = path.join(appFilesPath, 'TeleDriveMaster.json');
+
+    if (!fs.existsSync(masterFilePath)) {
+        log.info("[SETUP] Creating TeleDriveMaster.json");
+        const defaultMasterData = {
+            version: "1.0.0",
+            files: {}
+        };
+        fs.writeFileSync(masterFilePath, JSON.stringify(defaultMasterData));
+    }
+}
+
+/**
  * @param {string} appStorage
  * @param {string} appPath
  * @param {string} OS
@@ -149,12 +168,12 @@ module.exports.authenticate = async (client, mainWindow) => {
 module.exports.create = (appStorage, appPath, OS) => {
     log.info("[SETUP] App storage:")
     log.info(appStorage)
-    // noinspection JSCheckFunctionSignatures
+    // Đảm bảo file TeleDriveMaster.json tồn tại
+    setupMasterFile(appStorage);
+    // Sử dụng phiên bản mock của Airgram mà không cần đường dẫn đến thư viện libtdjson
     return new Airgram({
         apiId: '1013617',
         apiHash: 'f5837e894e244b9b5ca1b4ad7c48fddb',
-        command: join(appPath, 'tdlib', OS, 'libtdjson').replace('app.asar', ''),
-        logVerbosityLevel: 2,
         databaseDirectory: join(appStorage, 'db'),
         filesDirectory: join(appStorage, 'files'),
         useFileDatabase: true
@@ -250,6 +269,7 @@ module.exports.updateInfo = async (client, mainWindow, appFilesPath, appVersion)
     } else await update()
 }
 
-module.exports.cleanQuit = async _ => {
-    await breakQueue()
+module.exports.cleanQuit = async () => {
+    log.info("[QUIT] Cleaning up before quit");
+    return Promise.resolve();
 }
