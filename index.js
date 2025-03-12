@@ -84,6 +84,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Initialize Telegram bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
+let botStatus = {
+  isLaunched: false,
+  error: null,
+  startTime: null
+};
 
 // Bot middleware to handle files
 bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
@@ -288,6 +293,16 @@ app.get('/api/check-file/:id', (req, res) => {
   }
 });
 
+// API endpoint to check bot status
+app.get('/api/bot-status', (req, res) => {
+  res.json({
+    isLaunched: botStatus.isLaunched,
+    error: botStatus.error ? botStatus.error.message : null,
+    startTime: botStatus.startTime,
+    uptime: botStatus.startTime ? Math.floor((Date.now() - botStatus.startTime) / 1000) : null
+  });
+});
+
 // Handle errors from Telegram bot
 bot.catch((err, ctx) => {
   console.error('Telegram bot error:', err);
@@ -298,10 +313,17 @@ bot.catch((err, ctx) => {
 
 // Start the bot with error handling
 bot.launch()
-  .then(() => console.log('Telegram bot started successfully'))
+  .then(() => {
+    console.log('Telegram bot started successfully');
+    botStatus.isLaunched = true;
+    botStatus.startTime = Date.now();
+    botStatus.error = null;
+  })
   .catch(err => {
     console.error('Error starting Telegram bot:', err);
     console.log('Application will continue without bot functionality');
+    botStatus.isLaunched = false;
+    botStatus.error = err;
   });
 
 // Start Express server

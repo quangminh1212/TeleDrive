@@ -46,6 +46,11 @@
                 transform: rotate(360deg);
             }
         }
+        .file-unavailable {
+            color: #EA4335;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -69,8 +74,11 @@
                 <p class="text-muted">Manage files sent to your Telegram bot</p>
             </div>
             <div class="col-md-6 text-md-end">
-                <div class="alert alert-info d-inline-block">
-                    <strong>Tip:</strong> Send files to your bot to store them here
+                <div id="bot-status" class="alert alert-info d-inline-block">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                        <span class="visually-hidden">Checking...</span>
+                    </div>
+                    <span class="ms-2">Checking bot status...</span>
                 </div>
             </div>
         </div>
@@ -128,12 +136,16 @@
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
+                                <div class="file-unavailable mt-2 d-none">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> File unavailable
+                                </div>
                             </div>
                             <div class="card-footer bg-transparent file-status" data-id="<%= file._id %>">
                                 <div class="d-flex align-items-center justify-content-center">
-                                    <span class="badge rounded-pill bg-success">
-                                        <i class="bi bi-check-circle me-1"></i> Ready
-                                    </span>
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Checking...</span>
+                                    </div>
+                                    <span class="ms-2">Checking...</span>
                                 </div>
                             </div>
                         </div>
@@ -172,6 +184,43 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Check bot status
+            async function checkBotStatus() {
+                const statusElement = document.getElementById('bot-status');
+                
+                try {
+                    const response = await fetch('/api/bot-status');
+                    const data = await response.json();
+                    
+                    if (data.isLaunched) {
+                        statusElement.className = 'alert alert-success d-inline-block';
+                        let uptimeText = '';
+                        if (data.uptime) {
+                            const minutes = Math.floor(data.uptime / 60);
+                            const seconds = data.uptime % 60;
+                            uptimeText = ` (${minutes}m ${seconds}s)`;
+                        }
+                        statusElement.innerHTML = `
+                            <i class="bi bi-check-circle-fill me-2"></i>Bot online${uptimeText}
+                        `;
+                    } else {
+                        statusElement.className = 'alert alert-danger d-inline-block';
+                        statusElement.innerHTML = `
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Bot offline
+                            <small class="d-block">${data.error || 'Unknown error'}</small>
+                        `;
+                    }
+                } catch (error) {
+                    statusElement.className = 'alert alert-warning d-inline-block';
+                    statusElement.innerHTML = `
+                        <i class="bi bi-question-circle-fill me-2"></i>Bot status unknown
+                    `;
+                }
+            }
+            
+            // Run bot status check
+            checkBotStatus();
+            
             // Check file availability
             function checkFiles() {
                 const fileItems = document.querySelectorAll('.file-item');
@@ -181,6 +230,7 @@
                     const statusElement = item.querySelector('.file-status');
                     const downloadBtn = item.querySelector('.download-btn');
                     const fileActions = item.querySelector('.file-actions');
+                    const fileUnavailableMsg = item.querySelector('.file-unavailable');
                     
                     try {
                         const response = await fetch(`/api/check-file/${fileId}`);
@@ -195,6 +245,7 @@
                                 </div>
                             `;
                             downloadBtn.classList.remove('disabled');
+                            fileUnavailableMsg.classList.add('d-none');
                         } else {
                             statusElement.innerHTML = `
                                 <div class="d-flex align-items-center justify-content-center">
@@ -204,6 +255,7 @@
                                 </div>
                             `;
                             downloadBtn.classList.add('disabled');
+                            fileUnavailableMsg.classList.remove('d-none');
                             
                             // Replace image with error icon if it's a photo
                             const imgElement = item.querySelector('img');
@@ -242,8 +294,14 @@
                     // Wait a moment to show loading state
                     await new Promise(resolve => setTimeout(resolve, 500));
                     
-                    // Reload the page
-                    window.location.reload();
+                    // Run file check again without page reload
+                    checkFiles();
+                    
+                    // After checking, remove loading state
+                    setTimeout(() => {
+                        refreshButton.classList.remove('spinning');
+                        loadingSpinner.style.display = 'none';
+                    }, 500);
                 } catch (error) {
                     console.error('Error refreshing:', error);
                     refreshButton.classList.remove('spinning');
@@ -276,8 +334,36 @@
                     
                     if (response.ok) {
                         deleteModal.hide();
-                        // Reload the page to reflect changes
-                        window.location.reload();
+                        
+                        // Find the file item and update its UI instead of reloading
+                        const fileItem = document.querySelector(`.file-item[data-id="${fileToDelete}"]`);
+                        if (fileItem) {
+                            const statusElement = fileItem.querySelector('.file-status');
+                            const downloadBtn = fileItem.querySelector('.download-btn');
+                            const fileUnavailableMsg = fileItem.querySelector('.file-unavailable');
+                            
+                            statusElement.innerHTML = `
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="badge rounded-pill bg-danger">
+                                        <i class="bi bi-trash me-1"></i> Deleted
+                                    </span>
+                                </div>
+                            `;
+                            downloadBtn.classList.add('disabled');
+                            fileUnavailableMsg.classList.remove('d-none');
+                            
+                            // Replace image with deleted icon if it's a photo
+                            const imgContainer = fileItem.querySelector('.file-thumb');
+                            if (imgContainer) {
+                                imgContainer.innerHTML = `
+                                    <i class="bi bi-trash file-icon file-error"></i>
+                                    <p>File deleted</p>
+                                `;
+                            }
+                        } else {
+                            // If can't find item, reload the page
+                            window.location.reload();
+                        }
                     } else {
                         alert('Failed to delete file. Please try again.');
                     }
