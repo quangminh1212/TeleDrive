@@ -213,6 +213,19 @@ router.post('/api/upload', upload.single('file'), async (req, res) => {
       const caption = `File: ${fileInfo.name}`;
       
       // Code upload qua Bot
+      console.log(`Đang upload file ${fileInfo.name} lên chat ${chatId} qua Bot`);
+      
+      if (fileInfo.type.startsWith('image/')) {
+        // Upload ảnh
+        await bot.telegram.sendPhoto(chatId, { source: req.file.path }, { caption });
+        console.log('Đã upload ảnh thành công qua Bot');
+        fileInfo.telegramUploaded = true;
+      } else {
+        // Upload document (file khác)
+        await bot.telegram.sendDocument(chatId, { source: req.file.path }, { caption });
+        console.log('Đã upload file thành công qua Bot');
+        fileInfo.telegramUploaded = true;
+      }
     } catch (error) {
       console.error('Lỗi upload qua Telegram Bot:', error);
     }
