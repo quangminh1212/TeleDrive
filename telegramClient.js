@@ -2,10 +2,8 @@ const MTProto = require('@mtproto/core');
 const path = require('path');
 const fs = require('fs');
 const WebSocket = require('ws');
+const FileReader = require('filereader');
 require('dotenv').config();
-
-// Thêm WebSocket vào global để @mtproto/core có thể sử dụng
-global.WebSocket = WebSocket;
 
 // Tạo thư mục lưu session
 const SESSION_DIR = path.join(__dirname, '.telegram-sessions');
@@ -45,6 +43,10 @@ global.localStorage = {
     }
   }
 };
+
+// Thêm WebSocket và FileReader vào global để @mtproto/core có thể sử dụng
+global.WebSocket = WebSocket;
+global.FileReader = FileReader;
 
 // Khởi tạo kết nối
 const mtproto = new MTProto({
@@ -257,28 +259,6 @@ const checkAuth = async () => {
   }
 };
 
-/**
- * Đăng xuất
- */
-const logout = async () => {
-  try {
-    const result = await mtproto.call('auth.logOut');
-    console.log('Logout result:', result);
-    
-    // Xóa file session
-    const sessionFile = path.join(SESSION_DIR, 'telegram-session.json');
-    if (fs.existsSync(sessionFile)) {
-      fs.unlinkSync(sessionFile);
-      console.log('Session file deleted');
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error logging out:', error);
-    return { success: false, error: error.message };
-  }
-};
-
 // Export các hàm
 module.exports = {
   mtproto,
@@ -286,6 +266,5 @@ module.exports = {
   sendCode,
   signIn,
   uploadFile,
-  checkAuth,
-  logout
+  checkAuth
 }; 
