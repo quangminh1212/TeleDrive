@@ -12,6 +12,10 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do (
     echo Đang dừng tiến trình với PID: %%a
     taskkill /F /PID %%a 2>nul
 )
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3001') do (
+    echo Đang dừng tiến trình với PID: %%a
+    taskkill /F /PID %%a 2>nul
+)
 
 REM Tạo thư mục uploads nếu chưa tồn tại
 if not exist "server\uploads" mkdir server\uploads
@@ -40,7 +44,17 @@ echo NEXT_PUBLIC_PORT=3001 >> client\.env.local
 REM Kiểm tra và cài đặt dependencies còn thiếu
 echo Kiểm tra và cài đặt dependencies còn thiếu...
 cd client
-call npm list @emotion/cache @emotion/react @emotion/server @emotion/styled || call npm install @emotion/cache @emotion/react @emotion/server @emotion/styled --save
+call npm uninstall @emotion/cache @emotion/react @emotion/server @emotion/styled
+call npm install @emotion/cache @emotion/react @emotion/server @emotion/styled --save
+cd ..
+
+REM Sửa file index.ts để sử dụng port từ file .env
+echo Sửa file index.ts để sử dụng port 5001...
+cd server
+echo Sao lưu file index.ts...
+copy src\index.ts src\index.ts.bak
+echo Cập nhật file index.ts...
+powershell -Command "(Get-Content src\index.ts) -replace 'PORT = process.env.PORT \|\| 5000', 'PORT = process.env.PORT \|\| 5001' | Set-Content src\index.ts"
 cd ..
 
 REM Kiểm tra xem port có đang được sử dụng không
@@ -54,15 +68,10 @@ echo.
 echo Port 5001 sẽ được sử dụng cho server
 echo Port 3001 sẽ được sử dụng cho client
 echo.
+echo Đã sửa file cấu hình và cài đặt lại dependencies.
 echo Nếu vẫn thấy các port này bị chiếm, hãy mở Task Manager và kết thúc tiến trình tương ứng.
 echo.
 pause
-
-REM Kiểm tra xem server/index.ts có sử dụng port từ .env không
-echo Kiểm tra file server/src/index.ts...
-cd server
-call node -e "const fs = require('fs'); const content = fs.readFileSync('src/index.ts', 'utf8'); if (content.includes('process.env.PORT') && content.includes('5000')) { console.log('Cần sửa file index.ts để sử dụng port từ .env'); } else { console.log('File index.ts đã sẵn sàng'); }"
-cd ..
 
 REM Khởi động ứng dụng
 echo Khởi động TeleDrive...

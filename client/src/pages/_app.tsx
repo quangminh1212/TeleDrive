@@ -5,7 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/globals.css';
-import { CacheProvider, EmotionCache } from '@emotion/react';
+import { CacheProvider } from '@emotion/react';
 import { createEmotionCache } from '../utils/createEmotionCache';
 
 // Client-side cache, shared for the whole session of the user
@@ -57,9 +57,9 @@ const theme = createTheme({
   },
 });
 
-interface MyAppProps extends AppProps {
-  emotionCache?: EmotionCache;
-}
+type MyAppProps = AppProps & {
+  emotionCache?: any;
+};
 
 function MyApp({ Component, pageProps, emotionCache = clientSideEmotionCache }: MyAppProps) {
   React.useEffect(() => {
