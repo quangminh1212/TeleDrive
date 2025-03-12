@@ -1,0 +1,23 @@
+{
+  "name": "teledrive",
+  "version": "1.0.0",
+  "description": "Cloud storage service using Telegram API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/dist/index.js",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "build": "cd server && npm run build && cd ../client && npm run build",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": [
+    "telegram",
+    "storage",
+    "cloud",
+    "file-sharing"
+  ],
+  "author": "",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+} 
