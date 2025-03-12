@@ -9,6 +9,39 @@ if (!fs.existsSync(SESSION_DIR)) {
   fs.mkdirSync(SESSION_DIR, { recursive: true });
 }
 
+// Tạo localStorage giả lập cho môi trường Node.js
+global.localStorage = {
+  getItem: (key) => {
+    try {
+      const filePath = path.join(SESSION_DIR, `${key}.json`);
+      return fs.existsSync(filePath)
+        ? fs.readFileSync(filePath, 'utf8')
+        : null;
+    } catch (error) {
+      console.error('Error reading localStorage:', error);
+      return null;
+    }
+  },
+  setItem: (key, value) => {
+    try {
+      const filePath = path.join(SESSION_DIR, `${key}.json`);
+      fs.writeFileSync(filePath, value, 'utf8');
+    } catch (error) {
+      console.error('Error writing localStorage:', error);
+    }
+  },
+  removeItem: (key) => {
+    try {
+      const filePath = path.join(SESSION_DIR, `${key}.json`);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.error('Error removing localStorage item:', error);
+    }
+  }
+};
+
 // Khởi tạo kết nối
 const mtproto = new MTProto({
   api_id: parseInt(process.env.TELEGRAM_API_ID || 0),
