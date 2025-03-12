@@ -9,6 +9,7 @@ export interface IUser extends Document {
   telegramId: number;
   telegramUsername?: string;
   telegramPhoneNumber?: string;
+  photoUrl?: string;
   sessionString?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -41,6 +42,10 @@ const userSchema = new Schema<IUser>(
       trim: true,
     },
     telegramPhoneNumber: {
+      type: String,
+      trim: true,
+    },
+    photoUrl: {
       type: String,
       trim: true,
     },
