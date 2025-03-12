@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { UserModel } from '../models/user';
 import { AuthRequest } from '../middleware/auth';
 import crypto from 'crypto';
+import { userStore, User } from '../services/fileSystemStore';
+import { v4 as uuidv4 } from 'uuid';
 
 // Register a new user
 export const register = async (req: Request, res: Response) => {
@@ -9,25 +10,29 @@ export const register = async (req: Request, res: Response) => {
     const { telegramId, firstName, lastName, username, phoneNumber } = req.body;
 
     // Check if user already exists
-    const existingUser = await UserModel.findOne({ telegramId });
+    const existingUser = await userStore.findOne({ telegramId });
     if (existingUser) {
       return res.status(400).json({ message: 'Người dùng đã tồn tại' });
     }
 
     // Create new user
-    const user = new UserModel({
+    const now = new Date();
+    const user: User = {
+      id: uuidv4(),
       telegramId,
       firstName,
       lastName,
       telegramUsername: username,
       telegramPhoneNumber: phoneNumber,
-    });
+      createdAt: now,
+      updatedAt: now
+    };
 
-    await user.save();
+    await userStore.save(user);
 
     // Lưu userId vào session
     if (req.session) {
-      req.session.userId = user._id.toString();
+      req.session.userId = user.id;
     }
 
     res.status(201).json({
@@ -46,14 +51,14 @@ export const login = async (req: Request, res: Response) => {
     const { telegramId } = req.body;
 
     // Find user by telegramId
-    const user = await UserModel.findOne({ telegramId });
+    const user = await userStore.findOne({ telegramId });
     if (!user) {
       return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
     // Lưu userId vào session
     if (req.session) {
-      req.session.userId = user._id.toString();
+      req.session.userId = user.id;
     }
 
     res.status(200).json({
@@ -117,30 +122,35 @@ export const loginWithTelegram = async (req: Request, res: Response) => {
     }
 
     // Tìm người dùng bằng Telegram ID
-    let user = await UserModel.findOne({ telegramId: id });
+    let user = await userStore.findOne({ telegramId: Number(id) });
+    const now = new Date();
 
     if (!user) {
       // Tạo người dùng mới nếu chưa tồn tại
-      user = new UserModel({
-        telegramId: id,
+      user = {
+        id: uuidv4(),
+        telegramId: Number(id),
         firstName: first_name,
         lastName: last_name || '',
         telegramUsername: username || '',
         photoUrl: photo_url || '',
-      });
+        createdAt: now,
+        updatedAt: now
+      };
+      await userStore.save(user);
     } else {
       // Cập nhật thông tin người dùng nếu đã tồn tại
       user.firstName = first_name;
       user.lastName = last_name || user.lastName;
       user.telegramUsername = username || user.telegramUsername;
       user.photoUrl = photo_url || user.photoUrl;
+      user.updatedAt = now;
+      await userStore.save(user);
     }
-
-    await user.save();
 
     // Lưu userId vào session
     if (req.session) {
-      req.session.userId = user._id.toString();
+      req.session.userId = user.id;
     }
 
     res.status(200).json({
