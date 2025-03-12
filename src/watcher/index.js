@@ -318,16 +318,10 @@ const addWatches = (teleDir, myID, client, appFilesPath, appVersion, mainWindow)
     };
 };
 
-module.exports.breakQueue = async _ => {
-    queue.length = 1
-    const awaitLock = _ => {
-        if (lock) {
-            window.setTimeout(awaitLock, 100) /* this checks the flag every 100 milliseconds*/
-        }
-        log.info("[QUEUE CLEAN]")
-    }
-    awaitLock()
-}
+const breakQueue = async () => {
+    log.info("[MOCK] Breaking queue");
+    return Promise.resolve();
+};
 
 module.exports = {
     addWatches,
