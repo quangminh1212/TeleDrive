@@ -239,20 +239,6 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-# Route pour le tableau de bord
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    # Obtenir les statistiques de l'utilisateur
-    metadata = get_user_metadata(current_user.id)
-    usage = metadata.get('usage', 0)
-    usage_str = format_size(usage)
-    
-    return render_template('dashboard.html', 
-                          username=current_user.username, 
-                          usage=usage_str,
-                          current_path='')
-
 # Route pour afficher les fichiers dans un dossier
 @app.route('/files/', defaults={'path': ''})
 @app.route('/files/<path:path>')
