@@ -9,6 +9,7 @@ yarn-error.log
 
 # Uploaded files
 uploads/
+data/
 
 # OS specific
 .DS_Store

@@ -13,7 +13,6 @@ TeleDrive is a web application that allows you to manage files sent to your Tele
 ## Prerequisites
 
 - Node.js (v14+)
-- MongoDB
 - A Telegram bot (created via [@BotFather](https://t.me/botfather))
 
 ## Installation
@@ -36,7 +35,6 @@ TeleDrive is a web application that allows you to manage files sent to your Tele
 
 4. Edit the `.env` file and add your:
    - Telegram Bot Token (from BotFather)
-   - MongoDB URI (local or remote)
    - Port (optional, defaults to 3000)
 
 ## Usage
@@ -64,7 +62,7 @@ TeleDrive is a web application that allows you to manage files sent to your Tele
 
 ## File Storage
 
-Files are stored locally in the `uploads` directory. For production use, you might want to consider using cloud storage solutions.
+Files are stored locally in the `uploads` directory and file metadata is stored in a JSON file in the `data` directory. For production use, you might want to consider using cloud storage solutions.
 
 ## License
 

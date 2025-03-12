@@ -1,14 +1,49 @@
 require('dotenv').config();
 const express = require('express');
 const { Telegraf } = require('telegraf');
-const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
 
-// Create upload directory if it doesn't exist
+// Create directories if they don't exist
 const uploadDir = path.join(__dirname, 'uploads');
+const dataDir = path.join(__dirname, 'data');
+const filesDbPath = path.join(dataDir, 'files.json');
+
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// Initialize or load the files database
+let filesDb = [];
+
+if (fs.existsSync(filesDbPath)) {
+  try {
+    const fileContent = fs.readFileSync(filesDbPath, 'utf8');
+    filesDb = JSON.parse(fileContent);
+    console.log('Files database loaded successfully');
+  } catch (error) {
+    console.error('Error loading files database:', error);
+    // Continue with empty database
+    filesDb = [];
+  }
+} else {
+  // Create empty database file
+  fs.writeFileSync(filesDbPath, JSON.stringify([], null, 2));
+  console.log('Created new files database');
+}
+
+// Helper function to save filesDb to disk
+function saveFilesDb() {
+  fs.writeFileSync(filesDbPath, JSON.stringify(filesDb, null, 2));
+}
+
+// Generate a unique ID for files
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
 // Initialize Express app
@@ -22,32 +57,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize Telegram bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
-
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
-
-// Define File schema
-const fileSchema = new mongoose.Schema({
-  fileId: { type: String, required: true, unique: true },
-  fileName: { type: String, required: true },
-  fileType: { type: String },
-  filePath: { type: String, required: true },
-  fileSize: { type: Number },
-  uploadDate: { type: Date, default: Date.now },
-  uploadedBy: {
-    userId: { type: String },
-    firstName: { type: String },
-    lastName: { type: String },
-    username: { type: String }
-  }
-});
-
-const File = mongoose.model('File', fileSchema);
 
 // Bot middleware to handle files
 bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
@@ -93,22 +102,25 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
       fileStream.on('finish', resolve);
     });
     
-    // Save file metadata to database
-    const newFile = new File({
-      fileId,
-      fileName,
-      fileType,
+    // Save file metadata to our JSON database
+    const newFile = {
+      _id: generateId(),
+      fileId: fileId,
+      fileName: fileName,
+      fileType: fileType,
       filePath: `/uploads/${fileName}`,
-      fileSize,
+      fileSize: fileSize,
+      uploadDate: new Date().toISOString(),
       uploadedBy: {
         userId: ctx.from.id.toString(),
         firstName: ctx.from.first_name,
         lastName: ctx.from.last_name,
         username: ctx.from.username
       }
-    });
+    };
     
-    await newFile.save();
+    filesDb.push(newFile);
+    saveFilesDb();
     
     await ctx.reply(`File "${fileName}" has been saved successfully! Access it from the web interface.`);
   } catch (error) {
@@ -128,7 +140,10 @@ bot.command('help', (ctx) => {
 // Express routes
 app.get('/', async (req, res) => {
   try {
-    const files = await File.find().sort({ uploadDate: -1 });
+    // Sort files by uploadDate, newest first
+    const files = [...filesDb].sort((a, b) => 
+      new Date(b.uploadDate) - new Date(a.uploadDate)
+    );
     res.render('index', { files });
   } catch (error) {
     console.error('Error fetching files:', error);
@@ -138,7 +153,7 @@ app.get('/', async (req, res) => {
 
 app.get('/files/:id', async (req, res) => {
   try {
-    const file = await File.findById(req.params.id);
+    const file = filesDb.find(f => f._id === req.params.id);
     if (!file) {
       return res.status(404).send('File not found');
     }
@@ -151,10 +166,12 @@ app.get('/files/:id', async (req, res) => {
 
 app.delete('/files/:id', async (req, res) => {
   try {
-    const file = await File.findById(req.params.id);
-    if (!file) {
+    const fileIndex = filesDb.findIndex(f => f._id === req.params.id);
+    if (fileIndex === -1) {
       return res.status(404).json({ error: 'File not found' });
     }
+    
+    const file = filesDb[fileIndex];
     
     // Delete file from filesystem
     const filePath = path.join(__dirname, file.filePath);
@@ -162,8 +179,9 @@ app.delete('/files/:id', async (req, res) => {
       fs.unlinkSync(filePath);
     }
     
-    // Delete from database
-    await File.findByIdAndDelete(req.params.id);
+    // Remove from our database
+    filesDb.splice(fileIndex, 1);
+    saveFilesDb();
     
     res.json({ success: true });
   } catch (error) {
