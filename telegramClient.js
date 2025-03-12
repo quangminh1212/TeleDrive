@@ -76,6 +76,40 @@ try {
   console.error('[TelegramClient] Lỗi khởi tạo MTProto client:', error);
 }
 
+/**
+ * Tải lại thông tin xác thực và khởi tạo lại MTProto client
+ * @returns {Promise<boolean>} Kết quả tải lại
+ */
+const reloadAuth = async () => {
+  try {
+    console.log('[TelegramClient] Đang tải lại thông tin xác thực...');
+    
+    // Kiểm tra xem file session có tồn tại không
+    const sessionPath = path.join(SESSION_DIR, 'telegram-session.json');
+    if (!fs.existsSync(sessionPath)) {
+      console.error('[TelegramClient] Không tìm thấy file session:', sessionPath);
+      return false;
+    }
+    
+    // Khởi tạo lại MTProto client
+    mtproto = new MTProto({
+      api_id: parseInt(process.env.TELEGRAM_API_ID || 0),
+      api_hash: process.env.TELEGRAM_API_HASH || '',
+      storageOptions: {
+        path: sessionPath,
+      },
+      customDc: process.env.NODE_ENV === 'production' ? PRODUCTION_DC : TEST_DC,
+      useWSS: true
+    });
+    
+    console.log('[TelegramClient] Đã tải lại thông tin xác thực thành công');
+    return true;
+  } catch (error) {
+    console.error('[TelegramClient] Lỗi tải lại thông tin xác thực:', error);
+    return false;
+  }
+};
+
 // Hàm xử lý các method API của Telegram
 const callApi = async (method, params = {}, options = {}) => {
   try {
@@ -360,5 +394,6 @@ module.exports = {
   sendCode,
   signIn,
   uploadFile,
-  checkAuth
+  checkAuth,
+  reloadAuth
 }; 

@@ -9,6 +9,7 @@ const fs = require('fs');
 // Import Telegram Client và Routes
 const telegramClient = require('./telegramClient');
 const { router, sessions, files } = require('./routes');
+const telegramWebUploader = require('./telegramWebUploader');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,6 +36,32 @@ if (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH) {
         console.log('[Telegram API] Chưa đăng nhập vào Telegram API. Sử dụng giao diện để đăng nhập.');
         if (result.error) {
           console.log('[Telegram API] Chi tiết lỗi:', result.error);
+          
+          // Nếu lỗi AUTH_KEY_UNREGISTERED, thử lấy xác thực từ Telegram Web
+          if (result.error.includes('AUTH_KEY_UNREGISTERED') && process.env.USE_WEB_CLIENT_UPLOAD === 'true') {
+            console.log('[Telegram API] Đang thử trích xuất thông tin xác thực từ Telegram Web...');
+            
+            telegramWebUploader.initBrowser()
+              .then(() => telegramWebUploader.checkLoginStatus())
+              .then(isLoggedIn => {
+                if (isLoggedIn) {
+                  console.log('[Telegram API] Đã phát hiện đăng nhập Telegram Web, đang trích xuất thông tin xác thực...');
+                  return telegramWebUploader.extractAuthData();
+                } else {
+                  console.log('[Telegram API] Chưa đăng nhập Telegram Web. Vui lòng đăng nhập qua giao diện web trước.');
+                  return false;
+                }
+              })
+              .then(success => {
+                if (success) {
+                  console.log('[Telegram API] Đã trích xuất thông tin xác thực thành công từ Telegram Web.');
+                  console.log('[Telegram API] Khởi động lại server để áp dụng thông tin xác thực mới.');
+                }
+              })
+              .catch(error => {
+                console.error('[Telegram API] Lỗi khi trích xuất thông tin xác thực:', error);
+              });
+          }
         }
       }
     })
@@ -321,6 +348,57 @@ app.get('/api/telegram/config', (req, res) => {
     botConfigured: !!botToken,
     chatConfigured: !!chatId
   });
+});
+
+// API endpoint để trích xuất auth key từ Telegram Web
+app.post('/api/telegram/extract-web-auth', async (req, res) => {
+  try {
+    if (process.env.USE_WEB_CLIENT_UPLOAD !== 'true') {
+      return res.status(400).json({
+        success: false,
+        error: 'Tính năng upload qua web client không được bật. Vui lòng bật USE_WEB_CLIENT_UPLOAD trong file .env'
+      });
+    }
+    
+    console.log('[API] Đang thử trích xuất thông tin xác thực từ Telegram Web...');
+    
+    // Kiểm tra đăng nhập Telegram Web
+    await telegramWebUploader.initBrowser();
+    const isLoggedIn = await telegramWebUploader.checkLoginStatus();
+    
+    if (!isLoggedIn) {
+      return res.status(400).json({
+        success: false,
+        error: 'Chưa đăng nhập Telegram Web. Vui lòng đăng nhập qua web trước.',
+        actionRequired: 'login_web'
+      });
+    }
+    
+    // Trích xuất thông tin xác thực
+    const extractSuccess = await telegramWebUploader.extractAuthData();
+    if (!extractSuccess) {
+      return res.status(500).json({
+        success: false,
+        error: 'Không thể trích xuất thông tin xác thực từ Telegram Web.'
+      });
+    }
+    
+    // Tải lại thông tin xác thực trong MTProto client
+    const reloadSuccess = await telegramClient.reloadAuth();
+    
+    return res.json({
+      success: true,
+      message: 'Đã trích xuất thông tin xác thực thành công từ Telegram Web.',
+      reloadSuccess: reloadSuccess,
+      requireRestart: !reloadSuccess
+    });
+  } catch (error) {
+    console.error('[API] Lỗi khi trích xuất thông tin xác thực:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Lỗi khi trích xuất thông tin xác thực: ' + error.message
+    });
+  }
 });
 
 // Khởi động server

@@ -189,6 +189,16 @@
                 </div>
             </div>
 
+            <div id="authWarning" class="alert alert-info mb-3">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>Trích xuất Auth từ Web:</strong> Nếu bạn đã đăng nhập vào Telegram Web, bạn có thể trích xuất thông tin xác thực từ đó để đăng nhập vào TeleDrive.
+                <div class="mt-2">
+                    <button id="extractWebAuthBtn" class="btn btn-primary btn-sm">
+                        <i class="bi bi-key me-1"></i> Trích xuất Auth Key từ Web
+                    </button>
+                </div>
+            </div>
+
             <div class="status-container" id="statusContainer">
                 <div class="alert d-flex align-items-center" id="statusAlert">
                     <div class="spinner-border spinner-border-sm me-2" role="status" id="statusSpinner"></div>
@@ -316,6 +326,7 @@
             if (isDirectOpen) {
                 document.getElementById('directOpenWarning').classList.remove('d-none');
                 document.getElementById('phoneStep').classList.add('d-none');
+                document.getElementById('authWarning').classList.add('d-none');
             }
             
             // Elements
@@ -605,6 +616,78 @@
                 
                 // Implement mã xác thực mật khẩu hai lớp
                 showError('Chức năng đăng nhập bằng mật khẩu hai lớp chưa được hỗ trợ');
+            });
+            
+            // Nút trích xuất auth key từ web
+            document.getElementById('extractWebAuthBtn').addEventListener('click', async function() {
+                if (isDirectOpen) {
+                    showError('Chức năng không khả dụng khi mở file trực tiếp. Vui lòng chạy server Node.js.');
+                    return;
+                }
+                
+                // Hiển thị trạng thái đang xử lý
+                showStatus('Đang trích xuất thông tin xác thực từ Telegram Web...', 'info');
+                
+                try {
+                    const response = await fetch('/api/telegram/extract-web-auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        // Hiển thị thông báo thành công
+                        showStatus(data.message, 'success');
+                        
+                        if (data.requireRestart) {
+                            // Hiển thị thông báo cần khởi động lại
+                            showStatus('Cần khởi động lại ứng dụng để áp dụng thông tin xác thực mới.', 'warning');
+                        } else {
+                            // Chuyển sang trang thành công
+                            setTimeout(() => {
+                                showStep(successStep);
+                                hideStatus();
+                                
+                                // Thông báo cho cửa sổ cha
+                                if (window.opener && !window.opener.closed) {
+                                    window.opener.postMessage({ type: 'telegram_api_login_success' }, '*');
+                                }
+                                
+                                // Tự động đóng sau 3 giây
+                                setTimeout(() => {
+                                    window.location.href = '/';
+                                }, 3000);
+                            }, 1500);
+                        }
+                    } else {
+                        // Hiển thị lỗi
+                        const errorMsg = data.error || 'Không thể trích xuất thông tin xác thực';
+                        showError(errorMsg);
+                        
+                        // Hiển thị hướng dẫn nếu chưa đăng nhập web
+                        if (data.actionRequired === 'login_web') {
+                            errorHelp.innerHTML = `
+                                <div class="alert alert-info mt-3">
+                                    <h6><i class="bi bi-info-circle-fill"></i> Bạn cần đăng nhập Telegram Web trước</h6>
+                                    <p>Để trích xuất thông tin xác thực, bạn cần đăng nhập vào Telegram Web trước:</p>
+                                    <ol>
+                                        <li>Mở <a href="https://web.telegram.org/" target="_blank" class="text-info">web.telegram.org</a> trong tab mới</li>
+                                        <li>Đăng nhập với tài khoản Telegram của bạn</li>
+                                        <li>Quay lại đây và thử lại</li>
+                                    </ol>
+                                    <a href="https://web.telegram.org/" target="_blank" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-telegram"></i> Mở Telegram Web
+                                    </a>
+                                </div>
+                            `;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error extracting auth:', error);
+                    showError('Lỗi kết nối: ' + error.message);
+                }
             });
             
             // Hiển thị bước

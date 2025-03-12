@@ -8,10 +8,15 @@ puppeteer.use(StealthPlugin());
 
 // Đường dẫn đến thư mục lưu profile Chrome
 const userDataDir = path.join(__dirname, '.chrome-profile');
+// Đường dẫn đến thư mục lưu session Telegram
+const SESSION_DIR = path.join(__dirname, '.telegram-sessions');
 
 // Đảm bảo thư mục tồn tại
 if (!fs.existsSync(userDataDir)) {
   fs.mkdirSync(userDataDir, { recursive: true });
+}
+if (!fs.existsSync(SESSION_DIR)) {
+  fs.mkdirSync(SESSION_DIR, { recursive: true });
 }
 
 // Biến lưu trữ browser instance
@@ -257,6 +262,72 @@ async function closeBrowser() {
   }
 }
 
+/**
+ * Trích xuất thông tin xác thực từ Telegram Web và lưu cho MTProto sử dụng
+ * @returns {Promise<boolean>} Thành công hay không
+ */
+async function extractAuthData() {
+  if (!browser) {
+    await initBrowser();
+  }
+
+  if (!isLoggedIn) {
+    console.log('[Telegram Web] Chưa đăng nhập Telegram Web. Vui lòng đăng nhập trước.');
+    return false;
+  }
+
+  try {
+    console.log('[Telegram Web] Bắt đầu trích xuất thông tin xác thực...');
+    
+    const page = await browser.newPage();
+    await page.goto('https://web.telegram.org/k/', { waitUntil: 'networkidle2' });
+    
+    // Trích xuất localStorage từ Telegram Web
+    const localStorageData = await page.evaluate(() => {
+      let data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        data[key] = localStorage.getItem(key);
+      }
+      return data;
+    });
+    
+    console.log('[Telegram Web] Đã lấy được dữ liệu localStorage từ Telegram Web');
+    
+    // Lưu dữ liệu xác thực vào thư mục session MTProto
+    for (const [key, value] of Object.entries(localStorageData)) {
+      if (key.includes('auth') || key.includes('user') || key.includes('dc')) {
+        const filePath = path.join(SESSION_DIR, `${key}.json`);
+        fs.writeFileSync(filePath, value, 'utf8');
+        console.log(`[Telegram Web] Đã lưu ${key} vào ${filePath}`);
+      }
+    }
+    
+    // Tạo file telegram-session.json từ dữ liệu web nếu cần
+    const authData = {
+      authKey: localStorageData['tgme_sync'] || localStorageData['ts_key'],
+      dcId: Number(localStorageData['dc'] || '2'),
+      serverTimeOffset: 0,
+      lastMessageId: 0
+    };
+    
+    if (authData.authKey) {
+      fs.writeFileSync(
+        path.join(SESSION_DIR, 'telegram-session.json'), 
+        JSON.stringify(authData, null, 2),
+        'utf8'
+      );
+      console.log('[Telegram Web] Đã lưu thông tin xác thực để MTProto sử dụng');
+    }
+    
+    await page.close();
+    return true;
+  } catch (error) {
+    console.error('[Telegram Web] Lỗi trích xuất thông tin xác thực:', error);
+    return false;
+  }
+}
+
 // Khởi tạo trình duyệt khi module được load
 initBrowser().catch(console.error);
 
@@ -270,5 +341,6 @@ module.exports = {
   uploadFile,
   checkLoginStatus,
   initBrowser,
-  closeBrowser
+  closeBrowser,
+  extractAuthData
 }; 
