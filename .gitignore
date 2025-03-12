@@ -40,4 +40,29 @@ pnpm-debug.log*
 *.sw?
 
 # Chrome profile data
-chrome_profile/ 
+chrome_profile/
+
+# Next.js
+.next/
+out/
+client/.next/
+*/out/
+
+# Storage & Uploads
+server/storage/
+*/storage/
+server/uploads/
+*/uploads/
+
+# Backup files
+*.bak
+*.backup
+*~
+*.swp
+
+# IDE files
+.history/
+*.code-workspace
+
+# Runtime files
+server/src/index.ts.bak 
