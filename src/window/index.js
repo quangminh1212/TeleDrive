@@ -2,6 +2,8 @@ const { ipcRenderer, shell } = require('electron')
 ipcRenderer.setMaxListeners(Infinity);
 
 window.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM Content Loaded - Starting initialization");
+
     const title = document.getElementById('title')
     const name = document.getElementById('name')
     const number = document.getElementById('number')
@@ -91,14 +93,17 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log(`[AUTO] Automatically responding to: ${what}`);
         if (what === 'phoneNumber') {
             setTimeout(() => {
+                console.log('[AUTO] Sending phone number to main process');
                 ipcRenderer.send('phoneNumber', '1234567890');
             }, 100);
         } else if (what === 'authCode') {
             setTimeout(() => {
+                console.log('[AUTO] Sending auth code to main process');
                 ipcRenderer.send('authCode', '12345');
             }, 100);
         } else if (what === 'password') {
             setTimeout(() => {
+                console.log('[AUTO] Sending password to main process');
                 ipcRenderer.send('password', 'password');
             }, 100);
         }
@@ -152,6 +157,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Cập nhật trạng thái kết nối
     function updateConnectionStatus(status) {
+        console.log(`Updating connection status to: ${status}`);
+        
         const statusText = connectionStatus.querySelector('span')
         const statusIndicator = connectionStatus.querySelector('.status-indicator')
         
@@ -196,11 +203,23 @@ window.addEventListener('DOMContentLoaded', () => {
         syncProgress.style.display = show ? '' : 'none'
     }
 
+    // Đăng ký lắng nghe sự kiện từ main process
+    console.log("Registering IPC event listeners");
+
+    // Kiểm tra kết nối ngay khi khởi động
+    setTimeout(() => {
+        console.log("Performing initial connection check");
+        ipcRenderer.send('checkConnection');
+        
+        // Hiển thị trạng thái kết nối mặc định
+        updateConnectionStatus('connecting');
+    }, 500);
+
     ipcRenderer.on('auth', async (event, message) => {
         console.log("Auth event received:", message);
         
         // Cập nhật trạng thái kết nối
-        updateConnectionStatus('connecting')
+        updateConnectionStatus('connecting');
 
         // Tự động trả lời các câu hỏi xác thực
         autoRespond(message._);
@@ -260,11 +279,14 @@ window.addEventListener('DOMContentLoaded', () => {
     })
 
     ipcRenderer.on('updateMyInfo', (event, myInfo) => {
-        console.log("Updating info:", myInfo);
-        name.innerHTML = myInfo.name
-        number.innerHTML = myInfo.number
+        console.log("Updating user info:", myInfo);
+        name.innerHTML = myInfo.name || 'Unknown'
+        number.innerHTML = myInfo.number || 'No number'
         if (myInfo.photo) {
+            console.log("Setting profile picture from:", myInfo.photo);
             profilePicture.src = myInfo.photo
+        } else {
+            console.log("No profile picture available");
         }
         
         // Đánh dấu là đã xác thực
@@ -272,10 +294,10 @@ window.addEventListener('DOMContentLoaded', () => {
     })
 
     ipcRenderer.on('authSuccess', () => {
-        console.log("Auth success received");
+        console.log("Auth success received - user authenticated successfully");
         
         // Cập nhật trạng thái kết nối
-        updateConnectionStatus('connected')
+        updateConnectionStatus('connected');
         
         title.innerHTML = 'Login Successful'
         profile.style.display = ''
@@ -285,6 +307,7 @@ window.addEventListener('DOMContentLoaded', () => {
         button.innerHTML = 'Open'
 
         button.addEventListener('click', function f() {
+            console.log("User clicked to open file dialog");
             ipcRenderer.send('openFileDialog')
             button.removeEventListener('click', f)
         })
@@ -298,15 +321,16 @@ window.addEventListener('DOMContentLoaded', () => {
             ipcRenderer.send('openFileDialog')
         }, 500);
         
-        // Hiển thị các nút thao tác nhanh
-        showQuickActions(true)
-        
         // Hiển thị các nút chức năng mới
         analyticsButton.style.display = '';
         optimizeButton.style.display = '';
+        
+        // Hiển thị các nút thao tác nhanh
+        showQuickActions(true);
     })
 
     ipcRenderer.on('dialogCancelled', () => {
+        console.log("File dialog was cancelled");
         button.addEventListener('click', function f() {
             ipcRenderer.send('openFileDialog')
             button.removeEventListener('click', f)
@@ -793,41 +817,39 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Theo dõi trạng thái kết nối
     let connectionCheckInterval = setInterval(() => {
+        console.log("Sending periodic connection check request");
         ipcRenderer.send('checkConnection');
-    }, 5000);
-    
+    }, 10000); // Kiểm tra mỗi 10 giây
+
     // Nhận phản hồi trạng thái kết nối
     ipcRenderer.on('connectionStatus', (event, status) => {
+        console.log("Received connection status:", status);
         updateConnectionStatus(status.connected ? 'connected' : 'disconnected');
     });
     
-    // Xử lý sự kiện mất kết nối
-    ipcRenderer.on('connectionLost', () => {
+    // Bắt sự kiện lỗi
+    ipcRenderer.on('error', (event, error) => {
+        console.error("Received error from main process:", error);
+        
+        // Hiển thị thông báo lỗi
+        swal({
+            title: "Lỗi",
+            text: error.message || "Đã xảy ra lỗi không xác định",
+            icon: "error",
+            button: "Đóng"
+        });
+        
+        // Cập nhật trạng thái UI
         updateConnectionStatus('disconnected');
-        swal({
-            title: "Mất kết nối",
-            text: "Kết nối với Telegram đã bị mất. Đang thử kết nối lại...",
-            icon: "warning",
-            buttons: false,
-            closeOnClickOutside: false
-        });
     });
     
-    // Xử lý sự kiện kết nối lại
-    ipcRenderer.on('connectionRestored', () => {
-        updateConnectionStatus('connected');
-        swal.close();
-        swal({
-            title: "Đã kết nối lại",
-            text: "Kết nối với Telegram đã được khôi phục.",
-            icon: "success",
-            timer: 2000,
-            buttons: false
-        });
-    });
-    
-    // Dọn dẹp khi trang được đóng
-    window.addEventListener('beforeunload', () => {
-        clearInterval(connectionCheckInterval);
-    });
+    // Debug logging
+    console.log("Setting up debug logging for IPC events");
+    const originalSend = ipcRenderer.send;
+    ipcRenderer.send = function(channel, ...args) {
+        console.log(`[IPC Send] ${channel}:`, ...args);
+        return originalSend.apply(this, [channel, ...args]);
+    };
+
+    console.log("Renderer process initialization complete");
 });
