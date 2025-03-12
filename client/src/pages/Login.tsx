@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, Typography, Spin, Alert } from 'antd';
 import { useAuth } from '../hooks/useAuth';
+import { useQuery } from 'react-query';
+import { telegramService } from '../services/telegramService';
 
 const { Title, Text } = Typography;
 
@@ -20,12 +22,35 @@ declare global {
 const Login = () => {
   const { loginWithTelegram } = useAuth();
   const telegramLoginRef = useRef<HTMLDivElement>(null);
+  const [botUsername, setBotUsername] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  // Fetch bot info to get username
+  const { isLoading } = useQuery(
+    'botInfo',
+    async () => {
+      try {
+        const response = await telegramService.getBotLink();
+        setBotUsername(response.botUsername);
+        return response;
+      } catch (err) {
+        console.error('Error fetching bot info:', err);
+        setError('Không thể kết nối với bot Telegram. Vui lòng thử lại sau.');
+        return null;
+      }
+    },
+    {
+      retry: 1,
+    }
+  );
 
   useEffect(() => {
+    if (!botUsername) return;
+
     // Tạo script để tải Telegram Login Widget
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
-    script.setAttribute('data-telegram-login', 'YOUR_BOT_USERNAME'); // Thay YOUR_BOT_USERNAME bằng username của bot của bạn
+    script.setAttribute('data-telegram-login', botUsername);
     script.setAttribute('data-size', 'large');
     script.setAttribute('data-auth-url', `${window.location.origin}/auth/telegram/callback`);
     script.setAttribute('data-request-access', 'write');
@@ -38,8 +63,9 @@ const Login = () => {
       }
     };
 
-    // Thêm script vào DOM
+    // Xóa bất kỳ script nào đã tồn tại trước đó
     if (telegramLoginRef.current) {
+      telegramLoginRef.current.innerHTML = '';
       telegramLoginRef.current.appendChild(script);
     }
 
@@ -49,7 +75,7 @@ const Login = () => {
         script.parentNode.removeChild(script);
       }
     };
-  }, [loginWithTelegram]);
+  }, [loginWithTelegram, botUsername]);
 
   return (
     <div style={{ 
@@ -69,8 +95,18 @@ const Login = () => {
           <Text>Đăng nhập với tài khoản Telegram của bạn để tiếp tục.</Text>
         </div>
 
+        {error && (
+          <Alert 
+            message="Lỗi kết nối" 
+            description={error}
+            type="error" 
+            style={{ marginBottom: 16 }} 
+            showIcon
+          />
+        )}
+
         <div ref={telegramLoginRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-          <Spin tip="Đang tải..." />
+          {(isLoading || !botUsername) && <Spin tip="Đang tải..." />}
         </div>
 
         <Alert
