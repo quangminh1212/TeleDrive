@@ -407,9 +407,16 @@
                     // Lưu phone_code_hash
                     phoneCodeHash = data.phone_code_hash;
                     
+                    // Cập nhật UI với số điện thoại đã được định dạng
+                    if (data.formatted_phone) {
+                        phone = data.formatted_phone;
+                    }
+                    
+                    // Hiển thị thông báo xác nhận
+                    showStatus(`Mã xác nhận đã được gửi đến ${phone}`, 'info');
+                    
                     // Chuyển sang bước nhập mã
                     showStep(codeStep);
-                    hideStatus();
                 } else {
                     const errorMsg = data.error || 'Không thể gửi mã xác nhận';
                     showError(errorMsg);
@@ -417,7 +424,11 @@
                     // Hiển thị gợi ý khắc phục
                     let helpText = '';
                     if (errorMsg.includes('số điện thoại không hợp lệ') || errorMsg.includes('PHONE_NUMBER_INVALID')) {
-                        helpText = 'Vui lòng kiểm tra lại số điện thoại. Định dạng đúng: +84123456789 (có dấu +, mã quốc gia, không có số 0 đầu).';
+                        if (data.details && data.details.formattedPhone) {
+                            helpText = `Telegram không chấp nhận số điện thoại ${data.details.formattedPhone}. Vui lòng kiểm tra lại.`;
+                        } else {
+                            helpText = 'Vui lòng kiểm tra lại số điện thoại. Định dạng đúng: +84123456789 (có dấu +, mã quốc gia, có thể nhập với hoặc không nhập số 0 đầu).';
+                        }
                     } else if (errorMsg.includes('FLOOD_WAIT')) {
                         const waitMatch = errorMsg.match(/(\d+) giây/);
                         const waitTime = waitMatch ? waitMatch[1] : 'một khoảng thời gian';

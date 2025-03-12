@@ -97,8 +97,9 @@ app.post('/api/telegram/send-code', async (req, res) => {
     // Loại bỏ tất cả ký tự không phải số sau dấu +
     formattedPhone = '+' + formattedPhone.substring(1).replace(/\D/g, '');
     
-    // Xử lý nếu người dùng nhập số 0 sau mã quốc gia (ví dụ: +840...)
+    // Xử lý riêng cho số Việt Nam (+84): nếu có số 0 sau mã quốc gia, loại bỏ nó
     if (formattedPhone.startsWith('+840')) {
+      console.log('Phát hiện số Việt Nam bắt đầu bằng 0, đang định dạng lại...');
       formattedPhone = '+84' + formattedPhone.substring(4);
     }
     
@@ -124,7 +125,8 @@ app.post('/api/telegram/send-code', async (req, res) => {
       
       return res.json({
         success: true,
-        phone_code_hash: result.phone_code_hash
+        phone_code_hash: result.phone_code_hash,
+        formatted_phone: result.phone // Trả về số điện thoại đã định dạng cho client
       });
     } catch (apiError) {
       console.error('Telegram API error:', apiError);
@@ -135,7 +137,8 @@ app.post('/api/telegram/send-code', async (req, res) => {
       
       if (apiError.message.includes('PHONE_NUMBER_INVALID')) {
         errorMessage = 'Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.';
-        errorDetails.suggestion = 'Đảm bảo số điện thoại bắt đầu bằng mã quốc gia (ví dụ: +84 cho Việt Nam) và không có số 0 đầu.';
+        errorDetails.suggestion = 'Đảm bảo số điện thoại đúng định dạng: +84xxxxxxxxx cho Việt Nam (có thể nhập cả số 0 đầu).';
+        errorDetails.formattedPhone = formattedPhone;
       } else if (apiError.message.includes('PHONE_NUMBER_BANNED')) {
         errorMessage = 'Số điện thoại đã bị Telegram chặn.';
       } else if (apiError.message.includes('PHONE_NUMBER_UNOCCUPIED')) {
