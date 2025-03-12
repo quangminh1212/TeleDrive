@@ -3,7 +3,7 @@ const fs = require('fs');
 const input = require('input');
 const WebSocket = require('ws');
 const { FileReader } = require('filereader');
-const { MTProto } = require('@mtproto/core');
+const MTProto = require('@mtproto/core');
 require('dotenv').config();
 
 // Tạo thư mục lưu session
@@ -50,13 +50,23 @@ global.WebSocket = WebSocket;
 global.FileReader = FileReader;
 
 // Khởi tạo kết nối
-const mtproto = new MTProto({
-  api_id: parseInt(process.env.TELEGRAM_API_ID || 0),
-  api_hash: process.env.TELEGRAM_API_HASH || '',
-  storageOptions: {
-    path: path.join(SESSION_DIR, 'telegram-session.json'),
-  },
-});
+let mtproto;
+try {
+  if (!process.env.TELEGRAM_API_ID || !process.env.TELEGRAM_API_HASH) {
+    console.error('[TelegramClient] API_ID hoặc API_HASH không được cấu hình. Vui lòng kiểm tra file .env');
+  } else {
+    mtproto = new MTProto({
+      api_id: parseInt(process.env.TELEGRAM_API_ID || 0),
+      api_hash: process.env.TELEGRAM_API_HASH || '',
+      storageOptions: {
+        path: path.join(SESSION_DIR, 'telegram-session.json'),
+      },
+    });
+    console.log('[TelegramClient] Khởi tạo thành công MTProto client');
+  }
+} catch (error) {
+  console.error('[TelegramClient] Lỗi khởi tạo MTProto client:', error);
+}
 
 // Hàm xử lý các method API của Telegram
 const callApi = async (method, params = {}, options = {}) => {
