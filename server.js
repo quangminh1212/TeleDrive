@@ -18,26 +18,25 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Khởi tạo Telegram Client
-let mtproto = null;
 let useMTProto = false;
 if (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH) {
-  mtproto = telegramClient.initTelegramClient();
-  useMTProto = !!mtproto;
+  console.log('[TelegramClient] Đang khởi tạo...');
+  useMTProto = true;
   
   // Kiểm tra trạng thái đăng nhập
-  if (mtproto) {
-    telegramClient.checkAuth(mtproto)
-      .then(result => {
-        if (result.success) {
-          console.log('[Telegram API] Đã đăng nhập vào Telegram API với tài khoản:', result.user.first_name);
-        } else {
-          console.log('[Telegram API] Chưa đăng nhập vào Telegram API. Sử dụng giao diện để đăng nhập.');
-        }
-      })
-      .catch(error => {
-        console.error('[Telegram API] Lỗi kiểm tra đăng nhập:', error);
-      });
-  }
+  telegramClient.checkAuth()
+    .then(result => {
+      if (result.authorized) {
+        console.log('[Telegram API] Đã đăng nhập vào Telegram API với tài khoản:', result.user.name);
+      } else {
+        console.log('[Telegram API] Chưa đăng nhập vào Telegram API. Sử dụng giao diện để đăng nhập.');
+      }
+    })
+    .catch(error => {
+      console.error('[Telegram API] Lỗi kiểm tra đăng nhập:', error);
+    });
+} else {
+  console.log('[TelegramClient] Không tìm thấy thông tin API_ID hoặc API_HASH. Vui lòng kiểm tra file .env');
 }
 
 // Kiểm tra xem BOT_TOKEN đã được cấu hình chưa
@@ -61,9 +60,8 @@ if (!bot && !useMTProto) {
 }
 
 // Lưu các đối tượng vào app để routes có thể truy cập
-app.set('mtproto', mtproto);
-app.set('bot', bot);
 app.set('useMTProto', useMTProto);
+app.set('telegramClient', telegramClient);
 app.set('useWebUpload', useWebUpload);
 
 // Sử dụng router
