@@ -628,10 +628,11 @@
                     return;
                 }
                 
-                // Hiển thị trạng thái đang xử lý
-                showStatus('Đang trích xuất thông tin xác thực từ Telegram Web...', 'info');
-                
+                // Kiểm tra xem đã đăng nhập vào Telegram Web chưa
                 try {
+                    // Hiển thị trạng thái đang xử lý
+                    showStatus('Đang trích xuất thông tin xác thực từ Telegram Web...', 'info');
+                    
                     const response = await fetch('/api/telegram/extract-web-auth', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -640,7 +641,23 @@
                     
                     const data = await response.json();
                     
-                    if (response.ok && data.success) {
+                    if (data.needManualLogin) {
+                        // Người dùng cần đăng nhập thủ công
+                        showStatus('Vui lòng đăng nhập vào Telegram Web trước...', 'warning');
+                        
+                        // Hiển thị hướng dẫn
+                        errorHelp.innerHTML = `
+                            <div class="alert alert-info mt-3">
+                                <h6><i class="bi bi-info-circle-fill"></i> Bạn cần đăng nhập Telegram Web trước</h6>
+                                <p>Truy cập <a href="${data.telegramWebUrl}" target="_blank">Telegram Web</a> và đăng nhập với tài khoản của bạn.</p>
+                                <p>Sau khi đăng nhập xong, trở lại đây và nhấn nút "Trích xuất Auth Key" để tiếp tục.</p>
+                            </div>
+                        `;
+                        errorDetails.classList.remove('d-none');
+                        
+                        // Mở Telegram Web trong tab mới
+                        window.open(data.telegramWebUrl, '_blank');
+                    } else if (response.ok && data.success) {
                         // Hiển thị thông báo thành công
                         showStatus(data.message, 'success');
                         
@@ -705,8 +722,16 @@
                     const data = await response.json();
                     
                     if (response.ok && data.success) {
-                        // Hiển thị thông báo thành công
-                        showStatus('Đã mở Telegram Web. Hãy đăng nhập và quay lại đây để trích xuất thông tin xác thực.', 'info');
+                        // Hiển thị thông báo
+                        showStatus('Đang mở Telegram Web trong tab mới...', 'info');
+                        
+                        // Mở Telegram Web trong tab mới
+                        window.open(data.url, '_blank');
+                        
+                        // Cập nhật thông báo sau khi mở
+                        setTimeout(() => {
+                            showStatus('Đã mở Telegram Web trong tab mới. Vui lòng đăng nhập và quay lại đây để trích xuất thông tin xác thực.', 'info');
+                        }, 1000);
                     } else {
                         // Hiển thị lỗi
                         const errorMsg = data.error || 'Không thể mở Telegram Web';

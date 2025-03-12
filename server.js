@@ -341,36 +341,14 @@ app.post('/api/telegram/extract-web-auth', async (req, res) => {
     }
     
     console.log('[API] Đang thử trích xuất thông tin xác thực từ Telegram Web...');
-    
-    // Kiểm tra đăng nhập Telegram Web
-    await telegramWebUploader.initBrowser();
-    const isLoggedIn = await telegramWebUploader.checkLoginStatus();
-    
-    if (!isLoggedIn) {
-      return res.status(400).json({
-        success: false,
-        error: 'Chưa đăng nhập Telegram Web. Vui lòng đăng nhập qua web trước.',
-        actionRequired: 'login_web'
-      });
-    }
-    
-    // Trích xuất thông tin xác thực
-    const extractSuccess = await telegramWebUploader.extractAuthData();
-    if (!extractSuccess) {
-      return res.status(500).json({
-        success: false,
-        error: 'Không thể trích xuất thông tin xác thực từ Telegram Web.'
-      });
-    }
-    
-    // Tải lại thông tin xác thực trong MTProto client
-    const reloadSuccess = await telegramClient.reloadAuth();
+    console.log('[API] Truy cập http://web.telegram.org/k/ trong trình duyệt của bạn và đăng nhập');
+    console.log('[API] Sau đó quay lại đây để trích xuất thông tin xác thực');
     
     return res.json({
-      success: true,
-      message: 'Đã trích xuất thông tin xác thực thành công từ Telegram Web.',
-      reloadSuccess: reloadSuccess,
-      requireRestart: !reloadSuccess
+      success: false,
+      message: 'Vui lòng truy cập http://web.telegram.org/k/ trong trình duyệt để đăng nhập Telegram Web trước.',
+      needManualLogin: true,
+      telegramWebUrl: 'http://web.telegram.org/k/'
     });
   } catch (error) {
     console.error('[API] Lỗi khi trích xuất thông tin xác thực:', error);
@@ -391,27 +369,19 @@ app.post('/api/telegram/open-web', async (req, res) => {
       });
     }
     
-    console.log('[API] Mở Telegram Web trực tiếp...');
-    
-    // Mở Telegram Web trong browser hiện tại
-    const success = await telegramWebUploader.openTelegramWeb();
-    
-    if (!success) {
-      return res.status(500).json({
-        success: false,
-        error: 'Không thể mở Telegram Web.'
-      });
-    }
+    console.log('[API] Yêu cầu mở Telegram Web trực tiếp...');
+    console.log('[API] Người dùng cần truy cập http://web.telegram.org/k/ trong trình duyệt');
     
     return res.json({
       success: true,
-      message: 'Đã mở Telegram Web. Vui lòng đăng nhập nếu cần thiết và quay lại để trích xuất thông tin xác thực.'
+      message: 'Vui lòng truy cập Telegram Web trong trình duyệt của bạn.',
+      url: 'http://web.telegram.org/k/'
     });
   } catch (error) {
-    console.error('[API] Lỗi khi mở Telegram Web:', error);
+    console.error('[API] Lỗi khi xử lý yêu cầu mở Telegram Web:', error);
     return res.status(500).json({
       success: false,
-      error: 'Lỗi khi mở Telegram Web: ' + error.message
+      error: 'Lỗi khi xử lý yêu cầu mở Telegram Web: ' + error.message
     });
   }
 });

@@ -1,6 +1,16 @@
 const path = require('path');
 const fs = require('fs');
-const input = require('input');
+let input;
+try {
+  input = require('input');
+} catch (error) {
+  console.warn('[TelegramClient] Không thể tải module input, một số tính năng có thể không hoạt động');
+  // Module giả lập input nếu không tải được
+  input = {
+    text: () => Promise.resolve(''),
+    password: () => Promise.resolve('')
+  };
+}
 const WebSocket = require('ws');
 const { FileReader } = require('filereader');
 const MTProto = require('@mtproto/core');
