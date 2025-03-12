@@ -49,6 +49,11 @@ global.WebSocket = WebSocket;
 global.FileReader = FileReader;
 
 // Khởi tạo kết nối
+console.log('[MTProto] Bắt đầu khởi tạo kết nối MTProto...');
+console.log('[MTProto] API_ID:', process.env.TELEGRAM_API_ID);
+console.log('[MTProto] API_HASH:', process.env.TELEGRAM_API_HASH ? `${process.env.TELEGRAM_API_HASH.substring(0, 5)}...` : 'không có');
+console.log('[MTProto] Session path:', path.join(SESSION_DIR, 'telegram-session.json'));
+
 const mtproto = new MTProto({
   api_id: parseInt(process.env.TELEGRAM_API_ID || 0),
   api_hash: process.env.TELEGRAM_API_HASH || '',
@@ -59,14 +64,22 @@ const mtproto = new MTProto({
 
 // Hàm xử lý các method API của Telegram
 const callApi = async (method, params = {}, options = {}) => {
+  console.log(`[Telegram API] Gọi method ${method} với tham số:`, JSON.stringify(params, null, 2));
   try {
     const result = await mtproto.call(method, params, options);
+    console.log(`[Telegram API] Kết quả từ method ${method}:`, JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
-    console.log(`Error in ${method}:`, error);
+    console.log(`[Telegram API] Lỗi trong method ${method}:`, error);
+    
+    // Xử lý lỗi chi tiết hơn
+    if (error.error_code) {
+      console.log(`[Telegram API] Mã lỗi: ${error.error_code}, Thông báo: ${error.error_message}`);
+    }
     
     // Xử lý lỗi AUTH_KEY_UNREGISTERED - cần đăng nhập lại
     if (error.error_code === 401) {
+      console.log('[Telegram API] Lỗi xác thực 401: Cần đăng nhập lại');
       return {
         error: error.error_message || 'Bạn cần phải đăng nhập lại'
       };
@@ -77,7 +90,7 @@ const callApi = async (method, params = {}, options = {}) => {
       const waitTime = error.error_message.match(/FLOOD_WAIT_(\d+)/);
       const seconds = waitTime ? parseInt(waitTime[1]) : 60;
       
-      console.log(`Waiting for ${seconds} seconds due to FLOOD_WAIT`);
+      console.log(`[Telegram API] FLOOD_WAIT: Cần chờ ${seconds} giây trước khi thử lại`);
       
       return {
         error: `FLOOD_WAIT_${seconds}`,
@@ -96,6 +109,7 @@ const callApi = async (method, params = {}, options = {}) => {
  * @param {string} apiHash API Hash Telegram
  */
 const sendCode = async (phone, apiId, apiHash) => {
+  console.log('[SendCode] Bắt đầu gửi mã xác nhận...');
   try {
     // Xử lý định dạng số điện thoại
     if (!phone) throw new Error('Số điện thoại không được để trống');
@@ -112,16 +126,24 @@ const sendCode = async (phone, apiId, apiHash) => {
     
     // Xử lý riêng cho số Việt Nam (+84): nếu có số 0 sau mã quốc gia, loại bỏ nó
     if (formattedPhone.startsWith('+840')) {
-      console.log('Phát hiện số Việt Nam bắt đầu bằng 0, đang định dạng lại...');
+      console.log('[SendCode] Phát hiện số Việt Nam bắt đầu bằng 0, đang định dạng lại...');
       formattedPhone = '+84' + formattedPhone.substring(4);
     }
     
-    console.log(`Sending code to phone: ${formattedPhone} with API ID: ${apiId} and API Hash: ${apiHash}`);
+    console.log(`[SendCode] Gửi mã xác nhận đến SĐT: ${formattedPhone} với API ID: ${apiId}`);
     
     // Kiểm tra API ID và API Hash
     if (!apiId || !apiHash) {
+      console.log('[SendCode] Lỗi: Thiếu API ID hoặc API Hash');
       throw new Error('Không tìm thấy API ID hoặc API Hash. Vui lòng kiểm tra cấu hình.');
     }
+    
+    console.log('[SendCode] Gọi auth.sendCode với các tham số:');
+    console.log({
+      phone_number: formattedPhone.replace('+', ''),
+      api_id: apiId,
+      api_hash: apiHash
+    });
     
     const result = await mtproto.call('auth.sendCode', {
       phone_number: formattedPhone.replace('+', ''),
@@ -135,21 +157,51 @@ const sendCode = async (phone, apiId, apiHash) => {
       api_hash: apiHash
     });
     
-    console.log('Send code result:', JSON.stringify(result, null, 2));
+    console.log('[SendCode] Kết quả gửi mã:', JSON.stringify(result, null, 2));
     return {
+      success: true,
       phone_code_hash: result.phone_code_hash,
       type: result.type?._,
       phone: formattedPhone // Trả về số điện thoại đã được định dạng
     };
   } catch (error) {
-    console.error('Error sending code:', error);
+    console.error('[SendCode] Lỗi gửi mã xác nhận:', error);
+    console.error('[SendCode] Stack trace:', error.stack);
     
     // Xử lý các lỗi cụ thể
     if (error.error_message?.includes('PHONE_NUMBER_INVALID')) {
-      throw new Error('PHONE_NUMBER_INVALID: Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.');
+      console.log('[SendCode] Lỗi: Số điện thoại không hợp lệ');
+      return {
+        success: false,
+        error: 'PHONE_NUMBER_INVALID',
+        details: {
+          message: 'Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.',
+          providedPhone: phone
+        }
+      };
     }
     
-    throw error;
+    if (error.error_message?.includes('API_ID_INVALID')) {
+      console.log('[SendCode] Lỗi: API ID không hợp lệ');
+      return {
+        success: false,
+        error: 'API_ID_INVALID',
+        details: {
+          message: 'API ID không hợp lệ. Vui lòng kiểm tra lại cấu hình.',
+          providedApiId: apiId
+        }
+      };
+    }
+    
+    return {
+      success: false,
+      error: error.message,
+      details: {
+        phone: phone,
+        apiIdProvided: !!apiId,
+        apiHashProvided: !!apiHash
+      }
+    };
   }
 };
 
@@ -306,14 +358,16 @@ function getMimeType(extension) {
  * Kiểm tra xem đã đăng nhập chưa
  */
 const checkAuth = async () => {
+  console.log('[CheckAuth] Đang kiểm tra trạng thái đăng nhập...');
   try {
+    console.log('[CheckAuth] Gọi users.getFullUser với inputUserSelf');
     const result = await mtproto.call('users.getFullUser', {
       id: {
         _: 'inputUserSelf'
       }
     });
     
-    console.log('User data:', result);
+    console.log('[CheckAuth] Nhận được kết quả từ users.getFullUser:', JSON.stringify(result, null, 2));
     return {
       authorized: true,
       user: {
@@ -324,7 +378,18 @@ const checkAuth = async () => {
       }
     };
   } catch (error) {
-    console.log('Auth check error:', error);
+    console.log('[CheckAuth] Lỗi kiểm tra đăng nhập:', error);
+    
+    // Log chi tiết về lỗi
+    if (error.error_code) {
+      console.log(`[CheckAuth] Mã lỗi: ${error.error_code}, Thông báo: ${error.error_message}`);
+    }
+    
+    if (error.error_message === 'AUTH_KEY_UNREGISTERED') {
+      console.log('[CheckAuth] Chưa đăng nhập: AUTH_KEY_UNREGISTERED');
+      console.log('[CheckAuth] Cần đăng nhập thông qua giao diện web với API ID và API Hash');
+    }
+    
     return {
       authorized: false,
       error: error.message

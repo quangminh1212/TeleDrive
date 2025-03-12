@@ -84,16 +84,30 @@ router.post('/api/telegram/send-code', async (req, res) => {
   const mtproto = req.app.get('mtproto');
   const { phoneNumber } = req.body;
   
+  console.log('[API] /api/telegram/send-code - Nhận yêu cầu gửi mã xác nhận');
+  console.log('[API] Số điện thoại:', phoneNumber);
+  
   if (!phoneNumber) {
+    console.log('[API] Lỗi: Thiếu số điện thoại');
     return res.status(400).json({ error: 'Số điện thoại là bắt buộc' });
   }
   
   if (!mtproto) {
-    return res.status(400).json({ error: 'Telegram API chưa được khởi tạo' });
+    console.log('[API] Lỗi: MTProto chưa được khởi tạo');
+    return res.status(400).json({ 
+      error: 'Telegram API chưa được khởi tạo',
+      details: {
+        apiId: process.env.TELEGRAM_API_ID,
+        apiHashExists: !!process.env.TELEGRAM_API_HASH
+      }
+    });
   }
   
   try {
+    console.log('[API] Gọi telegramClient.sendCode');
     const result = await telegramClient.sendCode(mtproto, phoneNumber);
+    
+    console.log('[API] Kết quả sendCode:', JSON.stringify(result, null, 2));
     
     if (result.success) {
       return res.json({
@@ -102,9 +116,15 @@ router.post('/api/telegram/send-code', async (req, res) => {
         phone: phoneNumber
       });
     } else {
-      return res.status(400).json({ error: result.error, details: result.details });
+      console.log('[API] Lỗi từ sendCode:', result.error);
+      return res.status(400).json({ 
+        error: result.error, 
+        details: result.details 
+      });
     }
   } catch (error) {
+    console.error('[API] Lỗi server khi gửi mã xác nhận:', error);
+    console.error('[API] Stack trace:', error.stack);
     return res.status(500).json({ error: error.message });
   }
 });
