@@ -3,6 +3,8 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 
 // Load environment variables
 dotenv.config();
@@ -18,9 +20,27 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Cấu hình session
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'teledriveSecretKey123',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 1 ngày
+  },
+  store: MongoStore.create({ 
+    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/teledrive'
+  })
+}));
 
 // API Routes
 app.use('/api/auth', authRoutes);

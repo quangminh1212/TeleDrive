@@ -2,9 +2,10 @@ import axios from 'axios';
 
 const API_URL = '/api/telegram';
 
-// Create axios instance with auth header
+// Tạo axios instance với credentials
 const authAxios = axios.create({
   baseURL: API_URL,
+  withCredentials: true // Quan trọng để gửi cookies cho cross-site requests
 });
 
 // Add auth token to requests
@@ -24,7 +25,7 @@ authAxios.interceptors.request.use(
 export const telegramService = {
   // Send verification code
   sendCode: async (phoneNumber: string) => {
-    const response = await axios.post(`${API_URL}/send-code`, { phoneNumber });
+    const response = await axios.post(`${API_URL}/send-code`, { phoneNumber }, { withCredentials: true });
     return response.data;
   },
 
@@ -34,13 +35,13 @@ export const telegramService = {
       phoneNumber,
       code,
       phoneCodeHash,
-    });
+    }, { withCredentials: true });
     return response.data;
   },
 
   // Get bot link
   getBotLink: async () => {
-    const response = await axios.get(`${API_URL}/bot-link`);
+    const response = await axios.get(`${API_URL}/bot-link`, { withCredentials: true });
     return response.data;
   },
 

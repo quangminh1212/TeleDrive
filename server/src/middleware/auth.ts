@@ -1,35 +1,41 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 import { UserModel } from '../models/user';
+import session from 'express-session';
 
-// Extended request interface to include user
+// Mở rộng session để bao gồm userId
+declare module 'express-session' {
+  interface SessionData {
+    userId: string;
+  }
+}
+
+// Mở rộng Request để bao gồm user và session
 export interface AuthRequest extends Request {
   user?: any;
+  session: session.Session & Partial<session.SessionData>;
 }
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    // Get token from header
-    const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-      return res.status(401).json({ message: 'Không có token xác thực, truy cập bị từ chối' });
+    // Kiểm tra session
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ message: 'Không có phiên làm việc, truy cập bị từ chối' });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret') as any;
+    // Lấy userId từ session
+    const userId = req.session.userId;
 
-    // Check if user exists
-    const user = await UserModel.findById(decoded.id);
+    // Kiểm tra xem người dùng có tồn tại không
+    const user = await UserModel.findById(userId);
     if (!user) {
       return res.status(401).json({ message: 'Người dùng không tồn tại' });
     }
 
-    // Add user to request
+    // Thêm user vào request
     req.user = user;
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return res.status(401).json({ message: 'Token không hợp lệ' });
+    return res.status(401).json({ message: 'Lỗi xác thực' });
   }
 }; 

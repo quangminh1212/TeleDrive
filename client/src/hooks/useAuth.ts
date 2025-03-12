@@ -8,37 +8,29 @@ export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  // Check if token exists in localStorage
-  const token = localStorage.getItem('token');
-  
-  // Fetch current user data if token exists
-  const { data, isLoading, error } = useQuery(
+  // Fetch current user data to check if session is valid
+  const { data, isLoading, error, refetch } = useQuery(
     ['currentUser'],
     () => authService.getCurrentUser(),
     {
-      enabled: !!token,
       retry: 1,
       onError: () => {
-        // Clear token if invalid
-        localStorage.removeItem('token');
         setIsAuthenticated(false);
       }
     }
   );
 
   useEffect(() => {
-    if (token && data) {
+    if (data?.user) {
       setIsAuthenticated(true);
     } else {
       setIsAuthenticated(false);
     }
-  }, [token, data]);
+  }, [data]);
 
   const login = async (telegramId: number) => {
     try {
       const response = await authService.login(telegramId);
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
       setIsAuthenticated(true);
       message.success('Đăng nhập thành công');
       navigate('/');
@@ -54,8 +46,6 @@ export const useAuth = () => {
     try {
       // userData chứa thông tin từ Telegram: id, first_name, last_name, username, photo_url, auth_date, hash
       const response = await authService.loginWithTelegram(userData);
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
       setIsAuthenticated(true);
       message.success('Đăng nhập thành công');
       navigate('/');
@@ -70,8 +60,6 @@ export const useAuth = () => {
   const register = async (userData: any) => {
     try {
       const response = await authService.register(userData);
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
       setIsAuthenticated(true);
       message.success('Đăng ký thành công');
       navigate('/');
@@ -86,17 +74,11 @@ export const useAuth = () => {
   const logout = async () => {
     try {
       await authService.logout();
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
       setIsAuthenticated(false);
       message.success('Đăng xuất thành công');
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      // Still remove token and user data even if logout API fails
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setIsAuthenticated(false);
       navigate('/login');
     }
   };
@@ -109,5 +91,6 @@ export const useAuth = () => {
     loginWithTelegram,
     register,
     logout,
+    refetchUser: refetch
   };
 }; 

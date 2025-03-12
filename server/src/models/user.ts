@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import jwt from 'jsonwebtoken';
 
 // User interface
 export interface IUser extends Document {
@@ -13,7 +12,6 @@ export interface IUser extends Document {
   sessionString?: string;
   createdAt: Date;
   updatedAt: Date;
-  generateAuthToken: () => string;
 }
 
 // User schema
@@ -57,19 +55,6 @@ const userSchema = new Schema<IUser>(
     timestamps: true,
   }
 );
-
-// Generate auth token method
-userSchema.methods.generateAuthToken = function(): string {
-  const user = this;
-  const token = jwt.sign(
-    { id: user.id },
-    process.env.JWT_SECRET || 'default_secret',
-    {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    }
-  );
-  return token;
-};
 
 // Create User model
 export const UserModel = mongoose.model<IUser>('User', userSchema); 
