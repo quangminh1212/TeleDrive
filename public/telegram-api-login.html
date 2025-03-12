@@ -191,14 +191,17 @@
 
             <div id="authWarning" class="alert alert-info mb-3">
                 <i class="bi bi-info-circle-fill me-2"></i>
-                <strong>Trích xuất Auth từ Web:</strong> Nếu bạn đã đăng nhập vào Telegram Web, bạn có thể trích xuất thông tin xác thực từ đó để đăng nhập vào TeleDrive.
-                <div class="mt-2 d-flex">
-                    <button id="openTelegramWebBtn" class="btn btn-info me-2 btn-sm">
-                        <i class="bi bi-telegram me-1"></i> Mở Telegram Web
-                    </button>
-                    <button id="extractWebAuthBtn" class="btn btn-primary btn-sm">
+                <strong>Trích xuất Auth từ Web:</strong> Đăng nhập Telegram Web để trích xuất thông tin xác thực
+                <div class="mt-2 d-flex flex-wrap">
+                    <a href="https://web.telegram.org/k/" target="_blank" class="btn btn-info me-2 mb-2 btn-sm">
+                        <i class="bi bi-telegram me-1"></i> Đăng nhập Telegram Web
+                    </a>
+                    <a href="/api/telegram/extract-auth-manual" class="btn btn-primary mb-2 btn-sm">
                         <i class="bi bi-key me-1"></i> Trích xuất Auth Key
-                    </button>
+                    </a>
+                </div>
+                <div class="mt-2 small text-muted">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Truy cập Telegram Web trong tab mới, đăng nhập, sau đó quay lại đây để trích xuất thông tin.
                 </div>
             </div>
 
