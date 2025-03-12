@@ -9,6 +9,7 @@ from telegram.ext import (
 import datetime
 import shutil
 from pathlib import Path
+import json
 
 # Chargement des variables d'environnement
 load_dotenv()
@@ -27,11 +28,58 @@ MAIN_MENU, FILE_UPLOAD, FILE_BROWSE, FOLDER_CREATE = range(4)
 STORAGE_PATH = os.getenv('STORAGE_PATH', './storage')
 Path(STORAGE_PATH).mkdir(parents=True, exist_ok=True)
 
+# Chemin pour les métadonnées
+METADATA_PATH = Path(STORAGE_PATH) / 'metadata'
+METADATA_PATH.mkdir(exist_ok=True)
+
 def get_user_path(user_id):
     """Renvoie le chemin de stockage spécifique à l'utilisateur"""
     user_path = Path(STORAGE_PATH) / str(user_id)
     user_path.mkdir(exist_ok=True)
     return user_path
+
+def get_user_metadata_path(user_id):
+    """Renvoie le chemin des métadonnées de l'utilisateur"""
+    user_metadata_path = METADATA_PATH / f"{user_id}.json"
+    if not user_metadata_path.exists():
+        with open(user_metadata_path, 'w') as f:
+            json.dump({"files": {}, "usage": 0}, f)
+    return user_metadata_path
+
+def update_user_metadata(user_id, file_path, size, file_type):
+    """Met à jour les métadonnées de l'utilisateur"""
+    metadata_path = get_user_metadata_path(user_id)
+    with open(metadata_path, 'r') as f:
+        metadata = json.load(f)
+    
+    # Ajouter ou mettre à jour le fichier
+    metadata["files"][str(file_path)] = {
+        "size": size,
+        "type": file_type,
+        "created": datetime.datetime.now().isoformat()
+    }
+    
+    # Mettre à jour l'utilisation totale
+    metadata["usage"] = sum(item["size"] for item in metadata["files"].values())
+    
+    with open(metadata_path, 'w') as f:
+        json.dump(metadata, f)
+
+def remove_file_from_metadata(user_id, file_path):
+    """Supprime un fichier des métadonnées"""
+    metadata_path = get_user_metadata_path(user_id)
+    with open(metadata_path, 'r') as f:
+        metadata = json.load(f)
+    
+    # Supprimer le fichier s'il existe
+    if str(file_path) in metadata["files"]:
+        del metadata["files"][str(file_path)]
+    
+    # Mettre à jour l'utilisation totale
+    metadata["usage"] = sum(item["size"] for item in metadata["files"].values())
+    
+    with open(metadata_path, 'w') as f:
+        json.dump(metadata, f)
 
 def start(update: Update, context: CallbackContext) -> int:
     """Démarre la conversation et affiche le menu principal"""
@@ -41,15 +89,15 @@ def start(update: Update, context: CallbackContext) -> int:
     get_user_path(user.id)
     
     keyboard = [
-        [InlineKeyboardButton("📁 Parcourir mes fichiers", callback_data='browse')],
-        [InlineKeyboardButton("⬆️ Téléverser un fichier", callback_data='upload')],
-        [InlineKeyboardButton("📂 Créer un dossier", callback_data='create_folder')]
+        [InlineKeyboardButton("📁 Xem tệp của tôi", callback_data='browse')],
+        [InlineKeyboardButton("⬆️ Tải lên tệp", callback_data='upload')],
+        [InlineKeyboardButton("📂 Tạo thư mục", callback_data='create_folder')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     update.message.reply_text(
-        f"Bonjour {user.first_name}! Je suis TeleDrive, votre gestionnaire de fichiers sur Telegram. "
-        f"Que voulez-vous faire?",
+        f"Xin chào {user.first_name}! Tôi là TeleDrive, quản lý tệp của bạn trên Telegram. "
+        f"Bạn muốn làm gì?",
         reply_markup=reply_markup
     )
     
@@ -63,10 +111,10 @@ def button_handler(update: Update, context: CallbackContext) -> int:
     if query.data == 'browse':
         return browse_files(update, context)
     elif query.data == 'upload':
-        query.edit_message_text("Envoyez-moi un fichier, et je le stockerai pour vous.")
+        query.edit_message_text("Gửi cho tôi một tệp và tôi sẽ lưu trữ nó cho bạn.")
         return FILE_UPLOAD
     elif query.data == 'create_folder':
-        query.edit_message_text("Envoyez-moi le nom du nouveau dossier.")
+        query.edit_message_text("Hãy gửi cho tôi tên của thư mục mới.")
         return FOLDER_CREATE
     elif query.data.startswith('open_folder:'):
         folder_path = query.data.split(':', 1)[1]
@@ -87,6 +135,10 @@ def button_handler(update: Update, context: CallbackContext) -> int:
     elif query.data.startswith('delete:'):
         file_path = query.data.split(':', 1)[1]
         return delete_file(update, context, file_path)
+    elif query.data == 'main_menu':
+        # Retour au menu principal
+        query.edit_message_text("Đang quay lại menu chính...")
+        return start(update, context)
     
     return MAIN_MENU
 
@@ -131,7 +183,7 @@ def browse_files(update: Update, context: CallbackContext) -> int:
     
     # Bouton de retour si on n'est pas à la racine
     if current_path:
-        keyboard.append([InlineKeyboardButton("⬆️ Retour", callback_data='back')])
+        keyboard.append([InlineKeyboardButton("⬆️ Quay lại", callback_data='back')])
     
     # Ajouter les dossiers
     for folder_name, rel_path in folders:
@@ -147,20 +199,20 @@ def browse_files(update: Update, context: CallbackContext) -> int:
         ])
     
     # Bouton pour revenir au menu principal
-    keyboard.append([InlineKeyboardButton("🏠 Menu principal", callback_data='main_menu')])
+    keyboard.append([InlineKeyboardButton("🏠 Menu chính", callback_data='main_menu')])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Afficher le titre du dossier courant
-    title = "📁 Racine" if not current_path else f"📁 {Path(current_path).name}"
+    title = "📁 Thư mục gốc" if not current_path else f"📁 {Path(current_path).name}"
     
     query = update.callback_query
     if query:
-        query.edit_message_text(f"{title}\n\nSélectionnez un élément:", reply_markup=reply_markup)
+        query.edit_message_text(f"{title}\n\nChọn một mục:", reply_markup=reply_markup)
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=f"{title}\n\nSélectionnez un élément:",
+            text=f"{title}\n\nChọn một mục:",
             reply_markup=reply_markup
         )
     
@@ -173,23 +225,28 @@ def receive_file(update: Update, context: CallbackContext) -> int:
     # Obtenir le document
     file = None
     file_name = None
+    file_type = "unknown"
     
     if update.message.document:
         file = update.message.document.get_file()
         file_name = update.message.document.file_name
+        file_type = "document"
     elif update.message.photo:
         file = update.message.photo[-1].get_file()
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         file_name = f"photo_{timestamp}.jpg"
+        file_type = "photo"
     elif update.message.video:
         file = update.message.video.get_file()
         file_name = update.message.video.file_name or f"video_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
+        file_type = "video"
     elif update.message.audio:
         file = update.message.audio.get_file()
         file_name = update.message.audio.file_name or f"audio_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.mp3"
+        file_type = "audio"
     
     if not file:
-        update.message.reply_text("Type de fichier non pris en charge. Veuillez envoyer un document, une photo, une vidéo ou un audio.")
+        update.message.reply_text("Loại tệp không được hỗ trợ. Vui lòng gửi tài liệu, hình ảnh, video hoặc âm thanh.")
         return FILE_UPLOAD
     
     # Obtenir le chemin courant
@@ -212,8 +269,12 @@ def receive_file(update: Update, context: CallbackContext) -> int:
     file_size = file_path.stat().st_size
     size_str = format_size(file_size)
     
+    # Mettre à jour les métadonnées
+    rel_path = str(file_path.relative_to(base_path))
+    update_user_metadata(user_id, rel_path, file_size, file_type)
+    
     update.message.reply_text(
-        f"✅ Fichier '{file_name}' ({size_str}) téléversé avec succès!"
+        f"✅ Tệp '{file_name}' ({size_str}) đã được tải lên thành công!"
     )
     
     # Retour au menu principal
@@ -226,7 +287,7 @@ def create_folder(update: Update, context: CallbackContext) -> int:
     
     # Validation du nom du dossier
     if not folder_name or '/' in folder_name or '\\' in folder_name or folder_name in ['.', '..']:
-        update.message.reply_text("Nom de dossier invalide. Veuillez réessayer avec un nom valide.")
+        update.message.reply_text("Tên thư mục không hợp lệ. Vui lòng thử lại với tên hợp lệ.")
         return FOLDER_CREATE
     
     # Obtenir le chemin courant
@@ -243,10 +304,10 @@ def create_folder(update: Update, context: CallbackContext) -> int:
     new_folder_path = folder_path / folder_name
     
     if new_folder_path.exists():
-        update.message.reply_text(f"Un dossier nommé '{folder_name}' existe déjà.")
+        update.message.reply_text(f"Thư mục có tên '{folder_name}' đã tồn tại.")
     else:
         new_folder_path.mkdir(parents=True, exist_ok=True)
-        update.message.reply_text(f"✅ Dossier '{folder_name}' créé avec succès!")
+        update.message.reply_text(f"✅ Thư mục '{folder_name}' đã được tạo thành công!")
     
     # Retour au menu principal
     return start(update, context)
@@ -259,7 +320,7 @@ def send_file(update: Update, context: CallbackContext, file_path: str) -> int:
     
     if not full_path.exists():
         query = update.callback_query
-        query.edit_message_text("Ce fichier n'existe plus.")
+        query.edit_message_text("Tệp này không còn tồn tại.")
         return browse_files(update, context)
     
     # Obtenir le nom et la taille du fichier
@@ -270,7 +331,7 @@ def send_file(update: Update, context: CallbackContext, file_path: str) -> int:
     try:
         # Envoyer un message de chargement
         query = update.callback_query
-        query.edit_message_text(f"Envoi de '{file_name}' ({size_str}) en cours...")
+        query.edit_message_text(f"Đang gửi '{file_name}' ({size_str})...")
         
         # Envoyer le fichier
         with open(full_path, 'rb') as file:
@@ -287,7 +348,7 @@ def send_file(update: Update, context: CallbackContext, file_path: str) -> int:
         logger.error(f"Erreur lors de l'envoi du fichier: {e}")
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=f"Désolé, une erreur s'est produite lors de l'envoi du fichier: {e}"
+            text=f"Xin lỗi, đã xảy ra lỗi khi gửi tệp: {e}"
         )
         return browse_files(update, context)
 
@@ -299,7 +360,7 @@ def delete_file(update: Update, context: CallbackContext, file_path: str) -> int
     
     if not full_path.exists():
         query = update.callback_query
-        query.edit_message_text("Ce fichier ou dossier n'existe plus.")
+        query.edit_message_text("Tệp hoặc thư mục này không còn tồn tại.")
         return browse_files(update, context)
     
     try:
@@ -307,9 +368,11 @@ def delete_file(update: Update, context: CallbackContext, file_path: str) -> int
             shutil.rmtree(full_path)
         else:
             full_path.unlink()
+            # Mettre à jour les métadonnées
+            remove_file_from_metadata(user_id, file_path)
         
         query = update.callback_query
-        query.edit_message_text(f"✅ '{full_path.name}' supprimé avec succès!")
+        query.edit_message_text(f"✅ '{full_path.name}' đã được xóa thành công!")
         
         # Revenir à la navigation des fichiers après un court délai
         context.job_queue.run_once(
@@ -323,7 +386,7 @@ def delete_file(update: Update, context: CallbackContext, file_path: str) -> int
     except Exception as e:
         logger.error(f"Erreur lors de la suppression: {e}")
         query = update.callback_query
-        query.edit_message_text(f"Désolé, une erreur s'est produite lors de la suppression: {e}")
+        query.edit_message_text(f"Xin lỗi, đã xảy ra lỗi khi xóa: {e}")
         return browse_files(update, context)
 
 def format_size(size_bytes):
@@ -344,7 +407,7 @@ def error_handler(update: Update, context: CallbackContext):
         if update and update.effective_chat:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Désolé, une erreur s'est produite. L'opération a échoué."
+                text="Xin lỗi, đã xảy ra lỗi. Thao tác thất bại."
             )
     except Exception as e:
         logger.error(f"Erreur lors de l'envoi du message d'erreur: {e}")
@@ -354,7 +417,7 @@ def main():
     # Récupérer le token du bot depuis les variables d'environnement
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     if not token:
-        logger.error("Token Telegram non trouvé. Veuillez définir TELEGRAM_BOT_TOKEN dans le fichier .env")
+        logger.error("Token Telegram không tìm thấy. Vui lòng đặt TELEGRAM_BOT_TOKEN trong tệp .env")
         return
     
     # Créer l'updater et le dispatcher
@@ -394,6 +457,7 @@ def main():
     
     # Démarrer le bot
     updater.start_polling()
+    print("Bot TeleDrive đã khởi động! Nhấn Ctrl+C để dừng.")
     updater.idle()
 
 if __name__ == '__main__':
