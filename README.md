@@ -1,82 +1,92 @@
-# TeleDrive - Bot Telegram de Gestion de Fichiers
+# TeleDrive - Quản lý tệp trên Telegram
 
-TeleDrive est un bot Telegram qui vous permet de gérer vos fichiers directement depuis Telegram, similaire à Google Drive ou OneDrive. Vous pouvez téléverser, télécharger, organiser et gérer vos fichiers à travers une interface simple et intuitive.
+TeleDrive là một ứng dụng giúp bạn quản lý tệp trực tiếp từ Telegram, tương tự như Google Drive hoặc OneDrive. Bạn có thể tải lên, tải xuống, tổ chức và quản lý tệp của mình thông qua giao diện đơn giản và trực quan.
 
-## Fonctionnalités
+## Tính năng
 
-- 📁 **Gestion de fichiers** : Parcourez, téléversez et téléchargez des fichiers
-- 📂 **Gestion de dossiers** : Créez des dossiers pour organiser vos fichiers
-- 🗑️ **Suppression** : Supprimez les fichiers et dossiers dont vous n'avez plus besoin
-- 🔒 **Stockage privé** : Chaque utilisateur a son propre espace de stockage privé
-- 📱 **Multi-plateformes** : Accessible depuis n'importe quel appareil grâce à Telegram
+- 📁 **Quản lý tệp** : Duyệt, tải lên và tải xuống các tệp
+- 📂 **Quản lý thư mục** : Tạo thư mục để tổ chức tệp của bạn
+- 🗑️ **Xóa tệp** : Xóa các tệp và thư mục bạn không cần nữa
+- 🔒 **Lưu trữ riêng tư** : Mỗi người dùng có không gian lưu trữ riêng
+- 📱 **Đa nền tảng** : Truy cập từ bất kỳ thiết bị nào thông qua Telegram hoặc giao diện web
+- 🌐 **Giao diện web** : Quản lý tệp của bạn thông qua trình duyệt web
 
-## Prérequis
+## Yêu cầu
 
-- Python 3.7 ou supérieur
-- Un token de bot Telegram (obtenu via [@BotFather](https://t.me/BotFather))
-- MongoDB (optionnel, pour une future implémentation)
+- Python 3.7 trở lên
+- Token bot Telegram (lấy từ [@BotFather](https://t.me/BotFather))
+- MongoDB (tùy chọn, để triển khai trong tương lai)
 
-## Installation
+## Cài đặt
 
-1. Clonez ce dépôt :
+1. Sao chép kho lưu trữ này:
 ```bash
-git clone https://github.com/votre-username/teledrive.git
+git clone https://github.com/tên-người-dùng-của-bạn/teledrive.git
 cd teledrive
 ```
 
-2. Installez les dépendances :
+2. Cài đặt các gói phụ thuộc:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Créez un fichier `.env` à la racine du projet avec le contenu suivant :
+3. Tạo file `.env` ở thư mục gốc của dự án với nội dung sau:
 ```
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 MONGODB_URI=mongodb://localhost:27017
 DATABASE_NAME=teledrivedb
 STORAGE_PATH=./storage
+SECRET_KEY=your_secret_key_here
 ```
 
-4. Remplacez `your_telegram_bot_token_here` par le token que vous avez obtenu de [@BotFather](https://t.me/BotFather).
+4. Thay thế `your_telegram_bot_token_here` bằng token bạn đã nhận từ [@BotFather](https://t.me/BotFather) và `your_secret_key_here` bằng một chuỗi ngẫu nhiên cho ứng dụng web.
 
-## Utilisation
+## Sử dụng
 
-1. Démarrez le bot :
+1. Khởi động ứng dụng:
 ```bash
-python bot.py
+python run.py
 ```
 
-2. Ouvrez Telegram et recherchez votre bot par son nom d'utilisateur.
+2. Sử dụng qua Telegram:
+   - Mở Telegram và tìm bot của bạn theo tên người dùng.
+   - Bắt đầu cuộc trò chuyện bằng cách gửi `/start`.
+   - Sử dụng các nút tương tác để điều hướng và quản lý tệp của bạn.
 
-3. Commencez la conversation en envoyant `/start`.
+3. Sử dụng qua giao diện web:
+   - Mở trình duyệt web và truy cập `http://localhost:5000`.
+   - Đăng ký tài khoản mới hoặc đăng nhập.
+   - Sử dụng giao diện web để quản lý tệp của bạn.
 
-4. Utilisez les boutons interactifs pour naviguer et gérer vos fichiers.
-
-## Structure du projet
+## Cấu trúc dự án
 
 ```
 teledrive/
-├── bot.py            # Fichier principal du bot
-├── requirements.txt  # Dépendances du projet
-├── .env              # Variables d'environnement (à créer)
-├── .gitignore        # Fichiers ignorés par Git
-├── README.md         # Ce fichier
-└── storage/          # Dossier de stockage des fichiers (créé automatiquement)
+├── app.py           # Ứng dụng web Flask
+├── bot.py           # Bot Telegram chính
+├── run.py           # Script khởi động
+├── requirements.txt # Các gói phụ thuộc
+├── .env             # Biến môi trường (cần tạo)
+├── .gitignore       # File bị bỏ qua bởi Git
+├── README.md        # File này
+├── static/          # Tệp tĩnh cho web (CSS, JS, hình ảnh)
+├── templates/       # Mẫu HTML cho web
+└── storage/         # Thư mục lưu trữ tệp (được tạo tự động)
 ```
 
-## Fonctionnalités à venir
+## Tính năng sắp tới
 
-- 🔄 Synchronisation avec Google Drive et OneDrive
-- 🔍 Recherche de fichiers
-- 🏷️ Organisation par tags
-- 📊 Statistiques d'utilisation
-- 🔐 Partage de fichiers avec d'autres utilisateurs
-- 📱 Interface Web (optionnel)
+- 🔄 Đồng bộ hóa với Google Drive và OneDrive
+- 🔍 Tìm kiếm tệp
+- 🏷️ Tổ chức bằng thẻ
+- 📊 Thống kê sử dụng
+- 🔐 Chia sẻ tệp với người dùng khác
+- 📱 Ứng dụng di động (tùy chọn)
 
-## Contribution
+## Đóng góp
 
-Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou à soumettre une pull request.
+Chúng tôi hoan nghênh các đóng góp! Đừng ngần ngại mở vấn đề hoặc gửi yêu cầu kéo.
 
-## Licence
+## Giấy phép
 
-Ce projet est sous licence MIT. 
+Dự án này được cấp phép theo giấy phép MIT. 
