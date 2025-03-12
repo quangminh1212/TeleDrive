@@ -7,6 +7,9 @@ const { Telegraf } = require('telegraf');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
+// Import Telegram Client
+const telegramClient = require('./telegramClient');
+
 // Tạo thư mục uploads nếu chưa tồn tại
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -36,6 +39,29 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Khởi tạo Telegram Client
+let mtproto = null;
+let useMTProto = false;
+if (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH) {
+  mtproto = telegramClient.initTelegramClient();
+  useMTProto = !!mtproto;
+  
+  // Kiểm tra trạng thái đăng nhập
+  if (mtproto) {
+    telegramClient.checkAuth(mtproto)
+      .then(result => {
+        if (result.success) {
+          console.log('[Telegram API] Đã đăng nhập vào Telegram API với tài khoản:', result.user.first_name);
+        } else {
+          console.log('[Telegram API] Chưa đăng nhập vào Telegram API. Sử dụng giao diện để đăng nhập.');
+        }
+      })
+      .catch(error => {
+        console.error('[Telegram API] Lỗi kiểm tra đăng nhập:', error);
+      });
+  }
+}
+
 // Kiểm tra xem BOT_TOKEN đã được cấu hình chưa
 let bot;
 let useWebUpload = process.env.USE_WEB_CLIENT_UPLOAD === 'true';
@@ -47,12 +73,13 @@ if (process.env.BOT_TOKEN && process.env.BOT_TOKEN.includes(':') && !process.env
   console.warn('BOT_TOKEN không hợp lệ hoặc chưa được cấu hình đúng. Chức năng Telegram sẽ bị hạn chế.');
   // Luôn bật chế độ Web Client Upload nếu không có bot
   useWebUpload = true;
-  console.log('Đã bật chế độ upload qua Web Client. Các file sẽ được lưu cả cục bộ và có hướng dẫn upload lên Telegram.');
+  console.log('Sử dụng Telegram API trực tiếp hoặc Web Client để upload file');
 }
 
 // Hiển thị hướng dẫn lấy token nếu không có token hợp lệ
-if (!bot) {
+if (!bot && !useMTProto) {
   console.log('Hướng dẫn nhận token: Mở Telegram, chat với @BotFather và làm theo hướng dẫn.');
+  console.log('Hoặc đăng ký API_ID và API_HASH tại https://my.telegram.org');
 }
 
 // Saved Sessions (simulated database)
@@ -69,6 +96,119 @@ app.get('/api/auth/status', (req, res) => {
     });
   }
   res.json({ authenticated: false });
+});
+
+// API endpoint để kiểm tra trạng thái kết nối Telegram
+app.get('/api/telegram/status', async (req, res) => {
+  const sessionId = req.headers.authorization;
+  if (!sessionId || !sessions[sessionId]) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  if (mtproto) {
+    try {
+      const authStatus = await telegramClient.checkAuth(mtproto);
+      return res.json({
+        useTelegramAPI: true,
+        loggedIn: authStatus.success,
+        user: authStatus.success ? authStatus.user : null
+      });
+    } catch (error) {
+      return res.json({
+        useTelegramAPI: true,
+        loggedIn: false,
+        error: error.message
+      });
+    }
+  } else {
+    return res.json({
+      useTelegramAPI: false,
+      useTelegramBot: !!bot
+    });
+  }
+});
+
+// API endpoint để gửi mã xác nhận
+app.post('/api/telegram/send-code', async (req, res) => {
+  const { phoneNumber } = req.body;
+  
+  if (!phoneNumber) {
+    return res.status(400).json({ error: 'Số điện thoại là bắt buộc' });
+  }
+  
+  if (!mtproto) {
+    return res.status(400).json({ error: 'Telegram API chưa được khởi tạo' });
+  }
+  
+  try {
+    const result = await telegramClient.sendCode(mtproto, phoneNumber);
+    
+    if (result.success) {
+      return res.json({
+        success: true,
+        phone_code_hash: result.phone_code_hash,
+        phone: phoneNumber
+      });
+    } else {
+      return res.status(400).json({ error: result.error });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// API endpoint để đăng nhập với mã xác nhận
+app.post('/api/telegram/sign-in', async (req, res) => {
+  const { phoneNumber, code, phoneCodeHash } = req.body;
+  
+  if (!phoneNumber || !code || !phoneCodeHash) {
+    return res.status(400).json({ error: 'Thiếu thông tin đăng nhập' });
+  }
+  
+  if (!mtproto) {
+    return res.status(400).json({ error: 'Telegram API chưa được khởi tạo' });
+  }
+  
+  try {
+    const result = await telegramClient.signIn(mtproto, {
+      phone: phoneNumber,
+      code,
+      phone_code_hash: phoneCodeHash
+    });
+    
+    if (result.success) {
+      // Tạo phiên mới
+      const sessionId = 'telegram_' + Date.now();
+      sessions[sessionId] = {
+        user: {
+          id: result.user.id,
+          phoneNumber,
+          name: result.user.first_name + (result.user.last_name ? ' ' + result.user.last_name : ''),
+          avatar: null
+        },
+        telegramSession: {
+          authenticated: true,
+          created: new Date()
+        }
+      };
+      
+      return res.json({
+        success: true,
+        sessionId,
+        user: sessions[sessionId].user
+      });
+    } else if (result.error === 'PASSWORD_NEEDED') {
+      return res.json({
+        success: false,
+        error: 'PASSWORD_NEEDED',
+        message: 'Tài khoản này được bảo vệ bằng mật khẩu hai lớp. Vui lòng nhập mật khẩu.'
+      });
+    } else {
+      return res.status(400).json({ error: result.error });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
 });
 
 // Đăng nhập với Telegram (simulated)
@@ -125,8 +265,29 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       userId: sessions[sessionId].user.id
     };
     
+    // Nếu đã kết nối Telegram API và đã đăng nhập, tự động upload
+    if (mtproto) {
+      console.log(`[Telegram API] Đang tự động upload file: ${fileData.name}`);
+      
+      try {
+        const uploadResult = await telegramClient.uploadFile(mtproto, fileData.path, `File: ${fileData.name}`);
+        
+        if (uploadResult.success) {
+          console.log(`[Telegram API] Upload thành công: ${fileData.name}`);
+          fileData.savedToTelegram = true;
+        } else {
+          console.error(`[Telegram API] Lỗi upload: ${uploadResult.error}`);
+          fileData.savedToTelegram = false;
+          fileData.uploadError = uploadResult.error;
+        }
+      } catch (error) {
+        console.error('[Telegram API] Exception khi upload file:', error);
+        fileData.savedToTelegram = false;
+        fileData.uploadError = error.message;
+      }
+    }
     // If Telegram bot is configured, send file to Telegram
-    if (bot) {
+    else if (bot) {
       try {
         console.log(`[Telegram] Uploading file: ${fileData.name}`);
         
@@ -275,6 +436,7 @@ app.get('/api/telegram/config', (req, res) => {
   
   res.json({
     useTelegramBot: !!bot,
+    useTelegramAPI: useMTProto,
     useWebClientUpload: useWebUpload,
     uploadPath: uploadPath.replace(/\\/g, '/')
   });
