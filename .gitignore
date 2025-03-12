@@ -81,4 +81,9 @@ docker-volumes/
 
 # Local scripts
 run.bat
-runbat.bat 
+runbat.bat
+
+# Runtime directories
+.chrome-profile/
+uploads/
+.telegram-sessions/ 
