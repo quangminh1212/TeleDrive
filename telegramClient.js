@@ -71,6 +71,11 @@ try {
 // Hàm xử lý các method API của Telegram
 const callApi = async (method, params = {}, options = {}) => {
   try {
+    if (!mtproto) {
+      return {
+        error: 'Telegram API chưa được khởi tạo hoặc cấu hình không đúng. Vui lòng kiểm tra lại.'
+      };
+    }
     const result = await mtproto.call(method, params, options);
     return result;
   } catch (error) {
@@ -305,6 +310,13 @@ function getMimeType(extension) {
  */
 const checkAuth = async () => {
   try {
+    if (!mtproto) {
+      return {
+        authorized: false,
+        error: 'Telegram API chưa được khởi tạo hoặc cấu hình không đúng.'
+      };
+    }
+    
     const result = await mtproto.call('users.getFullUser', {
       id: {
         _: 'inputUserSelf'
@@ -313,14 +325,23 @@ const checkAuth = async () => {
     
     console.log('User data:', result);
     return {
-      authorized: false,
-      error: 'Not implemented yet'
+      authorized: true,
+      user: result.user
     };
   } catch (error) {
     console.log('Auth check error:', error);
+    
+    // Trả về lỗi cụ thể nếu là AUTH_KEY_UNREGISTERED
+    if (error.error_code === 401) {
+      return {
+        authorized: false,
+        error: 'AUTH_KEY_UNREGISTERED - Chưa đăng nhập vào Telegram API'
+      };
+    }
+    
     return {
       authorized: false,
-      error: error.message
+      error: error.message || 'Lỗi kiểm tra đăng nhập'
     };
   }
 };
