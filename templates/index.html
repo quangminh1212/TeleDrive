@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h2>Lưu trữ và quản lý tệp của bạn trên Telegram</h2>
+                <p>TeleDrive giúp bạn lưu trữ, truy cập và chia sẻ tập tin của mình một cách dễ dàng từ mọi thiết bị. Sử dụng Telegram làm dịch vụ lưu trữ của bạn!</p>
+                <div class="hero-buttons">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary">Đăng ký ngay</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline">Đăng nhập</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="https://via.placeholder.com/500x300?text=TeleDrive" alt="TeleDrive Hero Image">
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="container">
+        <div class="section-title">
+            <h2>Tính năng của TeleDrive</h2>
+            <p>Khám phá những tính năng mạnh mẽ của chúng tôi giúp bạn quản lý tệp một cách hiệu quả</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h3>Lưu trữ không giới hạn</h3>
+                <p>Tận dụng lưu trữ Telegram để lưu trữ tệp của bạn mà không lo về giới hạn dung lượng.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3>Truy cập từ mọi nơi</h3>
+                <p>Truy cập các tệp của bạn từ bất kỳ thiết bị nào có kết nối internet.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3>Bảo mật tối đa</h3>
+                <p>Tệp của bạn được bảo vệ bởi lớp mã hóa của Telegram, đảm bảo an toàn tuyệt đối.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-share-alt"></i>
+                </div>
+                <h3>Chia sẻ dễ dàng</h3>
+                <p>Chia sẻ tệp của bạn với bạn bè và đồng nghiệp chỉ với một vài cú nhấp chuột.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <h3>Tổ chức hiệu quả</h3>
+                <p>Sắp xếp tệp của bạn trong các thư mục và dễ dàng tìm kiếm khi cần.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <h3>Đồng bộ hóa tự động</h3>
+                <p>Đồng bộ hóa tự động tệp của bạn giữa Telegram và dịch vụ lưu trữ đám mây khác.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta" style="background-color: #f8f9fa; padding: 80px 0;">
+    <div class="container">
+        <div style="text-align: center; max-width: 700px; margin: 0 auto;">
+            <h2 style="font-size: 2rem; margin-bottom: 20px;">Bắt đầu sử dụng TeleDrive ngay hôm nay</h2>
+            <p style="margin-bottom: 30px;">Đăng ký miễn phí và bắt đầu quản lý tệp của bạn một cách hiệu quả. Không cần thẻ tín dụng, không có chi phí ẩn.</p>
+            <a href="{{ url_for('register') }}" class="btn btn-primary">Tạo tài khoản miễn phí</a>
+        </div>
+    </div>
+</section>
+{% endblock %} 
