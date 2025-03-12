@@ -1,7 +1,11 @@
 const MTProto = require('@mtproto/core');
 const path = require('path');
 const fs = require('fs');
+const WebSocket = require('ws');
 require('dotenv').config();
+
+// Thêm WebSocket vào global để @mtproto/core có thể sử dụng
+global.WebSocket = WebSocket;
 
 // Tạo thư mục lưu session
 const SESSION_DIR = path.join(__dirname, '.telegram-sessions');
@@ -248,7 +252,7 @@ const checkAuth = async () => {
     console.log('Auth check error:', error);
     return {
       authorized: false,
-      error: error.error_message || 'Not authorized'
+      error: error.message
     };
   }
 };
@@ -275,7 +279,9 @@ const logout = async () => {
   }
 };
 
+// Export các hàm
 module.exports = {
+  mtproto,
   callApi,
   sendCode,
   signIn,
