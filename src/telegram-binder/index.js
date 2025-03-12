@@ -4,7 +4,7 @@ const {Airgram, toObject} = require('./mock-airgram')
 const {join} = require('path')
 const Store = require('electron-store')
 const store = new Store()
-const {addWatches, breakQueue} = require(join(__dirname, '..', 'watcher', 'index.js'))
+const {addWatches} = require(join(__dirname, '..', 'watcher', 'index.js'))
 const log = require('electron-log');
 
 /**

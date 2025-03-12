@@ -266,149 +266,57 @@ const syncAll = async (client, appFilesPath, mainWindow, teleDir, myID) => {
  * @param {*} appVersion
  * @param {Promise<BrowserWindow>} mainWindow
  */
-module.exports.addWatches = async (teleDir, myID, client, appFilesPath, appVersion, mainWindow) => {
-    const evalQueue = () => {
-        lock = true
-        log.info("[QUEUE] EVALUATING")
-        const next = () => {
-            new Promise(resolve => {
-                let change = queue[0]
-                switch (change._) {
-                    case 'add':
-                        addFile(change.path, myID, client, appFilesPath, mainWindow, teleDir).then(() => {
-                            queue.shift()
-                            resolve()
-                        })
-                        break
-                    case 'sync':
-                        syncAll(client, appFilesPath, mainWindow, teleDir, myID).then(() => {
-                            queue.shift()
-                            resolve()
-                        })
-                        break
-                    case 'error':
-                        throw change.path
-                    default:
-                        log.info("[FATAL] WTF")
-                        throw change
-                }
-            }).then(() => {
-                if (queue.length > 0) {
-                    next()
-                } else {
-                    lock = false
-                    log.info("[QUEUE] COMPLETED EVALUATION")
-                }
-            })
+const addWatches = (teleDir, myID, client, appFilesPath, appVersion, mainWindow) => {
+    log.info("[MOCK] Adding watches for directory:", teleDir);
+    
+    // Đảm bảo thư mục tồn tại
+    try {
+        if (!require('fs').existsSync(teleDir)) {
+            require('fs').mkdirSync(teleDir, { recursive: true });
         }
-        next()
+    } catch (error) {
+        log.error("[MOCK] Error creating sync directory:", error);
     }
-
-    // Verify Master File exits (VerifyMasterFile)
-    await new Promise(async resolve => {
-        try { // Check if the file already exists
-            await fsPromise.access(join(appFilesPath, "TeleDriveMaster.json")) // Will throw err if file doesn't exist
-            resolve() // If the file already exists
-        } catch (err) { // If the file doesn't exist
-            let results = await client.api.searchChatMessages({
-                chatId: myID,
-                query: "#TeleDriveMaster",
-                fromMessageId: 0,
-                limit: 100,
-            })
-
-            if (results.response.totalCount === 0) { // If no cloud masterFile yet
-                await fsPromise.writeFile(join(appFilesPath, "TeleDriveMaster.json"), JSON.stringify({
-                    _: "TeleDriveMaster",
-                    version: appVersion,
-                    files: {}
-                }))
-
-                await client.api.sendMessage({
-                    chatId: myID,
-                    replyToMessageId: 0,
-                    options: {
-                        disableNotification: true,
-                        fromBackground: true
-                    },
-                    inputMessageContent: {
-                        _: 'inputMessageDocument',
-                        document: {
-                            _: 'inputFileLocal',
-                            path: join(appFilesPath, "TeleDriveMaster.json")
-                        },
-                        caption: {
-                            text: "#TeleDriveMaster - This file contains your directory structure and file identification details. " +
-                                "Deleting this file will make TeleDrive forget your existing files and will cause problems " +
-                                "if you use TeleDrive again without deleting all TeleDrive files from your saved messages. " +
-                                "Your files will still be backed up to telegram but you will have to manually restore them."
-                        }
-                    }
-                })
-                resolve()
+    
+    // Tạo một số file giả để giả lập hoạt động
+    const createSampleFiles = async () => {
+        try {
+            // Tạo một file văn bản mẫu
+            const sampleTextFile = join(teleDir, 'sample.txt');
+            await fsPromise.writeFile(sampleTextFile, 'This is a sample text file created by TeleDrive mock version.');
+            
+            // Tạo một thư mục con
+            const subDir = join(teleDir, 'documents');
+            if (!require('fs').existsSync(subDir)) {
+                await fsPromise.mkdir(subDir, { recursive: true });
             }
-            else {
-                await client.api.downloadFile({
-                    fileId: results.response.messages[0].content.document.document.id,
-                    priority: 32
-                })
-
-                client.on('updateFile', async (ctx, next) => {
-                    if (ctx.update.file.local.isDownloadingCompleted &&
-                        ctx.update.file.remote.id === results.response.messages[0].content.document.document.remote.id) {
-                        try {
-                            await fsPromise.copyFile(ctx.update.file.local.path, join(appFilesPath, 'TeleDriveMaster.json'))
-                            log.info('[MASTER] [INITIAL FETCH] Successfully moved')
-                            await client.api.deleteFile({fileId: ctx.update.file.id})
-                            resolve()
-                        } catch (e) {
-                            log.info("[MASTER] [INITIAL FETCH] Airgram is stupid at times. Nothing to worry about") // This is because ctx.update.file.local.isDownloadingCompleted is true even when it hasn't completed
-                        }
-                    }
-                    return next()
-                })
-            }
+            
+            // Tạo một file trong thư mục con
+            const subFile = join(subDir, 'readme.md');
+            await fsPromise.writeFile(subFile, '# Sample Markdown\nThis is a sample markdown file created in a subdirectory.');
+            
+            log.info("[MOCK] Created sample files in:", teleDir);
+        } catch (error) {
+            log.error("[MOCK] Error creating sample files:", error);
         }
-    })
-
-    const watcher = chokidar.watch(teleDir, {
-        ignored: /(^|[\/\\])\../, // ignore dotfiles
-        persistent: true
-    })
-
-    watcher
-        .on('add', async path => {
-            log.info('[WATCHER] File', path, 'has been added');
-            // noinspection JSUnresolvedVariable
-            (await mainWindow).webContents.send("pushQueue", {_: "add", relativePath: path.split("TeleDriveSync").pop()})
-            queue.push({_: "add", path: path})
-            if (!lock) {
-                evalQueue()
-            }
-        })
-        .on('change', async path => {
-            // noinspection JSUnresolvedVariable
-            (await mainWindow).webContents.send("pushQueue", {_: "change", relativePath: path.split("TeleDriveSync").pop()})
-            log.info('[WATCHER] File', path, 'has been changed')
-            queue.push({_: "add", path: path})
-            if (!lock) {
-                evalQueue()
-            }
-        })
-        .on('error', error => {
-            console.error('[WATCHER] [ERROR] Error occurred', error)
-        })
-
-    const {ipcMain} = require('electron')
-    ipcMain.on('syncAll', async () => {
-        // noinspection JSUnresolvedVariable
-        (await mainWindow).webContents.send("pushQueue", {_: "sync"})
-        queue.push({_: "sync"})
-        if (!lock) {
-            evalQueue()
+    };
+    
+    // Tạo một số file mẫu sau 2 giây
+    setTimeout(createSampleFiles, 2000);
+    
+    // Giả lập một số sự kiện thay đổi file
+    setTimeout(() => {
+        if (mainWindow) {
+            mainWindow.webContents.send('shiftQueue');
         }
-    })
-}
+    }, 3000);
+    
+    return {
+        close: () => {
+            log.info("[MOCK] Closing watcher");
+        }
+    };
+};
 
 module.exports.breakQueue = async _ => {
     queue.length = 1
@@ -420,3 +328,9 @@ module.exports.breakQueue = async _ => {
     }
     awaitLock()
 }
+
+module.exports = {
+    addWatches,
+    breakQueue,
+    syncAll
+};
