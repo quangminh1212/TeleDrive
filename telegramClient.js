@@ -68,37 +68,60 @@ const checkAuth = async (mtproto) => {
 // Gửi mã xác nhận đăng nhập
 const sendCode = async (mtproto, phone) => {
   try {
+    // Đảm bảo số điện thoại đúng định dạng (có dấu +)
+    const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
+    
+    console.log(`[TelegramClient] Đang gửi mã xác nhận cho: ${formattedPhone}`);
+    
     const result = await mtproto.call('auth.sendCode', {
-      phone_number: phone,
+      phone_number: formattedPhone.replace('+', ''), // Telegram API cần số điện thoại không có dấu +
       settings: {
         _: 'codeSettings',
       },
     });
     
+    console.log(`[TelegramClient] Đã gửi mã xác nhận, hash: ${result.phone_code_hash.substring(0, 5)}...`);
     return { success: true, phone_code_hash: result.phone_code_hash };
   } catch (error) {
     console.error('[TelegramClient] Lỗi gửi mã:', error);
-    return { success: false, error: error.error_message };
+    // Trả về thông báo lỗi cụ thể hơn
+    return { 
+      success: false, 
+      error: error.error_message || error.message || 'Không thể gửi mã xác nhận',
+      details: error 
+    };
   }
 };
 
 // Đăng nhập với mã xác nhận
 const signIn = async (mtproto, { phone, code, phone_code_hash }) => {
   try {
+    // Đảm bảo số điện thoại đúng định dạng (có dấu +)
+    const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
+    
+    console.log(`[TelegramClient] Đang đăng nhập với mã: ${code}, phone: ${formattedPhone}`);
+    
     const result = await mtproto.call('auth.signIn', {
-      phone_number: phone,
+      phone_number: formattedPhone.replace('+', ''), // Telegram API cần số điện thoại không có dấu +
       phone_code_hash,
       phone_code: code,
     });
     
+    console.log('[TelegramClient] Đăng nhập thành công:', result.user.first_name);
     return { success: true, user: result.user };
   } catch (error) {
+    console.error('[TelegramClient] Lỗi đăng nhập:', error);
+    
     if (error.error_message === 'SESSION_PASSWORD_NEEDED') {
       return { success: false, error: 'PASSWORD_NEEDED' };
     }
     
-    console.error('[TelegramClient] Lỗi đăng nhập:', error);
-    return { success: false, error: error.error_message };
+    // Trả về thông báo lỗi cụ thể hơn
+    return { 
+      success: false, 
+      error: error.error_message || error.message || 'Không thể đăng nhập',
+      details: error 
+    };
   }
 };
 

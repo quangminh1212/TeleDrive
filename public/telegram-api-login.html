@@ -176,6 +176,10 @@
                 return;
             }
             
+            // Kiểm tra xem số điện thoại đã có dấu + chưa
+            const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
+            console.log('Sending code to phone:', formattedPhone);
+            
             // Hiển thị trạng thái đang xử lý
             showStatus('Đang gửi mã xác nhận...', 'info');
             
@@ -183,10 +187,11 @@
                 const response = await fetch('/api/telegram/send-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: '+' + phone })
+                    body: JSON.stringify({ phoneNumber: formattedPhone })
                 });
                 
                 const data = await response.json();
+                console.log('Server response:', data);
                 
                 if (response.ok && data.success) {
                     // Lưu phone_code_hash
@@ -199,6 +204,7 @@
                     showError(data.error || 'Không thể gửi mã xác nhận');
                 }
             } catch (error) {
+                console.error('Error sending code:', error);
                 showError('Lỗi kết nối: ' + error.message);
             }
         });
@@ -214,19 +220,24 @@
             }
             
             showStatus('Đang xác thực...', 'info');
+            console.log('Confirming code:', code, 'for phone:', phone);
             
             try {
+                // Kiểm tra xem số điện thoại đã có dấu + chưa
+                const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
+                
                 const response = await fetch('/api/telegram/sign-in', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        phoneNumber: '+' + phone,
+                        phoneNumber: formattedPhone,
                         code,
                         phoneCodeHash
                     })
                 });
                 
                 const data = await response.json();
+                console.log('Sign-in response:', data);
                 
                 if (response.ok && data.success) {
                     // Đăng nhập thành công
@@ -262,6 +273,7 @@
                     showError(data.error || 'Mã xác nhận không đúng');
                 }
             } catch (error) {
+                console.error('Error confirming code:', error);
                 showError('Lỗi kết nối: ' + error.message);
             }
         });
