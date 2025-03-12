@@ -1,22 +1,36 @@
 import React from 'react';
 import Document, { Html, Head, Main, NextScript, DocumentContext } from 'next/document';
-import { ServerStyleSheets } from '@mui/styles';
+import createEmotionServer from '@emotion/server/create-instance';
+import { createEmotionCache } from '../utils/createEmotionCache';
 
 class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
-    const sheets = new ServerStyleSheets();
     const originalRenderPage = ctx.renderPage;
+    
+    // Tạo cache instance
+    const cache = createEmotionCache();
+    const { extractCriticalToChunks } = createEmotionServer(cache);
 
     ctx.renderPage = () =>
       originalRenderPage({
-        enhanceApp: (App) => (props) => sheets.collect(<App {...props} />),
+        enhanceApp: (App: any) => (props) => <App emotionCache={cache} {...props} />,
       });
 
     const initialProps = await Document.getInitialProps(ctx);
+    
+    // Trích xuất CSS
+    const emotionStyles = extractCriticalToChunks(initialProps.html);
+    const emotionStyleTags = emotionStyles.styles.map((style) => (
+      <style
+        data-emotion={`${style.key} ${style.ids.join(' ')}`}
+        key={style.key}
+        dangerouslySetInnerHTML={{ __html: style.css }}
+      />
+    ));
 
     return {
       ...initialProps,
-      styles: [...React.Children.toArray(initialProps.styles), sheets.getStyleElement()],
+      styles: [...React.Children.toArray(initialProps.styles), ...emotionStyleTags],
     };
   }
 
