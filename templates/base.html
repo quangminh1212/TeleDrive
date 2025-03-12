@@ -3,41 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}TeleDrive - Quản lý tệp trực tuyến{% endblock %}</title>
+    <title>{% block title %}TeleDrive - Lưu trữ tệp trên Telegram{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    {% if current_user.is_authenticated %}
     <header class="header">
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="TeleDrive Logo" onerror="this.src='https://via.placeholder.com/40x40?text=TD'">
-                    <h1>TeleDrive</h1>
+                    <a href="{{ url_for('browse_files') }}">
+                        <i class="fas fa-cloud"></i>
+                        <h1>TeleDrive</h1>
+                    </a>
                 </div>
                 <div class="nav-links">
-                    {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('dashboard') }}">Bảng điều khiển</a>
-                        <a href="{{ url_for('browse_files') }}">Tệp của tôi</a>
-                        <a href="{{ url_for('logout') }}">Đăng xuất</a>
-                    {% else %}
-                        <a href="{{ url_for('login') }}">Đăng nhập</a>
-                        <a href="{{ url_for('register') }}">Đăng ký</a>
-                    {% endif %}
+                    <div class="user-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span>{{ current_user.username }}</span>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
                 </div>
             </div>
         </div>
     </header>
+    {% endif %}
 
     <main>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="container" style="margin-top: 80px;">
+                <div class="container{% if not current_user.is_authenticated %} auth-container{% endif %}">
                     {% for category, message in messages %}
                         <div class="alert alert-{{ category }}">
                             {{ message }}
+                            <button type="button" class="close" onclick="this.parentElement.style.display='none'">×</button>
                         </div>
                     {% endfor %}
                 </div>
@@ -47,20 +49,20 @@
         {% block content %}{% endblock %}
     </main>
 
+    {% if current_user.is_authenticated %}
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="copyright">
-                    &copy; 2023 TeleDrive. Đã đăng ký bản quyền.
+                    &copy; 2023 TeleDrive
                 </div>
-                <div class="footer-links">
-                    <a href="#">Chính sách bảo mật</a>
-                    <a href="#">Điều khoản sử dụng</a>
-                    <a href="#">Liên hệ</a>
+                <div class="storage-info">
+                    Dung lượng đã dùng: {{ usage if usage is defined else '0 B' }}
                 </div>
             </div>
         </div>
     </footer>
+    {% endif %}
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block extra_js %}{% endblock %}
