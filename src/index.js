@@ -1,21 +1,21 @@
 require('dotenv').config();
-const TelegramBot = require('node-telegram-bot-api');
+// const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs-extra');
 const path = require('path');
 const logger = require('./utils/logger');
-const commandHandler = require('./handlers/commandHandler');
-const fileHandler = require('./handlers/fileHandler');
-const menuHandler = require('./handlers/menuHandler');
+// const commandHandler = require('./handlers/commandHandler');
+// const fileHandler = require('./handlers/fileHandler');
+// const menuHandler = require('./handlers/menuHandler');
 const webServer = require('./web/server');
 
 // Khởi tạo thông số bot
-const token = process.env.TELEGRAM_BOT_TOKEN;
+// const token = process.env.TELEGRAM_BOT_TOKEN;
 const storagePath = process.env.STORAGE_PATH || './storage';
-const botUsername = process.env.BOT_USERNAME || 'teledrive_bot';
+// const botUsername = process.env.BOT_USERNAME || 'teledrive_bot';
 const webPort = process.env.WEB_PORT || 3000;
 
 // Khởi tạo bot
-const bot = new TelegramBot(token, { polling: true });
+// const bot = new TelegramBot(token, { polling: true });
 
 // Đảm bảo thư mục lưu trữ tồn tại
 fs.ensureDirSync(storagePath);
@@ -33,6 +33,7 @@ logger.info('Thư mục web interface đã được khởi tạo');
 webServer.startServer();
 logger.info(`Web interface đã được khởi động tại http://localhost:${webPort}`);
 
+/*
 // Xử lý lệnh start
 bot.onText(/\/start/, (msg) => {
     commandHandler.handleStart(bot, msg);
@@ -95,4 +96,5 @@ bot.on('text', (msg) => {
 });
 
 // Thông báo khởi động thành công
-logger.info(`Bot đã khởi động! @${botUsername}`); 
+logger.info(`Bot đã khởi động! @${botUsername}`);
+*/ 
