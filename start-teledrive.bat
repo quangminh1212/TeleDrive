@@ -41,6 +41,12 @@ echo # Next.js Client Configuration > client\.env.local
 echo NEXT_PUBLIC_API_URL=http://localhost:5001 >> client\.env.local
 echo NEXT_PUBLIC_PORT=3001 >> client\.env.local
 
+REM Cập nhật package.json của client để sử dụng port 3001
+echo Cập nhật package.json để sử dụng port 3001...
+cd client
+powershell -Command "(Get-Content package.json) -replace '\"dev\": \"next dev\"', '\"dev\": \"next dev -p 3001\"' | Set-Content package.json"
+cd ..
+
 REM Kiểm tra và cài đặt dependencies còn thiếu
 echo Kiểm tra và cài đặt dependencies còn thiếu...
 cd client
@@ -85,6 +91,11 @@ echo // Routes
 echo // app.use('/api/auth', authRoutes);
 echo // app.use('/api/files', fileRoutes);
 echo // app.use('/api/users', userRoutes);
+echo.
+echo // API health check route
+echo app.get('/api/health', (req, res) =^> {
+echo   res.status(200).json({ status: 'ok', message: 'TeleDrive API đang hoạt động' });
+echo });
 echo.
 echo // Serve static assets in production
 echo if (process.env.NODE_ENV === 'production') {
@@ -157,13 +168,18 @@ netstat -ano | findstr :5001
 netstat -ano | findstr :3000
 netstat -ano | findstr :3001
 
-REM Chờ xác nhận từ người dùng
 echo.
-echo Port 5001 sẽ được sử dụng cho server
-echo Port 3001 sẽ được sử dụng cho client
+echo ===================================================
+echo Cấu hình hoàn tất
+echo ===================================================
+echo.
+echo Server: http://localhost:5001
+echo Client: http://localhost:3001
+echo API Health Check: http://localhost:5001/api/health
 echo.
 echo Đã sửa file cấu hình và cài đặt lại dependencies.
 echo Đã đơn giản hóa file _document.tsx để tránh lỗi với Material-UI.
+echo Đã thêm endpoint /api/health để kiểm tra trạng thái server.
 echo.
 echo Nếu vẫn thấy các port này bị chiếm, hãy mở Task Manager và kết thúc tiến trình tương ứng.
 echo.
