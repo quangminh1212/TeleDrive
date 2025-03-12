@@ -220,14 +220,15 @@
                             <ul class="dropdown-menu country-select" id="countryDropdown">
                                 <!-- Danh sách quốc gia sẽ được thêm bằng JavaScript -->
                             </ul>
-                            <input type="tel" class="form-control" id="phoneNumber" placeholder="936374950">
+                            <input type="tel" class="form-control" id="phoneNumber" placeholder="Nhập số điện thoại">
                         </div>
-                        <div class="form-text">Chọn mã quốc gia và nhập số điện thoại KHÔNG có số 0 đầu</div>
+                        <div class="form-text">Nhập đầy đủ số điện thoại (có thể bắt đầu bằng số 0)</div>
                         
                         <div class="phone-example mt-2">
-                            <strong>Ví dụ đúng:</strong><br>
-                            • Chọn Việt Nam (+84) và nhập <code>936374950</code> (bỏ số 0 đầu)<br>
-                            • Chọn Hoa Kỳ (+1) và nhập <code>2345678901</code>
+                            <strong>Hướng dẫn nhập:</strong><br>
+                            • Có thể nhập <code>0936374950</code> hoặc <code>936374950</code> (tự động chuyển đổi)<br>
+                            • Mã quốc gia Việt Nam (+84) được chọn mặc định<br>
+                            • Chọn mã quốc gia khác nếu không dùng số Việt Nam
                         </div>
                     </div>
                     <div class="d-grid mt-3">
@@ -373,11 +374,16 @@
         // Nút gửi mã
         document.getElementById('sendCodeBtn').addEventListener('click', async function() {
             const phoneInput = document.getElementById('phoneNumber');
-            const phoneNumber = phoneInput.value.trim();
+            let phoneNumber = phoneInput.value.trim();
             
             if (!phoneNumber) {
                 showError('Vui lòng nhập số điện thoại');
                 return;
+            }
+            
+            // Xử lý số điện thoại bắt đầu bằng số 0 cho Việt Nam
+            if (selectedCountryCode === '84' && phoneNumber.startsWith('0')) {
+                phoneNumber = phoneNumber.substring(1);
             }
             
             // Thêm mã quốc gia đã chọn vào số điện thoại
@@ -444,11 +450,7 @@
         document.getElementById('phoneNumber').addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
             
-            // Nếu bắt đầu bằng số 0, loại bỏ nó
-            if (value.startsWith('0')) {
-                value = value.substring(1);
-            }
-            
+            // Giữ nguyên số 0 ở đầu (sẽ tự động xử lý khi gửi)
             e.target.value = value;
         });
         

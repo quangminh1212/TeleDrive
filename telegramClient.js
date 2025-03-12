@@ -110,6 +110,12 @@ const sendCode = async (phone, apiId, apiHash) => {
     // Loại bỏ tất cả ký tự không phải số sau dấu +
     formattedPhone = '+' + formattedPhone.substring(1).replace(/\D/g, '');
     
+    // Xử lý riêng cho số Việt Nam (+84): nếu có số 0 sau mã quốc gia, loại bỏ nó
+    if (formattedPhone.startsWith('+840')) {
+      console.log('Phát hiện số Việt Nam bắt đầu bằng 0, đang định dạng lại...');
+      formattedPhone = '+84' + formattedPhone.substring(4);
+    }
+    
     console.log(`Sending code to phone: ${formattedPhone} with API ID: ${apiId} and API Hash: ${apiHash}`);
     
     // Kiểm tra API ID và API Hash
@@ -133,7 +139,7 @@ const sendCode = async (phone, apiId, apiHash) => {
     return {
       phone_code_hash: result.phone_code_hash,
       type: result.type?._,
-      phone
+      phone: formattedPhone // Trả về số điện thoại đã được định dạng
     };
   } catch (error) {
     console.error('Error sending code:', error);
