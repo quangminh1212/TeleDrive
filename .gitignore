@@ -86,4 +86,7 @@ runbat.bat
 # Runtime directories
 .chrome-profile/
 uploads/
-.telegram-sessions/ 
+.telegram-sessions/
+node_modules/
+*.session
+*.session-journal 
