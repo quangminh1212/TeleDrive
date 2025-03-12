@@ -64,14 +64,14 @@ window.addEventListener('DOMContentLoaded', () => {
     const queueButton = document.getElementById('queueButton')
     
     // Thành phần UI mới
-    const connectionStatus = document.getElementById('connectionStatus')
-    const syncProgress = document.getElementById('syncProgress')
-    const progressIndicator = document.getElementById('progressIndicator')
-    const progressText = document.getElementById('progressText')
-    const quickActions = document.getElementById('quickActions')
-    const actionPause = document.getElementById('actionPause')
-    const actionResume = document.getElementById('actionResume')
-    const actionRefresh = document.getElementById('actionRefresh')
+    const connectionStatus = document.getElementById('connectionStatus') || createConnectionStatusElement();
+    const syncProgress = document.getElementById('syncProgress') || createSyncProgressElement();
+    const progressIndicator = document.getElementById('progressIndicator') || document.querySelector('.progress-indicator');
+    const progressText = document.getElementById('progressText') || document.querySelector('.progress-text');
+    const quickActions = document.getElementById('quickActions') || createQuickActionsElement();
+    const actionPause = document.getElementById('actionPause') || document.querySelector('.action-pause');
+    const actionResume = document.getElementById('actionResume') || document.querySelector('.action-resume');
+    const actionRefresh = document.getElementById('actionRefresh') || document.querySelector('.action-refresh');
 
     // Thêm nút analytics
     const analyticsButton = document.createElement('div');
@@ -1237,33 +1237,179 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // Thêm lắng nghe sự kiện nhận thông tin người dùng
-    ipcRenderer.on('userInfo', (event, user) => {
-        console.log("User info received:", user);
+    ipcRenderer.on('userInfo', (event, myInfo) => {
+        console.log("Updating user info:", myInfo);
         
-        if (user && user.firstName) {
-            const userInfo = document.getElementById('userInfo') || (() => {
-                const el = document.createElement('div');
-                el.id = 'userInfo';
-                el.style.marginTop = '15px';
-                el.style.textAlign = 'center';
-                profile.appendChild(el);
-                return el;
-            })();
+        // Đánh dấu là đã xác thực
+        appState.authenticated = true;
+        
+        // Cập nhật thông tin người dùng
+        name.innerHTML = myInfo.name || 'Unknown'
+        number.innerHTML = myInfo.number || 'No number'
+        if (myInfo.photo) {
+            console.log("Setting profile picture from:", myInfo.photo);
+            profilePicture.src = myInfo.photo
+        } else {
+            console.log("No profile picture available");
+        }
+        
+        // Nếu đang ở màn hình "Connecting...", cập nhật UI
+        if (title.innerHTML === 'Connecting...') {
+            console.log("User info received, updating UI from connecting state");
             
-            userInfo.innerHTML = `
-                <div style="font-weight: bold; font-size: 16px;">${user.firstName} ${user.lastName || ''}</div>
-                <div style="color: #666; font-size: 14px;">${user.phoneNumber || user.username || ''}</div>
-            `;
+            // Cập nhật UI
+            title.innerHTML = 'Login Successful';
+            profile.style.display = '';
+            description.innerHTML = 'Select the location for <br> your synced folder';
+            description.style.display = '';
+            button.innerHTML = 'Open';
+            button.style.display = '';
+            input.style.display = 'none';
             
-            if (user.photoUrl) {
-                profilePicture.src = user.photoUrl;
-                profilePicture.style.display = '';
-            }
+            // Thêm event listener cho nút chọn thư mục
+            button.addEventListener('click', function f() {
+                console.log("User clicked to open file dialog");
+                ipcRenderer.send('openFileDialog');
+                button.removeEventListener('click', f);
+            });
             
-            // Lưu số điện thoại để sử dụng lần sau
-            if (user.phoneNumber) {
-                localStorage.setItem('phoneNumber', user.phoneNumber);
-            }
+            // Tự động mở hộp thoại chọn thư mục
+            setTimeout(() => {
+                console.log("[AUTO] Automatically opening file dialog after user info");
+                ipcRenderer.send('openFileDialog');
+            }, 500);
+            
+            // Hiển thị các nút chức năng
+            analyticsButton.style.display = '';
+            optimizeButton.style.display = '';
+            showQuickActions(true);
+            
+            // Cập nhật trạng thái kết nối
+            updateConnectionStatus('connected');
         }
     });
+
+    // Hàm tạo phần tử trạng thái kết nối nếu nó không tồn tại
+    function createConnectionStatusElement() {
+        const element = document.createElement('div');
+        element.id = 'connectionStatus';
+        element.className = 'connection-status connecting';
+        element.innerHTML = `
+            <div class="status-indicator yellow"></div>
+            <span>Đang kết nối...</span>
+        `;
+        element.style.position = 'absolute';
+        element.style.top = '10px';
+        element.style.right = '10px';
+        element.style.padding = '5px 10px';
+        element.style.borderRadius = '5px';
+        element.style.fontSize = '12px';
+        element.style.display = 'flex';
+        element.style.alignItems = 'center';
+        element.style.gap = '5px';
+        document.body.appendChild(element);
+        return element;
+    }
+    
+    // Hàm tạo phần tử tiến trình đồng bộ nếu nó không tồn tại
+    function createSyncProgressElement() {
+        const element = document.createElement('div');
+        element.id = 'syncProgress';
+        element.className = 'sync-progress';
+        element.style.display = 'none';
+        element.innerHTML = `
+            <div class="progress-indicator"></div>
+            <div class="progress-text">Đang đồng bộ...</div>
+        `;
+        element.style.position = 'absolute';
+        element.style.bottom = '50px';
+        element.style.left = '50%';
+        element.style.transform = 'translateX(-50%)';
+        element.style.width = '90%';
+        element.style.maxWidth = '350px';
+        element.style.padding = '10px';
+        element.style.borderRadius = '5px';
+        element.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        element.style.color = 'white';
+        element.style.textAlign = 'center';
+        document.body.appendChild(element);
+        return element;
+    }
+    
+    // Hàm tạo phần tử thao tác nhanh nếu nó không tồn tại
+    function createQuickActionsElement() {
+        const element = document.createElement('div');
+        element.id = 'quickActions';
+        element.className = 'quick-actions';
+        element.style.display = 'none';
+        element.innerHTML = `
+            <div id="actionPause" class="action-button action-pause" title="Tạm dừng đồng bộ">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20">
+                    <path fill="currentColor" d="M224 432h-80V80h80zM368 432h-80V80h80z"/>
+                </svg>
+            </div>
+            <div id="actionResume" class="action-button action-resume" title="Tiếp tục đồng bộ">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20">
+                    <path fill="currentColor" d="M133 440a35.37 35.37 0 01-17.5-4.67c-12-6.8-19.46-20-19.46-34.33V111c0-14.37 7.46-27.53 19.46-34.33a35.13 35.13 0 0135.77.45l247.85 148.36a36 36 0 010 61l-247.89 148.4A35.5 35.5 0 01133 440z"/>
+                </svg>
+            </div>
+            <div id="actionRefresh" class="action-button action-refresh" title="Làm mới trạng thái">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20">
+                    <path fill="currentColor" d="M320 146s24.36-12-64-12a160 160 0 10160 160" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="32"/>
+                    <path fill="currentColor" d="M256 58l80 80-80 80" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/>
+                </svg>
+            </div>
+        `;
+        element.style.position = 'absolute';
+        element.style.bottom = '100px';
+        element.style.right = '20px';
+        element.style.display = 'flex';
+        element.style.flexDirection = 'column';
+        element.style.gap = '10px';
+        document.body.appendChild(element);
+        
+        // Thêm CSS cho các nút thao tác
+        const style = document.createElement('style');
+        style.textContent = `
+            .action-button {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            .action-button:hover {
+                background-color: rgba(0, 0, 0, 0.9);
+                transform: scale(1.1);
+            }
+            .status-indicator {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+            }
+            .status-indicator.green { background-color: #4CAF50; }
+            .status-indicator.yellow { background-color: #FFC107; }
+            .status-indicator.red { background-color: #F44336; }
+            .connection-status {
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+            }
+            .progress-indicator {
+                height: 5px;
+                background-color: #4CAF50;
+                width: 0%;
+                border-radius: 5px;
+                margin-bottom: 5px;
+                transition: width 0.3s ease;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        return element;
+    }
 });
