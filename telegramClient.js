@@ -220,20 +220,87 @@ const uploadFile = async (filePath, caption = '') => {
     const fileContent = fs.readFileSync(filePath);
     const fileName = path.basename(filePath);
     
-    // TODO: Implement upload file
     console.log(`Uploading file: ${fileName} (${fileContent.length} bytes)`);
     
-    // Upload file code sẽ được thêm ở đây
+    // Kiểm tra ID chat Telegram
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    if (!chatId) {
+      throw new Error('TELEGRAM_CHAT_ID không được cấu hình trong file .env');
+    }
+    
+    // Xác định loại file dựa vào phần mở rộng
+    const fileExt = path.extname(fileName).toLowerCase();
+    const mimeType = getMimeType(fileExt);
+    
+    // Chuẩn bị thông tin media để upload
+    let attributes = [
+      {
+        _: 'documentAttributeFilename',
+        file_name: fileName
+      }
+    ];
+    
+    // Upload file lên Telegram
+    const result = await mtproto.call('messages.sendMedia', {
+      peer: {
+        _: 'inputPeerChat',
+        chat_id: parseInt(chatId.replace('-100', ''))
+      },
+      media: {
+        _: 'inputMediaUploadedDocument',
+        file: {
+          _: 'inputFile',
+          id: Math.floor(Math.random() * 999999999),
+          parts: 1,
+          name: fileName,
+          md5_checksum: '',
+        },
+        mime_type: mimeType,
+        attributes: attributes,
+        caption: caption || ''
+      },
+      random_id: Math.floor(Math.random() * 999999999)
+    });
+    
+    console.log('File uploaded successfully:', result);
     
     return {
       success: true,
-      message: 'File upload function is under development'
+      result: result
     };
   } catch (error) {
     console.error('Error uploading file:', error);
-    throw error;
+    return {
+      success: false,
+      error: error.message
+    };
   }
 };
+
+/**
+ * Lấy MIME type từ phần mở rộng file
+ * @param {string} extension Phần mở rộng file (.jpg, .pdf, ...)
+ * @returns {string} MIME type
+ */
+function getMimeType(extension) {
+  const mimeTypes = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.pdf': 'application/pdf',
+    '.doc': 'application/msword',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.xls': 'application/vnd.ms-excel',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.txt': 'text/plain',
+    '.zip': 'application/zip',
+    '.mp3': 'audio/mpeg',
+    '.mp4': 'video/mp4'
+  };
+  
+  return mimeTypes[extension] || 'application/octet-stream';
+}
 
 /**
  * Kiểm tra xem đã đăng nhập chưa
