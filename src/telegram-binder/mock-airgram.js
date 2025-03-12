@@ -4,6 +4,18 @@ const log = require('electron-log');
 const fs = require('fs');
 const path = require('path');
 
+// Lưu trữ dữ liệu đã thu thập để hiển thị và phân tích
+const collectData = {
+    files: {},
+    messages: [],
+    interactions: {},
+    stats: {
+        filesBackedUp: 0,
+        totalSize: 0,
+        lastBackup: new Date().toISOString()
+    }
+};
+
 class MockAirgram extends EventEmitter {
     constructor(config) {
         super();
@@ -12,8 +24,32 @@ class MockAirgram extends EventEmitter {
         // Log thông tin API đã cập nhật
         log.info("[MOCK] Using API credentials - ID:", config.apiId, "Hash:", config.apiHash);
         
+        // Đảm bảo các thư mục tồn tại
+        try {
+            if (!fs.existsSync(this.config.databaseDirectory)) {
+                fs.mkdirSync(this.config.databaseDirectory, { recursive: true });
+            }
+            if (!fs.existsSync(this.config.filesDirectory)) {
+                fs.mkdirSync(this.config.filesDirectory, { recursive: true });
+            }
+            
+            // Tạo thư mục cho dữ liệu đã thu thập
+            const dataDir = path.join(this.config.filesDirectory, 'collected_data');
+            if (!fs.existsSync(dataDir)) {
+                fs.mkdirSync(dataDir, { recursive: true });
+            }
+            
+            // Lưu dữ liệu mẫu vào thư mục
+            const sampleDataPath = path.join(dataDir, 'sample_data.json');
+            fs.writeFileSync(sampleDataPath, JSON.stringify(collectData, null, 2));
+            log.info("[MOCK] Created sample data file at:", sampleDataPath);
+        } catch (error) {
+            log.error("[MOCK] Error creating directories:", error);
+        }
+        
         this.api = {
             getAuthorizationState: async () => {
+                log.info("[MOCK] getAuthorizationState called");
                 return {
                     response: {
                         _: "authorizationStateReady"
@@ -21,6 +57,7 @@ class MockAirgram extends EventEmitter {
                 };
             },
             setAuthenticationPhoneNumber: async () => {
+                log.info("[MOCK] setAuthenticationPhoneNumber called");
                 return {
                     response: {
                         _: "ok"
@@ -28,6 +65,7 @@ class MockAirgram extends EventEmitter {
                 };
             },
             checkAuthenticationCode: async () => {
+                log.info("[MOCK] checkAuthenticationCode called");
                 return {
                     response: {
                         _: "ok"
@@ -35,6 +73,7 @@ class MockAirgram extends EventEmitter {
                 };
             },
             checkAuthenticationPassword: async () => {
+                log.info("[MOCK] checkAuthenticationPassword called");
                 return {
                     response: {
                         _: "ok"
@@ -42,6 +81,7 @@ class MockAirgram extends EventEmitter {
                 };
             },
             getMe: async () => {
+                log.info("[MOCK] getMe called");
                 // Tạo ảnh hồ sơ giả
                 const profileImagePath = path.join(this.config.filesDirectory, 'mock-profile.png');
                 if (!fs.existsSync(profileImagePath)) {
@@ -72,6 +112,7 @@ class MockAirgram extends EventEmitter {
                 };
             },
             getChats: async () => {
+                log.info("[MOCK] getChats called");
                 return {
                     response: {
                         _: "chats",
@@ -83,6 +124,13 @@ class MockAirgram extends EventEmitter {
             downloadFile: async (params) => {
                 log.info("[MOCK] Downloading file:", params.fileId);
                 
+                const mockFilePath = path.join(this.config.filesDirectory, `mock-file-${params.fileId}`);
+                
+                // Tạo file mẫu nếu nó không tồn tại
+                if (!fs.existsSync(mockFilePath)) {
+                    fs.writeFileSync(mockFilePath, `Mock file content for file ID: ${params.fileId}`);
+                }
+                
                 // Giả lập việc tải file xong
                 setTimeout(() => {
                     this.emit('updateFile', {
@@ -90,7 +138,7 @@ class MockAirgram extends EventEmitter {
                             file: {
                                 id: params.fileId,
                                 local: {
-                                    path: path.join(this.config.filesDirectory, `mock-file-${params.fileId}`),
+                                    path: mockFilePath,
                                     isDownloadingCompleted: true
                                 },
                                 remote: {
@@ -99,14 +147,25 @@ class MockAirgram extends EventEmitter {
                             }
                         }
                     }, () => {});
-                }, 500);
+                    
+                    // Cập nhật thống kê
+                    collectData.stats.filesBackedUp++;
+                    collectData.stats.totalSize += fs.statSync(mockFilePath).size;
+                    collectData.stats.lastBackup = new Date().toISOString();
+                    
+                    // Lưu lại thống kê
+                    const dataDir = path.join(this.config.filesDirectory, 'collected_data');
+                    const statsPath = path.join(dataDir, 'stats.json');
+                    fs.writeFileSync(statsPath, JSON.stringify(collectData.stats, null, 2));
+                    
+                }, 300);
                 
                 return {
                     response: {
                         _: "file",
                         id: params.fileId,
                         local: {
-                            path: path.join(this.config.filesDirectory, `mock-file-${params.fileId}`),
+                            path: mockFilePath,
                             isDownloadingCompleted: true
                         },
                         remote: {
@@ -117,10 +176,19 @@ class MockAirgram extends EventEmitter {
             },
             sendMessage: async (params) => {
                 log.info("[MOCK] Sending message:", params);
+                
+                // Thêm vào danh sách tin nhắn đã thu thập
+                const messageId = Math.floor(Math.random() * 10000);
+                collectData.messages.push({
+                    id: messageId,
+                    content: params.inputMessageContent,
+                    timestamp: new Date().toISOString()
+                });
+                
                 return {
                     response: {
                         _: "message",
-                        id: Math.floor(Math.random() * 10000),
+                        id: messageId,
                         content: params.inputMessageContent
                     }
                 };
@@ -178,23 +246,12 @@ class MockAirgram extends EventEmitter {
             }
         };
 
-        // Đảm bảo các thư mục tồn tại
-        try {
-            if (!fs.existsSync(this.config.databaseDirectory)) {
-                fs.mkdirSync(this.config.databaseDirectory, { recursive: true });
-            }
-            if (!fs.existsSync(this.config.filesDirectory)) {
-                fs.mkdirSync(this.config.filesDirectory, { recursive: true });
-            }
-        } catch (error) {
-            log.error("[MOCK] Error creating directories:", error);
-        }
-
         // Giả lập quá trình xác thực
         log.info("[MOCK] Simulating auth process");
         
-        // Bước 1: Gửi trạng thái đợi số điện thoại
+        // Bước 1: Gửi trạng thái đợi số điện thoại ngay lập tức
         setTimeout(() => {
+            log.info("[MOCK] Emitting authorizationStateWaitPhoneNumber");
             this.emit('updateAuthorizationState', {
                 update: {
                     authorizationState: {
@@ -205,6 +262,7 @@ class MockAirgram extends EventEmitter {
             
             // Bước 2: Giả lập đã nhập số điện thoại, chuyển sang đợi mã xác thực
             setTimeout(() => {
+                log.info("[MOCK] Emitting authorizationStateWaitCode");
                 this.emit('updateAuthorizationState', {
                     update: {
                         authorizationState: {
@@ -215,6 +273,7 @@ class MockAirgram extends EventEmitter {
                 
                 // Bước 3: Giả lập đã nhập mã xác thực, chuyển sang trạng thái hoàn tất
                 setTimeout(() => {
+                    log.info("[MOCK] Emitting authorizationStateReady");
                     this.emit('updateAuthorizationState', {
                         update: {
                             authorizationState: {
@@ -225,9 +284,9 @@ class MockAirgram extends EventEmitter {
                     
                     // Thông báo cho log khi quá trình xác thực hoàn tất
                     log.info("[MOCK] Authentication process completed, state: authorizationStateReady");
-                }, 300);
-            }, 300);
-        }, 300);
+                }, 100);
+            }, 100);
+        }, 100);
 
         log.info("[MOCK] Airgram initialized with config:", config);
     }
@@ -235,5 +294,7 @@ class MockAirgram extends EventEmitter {
 
 module.exports = {
     Airgram: MockAirgram,
-    toObject: (obj) => obj
+    toObject: (obj) => obj,
+    // Thêm hàm tiện ích để truy cập dữ liệu đã thu thập
+    getCollectedData: () => collectData
 }; 
