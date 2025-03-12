@@ -1,3 +1,119 @@
+// Thêm khai báo electron-log để ghi log
+const log = require('electron-log');
+
+// Cấu hình electron-log
+log.transports.file.level = 'debug';
+log.transports.console.level = 'debug';
+log.transports.file.maxSize = 10 * 1024 * 1024; // 10MB
+log.catchErrors({
+  showDialog: false,
+  onError(error) {
+    log.error('Caught error:', error);
+    if (mainWindow) {
+      mainWindow.webContents.send('error', {
+        message: error.message,
+        stack: error.stack
+      });
+    }
+  }
+});
+
+log.info('=== Application Starting ===');
+log.info('App version:', app.getVersion ? app.getVersion() : 'Unknown');
+log.info('OS:', process.platform, process.arch);
+log.info('Node version:', process.versions.node);
+log.info('Electron version:', process.versions.electron);
+
+app.on('ready', function() {
+  log.info('App ready event triggered');
+  
+  // Create window
+  createWindow();
+  
+  // Cập nhật trạng thái khởi động
+  startupStatus.appReady = true;
+  log.info('Main window created');
+});
+
+// Hàm tạo cửa sổ chính
+function createWindow() {
+  try {
+    // ... existing code ...
+    
+    // Bắt các sự kiện của cửa sổ
+    mainWindow.webContents.on('did-finish-load', () => {
+      log.info('Main window finished loading');
+    });
+    
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+      log.error('Main window failed to load:', errorCode, errorDescription);
+    });
+    
+    mainWindow.on('closed', function() {
+      log.info('Main window closed');
+      mainWindow = null;
+    });
+
+    // Thiết lập debug cho IPC
+    const ipcDebug = (direction, channel, ...args) => {
+      const safeArgs = args.map(arg => {
+        // Chuyển đổi các đối tượng phức tạp thành chuỗi để tránh lỗi circular reference
+        try {
+          if (typeof arg === 'object' && arg !== null) {
+            return JSON.stringify(arg);
+          }
+          return arg;
+        } catch (e) {
+          return '[Complex object]';
+        }
+      });
+      
+      log.debug(`IPC ${direction}: ${channel}`, ...safeArgs);
+    };
+
+    // Ghi log tất cả các sự kiện IPC
+    const originalOn = ipcMain.on;
+    ipcMain.on = function(channel, listener) {
+      return originalOn.call(this, channel, (event, ...args) => {
+        ipcDebug('receive', channel, ...args);
+        return listener(event, ...args);
+      });
+    };
+
+    log.info('Event listeners registered');
+  } catch (error) {
+    log.error('Error creating window:', error);
+  }
+}
+
+// Theo dõi trạng thái khởi động
+const startupStatus = {
+  appReady: false,
+  telegramConnected: false,
+  configLoaded: false
+};
+
+// Kiểm tra kết nối
+ipcMain.on('checkConnection', async (event) => {
+  log.info('Checking Telegram connection');
+  try {
+    const connectionStatus = await checkTelegramConnection();
+    
+    // Gửi trạng thái về renderer process
+    mainWindow.webContents.send('connectionStatus', { connected: connectionStatus });
+    
+    // Cập nhật trạng thái khởi động
+    startupStatus.telegramConnected = connectionStatus;
+    log.info('Connection check result:', connectionStatus);
+  } catch (error) {
+    log.error('Error checking connection:', error);
+    mainWindow.webContents.send('connectionStatus', { connected: false });
+    mainWindow.webContents.send('error', { 
+      message: 'Không thể kết nối đến Telegram: ' + error.message 
+    });
+  }
+});
+
 ipcMain.on('syncAll', async () => {
   mainWindow.webContents.send('syncStarting')
   await sync.syncAll()
@@ -341,51 +457,6 @@ let isConnected = false;
 let lastConnectionCheck = Date.now();
 let syncPaused = false;
 
-// Kiểm tra kết nối
-ipcMain.on('checkConnection', async (event) => {
-  try {
-    // Kiểm tra kết nối với Telegram
-    const connectionStatus = await checkTelegramConnection();
-    
-    // Nếu trạng thái kết nối thay đổi
-    if (connectionStatus !== isConnected) {
-      isConnected = connectionStatus;
-      
-      // Gửi thông báo về renderer process
-      if (isConnected) {
-        mainWindow.webContents.send('connectionRestored');
-      } else {
-        mainWindow.webContents.send('connectionLost');
-      }
-    }
-    
-    // Cập nhật thời gian kiểm tra cuối cùng
-    lastConnectionCheck = Date.now();
-    
-    // Gửi trạng thái về renderer process
-    mainWindow.webContents.send('connectionStatus', { connected: isConnected });
-  } catch (error) {
-    console.error('Lỗi khi kiểm tra kết nối:', error);
-    mainWindow.webContents.send('connectionStatus', { connected: false });
-  }
-});
-
-// Kiểm tra kết nối với Telegram
-async function checkTelegramConnection() {
-  try {
-    // Kiểm tra xem có thể thực hiện một API call đơn giản không
-    // Đây chỉ là mã giả, cần thay thế bằng API call thực tế
-    // const result = await telegram.getMe();
-    // return result != null;
-    
-    // Tạm thời luôn trả về true
-    return true;
-  } catch (error) {
-    console.error('Lỗi khi kiểm tra kết nối Telegram:', error);
-    return false;
-  }
-}
-
 // Tạm dừng đồng bộ
 ipcMain.on('pauseSync', async () => {
   syncPaused = true;
@@ -487,4 +558,48 @@ ipcMain.on('syncAll', async () => {
       message: error.message
     });
   }
-}); 
+});
+
+// Xử lý sự kiện lỗi không mong muốn
+process.on('uncaughtException', (error) => {
+  log.error('Uncaught exception:', error);
+  
+  // Thông báo lỗi cho giao diện người dùng
+  if (mainWindow) {
+    mainWindow.webContents.send('error', {
+      message: 'Lỗi không mong muốn: ' + error.message,
+      stack: error.stack
+    });
+  }
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  log.error('Unhandled rejection at:', promise, 'reason:', reason);
+  
+  // Thông báo lỗi cho giao diện người dùng
+  if (mainWindow) {
+    mainWindow.webContents.send('error', {
+      message: 'Lỗi không xử lý: ' + (reason.message || reason)
+    });
+  }
+});
+
+// Kiểm tra kết nối với Telegram - cải tiến với xử lý lỗi tốt hơn
+async function checkTelegramConnection() {
+  log.debug('Checking Telegram connection');
+  
+  try {
+    // Thử một API call đơn giản
+    if (telegram && telegram.api) {
+      const result = await telegram.api.getMe();
+      log.debug('getMe result:', result);
+      return Boolean(result);
+    } else {
+      log.warn('Telegram client not initialized');
+      return false;
+    }
+  } catch (error) {
+    log.error('Error connecting to Telegram:', error);
+    return false;
+  }
+} 

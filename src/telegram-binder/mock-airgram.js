@@ -4,6 +4,15 @@ const log = require('electron-log');
 const fs = require('fs');
 const path = require('path');
 
+// Cấu hình log
+log.transports.file.level = 'debug';
+log.transports.console.level = 'debug';
+
+// Trạng thái xác thực
+let authState = 'initial';
+let authAttempts = 0;
+const MAX_AUTH_ATTEMPTS = 3;
+
 // Lưu trữ dữ liệu đã thu thập để hiển thị và phân tích
 const collectData = {
     files: {},
@@ -21,21 +30,31 @@ class MockAirgram extends EventEmitter {
         super();
         this.config = config;
         
+        log.info("[MOCK] Constructor called with config:", JSON.stringify(config, null, 2));
+        
+        // Đăng ký xử lý sự kiện lỗi
+        this.on('error', (err) => {
+            log.error('[MOCK] Error event:', err);
+        });
+        
         // Log thông tin API đã cập nhật
         log.info("[MOCK] Using API credentials - ID:", config.apiId, "Hash:", config.apiHash);
         
         // Đảm bảo các thư mục tồn tại
         try {
             if (!fs.existsSync(this.config.databaseDirectory)) {
+                log.info(`[MOCK] Creating database directory: ${this.config.databaseDirectory}`);
                 fs.mkdirSync(this.config.databaseDirectory, { recursive: true });
             }
             if (!fs.existsSync(this.config.filesDirectory)) {
+                log.info(`[MOCK] Creating files directory: ${this.config.filesDirectory}`);
                 fs.mkdirSync(this.config.filesDirectory, { recursive: true });
             }
             
             // Tạo thư mục cho dữ liệu đã thu thập
             const dataDir = path.join(this.config.filesDirectory, 'collected_data');
             if (!fs.existsSync(dataDir)) {
+                log.info(`[MOCK] Creating data directory: ${dataDir}`);
                 fs.mkdirSync(dataDir, { recursive: true });
             }
             
@@ -49,31 +68,107 @@ class MockAirgram extends EventEmitter {
         
         this.api = {
             getAuthorizationState: async () => {
-                log.info("[MOCK] getAuthorizationState called");
+                log.info("[MOCK] getAuthorizationState called, current state:", authState);
+                
+                // Trả về trạng thái xác thực hiện tại
+                let stateResponse;
+                switch (authState) {
+                    case 'initial':
+                        stateResponse = "authorizationStateWaitPhoneNumber";
+                        break;
+                    case 'phone_submitted':
+                        stateResponse = "authorizationStateWaitCode";
+                        break;
+                    case 'code_submitted':
+                        stateResponse = "authorizationStateWaitPassword";
+                        break;
+                    case 'authenticated':
+                        stateResponse = "authorizationStateReady";
+                        break;
+                    default:
+                        stateResponse = "authorizationStateWaitPhoneNumber";
+                }
+                
                 return {
                     response: {
-                        _: "authorizationStateReady"
+                        _: stateResponse
                     }
                 };
             },
-            setAuthenticationPhoneNumber: async () => {
-                log.info("[MOCK] setAuthenticationPhoneNumber called");
+            setAuthenticationPhoneNumber: async (params) => {
+                log.info("[MOCK] setAuthenticationPhoneNumber called with params:", params);
+                
+                // Cập nhật trạng thái
+                authState = 'phone_submitted';
+                authAttempts++;
+                
+                // Log mỗi lần thử
+                log.info(`[MOCK] Authentication attempt ${authAttempts}/${MAX_AUTH_ATTEMPTS}`);
+                
+                // Emit sự kiện
+                setTimeout(() => {
+                    this.emit('updateAuthorizationState', {
+                        update: {
+                            authorizationState: {
+                                _: "authorizationStateWaitCode"
+                            }
+                        }
+                    }, () => {});
+                    
+                    log.info("[MOCK] Emitted authorizationStateWaitCode event");
+                }, 500);
+                
                 return {
                     response: {
                         _: "ok"
                     }
                 };
             },
-            checkAuthenticationCode: async () => {
-                log.info("[MOCK] checkAuthenticationCode called");
+            checkAuthenticationCode: async (params) => {
+                log.info("[MOCK] checkAuthenticationCode called with params:", params);
+                
+                // Cập nhật trạng thái
+                authState = 'code_submitted';
+                
+                // Emit sự kiện
+                setTimeout(() => {
+                    // Giả lập yêu cầu mật khẩu 2FA
+                    this.emit('updateAuthorizationState', {
+                        update: {
+                            authorizationState: {
+                                _: "authorizationStateWaitPassword"
+                            }
+                        }
+                    }, () => {});
+                    
+                    log.info("[MOCK] Emitted authorizationStateWaitPassword event");
+                }, 500);
+                
                 return {
                     response: {
                         _: "ok"
                     }
                 };
             },
-            checkAuthenticationPassword: async () => {
-                log.info("[MOCK] checkAuthenticationPassword called");
+            checkAuthenticationPassword: async (params) => {
+                log.info("[MOCK] checkAuthenticationPassword called with params:", params);
+                
+                // Cập nhật trạng thái
+                authState = 'authenticated';
+                
+                // Emit sự kiện
+                setTimeout(() => {
+                    this.emit('updateAuthorizationState', {
+                        update: {
+                            authorizationState: {
+                                _: "authorizationStateReady"
+                            }
+                        }
+                    }, () => {});
+                    
+                    log.info("[MOCK] Emitted authorizationStateReady event");
+                }, 500);
+                
                 return {
                     response: {
                         _: "ok"
@@ -82,11 +177,19 @@ class MockAirgram extends EventEmitter {
             },
             getMe: async () => {
                 log.info("[MOCK] getMe called");
+                
+                // Nếu chưa xác thực, trả về lỗi
+                if (authState !== 'authenticated') {
+                    log.warn("[MOCK] getMe called but not authenticated");
+                    return null;
+                }
+                
                 // Tạo ảnh hồ sơ giả
                 const profileImagePath = path.join(this.config.filesDirectory, 'mock-profile.png');
                 if (!fs.existsSync(profileImagePath)) {
                     // Tạo file ảnh trống
                     try {
+                        log.info("[MOCK] Creating mock profile image at:", profileImagePath);
                         fs.writeFileSync(profileImagePath, 'mock profile image');
                     } catch (err) {
                         log.error('[MOCK] Error creating profile image:', err);
@@ -247,11 +350,14 @@ class MockAirgram extends EventEmitter {
         };
 
         // Giả lập quá trình xác thực
-        log.info("[MOCK] Simulating auth process");
+        log.info("[MOCK] Starting authentication simulation");
+        
+        // Đặt lại trạng thái xác thực
+        authState = 'initial';
         
         // Bước 1: Gửi trạng thái đợi số điện thoại ngay lập tức
         setTimeout(() => {
-            log.info("[MOCK] Emitting authorizationStateWaitPhoneNumber");
+            log.info("[MOCK] Emitting initial authorizationStateWaitPhoneNumber");
             this.emit('updateAuthorizationState', {
                 update: {
                     authorizationState: {
@@ -259,42 +365,24 @@ class MockAirgram extends EventEmitter {
                     }
                 }
             }, () => {});
-            
-            // Bước 2: Giả lập đã nhập số điện thoại, chuyển sang đợi mã xác thực
-            setTimeout(() => {
-                log.info("[MOCK] Emitting authorizationStateWaitCode");
-                this.emit('updateAuthorizationState', {
-                    update: {
-                        authorizationState: {
-                            _: "authorizationStateWaitCode"
-                        }
-                    }
-                }, () => {});
-                
-                // Bước 3: Giả lập đã nhập mã xác thực, chuyển sang trạng thái hoàn tất
-                setTimeout(() => {
-                    log.info("[MOCK] Emitting authorizationStateReady");
-                    this.emit('updateAuthorizationState', {
-                        update: {
-                            authorizationState: {
-                                _: "authorizationStateReady"
-                            }
-                        }
-                    }, () => {});
-                    
-                    // Thông báo cho log khi quá trình xác thực hoàn tất
-                    log.info("[MOCK] Authentication process completed, state: authorizationStateReady");
-                }, 100);
-            }, 100);
         }, 100);
 
-        log.info("[MOCK] Airgram initialized with config:", config);
+        log.info("[MOCK] Airgram initialized with config:", JSON.stringify(config, null, 2));
     }
 }
 
+// Xuất các hàm và biến
 module.exports = {
     Airgram: MockAirgram,
     toObject: (obj) => obj,
     // Thêm hàm tiện ích để truy cập dữ liệu đã thu thập
-    getCollectedData: () => collectData
+    getCollectedData: () => collectData,
+    // Thêm hàm để truy cập trạng thái xác thực
+    getAuthState: () => authState,
+    // Đặt lại trạng thái xác thực
+    resetAuthState: () => {
+        authState = 'initial';
+        authAttempts = 0;
+        log.info("[MOCK] Auth state reset to initial");
+    }
 }; 
