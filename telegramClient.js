@@ -3,6 +3,7 @@ const fs = require('fs');
 const input = require('input');
 const WebSocket = require('ws');
 const { FileReader } = require('filereader');
+const { MTProto } = require('@mtproto/core');
 require('dotenv').config();
 
 // Tạo thư mục lưu session
