@@ -59,6 +59,14 @@ TeleDriveSync ---- ----- Folder1 ----- MyFile1.txt
 - Queue viewer for uploads
 - Built in conflict resolver
   - When there's a newer file on Saved Messages but you're trying to backup
+- **NEW** Data analytics and statistics
+  - View usage statistics, file information, and interaction metrics
+- **NEW** Storage optimization
+  - Compress files, clean temporary files, and remove duplicates
+- **NEW** Enhanced connection monitoring
+  - Real-time connection status and automatic reconnection
+- **NEW** Quick actions
+  - Pause, resume, and refresh synchronization with one click
 
 # Running from source
 1. Clone repository:
@@ -74,8 +82,36 @@ yarn
 
 3. Run:
 ```bash
-yarn start
+# For Windows Command Prompt
+set NODE_ENV=development && npx electron .
+
+# For Windows PowerShell
+$env:NODE_ENV="development"; npx electron .
+
+# For Linux/macOS
+NODE_ENV=development npx electron .
+
+# Alternatively, use the included run.cmd file on Windows
+run.cmd
 ```
+
+# Troubleshooting
+
+## Connection Issues
+If you're experiencing connection issues:
+
+1. Check your internet connection
+2. Verify that your Telegram account is active
+3. Try restarting the application
+4. Check the logs at `%USERPROFILE%\AppData\Roaming\TeleDrive\logs` (Windows) or `~/Library/Application Support/TeleDrive/logs` (macOS)
+
+## Authentication Problems
+If you're having trouble authenticating:
+
+1. Make sure you're using the correct phone number in international format
+2. Check that you have a valid Telegram account
+3. If using 2FA, ensure your password is correct
+4. Try clearing the application data and starting fresh
 
 # Built with:
 
