@@ -321,6 +321,7 @@ bot.launch()
   })
   .catch(err => {
     console.error('Error starting Telegram bot:', err);
+    console.error('Bot token:', process.env.BOT_TOKEN ? process.env.BOT_TOKEN.substring(0, 10) + '...' : 'Not provided');
     console.log('Application will continue without bot functionality');
     botStatus.isLaunched = false;
     botStatus.error = err;
