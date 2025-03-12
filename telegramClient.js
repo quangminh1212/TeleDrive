@@ -42,13 +42,60 @@ global.localStorage = {
   }
 };
 
+// Thêm WebSocket và FileReader vào global để @mtproto/core có thể sử dụng
+global.WebSocket = WebSocket;
+global.FileReader = FileReader;
+
+// Khởi tạo kết nối
+console.log('[MTProto] Bắt đầu khởi tạo kết nối MTProto...');
+console.log('[MTProto] API_ID:', process.env.TELEGRAM_API_ID);
+console.log('[MTProto] API_HASH:', process.env.TELEGRAM_API_HASH ? `${process.env.TELEGRAM_API_HASH.substring(0, 5)}...` : 'không có');
+console.log('[MTProto] Session path:', path.join(SESSION_DIR, 'telegram-session.json'));
+
+const mtproto = new MTProto({
+  api_id: parseInt(process.env.TELEGRAM_API_ID || 0),
+  api_hash: process.env.TELEGRAM_API_HASH || '',
+  storageOptions: {
+    path: path.join(SESSION_DIR, 'telegram-session.json'),
+  },
+});
+
 // Hàm xử lý các method API của Telegram
 const callApi = async (method, params = {}, options = {}) => {
+  console.log(`[Telegram API] Gọi method ${method} với tham số:`, JSON.stringify(params, null, 2));
   try {
-    console.log(`[Telegram API] Calling ${method} with params:`, params);
-    return { success: true, message: 'API call simulated' };
+    const result = await mtproto.call(method, params, options);
+    console.log(`[Telegram API] Kết quả từ method ${method}:`, JSON.stringify(result, null, 2));
+    return result;
   } catch (error) {
-    console.log(`Error in ${method}:`, error);
+    console.log(`[Telegram API] Lỗi trong method ${method}:`, error);
+    
+    // Xử lý lỗi chi tiết hơn
+    if (error.error_code) {
+      console.log(`[Telegram API] Mã lỗi: ${error.error_code}, Thông báo: ${error.error_message}`);
+    }
+    
+    // Xử lý lỗi AUTH_KEY_UNREGISTERED - cần đăng nhập lại
+    if (error.error_code === 401) {
+      console.log('[Telegram API] Lỗi xác thực 401: Cần đăng nhập lại');
+      return {
+        error: error.error_message || 'Bạn cần phải đăng nhập lại'
+      };
+    }
+    
+    // Xử lý lỗi FLOOD_WAIT
+    if (error.error_message && error.error_message.includes('FLOOD_WAIT')) {
+      const waitTime = error.error_message.match(/FLOOD_WAIT_(\d+)/);
+      const seconds = waitTime ? parseInt(waitTime[1]) : 60;
+      
+      console.log(`[Telegram API] FLOOD_WAIT: Cần chờ ${seconds} giây trước khi thử lại`);
+      
+      return {
+        error: `FLOOD_WAIT_${seconds}`,
+        seconds
+      };
+    }
+    
     throw error;
   }
 };
@@ -60,6 +107,7 @@ const callApi = async (method, params = {}, options = {}) => {
  * @param {string} apiHash API Hash Telegram
  */
 const sendCode = async (phone, apiId, apiHash) => {
+  console.log('[SendCode] Bắt đầu gửi mã xác nhận...');
   try {
     // Xử lý định dạng số điện thoại
     if (!phone) throw new Error('Số điện thoại không được để trống');
@@ -74,23 +122,84 @@ const sendCode = async (phone, apiId, apiHash) => {
     // Loại bỏ tất cả ký tự không phải số sau dấu +
     formattedPhone = '+' + formattedPhone.substring(1).replace(/\D/g, '');
     
-    console.log(`Sending code to phone: ${formattedPhone} with API ID: ${apiId} and API Hash: ${apiHash}`);
+    // Xử lý riêng cho số Việt Nam (+84): nếu có số 0 sau mã quốc gia, loại bỏ nó
+    if (formattedPhone.startsWith('+840')) {
+      console.log('[SendCode] Phát hiện số Việt Nam bắt đầu bằng 0, đang định dạng lại...');
+      formattedPhone = '+84' + formattedPhone.substring(4);
+    }
+    
+    console.log(`[SendCode] Gửi mã xác nhận đến SĐT: ${formattedPhone} với API ID: ${apiId}`);
     
     // Kiểm tra API ID và API Hash
     if (!apiId || !apiHash) {
+      console.log('[SendCode] Lỗi: Thiếu API ID hoặc API Hash');
       throw new Error('Không tìm thấy API ID hoặc API Hash. Vui lòng kiểm tra cấu hình.');
     }
     
-    // Giả lập gửi mã xác nhận
-    console.log('Send code result: Simulated response');
+    console.log('[SendCode] Gọi auth.sendCode với các tham số:');
+    console.log({
+      phone_number: formattedPhone.replace('+', ''),
+      api_id: apiId,
+      api_hash: apiHash
+    });
+    
+    const result = await mtproto.call('auth.sendCode', {
+      phone_number: formattedPhone.replace('+', ''),
+      settings: {
+        _: 'codeSettings',
+        allow_flashcall: false,
+        allow_missed_call: false,
+        allow_app_hash: true,
+      },
+      api_id: apiId,
+      api_hash: apiHash
+    });
+    
+    console.log('[SendCode] Kết quả gửi mã:', JSON.stringify(result, null, 2));
     return {
-      phone_code_hash: 'simulated_hash_' + Date.now(),
-      type: 'app',
-      phone: formattedPhone
+      success: true,
+      phone_code_hash: result.phone_code_hash,
+      type: result.type?._,
+      phone: formattedPhone // Trả về số điện thoại đã được định dạng
     };
   } catch (error) {
-    console.error('Error sending code:', error);
-    throw error;
+    console.error('[SendCode] Lỗi gửi mã xác nhận:', error);
+    console.error('[SendCode] Stack trace:', error.stack);
+    
+    // Xử lý các lỗi cụ thể
+    if (error.error_message?.includes('PHONE_NUMBER_INVALID')) {
+      console.log('[SendCode] Lỗi: Số điện thoại không hợp lệ');
+      return {
+        success: false,
+        error: 'PHONE_NUMBER_INVALID',
+        details: {
+          message: 'Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.',
+          providedPhone: phone
+        }
+      };
+    }
+    
+    if (error.error_message?.includes('API_ID_INVALID')) {
+      console.log('[SendCode] Lỗi: API ID không hợp lệ');
+      return {
+        success: false,
+        error: 'API_ID_INVALID',
+        details: {
+          message: 'API ID không hợp lệ. Vui lòng kiểm tra lại cấu hình.',
+          providedApiId: apiId
+        }
+      };
+    }
+    
+    return {
+      success: false,
+      error: error.message,
+      details: {
+        phone: phone,
+        apiIdProvided: !!apiId,
+        apiHashProvided: !!apiHash
+      }
+    };
   }
 };
 
@@ -148,34 +257,119 @@ const uploadFile = async (filePath, caption = '') => {
     const fileContent = fs.readFileSync(filePath);
     const fileName = path.basename(filePath);
     
-    // TODO: Implement upload file
     console.log(`Uploading file: ${fileName} (${fileContent.length} bytes)`);
     
-    // Upload file code sẽ được thêm ở đây
+    // Kiểm tra ID chat Telegram
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    if (!chatId) {
+      throw new Error('TELEGRAM_CHAT_ID không được cấu hình trong file .env');
+    }
+    
+    // Xác định loại file dựa vào phần mở rộng
+    const fileExt = path.extname(fileName).toLowerCase();
+    const mimeType = getMimeType(fileExt);
+    
+    // Chuẩn bị thông tin media để upload
+    let attributes = [
+      {
+        _: 'documentAttributeFilename',
+        file_name: fileName
+      }
+    ];
+    
+    // Upload file lên Telegram
+    const result = await mtproto.call('messages.sendMedia', {
+      peer: {
+        _: 'inputPeerChat',
+        chat_id: parseInt(chatId.replace('-100', ''))
+      },
+      media: {
+        _: 'inputMediaUploadedDocument',
+        file: {
+          _: 'inputFile',
+          id: Math.floor(Math.random() * 999999999),
+          parts: 1,
+          name: fileName,
+          md5_checksum: '',
+        },
+        mime_type: mimeType,
+        attributes: attributes,
+        caption: caption || ''
+      },
+      random_id: Math.floor(Math.random() * 999999999)
+    });
+    
+    console.log('File uploaded successfully:', result);
     
     return {
       success: true,
-      message: 'File upload function is under development'
+      result: result
     };
   } catch (error) {
     console.error('Error uploading file:', error);
-    throw error;
+    return {
+      success: false,
+      error: error.message
+    };
   }
 };
+
+/**
+ * Lấy MIME type từ phần mở rộng file
+ * @param {string} extension Phần mở rộng file (.jpg, .pdf, ...)
+ * @returns {string} MIME type
+ */
+function getMimeType(extension) {
+  const mimeTypes = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.pdf': 'application/pdf',
+    '.doc': 'application/msword',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.xls': 'application/vnd.ms-excel',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.txt': 'text/plain',
+    '.zip': 'application/zip',
+    '.mp3': 'audio/mpeg',
+    '.mp4': 'video/mp4'
+  };
+  
+  return mimeTypes[extension] || 'application/octet-stream';
+}
 
 /**
  * Kiểm tra xem đã đăng nhập chưa
  */
 const checkAuth = async () => {
+  console.log('[CheckAuth] Đang kiểm tra trạng thái đăng nhập...');
   try {
-    // Giả lập kiểm tra đăng nhập
-    console.log('Auth check: Simulated response');
+    console.log('[CheckAuth] Gọi users.getFullUser với inputUserSelf');
+    const result = await mtproto.call('users.getFullUser', {
+      id: {
+        _: 'inputUserSelf'
+      }
+    });
+    
+    console.log('[CheckAuth] Nhận được kết quả từ users.getFullUser:', JSON.stringify(result, null, 2));
     return {
       authorized: false,
       error: 'Not implemented yet'
     };
   } catch (error) {
-    console.log('Auth check error:', error);
+    console.log('[CheckAuth] Lỗi kiểm tra đăng nhập:', error);
+    
+    // Log chi tiết về lỗi
+    if (error.error_code) {
+      console.log(`[CheckAuth] Mã lỗi: ${error.error_code}, Thông báo: ${error.error_message}`);
+    }
+    
+    if (error.error_message === 'AUTH_KEY_UNREGISTERED') {
+      console.log('[CheckAuth] Chưa đăng nhập: AUTH_KEY_UNREGISTERED');
+      console.log('[CheckAuth] Cần đăng nhập thông qua giao diện web với API ID và API Hash');
+    }
+    
     return {
       authorized: false,
       error: error.message

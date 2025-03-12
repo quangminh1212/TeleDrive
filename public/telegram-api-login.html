@@ -181,6 +181,14 @@
                 <p class="text-muted">Sử dụng tài khoản Telegram của bạn để tự động đồng bộ file</p>
             </div>
 
+            <div id="directOpenWarning" class="alert alert-warning d-none mb-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Mở trực tiếp:</strong> Chức năng login sẽ không hoạt động khi mở file trực tiếp. Vui lòng chạy server Node.js để sử dụng đầy đủ tính năng.
+                <div class="mt-2">
+                    <a href="index.html" class="btn btn-outline-dark btn-sm">Quay lại trang chủ</a>
+                </div>
+            </div>
+
             <div class="status-container" id="statusContainer">
                 <div class="alert d-flex align-items-center" id="statusAlert">
                     <div class="spinner-border spinner-border-sm me-2" role="status" id="statusSpinner"></div>
@@ -220,19 +228,23 @@
                             <ul class="dropdown-menu country-select" id="countryDropdown">
                                 <!-- Danh sách quốc gia sẽ được thêm bằng JavaScript -->
                             </ul>
-                            <input type="tel" class="form-control" id="phoneNumber" placeholder="936374950">
+                            <input type="tel" class="form-control" id="phoneNumber" placeholder="Nhập số điện thoại">
                         </div>
-                        <div class="form-text">Chọn mã quốc gia và nhập số điện thoại KHÔNG có số 0 đầu</div>
+                        <div class="form-text">Nhập đầy đủ số điện thoại (có thể bắt đầu bằng số 0)</div>
                         
                         <div class="phone-example mt-2">
-                            <strong>Ví dụ đúng:</strong><br>
-                            • Chọn Việt Nam (+84) và nhập <code>936374950</code> (bỏ số 0 đầu)<br>
-                            • Chọn Hoa Kỳ (+1) và nhập <code>2345678901</code>
+                            <strong>Hướng dẫn nhập:</strong><br>
+                            • Có thể nhập <code>0936374950</code> hoặc <code>936374950</code> (tự động chuyển đổi)<br>
+                            • Mã quốc gia Việt Nam (+84) được chọn mặc định<br>
+                            • Chọn mã quốc gia khác nếu không dùng số Việt Nam
                         </div>
                     </div>
                     <div class="d-grid mt-3">
                         <button type="button" id="sendCodeBtn" class="btn btn-telegram">
                             <i class="bi bi-telegram me-2"></i> Gửi mã xác nhận
+                        </button>
+                        <button type="button" id="backToHomeBtn" class="btn btn-outline-light mt-2">
+                            <i class="bi bi-arrow-left me-2"></i> Quay lại trang chủ
                         </button>
                     </div>
                 </div>
@@ -298,313 +310,355 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Biến lưu trữ dữ liệu
-        let phone = '';
-        let phoneCodeHash = '';
-        let selectedCountryCode = '84'; // Mặc định: Việt Nam
-        
-        // Phần tử DOM
-        const phoneStep = document.getElementById('phoneStep');
-        const codeStep = document.getElementById('codeStep');
-        const passwordStep = document.getElementById('passwordStep');
-        const successStep = document.getElementById('successStep');
-        const statusContainer = document.getElementById('statusContainer');
-        const statusMessage = document.getElementById('statusMessage');
-        const errorDetails = document.getElementById('errorDetails');
-        const errorHelp = document.getElementById('errorHelp');
-        const errorCode = document.getElementById('errorCode');
-        const countryDropdown = document.getElementById('countryDropdown');
-        const countryCodeBtn = document.getElementById('countryCodeBtn');
-        const selectedFlag = document.getElementById('selectedFlag');
-        const selectedCountryCodeText = document.getElementById('selectedCountryCodeText');
-        
-        // Danh sách mã quốc gia phổ biến với cờ
-        const countries = [
-            { code: '84', name: 'Việt Nam', flag: 'vn' },
-            { code: '1', name: 'Hoa Kỳ', flag: 'us' },
-            { code: '86', name: 'Trung Quốc', flag: 'cn' },
-            { code: '82', name: 'Hàn Quốc', flag: 'kr' },
-            { code: '81', name: 'Nhật Bản', flag: 'jp' },
-            { code: '65', name: 'Singapore', flag: 'sg' },
-            { code: '66', name: 'Thái Lan', flag: 'th' },
-            { code: '60', name: 'Malaysia', flag: 'my' },
-            { code: '62', name: 'Indonesia', flag: 'id' },
-            { code: '63', name: 'Philippines', flag: 'ph' },
-            { code: '44', name: 'Anh', flag: 'gb' },
-            { code: '33', name: 'Pháp', flag: 'fr' },
-            { code: '49', name: 'Đức', flag: 'de' },
-            { code: '39', name: 'Ý', flag: 'it' },
-            { code: '34', name: 'Tây Ban Nha', flag: 'es' },
-            { code: '7', name: 'Nga', flag: 'ru' },
-            { code: '61', name: 'Úc', flag: 'au' },
-            { code: '64', name: 'New Zealand', flag: 'nz' },
-            { code: '91', name: 'Ấn Độ', flag: 'in' },
-            { code: '55', name: 'Brazil', flag: 'br' },
-            { code: '52', name: 'Mexico', flag: 'mx' },
-            { code: '971', name: 'UAE', flag: 'ae' },
-            { code: '966', name: 'Ả Rập Saudi', flag: 'sa' },
-            { code: '20', name: 'Ai Cập', flag: 'eg' },
-            { code: '27', name: 'Nam Phi', flag: 'za' }
-        ];
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kiểm tra nếu đang mở file trực tiếp
+            const isDirectOpen = window.location.protocol === 'file:';
+            if (isDirectOpen) {
+                document.getElementById('directOpenWarning').classList.remove('d-none');
+                document.getElementById('phoneStep').classList.add('d-none');
+            }
+            
+            // Elements
+            const phoneStep = document.getElementById('phoneStep');
+            const codeStep = document.getElementById('codeStep');
+            const passwordStep = document.getElementById('passwordStep');
+            const successStep = document.getElementById('successStep');
+            const statusContainer = document.getElementById('statusContainer');
+            const statusMessage = document.getElementById('statusMessage');
+            const statusSpinner = document.getElementById('statusSpinner');
+            const errorDetails = document.getElementById('errorDetails');
+            const errorHelp = document.getElementById('errorHelp');
+            const errorCode = document.getElementById('errorCode');
+            const countryDropdown = document.getElementById('countryDropdown');
+            const countryCodeBtn = document.getElementById('countryCodeBtn');
+            const selectedFlag = document.getElementById('selectedFlag');
+            const selectedCountryCodeText = document.getElementById('selectedCountryCodeText');
+            
+            // Variables
+            let phone = '';
+            let phoneCodeHash = '';
+            let selectedCountryCode = '84'; // Mặc định: Việt Nam
+            
+            // Danh sách mã quốc gia phổ biến với cờ
+            const countries = [
+                { code: '84', name: 'Việt Nam', flag: 'vn' },
+                { code: '1', name: 'Hoa Kỳ', flag: 'us' },
+                { code: '86', name: 'Trung Quốc', flag: 'cn' },
+                { code: '82', name: 'Hàn Quốc', flag: 'kr' },
+                { code: '81', name: 'Nhật Bản', flag: 'jp' },
+                { code: '65', name: 'Singapore', flag: 'sg' },
+                { code: '66', name: 'Thái Lan', flag: 'th' },
+                { code: '60', name: 'Malaysia', flag: 'my' },
+                { code: '62', name: 'Indonesia', flag: 'id' },
+                { code: '63', name: 'Philippines', flag: 'ph' },
+                { code: '44', name: 'Anh', flag: 'gb' },
+                { code: '33', name: 'Pháp', flag: 'fr' },
+                { code: '49', name: 'Đức', flag: 'de' },
+                { code: '39', name: 'Ý', flag: 'it' },
+                { code: '34', name: 'Tây Ban Nha', flag: 'es' },
+                { code: '7', name: 'Nga', flag: 'ru' },
+                { code: '61', name: 'Úc', flag: 'au' },
+                { code: '64', name: 'New Zealand', flag: 'nz' },
+                { code: '91', name: 'Ấn Độ', flag: 'in' },
+                { code: '55', name: 'Brazil', flag: 'br' },
+                { code: '52', name: 'Mexico', flag: 'mx' },
+                { code: '971', name: 'UAE', flag: 'ae' },
+                { code: '966', name: 'Ả Rập Saudi', flag: 'sa' },
+                { code: '20', name: 'Ai Cập', flag: 'eg' },
+                { code: '27', name: 'Nam Phi', flag: 'za' }
+            ];
 
-        // Thêm các quốc gia vào dropdown
-        countries.forEach(country => {
-            const listItem = document.createElement('li');
-            listItem.innerHTML = `
-                <a class="dropdown-item country-option" href="#" data-code="${country.code}" data-flag="${country.flag}">
-                    <img src="https://flagcdn.com/w20/${country.flag}.png" alt="${country.name}" class="country-flag">
-                    ${country.name} <span class="country-code">+${country.code}</span>
-                </a>
-            `;
-            countryDropdown.appendChild(listItem);
-            
-            // Thêm sự kiện click cho mỗi quốc gia
-            listItem.querySelector('a').addEventListener('click', function(e) {
-                e.preventDefault();
-                const code = this.getAttribute('data-code');
-                const flag = this.getAttribute('data-flag');
+            // Thêm các quốc gia vào dropdown
+            countries.forEach(country => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <a class="dropdown-item country-option" href="#" data-code="${country.code}" data-flag="${country.flag}">
+                        <img src="https://flagcdn.com/w20/${country.flag}.png" alt="${country.name}" class="country-flag">
+                        ${country.name} <span class="country-code">+${country.code}</span>
+                    </a>
+                `;
+                countryDropdown.appendChild(listItem);
                 
-                selectedCountryCode = code;
-                selectedFlag.src = `https://flagcdn.com/w20/${flag}.png`;
-                selectedCountryCodeText.textContent = `+${code}`;
+                // Thêm sự kiện click cho mỗi quốc gia
+                listItem.querySelector('a').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const code = this.getAttribute('data-code');
+                    const flag = this.getAttribute('data-flag');
+                    
+                    selectedCountryCode = code;
+                    selectedFlag.src = `https://flagcdn.com/w20/${flag}.png`;
+                    selectedCountryCodeText.textContent = `+${code}`;
+                });
             });
-        });
-        
-        // Nút gửi mã
-        document.getElementById('sendCodeBtn').addEventListener('click', async function() {
-            const phoneInput = document.getElementById('phoneNumber');
-            const phoneNumber = phoneInput.value.trim();
             
-            if (!phoneNumber) {
-                showError('Vui lòng nhập số điện thoại');
-                return;
-            }
-            
-            // Thêm mã quốc gia đã chọn vào số điện thoại
-            phone = `+${selectedCountryCode}${phoneNumber}`;
-            
-            // Hiển thị trạng thái đang xử lý
-            showStatus('Đang gửi mã xác nhận...', 'info');
-            console.log('Sending code to phone:', phone);
-            
-            try {
-                const response = await fetch('/api/telegram/send-code', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: phone })
-                });
-                
-                const data = await response.json();
-                console.log('Server response:', data);
-                
-                if (response.ok && data.success) {
-                    // Lưu phone_code_hash
-                    phoneCodeHash = data.phone_code_hash;
-                    
-                    // Chuyển sang bước nhập mã
-                    showStep(codeStep);
-                    hideStatus();
-                } else {
-                    const errorMsg = data.error || 'Không thể gửi mã xác nhận';
-                    showError(errorMsg);
-                    
-                    // Hiển thị gợi ý khắc phục
-                    let helpText = '';
-                    if (errorMsg.includes('số điện thoại không hợp lệ') || errorMsg.includes('PHONE_NUMBER_INVALID')) {
-                        helpText = 'Vui lòng kiểm tra lại số điện thoại. Định dạng đúng: +84123456789 (có dấu +, mã quốc gia, không có số 0 đầu).';
-                    } else if (errorMsg.includes('FLOOD_WAIT')) {
-                        const waitMatch = errorMsg.match(/(\d+) giây/);
-                        const waitTime = waitMatch ? waitMatch[1] : 'một khoảng thời gian';
-                        helpText = `Telegram giới hạn số lần gửi mã. Vui lòng đợi ${waitTime} giây và thử lại sau.`;
-                        
-                        // Hiển thị thông báo đặc biệt cho lỗi flood
-                        errorHelp.innerHTML = `
-                            <div class="alert alert-warning">
-                                <h6><i class="bi bi-exclamation-triangle-fill"></i> Lỗi giới hạn yêu cầu</h6>
-                                <p>Telegram hạn chế số lần yêu cầu mã xác nhận từ một số điện thoại trong một khoảng thời gian.</p>
-                                <p>Bạn cần đợi <strong>${waitTime} giây</strong> trước khi có thể gửi lại yêu cầu.</p>
-                                <hr>
-                                <p class="mb-0">Bạn có thể đóng cửa sổ này và thử lại sau.</p>
-                            </div>
-                        `;
-                    } else if (data.details) {
-                        errorCode.textContent = JSON.stringify(data.details, null, 2);
-                    }
-                    if (!errorMsg.includes('FLOOD_WAIT')) {
-                        errorHelp.textContent = helpText || errorMsg;
-                    }
+            // Nút gửi mã
+            document.getElementById('sendCodeBtn').addEventListener('click', async function() {
+                if (isDirectOpen) {
+                    showError('Chức năng không khả dụng khi mở file trực tiếp. Vui lòng chạy server Node.js.');
+                    return;
                 }
-            } catch (error) {
-                console.error('Error sending code:', error);
-                showError('Lỗi kết nối: ' + error.message);
-            }
-        });
-        
-        // Format điện thoại trực tiếp khi nhập
-        document.getElementById('phoneNumber').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            
-            // Nếu bắt đầu bằng số 0, loại bỏ nó
-            if (value.startsWith('0')) {
-                value = value.substring(1);
-            }
-            
-            e.target.value = value;
-        });
-        
-        // Nút xác nhận mã
-        document.getElementById('confirmCodeBtn').addEventListener('click', async function() {
-            const codeInput = document.getElementById('confirmCode');
-            const code = codeInput.value.trim();
-            
-            if (!code) {
-                showError('Vui lòng nhập mã xác nhận');
-                return;
-            }
-            
-            showStatus('Đang xác thực...', 'info');
-            console.log('Confirming code:', code, 'for phone:', phone);
-            
-            try {
-                // Kiểm tra xem số điện thoại đã có dấu + chưa
-                const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
                 
-                const response = await fetch('/api/telegram/sign-in', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phoneNumber: formattedPhone,
-                        code,
-                        phoneCodeHash
-                    })
-                });
+                const phoneInput = document.getElementById('phoneNumber');
+                let phoneNumber = phoneInput.value.trim();
                 
-                const data = await response.json();
-                console.log('Sign-in response:', data);
+                if (!phoneNumber) {
+                    showError('Vui lòng nhập số điện thoại');
+                    return;
+                }
                 
-                if (response.ok && data.success) {
-                    // Đăng nhập thành công
-                    showStatus('Đăng nhập thành công!', 'success');
+                // Xử lý số điện thoại bắt đầu bằng số 0 cho Việt Nam
+                if (selectedCountryCode === '84' && phoneNumber.startsWith('0')) {
+                    phoneNumber = phoneNumber.substring(1);
+                }
+                
+                // Thêm mã quốc gia đã chọn vào số điện thoại
+                phone = `+${selectedCountryCode}${phoneNumber}`;
+                
+                // Hiển thị trạng thái đang xử lý
+                showStatus('Đang gửi mã xác nhận...', 'info');
+                console.log('Sending code to phone:', phone);
+                
+                try {
+                    const response = await fetch('/api/telegram/send-code', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phoneNumber: phone })
+                    });
                     
-                    // Lưu session
-                    if (data.sessionId) {
-                        localStorage.setItem('sessionId', data.sessionId);
-                        localStorage.setItem('username', data.user.name);
-                        localStorage.setItem('telegramLoggedIn', 'true');
-                    }
+                    const data = await response.json();
+                    console.log('Server response:', data);
                     
-                    // Chuyển sang bước thành công
-                    setTimeout(() => {
-                        showStep(successStep);
-                        hideStatus();
+                    if (response.ok && data.success) {
+                        // Lưu phone_code_hash
+                        phoneCodeHash = data.phone_code_hash;
                         
-                        // Thông báo cho cửa sổ cha
-                        if (window.opener && !window.opener.closed) {
-                            window.opener.postMessage({ type: 'telegram_api_login_success' }, '*');
+                        // Cập nhật UI với số điện thoại đã được định dạng
+                        if (data.formatted_phone) {
+                            phone = data.formatted_phone;
                         }
                         
-                        // Tự động đóng sau 3 giây
-                        setTimeout(() => {
-                            window.close();
-                        }, 3000);
-                    }, 1000);
-                } else if (data.error === 'PASSWORD_NEEDED') {
-                    // Yêu cầu mật khẩu hai lớp
-                    showStep(passwordStep);
-                    hideStatus();
-                } else {
-                    const errorMsg = data.error || 'Mã xác nhận không đúng';
-                    showError(errorMsg);
-                    
-                    // Hiển thị gợi ý khắc phục
-                    let helpText = '';
-                    if (errorMsg.includes('PHONE_CODE_INVALID')) {
-                        helpText = 'Mã xác nhận không đúng. Vui lòng kiểm tra lại mã Telegram đã gửi cho bạn.';
-                    } else if (errorMsg.includes('PHONE_CODE_EXPIRED')) {
-                        helpText = 'Mã xác nhận đã hết hạn. Vui lòng quay lại và yêu cầu mã mới.';
-                    } else if (data.details) {
-                        errorCode.textContent = JSON.stringify(data.details, null, 2);
+                        // Hiển thị thông báo xác nhận
+                        showStatus(`Mã xác nhận đã được gửi đến ${phone}`, 'info');
+                        
+                        // Chuyển sang bước nhập mã
+                        showStep(codeStep);
+                    } else {
+                        const errorMsg = data.error || 'Không thể gửi mã xác nhận';
+                        showError(errorMsg);
+                        
+                        // Hiển thị gợi ý khắc phục
+                        let helpText = '';
+                        if (errorMsg.includes('số điện thoại không hợp lệ') || errorMsg.includes('PHONE_NUMBER_INVALID')) {
+                            if (data.details && data.details.formattedPhone) {
+                                helpText = `Telegram không chấp nhận số điện thoại ${data.details.formattedPhone}. Vui lòng kiểm tra lại.`;
+                            } else {
+                                helpText = 'Vui lòng kiểm tra lại số điện thoại. Định dạng đúng: +84123456789 (có dấu +, mã quốc gia, có thể nhập với hoặc không nhập số 0 đầu).';
+                            }
+                        } else if (errorMsg.includes('FLOOD_WAIT')) {
+                            const waitMatch = errorMsg.match(/(\d+) giây/);
+                            const waitTime = waitMatch ? waitMatch[1] : 'một khoảng thời gian';
+                            helpText = `Telegram giới hạn số lần gửi mã. Vui lòng đợi ${waitTime} giây và thử lại sau.`;
+                            
+                            // Hiển thị thông báo đặc biệt cho lỗi flood
+                            errorHelp.innerHTML = `
+                                <div class="alert alert-warning">
+                                    <h6><i class="bi bi-exclamation-triangle-fill"></i> Lỗi giới hạn yêu cầu</h6>
+                                    <p>Telegram hạn chế số lần yêu cầu mã xác nhận từ một số điện thoại trong một khoảng thời gian.</p>
+                                    <p>Bạn cần đợi <strong>${waitTime} giây</strong> trước khi có thể gửi lại yêu cầu.</p>
+                                    <hr>
+                                    <p class="mb-0">Bạn có thể đóng cửa sổ này và thử lại sau.</p>
+                                </div>
+                            `;
+                        } else if (data.details) {
+                            errorCode.textContent = JSON.stringify(data.details, null, 2);
+                        }
+                        if (!errorMsg.includes('FLOOD_WAIT')) {
+                            errorHelp.textContent = helpText || errorMsg;
+                        }
                     }
-                    errorHelp.textContent = helpText || errorMsg;
+                } catch (error) {
+                    console.error('Error sending code:', error);
+                    showError('Lỗi kết nối: ' + error.message);
                 }
-            } catch (error) {
-                console.error('Error confirming code:', error);
-                showError('Lỗi kết nối: ' + error.message);
-            }
-        });
-        
-        // Nút quay lại số điện thoại
-        document.getElementById('backToPhoneBtn').addEventListener('click', function() {
-            showStep(phoneStep);
-        });
-        
-        // Nút quay lại mã xác nhận
-        document.getElementById('backToCodeBtn').addEventListener('click', function() {
-            showStep(codeStep);
-        });
-        
-        // Nút xác nhận mật khẩu
-        document.getElementById('confirmPasswordBtn').addEventListener('click', async function() {
-            const passwordInput = document.getElementById('twoFactorPassword');
-            const password = passwordInput.value;
-            
-            if (!password) {
-                showError('Vui lòng nhập mật khẩu');
-                return;
-            }
-            
-            showStatus('Đang xác thực...', 'info');
-            
-            // Implement mã xác thực mật khẩu hai lớp
-            showError('Chức năng đăng nhập bằng mật khẩu hai lớp chưa được hỗ trợ');
-        });
-        
-        // Hiển thị bước
-        function showStep(stepElement) {
-            // Ẩn tất cả các bước
-            document.querySelectorAll('.form-step').forEach(step => {
-                step.classList.remove('active');
             });
             
-            // Hiển thị bước được chọn
-            stepElement.classList.add('active');
-        }
-        
-        // Hiển thị lỗi
-        function showError(message) {
-            statusContainer.style.display = 'block';
-            statusContainer.className = 'status-container status-error';
-            statusMessage.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i> ${message}`;
-            errorHelp.textContent = message;
-            errorCode.textContent = message;
-            errorDetails.classList.remove('d-none');
+            // Format điện thoại trực tiếp khi nhập
+            document.getElementById('phoneNumber').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                
+                // Giữ nguyên số 0 ở đầu (sẽ tự động xử lý khi gửi)
+                e.target.value = value;
+            });
             
-            // Gửi thông báo lỗi cho cửa sổ chính
-            if (window.opener && !window.opener.closed) {
-                window.opener.postMessage({
-                    type: 'telegram_login_error',
-                    error: message,
-                    details: {
-                        phoneNumber: document.getElementById('phoneNumber').value,
-                        errorText: message,
-                        errorType: 'connection_error'
+            // Nút xác nhận mã
+            document.getElementById('confirmCodeBtn').addEventListener('click', async function() {
+                if (isDirectOpen) {
+                    showError('Chức năng không khả dụng khi mở file trực tiếp. Vui lòng chạy server Node.js.');
+                    return;
+                }
+                
+                const codeInput = document.getElementById('confirmCode');
+                const code = codeInput.value.trim();
+                
+                if (!code) {
+                    showError('Vui lòng nhập mã xác nhận');
+                    return;
+                }
+                
+                showStatus('Đang xác thực...', 'info');
+                console.log('Confirming code:', code, 'for phone:', phone);
+                
+                try {
+                    // Kiểm tra xem số điện thoại đã có dấu + chưa
+                    const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
+                    
+                    const response = await fetch('/api/telegram/sign-in', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            phoneNumber: formattedPhone,
+                            code,
+                            phoneCodeHash
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    console.log('Sign-in response:', data);
+                    
+                    if (response.ok && data.success) {
+                        // Đăng nhập thành công
+                        showStatus('Đăng nhập thành công!', 'success');
+                        
+                        // Lưu session
+                        if (data.sessionId) {
+                            localStorage.setItem('sessionId', data.sessionId);
+                            localStorage.setItem('username', data.user.name);
+                            localStorage.setItem('telegramLoggedIn', 'true');
+                        }
+                        
+                        // Chuyển sang bước thành công
+                        setTimeout(() => {
+                            showStep(successStep);
+                            hideStatus();
+                            
+                            // Thông báo cho cửa sổ cha
+                            if (window.opener && !window.opener.closed) {
+                                window.opener.postMessage({ type: 'telegram_api_login_success' }, '*');
+                            }
+                            
+                            // Tự động đóng sau 3 giây
+                            setTimeout(() => {
+                                window.close();
+                            }, 3000);
+                        }, 1000);
+                    } else if (data.error === 'PASSWORD_NEEDED') {
+                        // Yêu cầu mật khẩu hai lớp
+                        showStep(passwordStep);
+                        hideStatus();
+                    } else {
+                        const errorMsg = data.error || 'Mã xác nhận không đúng';
+                        showError(errorMsg);
+                        
+                        // Hiển thị gợi ý khắc phục
+                        let helpText = '';
+                        if (errorMsg.includes('PHONE_CODE_INVALID')) {
+                            helpText = 'Mã xác nhận không đúng. Vui lòng kiểm tra lại mã Telegram đã gửi cho bạn.';
+                        } else if (errorMsg.includes('PHONE_CODE_EXPIRED')) {
+                            helpText = 'Mã xác nhận đã hết hạn. Vui lòng quay lại và yêu cầu mã mới.';
+                        } else if (data.details) {
+                            errorCode.textContent = JSON.stringify(data.details, null, 2);
+                        }
+                        errorHelp.textContent = helpText || errorMsg;
                     }
-                }, '*');
+                } catch (error) {
+                    console.error('Error confirming code:', error);
+                    showError('Lỗi kết nối: ' + error.message);
+                }
+            });
+            
+            // Nút quay lại số điện thoại
+            document.getElementById('backToPhoneBtn').addEventListener('click', function() {
+                showStep(phoneStep);
+            });
+            
+            // Nút quay lại mã xác nhận
+            document.getElementById('backToCodeBtn').addEventListener('click', function() {
+                showStep(codeStep);
+            });
+            
+            // Nút xác nhận mật khẩu
+            document.getElementById('confirmPasswordBtn').addEventListener('click', async function() {
+                if (isDirectOpen) {
+                    showError('Chức năng không khả dụng khi mở file trực tiếp. Vui lòng chạy server Node.js.');
+                    return;
+                }
+                
+                const passwordInput = document.getElementById('twoFactorPassword');
+                const password = passwordInput.value;
+                
+                if (!password) {
+                    showError('Vui lòng nhập mật khẩu');
+                    return;
+                }
+                
+                showStatus('Đang xác thực...', 'info');
+                
+                // Implement mã xác thực mật khẩu hai lớp
+                showError('Chức năng đăng nhập bằng mật khẩu hai lớp chưa được hỗ trợ');
+            });
+            
+            // Hiển thị bước
+            function showStep(stepElement) {
+                // Ẩn tất cả các bước
+                document.querySelectorAll('.form-step').forEach(step => {
+                    step.classList.remove('active');
+                });
+                
+                // Hiển thị bước được chọn
+                stepElement.classList.add('active');
             }
-        }
-        
-        // Hiển thị thông báo trạng thái
-        function showStatus(message, type = 'info') {
-            statusContainer.style.display = 'block';
-            statusContainer.className = `status-container status-${type}`;
-            statusMessage.innerHTML = `<i class="bi bi-info-circle-fill me-2"></i> ${message}`;
-        }
-        
-        // Ẩn thông báo
-        function hideStatus() {
-            statusContainer.style.display = 'none';
-            errorDetails.classList.add('d-none');
-        }
+            
+            // Hiển thị lỗi
+            function showError(message) {
+                statusContainer.style.display = 'block';
+                statusContainer.className = 'status-container status-error';
+                statusMessage.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i> ${message}`;
+                errorHelp.textContent = message;
+                errorCode.textContent = message;
+                errorDetails.classList.remove('d-none');
+                
+                // Gửi thông báo lỗi cho cửa sổ chính
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                        type: 'telegram_login_error',
+                        error: message,
+                        details: {
+                            phoneNumber: document.getElementById('phoneNumber').value,
+                            errorText: message,
+                            errorType: 'connection_error'
+                        }
+                    }, '*');
+                }
+            }
+            
+            // Hiển thị thông báo trạng thái
+            function showStatus(message, type = 'info') {
+                statusContainer.style.display = 'block';
+                statusContainer.className = `status-container status-${type}`;
+                statusMessage.innerHTML = `<i class="bi bi-info-circle-fill me-2"></i> ${message}`;
+            }
+            
+            // Ẩn thông báo
+            function hideStatus() {
+                statusContainer.style.display = 'none';
+                errorDetails.classList.add('d-none');
+            }
+            
+            // Nút quay lại trang chủ
+            document.getElementById('backToHomeBtn').addEventListener('click', function() {
+                window.location.href = isDirectOpen ? 'index.html' : '/';
+            });
+        });
     </script>
 </body>
 </html> 
