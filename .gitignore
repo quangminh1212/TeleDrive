@@ -1,0 +1,23 @@
+# Environnement et configuration
+.env
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Fichiers de stockage
+storage/
+
+# Logs
+logs/
+*.log
+
+# Base de données
+*.db
+*.sqlite3
+
+# Autres
+.DS_Store
+.idea/
+.vscode/ 
