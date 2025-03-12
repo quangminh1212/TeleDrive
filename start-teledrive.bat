@@ -2,6 +2,17 @@
 echo === TeleDrive Starter ===
 echo.
 
+REM Kiểm tra và dừng các tiến trình đang chạy trên port 5001 và 3000/3001
+echo Kiểm tra và giải phóng các port đang được sử dụng...
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr :5001') do (
+    echo Đang dừng tiến trình với PID: %%a
+    taskkill /F /PID %%a 2>nul
+)
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do (
+    echo Đang dừng tiến trình với PID: %%a
+    taskkill /F /PID %%a 2>nul
+)
+
 REM Tạo thư mục uploads nếu chưa tồn tại
 if not exist "server\uploads" mkdir server\uploads
 
@@ -24,22 +35,26 @@ REM Tạo file .env.local cho client
 echo Tạo file .env.local cho client...
 echo # Next.js Client Configuration > client\.env.local
 echo NEXT_PUBLIC_API_URL=http://localhost:5001 >> client\.env.local
+echo NEXT_PUBLIC_PORT=3001 >> client\.env.local
 
-REM Cài đặt dependencies còn thiếu
-echo Cài đặt dependencies còn thiếu...
+REM Kiểm tra và cài đặt dependencies còn thiếu
+echo Kiểm tra và cài đặt dependencies còn thiếu...
 cd client
-call npm install @emotion/cache @emotion/react @emotion/server @emotion/styled --save
+call npm list @emotion/cache @emotion/react @emotion/server @emotion/styled || call npm install @emotion/cache @emotion/react @emotion/server @emotion/styled --save
 cd ..
 
 REM Kiểm tra xem port có đang được sử dụng không
-echo Kiểm tra các port đang sử dụng...
+echo Kiểm tra các port đang sử dụng sau khi giải phóng...
 netstat -ano | findstr :5001
 netstat -ano | findstr :3000
+netstat -ano | findstr :3001
 
 REM Chờ xác nhận từ người dùng
 echo.
 echo Port 5001 sẽ được sử dụng cho server
-echo Port 3000 sẽ được sử dụng cho client (hoặc 3001 nếu 3000 đã bị chiếm)
+echo Port 3001 sẽ được sử dụng cho client
+echo.
+echo Nếu vẫn thấy các port này bị chiếm, hãy mở Task Manager và kết thúc tiến trình tương ứng.
 echo.
 pause
 
