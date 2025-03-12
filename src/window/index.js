@@ -394,37 +394,45 @@ window.addEventListener('DOMContentLoaded', () => {
     ipcRenderer.on('authSuccess', () => {
         console.log("Auth success received - user authenticated successfully");
         
+        // Đánh dấu là đã xác thực thành công
+        appState.authenticated = true;
+        
         // Cập nhật trạng thái kết nối
         updateConnectionStatus('connected');
         
-        title.innerHTML = 'Login Successful'
-        profile.style.display = ''
+        // Thay đổi UI chỉ khi không đang ở màn hình "Connecting..."
+        if (title.innerHTML !== 'Connecting...') {
+            title.innerHTML = 'Login Successful'
+            profile.style.display = ''
 
-        description.innerHTML = 'Select the location for <br> your synced folder'
-        description.style.display = ''
-        button.innerHTML = 'Open'
+            description.innerHTML = 'Select the location for <br> your synced folder'
+            description.style.display = ''
+            button.innerHTML = 'Open'
 
-        button.addEventListener('click', function f() {
-            console.log("User clicked to open file dialog");
-            ipcRenderer.send('openFileDialog')
-            button.removeEventListener('click', f)
-        })
+            button.addEventListener('click', function f() {
+                console.log("User clicked to open file dialog");
+                ipcRenderer.send('openFileDialog')
+                button.removeEventListener('click', f)
+            })
 
-        button.style.display = ''
-        input.style.display = 'none'
-        
-        // Tự động mở hộp thoại chọn thư mục sau 0.5 giây
-        setTimeout(() => {
-            console.log("[AUTO] Automatically opening file dialog");
-            ipcRenderer.send('openFileDialog')
-        }, 500);
-        
-        // Hiển thị các nút chức năng mới
-        analyticsButton.style.display = '';
-        optimizeButton.style.display = '';
-        
-        // Hiển thị các nút thao tác nhanh
-        showQuickActions(true);
+            button.style.display = ''
+            input.style.display = 'none'
+            
+            // Tự động mở hộp thoại chọn thư mục sau 0.5 giây
+            setTimeout(() => {
+                console.log("[AUTO] Automatically opening file dialog");
+                ipcRenderer.send('openFileDialog')
+            }, 500);
+            
+            // Hiển thị các nút chức năng mới
+            analyticsButton.style.display = '';
+            optimizeButton.style.display = '';
+            
+            // Hiển thị các nút thao tác nhanh
+            showQuickActions(true);
+        } else {
+            console.log("Still on connecting screen, waiting for connection status to update UI");
+        }
     })
 
     ipcRenderer.on('dialogCancelled', () => {
