@@ -63,6 +63,7 @@ if (!bot && !useMTProto) {
 app.set('useMTProto', useMTProto);
 app.set('telegramClient', telegramClient);
 app.set('useWebUpload', useWebUpload);
+app.set('bot', bot);
 
 // Sử dụng router
 app.use('/', router);
