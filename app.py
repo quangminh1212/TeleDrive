@@ -1,5 +1,10 @@
 import os
 import json
+import time
+import hashlib
+import hmac
+from urllib.parse import urlencode
+import requests
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from pathlib import Path
@@ -16,6 +21,10 @@ app.secret_key = os.getenv('SECRET_KEY', secrets.token_hex(16))
 app.config['UPLOAD_FOLDER'] = os.getenv('STORAGE_PATH', './storage')
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max
 
+# Configuration Telegram
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+BOT_USERNAME = os.getenv('BOT_USERNAME', 'your_bot_username')  # Thay bằng username của bot của bạn
+
 # Configuration de Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -23,13 +32,15 @@ login_manager.login_view = 'login'
 
 # Classe d'utilisateur pour Flask-Login
 class User(UserMixin):
-    def __init__(self, id, username):
+    def __init__(self, id, username, telegram_id=None):
         self.id = id
         self.username = username
+        self.telegram_id = telegram_id
 
 # Dictionnaires des utilisateurs et des mots de passe (à remplacer par une base de données dans une application de production)
 users = {}
 user_passwords = {}  # Dictionnaire pour stocker les mots de passe
+telegram_users = {}  # Dictionnaire pour stocker les utilisateurs Telegram
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -106,6 +117,20 @@ def format_size(size_bytes):
     else:
         return f"{size_bytes / (1024 * 1024 * 1024):.1f} GB"
 
+# Vérification des données Telegram
+def verify_telegram_data(data):
+    if 'hash' not in data:
+        return False
+    
+    auth_data = data.copy()
+    auth_hash = auth_data.pop('hash')
+    
+    data_check_string = '\n'.join(f'{k}={v}' for k, v in sorted(auth_data.items()))
+    secret_key = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode()).digest()
+    hash_string = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+    
+    return hash_string == auth_hash
+
 # Route pour la page d'accueil
 @app.route('/')
 def index():
@@ -114,6 +139,46 @@ def index():
         return redirect(url_for('browse_files'))
     # Sinon, rediriger vers la page de connexion
     return redirect(url_for('login'))
+
+# Route pour Telegram Login
+@app.route('/telegram_login')
+def telegram_login():
+    auth_url = f"https://telegram.org/auth/authorize?bot_id={BOT_USERNAME}&origin={request.host_url}&return_to={url_for('telegram_callback', _external=True)}"
+    return redirect(auth_url)
+
+# Route pour callback après l'authentification Telegram
+@app.route('/telegram_callback')
+def telegram_callback():
+    auth_data = request.args.to_dict()
+    
+    if not verify_telegram_data(auth_data):
+        flash('Xác thực Telegram thất bại. Vui lòng thử lại.', 'danger')
+        return redirect(url_for('login'))
+    
+    telegram_id = auth_data.get('id')
+    first_name = auth_data.get('first_name', '')
+    last_name = auth_data.get('last_name', '')
+    username = auth_data.get('username', f"user_{telegram_id}")
+    
+    # Vérifier si l'utilisateur existe déjà
+    if telegram_id in telegram_users:
+        user_id = telegram_users[telegram_id]
+        login_user(users[user_id])
+        flash(f'Xin chào {first_name}! Đăng nhập thành công.', 'success')
+        return redirect(url_for('browse_files'))
+    
+    # Créer un nouvel utilisateur
+    user_id = str(len(users) + 1)
+    display_name = f"{first_name} {last_name}".strip() if last_name else first_name
+    users[user_id] = User(user_id, display_name, telegram_id)
+    telegram_users[telegram_id] = user_id
+    
+    # Créer le dossier de l'utilisateur
+    get_user_path(user_id)
+    
+    login_user(users[user_id])
+    flash(f'Xin chào {display_name}! Tài khoản của bạn đã được tạo thành công.', 'success')
+    return redirect(url_for('browse_files'))
 
 # Route pour l'inscription
 @app.route('/register', methods=['GET', 'POST'])
@@ -161,7 +226,7 @@ def login():
         if user_id and user_passwords.get(user_id) == password:
             login_user(users[user_id])
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('dashboard'))
+            return redirect(next_page or url_for('browse_files'))
         else:
             flash('Đăng nhập thất bại. Kiểm tra tên người dùng và mật khẩu của bạn.', 'danger')
     
