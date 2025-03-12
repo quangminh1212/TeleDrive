@@ -37,30 +37,10 @@ if (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH) {
         if (result.error) {
           console.log('[Telegram API] Chi tiết lỗi:', result.error);
           
-          // Nếu lỗi AUTH_KEY_UNREGISTERED, thử lấy xác thực từ Telegram Web
+          // Nếu lỗi AUTH_KEY_UNREGISTERED, hiển thị hướng dẫn
           if (result.error.includes('AUTH_KEY_UNREGISTERED') && process.env.USE_WEB_CLIENT_UPLOAD === 'true') {
-            console.log('[Telegram API] Đang thử trích xuất thông tin xác thực từ Telegram Web...');
-            
-            telegramWebUploader.initBrowser()
-              .then(() => telegramWebUploader.checkLoginStatus())
-              .then(isLoggedIn => {
-                if (isLoggedIn) {
-                  console.log('[Telegram API] Đã phát hiện đăng nhập Telegram Web, đang trích xuất thông tin xác thực...');
-                  return telegramWebUploader.extractAuthData();
-                } else {
-                  console.log('[Telegram API] Chưa đăng nhập Telegram Web. Vui lòng đăng nhập qua giao diện web trước.');
-                  return false;
-                }
-              })
-              .then(success => {
-                if (success) {
-                  console.log('[Telegram API] Đã trích xuất thông tin xác thực thành công từ Telegram Web.');
-                  console.log('[Telegram API] Khởi động lại server để áp dụng thông tin xác thực mới.');
-                }
-              })
-              .catch(error => {
-                console.error('[Telegram API] Lỗi khi trích xuất thông tin xác thực:', error);
-              });
+            console.log('[Telegram API] Bạn có thể truy cập http://localhost:' + PORT + '/telegram-api-login.html để đăng nhập');
+            console.log('[Telegram API] Hoặc trích xuất auth key từ Telegram Web thông qua giao diện');
           }
         }
       }
@@ -438,5 +418,11 @@ app.post('/api/telegram/open-web', async (req, res) => {
 
 // Khởi động server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`\n====================================`);
+  console.log(`  TeleDrive đang chạy thành công!`);
+  console.log(`  URL truy cập:`)
+  console.log(`    - Trang chủ:    http://localhost:${PORT}/`);
+  console.log(`    - Đăng nhập:    http://localhost:${PORT}/telegram-api-login.html`);
+  console.log(`    - Cấu hình API: http://localhost:${PORT}/telegram-api-config.html`);
+  console.log(`====================================\n`);
 }); 

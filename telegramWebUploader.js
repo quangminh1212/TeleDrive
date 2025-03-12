@@ -403,8 +403,8 @@ async function openTelegramWeb() {
   }
 }
 
-// Khởi tạo trình duyệt khi module được load
-initBrowser().catch(console.error);
+// Không tự động khởi tạo khi module được load
+// initBrowser().catch(console.error);
 
 // Đảm bảo đóng trình duyệt khi ứng dụng kết thúc
 process.on('exit', closeBrowser);
