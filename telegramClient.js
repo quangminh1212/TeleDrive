@@ -1,252 +1,252 @@
-const MTProto = require('@mtproto/core');
-const { resolve } = require('path');
+const { MTProto } = require('@mtproto/core');
+const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-// Thư mục lưu trữ phiên
-const SESSION_PATH = resolve(__dirname, '.telegram-sessions');
-if (!fs.existsSync(SESSION_PATH)) {
-  fs.mkdirSync(SESSION_PATH, { recursive: true });
+// Tạo thư mục lưu session
+const SESSION_DIR = path.join(__dirname, '.telegram-sessions');
+if (!fs.existsSync(SESSION_DIR)) {
+  fs.mkdirSync(SESSION_DIR, { recursive: true });
 }
 
-// Khởi tạo API Telegram
-const initTelegramClient = () => {
-  console.log('[TelegramClient] Đang khởi tạo...');
-  
-  const API_ID = process.env.TELEGRAM_API_ID;
-  const API_HASH = process.env.TELEGRAM_API_HASH;
-  
-  if (!API_ID || !API_HASH) {
-    console.error('[TelegramClient] Thiếu cấu hình API_ID hoặc API_HASH. Vui lòng đăng ký ứng dụng tại https://my.telegram.org');
-    return null;
-  }
-  
-  try {
-    // Khởi tạo MTProto client
-    const mtproto = new MTProto({
-      api_id: API_ID,
-      api_hash: API_HASH,
-      storageOptions: {
-        path: resolve(SESSION_PATH, 'storage.json'),
-      },
-    });
-    
-    console.log('[TelegramClient] Đã khởi tạo thành công');
-    return mtproto;
-  } catch (error) {
-    console.error('[TelegramClient] Lỗi khởi tạo:', error);
-    return null;
-  }
-};
+// Khởi tạo kết nối
+const mtproto = new MTProto({
+  api_id: parseInt(process.env.TELEGRAM_API_ID || 0),
+  api_hash: process.env.TELEGRAM_API_HASH || '',
+  storageOptions: {
+    path: path.join(SESSION_DIR, 'telegram-session.json'),
+  },
+});
 
-// Kiểm tra trạng thái đăng nhập
-const checkAuth = async (mtproto) => {
-  if (!mtproto) return false;
-  
+// Hàm xử lý các method API của Telegram
+const callApi = async (method, params = {}, options = {}) => {
   try {
-    const { user } = await mtproto.call('users.getFullUser', {
-      id: {
-        _: 'inputUserSelf',
-      },
-    });
-    
-    console.log('[TelegramClient] Đã đăng nhập: ', user.first_name);
-    return { success: true, user };
+    const result = await mtproto.call(method, params, options);
+    return result;
   } catch (error) {
-    if (error.error_message === 'AUTH_KEY_UNREGISTERED') {
-      console.log('[TelegramClient] Chưa đăng nhập');
-      return { success: false, error: 'NOT_LOGGED_IN' };
-    } else if (error.error_message === 'SESSION_PASSWORD_NEEDED') {
-      return { success: false, error: 'PASSWORD_NEEDED' };
-    } else {
-      console.error('[TelegramClient] Lỗi kiểm tra đăng nhập:', error);
-      return { success: false, error: error.error_message };
+    console.log(`Error in ${method}:`, error);
+    
+    // Xử lý lỗi AUTH_KEY_UNREGISTERED - cần đăng nhập lại
+    if (error.error_code === 401) {
+      return {
+        error: error.error_message || 'Bạn cần phải đăng nhập lại'
+      };
     }
+    
+    // Xử lý lỗi FLOOD_WAIT
+    if (error.error_message && error.error_message.includes('FLOOD_WAIT')) {
+      const waitTime = error.error_message.match(/FLOOD_WAIT_(\d+)/);
+      const seconds = waitTime ? parseInt(waitTime[1]) : 60;
+      
+      console.log(`Waiting for ${seconds} seconds due to FLOOD_WAIT`);
+      
+      return {
+        error: `FLOOD_WAIT_${seconds}`,
+        seconds
+      };
+    }
+    
+    throw error;
   }
 };
 
-// Gửi mã xác nhận đăng nhập
-const sendCode = async (mtproto, phone) => {
+/**
+ * Gửi yêu cầu xác thực bằng mã OTP qua Telegram
+ * @param {string} phone Số điện thoại (với mã quốc gia, không có số 0 đầu)
+ * @param {number} apiId API ID Telegram
+ * @param {string} apiHash API Hash Telegram
+ */
+const sendCode = async (phone, apiId, apiHash) => {
   try {
-    // Đảm bảo số điện thoại đúng định dạng (có dấu +)
-    const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
-    // Xử lý định dạng đúng: bỏ dấu + và cả các ký tự không phải số
-    const cleanPhone = formattedPhone.replace(/\+/g, '').replace(/\D/g, '');
+    // Xử lý định dạng số điện thoại
+    if (!phone) throw new Error('Số điện thoại không được để trống');
     
-    console.log(`[TelegramClient] Đang gửi mã xác nhận cho: +${cleanPhone}`);
+    let formattedPhone = phone.trim();
+    
+    // Đảm bảo bắt đầu bằng dấu +
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = '+' + formattedPhone;
+    }
+    
+    // Loại bỏ tất cả ký tự không phải số sau dấu +
+    formattedPhone = '+' + formattedPhone.substring(1).replace(/\D/g, '');
+    
+    console.log(`Sending code to phone: ${formattedPhone} with API ID: ${apiId} and API Hash: ${apiHash}`);
+    
+    // Kiểm tra API ID và API Hash
+    if (!apiId || !apiHash) {
+      throw new Error('Không tìm thấy API ID hoặc API Hash. Vui lòng kiểm tra cấu hình.');
+    }
     
     const result = await mtproto.call('auth.sendCode', {
-      phone_number: cleanPhone,
+      phone_number: formattedPhone.replace('+', ''),
       settings: {
         _: 'codeSettings',
+        allow_flashcall: false,
+        allow_missed_call: false,
+        allow_app_hash: true,
       },
-      api_id: process.env.TELEGRAM_API_ID,
-      api_hash: process.env.TELEGRAM_API_HASH
+      api_id: apiId,
+      api_hash: apiHash
     });
     
-    console.log(`[TelegramClient] Đã gửi mã xác nhận, hash: ${result.phone_code_hash.substring(0, 5)}...`);
-    return { success: true, phone_code_hash: result.phone_code_hash };
+    console.log('Send code result:', JSON.stringify(result, null, 2));
+    return {
+      phone_code_hash: result.phone_code_hash,
+      type: result.type?._,
+      phone
+    };
   } catch (error) {
-    console.error('[TelegramClient] Lỗi gửi mã:', error);
-    console.error('[TelegramClient] Chi tiết lỗi:', JSON.stringify(error, null, 2));
+    console.error('Error sending code:', error);
     
     // Xử lý các lỗi cụ thể
-    let errorMessage = 'Không thể gửi mã xác nhận';
-    if (error.error_message) {
-      if (error.error_message.includes('PHONE_NUMBER_INVALID')) {
-        errorMessage = 'Số điện thoại không hợp lệ. Vui lòng kiểm tra lại';
-      } else if (error.error_message.includes('PHONE_NUMBER_BANNED')) {
-        errorMessage = 'Số điện thoại này đã bị Telegram chặn';
-      } else if (error.error_message.includes('FLOOD_WAIT')) {
-        errorMessage = 'Vui lòng đợi một thời gian trước khi thử lại';
-      } else {
-        errorMessage = `Lỗi Telegram: ${error.error_message}`;
-      }
+    if (error.error_message?.includes('PHONE_NUMBER_INVALID')) {
+      throw new Error('PHONE_NUMBER_INVALID: Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.');
     }
     
-    // Trả về thông báo lỗi cụ thể hơn
-    return { 
-      success: false, 
-      error: errorMessage,
-      details: error 
-    };
+    throw error;
   }
 };
 
-// Đăng nhập với mã xác nhận
-const signIn = async (mtproto, { phone, code, phone_code_hash }) => {
+/**
+ * Đăng nhập bằng số điện thoại và mã xác nhận
+ * @param {string} phone Số điện thoại (với mã quốc gia)
+ * @param {string} phoneCodeHash Mã hash nhận được từ sendCode
+ * @param {string} code Mã xác nhận người dùng nhập
+ */
+const signIn = async (phone, phoneCodeHash, code) => {
   try {
-    // Đảm bảo số điện thoại đúng định dạng (có dấu +)
-    const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
-    // Xử lý định dạng đúng: bỏ dấu + và cả các ký tự không phải số
-    const cleanPhone = formattedPhone.replace(/\+/g, '').replace(/\D/g, '');
+    // Xử lý định dạng số điện thoại
+    let formattedPhone = phone.trim();
     
-    console.log(`[TelegramClient] Đang đăng nhập với mã: ${code}, phone: +${cleanPhone}, hash: ${phone_code_hash}`);
+    // Đảm bảo bắt đầu bằng dấu +
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = '+' + formattedPhone;
+    }
+    
+    // Loại bỏ tất cả ký tự không phải số sau dấu +
+    formattedPhone = '+' + formattedPhone.substring(1).replace(/\D/g, '');
+    
+    console.log(`Signing in with phone: ${formattedPhone}, code: ${code}, hash: ${phoneCodeHash}`);
     
     const result = await mtproto.call('auth.signIn', {
-      phone_number: cleanPhone,
-      phone_code_hash,
-      phone_code: code,
+      phone_number: formattedPhone.replace('+', ''),
+      phone_code_hash: phoneCodeHash,
+      phone_code: code
     });
     
-    console.log('[TelegramClient] Đăng nhập thành công:', result.user.first_name);
-    return { success: true, user: result.user };
+    console.log('Sign in result:', JSON.stringify(result, null, 2));
+    return result;
   } catch (error) {
-    console.error('[TelegramClient] Lỗi đăng nhập:', error);
-    console.error('[TelegramClient] Chi tiết lỗi:', JSON.stringify(error, null, 2));
+    console.error('Error signing in:', error);
     
+    // Xử lý lỗi SESSION_PASSWORD_NEEDED
     if (error.error_message === 'SESSION_PASSWORD_NEEDED') {
-      return { success: false, error: 'PASSWORD_NEEDED' };
+      throw new Error('SESSION_PASSWORD_NEEDED');
     }
     
-    // Xử lý các lỗi cụ thể
-    let errorMessage = 'Không thể đăng nhập';
-    if (error.error_message) {
-      if (error.error_message.includes('PHONE_CODE_INVALID')) {
-        errorMessage = 'Mã xác nhận không đúng. Vui lòng kiểm tra lại';
-      } else if (error.error_message.includes('PHONE_CODE_EXPIRED')) {
-        errorMessage = 'Mã xác nhận đã hết hạn. Vui lòng yêu cầu mã mới';
-      } else if (error.error_message.includes('FLOOD_WAIT')) {
-        errorMessage = 'Vui lòng đợi một thời gian trước khi thử lại';
-      } else {
-        errorMessage = `Lỗi Telegram: ${error.error_message}`;
+    // Xử lý lỗi PHONE_CODE_INVALID
+    if (error.error_message?.includes('PHONE_CODE_INVALID')) {
+      throw new Error('PHONE_CODE_INVALID: Mã xác nhận không đúng.');
+    }
+    
+    // Xử lý lỗi PHONE_CODE_EXPIRED
+    if (error.error_message?.includes('PHONE_CODE_EXPIRED')) {
+      throw new Error('PHONE_CODE_EXPIRED: Mã xác nhận đã hết hạn.');
+    }
+    
+    throw error;
+  }
+};
+
+/**
+ * Upload file lên Telegram
+ * @param {string} filePath Đường dẫn tới file cần upload
+ * @param {string} caption Mô tả cho file
+ */
+const uploadFile = async (filePath, caption = '') => {
+  try {
+    // Kiểm tra xem file có tồn tại không
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File không tồn tại: ${filePath}`);
+    }
+    
+    // Đọc nội dung file
+    const fileContent = fs.readFileSync(filePath);
+    const fileName = path.basename(filePath);
+    
+    // TODO: Implement upload file
+    console.log(`Uploading file: ${fileName} (${fileContent.length} bytes)`);
+    
+    // Upload file code sẽ được thêm ở đây
+    
+    return {
+      success: true,
+      message: 'File upload function is under development'
+    };
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw error;
+  }
+};
+
+/**
+ * Kiểm tra xem đã đăng nhập chưa
+ */
+const checkAuth = async () => {
+  try {
+    const result = await mtproto.call('users.getFullUser', {
+      id: {
+        _: 'inputUserSelf'
       }
-    }
+    });
     
-    // Trả về thông báo lỗi cụ thể hơn
-    return { 
-      success: false, 
-      error: errorMessage,
-      details: error 
+    console.log('User data:', result);
+    return {
+      authorized: true,
+      user: {
+        id: result.user.id,
+        name: `${result.user.first_name} ${result.user.last_name || ''}`.trim(),
+        username: result.user.username || null,
+        phone: result.user.phone
+      }
+    };
+  } catch (error) {
+    console.log('Auth check error:', error);
+    return {
+      authorized: false,
+      error: error.error_message || 'Not authorized'
     };
   }
 };
 
-// Đăng nhập với mật khẩu hai lớp
-const checkPassword = async (mtproto, password) => {
+/**
+ * Đăng xuất
+ */
+const logout = async () => {
   try {
-    const { srp_id, current_algo, srp_B } = await mtproto.call('account.getPassword');
-    // Xử lý xác thực SRP phức tạp - cần thêm logic xử lý password
+    const result = await mtproto.call('auth.logOut');
+    console.log('Logout result:', result);
     
-    // Giả định đã xử lý password SRP
-    const result = await mtproto.call('auth.checkPassword', {
-      password: {
-        _: 'inputCheckPasswordSRP',
-        srp_id,
-        A: 'processed_A',
-        M1: 'processed_M1'
-      }
-    });
+    // Xóa file session
+    const sessionFile = path.join(SESSION_DIR, 'telegram-session.json');
+    if (fs.existsSync(sessionFile)) {
+      fs.unlinkSync(sessionFile);
+      console.log('Session file deleted');
+    }
     
-    return { success: true, user: result.user };
-  } catch (error) {
-    console.error('[TelegramClient] Lỗi kiểm tra mật khẩu:', error);
-    return { success: false, error: error.error_message };
-  }
-};
-
-// Upload file lên Telegram
-const uploadFile = async (mtproto, filePath, caption = '') => {
-  if (!mtproto) return { success: false, error: 'Chưa đăng nhập Telegram' };
-  
-  try {
-    console.log(`[TelegramClient] Đang tải file: ${filePath}`);
-    
-    // Đọc file
-    const fileBuffer = fs.readFileSync(filePath);
-    const fileName = filePath.split('/').pop();
-    
-    // Thực hiện upload file
-    // (Lưu ý: Code thực tế cần phân chia file thành các phần nhỏ - chunking)
-    
-    // Upload lên Saved Messages
-    const result = await mtproto.call('messages.sendMedia', {
-      peer: {
-        _: 'inputPeerSelf',
-      },
-      media: {
-        _: 'inputMediaUploadedDocument',
-        file: fileBuffer,
-        mime_type: 'application/octet-stream', // Tự động xác định từ file
-        attributes: [
-          {
-            _: 'documentAttributeFilename',
-            file_name: fileName,
-          },
-        ],
-      },
-      message: caption || fileName,
-      random_id: Math.floor(Math.random() * 0xFFFFFFFF), // Random ID cho message
-    });
-    
-    console.log(`[TelegramClient] Upload thành công: ${fileName}`);
-    return { success: true, result };
-  } catch (error) {
-    console.error('[TelegramClient] Lỗi upload file:', error);
-    return { success: false, error: error.error_message || error.message };
-  }
-};
-
-// Đăng xuất
-const logOut = async (mtproto) => {
-  if (!mtproto) return { success: false };
-  
-  try {
-    await mtproto.call('auth.logOut');
-    console.log('[TelegramClient] Đã đăng xuất');
     return { success: true };
   } catch (error) {
-    console.error('[TelegramClient] Lỗi đăng xuất:', error);
-    return { success: false, error: error.error_message };
+    console.error('Error logging out:', error);
+    return { success: false, error: error.message };
   }
 };
 
 module.exports = {
-  initTelegramClient,
-  checkAuth,
+  callApi,
   sendCode,
   signIn,
-  checkPassword,
   uploadFile,
-  logOut
+  checkAuth,
+  logout
 }; 
