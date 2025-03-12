@@ -50,6 +50,23 @@ export const useAuth = () => {
     }
   };
 
+  const loginWithTelegram = async (userData: any) => {
+    try {
+      // userData chứa thông tin từ Telegram: id, first_name, last_name, username, photo_url, auth_date, hash
+      const response = await authService.loginWithTelegram(userData);
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      setIsAuthenticated(true);
+      message.success('Đăng nhập thành công');
+      navigate('/');
+      return response;
+    } catch (error) {
+      message.error('Đăng nhập thất bại');
+      console.error('Login with Telegram error:', error);
+      throw error;
+    }
+  };
+
   const register = async (userData: any) => {
     try {
       const response = await authService.register(userData);
@@ -89,6 +106,7 @@ export const useAuth = () => {
     isLoading,
     user: data?.user,
     login,
+    loginWithTelegram,
     register,
     logout,
   };
