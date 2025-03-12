@@ -665,4 +665,49 @@ body {
     display: flex;
     justify-content: center;
     gap: 15px;
+}
+
+/* Telegram Login */
+.telegram-login {
+    margin-bottom: 20px;
+}
+
+.btn-telegram {
+    background-color: #0088cc;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-telegram:hover {
+    background-color: #0077b5;
+}
+
+.btn-telegram i {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--gray-color);
+    margin: 15px 0;
+}
+
+.separator::before,
+.separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.separator::before {
+    margin-right: 10px;
+}
+
+.separator::after {
+    margin-left: 10px;
 } 
