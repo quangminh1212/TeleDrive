@@ -3,16 +3,17 @@ echo === KHỞI ĐỘNG TELEDRIVE ===
 echo Đang khởi động server...
 
 :: Khởi động server Node.js trong nền
-start /B cmd /c "npm start"
+start /B cmd /c "node server.js"
 
-:: Đợi 3 giây để server khởi động
-timeout /t 3 /nobreak > nul
+:: Đợi 5 giây để server khởi động
+echo Đợi server khởi động...
+timeout /t 5 /nobreak > nul
 
-:: Mở Chrome với URL localhost:3000, sử dụng profile mặc định
-echo Đang mở trình duyệt Chrome...
-start chrome --profile-directory="Default" http://localhost:3000
+:: Mở URL trong trình duyệt mặc định
+echo Đang mở trình duyệt...
+start "" http://localhost:3000
 
 echo === TELEDRIVE ĐÃ KHỞI ĐỘNG ===
 echo Server đang chạy tại địa chỉ: http://localhost:3000
 echo.
-echo Để dừng server, nhấn Ctrl+C trong cửa sổ cmd đang chạy server. 
+echo Để dừng server, đóng cửa sổ cmd này và các cửa sổ liên quan. 
