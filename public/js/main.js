@@ -228,6 +228,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginWindow) loginWindow.focus();
   }
 
+  // Mở cửa sổ đăng nhập Telegram API
+  function openTelegramApiLogin() {
+    const width = 450;
+    const height = 650;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    
+    const loginWindow = window.open('/telegram-api-login', 'telegram-api-login', 
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`);
+    
+    // Focus vào cửa sổ mới
+    if (loginWindow) loginWindow.focus();
+  }
+
   // Đăng xuất khỏi Telegram
   function logoutTelegram() {
     // Đóng dropdown
@@ -786,26 +800,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showNotification('Đã kết nối với Telegram Web thành công!', 'success');
   }
 
-  // Mở cửa sổ đăng nhập Telegram Web
-  function openTelegramLogin() {
-    const width = 800;
-    const height = 600;
-    const left = (window.innerWidth - width) / 2;
-    const top = (window.innerHeight - height) / 2;
-    
-    const telegramLoginWindow = window.open('/telegram-login', 'telegram-login', 
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`);
-    
-    // Kiểm tra cửa sổ đóng
-    const checkWindowClosed = setInterval(function() {
-      if (telegramLoginWindow.closed) {
-        clearInterval(checkWindowClosed);
-        // Sau khi cửa sổ đóng, kiểm tra lại trạng thái đăng nhập
-        setTimeout(checkTelegramAfterWindowClosed, 1000);
-      }
-    }, 1000);
-  }
-
   // Kiểm tra trạng thái sau khi cửa sổ Telegram đóng
   function checkTelegramAfterWindowClosed() {
     // Giả định đăng nhập thành công sau khi cửa sổ đóng
@@ -815,21 +809,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Tải lại danh sách file
     loadUserFiles();
-  }
-
-  // Đăng xuất khỏi Telegram
-  function logoutTelegram() {
-    localStorage.removeItem('telegramWebLoggedIn');
-    
-    const loginBtn = document.querySelector('.telegram-login-btn');
-    const userInfo = document.querySelector('.user-info');
-    
-    if (loginBtn && userInfo) {
-      loginBtn.classList.remove('d-none');
-      userInfo.classList.add('d-none');
-    }
-    
-    showNotification('Đã đăng xuất khỏi Telegram', 'info');
   }
 
   // Lắng nghe thông báo từ cửa sổ đăng nhập Telegram

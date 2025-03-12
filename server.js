@@ -430,6 +430,11 @@ app.get('/telegram-login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'telegram-login.html'));
 });
 
+// Endpoint cho đăng nhập Telegram API
+app.get('/telegram-api-login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'telegram-api-login.html'));
+});
+
 // API endpoint để kiểm tra cấu hình Telegram
 app.get('/api/telegram/config', (req, res) => {
   const uploadPath = path.join(__dirname, 'uploads');

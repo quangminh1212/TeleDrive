@@ -244,6 +244,17 @@
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`);
     }
     
+    // Mở cửa sổ đăng nhập Telegram API (sử dụng MTProto)
+    function openTelegramApiLogin() {
+      const width = 450;
+      const height = 650;
+      const left = (window.innerWidth - width) / 2;
+      const top = (window.innerHeight - height) / 2;
+      
+      window.open('/telegram-api-login', 'telegram-api-login', 
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`);
+    }
+    
     // Lắng nghe thông báo đăng nhập thành công từ cửa sổ Telegram Web
     window.addEventListener('message', function(event) {
       if (event.data && event.data.type === 'telegram_login_success') {
@@ -260,6 +271,22 @@
         // Tải lại danh sách file
         loadFiles();
       }
+      
+      // Lắng nghe sự kiện đăng nhập API thành công
+      if (event.data && event.data.type === 'telegram_api_login_success') {
+        // Cập nhật giao diện sau khi đăng nhập thành công
+        document.querySelector('.telegram-login-btn').classList.add('d-none');
+        document.querySelector('.user-info').classList.remove('d-none');
+        
+        // Lưu trạng thái đăng nhập
+        localStorage.setItem('telegramLoggedIn', 'true');
+        
+        // Thông báo đăng nhập thành công
+        alert('Đăng nhập Telegram API thành công! Bạn có thể bắt đầu sử dụng TeleDrive với tự động đồng bộ file.');
+        
+        // Tải lại danh sách file
+        loadFiles();
+      }
     });
     
     // Kiểm tra trạng thái đăng nhập khi tải trang
@@ -268,6 +295,26 @@
         document.querySelector('.telegram-login-btn').classList.add('d-none');
         document.querySelector('.user-info').classList.remove('d-none');
       }
+      
+      // Kiểm tra xem ứng dụng có hỗ trợ Telegram API không
+      fetch('/api/telegram/config')
+        .then(response => response.json())
+        .then(config => {
+          if (config.useTelegramAPI) {
+            // Hiển thị nút đăng nhập API nếu chưa đăng nhập
+            const apiLoginButton = document.createElement('button');
+            apiLoginButton.className = 'btn btn-primary ms-2 telegram-api-login-btn';
+            apiLoginButton.innerHTML = '<i class="bi bi-telegram"></i> <span>API Đăng nhập</span>';
+            apiLoginButton.onclick = openTelegramApiLogin;
+            
+            // Thêm nút vào giao diện
+            const loginStatus = document.querySelector('#loginStatus');
+            if (loginStatus && localStorage.getItem('telegramLoggedIn') !== 'true') {
+              loginStatus.appendChild(apiLoginButton);
+            }
+          }
+        })
+        .catch(error => console.error('Error checking Telegram config:', error));
     });
   </script>
 </body>

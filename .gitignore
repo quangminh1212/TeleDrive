@@ -54,6 +54,8 @@ public/downloads/
 # Telegram session files
 *.session
 *.session-journal
+.telegram-sessions/
+storage.json
 
 # Project specific
 data/
