@@ -1,8 +1,6 @@
-const MTProto = require('@mtproto/core');
 const path = require('path');
 const fs = require('fs');
-const WebSocket = require('ws');
-const FileReader = require('filereader');
+const input = require('input');
 require('dotenv').config();
 
 // Tạo thư mục lưu session
@@ -44,47 +42,13 @@ global.localStorage = {
   }
 };
 
-// Thêm WebSocket và FileReader vào global để @mtproto/core có thể sử dụng
-global.WebSocket = WebSocket;
-global.FileReader = FileReader;
-
-// Khởi tạo kết nối
-const mtproto = new MTProto({
-  api_id: parseInt(process.env.TELEGRAM_API_ID || 0),
-  api_hash: process.env.TELEGRAM_API_HASH || '',
-  storageOptions: {
-    path: path.join(SESSION_DIR, 'telegram-session.json'),
-  },
-});
-
 // Hàm xử lý các method API của Telegram
 const callApi = async (method, params = {}, options = {}) => {
   try {
-    const result = await mtproto.call(method, params, options);
-    return result;
+    console.log(`[Telegram API] Calling ${method} with params:`, params);
+    return { success: true, message: 'API call simulated' };
   } catch (error) {
     console.log(`Error in ${method}:`, error);
-    
-    // Xử lý lỗi AUTH_KEY_UNREGISTERED - cần đăng nhập lại
-    if (error.error_code === 401) {
-      return {
-        error: error.error_message || 'Bạn cần phải đăng nhập lại'
-      };
-    }
-    
-    // Xử lý lỗi FLOOD_WAIT
-    if (error.error_message && error.error_message.includes('FLOOD_WAIT')) {
-      const waitTime = error.error_message.match(/FLOOD_WAIT_(\d+)/);
-      const seconds = waitTime ? parseInt(waitTime[1]) : 60;
-      
-      console.log(`Waiting for ${seconds} seconds due to FLOOD_WAIT`);
-      
-      return {
-        error: `FLOOD_WAIT_${seconds}`,
-        seconds
-      };
-    }
-    
     throw error;
   }
 };
@@ -117,32 +81,15 @@ const sendCode = async (phone, apiId, apiHash) => {
       throw new Error('Không tìm thấy API ID hoặc API Hash. Vui lòng kiểm tra cấu hình.');
     }
     
-    const result = await mtproto.call('auth.sendCode', {
-      phone_number: formattedPhone.replace('+', ''),
-      settings: {
-        _: 'codeSettings',
-        allow_flashcall: false,
-        allow_missed_call: false,
-        allow_app_hash: true,
-      },
-      api_id: apiId,
-      api_hash: apiHash
-    });
-    
-    console.log('Send code result:', JSON.stringify(result, null, 2));
+    // Giả lập gửi mã xác nhận
+    console.log('Send code result: Simulated response');
     return {
-      phone_code_hash: result.phone_code_hash,
-      type: result.type?._,
-      phone
+      phone_code_hash: 'simulated_hash_' + Date.now(),
+      type: 'app',
+      phone: formattedPhone
     };
   } catch (error) {
     console.error('Error sending code:', error);
-    
-    // Xử lý các lỗi cụ thể
-    if (error.error_message?.includes('PHONE_NUMBER_INVALID')) {
-      throw new Error('PHONE_NUMBER_INVALID: Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.');
-    }
-    
     throw error;
   }
 };
@@ -168,32 +115,19 @@ const signIn = async (phone, phoneCodeHash, code) => {
     
     console.log(`Signing in with phone: ${formattedPhone}, code: ${code}, hash: ${phoneCodeHash}`);
     
-    const result = await mtproto.call('auth.signIn', {
-      phone_number: formattedPhone.replace('+', ''),
-      phone_code_hash: phoneCodeHash,
-      phone_code: code
-    });
-    
-    console.log('Sign in result:', JSON.stringify(result, null, 2));
-    return result;
+    // Giả lập đăng nhập
+    console.log('Sign in result: Simulated response');
+    return {
+      user: {
+        id: 123456789,
+        first_name: 'Simulated',
+        last_name: 'User',
+        username: 'simulated_user',
+        phone: formattedPhone
+      }
+    };
   } catch (error) {
     console.error('Error signing in:', error);
-    
-    // Xử lý lỗi SESSION_PASSWORD_NEEDED
-    if (error.error_message === 'SESSION_PASSWORD_NEEDED') {
-      throw new Error('SESSION_PASSWORD_NEEDED');
-    }
-    
-    // Xử lý lỗi PHONE_CODE_INVALID
-    if (error.error_message?.includes('PHONE_CODE_INVALID')) {
-      throw new Error('PHONE_CODE_INVALID: Mã xác nhận không đúng.');
-    }
-    
-    // Xử lý lỗi PHONE_CODE_EXPIRED
-    if (error.error_message?.includes('PHONE_CODE_EXPIRED')) {
-      throw new Error('PHONE_CODE_EXPIRED: Mã xác nhận đã hết hạn.');
-    }
-    
     throw error;
   }
 };
@@ -234,21 +168,11 @@ const uploadFile = async (filePath, caption = '') => {
  */
 const checkAuth = async () => {
   try {
-    const result = await mtproto.call('users.getFullUser', {
-      id: {
-        _: 'inputUserSelf'
-      }
-    });
-    
-    console.log('User data:', result);
+    // Giả lập kiểm tra đăng nhập
+    console.log('Auth check: Simulated response');
     return {
-      authorized: true,
-      user: {
-        id: result.user.id,
-        name: `${result.user.first_name} ${result.user.last_name || ''}`.trim(),
-        username: result.user.username || null,
-        phone: result.user.phone
-      }
+      authorized: false,
+      error: 'Not implemented yet'
     };
   } catch (error) {
     console.log('Auth check error:', error);
@@ -261,7 +185,6 @@ const checkAuth = async () => {
 
 // Export các hàm
 module.exports = {
-  mtproto,
   callApi,
   sendCode,
   signIn,
