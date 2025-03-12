@@ -34,6 +34,12 @@ export const authService = {
     return response.data;
   },
 
+  // Login with Telegram widget
+  loginWithTelegram: async (telegramData: any) => {
+    const response = await axios.post(`${API_URL}/login/telegram`, telegramData);
+    return response.data;
+  },
+
   // Logout user
   logout: async () => {
     const response = await authAxios.post(`${API_URL}/logout`);
