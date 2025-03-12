@@ -49,6 +49,10 @@ global.localStorage = {
 global.WebSocket = WebSocket;
 global.FileReader = FileReader;
 
+// Cấu hình server Telegram MTProto
+const TEST_DC = '149.154.167.40:443';
+const PRODUCTION_DC = '149.154.167.50:443';
+
 // Khởi tạo kết nối
 let mtproto;
 try {
@@ -61,8 +65,12 @@ try {
       storageOptions: {
         path: path.join(SESSION_DIR, 'telegram-session.json'),
       },
+      // Cấu hình server để kết nối
+      customDc: process.env.NODE_ENV === 'production' ? PRODUCTION_DC : TEST_DC,
+      useWSS: true
     });
     console.log('[TelegramClient] Khởi tạo thành công MTProto client');
+    console.log(`[TelegramClient] Đang sử dụng DC: ${process.env.NODE_ENV === 'production' ? PRODUCTION_DC : TEST_DC}`);
   }
 } catch (error) {
   console.error('[TelegramClient] Lỗi khởi tạo MTProto client:', error);
