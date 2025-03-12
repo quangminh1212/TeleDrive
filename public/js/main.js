@@ -137,58 +137,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Update UI for authenticated user
   function updateUIForAuthenticatedUser() {
-    const userProfile = document.querySelector('.user-profile');
-    const username = userProfile.querySelector('.username');
+    const loginStatus = document.getElementById('loginStatus');
+    if (!loginStatus) return;
     
-    username.textContent = currentUser.name;
-    if (currentUser.avatar) {
-      userProfile.querySelector('.avatar').src = currentUser.avatar;
+    loginStatus.innerHTML = `
+      <div class="user-info">
+        <span class="user-name">${currentUser ? currentUser.firstName || 'Telegram User' : 'Telegram User'}</span>
+        <img src="${currentUser && currentUser.photoUrl ? currentUser.photoUrl : 'https://placehold.co/40x40?text=User'}" alt="Avatar" class="avatar">
+        <i class="bi bi-chevron-down ms-1 small text-muted"></i>
+      </div>
+      
+      <div class="user-dropdown d-none">
+        <div class="dropdown-item telegram-status">
+          <i class="bi bi-circle-fill text-success me-2 small"></i>
+          <span>Đã kết nối Telegram</span>
+        </div>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="#" onclick="logoutTelegram()">
+          <i class="bi bi-box-arrow-right me-2"></i>
+          Đăng xuất
+        </a>
+      </div>
+    `;
+    
+    // Thêm event listener cho menu user
+    const userInfo = document.querySelector('.user-info');
+    const userDropdown = document.querySelector('.user-dropdown');
+    
+    if (userInfo && userDropdown) {
+      userInfo.addEventListener('click', function() {
+        userDropdown.classList.toggle('d-none');
+      });
+      
+      // Đóng dropdown khi click ra ngoài
+      document.addEventListener('click', function(event) {
+        if (!userInfo.contains(event.target) && !userDropdown.contains(event.target)) {
+          userDropdown.classList.add('d-none');
+        }
+      });
     }
-    
-    loadUserFiles();
   }
 
   // Show login modal
   function showLoginModal() {
-    // Create login modal if it doesn't exist
-    if (!document.getElementById('loginModal')) {
-      const modalHTML = `
-        <div class="modal fade" id="loginModal" tabindex="-1" data-bs-backdrop="static">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Login with Telegram</h5>
-              </div>
-              <div class="modal-body">
-                <p>Enter your phone number to connect with Telegram:</p>
-                <div class="mb-3">
-                  <input type="tel" class="form-control" id="phoneNumber" placeholder="+84123456789">
-                  <div class="form-text">We'll send a code to this number</div>
-                </div>
-                <div id="confirmCodeContainer" class="mb-3 d-none">
-                  <input type="text" class="form-control" id="confirmCode" placeholder="Enter code">
-                </div>
-                <div id="loginMessage" class="alert alert-info d-none"></div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="telegramLoginBtn">Send Code</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      const modalContainer = document.createElement('div');
-      modalContainer.innerHTML = modalHTML;
-      document.body.appendChild(modalContainer.firstElementChild);
-      
-      // Add event listener for login button
-      document.getElementById('telegramLoginBtn').addEventListener('click', handleTelegramLogin);
-    }
+    const loginStatus = document.getElementById('loginStatus');
+    if (!loginStatus) return;
     
-    // Show the modal
-    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-    loginModal.show();
+    loginStatus.innerHTML = `
+      <button class="btn btn-primary telegram-login-btn" onclick="openTelegramLogin()">
+        <i class="bi bi-telegram"></i> <span>Đăng nhập Web</span>
+      </button>
+      <button class="btn btn-info telegram-api-login-btn ms-2" onclick="openTelegramApiLogin()">
+        <i class="bi bi-shield-lock"></i> <span>API Đăng nhập</span>
+      </button>
+    `;
   }
 
   // Handle Telegram login
@@ -259,14 +261,32 @@ document.addEventListener('DOMContentLoaded', () => {
   let telegramLoggedIn = localStorage.getItem('telegramLoggedIn') === 'true';
 
   // Kiểm tra trạng thái đăng nhập Telegram
-  function checkTelegramAuthStatus() {
-    if (telegramLoggedIn) {
-      document.querySelector('.telegram-login-btn').classList.add('d-none');
-      document.querySelector('.user-info').classList.remove('d-none');
-      loadUserFiles();
-    } else {
-      document.querySelector('.telegram-login-btn').classList.remove('d-none');
-      document.querySelector('.user-info').classList.add('d-none');
+  async function checkTelegramAuthStatus() {
+    if (isDirectOpen) {
+      console.log('Mở file trực tiếp, hiển thị UI mặc định cho login');
+      updateUIForDirectOpen();
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/telegram/status', {
+        headers: {
+          'Authorization': sessionId || ''
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.authenticated) {
+        isAuthenticated = true;
+        currentUser = data.user;
+        updateUIForAuthenticatedUser();
+      } else {
+        showLoginModal();
+      }
+    } catch (error) {
+      console.error('Error checking Telegram auth status:', error);
+      updateUIForDirectOpen();
     }
   }
 
@@ -284,48 +304,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Mở cửa sổ đăng nhập Telegram Web
-  function openTelegramLogin() {
-    const width = 800;
-    const height = 600;
-    const left = (window.innerWidth - width) / 2;
-    const top = (window.innerHeight - height) / 2;
+  // Mở cửa sổ đăng nhập Telegram
+  window.openTelegramLogin = function() {
+    if (isDirectOpen) {
+      showToast('Tính năng không khả dụng khi mở trực tiếp. Hãy chạy server Node.js.', 'warning');
+      return;
+    }
     
-    const loginWindow = window.open('/telegram-login', 'telegram-login', 
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`);
-    
-    // Focus vào cửa sổ mới
-    if (loginWindow) loginWindow.focus();
-  }
+    window.open('/telegram-login.html', '_blank', 'width=600,height=600');
+  };
 
   // Mở cửa sổ đăng nhập Telegram API
-  function openTelegramApiLogin() {
-    const width = 450;
-    const height = 650;
-    const left = (window.innerWidth - width) / 2;
-    const top = (window.innerHeight - height) / 2;
-    
-    const loginWindow = window.open('/telegram-api-login', 'telegram-api-login', 
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`);
-    
-    // Focus vào cửa sổ mới
-    if (loginWindow) loginWindow.focus();
-  }
+  window.openTelegramApiLogin = function() {
+    if (isDirectOpen) {
+      window.open('telegram-api-login.html', '_self');
+    } else {
+      window.open('/telegram-api-login.html', '_self');
+    }
+  };
 
   // Đăng xuất khỏi Telegram
-  function logoutTelegram() {
-    // Đóng dropdown
-    document.querySelector('.user-dropdown').classList.add('d-none');
+  window.logoutTelegram = async function() {
+    if (isDirectOpen) {
+      console.log('Mở file trực tiếp, hiển thị UI mặc định sau khi logout');
+      updateUIForDirectOpen();
+      return;
+    }
     
-    // Xóa trạng thái đăng nhập
-    localStorage.removeItem('telegramLoggedIn');
-    
-    // Cập nhật giao diện
-    checkTelegramAuthStatus();
-    
-    // Hiển thị thông báo
-    showNotification('Đã đăng xuất khỏi Telegram', 'info');
-  }
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': sessionId || ''
+        }
+      });
+      
+      if (response.ok) {
+        localStorage.removeItem('sessionId');
+        localStorage.removeItem('username');
+        isAuthenticated = false;
+        currentUser = null;
+        
+        // Hiển thị UI đăng nhập
+        showLoginModal();
+        
+        // Hiển thị thông báo
+        showToast('Đăng xuất thành công', 'success');
+      }
+    } catch (error) {
+      console.error('Error logging out:', error);
+      showToast('Đăng xuất thất bại: ' + error.message, 'danger');
+    }
+  };
 
   // Hiển thị thông báo
   function showNotification(message, type = 'info') {
@@ -894,4 +924,37 @@ document.addEventListener('DOMContentLoaded', () => {
       loadUserFiles();
     }
   });
+
+  // Hiển thị toast thông báo
+  function showToast(message, type = 'info') {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    
+    const id = 'toast-' + Date.now();
+    const toast = document.createElement('div');
+    toast.className = `toast show bg-${type} text-white`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    toast.id = id;
+    
+    toast.innerHTML = `
+      <div class="toast-header bg-${type} text-white">
+        <strong class="me-auto">TeleDrive</strong>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body">
+        ${message}
+      </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+      const toastEl = document.getElementById(id);
+      if (toastEl) {
+        toastEl.remove();
+      }
+    }, 5000);
+  }
 }); 
