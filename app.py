@@ -27,8 +27,9 @@ class User(UserMixin):
         self.id = id
         self.username = username
 
-# Dictionnaire des utilisateurs (à remplacer par une base de données dans une application de production)
+# Dictionnaires des utilisateurs et des mots de passe (à remplacer par une base de données dans une application de production)
 users = {}
+user_passwords = {}  # Dictionnaire pour stocker les mots de passe
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -129,7 +130,7 @@ def register():
         
         # Enregistrez le mot de passe (à faire correctement dans une application de production)
         # Dans un environnement de production, vous devriez hacher le mot de passe
-        session[f'password_{user_id}'] = password
+        user_passwords[user_id] = password
         
         # Créer le dossier de l'utilisateur
         get_user_path(user_id)
@@ -153,7 +154,7 @@ def login():
                 user_id = id
                 break
         
-        if user_id and session.get(f'password_{user_id}') == password:
+        if user_id and user_passwords.get(user_id) == password:
             login_user(users[user_id])
             next_page = request.args.get('next')
             return redirect(next_page or url_for('dashboard'))
@@ -356,11 +357,15 @@ def delete_item(file_path):
     
     return redirect(url_for('browse_files', path=parent_path))
 
+# Créer un utilisateur par défaut
+users['1'] = User('1', 'admin')
+user_passwords['1'] = 'admin'  # À ne pas faire en production !
+
 if __name__ == '__main__':
-    # Créer un utilisateur par défaut si aucun n'existe
-    if not users:
-        users['1'] = User('1', 'admin')
-        session['password_1'] = 'admin'  # À ne pas faire en production !
-        get_user_path('1')
+    # Créer les dossiers nécessaires
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'metadata'), exist_ok=True)
+    
+    # Créer le chemin pour l'utilisateur par défaut
+    get_user_path('1')
     
     app.run(host='0.0.0.0', port=5000, debug=True) 
