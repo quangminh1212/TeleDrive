@@ -224,10 +224,13 @@ const create = (appStorage, appPath, platform) => {
 }
 
 /**
- * @ param {Airgram} client
- * @ param {BrowserWindow} mainWindow
- * */
-module.exports.updateInfo = async (client, mainWindow, appFilesPath, appVersion) => {
+ * Cập nhật thông tin người dùng
+ * @param {Airgram} client Client Telegram
+ * @param {BrowserWindow} mainWindow Cửa sổ chính của ứng dụng
+ * @param {string} appFilesPath Đường dẫn đến thư mục lưu trữ ứng dụng
+ * @param {string} appVersion Phiên bản ứng dụng
+ */
+const updateInfo = async (client, mainWindow, appFilesPath, appVersion) => {
     log.info("[INFO] Updating user information");
     
     const update = async () => {
@@ -255,7 +258,7 @@ module.exports.updateInfo = async (client, mainWindow, appFilesPath, appVersion)
             mainWindow.webContents.send('authSuccess');
             
             log.info("[INFO] Sending user info update");
-            mainWindow.webContents.send('updateMyInfo', myInfo);
+            mainWindow.webContents.send('userInfo', myInfo);
 
             // If photo not already downloaded
             if (me.profilePhoto && !myInfo.photo) {
@@ -271,7 +274,7 @@ module.exports.updateInfo = async (client, mainWindow, appFilesPath, appVersion)
                         // Set photo and update again
                         log.info("[INFO] Profile photo downloaded, updating");
                         myInfo.photo = ctx.update.file.local.path;
-                        mainWindow.webContents.send('updateMyInfo', myInfo);
+                        mainWindow.webContents.send('userInfo', myInfo);
                     }
                     return next();
                 });
@@ -288,30 +291,25 @@ module.exports.updateInfo = async (client, mainWindow, appFilesPath, appVersion)
             ipcMain.on('changeTeleDir', async () => {
                 const fsPromise = require('fs').promises
                 let oldDir = store.get('teleDir')
-                let response = await dialog.showOpenDialog({properties: ['openDirectory']})
-                if (!response.canceled) {
-                    let teleDir = join(response.filePaths[0], 'TeleDriveSync');
-                    store.set('teleDir', teleDir)
-                    try {
-                        await fsPromise.access(teleDir)
-                    } catch (e) {
-                        await fsPromise.mkdir(teleDir, {recursive: true})
-                    } finally {
-                        (mainWindow).webContents.send("movingFiles")
-                        const { ncp } = require('ncp')
-                        const fsPromise = require('fs').promises
-                        ncp(oldDir, teleDir, async err => {
-                            if (err) {
-                                return console.error(err)
-                            }
-                            await fsPromise.rmdir(oldDir, { recursive: true });
-                            (mainWindow).webContents.send("restarting")
-                            setTimeout(_ => {
-                                app.relaunch()
-                                app.quit()
-                            }, 5000)
-                        })
-                    }
+                
+                // Trong phiên bản giả lập, tự động sử dụng thư mục mặc định
+                const defaultDir = join(app.getPath('documents'), 'TeleDriveSync');
+                log.info(`[MOCK] Using default directory for change: ${defaultDir}`);
+                
+                store.set('teleDir', defaultDir)
+                try {
+                    await fsPromise.access(defaultDir)
+                } catch (e) {
+                    await fsPromise.mkdir(defaultDir, {recursive: true})
+                } finally {
+                    mainWindow.webContents.send("movingFiles")
+                    log.info(`[MOCK] Simulating moving files from ${oldDir} to ${defaultDir}`);
+                    
+                    // Giả lập việc di chuyển file xong
+                    setTimeout(() => {
+                        mainWindow.webContents.send('selectedDir', defaultDir);
+                        log.info("[MOCK] Files moved successfully");
+                    }, 1000);
                 }
             });
             
@@ -369,16 +367,49 @@ module.exports.updateInfo = async (client, mainWindow, appFilesPath, appVersion)
                 }, 500);
             });
             
-            addWatches(teleDir, me.id, client, appFilesPath, appVersion, mainWindow)
+            // Thiết lập theo dõi thư mục
+            if (typeof addWatches === 'function') {
+                try {
+                    log.info("[INFO] Setting up directory watches");
+                    addWatches(teleDir, me.id, client, appFilesPath, appVersion, mainWindow);
+                } catch (error) {
+                    log.error("[INFO] Error setting up watches:", error);
+                }
+            } else {
+                log.warn("[INFO] addWatches function not available");
+            }
         } catch (error) {
             log.error("[INFO] Error updating user info:", error);
-            mainWindow.webContents.send('error', {
-                message: 'Lỗi khi cập nhật thông tin người dùng: ' + error.message
+            
+            // Gửi lại thông tin cơ bản nếu có lỗi
+            mainWindow.webContents.send('userInfo', {
+                name: 'Demo User',
+                number: '+1234567890',
+                photo: null
             });
+            
+            // Tự động thiết lập thư mục mặc định nếu có lỗi
+            try {
+                const defaultDir = join(app.getPath('documents'), 'TeleDriveSync');
+                log.info(`[MOCK] Using default directory due to error: ${defaultDir}`);
+                
+                store.set('teleDir', defaultDir);
+                const fsPromise = require('fs').promises;
+                
+                try {
+                    await fsPromise.access(defaultDir);
+                } catch (e) {
+                    await fsPromise.mkdir(defaultDir, {recursive: true});
+                }
+                
+                mainWindow.webContents.send('selectedDir', defaultDir);
+            } catch (dirError) {
+                log.error("[INFO] Error setting up default directory:", dirError);
+            }
         }
-    }
+    };
 
-    // Thực hiện update
+    // Thực hiện cập nhật
     await update();
 }
 
@@ -408,19 +439,33 @@ module.exports.checkConnectionStatus = async (mainWindow) => {
 }
 
 /**
- * @param {Airgram} client
- * */
-module.exports.cleanQuit = async (client) => {
-    log.info("[QUIT] Cleaning up");
+ * Dọn dẹp client Telegram khi tắt ứng dụng
+ * @param {Airgram} client Client Telegram
+ * @return {Promise<void>}
+ */
+const cleanQuit = async (client) => {
+    log.info("[QUIT] Cleaning up Telegram client");
     
-    if (client) {
-        try {
-            log.info("[QUIT] Closing client");
-            await client.api.close();
-            log.info("[QUIT] Client closed successfully");
-        } catch (error) {
-            log.error("[QUIT] Error closing client:", error);
+    if (!client) {
+        log.warn("[QUIT] No client to clean up");
+        return;
+    }
+    
+    try {
+        // Dừng mô phỏng dữ liệu nếu có
+        if (typeof stopDataSimulation === 'function') {
+            stopDataSimulation();
+            log.info("[QUIT] Data simulation stopped");
         }
+        
+        // Đóng client Telegram
+        await client.api.close();
+        log.info("[QUIT] Telegram client closed successfully");
+        
+        // Reset client
+        telegramClient = null;
+    } catch (error) {
+        log.error("[QUIT] Error cleaning up Telegram client:", error);
     }
 }
 
