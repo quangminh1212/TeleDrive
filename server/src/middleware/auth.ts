@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserModel } from '../models/user';
 import session from 'express-session';
+import { userStore } from '../services/fileSystemStore';
 
 // Mở rộng session để bao gồm userId
 declare module 'express-session' {
@@ -26,7 +26,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     const userId = req.session.userId;
 
     // Kiểm tra xem người dùng có tồn tại không
-    const user = await UserModel.findById(userId);
+    const user = await userStore.findById(userId);
     if (!user) {
       return res.status(401).json({ message: 'Người dùng không tồn tại' });
     }
