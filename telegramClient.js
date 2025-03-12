@@ -1,4 +1,4 @@
-const MTProto = require('@mtproto/core').default;
+const MTProto = require('@mtproto/core');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
