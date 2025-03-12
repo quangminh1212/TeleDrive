@@ -60,6 +60,37 @@
             background-color: #f8d7da;
             color: #721c24;
         }
+        .error-details {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            display: none;
+        }
+        .error-details .accordion {
+            margin-bottom: 15px;
+        }
+        .error-details .accordion-item {
+            border: none;
+            border-radius: 0;
+            background-color: transparent;
+        }
+        .error-details .accordion-button {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .error-details .accordion-button:focus {
+            box-shadow: none;
+        }
+        .error-details .accordion-button:not(.collapsed) {
+            color: #0056b3;
+        }
+        .error-details .accordion-body {
+            padding: 0;
+        }
+        .error-details .accordion-body p {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -72,7 +103,28 @@
             </div>
 
             <div class="status-container" id="statusContainer">
-                <div id="statusMessage"></div>
+                <div class="alert d-flex align-items-center" id="statusAlert">
+                    <div class="spinner-border spinner-border-sm me-2" role="status" id="statusSpinner"></div>
+                    <span id="statusMessage">Đang xử lý...</span>
+                </div>
+            </div>
+
+            <div class="error-details d-none" id="errorDetails">
+                <div class="accordion" id="errorAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#errorDetailsCollapse">
+                                Thông tin lỗi chi tiết
+                            </button>
+                        </h2>
+                        <div id="errorDetailsCollapse" class="accordion-collapse collapse" data-bs-parent="#errorAccordion">
+                            <div class="accordion-body">
+                                <p id="errorHelp" class="text-muted"></p>
+                                <code id="errorCode" class="d-block p-3 bg-dark text-light" style="white-space: pre-wrap; font-size: 0.8rem;"></code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="form-steps">
@@ -165,6 +217,9 @@
         const successStep = document.getElementById('successStep');
         const statusContainer = document.getElementById('statusContainer');
         const statusMessage = document.getElementById('statusMessage');
+        const errorDetails = document.getElementById('errorDetails');
+        const errorHelp = document.getElementById('errorHelp');
+        const errorCode = document.getElementById('errorCode');
         
         // Nút gửi mã
         document.getElementById('sendCodeBtn').addEventListener('click', async function() {
@@ -315,11 +370,14 @@
             stepElement.classList.add('active');
         }
         
-        // Hiển thị thông báo lỗi
+        // Hiển thị lỗi
         function showError(message) {
             statusContainer.style.display = 'block';
             statusContainer.className = 'status-container status-error';
             statusMessage.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i> ${message}`;
+            errorHelp.textContent = message;
+            errorCode.textContent = message;
+            errorDetails.classList.remove('d-none');
         }
         
         // Hiển thị thông báo trạng thái
@@ -332,6 +390,7 @@
         // Ẩn thông báo
         function hideStatus() {
             statusContainer.style.display = 'none';
+            errorDetails.classList.add('d-none');
         }
     </script>
 </body>
