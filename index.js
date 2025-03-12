@@ -87,8 +87,19 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 let botStatus = {
   isLaunched: false,
   error: null,
-  startTime: null
+  startTime: null,
+  botInfo: null
 };
+
+// Kiểm tra bot kết nối thành công
+bot.telegram.getMe()
+  .then(botInfo => {
+    console.log(`Bot information retrieved: @${botInfo.username} (${botInfo.first_name})`);
+    botStatus.botInfo = botInfo;
+  })
+  .catch(error => {
+    console.error('Error retrieving bot information:', error);
+  });
 
 // Bot middleware to handle files
 bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
@@ -299,7 +310,8 @@ app.get('/api/bot-status', (req, res) => {
     isLaunched: botStatus.isLaunched,
     error: botStatus.error ? botStatus.error.message : null,
     startTime: botStatus.startTime,
-    uptime: botStatus.startTime ? Math.floor((Date.now() - botStatus.startTime) / 1000) : null
+    uptime: botStatus.startTime ? Math.floor((Date.now() - botStatus.startTime) / 1000) : null,
+    botInfo: botStatus.botInfo
   });
 });
 

@@ -200,23 +200,49 @@
                             const seconds = data.uptime % 60;
                             uptimeText = ` (${minutes}m ${seconds}s)`;
                         }
+                        
+                        let botInfoText = '';
+                        if (data.botInfo) {
+                            botInfoText = `<small class="d-block">@${data.botInfo.username} (${data.botInfo.first_name})</small>`;
+                        }
+                        
                         statusElement.innerHTML = `
                             <i class="bi bi-check-circle-fill me-2"></i>Bot online${uptimeText}
+                            ${botInfoText}
                         `;
                     } else {
                         statusElement.className = 'alert alert-danger d-inline-block';
+                        let errorMsg = data.error || 'Unknown error';
+                        
                         statusElement.innerHTML = `
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>Bot offline
-                            <small class="d-block">${data.error || 'Unknown error'}</small>
+                            <small class="d-block">${errorMsg}</small>
+                            <small class="d-block mt-1">
+                                <a href="#" onclick="showBotHelp(event)" class="text-light text-decoration-underline">Cần trợ giúp?</a>
+                            </small>
                         `;
                     }
                 } catch (error) {
                     statusElement.className = 'alert alert-warning d-inline-block';
                     statusElement.innerHTML = `
                         <i class="bi bi-question-circle-fill me-2"></i>Bot status unknown
+                        <small class="d-block">Không thể kết nối với API</small>
                     `;
                 }
             }
+            
+            // Hiển thị hướng dẫn khắc phục bot offline
+            function showBotHelp(event) {
+                event.preventDefault();
+                alert(`Để bot online, hãy thực hiện các bước sau:
+1. Truy cập @BotFather trên Telegram
+2. Gửi lệnh /newbot để tạo bot mới
+3. Làm theo hướng dẫn và nhận token mới
+4. Cập nhật token mới vào file .env
+5. Khởi động lại ứng dụng`);
+            }
+            
+            window.showBotHelp = showBotHelp; // Expose to global scope
             
             // Run bot status check
             checkBotStatus();
