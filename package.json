@@ -1,23 +1,38 @@
 {
-  "name": "teledrive",
-  "version": "1.0.0",
-  "description": "Cloud storage service using Telegram API",
-  "main": "index.js",
-  "scripts": {
-    "start": "node server/dist/index.js",
-    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
-    "build": "cd server && npm run build && cd ../client && npm run build",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
-  },
-  "keywords": [
-    "telegram",
-    "storage",
-    "cloud",
-    "file-sharing"
-  ],
-  "author": "",
-  "license": "GPL-3.0",
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  }
-} 
+    "author": {
+        "email": "khushrajrathod@gmail.com",
+        "name": "Khushraj Rathod"
+    },
+    "dependencies": {
+        "airgram": "latest",
+        "chokidar": "^3.4.3",
+        "electron-log": "latest",
+        "electron-store": "latest",
+        "electron-updater": "^4.3.5",
+        "ncp": "latest"
+    },
+    "description": "An app that lets you automatically backup to Telegram Saved Messages",
+    "devDependencies": {
+        "electron": "12.0.9",
+        "electron-builder": "latest"
+    },
+    "homepage": "https://teledrive.khushrajrathod.com",
+    "keywords": [
+        "TeleDrive",
+        "telegram",
+        "telegram client",
+        "tdlib"
+    ],
+    "license": "GPL-3.0",
+    "main": "src/app.js",
+    "name": "teledrive",
+    "productName": "TeleDrive",
+    "repository": "https://github.com/khrj/teledrive",
+    "scripts": {
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder",
+        "start": "electron .",
+        "vercel-build": "rm -rf website-build && cp -rf website/out website-build && (cd docs/ && yarn && yarn build)"
+    },
+    "version": "1.2.2"
+}
