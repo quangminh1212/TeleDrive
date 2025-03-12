@@ -70,24 +70,44 @@ const sendCode = async (mtproto, phone) => {
   try {
     // Đảm bảo số điện thoại đúng định dạng (có dấu +)
     const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
+    // Xử lý định dạng đúng: bỏ dấu + và cả các ký tự không phải số
+    const cleanPhone = formattedPhone.replace(/\+/g, '').replace(/\D/g, '');
     
-    console.log(`[TelegramClient] Đang gửi mã xác nhận cho: ${formattedPhone}`);
+    console.log(`[TelegramClient] Đang gửi mã xác nhận cho: +${cleanPhone}`);
     
     const result = await mtproto.call('auth.sendCode', {
-      phone_number: formattedPhone.replace('+', ''), // Telegram API cần số điện thoại không có dấu +
+      phone_number: cleanPhone,
       settings: {
         _: 'codeSettings',
       },
+      api_id: process.env.TELEGRAM_API_ID,
+      api_hash: process.env.TELEGRAM_API_HASH
     });
     
     console.log(`[TelegramClient] Đã gửi mã xác nhận, hash: ${result.phone_code_hash.substring(0, 5)}...`);
     return { success: true, phone_code_hash: result.phone_code_hash };
   } catch (error) {
     console.error('[TelegramClient] Lỗi gửi mã:', error);
+    console.error('[TelegramClient] Chi tiết lỗi:', JSON.stringify(error, null, 2));
+    
+    // Xử lý các lỗi cụ thể
+    let errorMessage = 'Không thể gửi mã xác nhận';
+    if (error.error_message) {
+      if (error.error_message.includes('PHONE_NUMBER_INVALID')) {
+        errorMessage = 'Số điện thoại không hợp lệ. Vui lòng kiểm tra lại';
+      } else if (error.error_message.includes('PHONE_NUMBER_BANNED')) {
+        errorMessage = 'Số điện thoại này đã bị Telegram chặn';
+      } else if (error.error_message.includes('FLOOD_WAIT')) {
+        errorMessage = 'Vui lòng đợi một thời gian trước khi thử lại';
+      } else {
+        errorMessage = `Lỗi Telegram: ${error.error_message}`;
+      }
+    }
+    
     // Trả về thông báo lỗi cụ thể hơn
     return { 
       success: false, 
-      error: error.error_message || error.message || 'Không thể gửi mã xác nhận',
+      error: errorMessage,
       details: error 
     };
   }
@@ -98,11 +118,13 @@ const signIn = async (mtproto, { phone, code, phone_code_hash }) => {
   try {
     // Đảm bảo số điện thoại đúng định dạng (có dấu +)
     const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
+    // Xử lý định dạng đúng: bỏ dấu + và cả các ký tự không phải số
+    const cleanPhone = formattedPhone.replace(/\+/g, '').replace(/\D/g, '');
     
-    console.log(`[TelegramClient] Đang đăng nhập với mã: ${code}, phone: ${formattedPhone}`);
+    console.log(`[TelegramClient] Đang đăng nhập với mã: ${code}, phone: +${cleanPhone}, hash: ${phone_code_hash}`);
     
     const result = await mtproto.call('auth.signIn', {
-      phone_number: formattedPhone.replace('+', ''), // Telegram API cần số điện thoại không có dấu +
+      phone_number: cleanPhone,
       phone_code_hash,
       phone_code: code,
     });
@@ -111,15 +133,30 @@ const signIn = async (mtproto, { phone, code, phone_code_hash }) => {
     return { success: true, user: result.user };
   } catch (error) {
     console.error('[TelegramClient] Lỗi đăng nhập:', error);
+    console.error('[TelegramClient] Chi tiết lỗi:', JSON.stringify(error, null, 2));
     
     if (error.error_message === 'SESSION_PASSWORD_NEEDED') {
       return { success: false, error: 'PASSWORD_NEEDED' };
     }
     
+    // Xử lý các lỗi cụ thể
+    let errorMessage = 'Không thể đăng nhập';
+    if (error.error_message) {
+      if (error.error_message.includes('PHONE_CODE_INVALID')) {
+        errorMessage = 'Mã xác nhận không đúng. Vui lòng kiểm tra lại';
+      } else if (error.error_message.includes('PHONE_CODE_EXPIRED')) {
+        errorMessage = 'Mã xác nhận đã hết hạn. Vui lòng yêu cầu mã mới';
+      } else if (error.error_message.includes('FLOOD_WAIT')) {
+        errorMessage = 'Vui lòng đợi một thời gian trước khi thử lại';
+      } else {
+        errorMessage = `Lỗi Telegram: ${error.error_message}`;
+      }
+    }
+    
     // Trả về thông báo lỗi cụ thể hơn
     return { 
       success: false, 
-      error: error.error_message || error.message || 'Không thể đăng nhập',
+      error: errorMessage,
       details: error 
     };
   }

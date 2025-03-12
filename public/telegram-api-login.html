@@ -231,12 +231,20 @@
                 return;
             }
             
-            // Kiểm tra xem số điện thoại đã có dấu + chưa
-            const formattedPhone = phone.startsWith('+') ? phone : '+' + phone;
-            console.log('Sending code to phone:', formattedPhone);
+            // Kiểm tra và định dạng số điện thoại
+            let formattedPhone = phone;
+            
+            // Đảm bảo bắt đầu bằng dấu +
+            if (!formattedPhone.startsWith('+')) {
+                formattedPhone = '+' + formattedPhone;
+            }
+            
+            // Chỉ lấy các số
+            const digitsOnly = formattedPhone.replace(/\D/g, '');
             
             // Hiển thị trạng thái đang xử lý
             showStatus('Đang gửi mã xác nhận...', 'info');
+            console.log('Sending code to phone:', formattedPhone, '(digits only:', digitsOnly, ')');
             
             try {
                 const response = await fetch('/api/telegram/send-code', {
@@ -256,7 +264,20 @@
                     showStep(codeStep);
                     hideStatus();
                 } else {
-                    showError(data.error || 'Không thể gửi mã xác nhận');
+                    const errorMsg = data.error || 'Không thể gửi mã xác nhận';
+                    showError(errorMsg);
+                    
+                    // Hiển thị gợi ý khắc phục
+                    let helpText = '';
+                    if (errorMsg.includes('số điện thoại không hợp lệ') || errorMsg.includes('PHONE_NUMBER_INVALID')) {
+                        helpText = 'Vui lòng kiểm tra lại số điện thoại. Định dạng đúng: +84123456789 (có dấu +, mã quốc gia, không có số 0 đầu).';
+                        errorCode.textContent = 'Số điện thoại đúng: +84... (Việt Nam) hoặc +1... (Mỹ)';
+                    } else if (errorMsg.includes('FLOOD_WAIT')) {
+                        helpText = 'Telegram giới hạn số lần gửi mã. Vui lòng đợi ít phút và thử lại.';
+                    } else if (data.details) {
+                        errorCode.textContent = JSON.stringify(data.details, null, 2);
+                    }
+                    errorHelp.textContent = helpText || errorMsg;
                 }
             } catch (error) {
                 console.error('Error sending code:', error);
@@ -325,7 +346,19 @@
                     showStep(passwordStep);
                     hideStatus();
                 } else {
-                    showError(data.error || 'Mã xác nhận không đúng');
+                    const errorMsg = data.error || 'Mã xác nhận không đúng';
+                    showError(errorMsg);
+                    
+                    // Hiển thị gợi ý khắc phục
+                    let helpText = '';
+                    if (errorMsg.includes('PHONE_CODE_INVALID')) {
+                        helpText = 'Mã xác nhận không đúng. Vui lòng kiểm tra lại mã Telegram đã gửi cho bạn.';
+                    } else if (errorMsg.includes('PHONE_CODE_EXPIRED')) {
+                        helpText = 'Mã xác nhận đã hết hạn. Vui lòng quay lại và yêu cầu mã mới.';
+                    } else if (data.details) {
+                        errorCode.textContent = JSON.stringify(data.details, null, 2);
+                    }
+                    errorHelp.textContent = helpText || errorMsg;
                 }
             } catch (error) {
                 console.error('Error confirming code:', error);
