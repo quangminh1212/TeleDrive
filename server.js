@@ -4,6 +4,7 @@ const path = require('path');
 const { Telegraf } = require('telegraf');
 require('dotenv').config();
 const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
 
 // Import Telegram Client và Routes
 const telegramClient = require('./telegramClient');
@@ -83,6 +84,49 @@ app.get('/telegram-login', (req, res) => {
 
 app.get('/telegram-api-login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'telegram-api-login.html'));
+});
+
+app.get('/telegram-api-config', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'telegram-api-config.html'));
+});
+
+// Endpoint cập nhật thông tin API
+app.post('/api/telegram/update-api-credentials', async (req, res) => {
+  try {
+    const { api_id, api_hash } = req.body;
+    
+    if (!api_id || !api_hash) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'API ID và API Hash không được để trống' 
+      });
+    }
+    
+    // Đọc file .env hiện tại
+    const envPath = path.join(__dirname, '.env');
+    let envContent = fs.readFileSync(envPath, 'utf8');
+    
+    // Cập nhật API ID và API Hash
+    envContent = envContent.replace(/TELEGRAM_API_ID=.*$/m, `TELEGRAM_API_ID=${api_id}`);
+    envContent = envContent.replace(/TELEGRAM_API_HASH=.*$/m, `TELEGRAM_API_HASH=${api_hash}`);
+    
+    // Ghi lại file .env
+    fs.writeFileSync(envPath, envContent, 'utf8');
+    
+    console.log('Đã cập nhật thông tin API Telegram');
+    
+    // Thông báo cần khởi động lại ứng dụng
+    return res.json({ 
+      success: true, 
+      message: 'Đã cập nhật thông tin API. Vui lòng khởi động lại ứng dụng để áp dụng thay đổi.' 
+    });
+  } catch (error) {
+    console.error('Error updating API credentials:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Lỗi khi cập nhật thông tin API: ' + error.message 
+    });
+  }
 });
 
 // Telegram API endpoints
