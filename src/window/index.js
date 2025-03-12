@@ -13,11 +13,51 @@ window.addEventListener('DOMContentLoaded', () => {
     const syncButton = document.getElementById('reDownload')
     const queueButton = document.getElementById('queueButton')
 
+    // Thêm nút analytics
+    const analyticsButton = document.createElement('div');
+    analyticsButton.className = 'press press-blue press-pill press-ghost';
+    analyticsButton.style.display = 'none';
+    analyticsButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width: 25px; height: 25px">
+            <path d="M480 496H48a32 32 0 01-32-32V32a16 16 0 0116-16h32a16 16 0 0116 16v432h400a16 16 0 0116 16v16a16 16 0 01-16 16z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/>
+            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32" d="M400 448l-64-64-72 72-40-40-56 56"/>
+            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32" d="M400 320V192M304 352V192M208 320v-32M112 352V224"/>
+        </svg>
+        <div>THỐNG KÊ</div>
+    `;
+    document.body.appendChild(analyticsButton);
+
+    // Thêm nút tối ưu
+    const optimizeButton = document.createElement('div');
+    optimizeButton.className = 'press press-purple press-pill press-ghost';
+    optimizeButton.style.display = 'none';
+    optimizeButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width: 25px; height: 25px">
+            <path d="M262.29 192.31a64 64 0 1057.4 57.4 64.13 64.13 0 00-57.4-57.4zM416.39 256a154.34 154.34 0 01-1.53 20.79l45.21 35.46a10.81 10.81 0 012.45 13.75l-42.77 74a10.81 10.81 0 01-13.14 4.59l-44.9-18.08a16.11 16.11 0 00-15.17 1.75A164.48 164.48 0 01325 400.8a15.94 15.94 0 00-8.82 12.14l-6.73 47.89a11.08 11.08 0 01-10.68 9.17h-85.54a11.11 11.11 0 01-10.69-8.87l-6.72-47.82a16.07 16.07 0 00-9-12.22 155.3 155.3 0 01-21.46-12.57 16 16 0 00-15.11-1.71l-44.89 18.07a10.81 10.81 0 01-13.14-4.58l-42.77-74a10.8 10.8 0 012.45-13.75l38.21-30a16.05 16.05 0 006-14.08c-.36-4.17-.58-8.33-.58-12.5s.21-8.27.58-12.35a16 16 0 00-6.07-13.94l-38.19-30A10.81 10.81 0 0149.48 186l42.77-74a10.81 10.81 0 0113.14-4.59l44.9 18.08a16.11 16.11 0 0015.17-1.75A164.48 164.48 0 01187 111.2a15.94 15.94 0 008.82-12.14l6.73-47.89A11.08 11.08 0 01213.23 42h85.54a11.11 11.11 0 0110.69 8.87l6.72 47.82a16.07 16.07 0 009 12.22 155.3 155.3 0 0121.46 12.57 16 16 0 0015.11 1.71l44.89-18.07a10.81 10.81 0 0113.14 4.58l42.77 74a10.8 10.8 0 01-2.45 13.75l-38.21 30a16.05 16.05 0 00-6.05 14.08c.33 4.14.55 8.3.55 12.47z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/>
+        </svg>
+        <div>TỐI ƯU</div>
+    `;
+    document.body.appendChild(optimizeButton);
+
     let queue = [];
     const queueList = document.createElement('div')
     queueList.id = "queueList"
     queueList.style.lineHeight = "490px"
     queueList.innerHTML = "TeleDrive is Idle"
+
+    // Thêm đối tượng theo dõi trạng thái
+    const appState = {
+        authenticated: false,
+        selectedDir: "",
+        isProcessing: false,
+        syncComplete: false,
+        stats: {
+            filesProcessed: 0,
+            totalFiles: 0,
+            startTime: null,
+            endTime: null
+        }
+    };
 
     const ensureVisible = () => {
         description.style.display = '' // Setting display to '' resets display to initial state
@@ -54,8 +94,54 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Đối tượng chuyển đổi giao diện 
+    const uiTransition = {
+        // Chuyển sang trạng thái loading
+        showLoading: () => {
+            title.innerHTML = 'Processing...';
+            if (description) description.innerHTML = 'Please wait while we process your request';
+        },
+        
+        // Cập nhật trạng thái tiến độ
+        updateProgress: (message, percentage) => {
+            if (description) description.innerHTML = message;
+            // Có thể thêm thanh tiến độ ở đây
+        },
+        
+        // Hiển thị thống kê
+        showStats: (stats) => {
+            // Tạo phần tử hiển thị thống kê
+            const statsElement = document.createElement('div');
+            statsElement.className = 'stats-container';
+            statsElement.innerHTML = `
+                <h3>Thống kê hoạt động</h3>
+                <div class="stats-item">
+                    <div class="stats-label">Tệp đã xử lý:</div>
+                    <div class="stats-value">${stats.filesProcessed}/${stats.totalFiles}</div>
+                </div>
+                <div class="stats-item">
+                    <div class="stats-label">Thời gian xử lý:</div>
+                    <div class="stats-value">${stats.processTime || '0s'}</div>
+                </div>
+                <div class="stats-item">
+                    <div class="stats-label">Tổng dung lượng:</div>
+                    <div class="stats-value">${stats.totalSize || '0 KB'}</div>
+                </div>
+            `;
+            
+            // Hiển thị thống kê trong swal hoặc giao diện khác
+            if (window.swal) {
+                window.swal({
+                    title: "Thống kê",
+                    content: statsElement,
+                    button: "Đóng"
+                });
+            }
+        }
+    };
+
     ipcRenderer.on('auth', async (event, message) => {
-        console.log(message)
+        console.log("Auth event received:", message);
 
         // Tự động trả lời các câu hỏi xác thực
         autoRespond(message._);
@@ -115,16 +201,19 @@ window.addEventListener('DOMContentLoaded', () => {
     })
 
     ipcRenderer.on('updateMyInfo', (event, myInfo) => {
-        console.log("Updating info,")
-        console.log(myInfo)
+        console.log("Updating info:", myInfo);
         name.innerHTML = myInfo.name
         number.innerHTML = myInfo.number
         if (myInfo.photo) {
             profilePicture.src = myInfo.photo
         }
+        
+        // Đánh dấu là đã xác thực
+        appState.authenticated = true;
     })
 
     ipcRenderer.on('authSuccess', () => {
+        console.log("Auth success received");
         title.innerHTML = 'Login Successful'
         profile.style.display = ''
 
@@ -145,6 +234,10 @@ window.addEventListener('DOMContentLoaded', () => {
             console.log("[AUTO] Automatically opening file dialog");
             ipcRenderer.send('openFileDialog')
         }, 500);
+        
+        // Hiển thị các nút chức năng mới
+        analyticsButton.style.display = '';
+        optimizeButton.style.display = '';
     })
 
     ipcRenderer.on('dialogCancelled', () => {
@@ -155,7 +248,7 @@ window.addEventListener('DOMContentLoaded', () => {
     })
 
     ipcRenderer.on('selectedDir', (event, path) => {
-        console.log('selectedDir', path)
+        console.log('Selected directory:', path);
         title.innerHTML = 'Setup Successfully'
         description.innerHTML = `Currently syncing <br> <u style="cursor: pointer"> ${path} <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" style="color: #aaa"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></u>`
         description.addEventListener('click', _ => {
@@ -169,11 +262,20 @@ window.addEventListener('DOMContentLoaded', () => {
 
         syncButton.style.display = ''
         queueButton.style.display = ''
+        
+        // Lưu đường dẫn thư mục đã chọn
+        appState.selectedDir = path;
 
         syncButton.addEventListener('click', function syncAll() {
             syncButton.removeEventListener("click", syncAll)
             syncButton.innerHTML = 'WAITING IN QUEUE'
             ipcRenderer.send('syncAll')
+            
+            // Bắt đầu theo dõi quá trình đồng bộ
+            appState.isProcessing = true;
+            appState.stats.startTime = new Date();
+            appState.stats.filesProcessed = 0;
+            appState.stats.totalFiles = 0;
         })
 
         queueButton.addEventListener('click', () => {
@@ -203,7 +305,179 @@ window.addEventListener('DOMContentLoaded', () => {
                 document.getElementById("swalStyle").remove()
             })
         })
+        
+        // Thêm xử lý sự kiện cho nút thống kê
+        analyticsButton.addEventListener('click', () => {
+            // Gửi yêu cầu để lấy dữ liệu thống kê từ main process
+            ipcRenderer.send('getAnalytics');
+        });
+        
+        // Thêm xử lý sự kiện cho nút tối ưu
+        optimizeButton.addEventListener('click', () => {
+            // Hiển thị dialog tối ưu hóa
+            showOptimizeDialog();
+        });
     })
+
+    // Nhận phản hồi dữ liệu thống kê từ main process
+    ipcRenderer.on('analyticsData', (event, data) => {
+        showAnalyticsDialog(data);
+    });
+
+    // Nhận thông báo tiến độ tối ưu hóa
+    ipcRenderer.on('optimizeProgress', (event, data) => {
+        updateOptimizeProgress(data);
+    });
+
+    // Hiển thị dialog thống kê
+    function showAnalyticsDialog(data) {
+        // Tạo phần tử HTML để hiển thị dữ liệu
+        const content = document.createElement('div');
+        content.className = 'analytics-container';
+        content.innerHTML = `
+            <div class="analytics-section">
+                <h3>Thống kê chung</h3>
+                <div class="stats-row">
+                    <span>Tổng số phiên:</span>
+                    <span>${data.usage.sessions}</span>
+                </div>
+                <div class="stats-row">
+                    <span>Thời gian hoạt động:</span>
+                    <span>${data.usage.formattedRuntime || '0s'}</span>
+                </div>
+                <div class="stats-row">
+                    <span>Phiên cuối:</span>
+                    <span>${new Date(data.usage.lastSession).toLocaleString()}</span>
+                </div>
+            </div>
+            
+            <div class="analytics-section">
+                <h3>Tệp tin</h3>
+                <div class="stats-row">
+                    <span>Tổng số tệp:</span>
+                    <span>${data.files.total}</span>
+                </div>
+                <div class="stats-row">
+                    <span>Dung lượng trung bình:</span>
+                    <span>${formatSize(data.files.averageSize)}</span>
+                </div>
+            </div>
+            
+            <div class="analytics-section">
+                <h3>Tương tác</h3>
+                <div class="stats-row">
+                    <span>Tin nhắn:</span>
+                    <span>${data.interactions.totalMessages}</span>
+                </div>
+                <div class="stats-row">
+                    <span>Phản ứng:</span>
+                    <span>${data.interactions.totalReactions}</span>
+                </div>
+                <div class="stats-row">
+                    <span>Chia sẻ:</span>
+                    <span>${data.interactions.totalShares}</span>
+                </div>
+            </div>
+        `;
+        
+        // Hiển thị dialog
+        swal({
+            title: "Phân tích dữ liệu",
+            content: content,
+            button: "Đóng",
+            className: "analytics-dialog"
+        });
+    }
+    
+    // Hiển thị dialog tối ưu hóa
+    function showOptimizeDialog() {
+        const content = document.createElement('div');
+        content.className = 'optimize-container';
+        content.innerHTML = `
+            <div class="optimize-options">
+                <div class="optimize-option">
+                    <input type="checkbox" id="opt-compress" checked>
+                    <label for="opt-compress">Nén tệp tin</label>
+                </div>
+                <div class="optimize-option">
+                    <input type="checkbox" id="opt-clean" checked>
+                    <label for="opt-clean">Dọn dẹp tệp tạm</label>
+                </div>
+                <div class="optimize-option">
+                    <input type="checkbox" id="opt-dedupe" checked>
+                    <label for="opt-dedupe">Loại bỏ trùng lặp</label>
+                </div>
+                <div class="optimize-option">
+                    <input type="checkbox" id="opt-organize" checked>
+                    <label for="opt-organize">Sắp xếp lưu trữ</label>
+                </div>
+            </div>
+            <div class="optimize-actions">
+                <button id="start-optimize" class="optimize-button">Bắt đầu tối ưu</button>
+            </div>
+        `;
+        
+        // Hiển thị dialog
+        swal({
+            title: "Tối ưu hóa dữ liệu",
+            content: content,
+            buttons: {
+                cancel: "Hủy",
+                confirm: {
+                    text: "Tối ưu",
+                    value: true,
+                    closeModal: false
+                }
+            }
+        }).then(value => {
+            if (value) {
+                // Thu thập các tùy chọn tối ưu
+                const options = {
+                    compress: document.getElementById('opt-compress')?.checked || false,
+                    clean: document.getElementById('opt-clean')?.checked || false,
+                    dedupe: document.getElementById('opt-dedupe')?.checked || false,
+                    organize: document.getElementById('opt-organize')?.checked || false
+                };
+                
+                // Gửi yêu cầu tối ưu
+                ipcRenderer.send('startOptimize', options);
+                
+                // Hiển thị tiến độ
+                swal({
+                    title: "Đang tối ưu...",
+                    text: "Quá trình đang được thực hiện. Vui lòng đợi...",
+                    buttons: false,
+                    closeOnClickOutside: false,
+                    closeOnEsc: false
+                });
+                
+                // Đợi kết quả
+                ipcRenderer.once('optimizeComplete', (event, result) => {
+                    swal({
+                        title: "Tối ưu hoàn tất",
+                        text: `Đã tối ưu ${result.optimizedFiles} tệp tin, tiết kiệm ${formatSize(result.savedSpace)}.`,
+                        icon: "success"
+                    });
+                });
+            }
+        });
+    }
+    
+    // Cập nhật tiến độ tối ưu
+    function updateOptimizeProgress(data) {
+        swal.update({
+            title: "Đang tối ưu...",
+            text: `Đã xử lý ${data.processed}/${data.total} tệp (${Math.round(data.processed/data.total*100)}%)`
+        });
+    }
+    
+    // Định dạng kích thước
+    function formatSize(size) {
+        if (size < 1024) return size + " B";
+        else if (size < 1024*1024) return (size/1024).toFixed(2) + " KB";
+        else if (size < 1024*1024*1024) return (size/(1024*1024)).toFixed(2) + " MB";
+        else return (size/(1024*1024*1024)).toFixed(2) + " GB";
+    }
 
     ipcRenderer.on('syncOver', _ => {
         syncButton.innerHTML =
@@ -224,10 +498,23 @@ window.addEventListener('DOMContentLoaded', () => {
             ipcRenderer.send('syncAll')
         }
         syncButton.addEventListener('click', syncAll)
+        
+        // Cập nhật trạng thái
+        appState.isProcessing = false;
+        appState.syncComplete = true;
+        appState.stats.endTime = new Date();
+        appState.stats.processTime = ((appState.stats.endTime - appState.stats.startTime) / 1000).toFixed(2) + 's';
+        
+        // Hiển thị thống kê
+        uiTransition.showStats(appState.stats);
     })
 
     ipcRenderer.on('syncStarting', _ => {
         syncButton.innerHTML = 'RESTORING...'
+        
+        // Cập nhật trạng thái
+        appState.isProcessing = true;
+        appState.stats.startTime = new Date();
     })
 
     ipcRenderer.on('pushQueue', (event, action) => {
@@ -239,10 +526,17 @@ window.addEventListener('DOMContentLoaded', () => {
         let thisAction = document.createElement('div')
         thisAction.innerHTML = "Add " + queue[queue.length - 1].relativePath
         queueList.appendChild(thisAction)
+        
+        // Cập nhật số lượng tệp
+        appState.stats.totalFiles++;
+        
         ipcRenderer.once('shiftQueue', () => {
             console.log("SHIFTING QUEUE")
             queue.shift()
-
+            
+            // Cập nhật số lượng tệp đã xử lý
+            appState.stats.filesProcessed++;
+            
             if (queue.length === 0) {
                 queueList.style.lineHeight = "440px"
                 queueList.innerHTML = "TeleDrive is Idle"
@@ -324,4 +618,69 @@ window.addEventListener('DOMContentLoaded', () => {
             closeOnClickOutside: false
         })
     })
-})
+    
+    // Thêm CSS cho các phần tử mới
+    const style = document.createElement('style');
+    style.textContent = `
+        .press-blue {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .press-purple {
+            background-color: #9b59b6;
+            color: white;
+        }
+        
+        .analytics-container {
+            padding: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .analytics-section {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .analytics-section h3 {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+        }
+        
+        .optimize-container {
+            padding: 10px;
+        }
+        
+        .optimize-options {
+            margin-bottom: 15px;
+        }
+        
+        .optimize-option {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        
+        .optimize-option input {
+            margin-right: 10px;
+        }
+        
+        .optimize-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    `;
+    document.head.appendChild(style);
+});
