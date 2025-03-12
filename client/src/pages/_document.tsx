@@ -1,6 +1,6 @@
 import React from 'react';
 import Document, { Html, Head, Main, NextScript, DocumentContext } from 'next/document';
-import createEmotionServer from '@emotion/server/create-instance';
+import { renderStatic } from '@emotion/server';
 import { createEmotionCache } from '../utils/createEmotionCache';
 
 class MyDocument extends Document {
@@ -9,7 +9,6 @@ class MyDocument extends Document {
     
     // Tạo cache instance
     const cache = createEmotionCache();
-    const { extractCriticalToChunks } = createEmotionServer(cache);
 
     ctx.renderPage = () =>
       originalRenderPage({
@@ -19,18 +18,20 @@ class MyDocument extends Document {
     const initialProps = await Document.getInitialProps(ctx);
     
     // Trích xuất CSS
-    const emotionStyles = extractCriticalToChunks(initialProps.html);
-    const emotionStyleTags = emotionStyles.styles.map((style) => (
-      <style
-        data-emotion={`${style.key} ${style.ids.join(' ')}`}
-        key={style.key}
-        dangerouslySetInnerHTML={{ __html: style.css }}
-      />
-    ));
+    const { ids, css } = await renderStatic(() => {
+      return initialProps.html;
+    });
 
     return {
       ...initialProps,
-      styles: [...React.Children.toArray(initialProps.styles), ...emotionStyleTags],
+      styles: [
+        ...React.Children.toArray(initialProps.styles),
+        <style
+          key="emotion"
+          data-emotion={`css ${ids.join(' ')}`}
+          dangerouslySetInnerHTML={{ __html: css }}
+        />
+      ],
     };
   }
 
