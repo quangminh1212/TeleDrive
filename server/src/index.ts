@@ -10,16 +10,13 @@ import morgan from 'morgan';
 // Load environment variables
 dotenv.config();
 
-// Routes
-import authRoutes from './routes/auth';
-import fileRoutes from './routes/files';
-import folderRoutes from './routes/folders';
-import telegramRoutes from './routes/telegram';
-
 // Đảm bảo thư mục data tồn tại
 const dataPath = process.env.DATA_PATH || './data';
 fs.ensureDirSync(dataPath);
 fs.ensureDirSync(path.join(dataPath, 'sessions'));
+fs.ensureDirSync(path.join(dataPath, 'users'));
+fs.ensureDirSync(path.join(dataPath, 'files'));
+fs.ensureDirSync(path.join(dataPath, 'folders'));
 
 // Initialize Express
 const app = express();
@@ -55,15 +52,8 @@ app.use(session({
 }));
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/files', fileRoutes);
-app.use('/api/folders', folderRoutes);
-app.use('/api/telegram', telegramRoutes);
-
-// Telegram Login Widget callback route
-app.get('/auth/telegram/callback', (req, res) => {
-  // Chuyển hướng về trang chủ với thông tin từ Telegram trong query parameters
-  res.redirect(`/login?auth=${encodeURIComponent(JSON.stringify(req.query))}`);
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
 // Serve static files in production
