@@ -8,6 +8,10 @@ class MockAirgram extends EventEmitter {
     constructor(config) {
         super();
         this.config = config;
+        
+        // Log thông tin API đã cập nhật
+        log.info("[MOCK] Using API credentials - ID:", config.apiId, "Hash:", config.apiHash);
+        
         this.api = {
             getAuthorizationState: async () => {
                 return {
@@ -218,9 +222,12 @@ class MockAirgram extends EventEmitter {
                             }
                         }
                     }, () => {});
-                }, 500);
-            }, 500);
-        }, 1000);
+                    
+                    // Thông báo cho log khi quá trình xác thực hoàn tất
+                    log.info("[MOCK] Authentication process completed, state: authorizationStateReady");
+                }, 300);
+            }, 300);
+        }, 300);
 
         log.info("[MOCK] Airgram initialized with config:", config);
     }

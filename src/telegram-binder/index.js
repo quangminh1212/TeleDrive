@@ -171,8 +171,8 @@ module.exports.create = (appStorage, appPath, OS) => {
     setupMasterFile(appStorage);
     // Sử dụng phiên bản mock của Airgram mà không cần đường dẫn đến thư viện libtdjson
     return new Airgram({
-        apiId: '1013617',
-        apiHash: 'f5837e894e244b9b5ca1b4ad7c48fddb',
+        apiId: '21272067',
+        apiHash: 'b7690dc86952dbc9b16717b101164af3',
         databaseDirectory: join(appStorage, 'db'),
         filesDirectory: join(appStorage, 'files'),
         useFileDatabase: true
