@@ -97,6 +97,177 @@ app.get('/telegram-api-config', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'telegram-api-config.html'));
 });
 
+// Trang hướng dẫn trích xuất auth key thủ công
+app.get('/api/telegram/extract-auth-manual', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Trích xuất Auth Key</title>
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+      <style>
+        body {
+          background-color: #212529;
+          color: #fff;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+          max-width: 800px;
+          margin: 30px auto;
+          padding: 20px;
+        }
+        .card {
+          background-color: #2c3034;
+          border: none;
+          border-radius: 10px;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+          margin-bottom: 20px;
+        }
+        .card-header {
+          background-color: #343a40;
+          color: #fff;
+          font-weight: bold;
+          border-bottom: 1px solid #495057;
+        }
+        pre {
+          background-color: #343a40;
+          color: #fff;
+          padding: 15px;
+          border-radius: 5px;
+          white-space: pre-wrap;
+          max-height: 200px;
+          overflow-y: auto;
+        }
+        .btn-primary {
+          background-color: #0d6efd;
+          border-color: #0d6efd;
+        }
+        .btn-success {
+          background-color: #198754;
+          border-color: #198754;
+        }
+        img {
+          max-width: 100%;
+          border: 1px solid #495057;
+          border-radius: 5px;
+        }
+        .result {
+          display: none;
+        }
+        .step {
+          margin-bottom: 10px;
+          padding: 10px;
+          background-color: #343a40;
+          border-radius: 5px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2 class="mb-4 text-center">Trích xuất Auth Key từ Telegram Web</h2>
+        
+        <div class="card mb-4">
+          <div class="card-header">
+            <i class="bi bi-info-circle-fill me-2"></i> Hướng dẫn
+          </div>
+          <div class="card-body">
+            <div class="alert alert-info">
+              <p><strong>Cách 1: Sử dụng công cụ tự động</strong></p>
+              <p>Đây là cách đơn giản nhất để trích xuất auth key từ Telegram Web. Làm theo các bước sau:</p>
+              
+              <ol>
+                <li>Mở <a href="https://web.telegram.org/k/" target="_blank" class="text-white">Telegram Web</a> và đăng nhập (nếu chưa)</li>
+                <li>Trong cửa sổ Telegram Web, nhấn F12 hoặc chuột phải và chọn "Inspect" để mở DevTools</li>
+                <li>Chuyển sang tab "Console" trong DevTools</li>
+                <li>Sao chép và dán đoạn mã bên dưới vào console và nhấn Enter:</li>
+              </ol>
+              
+              <pre><code>
+// Lấy dữ liệu từ localStorage
+let extractedData = {};
+for (let i = 0; i < localStorage.length; i++) {
+  const key = localStorage.key(i);
+  if (key.includes('auth') || key.includes('user') || key.includes('dc') || key.includes('tgme') || key.includes('ts_')) {
+    extractedData[key] = localStorage.getItem(key);
+  }
+}
+
+// Tạo dữ liệu session
+const sessionData = {
+  authKey: localStorage.getItem('tgme_sync') || localStorage.getItem('ts_key') || localStorage.getItem('auth_key'),
+  dcId: Number(localStorage.getItem('dc') || '2'),
+  serverTimeOffset: 0,
+  lastMessageId: 0
+};
+
+// Hiển thị kết quả
+console.log('Auth data extracted:', extractedData);
+console.log('Session data:', sessionData);
+
+// Tạo nút tải xuống
+const jsonData = JSON.stringify(sessionData, null, 2);
+const blob = new Blob([jsonData], {type: 'application/json'});
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.download = 'telegram-session.json';
+a.href = url;
+a.textContent = 'Tải xuống file session';
+a.style.display = 'block';
+a.style.margin = '10px 0';
+a.style.padding = '10px';
+a.style.backgroundColor = '#0088cc';
+a.style.color = 'white';
+a.style.textAlign = 'center';
+a.style.borderRadius = '5px';
+a.style.textDecoration = 'none';
+document.body.appendChild(a);
+              </code></pre>
+              
+              <p class="mt-3">Sau khi chạy mã trên, một nút "Tải xuống file session" sẽ xuất hiện. Nhấp vào nút đó để tải file <code>telegram-session.json</code>.</p>
+              
+              <p>Sau khi tải xuống file, copy file đó vào thư mục <code>.telegram-sessions</code> trong thư mục cài đặt TeleDrive và khởi động lại ứng dụng.</p>
+            </div>
+            
+            <div class="alert alert-secondary mt-4">
+              <p><strong>Cách 2: Trích xuất thủ công</strong></p>
+              <p>Nếu cách 1 không hoạt động, bạn có thể thử trích xuất thủ công:</p>
+              
+              <ol>
+                <li>Mở <a href="https://web.telegram.org/k/" target="_blank" class="text-white">Telegram Web</a> và đăng nhập</li>
+                <li>Mở DevTools (F12) và chuyển đến tab "Application"</li>
+                <li>Trong sidebar bên trái, mở rộng "Local Storage" và chọn trang Telegram Web</li>
+                <li>Tìm các key có tên `dc`, `tgme_sync`, hoặc `ts_key` và ghi lại giá trị của chúng</li>
+                <li>Tạo một file JSON với cấu trúc như sau:</li>
+              </ol>
+              
+              <pre><code>{
+  "authKey": "giá_trị_của_tgme_sync_hoặc_ts_key",
+  "dcId": số_giá_trị_của_dc (thường là 2 hoặc 4),
+  "serverTimeOffset": 0,
+  "lastMessageId": 0
+}</code></pre>
+              
+              <p>Lưu file này với tên <code>telegram-session.json</code> trong thư mục <code>.telegram-sessions</code> và khởi động lại ứng dụng.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-center mt-4">
+          <a href="/telegram-api-login.html" class="btn btn-primary">
+            <i class="bi bi-arrow-left me-2"></i> Quay lại trang đăng nhập
+          </a>
+        </div>
+      </div>
+      
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+    </html>
+  `);
+});
+
 // Endpoint cập nhật thông tin API
 app.post('/api/telegram/update-api-credentials', async (req, res) => {
   try {
