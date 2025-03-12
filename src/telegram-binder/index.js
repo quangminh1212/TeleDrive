@@ -1,5 +1,5 @@
 const {ipcMain, dialog, app} = require('electron')
-const {Airgram, toObject, resetAuthState, getCollectedData} = require('./mock-airgram')
+const {Airgram, toObject, resetAuthState, getCollectedData, stopDataSimulation} = require('./mock-airgram')
 // const {Airgram, toObject} = require('airgram')
 const {join} = require('path')
 const Store = require('electron-store')
