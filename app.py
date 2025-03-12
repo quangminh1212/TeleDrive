@@ -109,7 +109,11 @@ def format_size(size_bytes):
 # Route pour la page d'accueil
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # Si l'utilisateur est connecté, rediriger vers le tableau de bord
+    if current_user.is_authenticated:
+        return redirect(url_for('browse_files'))
+    # Sinon, rediriger vers la page de connexion
+    return redirect(url_for('login'))
 
 # Route pour l'inscription
 @app.route('/register', methods=['GET', 'POST'])
