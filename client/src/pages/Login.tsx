@@ -1,103 +1,55 @@
-import { useState } from 'react';
-import { Card, Form, Input, Button, Typography, Steps, message, Alert } from 'antd';
-import { UserOutlined, LockOutlined, MobileOutlined } from '@ant-design/icons';
+import { useEffect, useRef } from 'react';
+import { Card, Typography, Spin, Alert } from 'antd';
 import { useAuth } from '../hooks/useAuth';
-import { telegramService } from '../services/telegramService';
 
 const { Title, Text } = Typography;
-const { Step } = Steps;
+
+declare global {
+  interface Window {
+    TelegramLoginWidget: {
+      dataOnauth: (user: any) => void;
+    };
+    Telegram: {
+      Login: {
+        auth: (params: any) => void;
+      };
+    };
+  }
+}
 
 const Login = () => {
-  const [form] = Form.useForm();
-  const { login } = useAuth();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [phoneCodeHash, setPhoneCodeHash] = useState('');
-  const [error, setError] = useState('');
+  const { loginWithTelegram } = useAuth();
+  const telegramLoginRef = useRef<HTMLDivElement>(null);
 
-  const handleSendCode = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const phone = form.getFieldValue('phoneNumber');
-      
-      if (!phone) {
-        setError('Vui lòng nhập số điện thoại');
-        return;
+  useEffect(() => {
+    // Tạo script để tải Telegram Login Widget
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.setAttribute('data-telegram-login', 'YOUR_BOT_USERNAME'); // Thay YOUR_BOT_USERNAME bằng username của bot của bạn
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-auth-url', `${window.location.origin}/auth/telegram/callback`);
+    script.setAttribute('data-request-access', 'write');
+    script.async = true;
+
+    // Đặt callback function cho Telegram Login Widget
+    window.TelegramLoginWidget = {
+      dataOnauth: (user) => {
+        loginWithTelegram(user);
       }
+    };
 
-      const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
-      setPhoneNumber(formattedPhone);
-
-      const response = await telegramService.sendCode(formattedPhone);
-      setPhoneCodeHash(response.phoneCodeHash);
-      message.success('Mã xác thực đã được gửi đến điện thoại của bạn');
-      setCurrentStep(1);
-    } catch (error: any) {
-      console.error('Send code error:', error);
-      setError(error.response?.data?.message || 'Lỗi khi gửi mã xác thực');
-    } finally {
-      setLoading(false);
+    // Thêm script vào DOM
+    if (telegramLoginRef.current) {
+      telegramLoginRef.current.appendChild(script);
     }
-  };
 
-  const handleVerifyCode = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const code = form.getFieldValue('verificationCode');
-      
-      if (!code) {
-        setError('Vui lòng nhập mã xác thực');
-        return;
+    return () => {
+      // Xóa script khi component unmount
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
       }
-
-      const response = await telegramService.verifyCode(phoneNumber, code, phoneCodeHash);
-      message.success('Xác thực thành công');
-      
-      // Login with the user data
-      await login(response.user.telegramId);
-    } catch (error: any) {
-      console.error('Verify code error:', error);
-      setError(error.response?.data?.message || 'Lỗi khi xác thực mã');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const steps = [
-    {
-      title: 'Số điện thoại',
-      content: (
-        <Form.Item
-          name="phoneNumber"
-          rules={[{ required: true, message: 'Vui lòng nhập số điện thoại Telegram của bạn' }]}
-        >
-          <Input
-            prefix={<MobileOutlined />}
-            placeholder="Số điện thoại (VD: +84123456789)"
-            size="large"
-          />
-        </Form.Item>
-      ),
-    },
-    {
-      title: 'Xác thực',
-      content: (
-        <Form.Item
-          name="verificationCode"
-          rules={[{ required: true, message: 'Vui lòng nhập mã xác thực' }]}
-        >
-          <Input
-            prefix={<LockOutlined />}
-            placeholder="Mã xác thực"
-            size="large"
-          />
-        </Form.Item>
-      ),
-    },
-  ];
+    };
+  }, [loginWithTelegram]);
 
   return (
     <div style={{ 
@@ -107,41 +59,26 @@ const Login = () => {
       minHeight: '100vh',
       background: '#f0f2f5'
     }}>
-      <Card style={{ width: 400, boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+      <Card style={{ width: 400, boxShadow: '0 4px 8px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+        <div style={{ marginBottom: 24 }}>
           <Title level={2} style={{ color: '#0088cc' }}>TeleDrive</Title>
-          <Text>Đăng nhập bằng tài khoản Telegram</Text>
+          <Text>Lưu trữ đám mây không giới hạn với Telegram</Text>
         </div>
 
-        <Steps current={currentStep} style={{ marginBottom: 24 }}>
-          {steps.map(item => (
-            <Step key={item.title} title={item.title} />
-          ))}
-        </Steps>
+        <div style={{ marginBottom: 24 }}>
+          <Text>Đăng nhập với tài khoản Telegram của bạn để tiếp tục.</Text>
+        </div>
 
-        {error && <Alert message={error} type="error" style={{ marginBottom: 16 }} />}
+        <div ref={telegramLoginRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <Spin tip="Đang tải..." />
+        </div>
 
-        <Form
-          form={form}
-          name="login"
-          initialValues={{ remember: true }}
-          onFinish={currentStep === 0 ? handleSendCode : handleVerifyCode}
-        >
-          {steps[currentStep].content}
-
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              block
-              size="large"
-              style={{ backgroundColor: '#0088cc' }}
-            >
-              {currentStep === 0 ? 'Gửi mã xác thực' : 'Đăng nhập'}
-            </Button>
-          </Form.Item>
-        </Form>
+        <Alert
+          message="Lưu ý"
+          description="Đăng nhập bằng Telegram để bảo mật thông tin của bạn. Chúng tôi không lưu trữ mật khẩu của bạn."
+          type="info"
+          showIcon
+        />
       </Card>
     </div>
   );
