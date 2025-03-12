@@ -65,9 +65,22 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Custom middleware to check if uploaded files exist before serving them
+app.use('/uploads', (req, res, next) => {
+  const filePath = path.join(uploadDir, req.path.substr(1));
+  if (fs.existsSync(filePath)) {
+    next(); // File exists, continue to static middleware
+  } else {
+    console.warn(`File not found on disk: ${filePath}`);
+    res.status(404).json({ error: 'File not found' });
+  }
+});
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Initialize Telegram bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -275,10 +288,21 @@ app.get('/api/check-file/:id', (req, res) => {
   }
 });
 
-// Start the bot
+// Handle errors from Telegram bot
+bot.catch((err, ctx) => {
+  console.error('Telegram bot error:', err);
+  ctx.reply('An error occurred with the bot. Please try again later.').catch(e => {
+    console.error('Failed to send error message to user:', e);
+  });
+});
+
+// Start the bot with error handling
 bot.launch()
-  .then(() => console.log('Telegram bot started'))
-  .catch(err => console.error('Error starting bot:', err));
+  .then(() => console.log('Telegram bot started successfully'))
+  .catch(err => {
+    console.error('Error starting Telegram bot:', err);
+    console.log('Application will continue without bot functionality');
+  });
 
 // Start Express server
 const PORT = process.env.PORT || 3000;
@@ -289,5 +313,13 @@ app.listen(PORT, () => {
 });
 
 // Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM')); 
+process.once('SIGINT', () => {
+  console.log('Shutting down application gracefully...');
+  bot.stop('SIGINT');
+  process.exit(0);
+});
+process.once('SIGTERM', () => {
+  console.log('Shutting down application gracefully...');
+  bot.stop('SIGTERM');
+  process.exit(0);
+}); 
