@@ -1,6 +1,54 @@
 const { ipcRenderer, shell } = require('electron')
 ipcRenderer.setMaxListeners(Infinity);
 
+// Thêm hệ thống thông báo toast
+const toastStyles = document.createElement('style');
+toastStyles.innerHTML = `
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    .toast {
+        background: rgba(50, 50, 50, 0.9);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        min-width: 250px;
+        max-width: 350px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        animation: toast-in 0.3s ease-out;
+        transition: all 0.3s ease;
+    }
+    .toast.success { border-left: 4px solid #4CAF50; }
+    .toast.error { border-left: 4px solid #F44336; }
+    .toast.warning { border-left: 4px solid #FFC107; }
+    .toast.info { border-left: 4px solid #2196F3; }
+    .toast .toast-icon {
+        margin-right: 12px;
+        font-size: 20px;
+    }
+    .toast .toast-content {
+        flex: 1;
+    }
+    .toast .toast-title {
+        font-weight: bold;
+        margin-bottom: 4px;
+    }
+    .toast .toast-message {
+        font-size: 14px;
+    }
+    @keyframes toast-in {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+`;
+document.head.appendChild(toastStyles);
+
 window.addEventListener('DOMContentLoaded', () => {
     console.log("DOM Content Loaded - Starting initialization");
 
@@ -88,75 +136,53 @@ window.addEventListener('DOMContentLoaded', () => {
         password: false
     }
 
-    // Chức năng tự động trả lời
-    const autoRespond = (what) => {
-        console.log(`[AUTO] Automatically responding to: ${what}`);
-        if (what === 'phoneNumber') {
-            setTimeout(() => {
-                console.log('[AUTO] Sending phone number to main process');
-                ipcRenderer.send('phoneNumber', '1234567890');
-            }, 100);
-        } else if (what === 'authCode') {
-            setTimeout(() => {
-                console.log('[AUTO] Sending auth code to main process');
-                ipcRenderer.send('authCode', '12345');
-            }, 100);
-        } else if (what === 'password') {
-            setTimeout(() => {
-                console.log('[AUTO] Sending password to main process');
-                ipcRenderer.send('password', 'password');
-            }, 100);
-        }
-    };
+    // Thêm container cho toast notifications
+    const toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
 
-    // Đối tượng chuyển đổi giao diện 
-    const uiTransition = {
-        // Chuyển sang trạng thái loading
-        showLoading: () => {
-            title.innerHTML = 'Processing...';
-            if (description) description.innerHTML = 'Please wait while we process your request';
-        },
+    // Hàm hiển thị toast notification
+    function showToast(type, title, message, duration = 5000) {
+        console.log(`Showing toast: ${type} - ${title} - ${message}`);
         
-        // Cập nhật trạng thái tiến độ
-        updateProgress: (message, percentage) => {
-            if (description) description.innerHTML = message;
-            // Có thể thêm thanh tiến độ ở đây
-        },
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
         
-        // Hiển thị thống kê
-        showStats: (stats) => {
-            // Tạo phần tử hiển thị thống kê
-            const statsElement = document.createElement('div');
-            statsElement.className = 'stats-container';
-            statsElement.innerHTML = `
-                <h3>Thống kê hoạt động</h3>
-                <div class="stats-item">
-                    <div class="stats-label">Tệp đã xử lý:</div>
-                    <div class="stats-value">${stats.filesProcessed}/${stats.totalFiles}</div>
-                </div>
-                <div class="stats-item">
-                    <div class="stats-label">Thời gian xử lý:</div>
-                    <div class="stats-value">${stats.processTime || '0s'}</div>
-                </div>
-                <div class="stats-item">
-                    <div class="stats-label">Tổng dung lượng:</div>
-                    <div class="stats-value">${stats.totalSize || '0 KB'}</div>
-                </div>
-            `;
-            
-            // Hiển thị thống kê trong swal hoặc giao diện khác
-            if (window.swal) {
-                window.swal({
-                    title: "Thống kê",
-                    content: statsElement,
-                    button: "Đóng"
-                });
-            }
+        let iconSymbol = '';
+        switch(type) {
+            case 'success': iconSymbol = '✓'; break;
+            case 'error': iconSymbol = '✕'; break;
+            case 'warning': iconSymbol = '⚠'; break;
+            case 'info': 
+            default: iconSymbol = 'ℹ'; break;
         }
-    };
-
-    // Cập nhật trạng thái kết nối
-    function updateConnectionStatus(status) {
+        
+        toast.innerHTML = `
+            <div class="toast-icon">${iconSymbol}</div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Tự động đóng toast sau một khoảng thời gian
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toastContainer.removeChild(toast);
+                }
+            }, 300);
+        }, duration);
+        
+        return toast;
+    }
+    
+    // Cập nhật hàm updateConnectionStatus để thêm thông báo
+    function updateConnectionStatus(status, showNotification = true) {
         console.log(`Updating connection status to: ${status}`);
         
         const statusText = connectionStatus.querySelector('span')
@@ -166,18 +192,32 @@ window.addEventListener('DOMContentLoaded', () => {
         connectionStatus.classList.remove('connected', 'connecting', 'disconnected')
         statusIndicator.classList.remove('green', 'yellow', 'red')
         
+        const oldStatus = statusText.textContent;
+        
         if (status === 'connected') {
             connectionStatus.classList.add('connected')
             statusIndicator.classList.add('green')
             statusText.textContent = 'Đã kết nối'
+            
+            if (showNotification && oldStatus !== 'Đã kết nối') {
+                showToast('success', 'Kết nối thành công', 'Đã kết nối đến máy chủ Telegram.');
+            }
         } else if (status === 'connecting') {
             connectionStatus.classList.add('connecting')
             statusIndicator.classList.add('yellow')
             statusText.textContent = 'Đang kết nối...'
+            
+            if (showNotification && oldStatus === 'Mất kết nối') {
+                showToast('info', 'Đang kết nối lại', 'Đang thử kết nối lại với máy chủ Telegram...');
+            }
         } else if (status === 'disconnected') {
             connectionStatus.classList.add('disconnected')
             statusIndicator.classList.add('red')
             statusText.textContent = 'Mất kết nối'
+            
+            if (showNotification && oldStatus !== 'Mất kết nối') {
+                showToast('error', 'Mất kết nối', 'Kết nối đến máy chủ Telegram bị gián đoạn. Hệ thống sẽ tự động kết nối lại.');
+            }
         }
     }
     
@@ -189,7 +229,17 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         
         if (message) {
-            description.innerHTML = message
+            const progressMessage = document.getElementById('progressMessage') || (() => {
+                const el = document.createElement('div');
+                el.id = 'progressMessage';
+                el.style.fontSize = '12px';
+                el.style.marginTop = '4px';
+                el.style.color = '#666';
+                syncProgress.appendChild(el);
+                return el;
+            })();
+            
+            progressMessage.textContent = message;
         }
     }
     
@@ -199,8 +249,11 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     
     // Hiển thị thanh tiến độ
-    function showProgress(show) {
+    function showProgress(show, message = null) {
         syncProgress.style.display = show ? '' : 'none'
+        if (show && message) {
+            updateProgress(-1, message);
+        }
     }
 
     // Đăng ký lắng nghe sự kiện từ main process
@@ -221,62 +274,107 @@ window.addEventListener('DOMContentLoaded', () => {
         // Cập nhật trạng thái kết nối
         updateConnectionStatus('connecting');
 
-        // Tự động trả lời các câu hỏi xác thực
-        autoRespond(message._);
+        // Xử lý sự kiện xác thực dựa trên loại tin nhắn
+        if (message && message._) {
+            autoRespond(message._);
+        }
 
         const getInput = () => {
-            const modifyUI = () => {
-                let value = input.value
-                input.value = ''
-                title.innerHTML = 'Working...'
-                description.innerHTML = ''
-                return value
-            }
-
             return new Promise(resolve => {
                 const clicked = () => {
-                    button.removeEventListener('click', clicked)
-                    input.removeEventListener('keydown', pressed)
-                    resolve(modifyUI())
-                }
+                    button.removeEventListener('click', clicked);
+                    input.removeEventListener('keydown', pressed);
+                    
+                    const value = input.value;
+                    input.value = '';
+                    title.innerHTML = 'Đang xử lý...';
+                    description.innerHTML = 'Vui lòng đợi trong giây lát...';
+                    
+                    console.log(`Input received: ${value}`);
+                    resolve(value);
+                };
 
                 const pressed = event => {
                     if (event.keyCode === 13) {
-                        button.removeEventListener('click', clicked)
-                        input.removeEventListener('keydown', pressed)
-                        resolve(modifyUI())
+                        button.removeEventListener('click', clicked);
+                        input.removeEventListener('keydown', pressed);
+                        
+                        const value = input.value;
+                        input.value = '';
+                        title.innerHTML = 'Đang xử lý...';
+                        description.innerHTML = 'Vui lòng đợi trong giây lát...';
+                        
+                        console.log(`Input received: ${value}`);
+                        resolve(value);
                     }
-                }
+                };
 
-                button.addEventListener('click', clicked)
-                input.addEventListener('keydown', pressed)
-            })
-        }
+                button.addEventListener('click', clicked);
+                input.addEventListener('keydown', pressed);
+            });
+        };
 
-        if (message._ === 'phoneNumber') {
-            // Cập nhật giao diện nhưng không đợi input từ người dùng vì đã tự động trả lời
-            ensureVisible()
-            description.innerHTML = 'Please enter your phone number<br>in international format.'
-            input.placeholder = 'Phone Number'
-            // Hiển thị số điện thoại giả định trên input
-            input.value = '1234567890'
-        } else if (message._ === 'authCode') {
-            // Cập nhật giao diện nhưng không đợi input từ người dùng vì đã tự động trả lời
-            ensureVisible()
-            description.innerHTML = 'Please enter OTP'
-            input.placeholder = 'One time password'
-            // Hiển thị mã xác thực giả định trên input
-            input.value = '12345'
-        } else if (message._ === 'password') {
-            // Cập nhật giao diện nhưng không đợi input từ người dùng vì đã tự động trả lời
-            ensureVisible()
-            description.innerHTML = 'Please enter your 2FA Password'
-            input.placeholder = '2 Factor Auth Password'
-            input.type = 'password'
-            // Hiển thị mật khẩu giả định trên input
-            input.value = '********'
+        if (message._ === 'authorizationStateWaitPhoneNumber') {
+            const phoneNumber = await getInput();
+            console.log(`Sending phone number: ${phoneNumber}`);
+            ipcRenderer.send('phoneNumber', phoneNumber);
+            
+            // Lưu số điện thoại để sử dụng lần sau
+            localStorage.setItem('phoneNumber', phoneNumber);
+            
+            // Hiển thị thông báo
+            showToast('info', 'Đang kiểm tra', 'Đang kiểm tra số điện thoại của bạn...');
+        } else if (message._ === 'authorizationStateWaitCode') {
+            const code = await getInput();
+            console.log(`Sending verification code: ${code}`);
+            ipcRenderer.send('authCode', code);
+            
+            // Hiển thị thông báo
+            showToast('info', 'Đang xác thực', 'Đang xác thực mã code của bạn...');
+        } else if (message._ === 'authorizationStateWaitPassword') {
+            const password = await getInput();
+            console.log(`Sending password: [HIDDEN]`);
+            ipcRenderer.send('password', password);
+            
+            // Hiển thị thông báo
+            showToast('info', 'Đang đăng nhập', 'Đang xác thực mật khẩu của bạn...');
+        } else if (message._ === 'authorizationStateReady') {
+            console.log("Authorization completed successfully");
+            
+            // Hiển thị giao diện đã xác thực thành công
+            title.innerHTML = 'Đã đăng nhập';
+            description.innerHTML = 'Đã đăng nhập thành công vào tài khoản Telegram.';
+            input.style.display = 'none';
+            button.style.display = 'none';
+            
+            // Hiển thị thông báo
+            showToast('success', 'Đăng nhập thành công', 'Bạn đã đăng nhập thành công vào tài khoản Telegram.');
+            
+            // Cập nhật trạng thái kết nối
+            updateConnectionStatus('connected');
+            
+            // Hiển thị các nút thống kê và tối ưu sau khi đăng nhập thành công
+            analyticsButton.style.display = '';
+            optimizeButton.style.display = '';
+            quickActions.style.display = '';
+            
+            // Yêu cầu thông tin người dùng
+            ipcRenderer.send('getUserInfo');
+        } else if (message._ === 'error') {
+            console.error("Authentication error:", message.error);
+            
+            // Hiển thị thông báo lỗi
+            showToast('error', 'Lỗi xác thực', `Lỗi khi xác thực: ${message.error}`);
+            
+            // Yêu cầu xác thực lại
+            setTimeout(() => {
+                ipcRenderer.send('resetAuth');
+            }, 2000);
+            
+            // Cập nhật trạng thái kết nối
+            updateConnectionStatus('disconnected');
         }
-    })
+    });
 
     ipcRenderer.on('updateMyInfo', (event, myInfo) => {
         console.log("Updating user info:", myInfo);
@@ -398,20 +496,22 @@ window.addEventListener('DOMContentLoaded', () => {
         
         // Thêm xử lý sự kiện cho nút thống kê
         analyticsButton.addEventListener('click', () => {
-            // Gửi yêu cầu để lấy dữ liệu thống kê từ main process
+            console.log("Analytics button clicked");
             ipcRenderer.send('getAnalytics');
+            showToast('info', 'Đang tải', 'Đang tải dữ liệu thống kê...');
         });
         
         // Thêm xử lý sự kiện cho nút tối ưu
         optimizeButton.addEventListener('click', () => {
-            // Hiển thị dialog tối ưu hóa
-            showOptimizeDialog();
+            console.log("Optimize button clicked");
+            showOptimizationOptions();
         });
     })
 
     // Nhận phản hồi dữ liệu thống kê từ main process
     ipcRenderer.on('analyticsData', (event, data) => {
-        showAnalyticsDialog(data);
+        console.log("Analytics data received:", data);
+        showAnalyticsModal(data);
     });
 
     // Nhận thông báo tiến độ tối ưu hóa
@@ -419,139 +519,313 @@ window.addEventListener('DOMContentLoaded', () => {
         updateOptimizeProgress(data);
     });
 
-    // Hiển thị dialog thống kê
-    function showAnalyticsDialog(data) {
-        // Tạo phần tử HTML để hiển thị dữ liệu
-        const content = document.createElement('div');
-        content.className = 'analytics-container';
-        content.innerHTML = `
-            <div class="analytics-section">
-                <h3>Thống kê chung</h3>
-                <div class="stats-row">
-                    <span>Tổng số phiên:</span>
-                    <span>${data.usage.sessions}</span>
-                </div>
-                <div class="stats-row">
-                    <span>Thời gian hoạt động:</span>
-                    <span>${data.usage.formattedRuntime || '0s'}</span>
-                </div>
-                <div class="stats-row">
-                    <span>Phiên cuối:</span>
-                    <span>${new Date(data.usage.lastSession).toLocaleString()}</span>
+    // Hàm hiển thị modal tùy chọn tối ưu
+    function showOptimizationOptions() {
+        const modalContainer = document.createElement('div');
+        modalContainer.className = 'modal-container';
+        modalContainer.style.position = 'fixed';
+        modalContainer.style.top = '0';
+        modalContainer.style.left = '0';
+        modalContainer.style.width = '100%';
+        modalContainer.style.height = '100%';
+        modalContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        modalContainer.style.zIndex = '1000';
+        modalContainer.style.display = 'flex';
+        modalContainer.style.justifyContent = 'center';
+        modalContainer.style.alignItems = 'center';
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        modalContent.style.backgroundColor = 'white';
+        modalContent.style.borderRadius = '8px';
+        modalContent.style.width = '400px';
+        modalContent.style.maxWidth = '90%';
+        modalContent.style.padding = '20px';
+        modalContent.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+        
+        modalContent.innerHTML = `
+            <h3 style="margin-top: 0; color: #333;">Tùy chọn tối ưu hóa</h3>
+            <p style="color: #666; font-size: 14px;">Chọn các tùy chọn tối ưu hóa bạn muốn thực hiện:</p>
+            
+            <div class="optimize-option" style="margin: 15px 0; display: flex; align-items: flex-start;">
+                <input type="checkbox" id="opt-compress" style="margin-right: 10px; margin-top: 3px;" checked>
+                <div>
+                    <label for="opt-compress" style="font-weight: bold; display: block;">Nén tệp</label>
+                    <span style="font-size: 13px; color: #666;">Nén các tệp lớn để tiết kiệm không gian lưu trữ.</span>
                 </div>
             </div>
             
-            <div class="analytics-section">
-                <h3>Tệp tin</h3>
-                <div class="stats-row">
-                    <span>Tổng số tệp:</span>
-                    <span>${data.files.total}</span>
-                </div>
-                <div class="stats-row">
-                    <span>Dung lượng trung bình:</span>
-                    <span>${formatSize(data.files.averageSize)}</span>
+            <div class="optimize-option" style="margin: 15px 0; display: flex; align-items: flex-start;">
+                <input type="checkbox" id="opt-deduplicate" style="margin-right: 10px; margin-top: 3px;" checked>
+                <div>
+                    <label for="opt-deduplicate" style="font-weight: bold; display: block;">Xóa trùng lặp</label>
+                    <span style="font-size: 13px; color: #666;">Xác định và xử lý các tệp trùng lặp.</span>
                 </div>
             </div>
             
-            <div class="analytics-section">
-                <h3>Tương tác</h3>
-                <div class="stats-row">
-                    <span>Tin nhắn:</span>
-                    <span>${data.interactions.totalMessages}</span>
+            <div class="optimize-option" style="margin: 15px 0; display: flex; align-items: flex-start;">
+                <input type="checkbox" id="opt-cleanup" style="margin-right: 10px; margin-top: 3px;" checked>
+                <div>
+                    <label for="opt-cleanup" style="font-weight: bold; display: block;">Dọn dẹp tệp tạm</label>
+                    <span style="font-size: 13px; color: #666;">Xóa các tệp tạm thời không còn cần thiết.</span>
                 </div>
-                <div class="stats-row">
-                    <span>Phản ứng:</span>
-                    <span>${data.interactions.totalReactions}</span>
+            </div>
+            
+            <div class="optimize-option" style="margin: 15px 0; display: flex; align-items: flex-start;">
+                <input type="checkbox" id="opt-organize" style="margin-right: 10px; margin-top: 3px;">
+                <div>
+                    <label for="opt-organize" style="font-weight: bold; display: block;">Sắp xếp lưu trữ</label>
+                    <span style="font-size: 13px; color: #666;">Sắp xếp các tệp vào thư mục dựa trên loại tệp.</span>
                 </div>
-                <div class="stats-row">
-                    <span>Chia sẻ:</span>
-                    <span>${data.interactions.totalShares}</span>
-                </div>
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                <button id="cancel-optimize" style="padding: 8px 16px; margin-right: 10px; background: none; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">Hủy</button>
+                <button id="start-optimize" style="padding: 8px 16px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">Bắt đầu tối ưu</button>
             </div>
         `;
         
-        // Hiển thị dialog
-        swal({
-            title: "Phân tích dữ liệu",
-            content: content,
-            button: "Đóng",
-            className: "analytics-dialog"
+        modalContainer.appendChild(modalContent);
+        document.body.appendChild(modalContainer);
+        
+        // Xử lý sự kiện cho nút Hủy
+        document.getElementById('cancel-optimize').addEventListener('click', () => {
+            document.body.removeChild(modalContainer);
+        });
+        
+        // Xử lý sự kiện cho nút Bắt đầu tối ưu
+        document.getElementById('start-optimize').addEventListener('click', () => {
+            const options = {
+                compress: document.getElementById('opt-compress').checked,
+                deduplicate: document.getElementById('opt-deduplicate').checked,
+                cleanup: document.getElementById('opt-cleanup').checked,
+                organize: document.getElementById('opt-organize').checked
+            };
+            
+            ipcRenderer.send('startOptimization', options);
+            showToast('info', 'Bắt đầu tối ưu', 'Quá trình tối ưu hóa đã bắt đầu. Vui lòng đợi...');
+            document.body.removeChild(modalContainer);
         });
     }
     
-    // Hiển thị dialog tối ưu hóa
-    function showOptimizeDialog() {
-        const content = document.createElement('div');
-        content.className = 'optimize-container';
-        content.innerHTML = `
-            <div class="optimize-options">
-                <div class="optimize-option">
-                    <input type="checkbox" id="opt-compress" checked>
-                    <label for="opt-compress">Nén tệp tin</label>
-                </div>
-                <div class="optimize-option">
-                    <input type="checkbox" id="opt-clean" checked>
-                    <label for="opt-clean">Dọn dẹp tệp tạm</label>
-                </div>
-                <div class="optimize-option">
-                    <input type="checkbox" id="opt-dedupe" checked>
-                    <label for="opt-dedupe">Loại bỏ trùng lặp</label>
-                </div>
-                <div class="optimize-option">
-                    <input type="checkbox" id="opt-organize" checked>
-                    <label for="opt-organize">Sắp xếp lưu trữ</label>
+    // Hàm hiển thị modal thống kê
+    function showAnalyticsModal(data) {
+        const modalContainer = document.createElement('div');
+        modalContainer.className = 'modal-container';
+        modalContainer.style.position = 'fixed';
+        modalContainer.style.top = '0';
+        modalContainer.style.left = '0';
+        modalContainer.style.width = '100%';
+        modalContainer.style.height = '100%';
+        modalContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        modalContainer.style.zIndex = '1000';
+        modalContainer.style.display = 'flex';
+        modalContainer.style.justifyContent = 'center';
+        modalContainer.style.alignItems = 'center';
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        modalContent.style.backgroundColor = 'white';
+        modalContent.style.borderRadius = '8px';
+        modalContent.style.width = '500px';
+        modalContent.style.maxWidth = '90%';
+        modalContent.style.maxHeight = '80vh';
+        modalContent.style.overflowY = 'auto';
+        modalContent.style.padding = '20px';
+        modalContent.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+        
+        // Format thời gian
+        const formatDate = (timestamp) => {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        };
+        
+        // Hiển thị thống kê tệp
+        let filesContent = '<p>Không có dữ liệu tệp</p>';
+        if (data.files && Object.keys(data.files).length > 0) {
+            filesContent = `
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                    <thead>
+                        <tr style="background-color: #f5f5f5;">
+                            <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">Tên tệp</th>
+                            <th style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">Kích thước</th>
+                            <th style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd;">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            Object.values(data.files).forEach(file => {
+                filesContent += `
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${file.name}</td>
+                        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">${formatBytes(file.size)}</td>
+                        <td style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd;">
+                            ${file.isBackedUp ? 
+                                '<span style="color: green;">✓ Đã sao lưu</span>' : 
+                                '<span style="color: orange;">⟳ Chờ sao lưu</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            filesContent += `
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        // Hiển thị thống kê tin nhắn
+        let messagesContent = '<p>Không có dữ liệu tin nhắn</p>';
+        if (data.messages && data.messages.length > 0) {
+            messagesContent = `
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 15px;">
+            `;
+            
+            data.messages.forEach(message => {
+                messagesContent += `
+                    <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div style="font-weight: bold;">${message.author}</div>
+                            <div style="color: #666; font-size: 12px;">${formatDate(message.timestamp)}</div>
+                        </div>
+                        <div style="margin: 5px 0;">${message.content}</div>
+                        <div style="color: #666; font-size: 12px;">
+                            👍 ${message.likes || 0} · 
+                            💬 ${message.comments ? message.comments.length : 0} · 
+                            🔄 ${message.shares || 0}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            messagesContent += `</div>`;
+        }
+        
+        // Hiển thị thống kê tương tác
+        const interactions = data.interactions || { likes: 0, comments: 0, shares: 0 };
+        
+        // Hiển thị thống kê cơ bản
+        const stats = data.stats || { 
+            filesBackedUp: 0,
+            totalSize: 0,
+            lastBackup: null,
+            syncRate: '0 files/min',
+            errors: 0
+        };
+        
+        modalContent.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #333;">Thống kê và phân tích</h3>
+                <button id="close-analytics" style="background: none; border: none; cursor: pointer; font-size: 20px;">×</button>
+            </div>
+            
+            <div class="analytics-section">
+                <h4 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">Tổng quan</h4>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                    <div class="stat-card" style="background-color: #f9f9f9; padding: 12px; border-radius: 6px;">
+                        <div style="font-size: 12px; color: #666;">Tệp đã sao lưu</div>
+                        <div style="font-size: 18px; font-weight: bold;">${stats.filesBackedUp}</div>
+                    </div>
+                    <div class="stat-card" style="background-color: #f9f9f9; padding: 12px; border-radius: 6px;">
+                        <div style="font-size: 12px; color: #666;">Tổng dung lượng</div>
+                        <div style="font-size: 18px; font-weight: bold;">${formatBytes(stats.totalSize)}</div>
+                    </div>
+                    <div class="stat-card" style="background-color: #f9f9f9; padding: 12px; border-radius: 6px;">
+                        <div style="font-size: 12px; color: #666;">Lần sao lưu cuối</div>
+                        <div style="font-size: 14px; font-weight: bold;">${formatDate(stats.lastBackup)}</div>
+                    </div>
+                    <div class="stat-card" style="background-color: #f9f9f9; padding: 12px; border-radius: 6px;">
+                        <div style="font-size: 12px; color: #666;">Tốc độ đồng bộ</div>
+                        <div style="font-size: 18px; font-weight: bold;">${stats.syncRate}</div>
+                    </div>
                 </div>
             </div>
-            <div class="optimize-actions">
-                <button id="start-optimize" class="optimize-button">Bắt đầu tối ưu</button>
+            
+            <div class="analytics-section">
+                <h4 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">Tương tác</h4>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; text-align: center;">
+                    <div style="flex: 1; background-color: #E3F2FD; padding: 12px; border-radius: 6px;">
+                        <div style="font-size: 24px; font-weight: bold;">👍 ${interactions.likes}</div>
+                        <div style="font-size: 14px; color: #666;">Lượt thích</div>
+                    </div>
+                    <div style="flex: 1; background-color: #E8F5E9; padding: 12px; border-radius: 6px;">
+                        <div style="font-size: 24px; font-weight: bold;">💬 ${interactions.comments}</div>
+                        <div style="font-size: 14px; color: #666;">Bình luận</div>
+                    </div>
+                    <div style="flex: 1; background-color: #FFF3E0; padding: 12px; border-radius: 6px;">
+                        <div style="font-size: 24px; font-weight: bold;">🔄 ${interactions.shares}</div>
+                        <div style="font-size: 14px; color: #666;">Chia sẻ</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="analytics-tabs" style="margin-bottom: 15px;">
+                <div style="display: flex; border-bottom: 1px solid #ddd;">
+                    <div id="tab-files" class="tab active" style="padding: 10px 15px; cursor: pointer; border-bottom: 2px solid #2196F3;">Tệp</div>
+                    <div id="tab-messages" class="tab" style="padding: 10px 15px; cursor: pointer;">Tin nhắn</div>
+                </div>
+                
+                <div id="content-files" class="tab-content" style="padding: 15px 0;">
+                    <h4 style="margin-top: 0;">Danh sách tệp</h4>
+                    ${filesContent}
+                </div>
+                
+                <div id="content-messages" class="tab-content" style="display: none; padding: 15px 0;">
+                    <h4 style="margin-top: 0;">Tin nhắn gần đây</h4>
+                    ${messagesContent}
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                <button id="export-data" style="padding: 8px 16px; margin-right: 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Xuất dữ liệu</button>
+                <button id="refresh-analytics" style="padding: 8px 16px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">Làm mới</button>
             </div>
         `;
         
-        // Hiển thị dialog
-        swal({
-            title: "Tối ưu hóa dữ liệu",
-            content: content,
-            buttons: {
-                cancel: "Hủy",
-                confirm: {
-                    text: "Tối ưu",
-                    value: true,
-                    closeModal: false
-                }
-            }
-        }).then(value => {
-            if (value) {
-                // Thu thập các tùy chọn tối ưu
-                const options = {
-                    compress: document.getElementById('opt-compress')?.checked || false,
-                    clean: document.getElementById('opt-clean')?.checked || false,
-                    dedupe: document.getElementById('opt-dedupe')?.checked || false,
-                    organize: document.getElementById('opt-organize')?.checked || false
-                };
-                
-                // Gửi yêu cầu tối ưu
-                ipcRenderer.send('startOptimize', options);
-                
-                // Hiển thị tiến độ
-                swal({
-                    title: "Đang tối ưu...",
-                    text: "Quá trình đang được thực hiện. Vui lòng đợi...",
-                    buttons: false,
-                    closeOnClickOutside: false,
-                    closeOnEsc: false
-                });
-                
-                // Đợi kết quả
-                ipcRenderer.once('optimizeComplete', (event, result) => {
-                    swal({
-                        title: "Tối ưu hoàn tất",
-                        text: `Đã tối ưu ${result.optimizedFiles} tệp tin, tiết kiệm ${formatSize(result.savedSpace)}.`,
-                        icon: "success"
-                    });
-                });
-            }
+        modalContainer.appendChild(modalContent);
+        document.body.appendChild(modalContainer);
+        
+        // Xử lý sự kiện cho nút đóng
+        document.getElementById('close-analytics').addEventListener('click', () => {
+            document.body.removeChild(modalContainer);
+        });
+        
+        // Xử lý sự kiện cho các tab
+        document.getElementById('tab-files').addEventListener('click', () => {
+            document.getElementById('tab-files').style.borderBottom = '2px solid #2196F3';
+            document.getElementById('tab-messages').style.borderBottom = 'none';
+            document.getElementById('content-files').style.display = '';
+            document.getElementById('content-messages').style.display = 'none';
+        });
+        
+        document.getElementById('tab-messages').addEventListener('click', () => {
+            document.getElementById('tab-messages').style.borderBottom = '2px solid #2196F3';
+            document.getElementById('tab-files').style.borderBottom = 'none';
+            document.getElementById('content-files').style.display = 'none';
+            document.getElementById('content-messages').style.display = '';
+        });
+        
+        // Xử lý sự kiện cho nút Xuất dữ liệu
+        document.getElementById('export-data').addEventListener('click', () => {
+            ipcRenderer.send('exportAnalyticsData');
+            showToast('info', 'Xuất dữ liệu', 'Đang chuẩn bị xuất dữ liệu thống kê...');
+        });
+        
+        // Xử lý sự kiện cho nút Làm mới
+        document.getElementById('refresh-analytics').addEventListener('click', () => {
+            ipcRenderer.send('getAnalytics');
+            showToast('info', 'Đang tải', 'Đang làm mới dữ liệu thống kê...');
+            document.body.removeChild(modalContainer);
         });
     }
+    
+    // Lắng nghe sự kiện xuất dữ liệu thống kê thành công
+    ipcRenderer.on('exportAnalyticsComplete', (event, path) => {
+        console.log("Export analytics complete:", path);
+        showToast('success', 'Xuất dữ liệu thành công', `Dữ liệu thống kê đã được xuất ra: ${path}`);
+    });
     
     // Cập nhật tiến độ tối ưu
     function updateOptimizeProgress(data) {
@@ -797,22 +1071,21 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Xử lý các nút thao tác nhanh
     actionPause.addEventListener('click', () => {
-        if (appState.isProcessing) {
-            ipcRenderer.send('pauseSync');
-            description.innerHTML = 'Tạm dừng đồng bộ...';
-        }
+        console.log("Pause action clicked");
+        ipcRenderer.send('pauseSync');
+        showToast('info', 'Tạm dừng đồng bộ', 'Đã tạm dừng quá trình đồng bộ hóa.');
     });
     
     actionResume.addEventListener('click', () => {
-        if (!appState.isProcessing) {
-            ipcRenderer.send('resumeSync');
-            description.innerHTML = 'Tiếp tục đồng bộ...';
-        }
+        console.log("Resume action clicked");
+        ipcRenderer.send('resumeSync');
+        showToast('success', 'Tiếp tục đồng bộ', 'Đã tiếp tục quá trình đồng bộ hóa.');
     });
     
     actionRefresh.addEventListener('click', () => {
-        ipcRenderer.send('refreshStatus');
-        description.innerHTML = 'Đang làm mới...';
+        console.log("Refresh action clicked");
+        ipcRenderer.send('refreshSync');
+        showToast('info', 'Làm mới đồng bộ', 'Đang làm mới trạng thái đồng bộ hóa...');
     });
     
     // Theo dõi trạng thái kết nối
@@ -852,4 +1125,99 @@ window.addEventListener('DOMContentLoaded', () => {
     };
 
     console.log("Renderer process initialization complete");
+
+    // Cập nhật hàm autoRespond để thêm thông báo
+    function autoRespond(messageType) {
+        console.log(`Auto responding to message type: ${messageType}`);
+        
+        if (messageType === 'authorizationStateWaitPhoneNumber') {
+            showToast('info', 'Cần xác thực', 'Vui lòng nhập số điện thoại của bạn để xác thực với Telegram.');
+            
+            title.innerHTML = 'Xác thực Telegram';
+            description.innerHTML = 'Nhập số điện thoại của bạn (bao gồm mã quốc gia)';
+            input.style.display = '';
+            input.focus();
+            button.style.display = '';
+            button.innerHTML = 'Tiếp tục';
+            
+            // Nếu đã có profile và số điện thoại lưu trữ
+            if (localStorage.getItem('phoneNumber')) {
+                let savedPhone = localStorage.getItem('phoneNumber');
+                input.value = savedPhone;
+                showToast('info', 'Số điện thoại đã lưu', 'Sử dụng số điện thoại đã lưu trước đó.');
+            }
+        } else if (messageType === 'authorizationStateWaitCode') {
+            showToast('info', 'Mã xác thực', 'Vui lòng nhập mã xác thực được gửi đến điện thoại của bạn.');
+            
+            title.innerHTML = 'Xác thực Telegram';
+            description.innerHTML = 'Nhập mã xác thực được gửi đến điện thoại của bạn';
+            input.style.display = '';
+            input.value = '';
+            input.focus();
+            button.style.display = '';
+            button.innerHTML = 'Xác thực';
+        } else if (messageType === 'authorizationStateWaitPassword') {
+            showToast('info', 'Xác nhận mật khẩu', 'Vui lòng nhập mật khẩu 2FA của bạn.');
+            
+            title.innerHTML = 'Xác thực Telegram';
+            description.innerHTML = 'Nhập mật khẩu 2FA của bạn';
+            input.style.display = '';
+            input.value = '';
+            input.type = 'password';
+            input.focus();
+            button.style.display = '';
+            button.innerHTML = 'Đăng nhập';
+        } else if (messageType === 'authorizationStateReady') {
+            showToast('success', 'Đăng nhập thành công', 'Bạn đã đăng nhập thành công vào tài khoản Telegram.');
+            
+            title.innerHTML = 'Đã đăng nhập';
+            description.innerHTML = 'Đã đăng nhập thành công vào tài khoản Telegram.';
+            input.style.display = 'none';
+            button.style.display = 'none';
+            
+            // Hiển thị các nút thống kê và tối ưu
+            analyticsButton.style.display = '';
+            optimizeButton.style.display = '';
+            
+            // Hiển thị các nút thao tác nhanh
+            quickActions.style.display = '';
+            
+            // Cập nhật trạng thái kết nối
+            updateConnectionStatus('connected');
+            
+            // Cập nhật thông tin hồ sơ nếu có
+            ipcRenderer.send('getUserInfo');
+        }
+    }
+
+    // Thêm lắng nghe sự kiện nhận thông tin người dùng
+    ipcRenderer.on('userInfo', (event, user) => {
+        console.log("User info received:", user);
+        
+        if (user && user.firstName) {
+            const userInfo = document.getElementById('userInfo') || (() => {
+                const el = document.createElement('div');
+                el.id = 'userInfo';
+                el.style.marginTop = '15px';
+                el.style.textAlign = 'center';
+                profile.appendChild(el);
+                return el;
+            })();
+            
+            userInfo.innerHTML = `
+                <div style="font-weight: bold; font-size: 16px;">${user.firstName} ${user.lastName || ''}</div>
+                <div style="color: #666; font-size: 14px;">${user.phoneNumber || user.username || ''}</div>
+            `;
+            
+            if (user.photoUrl) {
+                profilePicture.src = user.photoUrl;
+                profilePicture.style.display = '';
+            }
+            
+            // Lưu số điện thoại để sử dụng lần sau
+            if (user.phoneNumber) {
+                localStorage.setItem('phoneNumber', user.phoneNumber);
+            }
+        }
+    });
 });

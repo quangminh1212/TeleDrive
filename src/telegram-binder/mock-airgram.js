@@ -61,15 +61,150 @@ function generateSampleData() {
         }
     ];
     
+    // Thêm dữ liệu tệp tin mẫu
+    const sampleFiles = {
+        'document1.pdf': {
+            id: 'doc1',
+            name: 'document1.pdf',
+            size: 1024 * 1024 * 2.5, // 2.5MB
+            mimeType: 'application/pdf',
+            uploadDate: new Date(Date.now() - 5400000).toISOString(),
+            lastModified: new Date(Date.now() - 4800000).toISOString(),
+            path: '/Documents/TeleDriveSync/document1.pdf',
+            isBackedUp: true
+        },
+        'image1.jpg': {
+            id: 'img1',
+            name: 'image1.jpg',
+            size: 1024 * 512, // 512KB
+            mimeType: 'image/jpeg',
+            uploadDate: new Date(Date.now() - 3600000).toISOString(),
+            lastModified: new Date(Date.now() - 3600000).toISOString(),
+            path: '/Documents/TeleDriveSync/Photos/image1.jpg',
+            isBackedUp: true
+        },
+        'spreadsheet.xlsx': {
+            id: 'xl1',
+            name: 'spreadsheet.xlsx',
+            size: 1024 * 1024 * 1.2, // 1.2MB
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            uploadDate: new Date(Date.now() - 7200000).toISOString(),
+            lastModified: new Date(Date.now() - 7200000).toISOString(),
+            path: '/Documents/TeleDriveSync/Work/spreadsheet.xlsx',
+            isBackedUp: true
+        }
+    };
+    
     // Thêm vào dữ liệu thu thập
     collectData.messages = posts;
+    collectData.files = sampleFiles;
     collectData.interactions = {
         likes: posts.reduce((sum, post) => sum + post.likes, 0),
         comments: posts.reduce((sum, post) => sum + post.comments.length, 0),
         shares: posts.reduce((sum, post) => sum + post.shares, 0)
     };
+    collectData.stats = {
+        filesBackedUp: Object.keys(sampleFiles).length,
+        totalSize: Object.values(sampleFiles).reduce((sum, file) => sum + file.size, 0),
+        lastBackup: new Date().toISOString(),
+        syncStartTime: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+        syncEndTime: new Date(Date.now() - 86390000).toISOString(),   // 10 min later
+        averageSpeed: 1024 * 1024 * 5 // 5MB/s
+    };
     
     return collectData;
+}
+
+// Giả lập việc thêm dữ liệu theo thời gian thực
+let simulationInterval = null;
+
+// Bắt đầu mô phỏng dữ liệu theo thời gian thực
+function startDataSimulation() {
+    if (simulationInterval) {
+        clearInterval(simulationInterval);
+    }
+    
+    simulationInterval = setInterval(() => {
+        // Thêm file mới ngẫu nhiên
+        if (Math.random() > 0.7) {
+            const fileId = `file-${Date.now()}`;
+            const fileName = `file-${Math.floor(Math.random() * 1000)}.${['pdf', 'jpg', 'docx', 'xlsx'][Math.floor(Math.random() * 4)]}`;
+            const fileSize = Math.floor(Math.random() * 1024 * 1024 * 5); // 0-5MB
+            
+            collectData.files[fileName] = {
+                id: fileId,
+                name: fileName,
+                size: fileSize,
+                mimeType: getMimeType(fileName),
+                uploadDate: new Date().toISOString(),
+                lastModified: new Date().toISOString(),
+                path: `/Documents/TeleDriveSync/${fileName}`,
+                isBackedUp: true
+            };
+            
+            collectData.stats.filesBackedUp++;
+            collectData.stats.totalSize += fileSize;
+            collectData.stats.lastBackup = new Date().toISOString();
+        }
+        
+        // Thêm tương tác mới
+        if (Math.random() > 0.8) {
+            if (collectData.messages.length > 0) {
+                const randomPostIndex = Math.floor(Math.random() * collectData.messages.length);
+                const randomPost = collectData.messages[randomPostIndex];
+                
+                if (Math.random() > 0.5) {
+                    // Thêm like
+                    randomPost.likes++;
+                    collectData.interactions.likes++;
+                } else {
+                    // Thêm bình luận
+                    const commentId = `cmt-${Date.now()}`;
+                    const comment = {
+                        id: commentId,
+                        author: `User ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
+                        content: `New comment ${Math.floor(Math.random() * 100)}`,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    randomPost.comments.push(comment);
+                    collectData.interactions.comments++;
+                }
+            }
+        }
+    }, 30000); // Cập nhật mỗi 30 giây
+}
+
+// Dừng mô phỏng dữ liệu
+function stopDataSimulation() {
+    if (simulationInterval) {
+        clearInterval(simulationInterval);
+        simulationInterval = null;
+    }
+}
+
+// Lấy MIME type từ phần mở rộng của tệp
+function getMimeType(fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+    const mimeTypes = {
+        'pdf': 'application/pdf',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'txt': 'text/plain',
+        'doc': 'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls': 'application/vnd.ms-excel',
+        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt': 'application/vnd.ms-powerpoint',
+        'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'mp3': 'audio/mpeg',
+        'mp4': 'video/mp4',
+        'zip': 'application/zip'
+    };
+    
+    return mimeTypes[extension] || 'application/octet-stream';
 }
 
 class MockAirgram extends EventEmitter {
@@ -108,6 +243,9 @@ class MockAirgram extends EventEmitter {
             const sampleDataPath = path.join(dataDir, 'sample_data.json');
             fs.writeFileSync(sampleDataPath, JSON.stringify(sampleData, null, 2));
             log.info("[MOCK] Created sample data file at:", sampleDataPath);
+            
+            // Bắt đầu mô phỏng dữ liệu theo thời gian thực
+            startDataSimulation();
         } catch (error) {
             log.error("[MOCK] Error creating directories:", error);
         }
@@ -407,5 +545,8 @@ module.exports = {
         authState = 'initial';
         authAttempts = 0;
         log.info("[MOCK] Auth state reset to initial");
-    }
+    },
+    // Thêm hàm để bắt đầu/dừng mô phỏng dữ liệu
+    startDataSimulation,
+    stopDataSimulation
 }; 
