@@ -99,7 +99,7 @@ app.get('/telegram-api-config', (req, res) => {
 
 // Trang hướng dẫn trích xuất auth key thủ công
 app.get('/api/telegram/extract-auth-manual', (req, res) => {
-  res.send(`
+  const htmlContent = `
     <!DOCTYPE html>
     <html lang="vi">
     <head>
@@ -239,7 +239,7 @@ document.body.appendChild(a);
                 <li>Mở <a href="https://web.telegram.org/k/" target="_blank" class="text-white">Telegram Web</a> và đăng nhập</li>
                 <li>Mở DevTools (F12) và chuyển đến tab "Application"</li>
                 <li>Trong sidebar bên trái, mở rộng "Local Storage" và chọn trang Telegram Web</li>
-                <li>Tìm các key có tên `dc`, `tgme_sync`, hoặc `ts_key` và ghi lại giá trị của chúng</li>
+                <li>Tìm các key có tên \`dc\`, \`tgme_sync\`, hoặc \`ts_key\` và ghi lại giá trị của chúng</li>
                 <li>Tạo một file JSON với cấu trúc như sau:</li>
               </ol>
               
@@ -265,7 +265,9 @@ document.body.appendChild(a);
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     </body>
     </html>
-  `);
+  `;
+  
+  res.send(htmlContent);
 });
 
 // Endpoint cập nhật thông tin API
