@@ -25,13 +25,38 @@ storage/
 
 # Flask session
 flask_session/
+.flask_session/
+instance/
 
 # Logs
 *.log
+logs/
 
 # Database
 *.db
 *.sqlite
 
+# Cache files
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Browser profiles and selenium related
+chrome_profile/
+firefox_profile/
+edge_profile/
+*.webdriver
+
 # Autres
-.DS_Store 
+node_modules/
+.webassets-cache/ 

@@ -1,11 +1,8 @@
 import os
 import json
-import time
 import hashlib
 import hmac
-from urllib.parse import urlencode
-import requests
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from pathlib import Path
 import datetime
@@ -23,9 +20,9 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max
 
 # Configuration Telegram
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-BOT_USERNAME = os.getenv('BOT_USERNAME', 'your_bot_username')  # Thay bằng username của bot của bạn
+BOT_USERNAME = os.getenv('BOT_USERNAME', 'your_bot_username')
 
-# Configuration de Flask-Login
+# Configuration Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -37,10 +34,10 @@ class User(UserMixin):
         self.username = username
         self.telegram_id = telegram_id
 
-# Dictionnaires des utilisateurs et des mots de passe (à remplacer par une base de données dans une application de production)
+# Dictionnaires des utilisateurs et des mots de passe
 users = {}
-user_passwords = {}  # Dictionnaire pour stocker les mots de passe
-telegram_users = {}  # Dictionnaire pour stocker les utilisateurs Telegram
+user_passwords = {}
+telegram_users = {}
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -73,14 +70,12 @@ def update_user_metadata(user_id, file_path, size, file_type):
     else:
         metadata = {"files": {}, "usage": 0}
     
-    # Ajouter ou mettre à jour le fichier
     metadata["files"][str(file_path)] = {
         "size": size,
         "type": file_type,
         "created": datetime.datetime.now().isoformat()
     }
     
-    # Mettre à jour l'utilisation totale
     metadata["usage"] = sum(item["size"] for item in metadata["files"].values())
     
     with open(metadata_path, 'w') as f:
@@ -96,11 +91,9 @@ def remove_file_from_metadata(user_id, file_path):
     with open(metadata_path, 'r') as f:
         metadata = json.load(f)
     
-    # Supprimer le fichier s'il existe
     if str(file_path) in metadata["files"]:
         del metadata["files"][str(file_path)]
     
-    # Mettre à jour l'utilisation totale
     metadata["usage"] = sum(item["size"] for item in metadata["files"].values())
     
     with open(metadata_path, 'w') as f:
@@ -134,51 +127,9 @@ def verify_telegram_data(data):
 # Route pour la page d'accueil
 @app.route('/')
 def index():
-    # Si l'utilisateur est connecté, rediriger vers le tableau de bord
     if current_user.is_authenticated:
         return redirect(url_for('browse_files'))
-    # Sinon, rediriger vers la page de connexion
     return redirect(url_for('login'))
-
-# Route pour Telegram Login
-@app.route('/telegram_login')
-def telegram_login():
-    auth_url = f"https://telegram.org/auth/authorize?bot_id={BOT_USERNAME}&origin={request.host_url}&return_to={url_for('telegram_callback', _external=True)}"
-    return redirect(auth_url)
-
-# Route pour callback après l'authentification Telegram
-@app.route('/telegram_callback')
-def telegram_callback():
-    auth_data = request.args.to_dict()
-    
-    if not verify_telegram_data(auth_data):
-        flash('Xác thực Telegram thất bại. Vui lòng thử lại.', 'danger')
-        return redirect(url_for('login'))
-    
-    telegram_id = auth_data.get('id')
-    first_name = auth_data.get('first_name', '')
-    last_name = auth_data.get('last_name', '')
-    username = auth_data.get('username', f"user_{telegram_id}")
-    
-    # Vérifier si l'utilisateur existe déjà
-    if telegram_id in telegram_users:
-        user_id = telegram_users[telegram_id]
-        login_user(users[user_id])
-        flash(f'Xin chào {first_name}! Đăng nhập thành công.', 'success')
-        return redirect(url_for('browse_files'))
-    
-    # Créer un nouvel utilisateur
-    user_id = str(len(users) + 1)
-    display_name = f"{first_name} {last_name}".strip() if last_name else first_name
-    users[user_id] = User(user_id, display_name, telegram_id)
-    telegram_users[telegram_id] = user_id
-    
-    # Créer le dossier de l'utilisateur
-    get_user_path(user_id)
-    
-    login_user(users[user_id])
-    flash(f'Xin chào {display_name}! Tài khoản của bạn đã được tạo thành công.', 'success')
-    return redirect(url_for('browse_files'))
 
 # Route pour l'inscription
 @app.route('/register', methods=['GET', 'POST'])
@@ -187,21 +138,14 @@ def register():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # Vérifiez si l'utilisateur existe déjà
         for user in users.values():
             if user.username == username:
                 flash('Tên người dùng đã tồn tại', 'danger')
                 return redirect(url_for('register'))
         
-        # Créer un nouvel utilisateur
         user_id = str(len(users) + 1)
         users[user_id] = User(user_id, username)
-        
-        # Enregistrez le mot de passe (à faire correctement dans une application de production)
-        # Dans un environnement de production, vous devriez hacher le mot de passe
         user_passwords[user_id] = password
-        
-        # Créer le dossier de l'utilisateur
         get_user_path(user_id)
         
         flash('Đăng ký thành công! Bạn có thể đăng nhập bây giờ.', 'success')
@@ -216,7 +160,6 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # Rechercher l'utilisateur
         user_id = None
         for id, user in users.items():
             if user.username == username:
@@ -239,6 +182,37 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+# Route pour traiter l'authentification Telegram via widget
+@app.route('/telegram_auth', methods=['POST'])
+def telegram_auth():
+    auth_data = request.form.to_dict()
+    
+    if not verify_telegram_data(auth_data):
+        flash('Xác thực Telegram thất bại. Vui lòng thử lại.', 'danger')
+        return redirect(url_for('login'))
+    
+    telegram_id = auth_data.get('id')
+    first_name = auth_data.get('first_name', '')
+    last_name = auth_data.get('last_name', '')
+    username = auth_data.get('username', f"user_{telegram_id}")
+    
+    if telegram_id in telegram_users:
+        user_id = telegram_users[telegram_id]
+        login_user(users[user_id])
+        flash(f'Xin chào {first_name}! Đăng nhập thành công.', 'success')
+        return redirect(url_for('browse_files'))
+    
+    user_id = str(len(users) + 1)
+    display_name = f"{first_name} {last_name}".strip() if last_name else first_name
+    users[user_id] = User(user_id, display_name, telegram_id)
+    telegram_users[telegram_id] = user_id
+    
+    get_user_path(user_id)
+    
+    login_user(users[user_id])
+    flash(f'Xin chào {display_name}! Tài khoản của bạn đã được tạo thành công.', 'success')
+    return redirect(url_for('browse_files'))
+
 # Route pour afficher les fichiers dans un dossier
 @app.route('/files/', defaults={'path': ''})
 @app.route('/files/<path:path>')
@@ -247,16 +221,13 @@ def browse_files(path):
     base_path = get_user_path(current_user.id)
     current_path = path
     
-    # Construire le chemin complet
     full_path = base_path
     if current_path:
         full_path = base_path / current_path
     
-    # Vérifier que le dossier existe
     if not full_path.exists():
         full_path.mkdir(parents=True, exist_ok=True)
     
-    # Lister les fichiers et dossiers
     items = []
     
     for item in full_path.iterdir():
@@ -282,15 +253,12 @@ def browse_files(path):
                 'date': datetime.datetime.fromtimestamp(item.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')
             })
     
-    # Trier: dossiers d'abord, puis fichiers, et par nom
     items.sort(key=lambda x: (0 if x['type'] == 'folder' else 1, x['name']))
     
-    # Obtenir le chemin parent
     parent_path = str(Path(current_path).parent) if current_path else None
     if parent_path == '.':
         parent_path = ''
     
-    # Obtenir les statistiques de l'utilisateur
     metadata = get_user_metadata(current_user.id)
     usage = metadata.get('usage', 0)
     usage_str = format_size(usage)
@@ -322,12 +290,10 @@ def create_folder():
     folder_name = request.form.get('folder_name', '').strip()
     current_path = request.form.get('current_path', '')
     
-    # Validation du nom du dossier
     if not folder_name or '/' in folder_name or '\\' in folder_name or folder_name in ['.', '..']:
         flash('Tên thư mục không hợp lệ', 'danger')
         return redirect(url_for('browse_files', path=current_path))
     
-    # Construire le chemin complet
     base_path = get_user_path(current_user.id)
     folder_path = base_path
     
@@ -359,21 +325,17 @@ def upload_file():
         flash('Không có tệp nào được chọn', 'danger')
         return redirect(request.referrer)
     
-    # Construire le chemin complet
     base_path = get_user_path(current_user.id)
     save_path = base_path
     
     if current_path:
         save_path = base_path / current_path
     
-    # Créer le dossier s'il n'existe pas
     save_path.mkdir(parents=True, exist_ok=True)
     
-    # Sauvegarder le fichier
     file_path = save_path / file.filename
     file.save(file_path)
     
-    # Mettre à jour les métadonnées
     file_size = file_path.stat().st_size
     file_type = file.filename.split('.')[-1] if '.' in file.filename else 'unknown'
     rel_path = str(file_path.relative_to(base_path))
@@ -393,7 +355,6 @@ def delete_item(file_path):
         flash('Tệp hoặc thư mục không tồn tại', 'danger')
         return redirect(request.referrer)
     
-    # Obtenir le chemin du dossier parent pour la redirection
     parent_path = str(Path(file_path).parent)
     if parent_path == '.':
         parent_path = ''
@@ -404,7 +365,6 @@ def delete_item(file_path):
             flash(f'Đã xóa thư mục \'{full_path.name}\' thành công', 'success')
         else:
             full_path.unlink()
-            # Mettre à jour les métadonnées
             remove_file_from_metadata(current_user.id, file_path)
             flash(f'Đã xóa tệp \'{full_path.name}\' thành công', 'success')
     except Exception as e:
@@ -412,49 +372,12 @@ def delete_item(file_path):
     
     return redirect(url_for('browse_files', path=parent_path))
 
-# Route pour traiter l'authentification Telegram via widget
-@app.route('/telegram_auth', methods=['POST'])
-def telegram_auth():
-    auth_data = request.form.to_dict()
-    
-    if not verify_telegram_data(auth_data):
-        flash('Xác thực Telegram thất bại. Vui lòng thử lại.', 'danger')
-        return redirect(url_for('login'))
-    
-    telegram_id = auth_data.get('id')
-    first_name = auth_data.get('first_name', '')
-    last_name = auth_data.get('last_name', '')
-    username = auth_data.get('username', f"user_{telegram_id}")
-    
-    # Vérifier si l'utilisateur existe déjà
-    if telegram_id in telegram_users:
-        user_id = telegram_users[telegram_id]
-        login_user(users[user_id])
-        flash(f'Xin chào {first_name}! Đăng nhập thành công.', 'success')
-        return redirect(url_for('browse_files'))
-    
-    # Créer un nouvel utilisateur
-    user_id = str(len(users) + 1)
-    display_name = f"{first_name} {last_name}".strip() if last_name else first_name
-    users[user_id] = User(user_id, display_name, telegram_id)
-    telegram_users[telegram_id] = user_id
-    
-    # Créer le dossier de l'utilisateur
-    get_user_path(user_id)
-    
-    login_user(users[user_id])
-    flash(f'Xin chào {display_name}! Tài khoản của bạn đã được tạo thành công.', 'success')
-    return redirect(url_for('browse_files'))
-
 # Créer un utilisateur par défaut
 users['1'] = User('1', 'admin')
-user_passwords['1'] = 'admin'  # À ne pas faire en production !
+user_passwords['1'] = 'admin'
 
 if __name__ == '__main__':
-    # Créer les dossiers nécessaires
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'metadata'), exist_ok=True)
-    
-    # Créer le chemin pour l'utilisateur par défaut
     get_user_path('1')
     
     app.run(host='0.0.0.0', port=5000, debug=True) 
