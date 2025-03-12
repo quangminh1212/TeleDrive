@@ -401,6 +401,41 @@ app.post('/api/telegram/extract-web-auth', async (req, res) => {
   }
 });
 
+// API endpoint để mở Telegram Web trực tiếp
+app.post('/api/telegram/open-web', async (req, res) => {
+  try {
+    if (process.env.USE_WEB_CLIENT_UPLOAD !== 'true') {
+      return res.status(400).json({
+        success: false,
+        error: 'Tính năng upload qua web client không được bật. Vui lòng bật USE_WEB_CLIENT_UPLOAD trong file .env'
+      });
+    }
+    
+    console.log('[API] Mở Telegram Web trực tiếp...');
+    
+    // Mở Telegram Web trong browser hiện tại
+    const success = await telegramWebUploader.openTelegramWeb();
+    
+    if (!success) {
+      return res.status(500).json({
+        success: false,
+        error: 'Không thể mở Telegram Web.'
+      });
+    }
+    
+    return res.json({
+      success: true,
+      message: 'Đã mở Telegram Web. Vui lòng đăng nhập nếu cần thiết và quay lại để trích xuất thông tin xác thực.'
+    });
+  } catch (error) {
+    console.error('[API] Lỗi khi mở Telegram Web:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Lỗi khi mở Telegram Web: ' + error.message
+    });
+  }
+});
+
 // Khởi động server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -45,7 +45,9 @@ async function initBrowser() {
         '--disable-accelerated-2d-canvas',
         '--disable-gpu',
         '--window-size=1280,720'
-      ]
+      ],
+      executablePath: process.env.CHROME_PATH || undefined, // Sử dụng đường dẫn Chrome từ biến môi trường nếu có
+      ignoreDefaultArgs: ['--enable-automation'] // Bỏ qua thông báo "Chrome đang được điều khiển bởi phần mềm tự động"
     });
 
     // Kiểm tra trạng thái đăng nhập
@@ -271,16 +273,42 @@ async function extractAuthData() {
     await initBrowser();
   }
 
-  if (!isLoggedIn) {
-    console.log('[Telegram Web] Chưa đăng nhập Telegram Web. Vui lòng đăng nhập trước.');
-    return false;
-  }
-
   try {
     console.log('[Telegram Web] Bắt đầu trích xuất thông tin xác thực...');
     
-    const page = await browser.newPage();
+    // Lấy tất cả các trang hiện có
+    const pages = await browser.pages();
+    let page;
+    
+    // Sử dụng trang đầu tiên hoặc tạo mới nếu không có
+    if (pages.length > 0) {
+      page = pages[0];
+    } else {
+      page = await browser.newPage();
+    }
+    
+    // Điều hướng đến Telegram Web
     await page.goto('https://web.telegram.org/k/', { waitUntil: 'networkidle2' });
+    
+    // Kiểm tra trạng thái đăng nhập
+    const checkLoginResult = await page.evaluate(() => {
+      // Kiểm tra xem đã đăng nhập chưa bằng cách tìm kiếm phần tử chỉ xuất hiện sau khi đăng nhập
+      return {
+        isLoggedIn: document.querySelector('.chat-list') !== null || 
+                   document.querySelector('.im_dialogs_col') !== null ||
+                   document.querySelector('.sidebar-header') !== null,
+        url: window.location.href
+      };
+    });
+    
+    isLoggedIn = checkLoginResult.isLoggedIn;
+    
+    if (!isLoggedIn) {
+      console.log('[Telegram Web] Chưa đăng nhập Telegram Web. URL hiện tại:', checkLoginResult.url);
+      return false;
+    }
+    
+    console.log('[Telegram Web] Đã đăng nhập Telegram Web, tiến hành trích xuất dữ liệu...');
     
     // Trích xuất localStorage từ Telegram Web
     const localStorageData = await page.evaluate(() => {
@@ -295,17 +323,19 @@ async function extractAuthData() {
     console.log('[Telegram Web] Đã lấy được dữ liệu localStorage từ Telegram Web');
     
     // Lưu dữ liệu xác thực vào thư mục session MTProto
+    let savedKeys = 0;
     for (const [key, value] of Object.entries(localStorageData)) {
-      if (key.includes('auth') || key.includes('user') || key.includes('dc')) {
+      if (key.includes('auth') || key.includes('user') || key.includes('dc') || key.includes('tgme') || key.includes('ts_')) {
         const filePath = path.join(SESSION_DIR, `${key}.json`);
         fs.writeFileSync(filePath, value, 'utf8');
         console.log(`[Telegram Web] Đã lưu ${key} vào ${filePath}`);
+        savedKeys++;
       }
     }
     
-    // Tạo file telegram-session.json từ dữ liệu web nếu cần
+    // Tạo file telegram-session.json từ dữ liệu web
     const authData = {
-      authKey: localStorageData['tgme_sync'] || localStorageData['ts_key'],
+      authKey: localStorageData['tgme_sync'] || localStorageData['ts_key'] || localStorageData['auth_key'],
       dcId: Number(localStorageData['dc'] || '2'),
       serverTimeOffset: 0,
       lastMessageId: 0
@@ -318,12 +348,57 @@ async function extractAuthData() {
         'utf8'
       );
       console.log('[Telegram Web] Đã lưu thông tin xác thực để MTProto sử dụng');
+      savedKeys++;
     }
     
-    await page.close();
-    return true;
+    console.log(`[Telegram Web] Đã lưu tổng cộng ${savedKeys} khóa xác thực`);
+    
+    return savedKeys > 0;
   } catch (error) {
     console.error('[Telegram Web] Lỗi trích xuất thông tin xác thực:', error);
+    return false;
+  }
+}
+
+/**
+ * Mở trang Telegram Web để đăng nhập
+ * @returns {Promise<boolean>} Kết quả mở trang
+ */
+async function openTelegramWeb() {
+  if (!browser) {
+    await initBrowser();
+  }
+
+  try {
+    console.log('[Telegram Web] Mở trang web Telegram...');
+    
+    // Lấy tất cả các trang hiện có
+    const pages = await browser.pages();
+    let page;
+    
+    // Sử dụng trang đầu tiên hoặc tạo mới nếu không có
+    if (pages.length > 0) {
+      page = pages[0];
+    } else {
+      page = await browser.newPage();
+    }
+    
+    // Điều hướng đến Telegram Web
+    await page.goto('https://web.telegram.org/k/', { waitUntil: 'networkidle2', timeout: 60000 });
+    
+    // Kiểm tra đã đăng nhập chưa
+    const loggedIn = await page.evaluate(() => {
+      return document.querySelector('.chat-list') !== null || 
+             document.querySelector('.im_dialogs_col') !== null ||
+             document.querySelector('.sidebar-header') !== null;
+    });
+    
+    console.log(`[Telegram Web] Đã mở trang Telegram Web. Trạng thái đăng nhập: ${loggedIn ? 'Đã đăng nhập' : 'Chưa đăng nhập'}`);
+    isLoggedIn = loggedIn;
+    
+    return true;
+  } catch (error) {
+    console.error('[Telegram Web] Lỗi mở trang Telegram Web:', error);
     return false;
   }
 }
@@ -342,5 +417,6 @@ module.exports = {
   checkLoginStatus,
   initBrowser,
   closeBrowser,
-  extractAuthData
+  extractAuthData,
+  openTelegramWeb
 }; 

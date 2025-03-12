@@ -192,9 +192,12 @@
             <div id="authWarning" class="alert alert-info mb-3">
                 <i class="bi bi-info-circle-fill me-2"></i>
                 <strong>Trích xuất Auth từ Web:</strong> Nếu bạn đã đăng nhập vào Telegram Web, bạn có thể trích xuất thông tin xác thực từ đó để đăng nhập vào TeleDrive.
-                <div class="mt-2">
+                <div class="mt-2 d-flex">
+                    <button id="openTelegramWebBtn" class="btn btn-info me-2 btn-sm">
+                        <i class="bi bi-telegram me-1"></i> Mở Telegram Web
+                    </button>
                     <button id="extractWebAuthBtn" class="btn btn-primary btn-sm">
-                        <i class="bi bi-key me-1"></i> Trích xuất Auth Key từ Web
+                        <i class="bi bi-key me-1"></i> Trích xuất Auth Key
                     </button>
                 </div>
             </div>
@@ -671,21 +674,46 @@
                             errorHelp.innerHTML = `
                                 <div class="alert alert-info mt-3">
                                     <h6><i class="bi bi-info-circle-fill"></i> Bạn cần đăng nhập Telegram Web trước</h6>
-                                    <p>Để trích xuất thông tin xác thực, bạn cần đăng nhập vào Telegram Web trước:</p>
-                                    <ol>
-                                        <li>Mở <a href="https://web.telegram.org/" target="_blank" class="text-info">web.telegram.org</a> trong tab mới</li>
-                                        <li>Đăng nhập với tài khoản Telegram của bạn</li>
-                                        <li>Quay lại đây và thử lại</li>
-                                    </ol>
-                                    <a href="https://web.telegram.org/" target="_blank" class="btn btn-primary btn-sm">
-                                        <i class="bi bi-telegram"></i> Mở Telegram Web
-                                    </a>
+                                    <p>Nhấp vào nút "Mở Telegram Web" để đăng nhập, sau đó quay lại đây và nhấp "Trích xuất Auth Key".</p>
                                 </div>
                             `;
                         }
                     }
                 } catch (error) {
                     console.error('Error extracting auth:', error);
+                    showError('Lỗi kết nối: ' + error.message);
+                }
+            });
+            
+            // Nút mở Telegram Web
+            document.getElementById('openTelegramWebBtn').addEventListener('click', async function() {
+                if (isDirectOpen) {
+                    showError('Chức năng không khả dụng khi mở file trực tiếp. Vui lòng chạy server Node.js.');
+                    return;
+                }
+                
+                // Hiển thị trạng thái đang xử lý
+                showStatus('Đang mở Telegram Web...', 'info');
+                
+                try {
+                    const response = await fetch('/api/telegram/open-web', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        // Hiển thị thông báo thành công
+                        showStatus('Đã mở Telegram Web. Hãy đăng nhập và quay lại đây để trích xuất thông tin xác thực.', 'info');
+                    } else {
+                        // Hiển thị lỗi
+                        const errorMsg = data.error || 'Không thể mở Telegram Web';
+                        showError(errorMsg);
+                    }
+                } catch (error) {
+                    console.error('Error opening Telegram Web:', error);
                     showError('Lỗi kết nối: ' + error.message);
                 }
             });
