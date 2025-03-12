@@ -11,6 +11,9 @@ const telegramClient = require('./telegramClient');
 const { router, sessions, files } = require('./routes');
 const telegramWebUploader = require('./telegramWebUploader');
 
+// Khởi tạo bot từ botCommands.js
+const bot = require('./botCommands');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -56,7 +59,6 @@ if (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH) {
 }
 
 // Kiểm tra xem BOT_TOKEN đã được cấu hình chưa
-let bot;
 let useWebUpload = process.env.USE_WEB_CLIENT_UPLOAD === 'true';
 
 if (process.env.BOT_TOKEN && process.env.BOT_TOKEN.includes(':') && !process.env.BOT_TOKEN.includes('1234567890')) {
@@ -557,6 +559,21 @@ app.post('/api/telegram/open-web', async (req, res) => {
       error: 'Lỗi khi xử lý yêu cầu mở Telegram Web: ' + error.message
     });
   }
+});
+
+// Khởi động bot
+bot.launch().then(() => {
+  console.log('Bot đã sẵn sàng');
+}).catch(error => {
+  console.error('Lỗi khởi động bot:', error);
+});
+
+// Xử lý khi server shutdown
+process.once('SIGINT', () => {
+  bot.stop('SIGINT');
+});
+process.once('SIGTERM', () => {
+  bot.stop('SIGTERM');
 });
 
 // Khởi động server
