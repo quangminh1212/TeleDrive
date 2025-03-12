@@ -230,7 +230,7 @@ def login():
         else:
             flash('Đăng nhập thất bại. Kiểm tra tên người dùng và mật khẩu của bạn.', 'danger')
     
-    return render_template('login.html')
+    return render_template('login.html', bot_username=BOT_USERNAME)
 
 # Route pour la déconnexion
 @app.route('/logout')
