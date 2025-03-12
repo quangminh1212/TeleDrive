@@ -256,17 +256,22 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Đăng ký lắng nghe sự kiện từ main process
-    console.log("Registering IPC event listeners");
-
-    // Kiểm tra kết nối ngay khi khởi động
+    // Kiểm tra kết nối ngay khi trang được tải
+    console.log("Requesting initial connection check");
     setTimeout(() => {
-        console.log("Performing initial connection check");
         ipcRenderer.send('checkConnection');
-        
-        // Hiển thị trạng thái kết nối mặc định
-        updateConnectionStatus('connecting');
-    }, 500);
+    }, 1000);
+    
+    // Tạo một interval để kiểm tra kết nối mỗi 5 giây cho đến khi kết nối thành công
+    let initialConnectionCheck = setInterval(() => {
+        if (appState.authenticated || title.innerHTML !== 'Connecting...') {
+            console.log("Initial connection check no longer needed, clearing interval");
+            clearInterval(initialConnectionCheck);
+        } else {
+            console.log("Still connecting, requesting another connection check");
+            ipcRenderer.send('checkConnection');
+        }
+    }, 5000);
 
     ipcRenderer.on('auth', async (event, message) => {
         console.log("Auth event received:", message);
