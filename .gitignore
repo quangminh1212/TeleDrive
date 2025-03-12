@@ -93,3 +93,10 @@ dist/
 
 # Built website
 website-build
+
+# TeleDrive specific
+C:/Users/**/AppData/Roaming/TeleDrive/
+**/TeleDriveMaster.json
+**/TeleDriveSync/
+**/mock-profile.png
+**/mock-file-*
