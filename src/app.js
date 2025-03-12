@@ -369,7 +369,8 @@ if (!isRunningInElectron) {
     ipcMain.on('checkConnection', async (event) => {
         try {
             log.info("Checking connection on demand");
-            await checkAndHandleConnection();
+            const isConnected = await checkConnectionStatus(await mainWindow);
+            (await mainWindow).webContents.send('connectionStatus', { connected: isConnected });
         } catch (error) {
             log.error("Error checking connection:", error);
             (await mainWindow).webContents.send('connectionStatus', { connected: false });

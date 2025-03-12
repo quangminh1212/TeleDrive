@@ -15,6 +15,7 @@ let telegramClient = null;
 let isInitializing = false;
 let authAttempts = 0;
 const MAX_AUTH_ATTEMPTS = 3;
+let isConnected = false;
 
 /**
  * @return {Promise<string>}
@@ -64,61 +65,98 @@ const getTeleDir = mainWindow => {
 }
 
 /**
- * @param {Airgram} client
- * @param {BrowserWindow} mainWindow
- * */
-module.exports.authenticate = async (client, mainWindow) => {
-    log.info("[AUTH] Starting...");
+ * Kiểm tra trạng thái kết nối đến Telegram
+ * @param mainWindow Cửa sổ chính của ứng dụng
+ * @return {Promise<boolean>} Trạng thái kết nối
+ */
+const checkConnectionStatus = async (mainWindow) => {
+    log.info("[CHECK] Checking connection status");
     
+    if (!telegramClient) {
+        log.warn("[CHECK] No Telegram client available - not connected");
+        return false;
+    }
+    
+    try {
+        // Thử gọi một API để kiểm tra kết nối
+        const response = await telegramClient.api.getMe();
+        
+        if (response && response.id) {
+            log.info("[CHECK] Connection successful");
+            isConnected = true;
+            return true;
+        } else {
+            log.warn("[CHECK] Connection failed - invalid response");
+            isConnected = false;
+            return false;
+        }
+    } catch (error) {
+        log.error("[CHECK] Connection error:", error);
+        isConnected = false;
+        return false;
+    }
+};
+
+/**
+ * Xác thực người dùng với Telegram
+ * @param client Client Telegram
+ * @param mainWindow Cửa sổ chính của ứng dụng
+ */
+const authenticate = async (client, mainWindow) => {
     // Đặt lại trạng thái xác thực
     resetAuthState();
-    authAttempts = 0;
     
-    // Đảm bảo client đã được khởi tạo
-    if (!client) {
-        log.error("[AUTH] Authentication failed: client is not initialized");
-        mainWindow.webContents.send('error', {
-            message: 'Không thể xác thực: Client Telegram chưa được khởi tạo'
-        });
+    log.info('[AUTH] Starting...');
+    
+    if (isInitializing) {
+        log.warn("[AUTH] Authentication already in progress, skipping");
         return;
     }
-
-    // Lưu trữ client để sử dụng sau này
-    telegramClient = client;
-
-    client.on('updateAuthorizationState', async (ctx, next) => {
-        log.info(`[AUTH] Received auth state update: ${ctx.update.authorizationState._}`);
-        
-        if (ctx.update.authorizationState._ === "authorizationStateWaitPhoneNumber") {
-            log.info("[AUTH] Prompting for phoneNumber");
-            mainWindow.webContents.send('auth', {_: 'phoneNumber', isRetry: false});
+    
+    isInitializing = true;
+    
+    // Giả lập xác thực tự động (vì đang sử dụng mock-airgram)
+    // Trong môi trường thực tế, quá trình này sẽ yêu cầu người dùng nhập thông tin
+    setTimeout(async () => {
+        try {
+            log.info("[MOCK-AUTH] Simulating automatic authentication");
             
-            // Tự động trả lời sau 100ms
-            setTimeout(() => {
-                ipcMain.emit('phoneNumber', {}, '1234567890');
-            }, 100);
-        } else if (ctx.update.authorizationState._ === "authorizationStateWaitCode") {
-            log.info("[AUTH] Prompting for authCode");
-            mainWindow.webContents.send('auth', {_: 'authCode', isRetry: false});
+            // Giả lập nhập số điện thoại
+            const phoneResponse = await client.api.setAuthenticationPhoneNumber({
+                phoneNumber: '+1234567890'
+            });
+            log.info("[MOCK-AUTH] Phone number set:", phoneResponse);
             
-            // Tự động trả lời sau 100ms
-            setTimeout(() => {
-                ipcMain.emit('authCode', {}, '12345');
+            // Giả lập nhập mã xác nhận
+            setTimeout(async () => {
+                const codeResponse = await client.api.checkAuthenticationCode({
+                    code: '12345'
+                });
+                log.info("[MOCK-AUTH] Code verified:", codeResponse);
+                
+                // Giả lập nhập mật khẩu 2FA (nếu cần)
+                setTimeout(async () => {
+                    const passwordResponse = await client.api.checkAuthenticationPassword({
+                        password: 'password123'
+                    });
+                    log.info("[MOCK-AUTH] Password verified:", passwordResponse);
+                    
+                    // Cập nhật giao diện sau khi xác thực thành công
+                    mainWindow.webContents.send('authSuccess');
+                    
+                    // Kiểm tra kết nối
+                    const connected = await checkConnectionStatus(mainWindow);
+                    mainWindow.webContents.send('connectionStatus', { connected });
+                    
+                    isInitializing = false;
+                }, 100);
             }, 100);
-        } else if (ctx.update.authorizationState._ === "authorizationStateWaitPassword") {
-            log.info("[AUTH] Prompting for password");
-            mainWindow.webContents.send('auth', {_: 'password', isRetry: false});
-            
-            // Tự động trả lời sau 100ms
-            setTimeout(() => {
-                ipcMain.emit('password', {}, 'password');
-            }, 100);
-        } else if (ctx.update.authorizationState._ === "authorizationStateReady") {
-            log.info("[MOCK] Authentication process completed, state: authorizationStateReady");
-            // Không thực hiện gì ở đây, updateInfo sẽ xử lý sau khi nhận được trạng thái này
+        } catch (error) {
+            log.error("[MOCK-AUTH] Error during automatic authentication:", error);
+            isInitializing = false;
+            mainWindow.webContents.send('authError', { error: error.message });
         }
-        return next();
-    });
+    }, 200);
 }
 
 /**
@@ -140,25 +178,26 @@ const setupMasterFile = async (appFilesPath) => {
 }
 
 /**
- * @param {string} appStorage
- * @param {string} appPath
- * @param {string} OS
- * */
-module.exports.create = (appStorage, appPath, OS) => {
+ * Tạo và khởi tạo client Telegram
+ * @param {string} appStorage Đường dẫn đến thư mục lưu trữ ứng dụng
+ * @param {string} appPath Đường dẫn đến thư mục ứng dụng
+ * @param {string} platform Nền tảng đang chạy (win, mac, linux)
+ * @return {Airgram} Client Telegram đã được khởi tạo
+ */
+const create = (appStorage, appPath, platform) => {
     log.info("[SETUP] App storage:");
     log.info(appStorage);
     
+    if (telegramClient) {
+        log.info("[SETUP] Client already exists, returning existing client");
+        return telegramClient;
+    }
+    
     if (isInitializing) {
         log.warn("[SETUP] Client initialization already in progress");
-        return telegramClient;
+        throw new Error("Client initialization already in progress");
     }
     
-    if (telegramClient) {
-        log.info("[SETUP] Reusing existing client");
-        return telegramClient;
-    }
-    
-    // Đánh dấu đang khởi tạo
     isInitializing = true;
     
     try {
@@ -384,3 +423,14 @@ module.exports.cleanQuit = async (client) => {
         }
     }
 }
+
+// Xuất module
+module.exports = {
+    authenticate,
+    create,
+    updateInfo,
+    cleanQuit,
+    checkConnectionStatus,
+    getTeleDir,
+    getCollectedData
+};
