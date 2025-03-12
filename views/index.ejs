@@ -22,6 +22,30 @@
         .photo-icon { color: #34A853; }
         .video-icon { color: #EA4335; }
         .audio-icon { color: #FBBC05; }
+        .file-error { color: #EA4335; }
+        .file-thumb {
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        #refresh-files {
+            animation: rotate 1s linear infinite paused;
+        }
+        #refresh-files.spinning {
+            animation-play-state: running;
+        }
+        @keyframes rotate {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 <body>
@@ -30,36 +54,58 @@
             <a class="navbar-brand" href="/">
                 <i class="bi bi-telegram me-2"></i>TeleDrive
             </a>
+            <div class="d-flex">
+                <button id="refresh-files" class="btn btn-outline-light" title="Refresh files">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
         </div>
     </nav>
 
     <div class="container py-5">
         <div class="row mb-4">
-            <div class="col">
+            <div class="col-md-6">
                 <h1>Your Telegram Files</h1>
                 <p class="text-muted">Manage files sent to your Telegram bot</p>
             </div>
+            <div class="col-md-6 text-md-end">
+                <div class="alert alert-info d-inline-block">
+                    <strong>Tip:</strong> Send files to your bot to store them here
+                </div>
+            </div>
+        </div>
+
+        <div id="loading-spinner" class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Refreshing files...</p>
         </div>
 
         <% if (files && files.length > 0) { %>
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" id="files-container">
                 <% files.forEach(file => { %>
-                    <div class="col">
+                    <div class="col file-item" data-id="<%= file._id %>">
                         <div class="card h-100 file-card">
                             <div class="card-body text-center">
-                                <% if (file.fileType === 'document') { %>
-                                    <i class="bi bi-file-earmark-text file-icon document-icon"></i>
-                                <% } else if (file.fileType === 'photo') { %>
-                                    <img src="<%= file.filePath %>" alt="<%= file.fileName %>" class="img-fluid mb-3" style="max-height: 150px; object-fit: cover;">
-                                <% } else if (file.fileType === 'video') { %>
-                                    <i class="bi bi-film file-icon video-icon"></i>
-                                <% } else if (file.fileType === 'audio') { %>
-                                    <i class="bi bi-music-note-beamed file-icon audio-icon"></i>
-                                <% } else { %>
-                                    <i class="bi bi-file-earmark file-icon"></i>
-                                <% } %>
+                                <div class="file-thumb">
+                                    <% if (file.fileType === 'document') { %>
+                                        <i class="bi bi-file-earmark-text file-icon document-icon"></i>
+                                    <% } else if (file.fileType === 'photo') { %>
+                                        <img src="<%= file.filePath %>" alt="<%= file.fileName %>" class="img-fluid mb-3" style="max-height: 150px; object-fit: cover;"
+                                            onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\'bi bi-exclamation-triangle file-icon file-error\'></i><p>Image preview unavailable</p>'">
+                                    <% } else if (file.fileType === 'video') { %>
+                                        <i class="bi bi-film file-icon video-icon"></i>
+                                    <% } else if (file.fileType === 'audio') { %>
+                                        <i class="bi bi-music-note-beamed file-icon audio-icon"></i>
+                                    <% } else { %>
+                                        <i class="bi bi-file-earmark file-icon"></i>
+                                    <% } %>
+                                </div>
                                 
-                                <h5 class="card-title text-truncate" title="<%= file.fileName %>"><%= file.fileName %></h5>
+                                <h5 class="card-title text-truncate" title="<%= file.originalFileName || file.fileName %>">
+                                    <%= file.originalFileName || file.fileName %>
+                                </h5>
                                 <p class="card-text">
                                     <small class="text-muted">
                                         <% if (file.fileSize) { %>
@@ -69,16 +115,25 @@
                                         <%= new Date(file.uploadDate).toLocaleString() %>
                                     </small>
                                 </p>
-                                <div class="d-flex justify-content-center mt-3">
-                                    <a href="<%= file.filePath %>" class="btn btn-sm btn-outline-primary me-2" download="<%= file.fileName %>">
+                                <div class="d-flex justify-content-center mt-3 file-actions">
+                                    <a href="<%= file.filePath %>" class="btn btn-sm btn-outline-primary me-2 download-btn" 
+                                       download="<%= file.originalFileName || file.fileName %>" 
+                                       data-id="<%= file._id %>">
                                         <i class="bi bi-download"></i> Download
                                     </a>
                                     <a href="/files/<%= file._id %>" class="btn btn-sm btn-outline-secondary me-2">
                                         <i class="bi bi-info-circle"></i> Details
                                     </a>
-                                    <button class="btn btn-sm btn-outline-danger delete-file" data-id="<%= file._id %>" data-name="<%= file.fileName %>">
+                                    <button class="btn btn-sm btn-outline-danger delete-file" data-id="<%= file._id %>" data-name="<%= file.originalFileName || file.fileName %>">
                                         <i class="bi bi-trash"></i>
                                     </button>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent file-status" data-id="<%= file._id %>">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="badge rounded-pill bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Ready
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -117,6 +172,86 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Check file availability
+            function checkFiles() {
+                const fileItems = document.querySelectorAll('.file-item');
+                
+                fileItems.forEach(async (item) => {
+                    const fileId = item.dataset.id;
+                    const statusElement = item.querySelector('.file-status');
+                    const downloadBtn = item.querySelector('.download-btn');
+                    const fileActions = item.querySelector('.file-actions');
+                    
+                    try {
+                        const response = await fetch(`/api/check-file/${fileId}`);
+                        const data = await response.json();
+                        
+                        if (data.exists) {
+                            statusElement.innerHTML = `
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="badge rounded-pill bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Ready
+                                    </span>
+                                </div>
+                            `;
+                            downloadBtn.classList.remove('disabled');
+                        } else {
+                            statusElement.innerHTML = `
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="badge rounded-pill bg-danger">
+                                        <i class="bi bi-exclamation-triangle me-1"></i> File unavailable
+                                    </span>
+                                </div>
+                            `;
+                            downloadBtn.classList.add('disabled');
+                            
+                            // Replace image with error icon if it's a photo
+                            const imgElement = item.querySelector('img');
+                            if (imgElement) {
+                                imgElement.parentElement.innerHTML = `
+                                    <i class="bi bi-exclamation-triangle file-icon file-error"></i>
+                                    <p>Image unavailable</p>
+                                `;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error checking file:', error);
+                        statusElement.innerHTML = `
+                            <div class="d-flex align-items-center justify-content-center">
+                                <span class="badge rounded-pill bg-warning">
+                                    <i class="bi bi-question-circle me-1"></i> Status unknown
+                                </span>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            // Run on page load
+            checkFiles();
+            
+            // Refresh button
+            const refreshButton = document.getElementById('refresh-files');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            
+            refreshButton.addEventListener('click', async () => {
+                refreshButton.classList.add('spinning');
+                loadingSpinner.style.display = 'block';
+                
+                try {
+                    // Wait a moment to show loading state
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Reload the page
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Error refreshing:', error);
+                    refreshButton.classList.remove('spinning');
+                    loadingSpinner.style.display = 'none';
+                    alert('Error refreshing files. Please try again.');
+                }
+            });
+
             // Set up delete file functionality
             const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
             let fileToDelete = null;
@@ -150,6 +285,26 @@
                     console.error('Error deleting file:', error);
                     alert('An error occurred while deleting the file.');
                 }
+            });
+            
+            // Handle download button clicks to verify file exists first
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', async (event) => {
+                    const fileId = btn.getAttribute('data-id');
+                    
+                    try {
+                        const response = await fetch(`/api/check-file/${fileId}`);
+                        const data = await response.json();
+                        
+                        if (!data.exists) {
+                            event.preventDefault();
+                            alert('This file is not available for download. It may have been deleted or moved.');
+                        }
+                    } catch (error) {
+                        console.error('Error checking file before download:', error);
+                        // Let the download attempt proceed anyway
+                    }
+                });
             });
         });
     </script>

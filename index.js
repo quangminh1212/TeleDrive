@@ -3,6 +3,7 @@ const express = require('express');
 const { Telegraf } = require('telegraf');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 // Create directories if they don't exist
 const uploadDir = path.join(__dirname, 'uploads');
@@ -46,6 +47,19 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
+// Generate unique filename to prevent collisions
+function generateUniqueFilename(originalName) {
+  const timestamp = Date.now();
+  const randomString = crypto.randomBytes(4).toString('hex');
+  
+  // Get file extension
+  const ext = path.extname(originalName);
+  const nameWithoutExt = path.basename(originalName, ext);
+  
+  // Create unique name
+  return `${nameWithoutExt}_${timestamp}_${randomString}${ext}`;
+}
+
 // Initialize Express app
 const app = express();
 app.set('view engine', 'ejs');
@@ -61,52 +75,92 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 // Bot middleware to handle files
 bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
   try {
-    let fileId, fileName, fileType, fileSize;
+    let fileId, originalFileName, fileType, fileSize;
     let messageObj;
     
     if (ctx.message.document) {
       messageObj = ctx.message.document;
       fileType = 'document';
-      fileName = messageObj.file_name;
+      originalFileName = messageObj.file_name || `document_${Date.now()}`;
     } else if (ctx.message.photo) {
       // Photos come in an array of different sizes, take the last one (highest quality)
       messageObj = ctx.message.photo[ctx.message.photo.length - 1];
       fileType = 'photo';
-      fileName = `photo_${Date.now()}.jpg`;
+      originalFileName = `photo_${Date.now()}.jpg`;
     } else if (ctx.message.video) {
       messageObj = ctx.message.video;
       fileType = 'video';
-      fileName = messageObj.file_name || `video_${Date.now()}.mp4`;
+      originalFileName = messageObj.file_name || `video_${Date.now()}.mp4`;
     } else if (ctx.message.audio) {
       messageObj = ctx.message.audio;
       fileType = 'audio';
-      fileName = messageObj.file_name || `audio_${Date.now()}.mp3`;
+      originalFileName = messageObj.file_name || `audio_${Date.now()}.mp3`;
     }
+    
+    // Generate a unique filename to prevent collisions
+    const fileName = generateUniqueFilename(originalFileName);
     
     fileId = messageObj.file_id;
     fileSize = messageObj.file_size;
     
+    console.log(`Processing file: ${fileName} (${fileType}, ${fileSize} bytes)`);
+    
     // Get file link from Telegram
     const fileLink = await ctx.telegram.getFileLink(fileId);
+    console.log(`File link from Telegram: ${fileLink}`);
     
     // Prepare local file path
     const filePath = path.join(uploadDir, fileName);
+    console.log(`Saving file to: ${filePath}`);
     
     // Download file from Telegram
-    const response = await fetch(fileLink);
-    const fileStream = fs.createWriteStream(filePath);
-    
-    await new Promise((resolve, reject) => {
-      response.body.pipe(fileStream);
-      response.body.on('error', reject);
-      fileStream.on('finish', resolve);
-    });
+    try {
+      const response = await fetch(fileLink);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download file: ${response.status} ${response.statusText}`);
+      }
+      
+      const fileStream = fs.createWriteStream(filePath);
+      
+      await new Promise((resolve, reject) => {
+        response.body.pipe(fileStream);
+        response.body.on('error', (err) => {
+          console.error('Error during file download stream:', err);
+          reject(err);
+        });
+        fileStream.on('finish', () => {
+          console.log(`File successfully saved to ${filePath}`);
+          resolve();
+        });
+        fileStream.on('error', (err) => {
+          console.error('Error writing file to disk:', err);
+          reject(err);
+        });
+      });
+      
+      // Verify file was saved
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File was not saved properly to ${filePath}`);
+      }
+      
+      const stats = fs.statSync(filePath);
+      console.log(`File saved, size on disk: ${stats.size} bytes`);
+      
+      // Use the actual file size
+      fileSize = stats.size;
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      await ctx.reply('Sorry, there was an error downloading your file.');
+      return;
+    }
     
     // Save file metadata to our JSON database
     const newFile = {
       _id: generateId(),
       fileId: fileId,
       fileName: fileName,
+      originalFileName: originalFileName,
       fileType: fileType,
       filePath: `/uploads/${fileName}`,
       fileSize: fileSize,
@@ -122,7 +176,7 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
     filesDb.push(newFile);
     saveFilesDb();
     
-    await ctx.reply(`File "${fileName}" has been saved successfully! Access it from the web interface.`);
+    await ctx.reply(`File "${originalFileName}" has been saved successfully! Access it from the web interface.`);
   } catch (error) {
     console.error('Error handling file:', error);
     await ctx.reply('Sorry, there was an error processing your file.');
@@ -177,6 +231,9 @@ app.delete('/files/:id', async (req, res) => {
     const filePath = path.join(__dirname, file.filePath);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+      console.log(`File deleted from disk: ${filePath}`);
+    } else {
+      console.warn(`File not found on disk when attempting to delete: ${filePath}`);
     }
     
     // Remove from our database
@@ -190,6 +247,34 @@ app.delete('/files/:id', async (req, res) => {
   }
 });
 
+// API endpoint to verify file exists
+app.get('/api/check-file/:id', (req, res) => {
+  try {
+    const file = filesDb.find(f => f._id === req.params.id);
+    
+    if (!file) {
+      return res.json({ exists: false, error: 'File not found in database' });
+    }
+    
+    const filePath = path.join(__dirname, file.filePath);
+    const fileExists = fs.existsSync(filePath);
+    
+    res.json({ 
+      exists: fileExists,
+      file: {
+        id: file._id,
+        name: file.fileName,
+        type: file.fileType,
+        size: file.fileSize,
+        path: file.filePath
+      }
+    });
+  } catch (error) {
+    console.error('Error checking file:', error);
+    res.status(500).json({ exists: false, error: error.message });
+  }
+});
+
 // Start the bot
 bot.launch()
   .then(() => console.log('Telegram bot started'))
@@ -199,6 +284,8 @@ bot.launch()
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Web interface available at http://localhost:${PORT}`);
+  console.log(`Files will be stored in: ${path.resolve(uploadDir)}`);
 });
 
 // Enable graceful stop
