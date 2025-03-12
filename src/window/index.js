@@ -36,8 +36,29 @@ window.addEventListener('DOMContentLoaded', () => {
         password: false
     }
 
+    // Chức năng tự động trả lời
+    const autoRespond = (what) => {
+        console.log(`[AUTO] Automatically responding to: ${what}`);
+        if (what === 'phoneNumber') {
+            setTimeout(() => {
+                ipcRenderer.send('phoneNumber', '1234567890');
+            }, 500);
+        } else if (what === 'authCode') {
+            setTimeout(() => {
+                ipcRenderer.send('authCode', '12345');
+            }, 500);
+        } else if (what === 'password') {
+            setTimeout(() => {
+                ipcRenderer.send('password', 'password');
+            }, 500);
+        }
+    };
+
     ipcRenderer.on('auth', async (event, message) => {
         console.log(message)
+
+        // Tự động trả lời các câu hỏi xác thực
+        autoRespond(message._);
 
         const getInput = () => {
             const modifyUI = () => {
@@ -69,96 +90,27 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         if (message._ === 'phoneNumber') {
-            // noinspection JSUnresolvedFunction
-            let choice = await swal({
-                title: "Welcome to TeleDrive",
-                text: 'New here? Checkout the documentation',
-                icon: "info",
-                buttons: {
-                    cancel: "Skip",
-                    confirm: "View documentation",
-                },
-                closeOnClickOutside: false
-            })
-
-            if (choice) {
-                await shell.openExternal('https://teledrive.khushrajrathod.me/docs/')
-            }
-
-            if (!message.isRetry) {
-                ensureVisible()
-                description.innerHTML = 'Please enter your phone number<br>in international format.'
-                input.placeholder = 'Phone Number'
-                ipcRenderer.send('phoneNumber', await getInput())
-            } else {
-                if (!retriedOnce.phoneNumber) {
-                    ensureVisible()
-                    retriedOnce.phoneNumber = true
-                    description.innerHTML = 'Please enter your phone number<br>in international format.'
-                    input.classList.add("shake-horizontal")
-                    input.style.border = "2px solid #d93025"
-                    ipcRenderer.send('phoneNumber', await getInput())
-                } else {
-                    ensureVisible()
-                    description.innerHTML = 'Please enter your phone number<br>in international format.'
-                    input.classList.remove('shake-horizontal')
-                    input.offsetHeight // Triggers Reflow
-                    input.classList.add("shake-horizontal")
-                    input.style.border = "2px solid #d93025"
-                    ipcRenderer.send('phoneNumber', await getInput())
-                }
-            }
+            // Cập nhật giao diện nhưng không đợi input từ người dùng vì đã tự động trả lời
+            ensureVisible()
+            description.innerHTML = 'Please enter your phone number<br>in international format.'
+            input.placeholder = 'Phone Number'
+            // Hiển thị số điện thoại giả định trên input
+            input.value = '1234567890'
         } else if (message._ === 'authCode') {
-            if (!message.isRetry) {
-                ensureVisible()
-                description.innerHTML = 'Please enter OTP'
-                input.placeholder = 'One time password'
-                ipcRenderer.send('authCode', await getInput())
-            } else {
-                if (!retriedOnce.code) {
-                    ensureVisible()
-                    retriedOnce.code = true
-                    description.innerHTML = 'Please enter OTP'
-                    input.classList.add("shake-horizontal")
-                    input.style.border = "2px solid #d93025"
-                    ipcRenderer.send('authCode', await getInput())
-                } else {
-                    ensureVisible()
-                    description.innerHTML = 'Please enter OTP'
-                    input.classList.remove('shake-horizontal')
-                    input.offsetHeight // Triggers Reflow
-                    input.classList.add("shake-horizontal")
-                    input.style.border = "2px solid #d93025"
-                    ipcRenderer.send('authCode', await getInput())
-                }
-            }
+            // Cập nhật giao diện nhưng không đợi input từ người dùng vì đã tự động trả lời
+            ensureVisible()
+            description.innerHTML = 'Please enter OTP'
+            input.placeholder = 'One time password'
+            // Hiển thị mã xác thực giả định trên input
+            input.value = '12345'
         } else if (message._ === 'password') {
-            if (!message.isRetry) {
-                ensureVisible()
-                description.innerHTML = 'Please enter your 2FA Password'
-                input.placeholder = '2 Factor Auth Password'
-                input.type = 'password'
-                ipcRenderer.send('password', await getInput())
-            } else {
-                if (!retriedOnce.password) {
-                    ensureVisible()
-                    retriedOnce.password = true
-                    description.innerHTML = 'Please enter your 2FA Password'
-                    input.classList.add("shake-horizontal")
-                    input.style.border = "2px solid #d93025"
-                    input.type = 'password'
-                    ipcRenderer.send('password', await getInput())
-                } else {
-                    ensureVisible()
-                    description.innerHTML = 'Please enter your 2FA Password'
-                    input.classList.remove('shake-horizontal')
-                    input.offsetHeight // Triggers Reflow
-                    input.classList.add("shake-horizontal")
-                    input.style.border = "2px solid #d93025"
-                    input.type = 'password'
-                    ipcRenderer.send('password', await getInput())
-                }
-            }
+            // Cập nhật giao diện nhưng không đợi input từ người dùng vì đã tự động trả lời
+            ensureVisible()
+            description.innerHTML = 'Please enter your 2FA Password'
+            input.placeholder = '2 Factor Auth Password'
+            input.type = 'password'
+            // Hiển thị mật khẩu giả định trên input
+            input.value = '********'
         }
     })
 
@@ -187,6 +139,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
         button.style.display = ''
         input.style.display = 'none'
+        
+        // Tự động mở hộp thoại chọn thư mục sau 1 giây
+        setTimeout(() => {
+            ipcRenderer.send('openFileDialog')
+        }, 1000);
     })
 
     ipcRenderer.on('dialogCancelled', () => {
@@ -195,7 +152,6 @@ window.addEventListener('DOMContentLoaded', () => {
             button.removeEventListener('click', f)
         })
     })
-
 
     ipcRenderer.on('selectedDir', (event, path) => {
         console.log('selectedDir', path)

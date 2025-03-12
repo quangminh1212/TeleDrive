@@ -24,19 +24,18 @@ const getTeleDir = mainWindow => {
             }
         } else {
             ipcMain.on('openFileDialog', async () => {
-                let response = await dialog.showOpenDialog({properties: ['openDirectory']})
-                if (!response.canceled) {
-                    let teleDir = join(response.filePaths[0], 'TeleDriveSync');
-                    store.set('teleDir', teleDir)
-                    try {
-                        await fsPromise.access(teleDir)
-                    } catch (e) {
-                        await fsPromise.mkdir(teleDir, {recursive: true})
-                    } finally {
-                        resolve(teleDir)
-                    }
-                } else {
-                    mainWindow.webContents.send('dialogCancelled')
+                // Không hiển thị hộp thoại chọn thư mục, mà tự động tạo một thư mục mặc định
+                const defaultDir = join(app.getPath('documents'), 'TeleDriveSync');
+                log.info(`[MOCK] Using default directory: ${defaultDir}`);
+                
+                // Tạo thư mục nếu nó không tồn tại
+                try {
+                    await fsPromise.access(defaultDir)
+                } catch (e) {
+                    await fsPromise.mkdir(defaultDir, {recursive: true})
+                } finally {
+                    store.set('teleDir', defaultDir)
+                    resolve(defaultDir)
                 }
             })
         }

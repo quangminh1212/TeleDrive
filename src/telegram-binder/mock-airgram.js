@@ -38,6 +38,17 @@ class MockAirgram extends EventEmitter {
                 };
             },
             getMe: async () => {
+                // Tạo ảnh hồ sơ giả
+                const profileImagePath = path.join(this.config.filesDirectory, 'mock-profile.png');
+                if (!fs.existsSync(profileImagePath)) {
+                    // Tạo file ảnh trống
+                    try {
+                        fs.writeFileSync(profileImagePath, 'mock profile image');
+                    } catch (err) {
+                        log.error('[MOCK] Error creating profile image:', err);
+                    }
+                }
+
                 return {
                     id: 12345678,
                     firstName: "Demo",
@@ -46,7 +57,7 @@ class MockAirgram extends EventEmitter {
                     profilePhoto: {
                         small: {
                             local: {
-                                path: ""
+                                path: profileImagePath
                             },
                             remote: {
                                 id: "profile-photo-id"
@@ -175,15 +186,40 @@ class MockAirgram extends EventEmitter {
             log.error("[MOCK] Error creating directories:", error);
         }
 
-        // Giả lập trạng thái ủy quyền sau 1 giây
+        // Giả lập quá trình xác thực
+        log.info("[MOCK] Simulating auth process");
+        
+        // Bước 1: Gửi trạng thái đợi số điện thoại
         setTimeout(() => {
             this.emit('updateAuthorizationState', {
                 update: {
                     authorizationState: {
-                        _: "authorizationStateReady"
+                        _: "authorizationStateWaitPhoneNumber"
                     }
                 }
             }, () => {});
+            
+            // Bước 2: Giả lập đã nhập số điện thoại, chuyển sang đợi mã xác thực
+            setTimeout(() => {
+                this.emit('updateAuthorizationState', {
+                    update: {
+                        authorizationState: {
+                            _: "authorizationStateWaitCode"
+                        }
+                    }
+                }, () => {});
+                
+                // Bước 3: Giả lập đã nhập mã xác thực, chuyển sang trạng thái hoàn tất
+                setTimeout(() => {
+                    this.emit('updateAuthorizationState', {
+                        update: {
+                            authorizationState: {
+                                _: "authorizationStateReady"
+                            }
+                        }
+                    }, () => {});
+                }, 500);
+            }, 500);
         }, 1000);
 
         log.info("[MOCK] Airgram initialized with config:", config);
