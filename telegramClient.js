@@ -1,4 +1,4 @@
-const { MTProto } = require('@mtproto/core');
+const MTProto = require('@mtproto/core');
 const { resolve } = require('path');
 const fs = require('fs');
 require('dotenv').config();
