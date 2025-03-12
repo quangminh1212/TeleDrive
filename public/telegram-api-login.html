@@ -124,6 +124,52 @@
             margin-top: 10px;
             font-size: 0.9rem;
         }
+        .country-select {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #343a40;
+            border-color: #495057;
+        }
+        .country-option {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+        }
+        .country-option:hover {
+            background-color: #212529;
+        }
+        .country-flag {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .country-code {
+            color: #adb5bd;
+            margin-left: 5px;
+        }
+        .input-group-text.country-code-btn {
+            min-width: 90px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-right: 8px;
+            cursor: pointer;
+            background-color: #212529;
+        }
+        .selected-flag {
+            width: 20px;
+            margin-right: 5px;
+        }
+        .dropdown-item {
+            color: #fff;
+        }
+        .dropdown-item:hover, .dropdown-item:focus {
+            color: #fff;
+            background-color: #212529;
+        }
+        .dropdown-menu {
+            background-color: #343a40;
+            border-color: #495057;
+        }
     </style>
 </head>
 <body>
@@ -166,15 +212,22 @@
                     <div class="mb-3">
                         <label for="phoneNumber" class="form-label">Số điện thoại Telegram của bạn</label>
                         <div class="input-group">
-                            <span class="input-group-text">+</span>
-                            <input type="tel" class="form-control" id="phoneNumber" placeholder="84123456789">
+                            <button class="input-group-text country-code-btn" type="button" id="countryCodeBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="https://flagcdn.com/w20/vn.png" alt="VN" class="selected-flag" id="selectedFlag">
+                                <span id="selectedCountryCodeText">+84</span>
+                                <i class="bi bi-caret-down-fill small"></i>
+                            </button>
+                            <ul class="dropdown-menu country-select" id="countryDropdown">
+                                <!-- Danh sách quốc gia sẽ được thêm bằng JavaScript -->
+                            </ul>
+                            <input type="tel" class="form-control" id="phoneNumber" placeholder="936374950">
                         </div>
-                        <div class="form-text">Nhập số điện thoại gồm mã quốc gia và số điện thoại KHÔNG có số 0 đầu</div>
+                        <div class="form-text">Chọn mã quốc gia và nhập số điện thoại KHÔNG có số 0 đầu</div>
                         
                         <div class="phone-example mt-2">
                             <strong>Ví dụ đúng:</strong><br>
-                            • Số Việt Nam: <code>+84936374950</code> (bỏ số 0 đầu)<br>
-                            • Số Mỹ: <code>+12345678901</code>
+                            • Chọn Việt Nam (+84) và nhập <code>936374950</code> (bỏ số 0 đầu)<br>
+                            • Chọn Hoa Kỳ (+1) và nhập <code>2345678901</code>
                         </div>
                     </div>
                     <div class="d-grid mt-3">
@@ -248,6 +301,7 @@
         // Biến lưu trữ dữ liệu
         let phone = '';
         let phoneCodeHash = '';
+        let selectedCountryCode = '84'; // Mặc định: Việt Nam
         
         // Phần tử DOM
         const phoneStep = document.getElementById('phoneStep');
@@ -259,39 +313,85 @@
         const errorDetails = document.getElementById('errorDetails');
         const errorHelp = document.getElementById('errorHelp');
         const errorCode = document.getElementById('errorCode');
+        const countryDropdown = document.getElementById('countryDropdown');
+        const countryCodeBtn = document.getElementById('countryCodeBtn');
+        const selectedFlag = document.getElementById('selectedFlag');
+        const selectedCountryCodeText = document.getElementById('selectedCountryCodeText');
+        
+        // Danh sách mã quốc gia phổ biến với cờ
+        const countries = [
+            { code: '84', name: 'Việt Nam', flag: 'vn' },
+            { code: '1', name: 'Hoa Kỳ', flag: 'us' },
+            { code: '86', name: 'Trung Quốc', flag: 'cn' },
+            { code: '82', name: 'Hàn Quốc', flag: 'kr' },
+            { code: '81', name: 'Nhật Bản', flag: 'jp' },
+            { code: '65', name: 'Singapore', flag: 'sg' },
+            { code: '66', name: 'Thái Lan', flag: 'th' },
+            { code: '60', name: 'Malaysia', flag: 'my' },
+            { code: '62', name: 'Indonesia', flag: 'id' },
+            { code: '63', name: 'Philippines', flag: 'ph' },
+            { code: '44', name: 'Anh', flag: 'gb' },
+            { code: '33', name: 'Pháp', flag: 'fr' },
+            { code: '49', name: 'Đức', flag: 'de' },
+            { code: '39', name: 'Ý', flag: 'it' },
+            { code: '34', name: 'Tây Ban Nha', flag: 'es' },
+            { code: '7', name: 'Nga', flag: 'ru' },
+            { code: '61', name: 'Úc', flag: 'au' },
+            { code: '64', name: 'New Zealand', flag: 'nz' },
+            { code: '91', name: 'Ấn Độ', flag: 'in' },
+            { code: '55', name: 'Brazil', flag: 'br' },
+            { code: '52', name: 'Mexico', flag: 'mx' },
+            { code: '971', name: 'UAE', flag: 'ae' },
+            { code: '966', name: 'Ả Rập Saudi', flag: 'sa' },
+            { code: '20', name: 'Ai Cập', flag: 'eg' },
+            { code: '27', name: 'Nam Phi', flag: 'za' }
+        ];
+
+        // Thêm các quốc gia vào dropdown
+        countries.forEach(country => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+                <a class="dropdown-item country-option" href="#" data-code="${country.code}" data-flag="${country.flag}">
+                    <img src="https://flagcdn.com/w20/${country.flag}.png" alt="${country.name}" class="country-flag">
+                    ${country.name} <span class="country-code">+${country.code}</span>
+                </a>
+            `;
+            countryDropdown.appendChild(listItem);
+            
+            // Thêm sự kiện click cho mỗi quốc gia
+            listItem.querySelector('a').addEventListener('click', function(e) {
+                e.preventDefault();
+                const code = this.getAttribute('data-code');
+                const flag = this.getAttribute('data-flag');
+                
+                selectedCountryCode = code;
+                selectedFlag.src = `https://flagcdn.com/w20/${flag}.png`;
+                selectedCountryCodeText.textContent = `+${code}`;
+            });
+        });
         
         // Nút gửi mã
         document.getElementById('sendCodeBtn').addEventListener('click', async function() {
             const phoneInput = document.getElementById('phoneNumber');
-            phone = phoneInput.value.trim();
+            const phoneNumber = phoneInput.value.trim();
             
-            if (!phone) {
+            if (!phoneNumber) {
                 showError('Vui lòng nhập số điện thoại');
                 return;
             }
             
-            // Kiểm tra và định dạng số điện thoại
-            let formattedPhone = phone;
-            
-            // Đảm bảo bắt đầu bằng dấu +
-            if (!formattedPhone.startsWith('+')) {
-                formattedPhone = '+' + formattedPhone;
-            }
-            
-            // Xử lý nếu người dùng nhập 0 đầu cho số Việt Nam
-            if (formattedPhone.startsWith('+840')) {
-                formattedPhone = '+84' + formattedPhone.substring(4);
-            }
+            // Thêm mã quốc gia đã chọn vào số điện thoại
+            phone = `+${selectedCountryCode}${phoneNumber}`;
             
             // Hiển thị trạng thái đang xử lý
             showStatus('Đang gửi mã xác nhận...', 'info');
-            console.log('Sending code to phone:', formattedPhone);
+            console.log('Sending code to phone:', phone);
             
             try {
                 const response = await fetch('/api/telegram/send-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: formattedPhone })
+                    body: JSON.stringify({ phoneNumber: phone })
                 });
                 
                 const data = await response.json();
