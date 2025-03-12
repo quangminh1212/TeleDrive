@@ -3,6 +3,7 @@ import { Card, Typography, Spin, Alert } from 'antd';
 import { useAuth } from '../hooks/useAuth';
 import { useQuery } from 'react-query';
 import { telegramService } from '../services/telegramService';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
@@ -19,11 +20,41 @@ declare global {
   }
 }
 
+// Hàm để lấy query params từ URL
+const useQueryParams = () => {
+  return new URLSearchParams(useLocation().search);
+};
+
 const Login = () => {
   const { loginWithTelegram } = useAuth();
   const telegramLoginRef = useRef<HTMLDivElement>(null);
   const [botUsername, setBotUsername] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const queryParams = useQueryParams();
+  const navigate = useNavigate();
+  
+  // Xử lý callback từ Telegram nếu có
+  useEffect(() => {
+    const authParam = queryParams.get('auth');
+    if (authParam) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(authParam));
+        // Nếu có dữ liệu callback từ Telegram, thực hiện đăng nhập
+        loginWithTelegram(userData)
+          .then(() => {
+            // Xóa query params sau khi đăng nhập thành công
+            navigate('/login', { replace: true });
+          })
+          .catch((err) => {
+            console.error('Login error:', err);
+            setError('Đăng nhập thất bại. Vui lòng thử lại.');
+          });
+      } catch (err) {
+        console.error('Error parsing auth data:', err);
+        setError('Dữ liệu xác thực không hợp lệ.');
+      }
+    }
+  }, [queryParams, loginWithTelegram, navigate]);
 
   // Fetch bot info to get username
   const { isLoading } = useQuery(
