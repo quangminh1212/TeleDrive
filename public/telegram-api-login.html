@@ -313,11 +313,26 @@
                     if (errorMsg.includes('số điện thoại không hợp lệ') || errorMsg.includes('PHONE_NUMBER_INVALID')) {
                         helpText = 'Vui lòng kiểm tra lại số điện thoại. Định dạng đúng: +84123456789 (có dấu +, mã quốc gia, không có số 0 đầu).';
                     } else if (errorMsg.includes('FLOOD_WAIT')) {
-                        helpText = 'Telegram giới hạn số lần gửi mã. Vui lòng đợi ít phút và thử lại.';
+                        const waitMatch = errorMsg.match(/(\d+) giây/);
+                        const waitTime = waitMatch ? waitMatch[1] : 'một khoảng thời gian';
+                        helpText = `Telegram giới hạn số lần gửi mã. Vui lòng đợi ${waitTime} giây và thử lại sau.`;
+                        
+                        // Hiển thị thông báo đặc biệt cho lỗi flood
+                        errorHelp.innerHTML = `
+                            <div class="alert alert-warning">
+                                <h6><i class="bi bi-exclamation-triangle-fill"></i> Lỗi giới hạn yêu cầu</h6>
+                                <p>Telegram hạn chế số lần yêu cầu mã xác nhận từ một số điện thoại trong một khoảng thời gian.</p>
+                                <p>Bạn cần đợi <strong>${waitTime} giây</strong> trước khi có thể gửi lại yêu cầu.</p>
+                                <hr>
+                                <p class="mb-0">Bạn có thể đóng cửa sổ này và thử lại sau.</p>
+                            </div>
+                        `;
                     } else if (data.details) {
                         errorCode.textContent = JSON.stringify(data.details, null, 2);
                     }
-                    errorHelp.textContent = helpText || errorMsg;
+                    if (!errorMsg.includes('FLOOD_WAIT')) {
+                        errorHelp.textContent = helpText || errorMsg;
+                    }
                 }
             } catch (error) {
                 console.error('Error sending code:', error);
@@ -463,6 +478,19 @@
             errorHelp.textContent = message;
             errorCode.textContent = message;
             errorDetails.classList.remove('d-none');
+            
+            // Gửi thông báo lỗi cho cửa sổ chính
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                    type: 'telegram_login_error',
+                    error: message,
+                    details: {
+                        phoneNumber: document.getElementById('phoneNumber').value,
+                        errorText: message,
+                        errorType: 'connection_error'
+                    }
+                }, '*');
+            }
         }
         
         // Hiển thị thông báo trạng thái

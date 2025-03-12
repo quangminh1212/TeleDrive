@@ -254,6 +254,21 @@ app.post('/api/telegram/sign-in', async (req, res) => {
   }
 });
 
+// API endpoint để kiểm tra cấu hình Telegram
+app.get('/api/telegram/config', (req, res) => {
+  const apiId = parseInt(process.env.TELEGRAM_API_ID || 0);
+  const apiHash = process.env.TELEGRAM_API_HASH || '';
+  const botToken = process.env.BOT_TOKEN || '';
+  const chatId = process.env.TELEGRAM_CHAT_ID || '';
+  
+  res.json({
+    useTelegramAPI: true,
+    apiConfigured: !!(apiId && apiHash),
+    botConfigured: !!botToken,
+    chatConfigured: !!chatId
+  });
+});
+
 // Khởi động server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
