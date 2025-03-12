@@ -11,6 +11,13 @@
         </div>
         <h2>Đăng nhập</h2>
         
+        <div class="telegram-login">
+            <a href="{{ url_for('telegram_login') }}" class="btn btn-telegram btn-block">
+                <i class="fab fa-telegram"></i> Đăng nhập bằng Telegram
+            </a>
+            <div class="separator">hoặc</div>
+        </div>
+        
         <form method="POST" action="{{ url_for('login') }}">
             <div class="form-group">
                 <input type="text" id="username" name="username" class="form-control" placeholder="Tên người dùng" required>
