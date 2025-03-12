@@ -1097,7 +1097,40 @@ window.addEventListener('DOMContentLoaded', () => {
     // Nhận phản hồi trạng thái kết nối
     ipcRenderer.on('connectionStatus', (event, status) => {
         console.log("Received connection status:", status);
-        updateConnectionStatus(status.connected ? 'connected' : 'disconnected');
+        
+        // Đảm bảo cập nhật giao diện khi kết nối thành công
+        if (status.connected) {
+            // Nếu đã xác thực nhưng giao diện vẫn ở màn hình kết nối, cập nhật nó
+            if (appState.authenticated && title.innerHTML === 'Connecting...') {
+                console.log("Connection successful, updating UI to logged in state");
+                
+                // Cập nhật UI để hiển thị màn hình chính
+                title.innerHTML = 'Login Successful';
+                profile.style.display = '';
+                description.innerHTML = 'Select the location for <br> your synced folder';
+                description.style.display = '';
+                button.innerHTML = 'Open';
+                button.style.display = '';
+                input.style.display = 'none';
+                
+                // Hiển thị các nút chức năng
+                analyticsButton.style.display = '';
+                optimizeButton.style.display = '';
+                showQuickActions(true);
+                
+                // Tự động mở hộp thoại chọn thư mục
+                setTimeout(() => {
+                    console.log("[AUTO] Automatically opening file dialog after connection");
+                    ipcRenderer.send('openFileDialog');
+                }, 500);
+            }
+            
+            updateConnectionStatus('connected');
+        } else if (status.reconnecting) {
+            updateConnectionStatus('connecting');
+        } else {
+            updateConnectionStatus('disconnected');
+        }
     });
     
     // Bắt sự kiện lỗi
