@@ -368,6 +368,257 @@ appTheme.innerHTML = `
 `;
 document.head.appendChild(appTheme);
 
+// Thêm màn hình chào mừng khi ứng dụng khởi động
+const splashScreen = document.createElement('div');
+splashScreen.id = 'splashScreen';
+splashScreen.style.position = 'fixed';
+splashScreen.style.top = '0';
+splashScreen.style.left = '0';
+splashScreen.style.width = '100%';
+splashScreen.style.height = '100%';
+splashScreen.style.backgroundColor = 'white';
+splashScreen.style.display = 'flex';
+splashScreen.style.flexDirection = 'column';
+splashScreen.style.justifyContent = 'center';
+splashScreen.style.alignItems = 'center';
+splashScreen.style.zIndex = '9999';
+splashScreen.style.transition = 'opacity 0.8s ease-out';
+
+// Logo và tên ứng dụng
+splashScreen.innerHTML = `
+    <div style="text-align: center; margin-bottom: 40px; animation: scale-in 0.6s ease-out;">
+        <div style="font-size: 40px; font-weight: bold; margin-bottom: 10px; color: #2196F3; text-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
+            TeleDrive
+        </div>
+        <div style="font-size: 18px; color: #666; max-width: 300px; line-height: 1.5;">
+            Giải pháp lưu trữ an toàn tích hợp với Telegram
+        </div>
+    </div>
+    <div class="loading-animation">
+        <div class="circle-loading"></div>
+    </div>
+    <div style="position: absolute; bottom: 20px; color: #999; font-size: 14px;">
+        © 2023 TeleDrive
+    </div>
+`;
+
+// CSS cho hiệu ứng loading
+const splashStyle = document.createElement('style');
+splashStyle.textContent = `
+    @keyframes scale-in {
+        0% { transform: scale(0.8); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes fadeOut {
+        0% { opacity: 1; }
+        100% { opacity: 0; visibility: hidden; }
+    }
+    .loading-animation {
+        margin-top: 30px;
+    }
+    .circle-loading {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(33, 150, 243, 0.2);
+        border-top: 4px solid #2196F3;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+`;
+
+document.head.appendChild(splashStyle);
+document.body.appendChild(splashScreen);
+
+// Đối tượng quản lý chuyển đổi UI
+const uiTransition = {
+    // Ẩn màn hình chào mừng
+    hideSplash: function() {
+        splashScreen.style.opacity = '0';
+        setTimeout(() => {
+            splashScreen.style.display = 'none';
+        }, 800);
+    },
+    
+    // Hiện giao diện đăng nhập
+    showLogin: function() {
+        if (title) title.innerHTML = 'Đăng nhập vào TeleDrive';
+        if (description) description.innerHTML = 'Vui lòng nhập thông tin đăng nhập của bạn';
+        if (input) {
+            input.style.display = '';
+            input.placeholder = 'Số điện thoại (gồm mã quốc gia)';
+        }
+        if (button) {
+            button.style.display = '';
+            button.innerHTML = 'Tiếp tục';
+        }
+        
+        // Thêm hiệu ứng xuất hiện
+        const loginElements = document.querySelectorAll('#title, #description, #input, #button');
+        loginElements.forEach(el => {
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, 100);
+            }
+        });
+    },
+    
+    // Chuyển đổi sang giao diện đã đăng nhập
+    showLoggedIn: function(userInfo) {
+        // Cập nhật trạng thái kết nối
+        updateConnectionStatus('connected');
+        
+        // Hiện thông tin người dùng
+        if (title) title.innerHTML = 'Chào mừng trở lại!';
+        if (description) description.innerHTML = 'Đã kết nối với tài khoản Telegram của bạn';
+        if (profile) profile.style.display = '';
+        
+        // Cập nhật thông tin người dùng nếu có
+        if (userInfo) {
+            if (name) name.innerHTML = userInfo.name || 'Unknown';
+            if (number) number.innerHTML = userInfo.number || 'No number';
+            if (profilePicture && userInfo.photo) profilePicture.src = userInfo.photo;
+        }
+        
+        // Hiện các nút thao tác
+        if (analyticsButton) analyticsButton.style.display = '';
+        if (optimizeButton) optimizeButton.style.display = '';
+        if (quickActions) showQuickActions(true);
+        
+        // Thông báo đăng nhập thành công
+        showToast('success', 'Đăng nhập tự động', 'Bạn đã được đăng nhập tự động vào tài khoản Telegram.');
+    },
+    
+    // Hiển thị quá trình đồng bộ hóa
+    showSyncStatus: function(dirPath) {
+        if (dirPath) {
+            if (title) title.innerHTML = 'Đang đồng bộ hóa';
+            if (description) {
+                description.innerHTML = `Đang đồng bộ với thư mục<br>
+                <u style="cursor: pointer">${dirPath} 
+                <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" style="color: #aaa">
+                    <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> 
+                    <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon>
+                </svg></u>`;
+                
+                description.addEventListener('click', _ => {
+                    shell.openPath(dirPath);
+                });
+            }
+            
+            // Hiện nút thao tác đồng bộ
+            if (syncButton) syncButton.style.display = '';
+            if (queueButton) queueButton.style.display = '';
+        }
+    },
+    
+    // Hiển thị thống kê đồng bộ hoàn tất
+    showStats: function(stats) {
+        // Tạo modal hiển thị thống kê sau khi đồng bộ hoàn tất
+        const modalContainer = document.createElement('div');
+        modalContainer.className = 'sync-stats-modal';
+        modalContainer.style.position = 'fixed';
+        modalContainer.style.top = '0';
+        modalContainer.style.left = '0';
+        modalContainer.style.width = '100%';
+        modalContainer.style.height = '100%';
+        modalContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        modalContainer.style.zIndex = '1000';
+        modalContainer.style.display = 'flex';
+        modalContainer.style.justifyContent = 'center';
+        modalContainer.style.alignItems = 'center';
+        modalContainer.style.opacity = '0';
+        modalContainer.style.transition = 'opacity 0.3s ease';
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        modalContent.style.backgroundColor = 'white';
+        modalContent.style.borderRadius = '10px';
+        modalContent.style.width = '400px';
+        modalContent.style.maxWidth = '90%';
+        modalContent.style.padding = '20px';
+        modalContent.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.2)';
+        modalContent.style.transform = 'translateY(20px)';
+        modalContent.style.transition = 'transform 0.3s ease';
+        
+        modalContent.innerHTML = `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 24px; font-weight: bold; color: #4CAF50; margin-bottom: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: -8px;">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    Đồng bộ hoàn tất!
+                </div>
+                <div style="font-size: 16px; color: #666;">
+                    Quá trình đồng bộ hóa đã hoàn tất thành công
+                </div>
+            </div>
+            
+            <div style="background-color: #f5f5f5; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="font-weight: bold;">Tệp đã xử lý:</div>
+                    <div>${stats.filesProcessed} / ${stats.totalFiles}</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="font-weight: bold;">Thời gian xử lý:</div>
+                    <div>${stats.processTime || '0s'}</div>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <div style="font-weight: bold;">Trạng thái:</div>
+                    <div style="color: #4CAF50;">Hoàn tất</div>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <button id="close-stats-modal" style="background-color: #2196F3; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: all 0.2s ease;">
+                    Đóng
+                </button>
+            </div>
+        `;
+        
+        modalContainer.appendChild(modalContent);
+        document.body.appendChild(modalContainer);
+        
+        // Hiệu ứng hiện modal
+        setTimeout(() => {
+            modalContainer.style.opacity = '1';
+            modalContent.style.transform = 'translateY(0)';
+        }, 100);
+        
+        // Xử lý sự kiện cho nút đóng
+        document.getElementById('close-stats-modal').addEventListener('click', () => {
+            modalContainer.style.opacity = '0';
+            modalContent.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                if (modalContainer.parentNode) {
+                    document.body.removeChild(modalContainer);
+                }
+            }, 300);
+        });
+        
+        // Tự động đóng sau 10 giây
+        setTimeout(() => {
+            if (modalContainer.parentNode) {
+                modalContainer.style.opacity = '0';
+                modalContent.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    if (modalContainer.parentNode) {
+                        document.body.removeChild(modalContainer);
+                    }
+                }, 300);
+            }
+        }, 10000);
+    }
+};
+
 window.addEventListener('DOMContentLoaded', () => {
     console.log("DOM Content Loaded - Starting initialization");
 
@@ -447,6 +698,28 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+    }
+    
+    // Tạo card chính để đặt nội dung
+    const mainCard = document.createElement('div');
+    mainCard.className = 'card main-card';
+    mainCard.style.marginTop = '40px';
+    mainCard.style.textAlign = 'center';
+    mainCard.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.1)';
+    mainCard.style.borderRadius = '15px';
+    mainCard.style.padding = '30px';
+    mainCard.style.backgroundColor = 'white';
+    
+    // Di chuyển các phần tử vào card chính
+    const elementsToMoveToCard = document.querySelectorAll('#title, #profile, #description, #next, #input');
+    elementsToMoveToCard.forEach(el => {
+        if (el && el.parentNode !== mainCard) {
+            mainCard.appendChild(el);
+        }
+    });
+    
+    if (mainContainer && !mainContainer.querySelector('.main-card')) {
+        mainContainer.appendChild(mainCard);
     }
 
     // Thêm nút analytics
@@ -643,9 +916,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Kiểm tra kết nối ngay khi trang được tải
     console.log("Requesting initial connection check");
+    
+    // Ẩn màn hình chào mừng sau 2 giây
     setTimeout(() => {
-        ipcRenderer.send('checkConnection');
-    }, 1000);
+        uiTransition.hideSplash();
+        
+        // Sau khi ẩn splash, gửi yêu cầu kiểm tra kết nối
+        setTimeout(() => {
+            ipcRenderer.send('checkConnection');
+        }, 500);
+    }, 2000);
     
     // Tạo một interval để kiểm tra kết nối mỗi 5 giây cho đến khi kết nối thành công
     let initialConnectionCheck = setInterval(() => {
@@ -835,22 +1115,34 @@ window.addEventListener('DOMContentLoaded', () => {
 
     ipcRenderer.on('selectedDir', (event, path) => {
         console.log('Selected directory:', path);
-        title.innerHTML = 'Setup Successfully'
-        description.innerHTML = `Currently syncing <br> <u style="cursor: pointer"> ${path} <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" style="color: #aaa"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></u>`
-        description.addEventListener('click', _ => {
-            shell.openPath(path)
-        })
-        button.innerHTML = 'CHANGE'
+        
+        // Cập nhật UI khi đã chọn thư mục
+        if (title) title.innerHTML = 'Thiết lập thành công';
+        
+        // Chuyển sang giao diện đồng bộ hóa
+        uiTransition.showSyncStatus(path);
+        
+        // Cập nhật nút
+        if (button) {
+            button.innerHTML = 'THAY ĐỔI';
+            button.addEventListener('click', function f() {
+                ipcRenderer.send('changeTeleDir');
+            });
+        }
 
-        button.addEventListener('click', function f() {
-            ipcRenderer.send('changeTeleDir')
-        })
-
-        syncButton.style.display = ''
-        queueButton.style.display = ''
+        // Hiện các nút đồng bộ
+        if (syncButton) syncButton.style.display = '';
+        if (queueButton) queueButton.style.display = '';
         
         // Lưu đường dẫn thư mục đã chọn
         appState.selectedDir = path;
+        
+        // Thêm dashboard UI nếu chưa có
+        const existingDashboard = document.getElementById('dashboard-container');
+        if (!existingDashboard && mainCard) {
+            const dashboard = createDashboardUI(path);
+            mainCard.appendChild(dashboard);
+        }
 
         syncButton.addEventListener('click', function syncAll() {
             syncButton.removeEventListener("click", syncAll)
@@ -1629,48 +1921,39 @@ window.addEventListener('DOMContentLoaded', () => {
         appState.authenticated = true;
         
         // Cập nhật thông tin người dùng
-        name.innerHTML = myInfo.name || 'Unknown'
-        number.innerHTML = myInfo.number || 'No number'
-        if (myInfo.photo) {
+        if (name) name.innerHTML = myInfo.name || 'Unknown'
+        if (number) number.innerHTML = myInfo.number || 'No number'
+        if (myInfo.photo && profilePicture) {
             console.log("Setting profile picture from:", myInfo.photo);
-            profilePicture.src = myInfo.photo
+            profilePicture.src = myInfo.photo;
         } else {
             console.log("No profile picture available");
         }
         
         // Nếu đang ở màn hình "Connecting...", cập nhật UI
-        if (title.innerHTML === 'Connecting...') {
+        if (title && title.innerHTML === 'Connecting...') {
             console.log("User info received, updating UI from connecting state");
             
-            // Cập nhật UI
-            title.innerHTML = 'Login Successful';
-            profile.style.display = '';
-            description.innerHTML = 'Select the location for <br> your synced folder';
-            description.style.display = '';
-            button.innerHTML = 'Open';
-            button.style.display = '';
-            input.style.display = 'none';
+            // Chuyển đổi sang giao diện đã đăng nhập
+            uiTransition.showLoggedIn(myInfo);
             
             // Thêm event listener cho nút chọn thư mục
-            button.addEventListener('click', function f() {
-                console.log("User clicked to open file dialog");
-                ipcRenderer.send('openFileDialog');
-                button.removeEventListener('click', f);
-            });
+            if (button) {
+                button.innerHTML = 'Chọn thư mục';
+                button.style.display = '';
+                
+                button.addEventListener('click', function f() {
+                    console.log("User clicked to open file dialog");
+                    ipcRenderer.send('openFileDialog');
+                    button.removeEventListener('click', f);
+                });
+            }
             
             // Tự động mở hộp thoại chọn thư mục
             setTimeout(() => {
                 console.log("[AUTO] Automatically opening file dialog after user info");
                 ipcRenderer.send('openFileDialog');
             }, 500);
-            
-            // Hiển thị các nút chức năng
-            analyticsButton.style.display = '';
-            optimizeButton.style.display = '';
-            showQuickActions(true);
-            
-            // Cập nhật trạng thái kết nối
-            updateConnectionStatus('connected');
         }
     });
 
@@ -1861,4 +2144,69 @@ window.addEventListener('DOMContentLoaded', () => {
         
         return element;
     }
+
+    // Sau khi đã chọn thư mục, thêm thẻ điều khiển đẹp hơn
+    function createDashboardUI(dirPath) {
+        // Container chính
+        const dashboardContainer = document.createElement('div');
+        dashboardContainer.id = 'dashboard-container';
+        dashboardContainer.className = 'dashboard-container';
+        dashboardContainer.style.marginTop = '30px';
+        dashboardContainer.style.display = 'flex';
+        dashboardContainer.style.flexDirection = 'column';
+        dashboardContainer.style.gap = '20px';
+        
+        // Thẻ thông tin tập tin
+        const fileInfoCard = document.createElement('div');
+        fileInfoCard.className = 'card file-info-card';
+        fileInfoCard.style.display = 'flex';
+        fileInfoCard.style.flexDirection = 'row';
+        fileInfoCard.style.alignItems = 'center';
+        fileInfoCard.style.padding = '15px';
+        fileInfoCard.style.borderRadius = '12px';
+        fileInfoCard.style.border = '1px solid #eee';
+        fileInfoCard.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.05)';
+        
+        fileInfoCard.innerHTML = `
+            <div style="width: 50px; height: 50px; background-color: #e3f2fd; border-radius: 10px; display: flex; justify-content: center; align-items: center; margin-right: 15px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </div>
+            <div style="flex: 1;">
+                <div style="font-weight: bold; margin-bottom: 3px;">Thư mục đồng bộ</div>
+                <div style="font-size: 13px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">
+                    ${dirPath}
+                </div>
+            </div>
+            <div>
+                <button id="open-folder-btn" class="button button-small" style="padding: 5px 10px; font-size: 12px; background-color: #f5f5f5; color: #333;">Mở</button>
+            </div>
+        `;
+        
+        // Thẻ thống kê
+        const statsCard = document.createElement('div');
+        statsCard.className = 'card stats-card';
+        statsCard.style.padding = '15px';
+        statsCard.style.borderRadius = '12px';
+        statsCard.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.05)';
+        statsCard.style.backgroundColor = 'white';
+        statsCard.style.border = '1px solid #eee';
+        
+        const filesCount = appState.stats.filesProcessed || 0;
+        const filesTotal = appState.stats.totalFiles || 0;
+        const syncPercent = filesTotal > 0 ? Math.round((filesCount / filesTotal) * 100) : 0;
+        
+        statsCard.innerHTML = `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <div style="font-weight: bold;">Thống kê đồng bộ</div>
+                <div style="font-size: 12px; color: #666;">Cập nhật lần cuối: ${new Date().toLocaleTimeString()}</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 10px;">
+                <div style="text-align: center; padding: 10px; background-color: #e3f2fd; border-radius: 8px;">
+                    <div style="font-size: 22px; font-weight: bold; color: #2196F3;">${filesCount}</div>
 });
