@@ -83,6 +83,12 @@ docker-volumes/
 run.bat
 runbat.bat
 
+# Temporary batch files
+setup-teledrive.bat
+start-teledrive.bat
+add-nodejs-to-path.bat
+run-teledrive.bat
+
 # Runtime directories
 .chrome-profile/
 uploads/
