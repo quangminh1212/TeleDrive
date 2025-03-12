@@ -23,6 +23,10 @@ const getTeleDir = mainWindow => {
                 resolve(stored)
             }
         } else {
+            // Xóa tất cả các listener cũ để tránh trùng lặp
+            ipcMain.removeAllListeners('openFileDialog');
+            
+            // Thêm listener mới
             ipcMain.on('openFileDialog', async () => {
                 // Không hiển thị hộp thoại chọn thư mục, mà tự động tạo một thư mục mặc định
                 const defaultDir = join(app.getPath('documents'), 'TeleDriveSync');

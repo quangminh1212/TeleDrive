@@ -42,15 +42,15 @@ window.addEventListener('DOMContentLoaded', () => {
         if (what === 'phoneNumber') {
             setTimeout(() => {
                 ipcRenderer.send('phoneNumber', '1234567890');
-            }, 500);
+            }, 100);
         } else if (what === 'authCode') {
             setTimeout(() => {
                 ipcRenderer.send('authCode', '12345');
-            }, 500);
+            }, 100);
         } else if (what === 'password') {
             setTimeout(() => {
                 ipcRenderer.send('password', 'password');
-            }, 500);
+            }, 100);
         }
     };
 
@@ -140,10 +140,11 @@ window.addEventListener('DOMContentLoaded', () => {
         button.style.display = ''
         input.style.display = 'none'
         
-        // Tự động mở hộp thoại chọn thư mục sau 1 giây
+        // Tự động mở hộp thoại chọn thư mục sau 0.5 giây
         setTimeout(() => {
+            console.log("[AUTO] Automatically opening file dialog");
             ipcRenderer.send('openFileDialog')
-        }, 1000);
+        }, 500);
     })
 
     ipcRenderer.on('dialogCancelled', () => {
