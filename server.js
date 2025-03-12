@@ -21,22 +21,30 @@ app.use(express.static(path.join(__dirname, 'public')));
 let useMTProto = false;
 if (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH) {
   console.log('[TelegramClient] Đang khởi tạo...');
+  console.log(`[TelegramClient] API_ID: ${process.env.TELEGRAM_API_ID}, API_HASH: ${process.env.TELEGRAM_API_HASH.substring(0,5)}...`);
   useMTProto = true;
   
   // Kiểm tra trạng thái đăng nhập
   telegramClient.checkAuth()
     .then(result => {
+      console.log('[TelegramClient] Kết quả kiểm tra đăng nhập:', JSON.stringify(result, null, 2));
       if (result.authorized) {
         console.log('[Telegram API] Đã đăng nhập vào Telegram API với tài khoản:', result.user.name);
       } else {
         console.log('[Telegram API] Chưa đăng nhập vào Telegram API. Sử dụng giao diện để đăng nhập.');
+        if (result.error) {
+          console.log('[Telegram API] Chi tiết lỗi:', result.error);
+        }
       }
     })
     .catch(error => {
       console.error('[Telegram API] Lỗi kiểm tra đăng nhập:', error);
+      console.error('[Telegram API] Stack trace:', error.stack);
     });
 } else {
   console.log('[TelegramClient] Không tìm thấy thông tin API_ID hoặc API_HASH. Vui lòng kiểm tra file .env');
+  console.log('[TelegramClient] TELEGRAM_API_ID:', process.env.TELEGRAM_API_ID);
+  console.log('[TelegramClient] TELEGRAM_API_HASH có giá trị:', !!process.env.TELEGRAM_API_HASH);
 }
 
 // Kiểm tra xem BOT_TOKEN đã được cấu hình chưa
