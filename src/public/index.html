@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TeleDrive</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+
+        .login-page {
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 130px);
+            justify-content: center;
+            padding: 0 16px;
+            width: calc(100% - 32px);
+        }
+
+        .profile {
+            transform: translateY(5px);
+            text-align: center;
+            display: none;
+        }
+
+        .profile-picture {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .name {
+            transform: translateY(-10px);
+            margin: 0;
+            display: inline-block;
+            font-size: 18px;
+            max-width: 150px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        .number {
+            transform: translateY(-9px);
+            margin: 0;
+            display: inline-block;
+            font-size: 10px;
+            opacity: 0.5;
+            vertical-align: middle;
+        }
+
+        h1 {
+            font-weight: 500;
+            font-size: 22px;
+            margin-top: 0;
+            padding-top: 0;
+            margin-bottom: 4px;
+            padding-bottom: 0;
+            text-align: center;
+        }
+
+        h3 {
+            font-weight: 400;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            color: #888;
+        }
+
+        .press {
+            cursor: pointer;
+            overflow: hidden;
+            width: 300px;
+            white-space: nowrap;
+            height: 38px;
+            margin-top: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .press div {
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.025em;
+            margin-top: 1px;
+            margin-left: 8px;
+        }
+
+        .press-glass {
+            background-color: rgba(224, 224, 224, 0.6);
+            /*backdrop-filter: blur(4px);*/
+            /*-webkit-backdrop-filter: blur(4px);*/
+            border: 1px solid rgba(212, 212, 212, 1);
+            color: rgba(72, 72, 72, 1);
+        }
+
+        .press-blue {
+            background-color: rgb(76, 175, 80);
+            color: white;
+            border: none;
+        }
+
+        .press-pill {
+            border-radius: 24px;
+        }
+
+        .press-ghost {
+            background: none;
+            border: 1px solid rgba(224, 224, 224, 1);
+            color: rgba(72, 72, 72, 1);
+        }
+
+        .press-flat {
+            box-shadow: none;
+            border: 1px solid rgba(224, 224, 224, 1);
+        }
+
+        .press:active {
+            transform: scale(0.98);
+        }
+
+        .press input {
+            font-size: 12px;
+            outline: none;
+            border: 1px solid #c4c4c4;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 300px;
+            display: none;
+            box-sizing: border-box;
+            transform: translateX(-12px);
+        }
+
+        .press-blue:hover {
+            background-color: rgb(69, 160, 73);
+        }
+
+        .press-red {
+            background-color: rgb(239, 83, 80);
+        }
+
+        .press-red:hover {
+            background-color: rgb(229, 57, 53);
+        }
+
+        .press-ghost:hover {
+            background-color: rgba(0, 0, 0, 0.025);
+        }
+
+        .press-purple {
+            background-color: rgb(103, 58, 183);
+            color: white;
+            border: none;
+        }
+
+        .press-purple:hover {
+            background-color: rgb(81, 45, 168);
+        }
+
+        @keyframes shake-horizontal {
+            0%,
+            100% {
+                -webkit-transform: translateX(-12px);
+                transform: translateX(-12px);
+            }
+            10%,
+            30%,
+            50%,
+            70% {
+                -webkit-transform: translateX(-17px);
+                transform: translateX(-17px);
+            }
+            20%,
+            40%,
+            60% {
+                -webkit-transform: translateX(-7px);
+                transform: translateX(-7px);
+            }
+            80% {
+                -webkit-transform: translateX(-9px);
+                transform: translateX(-9px);
+            }
+            90% {
+                -webkit-transform: translateX(-14px);
+                transform: translateX(-14px);
+            }
+        }
+
+        .shake-horizontal {
+            animation: shake-horizontal 0.8s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
+        }
+
+        #loader {
+            border: 8px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 8px solid #3498db;
+            width: 40px;
+            height: 40px;
+            -webkit-animation: spin 2s linear infinite; /* Safari */
+            animation: spin 2s linear infinite;
+        }
+
+        /* Safari */
+        @-webkit-keyframes spin {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+            100% {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        /* Thêm CSS mới */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .connection-status.connected {
+            background-color: rgba(76, 175, 80, 0.2);
+            color: rgb(76, 175, 80);
+        }
+        
+        .connection-status.connecting {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: rgb(255, 152, 0);
+        }
+        
+        .connection-status.disconnected {
+            background-color: rgba(244, 67, 54, 0.2);
+            color: rgb(244, 67, 54);
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-indicator.green {
+            background-color: rgb(76, 175, 80);
+        }
+        
+        .status-indicator.yellow {
+            background-color: rgb(255, 152, 0);
+        }
+        
+        .status-indicator.red {
+            background-color: rgb(244, 67, 54);
+        }
+        
+        .sync-progress {
+            width: 300px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #f3f3f3;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-indicator {
+            height: 100%;
+            background-color: rgb(76, 175, 80);
+            width: 0;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            font-size: 10px;
+            color: #888;
+            text-align: right;
+            margin-top: 2px;
+        }
+        
+        .stats-container {
+            padding: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        
+        .stats-label {
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .quick-actions {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        .action-button {
+            font-size: 11px;
+            background-color: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        .action-button:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .action-button svg {
+            width: 14px;
+            height: 14px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="connection-status connecting" id="connectionStatus">
+    <div class="status-indicator yellow"></div>
+    <span>Đang kết nối...</span>
+</div>
+
+<div class="login-page">
+    <div class="profile" id="profile">
+        <img alt="Profile Picture" id="profilePicture" class="profile-picture">
+        <h6 class="name" id="name"></h6>
+        <h6 class="number" id="number"></h6>
+    </div>
+    <h1 id="title">TeleDrive</h1>
+    <h3 id="description">Connecting...</h3>
+    <div class="sync-progress" id="syncProgress">
+        <div class="progress-bar">
+            <div class="progress-indicator" id="progressIndicator"></div>
+        </div>
+        <div class="progress-text" id="progressText">0%</div>
+    </div>
+    <div class="press press-blue press-pill" id="next">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" id="telegramIcon"
+             style="transform: scale(0.9) translateY(2px)" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" class="feather feather-send">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+        <div id="buttonTxt">START</div>
+        <input placeholder="First, Install Telegram Desktop..." id="input" autocomplete="off">
+    </div>
+    <div class="press press-ghost press-pill" id="reDownload" style="margin-top: 12px; display: none">
+        <svg xmlns='http://www.w3.org/2000/svg' style="width: 30px; height: 30px" viewBox='0 0 512 512'>
+            <path d='M320,336h76c55,0,100-21.21,100-75.6s-53-73.47-96-75.6C391.11,99.74,329,48,256,48c-69,0-113.44,45.79-128,91.2-60,5.7-112,35.88-112,98.4S70,336,136,336h56'
+                  style='fill:none;stroke:#000;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px'/>
+            <polyline points='192 400.1 256 464 320 400.1'
+                      style='fill:none;stroke:#000;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px'/>
+            <line x1='256' y1='224' x2='256' y2='448.03'
+                  style='fill:none;stroke:#000;stroke-linecap:round;stroke-linejoin:round;stroke-width:32px'/>
+        </svg>
+        <div>RESTORE ALL</div>
+    </div>
+    <div class="press press-ghost press-pill" id="queueButton" style="margin-top: 12px; display: none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             class="feather feather-list">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+        <div>QUEUE</div>
+    </div>
+    
+    <!-- Thêm phần Quick Actions -->
+    <div class="quick-actions" id="quickActions" style="display: none">
+        <div class="action-button" id="actionPause">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+            <span>Tạm dừng</span>
+        </div>
+        <div class="action-button" id="actionResume">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Tiếp tục</span>
+        </div>
+        <div class="action-button" id="actionRefresh">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <polyline points="23 20 23 14 17 14"></polyline>
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+            </svg>
+            <span>Làm mới</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+</body>
+</html> 

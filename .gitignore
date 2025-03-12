@@ -100,3 +100,26 @@ C:/Users/**/AppData/Roaming/TeleDrive/
 **/TeleDriveSync/
 **/mock-profile.png
 **/mock-file-*
+
+# Các tệp và thư mục được tạo khi chạy ứng dụng
+userData
+sessions.json
+.config
+.cache
+.local
+temp/
+tmp/
+.history/
+release/
+out/
+downloads/
+
+# Thông tin profile Chrome
+chrome_profile/
+**/chrome_profile/**
+**/Chrome_*/
+
+# Các tệp đồng bộ và thống kê
+*.sync-conflict-*
+.tele-drive/
+**/sessions.json

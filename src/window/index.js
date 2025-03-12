@@ -12,6 +12,16 @@ window.addEventListener('DOMContentLoaded', () => {
     const profilePicture = document.getElementById('profilePicture')
     const syncButton = document.getElementById('reDownload')
     const queueButton = document.getElementById('queueButton')
+    
+    // Thành phần UI mới
+    const connectionStatus = document.getElementById('connectionStatus')
+    const syncProgress = document.getElementById('syncProgress')
+    const progressIndicator = document.getElementById('progressIndicator')
+    const progressText = document.getElementById('progressText')
+    const quickActions = document.getElementById('quickActions')
+    const actionPause = document.getElementById('actionPause')
+    const actionResume = document.getElementById('actionResume')
+    const actionRefresh = document.getElementById('actionRefresh')
 
     // Thêm nút analytics
     const analyticsButton = document.createElement('div');
@@ -140,8 +150,57 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Cập nhật trạng thái kết nối
+    function updateConnectionStatus(status) {
+        const statusText = connectionStatus.querySelector('span')
+        const statusIndicator = connectionStatus.querySelector('.status-indicator')
+        
+        // Xóa tất cả các classes
+        connectionStatus.classList.remove('connected', 'connecting', 'disconnected')
+        statusIndicator.classList.remove('green', 'yellow', 'red')
+        
+        if (status === 'connected') {
+            connectionStatus.classList.add('connected')
+            statusIndicator.classList.add('green')
+            statusText.textContent = 'Đã kết nối'
+        } else if (status === 'connecting') {
+            connectionStatus.classList.add('connecting')
+            statusIndicator.classList.add('yellow')
+            statusText.textContent = 'Đang kết nối...'
+        } else if (status === 'disconnected') {
+            connectionStatus.classList.add('disconnected')
+            statusIndicator.classList.add('red')
+            statusText.textContent = 'Mất kết nối'
+        }
+    }
+    
+    // Cập nhật thanh tiến độ
+    function updateProgress(value, message) {
+        if (value >= 0) {
+            progressIndicator.style.width = `${value}%`
+            progressText.textContent = `${value}%`
+        }
+        
+        if (message) {
+            description.innerHTML = message
+        }
+    }
+    
+    // Hiển thị các nút thao tác nhanh
+    function showQuickActions(show) {
+        quickActions.style.display = show ? '' : 'none'
+    }
+    
+    // Hiển thị thanh tiến độ
+    function showProgress(show) {
+        syncProgress.style.display = show ? '' : 'none'
+    }
+
     ipcRenderer.on('auth', async (event, message) => {
         console.log("Auth event received:", message);
+        
+        // Cập nhật trạng thái kết nối
+        updateConnectionStatus('connecting')
 
         // Tự động trả lời các câu hỏi xác thực
         autoRespond(message._);
@@ -214,6 +273,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
     ipcRenderer.on('authSuccess', () => {
         console.log("Auth success received");
+        
+        // Cập nhật trạng thái kết nối
+        updateConnectionStatus('connected')
+        
         title.innerHTML = 'Login Successful'
         profile.style.display = ''
 
@@ -234,6 +297,9 @@ window.addEventListener('DOMContentLoaded', () => {
             console.log("[AUTO] Automatically opening file dialog");
             ipcRenderer.send('openFileDialog')
         }, 500);
+        
+        // Hiển thị các nút thao tác nhanh
+        showQuickActions(true)
         
         // Hiển thị các nút chức năng mới
         analyticsButton.style.display = '';
@@ -479,7 +545,33 @@ window.addEventListener('DOMContentLoaded', () => {
         else return (size/(1024*1024*1024)).toFixed(2) + " GB";
     }
 
+    ipcRenderer.on('syncStarting', _ => {
+        syncButton.innerHTML = 'RESTORING...'
+        
+        // Hiển thị thanh tiến độ
+        showProgress(true)
+        updateProgress(0, 'Đang bắt đầu đồng bộ hóa...')
+        
+        // Cập nhật trạng thái
+        appState.isProcessing = true;
+        appState.stats.startTime = new Date();
+    })
+    
+    // Nhận cập nhật tiến độ đồng bộ
+    ipcRenderer.on('syncProgress', (event, data) => {
+        // Cập nhật thanh tiến độ
+        const percent = Math.round((data.processed / data.total) * 100);
+        updateProgress(percent, `Đang đồng bộ (${data.processed}/${data.total})...`);
+        
+        // Cập nhật số lượng tệp đã xử lý
+        appState.stats.filesProcessed = data.processed;
+        appState.stats.totalFiles = data.total;
+    });
+
     ipcRenderer.on('syncOver', _ => {
+        // Ẩn thanh tiến độ
+        showProgress(false)
+        
         syncButton.innerHTML =
             `<svg xmlns='http://www.w3.org/2000/svg' style="width: 30px; height: 30px" viewBox='0 0 512 512'>
                      <path d='M320,336h76c55,0,100-21.21,100-75.6s-53-73.47-96-75.6C391.11,99.74,329,48,256,48c-69,0-113.44,45.79-128,91.2-60,5.7-112,35.88-112,98.4S70,336,136,336h56'
@@ -507,14 +599,9 @@ window.addEventListener('DOMContentLoaded', () => {
         
         // Hiển thị thống kê
         uiTransition.showStats(appState.stats);
-    })
-
-    ipcRenderer.on('syncStarting', _ => {
-        syncButton.innerHTML = 'RESTORING...'
         
-        // Cập nhật trạng thái
-        appState.isProcessing = true;
-        appState.stats.startTime = new Date();
+        // Cập nhật description
+        description.innerHTML = 'Đồng bộ hóa hoàn tất!';
     })
 
     ipcRenderer.on('pushQueue', (event, action) => {
@@ -683,4 +770,64 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     `;
     document.head.appendChild(style);
+
+    // Xử lý các nút thao tác nhanh
+    actionPause.addEventListener('click', () => {
+        if (appState.isProcessing) {
+            ipcRenderer.send('pauseSync');
+            description.innerHTML = 'Tạm dừng đồng bộ...';
+        }
+    });
+    
+    actionResume.addEventListener('click', () => {
+        if (!appState.isProcessing) {
+            ipcRenderer.send('resumeSync');
+            description.innerHTML = 'Tiếp tục đồng bộ...';
+        }
+    });
+    
+    actionRefresh.addEventListener('click', () => {
+        ipcRenderer.send('refreshStatus');
+        description.innerHTML = 'Đang làm mới...';
+    });
+    
+    // Theo dõi trạng thái kết nối
+    let connectionCheckInterval = setInterval(() => {
+        ipcRenderer.send('checkConnection');
+    }, 5000);
+    
+    // Nhận phản hồi trạng thái kết nối
+    ipcRenderer.on('connectionStatus', (event, status) => {
+        updateConnectionStatus(status.connected ? 'connected' : 'disconnected');
+    });
+    
+    // Xử lý sự kiện mất kết nối
+    ipcRenderer.on('connectionLost', () => {
+        updateConnectionStatus('disconnected');
+        swal({
+            title: "Mất kết nối",
+            text: "Kết nối với Telegram đã bị mất. Đang thử kết nối lại...",
+            icon: "warning",
+            buttons: false,
+            closeOnClickOutside: false
+        });
+    });
+    
+    // Xử lý sự kiện kết nối lại
+    ipcRenderer.on('connectionRestored', () => {
+        updateConnectionStatus('connected');
+        swal.close();
+        swal({
+            title: "Đã kết nối lại",
+            text: "Kết nối với Telegram đã được khôi phục.",
+            icon: "success",
+            timer: 2000,
+            buttons: false
+        });
+    });
+    
+    // Dọn dẹp khi trang được đóng
+    window.addEventListener('beforeunload', () => {
+        clearInterval(connectionCheckInterval);
+    });
 });
