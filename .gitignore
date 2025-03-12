@@ -77,4 +77,8 @@ CacheStorage/
 Code Cache/
 
 # Docker volumes
-docker-volumes/ 
+docker-volumes/
+
+# Local scripts
+run.bat
+runbat.bat 
