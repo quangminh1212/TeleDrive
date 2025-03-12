@@ -2209,4 +2209,72 @@ window.addEventListener('DOMContentLoaded', () => {
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 10px;">
                 <div style="text-align: center; padding: 10px; background-color: #e3f2fd; border-radius: 8px;">
                     <div style="font-size: 22px; font-weight: bold; color: #2196F3;">${filesCount}</div>
+                    <div style="font-size: 12px; color: #666;">Tệp đã đồng bộ</div>
+                </div>
+                <div style="text-align: center; padding: 10px; background-color: #e8f5e9; border-radius: 8px;">
+                    <div style="font-size: 22px; font-weight: bold; color: #4CAF50;">${filesTotal}</div>
+                    <div style="font-size: 12px; color: #666;">Tổng số tệp</div>
+                </div>
+                <div style="text-align: center; padding: 10px; background-color: #fff8e1; border-radius: 8px;">
+                    <div style="font-size: 22px; font-weight: bold; color: #FFC107;">${syncPercent}%</div>
+                    <div style="font-size: 12px; color: #666;">Tỉ lệ đồng bộ</div>
+                </div>
+            </div>
+            <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <div style="font-size: 12px; font-weight: bold;">Tiến độ đồng bộ</div>
+                    <div style="font-size: 12px;">${syncPercent}%</div>
+                </div>
+                <div style="width: 100%; height: 6px; background-color: #f5f5f5; border-radius: 3px; overflow: hidden;">
+                    <div style="width: ${syncPercent}%; height: 100%; background: linear-gradient(to right, #2196F3, #4CAF50); border-radius: 3px;"></div>
+                </div>
+            </div>
+        `;
+        
+        // Thẻ thao tác nhanh
+        const actionsCard = document.createElement('div');
+        actionsCard.className = 'card actions-card';
+        actionsCard.style.display = 'grid';
+        actionsCard.style.gridTemplateColumns = 'repeat(4, 1fr)';
+        actionsCard.style.gap = '10px';
+        actionsCard.style.padding = '15px';
+        actionsCard.style.borderRadius = '12px';
+        actionsCard.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.05)';
+        actionsCard.style.backgroundColor = 'white';
+        actionsCard.style.border = '1px solid #eee';
+        
+        actionsCard.innerHTML = `
+            <div id="action-sync" class="action-item" style="text-align: center; padding: 15px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div style="width: 40px; height: 40px; background-color: #e3f2fd; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <polyline points="23 20 23 14 17 14"></polyline>
+                        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                    </svg>
+                </div>
+                <div style="font-size: 13px; font-weight: bold;">Đồng bộ</div>
+            </div>
+            <div id="action-pause" class="action-item" style="text-align: center; padding: 15px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div style="width: 40px; height: 40px; background-color: #fff8e1; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                    </svg>
+                </div>
+                <div style="font-size: 13px; font-weight: bold;">Tạm dừng</div>
+            </div>
+            <div id="action-stats" class="action-item" style="text-align: center; padding: 15px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div style="width: 40px; height: 40px; background-color: #e8f5e9; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                </div>
+                <div style="font-size: 13px; font-weight: bold;">Thống kê</div>
+            </div>
+            <div id="action-settings" class="action-item" style="text-align: center; padding: 15px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div style="width: 40px; height: 40px; background-color: #f3e5f5; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9C27B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
 });
