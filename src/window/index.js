@@ -49,6 +49,325 @@ toastStyles.innerHTML = `
 `;
 document.head.appendChild(toastStyles);
 
+// Thêm theme hiện đại
+const appTheme = document.createElement('style');
+appTheme.innerHTML = `
+    :root {
+        --primary-color: #2196F3;
+        --primary-dark: #1976D2;
+        --accent-color: #FF4081;
+        --success-color: #4CAF50;
+        --warning-color: #FFC107;
+        --error-color: #F44336;
+        --dark-bg: #333;
+        --light-bg: #f5f5f5;
+        --text-primary: #333;
+        --text-secondary: #666;
+        --text-light: #fff;
+        --border-radius: 8px;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --transition: all 0.3s ease;
+    }
+    
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        transition: background 0.5s ease;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    /* Các kiểu dáng chung */
+    .card {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        padding: 20px;
+        margin: 15px;
+        transition: var(--transition);
+    }
+    
+    .card:hover {
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Giao diện đăng nhập */
+    .login-container {
+        max-width: 400px;
+        margin: 50px auto;
+        text-align: center;
+        padding: 30px;
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+    }
+    
+    .profile-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .profile-picture-container {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-bottom: 10px;
+        border: 3px solid var(--primary-color);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+    }
+    
+    .profile-picture-container:hover {
+        transform: scale(1.05);
+    }
+    
+    .profile-picture-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .user-name {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 10px 0 5px;
+        color: var(--text-primary);
+    }
+    
+    .user-phone {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin-bottom: 15px;
+    }
+    
+    /* Hiệu ứng nút */
+    .button {
+        padding: 12px 24px;
+        border-radius: 30px;
+        border: none;
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: var(--transition);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        outline: none;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    .button:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Hiệu ứng ripple cho nút */
+    .button-ripple {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .button-ripple:after {
+        content: "";
+        display: block;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+        background-repeat: no-repeat;
+        background-position: 50%;
+        transform: scale(10, 10);
+        opacity: 0;
+        transition: transform .5s, opacity 1s;
+    }
+    
+    .button-ripple:active:after {
+        transform: scale(0, 0);
+        opacity: .3;
+        transition: 0s;
+    }
+    
+    /* Hiệu ứng cho input */
+    .input-animated {
+        width: 100%;
+        padding: 12px 15px;
+        margin: 8px 0;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        transition: var(--transition);
+        font-size: 16px;
+        outline: none;
+    }
+    
+    .input-animated:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    }
+    
+    /* Hiệu ứng loading */
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        margin: 15px auto;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 4px solid var(--primary-color);
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Hiệu ứng chuyển động */
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .slide-up {
+        animation: slideUp 0.5s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    /* Màu cho trạng thái kết nối */
+    .connection-status {
+        transition: var(--transition);
+        border-radius: 20px;
+        font-weight: bold;
+        backdrop-filter: blur(5px);
+    }
+    
+    .connection-status.connected {
+        background-color: rgba(76, 175, 80, 0.2);
+        color: #4CAF50;
+    }
+    
+    .connection-status.connecting {
+        background-color: rgba(255, 193, 7, 0.2);
+        color: #FFC107;
+    }
+    
+    .connection-status.disconnected {
+        background-color: rgba(244, 67, 54, 0.2);
+        color: #F44336;
+    }
+    
+    /* Nút thao tác nhanh */
+    .quick-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .action-button {
+        background: rgba(0, 0, 0, 0.6);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(5px);
+        transition: var(--transition);
+    }
+    
+    .action-button:hover {
+        transform: scale(1.15) rotate(5deg);
+    }
+    
+    /* Thanh tiến độ */
+    .progress-indicator {
+        height: 6px;
+        border-radius: 3px;
+        background: linear-gradient(to right, #4CAF50, #8BC34A);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Đường viền cho hình ảnh hồ sơ */
+    #profilePicture {
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+    }
+    
+    #profilePicture:hover {
+        transform: scale(1.05);
+    }
+    
+    /* Hiệu ứng cho nút CHANGE, THỐNG KÊ, TỐI ƯU */
+    .press {
+        transition: var(--transition);
+        border-radius: 25px;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px 20px;
+        margin: 10px;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .press:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .press:active {
+        transform: translateY(1px);
+    }
+    
+    .press.press-blue {
+        background: linear-gradient(135deg, #2196F3, #0D47A1);
+    }
+    
+    .press.press-purple {
+        background: linear-gradient(135deg, #9C27B0, #4A148C);
+    }
+    
+    /* Màu gradient cho tiêu đề */
+    #title {
+        background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-weight: bold;
+        letter-spacing: 1px;
+        margin-bottom: 15px;
+    }
+    
+    /* Cải thiện thanh tiến độ */
+    #syncProgress {
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+`;
+document.head.appendChild(appTheme);
+
 window.addEventListener('DOMContentLoaded', () => {
     console.log("DOM Content Loaded - Starting initialization");
 
@@ -72,6 +391,63 @@ window.addEventListener('DOMContentLoaded', () => {
     const actionPause = document.getElementById('actionPause') || document.querySelector('.action-pause');
     const actionResume = document.getElementById('actionResume') || document.querySelector('.action-resume');
     const actionRefresh = document.getElementById('actionRefresh') || document.querySelector('.action-refresh');
+
+    // Thêm classes cho các phần tử UI hiện có
+    if (button) {
+        button.classList.add('button', 'button-ripple');
+    }
+    
+    if (input) {
+        input.classList.add('input-animated');
+    }
+    
+    if (title) {
+        title.classList.add('slide-up');
+    }
+    
+    if (description) {
+        description.classList.add('fade-in');
+    }
+    
+    if (profile) {
+        profile.classList.add('profile-section');
+    }
+    
+    if (profilePicture) {
+        const container = document.createElement('div');
+        container.className = 'profile-picture-container fade-in';
+        profilePicture.parentNode.insertBefore(container, profilePicture);
+        container.appendChild(profilePicture);
+    }
+    
+    if (name) {
+        name.classList.add('user-name', 'slide-up');
+    }
+    
+    if (number) {
+        number.classList.add('user-phone', 'fade-in');
+    }
+    
+    // Thêm container chính để cải thiện layout
+    const mainContainer = document.createElement('div');
+    mainContainer.className = 'main-container';
+    mainContainer.style.maxWidth = '500px';
+    mainContainer.style.margin = '0 auto';
+    mainContainer.style.padding = '20px';
+    
+    // Di chuyển các phần tử vào container mới nếu chưa có
+    if (!document.querySelector('.main-container')) {
+        // Chỉ bao bọc các phần tử nếu trang chưa được khởi tạo
+        const elementsToWrap = document.querySelectorAll('#title, #profile, #description, #next, #input');
+        if (elementsToWrap.length > 0) {
+            document.body.insertBefore(mainContainer, elementsToWrap[0]);
+            elementsToWrap.forEach(el => {
+                if (el.parentNode !== mainContainer) {
+                    mainContainer.appendChild(el);
+                }
+            });
+        }
+    }
 
     // Thêm nút analytics
     const analyticsButton = document.createElement('div');
@@ -181,7 +557,7 @@ window.addEventListener('DOMContentLoaded', () => {
         return toast;
     }
     
-    // Cập nhật hàm updateConnectionStatus để thêm thông báo
+    // Cập nhật hàm updateConnectionStatus để sử dụng theme mới
     function updateConnectionStatus(status, showNotification = true) {
         console.log(`Updating connection status to: ${status}`);
         
@@ -199,6 +575,9 @@ window.addEventListener('DOMContentLoaded', () => {
             statusIndicator.classList.add('green')
             statusText.textContent = 'Đã kết nối'
             
+            // Thêm hiệu ứng pulse khi kết nối thành công
+            statusIndicator.style.animation = 'pulse 2s infinite';
+            
             if (showNotification && oldStatus !== 'Đã kết nối') {
                 showToast('success', 'Kết nối thành công', 'Đã kết nối đến máy chủ Telegram.');
             }
@@ -207,6 +586,9 @@ window.addEventListener('DOMContentLoaded', () => {
             statusIndicator.classList.add('yellow')
             statusText.textContent = 'Đang kết nối...'
             
+            // Thêm hiệu ứng nhấp nháy cho trạng thái đang kết nối
+            statusIndicator.style.animation = 'blink 1s infinite';
+            
             if (showNotification && oldStatus === 'Mất kết nối') {
                 showToast('info', 'Đang kết nối lại', 'Đang thử kết nối lại với máy chủ Telegram...');
             }
@@ -214,6 +596,9 @@ window.addEventListener('DOMContentLoaded', () => {
             connectionStatus.classList.add('disconnected')
             statusIndicator.classList.add('red')
             statusText.textContent = 'Mất kết nối'
+            
+            // Xóa hiệu ứng animation
+            statusIndicator.style.animation = '';
             
             if (showNotification && oldStatus !== 'Mất kết nối') {
                 showToast('error', 'Mất kết nối', 'Kết nối đến máy chủ Telegram bị gián đoạn. Hệ thống sẽ tự động kết nối lại.');
@@ -1299,15 +1684,49 @@ window.addEventListener('DOMContentLoaded', () => {
             <span>Đang kết nối...</span>
         `;
         element.style.position = 'absolute';
-        element.style.top = '10px';
-        element.style.right = '10px';
-        element.style.padding = '5px 10px';
-        element.style.borderRadius = '5px';
-        element.style.fontSize = '12px';
+        element.style.top = '15px';
+        element.style.right = '15px';
+        element.style.padding = '8px 15px';
+        element.style.borderRadius = '20px';
+        element.style.fontSize = '13px';
+        element.style.fontWeight = 'bold';
         element.style.display = 'flex';
         element.style.alignItems = 'center';
-        element.style.gap = '5px';
+        element.style.gap = '8px';
+        element.style.boxShadow = '0 3px 8px rgba(0,0,0,0.15)';
+        element.style.zIndex = '1000';
+        element.style.backdropFilter = 'blur(5px)';
         document.body.appendChild(element);
+        
+        // Thêm hiệu ứng xuất hiện
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(-10px)';
+        element.style.transition = 'all 0.3s ease';
+        
+        setTimeout(() => {
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, 300);
+        
+        // Thêm keyframes cho animation
+        if (!document.getElementById('status-animations')) {
+            const animations = document.createElement('style');
+            animations.id = 'status-animations';
+            animations.textContent = `
+                @keyframes pulse {
+                    0% { opacity: 1; }
+                    50% { opacity: 0.7; }
+                    100% { opacity: 1; }
+                }
+                @keyframes blink {
+                    0% { opacity: 1; }
+                    50% { opacity: 0.3; }
+                    100% { opacity: 1; }
+                }
+            `;
+            document.head.appendChild(animations);
+        }
+        
         return element;
     }
     
@@ -1315,23 +1734,25 @@ window.addEventListener('DOMContentLoaded', () => {
     function createSyncProgressElement() {
         const element = document.createElement('div');
         element.id = 'syncProgress';
-        element.className = 'sync-progress';
+        element.className = 'sync-progress fade-in';
         element.style.display = 'none';
         element.innerHTML = `
             <div class="progress-indicator"></div>
             <div class="progress-text">Đang đồng bộ...</div>
         `;
         element.style.position = 'absolute';
-        element.style.bottom = '50px';
+        element.style.bottom = '65px';
         element.style.left = '50%';
         element.style.transform = 'translateX(-50%)';
         element.style.width = '90%';
-        element.style.maxWidth = '350px';
-        element.style.padding = '10px';
-        element.style.borderRadius = '5px';
-        element.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        element.style.maxWidth = '400px';
+        element.style.padding = '15px';
+        element.style.borderRadius = '10px';
+        element.style.backgroundColor = 'rgba(0, 0, 0, 0.75)';
         element.style.color = 'white';
         element.style.textAlign = 'center';
+        element.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+        element.style.backdropFilter = 'blur(10px)';
         document.body.appendChild(element);
         return element;
     }
@@ -1344,36 +1765,50 @@ window.addEventListener('DOMContentLoaded', () => {
         element.style.display = 'none';
         element.innerHTML = `
             <div id="actionPause" class="action-button action-pause" title="Tạm dừng đồng bộ">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22">
                     <path fill="currentColor" d="M224 432h-80V80h80zM368 432h-80V80h80z"/>
                 </svg>
             </div>
             <div id="actionResume" class="action-button action-resume" title="Tiếp tục đồng bộ">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22">
                     <path fill="currentColor" d="M133 440a35.37 35.37 0 01-17.5-4.67c-12-6.8-19.46-20-19.46-34.33V111c0-14.37 7.46-27.53 19.46-34.33a35.13 35.13 0 0135.77.45l247.85 148.36a36 36 0 010 61l-247.89 148.4A35.5 35.5 0 01133 440z"/>
                 </svg>
             </div>
             <div id="actionRefresh" class="action-button action-refresh" title="Làm mới trạng thái">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22">
                     <path fill="currentColor" d="M320 146s24.36-12-64-12a160 160 0 10160 160" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="32"/>
                     <path fill="currentColor" d="M256 58l80 80-80 80" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/>
                 </svg>
             </div>
         `;
         element.style.position = 'absolute';
-        element.style.bottom = '100px';
-        element.style.right = '20px';
+        element.style.bottom = '110px';
+        element.style.right = '25px';
         element.style.display = 'flex';
         element.style.flexDirection = 'column';
-        element.style.gap = '10px';
+        element.style.gap = '15px';
+        element.style.zIndex = '900';
         document.body.appendChild(element);
+        
+        // Thêm hiệu ứng xuất hiện
+        const buttons = element.querySelectorAll('.action-button');
+        buttons.forEach((btn, index) => {
+            btn.style.opacity = '0';
+            btn.style.transform = 'scale(0.5) translateX(20px)';
+            btn.style.transition = 'all 0.3s ease';
+            
+            setTimeout(() => {
+                btn.style.opacity = '1';
+                btn.style.transform = 'scale(1) translateX(0)';
+            }, 100 * (index + 1));
+        });
         
         // Thêm CSS cho các nút thao tác
         const style = document.createElement('style');
         style.textContent = `
             .action-button {
-                width: 40px;
-                height: 40px;
+                width: 48px;
+                height: 48px;
                 border-radius: 50%;
                 background-color: rgba(0, 0, 0, 0.7);
                 color: white;
@@ -1382,30 +1817,44 @@ window.addEventListener('DOMContentLoaded', () => {
                 justify-content: center;
                 cursor: pointer;
                 transition: all 0.3s ease;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+                backdrop-filter: blur(5px);
             }
             .action-button:hover {
-                background-color: rgba(0, 0, 0, 0.9);
-                transform: scale(1.1);
+                background-color: rgba(33, 150, 243, 0.9);
+                transform: scale(1.15) rotate(5deg);
+                box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            }
+            .action-button:active {
+                transform: scale(0.95);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
             }
             .status-indicator {
-                width: 10px;
-                height: 10px;
+                width: 12px;
+                height: 12px;
                 border-radius: 50%;
+                box-shadow: 0 0 5px currentColor;
             }
-            .status-indicator.green { background-color: #4CAF50; }
-            .status-indicator.yellow { background-color: #FFC107; }
-            .status-indicator.red { background-color: #F44336; }
-            .connection-status {
-                background-color: rgba(0, 0, 0, 0.7);
-                color: white;
+            .status-indicator.green { 
+                background-color: #4CAF50; 
+                box-shadow: 0 0 8px #4CAF50;
+            }
+            .status-indicator.yellow { 
+                background-color: #FFC107; 
+                box-shadow: 0 0 8px #FFC107;
+            }
+            .status-indicator.red { 
+                background-color: #F44336; 
+                box-shadow: 0 0 8px #F44336;
             }
             .progress-indicator {
-                height: 5px;
-                background-color: #4CAF50;
+                height: 6px;
+                background: linear-gradient(to right, #4CAF50, #8BC34A);
                 width: 0%;
-                border-radius: 5px;
-                margin-bottom: 5px;
-                transition: width 0.3s ease;
+                border-radius: 3px;
+                margin-bottom: 8px;
+                transition: width 0.5s ease;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
             }
         `;
         document.head.appendChild(style);
