@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= file.fileName %> - TeleDrive</title>
+    <title><%= file.originalFileName || file.fileName %> - TeleDrive</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
@@ -21,6 +21,12 @@
         .photo-icon { color: #34A853; }
         .video-icon { color: #EA4335; }
         .audio-icon { color: #FBBC05; }
+        .file-error { color: #EA4335; }
+        .file-unavailable {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
@@ -39,19 +45,27 @@
             </a>
         </div>
 
+        <div class="alert alert-danger file-unavailable" id="fileUnavailableAlert">
+            <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i> File Unavailable</h4>
+            <p>This file is no longer available on the server. It may have been deleted or moved.</p>
+            <hr>
+            <p class="mb-0">You can try refreshing the page or going back to the file list.</p>
+        </div>
+
         <div class="row">
             <div class="col-md-6 mb-4">
                 <div class="card h-100">
-                    <div class="card-body text-center py-5">
+                    <div class="card-body text-center py-5" id="filePreviewContainer">
                         <% if (file.fileType === 'photo') { %>
-                            <img src="<%= file.filePath %>" alt="<%= file.fileName %>" class="file-preview mb-3">
+                            <img src="<%= file.filePath %>" alt="<%= file.originalFileName || file.fileName %>" class="file-preview mb-3" id="photoPreview"
+                                 onerror="handleFileError()">
                         <% } else if (file.fileType === 'video') { %>
-                            <video controls class="file-preview mb-3">
+                            <video controls class="file-preview mb-3" id="videoPreview" onerror="handleFileError()">
                                 <source src="<%= file.filePath %>" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
                         <% } else if (file.fileType === 'audio') { %>
-                            <audio controls class="mb-3 w-100">
+                            <audio controls class="mb-3 w-100" id="audioPreview" onerror="handleFileError()">
                                 <source src="<%= file.filePath %>" type="audio/mpeg">
                                 Your browser does not support the audio tag.
                             </audio>
@@ -70,7 +84,7 @@
                         <h5 class="mb-0">File Details</h5>
                     </div>
                     <div class="card-body">
-                        <h3 class="mb-3"><%= file.fileName %></h3>
+                        <h3 class="mb-3"><%= file.originalFileName || file.fileName %></h3>
                         
                         <table class="table">
                             <tbody>
@@ -109,14 +123,23 @@
                                     <th scope="row">File ID</th>
                                     <td><small class="text-muted"><%= file.fileId %></small></td>
                                 </tr>
+                                <tr>
+                                    <th scope="row">Status</th>
+                                    <td id="fileStatus">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <span class="ms-2">Checking...</span>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                         
                         <div class="d-grid gap-2 mt-4">
-                            <a href="<%= file.filePath %>" class="btn btn-primary" download="<%= file.fileName %>">
+                            <a href="<%= file.filePath %>" class="btn btn-primary" id="downloadButton" download="<%= file.originalFileName || file.fileName %>">
                                 <i class="bi bi-download"></i> Download File
                             </a>
-                            <button class="btn btn-danger" id="deleteFile" data-id="<%= file._id %>" data-name="<%= file.fileName %>">
+                            <button class="btn btn-danger" id="deleteFile" data-id="<%= file._id %>" data-name="<%= file.originalFileName || file.fileName %>">
                                 <i class="bi bi-trash"></i> Delete File
                             </button>
                         </div>
@@ -147,7 +170,62 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // Handle file loading errors
+        function handleFileError() {
+            document.getElementById('fileUnavailableAlert').style.display = 'block';
+            document.getElementById('filePreviewContainer').innerHTML = `
+                <div class="text-center p-5">
+                    <i class="bi bi-exclamation-triangle-fill file-icon file-error"></i>
+                    <h4 class="mt-3">File Preview Unavailable</h4>
+                    <p class="text-muted">The file could not be loaded from the server.</p>
+                </div>
+            `;
+            
+            const statusElement = document.getElementById('fileStatus');
+            statusElement.innerHTML = `
+                <span class="badge bg-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Unavailable
+                </span>
+            `;
+            
+            // Disable download button
+            const downloadButton = document.getElementById('downloadButton');
+            downloadButton.classList.add('disabled');
+            downloadButton.setAttribute('aria-disabled', 'true');
+            downloadButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert('This file is not available for download. It may have been deleted or moved.');
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check if file exists
+            const fileId = '<%= file._id %>';
+            const statusElement = document.getElementById('fileStatus');
+            const downloadButton = document.getElementById('downloadButton');
+            
+            try {
+                const response = await fetch(`/api/check-file/${fileId}`);
+                const data = await response.json();
+                
+                if (data.exists) {
+                    statusElement.innerHTML = `
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle-fill me-1"></i> Available
+                        </span>
+                    `;
+                } else {
+                    handleFileError();
+                }
+            } catch (error) {
+                console.error('Error checking file:', error);
+                statusElement.innerHTML = `
+                    <span class="badge bg-warning">
+                        <i class="bi bi-question-circle-fill me-1"></i> Unknown
+                    </span>
+                `;
+            }
+            
             // Set up delete file functionality
             const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
             let fileToDelete = null;
