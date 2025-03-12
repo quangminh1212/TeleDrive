@@ -426,6 +426,40 @@ def delete_item(file_path):
     
     return redirect(url_for('browse_files', path=parent_path))
 
+# Route pour traiter l'authentification Telegram via widget
+@app.route('/telegram_auth', methods=['POST'])
+def telegram_auth():
+    auth_data = request.form.to_dict()
+    
+    if not verify_telegram_data(auth_data):
+        flash('Xác thực Telegram thất bại. Vui lòng thử lại.', 'danger')
+        return redirect(url_for('login'))
+    
+    telegram_id = auth_data.get('id')
+    first_name = auth_data.get('first_name', '')
+    last_name = auth_data.get('last_name', '')
+    username = auth_data.get('username', f"user_{telegram_id}")
+    
+    # Vérifier si l'utilisateur existe déjà
+    if telegram_id in telegram_users:
+        user_id = telegram_users[telegram_id]
+        login_user(users[user_id])
+        flash(f'Xin chào {first_name}! Đăng nhập thành công.', 'success')
+        return redirect(url_for('browse_files'))
+    
+    # Créer un nouvel utilisateur
+    user_id = str(len(users) + 1)
+    display_name = f"{first_name} {last_name}".strip() if last_name else first_name
+    users[user_id] = User(user_id, display_name, telegram_id)
+    telegram_users[telegram_id] = user_id
+    
+    # Créer le dossier de l'utilisateur
+    get_user_path(user_id)
+    
+    login_user(users[user_id])
+    flash(f'Xin chào {display_name}! Tài khoản của bạn đã được tạo thành công.', 'success')
+    return redirect(url_for('browse_files'))
+
 # Créer un utilisateur par défaut
 users['1'] = User('1', 'admin')
 user_passwords['1'] = 'admin'  # À ne pas faire en production !
