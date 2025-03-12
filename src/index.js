@@ -6,11 +6,13 @@ const logger = require('./utils/logger');
 const commandHandler = require('./handlers/commandHandler');
 const fileHandler = require('./handlers/fileHandler');
 const menuHandler = require('./handlers/menuHandler');
+const webServer = require('./web/server');
 
 // Khởi tạo thông số bot
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const storagePath = process.env.STORAGE_PATH || './storage';
 const botUsername = process.env.BOT_USERNAME || 'teledrive_bot';
+const webPort = process.env.WEB_PORT || 3000;
 
 // Khởi tạo bot
 const bot = new TelegramBot(token, { polling: true });
@@ -19,6 +21,17 @@ const bot = new TelegramBot(token, { polling: true });
 fs.ensureDirSync(storagePath);
 fs.ensureDirSync(path.join(storagePath, 'users'));
 logger.info('Thư mục lưu trữ đã được khởi tạo');
+
+// Đảm bảo thư mục cho web interface tồn tại
+fs.ensureDirSync(path.join(__dirname, 'web', 'public'));
+fs.ensureDirSync(path.join(__dirname, 'web', 'public', 'css'));
+fs.ensureDirSync(path.join(__dirname, 'web', 'public', 'images'));
+fs.ensureDirSync(path.join(__dirname, 'web', 'views'));
+logger.info('Thư mục web interface đã được khởi tạo');
+
+// Khởi động web server
+webServer.startServer();
+logger.info(`Web interface đã được khởi động tại http://localhost:${webPort}`);
 
 // Xử lý lệnh start
 bot.onText(/\/start/, (msg) => {

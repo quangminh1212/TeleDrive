@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/drive.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand d-flex align-items-center" href="/">
+        <img src="/images/logo.png" alt="TeleDrive Logo" width="40" class="me-2">
+        <span class="fw-bold">TeleDrive</span>
+      </a>
+      
+      <!-- Search bar -->
+      <div class="search-container mx-auto d-none d-md-block">
+        <form action="/drive/<%= userId %>/search" method="get" class="position-relative">
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0">
+              <i class="bi bi-search"></i>
+            </span>
+            <input type="text" name="q" class="form-control bg-light border-start-0" placeholder="Tìm kiếm trong TeleDrive" aria-label="Tìm kiếm" value="<%= searchTerm %>">
+          </div>
+        </form>
+      </div>
+      
+      <!-- User menu -->
+      <div class="d-flex align-items-center">
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle me-2"></i>
+            <span>Người dùng</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Hồ sơ</a></li>
+            <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i> Cài đặt</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right me-2"></i> Đăng xuất</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container-fluid h-100">
+    <div class="row h-100">
+      <!-- Sidebar -->
+      <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        <div class="position-sticky pt-3">
+          <div class="px-3 mb-3">
+            <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" type="button" data-bs-toggle="modal" data-bs-target="#uploadModal">
+              <i class="bi bi-plus-lg me-2"></i> Tạo mới
+            </button>
+          </div>
+          
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="/drive/<%= userId %>">
+                <i class="bi bi-hdd me-2"></i> TeleDrive của tôi
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/drive/<%= userId %>/recent">
+                <i class="bi bi-clock-history me-2"></i> Gần đây
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/drive/<%= userId %>/starred">
+                <i class="bi bi-star me-2"></i> Đánh dấu sao
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/drive/<%= userId %>/trash">
+                <i class="bi bi-trash me-2"></i> Thùng rác
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/drive/<%= userId %>/shared">
+                <i class="bi bi-people me-2"></i> Được chia sẻ
+              </a>
+            </li>
+          </ul>
+          
+          <hr class="my-3">
+          
+          <div class="px-3 mb-3">
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+              <span>Lưu trữ</span>
+            </h6>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar bg-primary" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <p class="small text-muted mt-2">2.5 GB / Không giới hạn</p>
+          </div>
+          
+          <div class="px-3 mt-4">
+            <a href="https://t.me/lab1212_bot" target="_blank" class="btn btn-outline-primary btn-sm w-100">
+              <i class="bi bi-telegram me-2"></i> Mở Telegram Bot
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content area -->
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pb-5 pt-3">
+        <!-- Search Results Header -->
+        <h2 class="h4 mb-4">
+          <i class="bi bi-search me-2"></i> Kết quả tìm kiếm: "<%= searchTerm %>"
+        </h2>
+        
+        <!-- Files and folders list -->
+        <div class="drive-items">
+          <% if (folders.length === 0 && files.length === 0) { %>
+            <div class="empty-state text-center py-5">
+              <i class="bi bi-search display-3 text-muted"></i>
+              <h3 class="mt-3">Không tìm thấy kết quả</h3>
+              <p class="text-muted">Thử tìm kiếm với từ khóa khác</p>
+              <a href="/drive/<%= userId %>" class="btn btn-primary mt-2">
+                <i class="bi bi-arrow-left me-2"></i>Quay lại TeleDrive
+              </a>
+            </div>
+          <% } else { %>
+            <div class="table-responsive drive-table">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th scope="col" style="width: 40px;"></th>
+                    <th scope="col">Tên</th>
+                    <th scope="col">Vị trí</th>
+                    <th scope="col" class="d-none d-md-table-cell">Sửa đổi</th>
+                    <th scope="col" class="d-none d-md-table-cell">Kích thước</th>
+                    <th scope="col" style="width: 40px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Folders -->
+                  <% folders.forEach(function(folder) { %>
+                    <tr class="folder-row" data-item-path="<%= folder.relativePath %>" data-item-name="<%= folder.name %>">
+                      <td>
+                        <i class="bi bi-folder-fill text-warning fs-5"></i>
+                      </td>
+                      <td>
+                        <a href="/drive/<%= userId %>?path=/<%= folder.relativePath %>" class="text-decoration-none text-dark">
+                          <%= folder.name %>
+                        </a>
+                      </td>
+                      <td>
+                        <small class="text-muted">
+                          <i class="bi bi-folder2 me-1"></i>
+                          <%= folder.relativePath.split('/').slice(0, -1).join('/') || '/' %>
+                        </small>
+                      </td>
+                      <td class="d-none d-md-table-cell"><%= formatDate(folder.modified) %></td>
+                      <td class="d-none d-md-table-cell">Thư mục</td>
+                      <td>
+                        <div class="dropdown">
+                          <button class="btn btn-sm btn-link text-dark" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical"></i>
+                          </button>
+                          <ul class="dropdown-menu dropdown-menu-end">
+                            <li><button class="dropdown-item rename-item" data-item-type="folder" data-item-path="<%= folder.relativePath %>" data-item-name="<%= folder.name %>"><i class="bi bi-pencil me-2"></i>Đổi tên</button></li>
+                            <li><button class="dropdown-item delete-item" data-item-type="folder" data-item-path="<%= folder.relativePath %>" data-item-name="<%= folder.name %>"><i class="bi bi-trash me-2"></i>Xóa</button></li>
+                          </ul>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+
+                  <!-- Files -->
+                  <% files.forEach(function(file) { %>
+                    <tr class="file-row" data-item-path="<%= file.relativePath %>" data-item-name="<%= file.name %>">
+                      <td>
+                        <% 
+                        let iconClass = "bi-file-earmark";
+                        const fileExt = file.name.split('.').pop().toLowerCase();
+                        
+                        if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExt)) {
+                          iconClass = "bi-file-earmark-image";
+                        } else if (['pdf'].includes(fileExt)) {
+                          iconClass = "bi-file-earmark-pdf";
+                        } else if (['doc', 'docx'].includes(fileExt)) {
+                          iconClass = "bi-file-earmark-word";
+                        } else if (['xls', 'xlsx'].includes(fileExt)) {
+                          iconClass = "bi-file-earmark-excel";
+                        } else if (['ppt', 'pptx'].includes(fileExt)) {
+                          iconClass = "bi-file-earmark-slides";
+                        } else if (['mp3', 'wav', 'ogg'].includes(fileExt)) {
+                          iconClass = "bi-file-earmark-music";
+                        } else if (['mp4', 'avi', 'mov', 'mkv'].includes(fileExt)) {
+                          iconClass = "bi-file-earmark-play";
+                        } else if (['zip', 'rar', '7z'].includes(fileExt)) {
+                          iconClass = "bi-file-earmark-zip";
+                        } else if (['txt'].includes(fileExt)) {
+                          iconClass = "bi-file-earmark-text";
+                        }
+                        %>
+                        <i class="bi <%= iconClass %> fs-5 text-primary"></i>
+                      </td>
+                      <td>
+                        <a href="#" class="text-decoration-none text-dark file-preview" data-file-path="<%= file.relativePath %>">
+                          <%= file.name %>
+                        </a>
+                      </td>
+                      <td>
+                        <small class="text-muted">
+                          <i class="bi bi-folder2 me-1"></i>
+                          <%= file.relativePath.split('/').slice(0, -1).join('/') || '/' %>
+                        </small>
+                      </td>
+                      <td class="d-none d-md-table-cell"><%= formatDate(file.modified) %></td>
+                      <td class="d-none d-md-table-cell"><%= formatSize(file.size) %></td>
+                      <td>
+                        <div class="dropdown">
+                          <button class="btn btn-sm btn-link text-dark" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical"></i>
+                          </button>
+                          <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/api/download/<%= userId %>?path=<%= file.relativePath %>"><i class="bi bi-download me-2"></i>Tải xuống</a></li>
+                            <li><button class="dropdown-item rename-item" data-item-type="file" data-item-path="<%= file.relativePath %>" data-item-name="<%= file.name %>"><i class="bi bi-pencil me-2"></i>Đổi tên</button></li>
+                            <li><button class="dropdown-item share-item" data-item-type="file" data-item-path="<%= file.relativePath %>" data-item-name="<%= file.name %>"><i class="bi bi-share me-2"></i>Chia sẻ</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item delete-item" data-item-type="file" data-item-path="<%= file.relativePath %>" data-item-name="<%= file.name %>"><i class="bi bi-trash me-2"></i>Xóa</button></li>
+                          </ul>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Các modal giống như trong drive.ejs -->
+  <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="uploadModalLabel">Tải lên file</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="uploadForm" enctype="multipart/form-data">
+            <div class="mb-3">
+              <label for="fileUpload" class="form-label">Chọn file để tải lên</label>
+              <input class="form-control" type="file" id="fileUpload" name="file">
+            </div>
+            <div class="upload-progress d-none">
+              <label class="form-label">Tiến trình</label>
+              <div class="progress mb-3">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button type="button" class="btn btn-primary" id="uploadButton">Tải lên</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename Modal -->
+  <div class="modal fade" id="renameModal" tabindex="-1" aria-labelledby="renameModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="renameModalLabel">Đổi tên</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="renameForm">
+            <input type="hidden" id="renameItemPath" name="oldPath">
+            <input type="hidden" id="renameItemType" name="itemType">
+            <div class="mb-3">
+              <label for="newName" class="form-label">Tên mới</label>
+              <input type="text" class="form-control" id="newName" name="newName" required>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button type="button" class="btn btn-primary" id="renameButton">Đổi tên</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteModalLabel">Xác nhận xóa</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Bạn có chắc chắn muốn xóa <span id="deleteItemName"></span>?</p>
+          <p class="text-danger">Lưu ý: Thao tác này không thể hoàn tác!</p>
+          <input type="hidden" id="deleteItemPath">
+          <input type="hidden" id="deleteItemType">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteButton">Xóa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="shareModalLabel">Chia sẻ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Chia sẻ <span id="shareItemName"></span></p>
+          <div class="mb-3">
+            <label for="shareLink" class="form-label">Liên kết chia sẻ</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="shareLink" readonly>
+              <button class="btn btn-outline-secondary" type="button" id="copyShareLink"><i class="bi bi-clipboard"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const userId = '<%= userId %>';
+      
+      // Xử lý tải file lên
+      document.getElementById('uploadButton').addEventListener('click', function() {
+        const fileInput = document.getElementById('fileUpload');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+          alert('Vui lòng chọn file để tải lên');
+          return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Hiện progress bar
+        const progressBar = document.querySelector('.upload-progress');
+        const progressBarInner = progressBar.querySelector('.progress-bar');
+        progressBar.classList.remove('d-none');
+        
+        fetch(`/api/upload/${userId}`, {
+          method: 'POST',
+          body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Đóng modal và làm mới trang
+            const modal = bootstrap.Modal.getInstance(document.getElementById('uploadModal'));
+            modal.hide();
+            window.location.reload();
+          } else {
+            alert('Lỗi: ' + data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Đã xảy ra lỗi khi tải file lên');
+        });
+      });
+      
+      // Xử lý đổi tên
+      const renameModal = document.getElementById('renameModal');
+      renameModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const itemPath = button.getAttribute('data-item-path');
+        const itemName = button.getAttribute('data-item-name');
+        const itemType = button.getAttribute('data-item-type');
+        
+        document.getElementById('renameItemPath').value = itemPath;
+        document.getElementById('renameItemType').value = itemType;
+        document.getElementById('newName').value = itemName;
+      });
+      
+      document.getElementById('renameButton').addEventListener('click', function() {
+        const oldPath = document.getElementById('renameItemPath').value;
+        const newName = document.getElementById('newName').value.trim();
+        
+        if (!newName) {
+          alert('Vui lòng nhập tên mới');
+          return;
+        }
+        
+        fetch(`/api/items/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ oldPath, newName }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Đóng modal và làm mới trang
+            const modal = bootstrap.Modal.getInstance(document.getElementById('renameModal'));
+            modal.hide();
+            window.location.reload();
+          } else {
+            alert('Lỗi: ' + data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Đã xảy ra lỗi khi đổi tên');
+        });
+      });
+      
+      // Xử lý xác nhận xóa
+      const deleteButtons = document.querySelectorAll('.delete-item');
+      deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const itemPath = this.getAttribute('data-item-path');
+          const itemName = this.getAttribute('data-item-name');
+          const itemType = this.getAttribute('data-item-type');
+          
+          document.getElementById('deleteItemPath').value = itemPath;
+          document.getElementById('deleteItemType').value = itemType;
+          document.getElementById('deleteItemName').textContent = `"${itemName}" (${itemType === 'folder' ? 'thư mục' : 'file'})`;
+          
+          const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+          deleteModal.show();
+        });
+      });
+      
+      document.getElementById('confirmDeleteButton').addEventListener('click', function() {
+        const itemPath = document.getElementById('deleteItemPath').value;
+        
+        fetch(`/api/items/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ path: itemPath }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Đóng modal và làm mới trang
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+            modal.hide();
+            window.location.reload();
+          } else {
+            alert('Lỗi: ' + data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Đã xảy ra lỗi khi xóa item');
+        });
+      });
+      
+      // Xử lý chia sẻ file
+      const shareButtons = document.querySelectorAll('.share-item');
+      shareButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const itemPath = this.getAttribute('data-item-path');
+          const itemName = this.getAttribute('data-item-name');
+          
+          const shareLink = `${window.location.origin}/api/download/${userId}?path=${encodeURIComponent(itemPath)}`;
+          
+          document.getElementById('shareItemName').textContent = `"${itemName}"`;
+          document.getElementById('shareLink').value = shareLink;
+          
+          const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+          shareModal.show();
+        });
+      });
+      
+      // Xử lý sao chép liên kết chia sẻ
+      document.getElementById('copyShareLink').addEventListener('click', function() {
+        const shareLink = document.getElementById('shareLink');
+        shareLink.select();
+        document.execCommand('copy');
+        this.innerHTML = '<i class="bi bi-check"></i>';
+        setTimeout(() => {
+          this.innerHTML = '<i class="bi bi-clipboard"></i>';
+        }, 2000);
+      });
+    });
+  </script>
+</body>
+</html> 
