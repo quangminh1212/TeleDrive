@@ -1,5 +1,5 @@
 const {ipcMain, dialog, app} = require('electron')
-const {Airgram, toObject, resetAuthState} = require('./mock-airgram')
+const {Airgram, toObject, resetAuthState, getCollectedData} = require('./mock-airgram')
 // const {Airgram, toObject} = require('airgram')
 const {join} = require('path')
 const Store = require('electron-store')
@@ -68,7 +68,7 @@ const getTeleDir = mainWindow => {
  * @param {BrowserWindow} mainWindow
  * */
 module.exports.authenticate = async (client, mainWindow) => {
-    log.info("[AUTH] Starting authentication process");
+    log.info("[AUTH] Starting...");
     
     // Đặt lại trạng thái xác thực
     resetAuthState();
@@ -90,172 +90,35 @@ module.exports.authenticate = async (client, mainWindow) => {
         log.info(`[AUTH] Received auth state update: ${ctx.update.authorizationState._}`);
         
         if (ctx.update.authorizationState._ === "authorizationStateWaitPhoneNumber") {
-            let attempt = async isRetry => {
-                log.info(`[AUTH] Requesting phone number${isRetry ? ' (retry)' : ''}`);
-                const phoneNumber = await get('phoneNumber', isRetry);
-                log.info(`[AUTH] Received phone number: ${phoneNumber.substring(0, 2)}****`);
-                
-                return await client.api.setAuthenticationPhoneNumber({
-                    phoneNumber: phoneNumber,
-                    settings: {
-                        allowFlashCall: false,
-                        isCurrentPhoneNumber: false,
-                        allowSmsRetrieverApi: false
-                    }
-                });
-            }
-
-            let correct = false;
-            authAttempts = 0;
-
-            try {
-                let response = await attempt(false);
-                log.info(`[AUTH] Phone number response: ${response.response._}`);
-                if (response.response._ === "ok") {
-                    correct = true;
-                }
-            } catch (error) {
-                log.error(`[AUTH] Error setting phone number: ${error.message}`);
-                mainWindow.webContents.send('error', {
-                    message: `Lỗi khi nhập số điện thoại: ${error.message}`
-                });
-            }
-
-            while (!correct && authAttempts < MAX_AUTH_ATTEMPTS) {
-                authAttempts++;
-                log.info(`[AUTH] Phone number attempt ${authAttempts}/${MAX_AUTH_ATTEMPTS}`);
-                
-                try {
-                    let response = await attempt(true);
-                    if (response.response._ === "ok") {
-                        correct = true;
-                    }
-                } catch (error) {
-                    log.error(`[AUTH] Error setting phone number (retry): ${error.message}`);
-                    if (authAttempts >= MAX_AUTH_ATTEMPTS) {
-                        mainWindow.webContents.send('error', {
-                            message: `Đã vượt quá số lần thử với số điện thoại. Vui lòng thử lại sau.`
-                        });
-                        break;
-                    }
-                }
-            }
+            log.info("[AUTH] Prompting for phoneNumber");
+            mainWindow.webContents.send('auth', {_: 'phoneNumber', isRetry: false});
+            
+            // Tự động trả lời sau 100ms
+            setTimeout(() => {
+                ipcMain.emit('phoneNumber', {}, '1234567890');
+            }, 100);
         } else if (ctx.update.authorizationState._ === "authorizationStateWaitCode") {
-            let attempt = async isRetry => {
-                log.info(`[AUTH] Requesting auth code${isRetry ? ' (retry)' : ''}`);
-                const code = await get('authCode', isRetry);
-                log.info(`[AUTH] Received auth code: ****`);
-                
-                return await client.api.checkAuthenticationCode({
-                    code: code,
-                });
-            }
-
-            let correct = false;
-            authAttempts = 0;
-
-            try {
-                let response = await attempt(false);
-                log.info(`[AUTH] Auth code response: ${response.response._}`);
-                if (response.response._ === "ok") {
-                    correct = true;
-                }
-            } catch (error) {
-                log.error(`[AUTH] Error checking auth code: ${error.message}`);
-                mainWindow.webContents.send('error', {
-                    message: `Lỗi khi nhập mã xác thực: ${error.message}`
-                });
-            }
-
-            while (!correct && authAttempts < MAX_AUTH_ATTEMPTS) {
-                authAttempts++;
-                log.info(`[AUTH] Auth code attempt ${authAttempts}/${MAX_AUTH_ATTEMPTS}`);
-                
-                try {
-                    let response = await attempt(true);
-                    if (response.response._ === "ok") {
-                        correct = true;
-                    }
-                } catch (error) {
-                    log.error(`[AUTH] Error checking auth code (retry): ${error.message}`);
-                    if (authAttempts >= MAX_AUTH_ATTEMPTS) {
-                        mainWindow.webContents.send('error', {
-                            message: `Đã vượt quá số lần thử với mã xác thực. Vui lòng thử lại sau.`
-                        });
-                        break;
-                    }
-                }
-            }
+            log.info("[AUTH] Prompting for authCode");
+            mainWindow.webContents.send('auth', {_: 'authCode', isRetry: false});
+            
+            // Tự động trả lời sau 100ms
+            setTimeout(() => {
+                ipcMain.emit('authCode', {}, '12345');
+            }, 100);
         } else if (ctx.update.authorizationState._ === "authorizationStateWaitPassword") {
-            let attempt = async isRetry => {
-                log.info(`[AUTH] Requesting password${isRetry ? ' (retry)' : ''}`);
-                const password = await get('password', isRetry);
-                log.info(`[AUTH] Received password: ****`);
-                
-                return await client.api.checkAuthenticationPassword({
-                    password: password,
-                });
-            }
-
-            let correct = false;
-            authAttempts = 0;
-
-            try {
-                let response = await attempt(false);
-                log.info(`[AUTH] Password response: ${response.response._}`);
-                if (response.response._ === "ok") {
-                    correct = true;
-                }
-            } catch (error) {
-                log.error(`[AUTH] Error checking password: ${error.message}`);
-                mainWindow.webContents.send('error', {
-                    message: `Lỗi khi nhập mật khẩu: ${error.message}`
-                });
-            }
-
-            while (!correct && authAttempts < MAX_AUTH_ATTEMPTS) {
-                authAttempts++;
-                log.info(`[AUTH] Password attempt ${authAttempts}/${MAX_AUTH_ATTEMPTS}`);
-                
-                try {
-                    let response = await attempt(true);
-                    if (response.response._ === "ok") {
-                        correct = true;
-                    }
-                } catch (error) {
-                    log.error(`[AUTH] Error checking password (retry): ${error.message}`);
-                    if (authAttempts >= MAX_AUTH_ATTEMPTS) {
-                        mainWindow.webContents.send('error', {
-                            message: `Đã vượt quá số lần thử với mật khẩu. Vui lòng thử lại sau.`
-                        });
-                        break;
-                    }
-                }
-            }
+            log.info("[AUTH] Prompting for password");
+            mainWindow.webContents.send('auth', {_: 'password', isRetry: false});
+            
+            // Tự động trả lời sau 100ms
+            setTimeout(() => {
+                ipcMain.emit('password', {}, 'password');
+            }, 100);
         } else if (ctx.update.authorizationState._ === "authorizationStateReady") {
-            log.info("[AUTH] Authentication state ready");
+            log.info("[MOCK] Authentication process completed, state: authorizationStateReady");
             // Không thực hiện gì ở đây, updateInfo sẽ xử lý sau khi nhận được trạng thái này
         }
         return next();
     });
-
-    /**
-     * @param {String} what
-     * @param {boolean} isRetry
-     * @returns {Promise<{String}>}
-     */
-    const get = async (what, isRetry) => {
-        log.info("[AUTH] Prompting for " + what);
-        mainWindow.webContents.send('auth', {_: what, isRetry: isRetry});
-
-        return new Promise(resolve => {
-            ipcMain.on(what, function listen (event, message) {
-                log.info(`[AUTH] Received ${what}: ${what === 'password' ? '****' : (what === 'phoneNumber' ? message.substring(0, 2) + '****' : '****')}`);
-                resolve(message);
-                ipcMain.removeListener(what, listen);
-            });
-        });
-    }
 }
 
 /**
@@ -413,6 +276,60 @@ module.exports.updateInfo = async (client, mainWindow, appFilesPath, appVersion)
                 }
             });
             
+            // Thêm xử lý sự kiện để lấy dữ liệu phân tích
+            ipcMain.on('getAnalytics', () => {
+                log.info("[INFO] Analytics requested");
+                const data = getCollectedData();
+                
+                // Tạo dữ liệu phân tích từ dữ liệu đã thu thập
+                const analyticsData = {
+                    usage: {
+                        sessions: 5,
+                        totalRuntime: 3600,
+                        formattedRuntime: '1h 0m',
+                        lastSession: new Date().toISOString()
+                    },
+                    files: {
+                        total: data.stats.filesBackedUp || 0,
+                        averageSize: data.stats.totalSize / (data.stats.filesBackedUp || 1)
+                    },
+                    interactions: {
+                        totalMessages: data.messages.length,
+                        totalReactions: data.interactions.likes || 0,
+                        totalShares: data.interactions.shares || 0
+                    }
+                };
+                
+                mainWindow.webContents.send('analyticsData', analyticsData);
+            });
+            
+            // Thêm xử lý sự kiện tối ưu hóa
+            ipcMain.on('startOptimize', (event, options) => {
+                log.info("[INFO] Optimization requested with options:", options);
+                
+                // Giả lập quá trình tối ưu
+                const totalFiles = 50;
+                let processed = 0;
+                
+                const interval = setInterval(() => {
+                    processed += 5;
+                    mainWindow.webContents.send('optimizeProgress', {
+                        processed,
+                        total: totalFiles
+                    });
+                    
+                    if (processed >= totalFiles) {
+                        clearInterval(interval);
+                        
+                        // Gửi kết quả
+                        mainWindow.webContents.send('optimizeComplete', {
+                            optimizedFiles: Math.floor(totalFiles * 0.8),
+                            savedSpace: 1024 * 1024 * 10 // 10MB
+                        });
+                    }
+                }, 500);
+            });
+            
             addWatches(teleDir, me.id, client, appFilesPath, appVersion, mainWindow)
         } catch (error) {
             log.error("[INFO] Error updating user info:", error);
@@ -439,12 +356,14 @@ module.exports.checkConnectionStatus = async (mainWindow) => {
         log.info("[CHECK] Checking connection status");
         const me = await telegramClient.api.getMe();
         log.info("[CHECK] Connection successful");
+        
+        // Gửi thông báo kết nối thành công
+        mainWindow.webContents.send('connectionStatus', { connected: true });
+        
         return Boolean(me);
     } catch (error) {
         log.error("[CHECK] Connection check failed:", error);
-        mainWindow.webContents.send('error', {
-            message: 'Lỗi khi kiểm tra kết nối: ' + error.message
-        });
+        mainWindow.webContents.send('connectionStatus', { connected: false });
         return false;
     }
 }

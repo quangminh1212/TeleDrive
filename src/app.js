@@ -7,13 +7,23 @@ const log = require('electron-log');
 log.transports.file.level = 'debug';
 log.transports.console.level = 'debug';
 
-// Auto updates
-const { autoUpdater } = require("electron-updater");
-if (app.isPackaged) {
-    log.info("App is packaged, checking for updates");
-    autoUpdater.checkForUpdatesAndNotify();
-} else {
-    log.info("Skip checkForUpdatesAndNotify because application is not packed");
+// Auto updates - Chỉ sử dụng khi chạy trong Electron thực sự
+let autoUpdater;
+try {
+    if (process.type === 'browser') {
+        const { autoUpdater: updater } = require("electron-updater");
+        autoUpdater = updater;
+        if (app.isPackaged) {
+            log.info("App is packaged, checking for updates");
+            autoUpdater.checkForUpdatesAndNotify();
+        } else {
+            log.info("Skip checkForUpdatesAndNotify because application is not packed");
+        }
+    } else {
+        log.info("Not running in Electron browser process, skipping auto-updater");
+    }
+} catch (error) {
+    log.error("Error initializing auto-updater:", error);
 }
 
 // Biến theo dõi trạng thái

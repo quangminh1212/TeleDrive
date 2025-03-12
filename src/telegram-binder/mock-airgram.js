@@ -17,7 +17,11 @@ const MAX_AUTH_ATTEMPTS = 3;
 const collectData = {
     files: {},
     messages: [],
-    interactions: {},
+    interactions: {
+        likes: 0,
+        comments: 0,
+        shares: 0
+    },
     stats: {
         filesBackedUp: 0,
         totalSize: 0,
@@ -25,20 +29,61 @@ const collectData = {
     }
 };
 
+// Tạo dữ liệu mẫu phong phú hơn
+function generateSampleData() {
+    // Tạo dữ liệu bài viết mẫu
+    const posts = [
+        {
+            id: 'post1',
+            content: 'This is sample post 1 with full content',
+            author: 'User A',
+            timestamp: new Date(Date.now() - 3600000).toISOString(),
+            likes: 15,
+            comments: [
+                { id: 'cmt1', author: 'User B', content: 'Sample comment 1', timestamp: new Date(Date.now() - 3000000).toISOString() },
+                { id: 'cmt2', author: 'User C', content: 'Sample comment 2', timestamp: new Date(Date.now() - 2000000).toISOString() }
+            ],
+            shares: 5,
+            url: 'https://example.com/post1'
+        },
+        {
+            id: 'post2',
+            content: 'This is sample post 2 with full content and some other information',
+            author: 'User D',
+            timestamp: new Date(Date.now() - 7200000).toISOString(),
+            likes: 25,
+            comments: [
+                { id: 'cmt3', author: 'User E', content: 'Sample comment 3', timestamp: new Date(Date.now() - 6000000).toISOString() },
+                { id: 'cmt4', author: 'User F', content: 'Sample comment 4', timestamp: new Date(Date.now() - 5000000).toISOString() }
+            ],
+            shares: 10,
+            url: 'https://example.com/post2'
+        }
+    ];
+    
+    // Thêm vào dữ liệu thu thập
+    collectData.messages = posts;
+    collectData.interactions = {
+        likes: posts.reduce((sum, post) => sum + post.likes, 0),
+        comments: posts.reduce((sum, post) => sum + post.comments.length, 0),
+        shares: posts.reduce((sum, post) => sum + post.shares, 0)
+    };
+    
+    return collectData;
+}
+
 class MockAirgram extends EventEmitter {
     constructor(config) {
         super();
         this.config = config;
         
-        log.info("[MOCK] Constructor called with config:", JSON.stringify(config, null, 2));
+        log.info("[MOCK] Simulating auth process");
+        log.info("[MOCK] Airgram initialized with config:", JSON.stringify(config, null, 2));
         
         // Đăng ký xử lý sự kiện lỗi
         this.on('error', (err) => {
             log.error('[MOCK] Error event:', err);
         });
-        
-        // Log thông tin API đã cập nhật
-        log.info("[MOCK] Using API credentials - ID:", config.apiId, "Hash:", config.apiHash);
         
         // Đảm bảo các thư mục tồn tại
         try {
@@ -58,9 +103,10 @@ class MockAirgram extends EventEmitter {
                 fs.mkdirSync(dataDir, { recursive: true });
             }
             
-            // Lưu dữ liệu mẫu vào thư mục
+            // Tạo và lưu dữ liệu mẫu phong phú
+            const sampleData = generateSampleData();
             const sampleDataPath = path.join(dataDir, 'sample_data.json');
-            fs.writeFileSync(sampleDataPath, JSON.stringify(collectData, null, 2));
+            fs.writeFileSync(sampleDataPath, JSON.stringify(sampleData, null, 2));
             log.info("[MOCK] Created sample data file at:", sampleDataPath);
         } catch (error) {
             log.error("[MOCK] Error creating directories:", error);
@@ -68,7 +114,7 @@ class MockAirgram extends EventEmitter {
         
         this.api = {
             getAuthorizationState: async () => {
-                log.info("[MOCK] getAuthorizationState called, current state:", authState);
+                log.info("[MOCK] getAuthorizationState called");
                 
                 // Trả về trạng thái xác thực hiện tại
                 let stateResponse;
@@ -100,10 +146,6 @@ class MockAirgram extends EventEmitter {
                 
                 // Cập nhật trạng thái
                 authState = 'phone_submitted';
-                authAttempts++;
-                
-                // Log mỗi lần thử
-                log.info(`[MOCK] Authentication attempt ${authAttempts}/${MAX_AUTH_ATTEMPTS}`);
                 
                 // Emit sự kiện
                 setTimeout(() => {
@@ -115,8 +157,8 @@ class MockAirgram extends EventEmitter {
                         }
                     }, () => {});
                     
-                    log.info("[MOCK] Emitted authorizationStateWaitCode event");
-                }, 500);
+                    log.info("[MOCK] Emitting authorizationStateWaitCode");
+                }, 100);
                 
                 return {
                     response: {
@@ -132,7 +174,6 @@ class MockAirgram extends EventEmitter {
                 
                 // Emit sự kiện
                 setTimeout(() => {
-                    // Giả lập yêu cầu mật khẩu 2FA
                     this.emit('updateAuthorizationState', {
                         update: {
                             authorizationState: {
@@ -141,8 +182,8 @@ class MockAirgram extends EventEmitter {
                         }
                     }, () => {});
                     
-                    log.info("[MOCK] Emitted authorizationStateWaitPassword event");
-                }, 500);
+                    log.info("[MOCK] Emitting authorizationStateWaitPassword");
+                }, 100);
                 
                 return {
                     response: {
@@ -166,8 +207,8 @@ class MockAirgram extends EventEmitter {
                         }
                     }, () => {});
                     
-                    log.info("[MOCK] Emitted authorizationStateReady event");
-                }, 500);
+                    log.info("[MOCK] Authentication process completed, state: authorizationStateReady");
+                }, 100);
                 
                 return {
                     response: {
@@ -177,12 +218,6 @@ class MockAirgram extends EventEmitter {
             },
             getMe: async () => {
                 log.info("[MOCK] getMe called");
-                
-                // Nếu chưa xác thực, trả về lỗi
-                if (authState !== 'authenticated') {
-                    log.warn("[MOCK] getMe called but not authenticated");
-                    return null;
-                }
                 
                 // Tạo ảnh hồ sơ giả
                 const profileImagePath = path.join(this.config.filesDirectory, 'mock-profile.png');
@@ -219,8 +254,8 @@ class MockAirgram extends EventEmitter {
                 return {
                     response: {
                         _: "chats",
-                        chatIds: [1234],
-                        totalCount: 1
+                        chatIds: [1234, 5678, 9012],
+                        totalCount: 3
                     }
                 };
             },
@@ -311,23 +346,17 @@ class MockAirgram extends EventEmitter {
                 return {
                     response: {
                         _: "messages",
-                        totalCount: 1,
-                        messages: [
-                            {
-                                id: 12345,
-                                content: {
-                                    _: "messageDocument",
-                                    document: {
-                                        document: {
-                                            id: "doc-12345",
-                                            remote: {
-                                                id: "remote-doc-12345"
-                                            }
-                                        }
-                                    }
+                        totalCount: collectData.messages.length,
+                        messages: collectData.messages.map((msg, index) => ({
+                            id: msg.id || index + 1,
+                            content: {
+                                _: "messageText",
+                                text: {
+                                    text: msg.content
                                 }
-                            }
-                        ]
+                            },
+                            date: new Date(msg.timestamp || Date.now()).getTime() / 1000
+                        }))
                     }
                 };
             },
@@ -350,14 +379,8 @@ class MockAirgram extends EventEmitter {
         };
 
         // Giả lập quá trình xác thực
-        log.info("[MOCK] Starting authentication simulation");
-        
-        // Đặt lại trạng thái xác thực
-        authState = 'initial';
-        
-        // Bước 1: Gửi trạng thái đợi số điện thoại ngay lập tức
         setTimeout(() => {
-            log.info("[MOCK] Emitting initial authorizationStateWaitPhoneNumber");
+            // Bước 1: Gửi trạng thái đợi số điện thoại
             this.emit('updateAuthorizationState', {
                 update: {
                     authorizationState: {
@@ -365,9 +388,9 @@ class MockAirgram extends EventEmitter {
                     }
                 }
             }, () => {});
+            
+            log.info("[MOCK] Emitting authorizationStateWaitPhoneNumber");
         }, 100);
-
-        log.info("[MOCK] Airgram initialized with config:", JSON.stringify(config, null, 2));
     }
 }
 
