@@ -665,3 +665,29 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
+// Debug route để kiểm tra dữ liệu files
+app.get('/debug', (req, res) => {
+  const files = filesDb || [];
+  
+  const debugInfo = {
+    filesDbExists: fs.existsSync(filesDbPath),
+    filesDbPath: filesDbPath,
+    filesCount: files.length,
+    filesDbIsArray: Array.isArray(filesDb),
+    filesDbType: typeof filesDb,
+    firstFile: files.length > 0 ? files[0] : null,
+    directories: {
+      dataDir: {
+        path: dataDir,
+        exists: fs.existsSync(dataDir)
+      },
+      uploadsDir: {
+        path: uploadDir,
+        exists: fs.existsSync(uploadDir)
+      }
+    }
+  };
+  
+  res.json(debugInfo);
+});
+
