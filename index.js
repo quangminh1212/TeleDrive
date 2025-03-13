@@ -19,14 +19,26 @@ bot.command('help', (ctx) => {
 // Express routes
 app.get('/', async (req, res) => {
   try {
+    // Load dữ liệu mới nhất từ file
+    if (fs.existsSync(filesDbPath)) {
+      try {
+        const content = fs.readFileSync(filesDbPath, 'utf8');
+        filesDb = JSON.parse(content);
+        console.log(`Đã tải lại dữ liệu từ file: ${filesDb.length} files`);
+      } catch (fileError) {
+        console.error('Lỗi khi đọc file dữ liệu:', fileError);
+      }
+    }
+    
     // Sort files by uploadDate, newest first
     const files = [...filesDb].sort((a, b) => 
       new Date(b.uploadDate) - new Date(a.uploadDate)
     );
-    res.render('index', { files });
+    
+    res.render('index', { files: files });
   } catch (error) {
-    console.error('Error fetching files:', error);
-    res.status(500).send('Error fetching files');
+    console.error('Lỗi khi render trang chủ:', error);
+    res.status(500).render('error', { message: 'Server error' });
   }
 });
 
@@ -581,4 +593,15 @@ process.once('SIGTERM', () => {
   console.log('Shutting down application gracefully...');
   bot.stop('SIGTERM');
   process.exit(0);
+});
+
+// Thêm middleware debug EJS errors (đặt sau app và trước các routes)
+app.use((err, req, res, next) => {
+  if (err.name === 'ReferenceError' && err.message.includes('is not defined')) {
+    console.error('EJS Error:', err.message);
+    return res.status(500).send(`<h1>Template Error</h1>
+      <p>Có lỗi trong template EJS: ${err.message}</p>
+      <p>Stack: ${err.stack}</p>`);
+  }
+  next(err);
 });
