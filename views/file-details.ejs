@@ -160,6 +160,72 @@
                 </div>
             </div>
         </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Xem trước File</h5>
+            </div>
+            <div class="card-body text-center">
+                <% if (file.previewAvailable) { %>
+                    <% if (file.directLink && file.fileLink) { %>
+                        <img src="<%= file.fileLink %>" class="img-fluid mb-3" alt="<%= file.originalFileName %>" 
+                             style="max-height: 400px;"
+                             onerror="this.onerror=null;this.src='';this.alt='Không thể tải ảnh xem trước';this.classList.add('d-none');document.getElementById('preview-error').classList.remove('d-none');">
+                    <% } else { %>
+                        <img src="<%= file.filePath %>" class="img-fluid mb-3" alt="<%= file.originalFileName %>" 
+                             style="max-height: 400px;"
+                             onerror="this.onerror=null;this.src='';this.alt='Không thể tải ảnh xem trước';this.classList.add('d-none');document.getElementById('preview-error').classList.remove('d-none');">
+                    <% } %>
+                    <div id="preview-error" class="alert alert-warning d-none">
+                        <i class="bi bi-exclamation-triangle"></i> Không thể tải ảnh xem trước
+                    </div>
+                <% } else if (file.fileType === 'video') { %>
+                    <% if (file.directLink && file.fileLink) { %>
+                        <div class="ratio ratio-16x9" style="max-width: 640px; margin: 0 auto;">
+                            <video controls>
+                                <source src="<%= file.fileLink %>" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    <% } else { %>
+                        <div class="ratio ratio-16x9" style="max-width: 640px; margin: 0 auto;">
+                            <video controls>
+                                <source src="<%= file.filePath %>" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    <% } %>
+                <% } else if (file.fileType === 'audio') { %>
+                    <% if (file.directLink && file.fileLink) { %>
+                        <audio controls style="width: 100%; max-width: 500px;">
+                            <source src="<%= file.fileLink %>" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    <% } else { %>
+                        <audio controls style="width: 100%; max-width: 500px;">
+                            <source src="<%= file.filePath %>" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    <% } %>
+                <% } else { %>
+                    <div class="py-5">
+                        <i class="bi bi-file-earmark text-primary" style="font-size: 4rem;"></i>
+                        <p class="mt-3">Không có xem trước cho loại file này</p>
+                    </div>
+                <% } %>
+            </div>
+            <div class="card-footer text-center">
+                <% if (file.directLink && file.fileLink) { %>
+                    <a href="/download/<%= file._id %>" class="btn btn-primary">
+                        <i class="bi bi-download"></i> Tải xuống
+                    </a>
+                <% } else { %>
+                    <a href="<%= file.filePath %>" class="btn btn-primary" download="<%= file.originalFileName %>">
+                        <i class="bi bi-download"></i> Tải xuống
+                    </a>
+                <% } %>
+            </div>
+        </div>
     </div>
 
     <!-- Delete Confirmation Modal -->

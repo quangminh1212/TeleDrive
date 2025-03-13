@@ -113,8 +113,13 @@
                                     <% if (file.fileType === 'document') { %>
                                         <i class="bi bi-file-earmark-text file-icon document-icon"></i>
                                     <% } else if (file.fileType === 'photo') { %>
-                                        <img src="<%= file.filePath %>" alt="<%= file.fileName %>" class="img-fluid mb-3" style="max-height: 150px; object-fit: cover;"
-                                            onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\'bi bi-exclamation-triangle file-icon file-error\'></i><p>Image preview unavailable</p>'">
+                                        <% if (file.directLink && file.fileLink) { %>
+                                            <img src="<%= file.fileLink %>" alt="<%= file.fileName %>" class="img-fluid mb-3" style="max-height: 150px; object-fit: cover;"
+                                                onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\'bi bi-exclamation-triangle file-icon file-error\'></i><p>Image preview unavailable</p>'">
+                                        <% } else { %>
+                                            <img src="<%= file.filePath %>" alt="<%= file.fileName %>" class="img-fluid mb-3" style="max-height: 150px; object-fit: cover;"
+                                                onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\'bi bi-exclamation-triangle file-icon file-error\'></i><p>Image preview unavailable</p>'">
+                                        <% } %>
                                     <% } else if (file.fileType === 'video') { %>
                                         <i class="bi bi-film file-icon video-icon"></i>
                                     <% } else if (file.fileType === 'audio') { %>
@@ -137,11 +142,17 @@
                                     </small>
                                 </p>
                                 <div class="d-flex justify-content-center mt-3 file-actions">
-                                    <a href="<%= file.filePath %>" class="btn btn-sm btn-outline-primary me-2 download-btn" 
-                                       download="<%= file.originalFileName || file.fileName %>" 
-                                       data-id="<%= file._id %>">
-                                        <i class="bi bi-download"></i> Download
-                                    </a>
+                                    <% if (file.directLink && file.fileLink) { %>
+                                        <a href="/download/<%= file._id %>" class="btn btn-sm btn-outline-primary me-2 download-btn">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    <% } else { %>
+                                        <a href="<%= file.filePath %>" class="btn btn-sm btn-outline-primary me-2 download-btn" 
+                                           download="<%= file.originalFileName || file.fileName %>" 
+                                           data-id="<%= file._id %>">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    <% } %>
                                     <a href="/files/<%= file._id %>" class="btn btn-sm btn-outline-secondary me-2">
                                         <i class="bi bi-info-circle"></i> Details
                                     </a>

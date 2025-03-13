@@ -102,6 +102,15 @@ function generateUniqueFilename(originalName) {
   return `${nameWithoutExt}_${timestamp}_${randomString}${ext}`;
 }
 
+// Hàm hỗ trợ định dạng kích thước file
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 // Initialize Express app
 const app = express();
 app.set('view engine', 'ejs');
