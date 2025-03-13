@@ -31,11 +31,36 @@
         .auto-refresh-toggle {
             margin-left: 15px;
         }
+        .progress {
+            height: 5px;
+        }
+        .upload-card {
+            margin-bottom: 1.5rem;
+        }
     </style>
 </head>
 <body>
     <div class="container py-4">
         <h1 class="mb-4">TeleDrive Files</h1>
+        
+        <!-- Form Upload File -->
+        <div class="card mb-4 upload-card">
+            <div class="card-header">
+                <h5 class="mb-0">Upload File</h5>
+            </div>
+            <div class="card-body">
+                <form id="upload-form" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <input class="form-control" type="file" id="file-input">
+                    </div>
+                    <div class="progress mb-3">
+                        <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div id="upload-status" class="mb-3"></div>
+                    <button type="button" id="upload-btn" class="btn btn-primary">Upload & Đồng bộ với Telegram</button>
+                </form>
+            </div>
+        </div>
         
         <div class="mb-3 d-flex align-items-center">
             <button id="refresh-btn" class="btn btn-primary">Refresh Files</button>
@@ -66,6 +91,10 @@
             const refreshBtn = document.getElementById('refresh-btn');
             const refreshStatus = document.getElementById('refresh-status');
             const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+            const uploadBtn = document.getElementById('upload-btn');
+            const fileInput = document.getElementById('file-input');
+            const progressBar = document.getElementById('progress-bar');
+            const uploadStatus = document.getElementById('upload-status');
             
             let currentFileCount = 0;
             let autoRefreshInterval = null;
@@ -80,9 +109,86 @@
                     this.disabled = false;
                 });
             });
+            
+            // Upload button
+            uploadBtn.addEventListener('click', uploadFile);
 
             // Auto refresh toggle
             autoRefreshToggle.addEventListener('change', toggleAutoRefresh);
+            
+            // Hàm upload file
+            async function uploadFile() {
+                const file = fileInput.files[0];
+                if (!file) {
+                    showUploadStatus('Vui lòng chọn file để upload', 'danger');
+                    return;
+                }
+                
+                // Kiểm tra kích thước file
+                if (file.size > 20 * 1024 * 1024) {
+                    showUploadStatus('Kích thước file vượt quá giới hạn 20MB', 'danger');
+                    return;
+                }
+                
+                // Disable upload button và hiển thị trạng thái
+                uploadBtn.disabled = true;
+                progressBar.style.width = '0%';
+                showUploadStatus('Đang upload...', 'primary');
+                
+                // Tạo form data và thêm file
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    // Upload file với progress
+                    const xhr = new XMLHttpRequest();
+                    
+                    xhr.upload.addEventListener('progress', function(event) {
+                        if (event.lengthComputable) {
+                            const percentComplete = (event.loaded / event.total) * 100;
+                            progressBar.style.width = percentComplete + '%';
+                            showUploadStatus('Đang upload: ' + Math.round(percentComplete) + '%', 'primary');
+                        }
+                    });
+                    
+                    xhr.addEventListener('load', function() {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            const response = JSON.parse(xhr.responseText);
+                            showUploadStatus('Upload thành công! File đã được lưu và đồng bộ với Telegram.', 'success');
+                            
+                            // Clear file input và làm mới danh sách sau 1 giây
+                            fileInput.value = '';
+                            setTimeout(() => {
+                                loadFiles();
+                            }, 1000);
+                        } else {
+                            let errorMsg = 'Lỗi khi upload file';
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                errorMsg = response.error || errorMsg;
+                            } catch (e) {}
+                            
+                            showUploadStatus(errorMsg, 'danger');
+                        }
+                        uploadBtn.disabled = false;
+                    });
+                    
+                    xhr.addEventListener('error', function() {
+                        showUploadStatus('Lỗi kết nối khi upload file', 'danger');
+                        uploadBtn.disabled = false;
+                    });
+                    
+                    xhr.open('POST', '/api/upload');
+                    xhr.send(formData);
+                } catch (error) {
+                    showUploadStatus('Lỗi: ' + error.message, 'danger');
+                    uploadBtn.disabled = false;
+                }
+            }
+            
+            function showUploadStatus(message, type) {
+                uploadStatus.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            }
             
             // Thiết lập auto refresh
             function toggleAutoRefresh() {
@@ -103,7 +209,7 @@
             // Hàm kiểm tra file mới
             async function checkForNewFiles() {
                 try {
-                    const response = await fetch('/data/files.json');
+                    const response = await fetch('/api/files');
                     
                     if (!response.ok) {
                         throw new Error(`Error: ${response.status} ${response.statusText}`);
@@ -142,7 +248,7 @@
                 
                 try {
                     // Đọc trực tiếp từ file JSON
-                    const response = await fetch('/data/files.json');
+                    const response = await fetch('/api/files');
                     
                     if (!response.ok) {
                         throw new Error(`Error: ${response.status} ${response.statusText}`);
@@ -195,6 +301,14 @@
                                 }
                             }
                             
+                            // Hiển thị thêm thông tin đồng bộ Telegram
+                            let telegramInfo = '';
+                            if (file.sentToTelegram === true) {
+                                telegramInfo = '<span class="badge bg-success">Đã đồng bộ với Telegram</span>';
+                            } else if (file.sentToTelegram === false) {
+                                telegramInfo = '<span class="badge bg-warning">Chưa đồng bộ với Telegram</span>';
+                            }
+                            
                             col.innerHTML = `
                                 <div class="card file-card h-100">
                                     <div class="card-body">
@@ -209,12 +323,16 @@
                                                 <br>
                                                 ${new Date(file.uploadDate).toLocaleString()}
                                             </small>
+                                            <br>${telegramInfo}
                                         </p>
-                                        <div class="mt-3">
+                                        <div class="mt-3 d-flex gap-2">
                                             <a href="${file.fileLink || file.filePath}" class="btn btn-primary btn-sm" 
                                                target="_blank" download="${file.originalFileName || file.fileName}">
                                                 Download
                                             </a>
+                                            <button class="btn btn-danger btn-sm" onclick="deleteFile('${file._id}')">
+                                                Delete
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -244,6 +362,29 @@
             
             // Kiểm tra ngay khi trang tải xong
             setTimeout(checkForNewFiles, 1000);
+            
+            // Thêm hàm xóa file vào global scope
+            window.deleteFile = async function(fileId) {
+                if (!confirm('Bạn có chắc chắn muốn xóa file này?')) {
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/api/files/${fileId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        // Làm mới danh sách file
+                        loadFiles();
+                    } else {
+                        alert('Không thể xóa file. Vui lòng thử lại sau.');
+                    }
+                } catch (error) {
+                    console.error('Error deleting file:', error);
+                    alert('Lỗi khi xóa file: ' + error.message);
+                }
+            };
         });
     </script>
 </body>
