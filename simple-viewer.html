@@ -23,14 +23,27 @@
         .photo-icon { color: #34A853; }
         .video-icon { color: #EA4335; }
         .audio-icon { color: #FBBC05; }
+        .refresh-status {
+            font-size: 12px;
+            color: #6c757d;
+            margin-left: 10px;
+        }
+        .auto-refresh-toggle {
+            margin-left: 15px;
+        }
     </style>
 </head>
 <body>
     <div class="container py-4">
         <h1 class="mb-4">TeleDrive Files</h1>
         
-        <div class="mb-3">
+        <div class="mb-3 d-flex align-items-center">
             <button id="refresh-btn" class="btn btn-primary">Refresh Files</button>
+            <div class="form-check form-switch auto-refresh-toggle">
+                <input class="form-check-input" type="checkbox" id="auto-refresh-toggle" checked>
+                <label class="form-check-label" for="auto-refresh-toggle">Tự động làm mới</label>
+            </div>
+            <span id="refresh-status" class="refresh-status"></span>
         </div>
         
         <div id="loading" class="text-center py-3">
@@ -51,6 +64,11 @@
             const loading = document.getElementById('loading');
             const noFiles = document.getElementById('no-files');
             const refreshBtn = document.getElementById('refresh-btn');
+            const refreshStatus = document.getElementById('refresh-status');
+            const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+            
+            let currentFileCount = 0;
+            let autoRefreshInterval = null;
             
             // Load files when page loads
             loadFiles();
@@ -62,6 +80,60 @@
                     this.disabled = false;
                 });
             });
+
+            // Auto refresh toggle
+            autoRefreshToggle.addEventListener('change', toggleAutoRefresh);
+            
+            // Thiết lập auto refresh
+            function toggleAutoRefresh() {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+                
+                if (autoRefreshToggle.checked) {
+                    // Kiểm tra mỗi 10 giây
+                    autoRefreshInterval = setInterval(checkForNewFiles, 10000);
+                    refreshStatus.textContent = 'Auto refresh: Đang bật';
+                } else {
+                    refreshStatus.textContent = 'Auto refresh: Đã tắt';
+                }
+            }
+            
+            // Hàm kiểm tra file mới
+            async function checkForNewFiles() {
+                try {
+                    const response = await fetch('/data/files.json');
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const files = await response.json();
+                    
+                    // Nếu số lượng file thay đổi, làm mới danh sách
+                    if (files && files.length !== currentFileCount) {
+                        console.log('Phát hiện file mới, đang làm mới...');
+                        refreshBtn.disabled = true;
+                        loadFiles().finally(() => {
+                            refreshBtn.disabled = false;
+                        });
+                        return true;
+                    }
+                    
+                    // Cập nhật trạng thái
+                    const now = new Date();
+                    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                                    now.getMinutes().toString().padStart(2, '0') + ':' + 
+                                    now.getSeconds().toString().padStart(2, '0');
+                    refreshStatus.textContent = `Kiểm tra lúc: ${timeStr}`;
+                    return false;
+                } catch (error) {
+                    console.error('Error checking for new files:', error);
+                    refreshStatus.textContent = `Lỗi: ${error.message}`;
+                    return false;
+                }
+            }
             
             async function loadFiles() {
                 loading.style.display = 'block';
@@ -79,6 +151,9 @@
                     const files = await response.json();
                     
                     if (files && files.length > 0) {
+                        // Cập nhật số lượng file hiện tại
+                        currentFileCount = files.length;
+                        
                         // Sort by newest first
                         files.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
                         
@@ -163,6 +238,12 @@
                     loading.style.display = 'none';
                 }
             }
+            
+            // Bắt đầu auto refresh nếu được bật
+            toggleAutoRefresh();
+            
+            // Kiểm tra ngay khi trang tải xong
+            setTimeout(checkForNewFiles, 1000);
         });
     </script>
 </body>

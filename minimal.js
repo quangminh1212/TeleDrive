@@ -21,6 +21,24 @@ app.get('/viewer', (req, res) => {
   res.sendFile(path.join(__dirname, 'simple-viewer.html'));
 });
 
+// API để lấy danh sách file
+app.get('/api/files', (req, res) => {
+  try {
+    // Đọc file database
+    if (fs.existsSync(filesDbPath)) {
+      const content = fs.readFileSync(filesDbPath, 'utf8');
+      const filesData = JSON.parse(content);
+      console.log(`API loaded ${filesData.length} files from database`);
+      res.json(filesData);
+    } else {
+      res.json([]);
+    }
+  } catch (error) {
+    console.error('Error loading files:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Route để xem danh sách file
 app.get('/', (req, res) => {
   let filesData = [];
@@ -52,19 +70,41 @@ app.get('/', (req, res) => {
           .no-files { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
           .viewer-link { margin-top: 20px; text-align: center; }
           .viewer-link a { color: #4285F4; text-decoration: none; font-weight: bold; }
+          #auto-refresh { margin-left: 10px; }
+          .refresh-status { font-size: 12px; color: #666; margin-left: 10px; }
+          .spinner { 
+            display: inline-block; 
+            width: 16px; 
+            height: 16px; 
+            border: 2px solid rgba(0,0,0,0.1); 
+            border-radius: 50%; 
+            border-top-color: #4285F4; 
+            animation: spin 1s linear infinite; 
+            margin-right: 5px; 
+            vertical-align: middle; 
+          }
+          @keyframes spin { to { transform: rotate(360deg); } }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
             <h1>TeleDrive Files</h1>
-            <button onclick="window.location.reload()">Refresh</button>
+            <div>
+              <button id="refresh-btn" onclick="refreshFiles()">Refresh</button>
+              <label id="auto-refresh">
+                <input type="checkbox" id="auto-refresh-toggle" checked> 
+                Tự động làm mới
+              </label>
+              <span id="refresh-status" class="refresh-status"></span>
+            </div>
           </div>
           
           <div class="viewer-link">
             <a href="/viewer">Xem với giao diện nâng cao</a>
           </div>
           
+          <div id="file-container">
           ${filesData.length === 0 ? 
             `<div class="no-files">
               <p>No files have been uploaded yet. Send files to your Telegram bot to get started.</p>
@@ -91,6 +131,7 @@ app.get('/', (req, res) => {
               `).join('')}
             </div>`
           }
+          </div>
           
           <div style="margin-top: 30px; background: #f5f5f5; padding: 15px; border-radius: 8px;">
             <h3>File Size Limits</h3>
@@ -98,6 +139,81 @@ app.get('/', (req, res) => {
             <p>Larger files will show an error: "Bad Request: file is too big"</p>
           </div>
         </div>
+        
+        <script>
+          // Biến để theo dõi số lượng file hiện tại
+          let currentFileCount = ${filesData.length};
+          let autoRefreshInterval = null;
+          const refreshStatus = document.getElementById('refresh-status');
+          const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+          const fileContainer = document.getElementById('file-container');
+          
+          // Hàm kiểm tra file mới từ server
+          async function checkForNewFiles() {
+            try {
+              const response = await fetch('/api/files');
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              
+              const files = await response.json();
+              
+              // Nếu số lượng file thay đổi, làm mới trang
+              if (files.length !== currentFileCount) {
+                console.log('Phát hiện file mới, đang làm mới...');
+                refreshStatus.innerHTML = '<div class="spinner"></div> Đang làm mới...';
+                currentFileCount = files.length;
+                refreshFiles(false);
+                return true;
+              }
+              
+              // Cập nhật trạng thái
+              const now = new Date();
+              const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                             now.getMinutes().toString().padStart(2, '0') + ':' + 
+                             now.getSeconds().toString().padStart(2, '0');
+              refreshStatus.textContent = `Kiểm tra lúc: ${timeStr}`;
+              return false;
+            } catch (error) {
+              console.error('Error checking for new files:', error);
+              refreshStatus.textContent = `Lỗi: ${error.message}`;
+              return false;
+            }
+          }
+          
+          // Hàm làm mới danh sách file
+          async function refreshFiles(showSpinner = true) {
+            if (showSpinner) {
+              refreshStatus.innerHTML = '<div class="spinner"></div> Đang làm mới...';
+            }
+            
+            // Đơn giản là tải lại trang để lấy dữ liệu mới nhất
+            location.reload();
+          }
+          
+          // Thiết lập auto refresh
+          function toggleAutoRefresh() {
+            if (autoRefreshToggle.checked) {
+              // Kiểm tra mỗi 10 giây
+              autoRefreshInterval = setInterval(checkForNewFiles, 10000);
+              refreshStatus.textContent = 'Auto refresh: Đang bật';
+            } else {
+              clearInterval(autoRefreshInterval);
+              refreshStatus.textContent = 'Auto refresh: Đã tắt';
+            }
+          }
+          
+          // Khởi động auto refresh khi trang tải xong
+          document.addEventListener('DOMContentLoaded', () => {
+            toggleAutoRefresh();
+            
+            // Thêm event listener cho checkbox
+            autoRefreshToggle.addEventListener('change', toggleAutoRefresh);
+            
+            // Kiểm tra ngay khi trang tải xong
+            setTimeout(checkForNewFiles, 1000);
+          });
+        </script>
       </body>
       </html>
     `);
