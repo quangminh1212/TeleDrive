@@ -527,34 +527,49 @@ app.get('/api/files', (req, res) => {
   }
 });
 
-// API endpoint để kiểm tra lưu trữ dữ liệu
-app.get('/api/debug-files', (req, res) => {
+// API endpoint để kiểm tra dữ liệu được lưu
+app.get('/api/check-data', (req, res) => {
   try {
-    // Kiểm tra file trên đĩa
-    let diskData = null;
-    if (fs.existsSync(filesDbPath)) {
-      const fileContent = fs.readFileSync(filesDbPath, 'utf8');
-      diskData = JSON.parse(fileContent);
+    // Kiểm tra file cơ sở dữ liệu
+    const dbFileExists = fs.existsSync(filesDbPath);
+    let filesFromDisk = [];
+    let diskError = null;
+    
+    if (dbFileExists) {
+      try {
+        const content = fs.readFileSync(filesDbPath, 'utf8');
+        filesFromDisk = JSON.parse(content);
+      } catch (readError) {
+        diskError = readError.message;
+      }
     }
     
-    // Trả về cả dữ liệu trong bộ nhớ và trên đĩa để so sánh
+    // Trả về thông tin
     res.json({
-      success: true,
-      memoryData: {
-        count: filesDb.length,
-        files: filesDb
+      database: {
+        path: filesDbPath,
+        exists: dbFileExists,
+        error: diskError,
+        fileCount: filesFromDisk.length,
+        files: filesFromDisk
       },
-      diskData: {
-        count: diskData ? diskData.length : 0,
-        files: diskData
+      memory: {
+        files: filesDb,
+        count: Array.isArray(filesDb) ? filesDb.length : 'Not an array'
       },
-      fileDbPath: filesDbPath,
-      fileDbExists: fs.existsSync(filesDbPath)
+      directories: {
+        data: {
+          path: dataDir,
+          exists: fs.existsSync(dataDir)
+        },
+        uploads: {
+          path: uploadDir,
+          exists: fs.existsSync(uploadDir)
+        }
+      }
     });
   } catch (error) {
-    console.error('Debug error:', error);
     res.status(500).json({
-      success: false,
       error: error.message,
       stack: error.stack
     });
@@ -689,5 +704,292 @@ app.get('/debug', (req, res) => {
   };
   
   res.json(debugInfo);
+});
+
+// Thêm route mới '/files-list' để xem danh sách file
+app.get('/files-list', (req, res) => {
+  // Trả về HTML tĩnh thay vì sử dụng EJS
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive - Files</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        .file-card { transition: transform 0.2s; }
+        .file-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="bi bi-telegram me-2"></i>TeleDrive</a>
+            <div class="navbar-nav">
+                <a class="nav-link active" href="/files-list">Files</a>
+                <a class="nav-link" href="/bot-settings">Bot Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Your Telegram Files</h1>
+            <button id="refresh-btn" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise me-2"></i> Refresh Files
+            </button>
+        </div>
+
+        <div id="loading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">Loading files...</p>
+        </div>
+
+        <div id="file-list" class="row g-4"></div>
+
+        <div id="no-files" class="alert alert-info d-none">
+            <i class="bi bi-info-circle me-2"></i> No files yet. Send files to your Telegram bot.
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">File Size Limits</h5>
+            </div>
+            <div class="card-body">
+                <p>Telegram Bot API limits file downloads to <strong>20MB</strong>.</p>
+                <p>Larger files will show an error: <code>"Bad Request: file is too big"</code>.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loading = document.getElementById('loading');
+            const fileList = document.getElementById('file-list');
+            const noFiles = document.getElementById('no-files');
+            const refreshBtn = document.getElementById('refresh-btn');
+            
+            // Load files on page load
+            loadFiles();
+            
+            // Set auto-refresh every 10 seconds
+            setInterval(loadFiles, 10000);
+            
+            // Manual refresh button
+            refreshBtn.addEventListener('click', function() {
+                this.disabled = true;
+                loadFiles().finally(() => {
+                    this.disabled = false;
+                });
+            });
+            
+            // Function to load files
+            async function loadFiles() {
+                loading.style.display = 'block';
+                fileList.innerHTML = '';
+                noFiles.classList.add('d-none');
+                
+                try {
+                    const response = await fetch('/api/files-data');
+                    const data = await response.json();
+                    
+                    if (data.files && data.files.length > 0) {
+                        data.files.forEach(file => {
+                            const fileCard = createFileCard(file);
+                            fileList.appendChild(fileCard);
+                        });
+                    } else {
+                        noFiles.classList.remove('d-none');
+                    }
+                } catch (error) {
+                    console.error('Error loading files:', error);
+                    fileList.innerHTML = \`
+                        <div class="col-12">
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Error loading files: \${error.message}
+                            </div>
+                        </div>
+                    \`;
+                } finally {
+                    loading.style.display = 'none';
+                }
+            }
+            
+            // Create card for each file
+            function createFileCard(file) {
+                const col = document.createElement('div');
+                col.className = 'col-md-4 col-lg-3';
+                
+                // Choose appropriate icon based on file type
+                let fileIcon = '<i class="bi bi-file-earmark text-secondary" style="font-size: 3rem;"></i>';
+                if (file.fileType === 'document') {
+                    fileIcon = '<i class="bi bi-file-earmark-text text-primary" style="font-size: 3rem;"></i>';
+                } else if (file.fileType === 'photo') {
+                    fileIcon = '<i class="bi bi-file-earmark-image text-success" style="font-size: 3rem;"></i>';
+                } else if (file.fileType === 'video') {
+                    fileIcon = '<i class="bi bi-file-earmark-play text-danger" style="font-size: 3rem;"></i>';
+                } else if (file.fileType === 'audio') {
+                    fileIcon = '<i class="bi bi-file-earmark-music text-warning" style="font-size: 3rem;"></i>';
+                }
+                
+                col.innerHTML = \`
+                    <div class="card h-100 file-card">
+                        <div class="card-body text-center">
+                            <div class="mb-3">\${fileIcon}</div>
+                            <h5 class="card-title text-truncate" title="\${file.originalFileName || file.fileName}">
+                                \${file.originalFileName || file.fileName}
+                            </h5>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    \${file.fileSize ? (file.fileSize / 1024 / 1024).toFixed(2) + ' MB' : ''}
+                                    <br>
+                                    \${new Date(file.uploadDate).toLocaleString()}
+                                </small>
+                            </p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="\${file.filePath}" class="btn btn-sm btn-primary" download="\${file.originalFileName || file.fileName}">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                                <a href="/files/\${file._id}" class="btn btn-sm btn-secondary">
+                                    <i class="bi bi-info-circle"></i> Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                \`;
+                
+                return col;
+            }
+        });
+    </script>
+</body>
+</html>
+  `);
+});
+
+// Thêm API endpoint để lấy dữ liệu file
+app.get('/api/files-data', (req, res) => {
+  try {
+    // Đọc trực tiếp từ file để đảm bảo dữ liệu mới nhất
+    let files = [];
+    if (fs.existsSync(filesDbPath)) {
+      try {
+        const content = fs.readFileSync(filesDbPath, 'utf8');
+        files = JSON.parse(content);
+        console.log(`Loaded ${files.length} files from database`);
+      } catch (err) {
+        console.error('Error reading database file:', err);
+        // Fallback to memory 
+        files = filesDb || [];
+      }
+    } else {
+      files = filesDb || [];
+    }
+    
+    // Sort by newest
+    files.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+    
+    // Return JSON
+    res.json({
+      files: files,
+      count: files.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in /api/files-data:', error);
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+// Điều hướng trang chủ đến route mới
+app.get('/', (req, res) => {
+  res.redirect('/files-list');
+});
+
+// Route khẩn cấp để kiểm tra dữ liệu từ endpoint bên trên
+app.get('/emergency', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Emergency Dashboard</title>
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body>
+      <div class="container py-4">
+        <h1>Emergency Dashboard</h1>
+        <div class="mb-4">
+          <a href="/files-list" class="btn btn-primary me-2">Go to Files List</a>
+          <a href="/" class="btn btn-secondary me-2">Go to Home</a>
+          <button id="check-data" class="btn btn-danger">Check Data</button>
+        </div>
+        
+        <div id="result" class="mt-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p>Click "Check Data" to see database information</p>
+        </div>
+      </div>
+      
+      <script>
+        document.getElementById('check-data').addEventListener('click', async function() {
+          const resultDiv = document.getElementById('result');
+          resultDiv.innerHTML = '<div class="spinner-border text-primary"></div> <p>Loading data...</p>';
+          
+          try {
+            const response = await fetch('/api/check-data');
+            const data = await response.json();
+            
+            let html = '<h3>Database Status</h3>';
+            html += '<div class="card mb-4"><div class="card-body">';
+            html += '<p><strong>Database File:</strong> ' + data.database.path + '</p>';
+            html += '<p><strong>File Exists:</strong> ' + data.database.exists + '</p>';
+            if (data.database.error) {
+              html += '<p><strong>Error:</strong> ' + data.database.error + '</p>';
+            }
+            html += '<p><strong>File Count:</strong> ' + data.database.fileCount + '</p>';
+            html += '</div></div>';
+            
+            html += '<h3>Directory Status</h3>';
+            html += '<div class="card mb-4"><div class="card-body">';
+            html += '<p><strong>Data Directory:</strong> ' + data.directories.data.path + ' (Exists: ' + data.directories.data.exists + ')</p>';
+            html += '<p><strong>Uploads Directory:</strong> ' + data.directories.uploads.path + ' (Exists: ' + data.directories.uploads.exists + ')</p>';
+            html += '</div></div>';
+            
+            if (data.database.files && data.database.files.length > 0) {
+              html += '<h3>Files (' + data.database.files.length + ')</h3>';
+              html += '<div class="table-responsive"><table class="table table-striped">';
+              html += '<thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Size</th><th>Date</th></tr></thead><tbody>';
+              
+              data.database.files.forEach(file => {
+                html += '<tr>';
+                html += '<td>' + file._id + '</td>';
+                html += '<td>' + (file.originalFileName || file.fileName) + '</td>';
+                html += '<td>' + file.fileType + '</td>';
+                html += '<td>' + (file.fileSize ? Math.round(file.fileSize/1024) + ' KB' : 'N/A') + '</td>';
+                html += '<td>' + new Date(file.uploadDate).toLocaleString() + '</td>';
+                html += '</tr>';
+              });
+              
+              html += '</tbody></table></div>';
+            } else {
+              html += '<div class="alert alert-warning">No files found in database</div>';
+            }
+            
+            resultDiv.innerHTML = html;
+          } catch (error) {
+            resultDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+          }
+        });
+      </script>
+    </body>
+    </html>
+  `);
 });
 
