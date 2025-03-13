@@ -15,6 +15,177 @@ bot.command('help', (ctx) => {
   ctx.reply('Just send me any file (document, photo, video, audio) under 20MB, and I will save it for you. You can manage your files through the web interface.\n\nLưu ý: Telegram Bot API giới hạn tải xuống file 20MB. File lớn hơn sẽ không thể xử lý.');
 });
 
+// Xử lý file từ người dùng
+bot.on('document', async (ctx) => {
+  try {
+    console.log('Nhận file document từ user:', ctx.from.username || ctx.from.id);
+    await processIncomingFile(ctx, 'document');
+  } catch (error) {
+    console.error('Lỗi xử lý document:', error);
+    ctx.reply(`Có lỗi xảy ra khi xử lý file: ${error.message}`);
+  }
+});
+
+bot.on('photo', async (ctx) => {
+  try {
+    console.log('Nhận file ảnh từ user:', ctx.from.username || ctx.from.id);
+    await processIncomingFile(ctx, 'photo');
+  } catch (error) {
+    console.error('Lỗi xử lý photo:', error);
+    ctx.reply(`Có lỗi xảy ra khi xử lý ảnh: ${error.message}`);
+  }
+});
+
+bot.on('video', async (ctx) => {
+  try {
+    console.log('Nhận file video từ user:', ctx.from.username || ctx.from.id);
+    await processIncomingFile(ctx, 'video');
+  } catch (error) {
+    console.error('Lỗi xử lý video:', error);
+    ctx.reply(`Có lỗi xảy ra khi xử lý video: ${error.message}`);
+  }
+});
+
+bot.on('audio', async (ctx) => {
+  try {
+    console.log('Nhận file audio từ user:', ctx.from.username || ctx.from.id);
+    await processIncomingFile(ctx, 'audio');
+  } catch (error) {
+    console.error('Lỗi xử lý audio:', error);
+    ctx.reply(`Có lỗi xảy ra khi xử lý audio: ${error.message}`);
+  }
+});
+
+/**
+ * Xử lý file nhận từ Telegram Bot
+ * @param {Object} ctx - Context từ Telegraf
+ * @param {String} fileType - Loại file: document, photo, video, audio
+ */
+async function processIncomingFile(ctx, fileType) {
+  try {
+    let fileId, fileName, fileSize, mimeType;
+    
+    // Lấy thông tin file dựa vào loại
+    if (fileType === 'photo') {
+      // Lấy phiên bản chất lượng cao nhất của ảnh
+      const photos = ctx.message.photo;
+      const photo = photos[photos.length - 1];
+      fileId = photo.file_id;
+      fileName = `photo_${Date.now()}.jpg`;
+      fileSize = photo.file_size;
+      mimeType = 'image/jpeg';
+    } else if (fileType === 'document') {
+      const doc = ctx.message.document;
+      fileId = doc.file_id;
+      fileName = doc.file_name || `document_${Date.now()}`;
+      fileSize = doc.file_size;
+      mimeType = doc.mime_type || 'application/octet-stream';
+    } else if (fileType === 'video') {
+      const video = ctx.message.video;
+      fileId = video.file_id;
+      fileName = video.file_name || `video_${Date.now()}.mp4`;
+      fileSize = video.file_size;
+      mimeType = video.mime_type || 'video/mp4';
+    } else if (fileType === 'audio') {
+      const audio = ctx.message.audio;
+      fileId = audio.file_id;
+      fileName = audio.file_name || `audio_${Date.now()}.mp3`;
+      fileSize = audio.file_size;
+      mimeType = audio.mime_type || 'audio/mpeg';
+    } else {
+      throw new Error('Không hỗ trợ loại file này');
+    }
+    
+    // Kiểm tra kích thước file
+    if (fileSize > 20 * 1024 * 1024) {
+      return ctx.reply('File quá lớn (>20MB). Vui lòng gửi file nhỏ hơn.');
+    }
+    
+    // Lấy thông tin file từ Telegram
+    ctx.reply('⏳ Đang tải xuống file... Vui lòng đợi.');
+    const fileInfo = await ctx.telegram.getFile(fileId);
+    const fileUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${fileInfo.file_path}`;
+    
+    // Tạo thư mục uploads nếu chưa tồn tại
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    // Tạo tên file an toàn
+    const timestamp = Date.now();
+    const fileHash = crypto.createHash('md5').update(fileName + timestamp).digest('hex').substring(0, 8);
+    const safeName = fileName.replace(/[^\w\s.-]/g, '').replace(/\s+/g, ' ');
+    const safeFileName = `${safeName}_${timestamp}_${fileHash}${path.extname(fileName)}`;
+    const filePath = path.join(uploadDir, safeFileName);
+    
+    // Tải xuống file
+    const response = await axios({
+      method: 'GET',
+      url: fileUrl,
+      responseType: 'stream'
+    });
+    
+    const writer = fs.createWriteStream(filePath);
+    response.data.pipe(writer);
+    
+    await new Promise((resolve, reject) => {
+      writer.on('finish', resolve);
+      writer.on('error', reject);
+    });
+    
+    // Lấy kích thước file thực tế
+    const stats = fs.statSync(filePath);
+    const realFileSize = stats.size;
+    
+    // Lưu thông tin người dùng
+    const user = {
+      userId: ctx.from.id.toString(),
+      firstName: ctx.from.first_name || '',
+      lastName: ctx.from.last_name || '',
+      username: ctx.from.username || ''
+    };
+    
+    // Tạo thông tin file
+    const fileData = {
+      _id: uuidv4().replace(/-/g, '').substring(0, 12),
+      fileName: safeFileName,
+      originalFileName: fileName,
+      fileType: fileType,
+      fileSize: realFileSize,
+      filePath: `/uploads/${safeFileName}`,
+      uploadDate: new Date().toISOString(),
+      uploadedBy: user,
+      fileId: fileId,
+      sentToTelegram: true
+    };
+    
+    // Lưu thông tin file vào database
+    filesDb.push(fileData);
+    saveFilesDb();
+    
+    // Thông báo hoàn thành
+    ctx.reply(`✅ File đã được lưu thành công! Truy cập web để xem và tải xuống file.`);
+    console.log(`File đã được lưu: ${filePath} (${realFileSize} bytes)`);
+    
+  } catch (error) {
+    console.error('Lỗi trong quá trình xử lý file:', error);
+    
+    // Ghi log lỗi chi tiết
+    logErrorToFile('download_file', error, {
+      fileType: fileType,
+      userId: ctx.from?.id,
+      username: ctx.from?.username
+    });
+    
+    // Thông báo lỗi người dùng
+    let errorMessage = `Xin lỗi, có lỗi khi xử lý file của bạn: ${error.message}.`;
+    if (error.message.includes('size') || error.message.includes('quá lớn')) {
+      errorMessage += ' Hãy thử gửi file nhỏ hơn 20MB.';
+    }
+    throw new Error(errorMessage);
+  }
+}
+
 // Express routes
 app.get('/', (req, res) => {
   res.redirect('/static-files');
