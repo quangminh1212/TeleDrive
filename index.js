@@ -88,18 +88,58 @@ let botStatus = {
   isLaunched: false,
   error: null,
   startTime: null,
-  botInfo: null
+  botInfo: null,
+  lastCheck: null
 };
 
-// Kiểm tra bot kết nối thành công
-bot.telegram.getMe()
-  .then(botInfo => {
-    console.log(`Bot information retrieved: @${botInfo.username} (${botInfo.first_name})`);
-    botStatus.botInfo = botInfo;
-  })
-  .catch(error => {
-    console.error('Error retrieving bot information:', error);
-  });
+// Kiểm tra bot kết nối thành công và cập nhật trạng thái
+try {
+  bot.telegram.getMe()
+    .then(botInfo => {
+      console.log(`Bot information retrieved: @${botInfo.username} (${botInfo.first_name})`);
+      botStatus.botInfo = botInfo;
+      botStatus.isLaunched = true; // Đánh dấu là bot đã online
+      botStatus.lastCheck = Date.now();
+      botStatus.startTime = botStatus.startTime || Date.now(); // Nếu chưa có startTime thì set
+      console.log('Bot status updated:', JSON.stringify(botStatus, null, 2));
+    })
+    .catch(error => {
+      console.error('Error retrieving bot information:', error);
+      botStatus.error = error;
+      botStatus.isLaunched = false;
+      botStatus.lastCheck = Date.now();
+    });
+} catch (error) {
+  console.error('Exception when checking bot info:', error);
+}
+
+// Thêm kiểm tra định kỳ trạng thái bot (mỗi 30 giây)
+setInterval(() => {
+  console.log('Checking bot status...');
+  try {
+    bot.telegram.getMe()
+      .then(botInfo => {
+        const wasOffline = !botStatus.isLaunched;
+        botStatus.isLaunched = true;
+        botStatus.error = null;
+        botStatus.botInfo = botInfo;
+        botStatus.lastCheck = Date.now();
+        
+        if (wasOffline) {
+          console.log(`Bot reconnected: @${botInfo.username}`);
+          botStatus.startTime = Date.now();
+        }
+      })
+      .catch(error => {
+        console.error('Error checking bot status:', error);
+        botStatus.isLaunched = false;
+        botStatus.error = error;
+        botStatus.lastCheck = Date.now();
+      });
+  } catch (error) {
+    console.error('Exception during periodic bot check:', error);
+  }
+}, 30000);
 
 // Bot middleware to handle files
 bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
@@ -306,13 +346,250 @@ app.get('/api/check-file/:id', (req, res) => {
 
 // API endpoint to check bot status
 app.get('/api/bot-status', (req, res) => {
-  res.json({
-    isLaunched: botStatus.isLaunched,
-    error: botStatus.error ? botStatus.error.message : null,
-    startTime: botStatus.startTime,
-    uptime: botStatus.startTime ? Math.floor((Date.now() - botStatus.startTime) / 1000) : null,
-    botInfo: botStatus.botInfo
-  });
+  // Check bot status right when endpoint is called
+  try {
+    bot.telegram.getMe()
+      .then(botInfo => {
+        botStatus.isLaunched = true;
+        botStatus.error = null;
+        botStatus.botInfo = botInfo;
+        botStatus.lastCheck = Date.now();
+        
+        res.json({
+          isLaunched: botStatus.isLaunched,
+          error: null,
+          startTime: botStatus.startTime,
+          uptime: botStatus.startTime ? Math.floor((Date.now() - botStatus.startTime) / 1000) : null,
+          botInfo: botStatus.botInfo,
+          lastCheck: botStatus.lastCheck
+        });
+      })
+      .catch(error => {
+        console.error('Error checking bot status in API call:', error);
+        botStatus.isLaunched = false;
+        botStatus.error = error;
+        botStatus.lastCheck = Date.now();
+        
+        res.json({
+          isLaunched: false,
+          error: error.message,
+          startTime: botStatus.startTime,
+          uptime: botStatus.startTime ? Math.floor((Date.now() - botStatus.startTime) / 1000) : null,
+          botInfo: botStatus.botInfo,
+          lastCheck: botStatus.lastCheck,
+          token: process.env.BOT_TOKEN ? `${process.env.BOT_TOKEN.substring(0, 5)}...${process.env.BOT_TOKEN.substring(process.env.BOT_TOKEN.length - 5)}` : 'Not provided'
+        });
+      });
+  } catch (error) {
+    console.error('Exception in bot status API endpoint:', error);
+    res.status(500).json({
+      isLaunched: false,
+      error: error.message,
+      lastCheck: Date.now()
+    });
+  }
+});
+
+// API endpoint to restart the bot
+app.post('/api/restart-bot', (req, res) => {
+  console.log('Attempting to restart bot...');
+  
+  try {
+    // Stop the bot safely
+    bot.stop('restart');
+    
+    setTimeout(() => {
+      // Restart the bot
+      bot.launch()
+        .then(() => {
+          console.log('Telegram bot restarted successfully');
+          botStatus.isLaunched = true;
+          botStatus.startTime = Date.now();
+          botStatus.error = null;
+          
+          // Get updated info
+          return bot.telegram.getMe();
+        })
+        .then(botInfo => {
+          botStatus.botInfo = botInfo;
+          botStatus.lastCheck = Date.now();
+          
+          res.json({
+            success: true,
+            message: 'Bot restarted successfully',
+            botInfo: botStatus.botInfo
+          });
+        })
+        .catch(err => {
+          console.error('Error restarting Telegram bot:', err);
+          botStatus.isLaunched = false;
+          botStatus.error = err;
+          botStatus.lastCheck = Date.now();
+          
+          res.status(500).json({
+            success: false,
+            message: 'Failed to restart bot',
+            error: err.message
+          });
+        });
+    }, 1000); // Đợi 1 giây sau khi dừng bot để khởi động lại
+  } catch (error) {
+    console.error('Exception during bot restart:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Exception occurred during restart',
+      error: error.message
+    });
+  }
+});
+
+// API endpoint to test bot directly
+app.get('/api/test-bot', (req, res) => {
+  console.log('Testing bot connection directly...');
+  
+  try {
+    bot.telegram.getMe()
+      .then(botInfo => {
+        console.log('Bot test successful:', botInfo);
+        res.json({
+          success: true,
+          message: 'Bot is online and responding',
+          botInfo: botInfo,
+          token_info: {
+            provided: !!process.env.BOT_TOKEN,
+            length: process.env.BOT_TOKEN ? process.env.BOT_TOKEN.length : 0,
+            preview: process.env.BOT_TOKEN ? `${process.env.BOT_TOKEN.substring(0, 5)}...${process.env.BOT_TOKEN.substring(process.env.BOT_TOKEN.length - 5)}` : 'Not provided'
+          }
+        });
+      })
+      .catch(error => {
+        console.error('Bot test failed:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Bot test failed',
+          error: error.message,
+          error_code: error.code,
+          error_response: error.response,
+          token_info: {
+            provided: !!process.env.BOT_TOKEN,
+            length: process.env.BOT_TOKEN ? process.env.BOT_TOKEN.length : 0,
+            preview: process.env.BOT_TOKEN ? `${process.env.BOT_TOKEN.substring(0, 5)}...${process.env.BOT_TOKEN.substring(process.env.BOT_TOKEN.length - 5)}` : 'Not provided'
+          }
+        });
+      });
+  } catch (error) {
+    console.error('Exception during bot test:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Exception occurred during bot test',
+      error: error.message
+    });
+  }
+});
+
+// API endpoint to update bot token
+app.post('/api/update-token', (req, res) => {
+  console.log('Attempting to update bot token...');
+  
+  // Check if token is provided
+  if (!req.body.token) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing token parameter'
+    });
+  }
+  
+  const newToken = req.body.token.trim();
+  
+  // Simple validation
+  if (newToken.length < 20) {
+    return res.status(400).json({
+      success: false,
+      message: 'Token appears to be invalid (too short)'
+    });
+  }
+  
+  // Store the original token if we need to restore it
+  const originalToken = process.env.BOT_TOKEN;
+  
+  try {
+    // Stop the existing bot
+    bot.stop('token_update');
+    
+    // Update the token
+    process.env.BOT_TOKEN = newToken;
+    
+    // Create a new bot instance with the new token
+    const newBot = new Telegraf(newToken);
+    
+    // Test the new token
+    newBot.telegram.getMe()
+      .then(botInfo => {
+        console.log('New bot token verified successfully:', botInfo);
+        
+        // Replace the old bot with the new one
+        bot = newBot;
+        botStatus.botInfo = botInfo;
+        botStatus.isLaunched = true;
+        botStatus.startTime = Date.now();
+        botStatus.error = null;
+        botStatus.lastCheck = Date.now();
+        
+        // Launch the new bot
+        bot.launch()
+          .then(() => {
+            console.log('Bot restarted with new token successfully');
+            
+            // Respond with success
+            res.json({
+              success: true,
+              message: 'Bot token updated and bot restarted successfully',
+              botInfo: botStatus.botInfo
+            });
+          })
+          .catch(err => {
+            console.error('Error launching bot with new token:', err);
+            
+            // Restore the original token and bot
+            process.env.BOT_TOKEN = originalToken;
+            bot = new Telegraf(originalToken);
+            bot.launch().catch(e => console.error('Failed to restore original bot:', e));
+            
+            res.status(500).json({
+              success: false,
+              message: 'Failed to launch bot with new token, reverted to original',
+              error: err.message
+            });
+          });
+      })
+      .catch(err => {
+        console.error('Error verifying new bot token:', err);
+        
+        // Restore the original token and bot
+        process.env.BOT_TOKEN = originalToken;
+        bot = new Telegraf(originalToken);
+        bot.launch().catch(e => console.error('Failed to restore original bot:', e));
+        
+        res.status(400).json({
+          success: false,
+          message: 'Invalid bot token provided',
+          error: err.message
+        });
+      });
+  } catch (error) {
+    console.error('Exception during token update:', error);
+    
+    // Restore the original token and bot
+    process.env.BOT_TOKEN = originalToken;
+    bot = new Telegraf(originalToken);
+    bot.launch().catch(e => console.error('Failed to restore original bot after exception:', e));
+    
+    res.status(500).json({
+      success: false,
+      message: 'Exception occurred during token update',
+      error: error.message
+    });
+  }
 });
 
 // Handle errors from Telegram bot
@@ -330,13 +607,34 @@ bot.launch()
     botStatus.isLaunched = true;
     botStatus.startTime = Date.now();
     botStatus.error = null;
+    
+    // Get and log bot information
+    return bot.telegram.getMe();
+  })
+  .then(botInfo => {
+    botStatus.botInfo = botInfo;
+    botStatus.lastCheck = Date.now();
+    
+    // Log additional information
+    console.log(`Bot is now running as @${botInfo.username} (${botInfo.first_name})`);
+    console.log(`Bot ID: ${botInfo.id}`);
+    console.log(`Bot token used: ${process.env.BOT_TOKEN ? `${process.env.BOT_TOKEN.substring(0, 5)}...${process.env.BOT_TOKEN.substring(process.env.BOT_TOKEN.length - 5)}` : 'Not provided'}`);
   })
   .catch(err => {
     console.error('Error starting Telegram bot:', err);
-    console.error('Bot token:', process.env.BOT_TOKEN ? process.env.BOT_TOKEN.substring(0, 10) + '...' : 'Not provided');
+    console.error('Bot token:', process.env.BOT_TOKEN ? `${process.env.BOT_TOKEN.substring(0, 5)}...${process.env.BOT_TOKEN.substring(process.env.BOT_TOKEN.length - 5)}` : 'Not provided');
     console.log('Application will continue without bot functionality');
     botStatus.isLaunched = false;
     botStatus.error = err;
+    
+    // Log detailed error
+    if (err.code === 'ETELEGRAM') {
+      console.error('Telegram API error:', err.response?.description || err.message);
+    } else if (err.code === 'EFATAL') {
+      console.error('Fatal error with Telegram bot:', err.message);
+    } else {
+      console.error('Unknown error type:', err);
+    }
   });
 
 // Start Express server
@@ -357,4 +655,4 @@ process.once('SIGTERM', () => {
   console.log('Shutting down application gracefully...');
   bot.stop('SIGTERM');
   process.exit(0);
-}); 
+});

@@ -209,6 +209,7 @@
                         statusElement.innerHTML = `
                             <i class="bi bi-check-circle-fill me-2"></i>Bot online${uptimeText}
                             ${botInfoText}
+                            <small class="d-block mt-1">Last checked: ${new Date(data.lastCheck).toLocaleTimeString()}</small>
                         `;
                     } else {
                         statusElement.className = 'alert alert-danger d-inline-block';
@@ -218,8 +219,10 @@
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>Bot offline
                             <small class="d-block">${errorMsg}</small>
                             <small class="d-block mt-1">
+                                <a href="#" onclick="restartBot(event)" class="text-light text-decoration-underline">Khởi động lại bot</a> | 
                                 <a href="#" onclick="showBotHelp(event)" class="text-light text-decoration-underline">Cần trợ giúp?</a>
                             </small>
+                            <small class="d-block mt-1">Token: ${data.token || 'N/A'}</small>
                         `;
                     }
                 } catch (error) {
@@ -227,6 +230,53 @@
                     statusElement.innerHTML = `
                         <i class="bi bi-question-circle-fill me-2"></i>Bot status unknown
                         <small class="d-block">Không thể kết nối với API</small>
+                        <small class="d-block mt-1">
+                            <a href="#" onclick="restartBot(event)" class="text-light text-decoration-underline">Thử khởi động lại</a>
+                        </small>
+                    `;
+                }
+            }
+            
+            // Khởi động lại bot
+            async function restartBot(event) {
+                event.preventDefault();
+                
+                const statusElement = document.getElementById('bot-status');
+                statusElement.innerHTML = `
+                    <div class="spinner-border spinner-border-sm text-light" role="status">
+                        <span class="visually-hidden">Restarting...</span>
+                    </div>
+                    <span class="ms-2">Đang khởi động lại bot...</span>
+                `;
+                
+                try {
+                    const response = await fetch('/api/restart-bot', {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Bot restarted successfully
+                        setTimeout(() => {
+                            checkBotStatus(); // Refresh status
+                            alert('Bot khởi động lại thành công!');
+                        }, 1500);
+                    } else {
+                        statusElement.className = 'alert alert-danger d-inline-block';
+                        statusElement.innerHTML = `
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Lỗi khởi động lại
+                            <small class="d-block">${data.error || 'Unknown error'}</small>
+                            <small class="d-block mt-1">
+                                <a href="#" onclick="showBotHelp(event)" class="text-light text-decoration-underline">Cần trợ giúp?</a>
+                            </small>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Error restarting bot:', error);
+                    statusElement.className = 'alert alert-danger d-inline-block';
+                    statusElement.innerHTML = `
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Lỗi kết nối
+                        <small class="d-block">Không thể kết nối đến server</small>
                     `;
                 }
             }
@@ -243,6 +293,7 @@
             }
             
             window.showBotHelp = showBotHelp; // Expose to global scope
+            window.restartBot = restartBot; // Expose to global scope
             
             // Run bot status check
             checkBotStatus();
