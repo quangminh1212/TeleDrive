@@ -13,6 +13,14 @@ const uploadDir = path.join(__dirname, 'uploads');
 // Phục vụ file tĩnh trong thư mục uploads
 app.use('/uploads', express.static(uploadDir));
 
+// Cho phép truy cập trực tiếp đến thư mục data để đọc files.json
+app.use('/data', express.static(dataDir));
+
+// Route để xem file simple-viewer.html
+app.get('/viewer', (req, res) => {
+  res.sendFile(path.join(__dirname, 'simple-viewer.html'));
+});
+
 // Route để xem danh sách file
 app.get('/', (req, res) => {
   let filesData = [];
@@ -42,6 +50,8 @@ app.get('/', (req, res) => {
           .file-meta { color: #666; font-size: 14px; margin-bottom: 10px; }
           .download-btn { background: #4285F4; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
           .no-files { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+          .viewer-link { margin-top: 20px; text-align: center; }
+          .viewer-link a { color: #4285F4; text-decoration: none; font-weight: bold; }
         </style>
       </head>
       <body>
@@ -49,6 +59,10 @@ app.get('/', (req, res) => {
           <div class="header">
             <h1>TeleDrive Files</h1>
             <button onclick="window.location.reload()">Refresh</button>
+          </div>
+          
+          <div class="viewer-link">
+            <a href="/viewer">Xem với giao diện nâng cao</a>
           </div>
           
           ${filesData.length === 0 ? 
@@ -60,7 +74,7 @@ app.get('/', (req, res) => {
                 <div class="file-card">
                   <div class="file-icon">
                     ${file.fileType === 'photo' ? 
-                      `<img src="${file.filePath}" alt="${file.fileName}" style="max-width:100%; max-height:150px; object-fit:contain; display:block; margin:0 auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                      `<img src="${file.fileLink || file.filePath}" alt="${file.fileName}" style="max-width:100%; max-height:150px; object-fit:contain; display:block; margin:0 auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                        <div style="display:none">🖼️</div>` : 
                      file.fileType === 'video' ? '🎬' : 
                      file.fileType === 'audio' ? '🎵' : '📄'}
@@ -70,7 +84,7 @@ app.get('/', (req, res) => {
                     ${file.fileSize ? (file.fileSize / 1024 / 1024).toFixed(2) + ' MB' : 'Unknown size'}<br>
                     ${new Date(file.uploadDate).toLocaleString()}
                   </div>
-                  <a href="${file.filePath}" download="${file.originalFileName || file.fileName}" class="download-btn">
+                  <a href="${file.fileLink || file.filePath}" download="${file.originalFileName || file.fileName}" class="download-btn">
                     Download
                   </a>
                 </div>
