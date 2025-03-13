@@ -274,6 +274,16 @@ app.get('/', async (req, res) => {
   }
 });
 
+// Bot settings page
+app.get('/bot-settings', async (req, res) => {
+  try {
+    res.render('bot-settings');
+  } catch (error) {
+    console.error('Error rendering bot settings page:', error);
+    res.status(500).send('Error loading bot settings page');
+  }
+});
+
 app.get('/files/:id', async (req, res) => {
   try {
     const file = filesDb.find(f => f._id === req.params.id);
