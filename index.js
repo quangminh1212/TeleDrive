@@ -536,17 +536,19 @@ app.get('/api/bot-status', (req, res) => {
 
 // API endpoint to restart the bot
 app.post('/api/restart-bot', (req, res) => {
-  console.log('Attempting to restart bot...');
+  console.log('Đang thử khởi động lại bot...');
   
   try {
     // Stop the bot safely
+    console.log('Dừng bot hiện tại...');
     bot.stop('restart');
     
     setTimeout(() => {
       // Restart the bot
+      console.log('Khởi động lại bot với token:', process.env.BOT_TOKEN ? `${process.env.BOT_TOKEN.substring(0, 5)}...` : 'không có token');
       bot.launch()
         .then(() => {
-          console.log('Telegram bot restarted successfully');
+          console.log('Bot Telegram đã khởi động lại thành công');
           botStatus.isLaunched = true;
           botStatus.startTime = Date.now();
           botStatus.error = null;
@@ -558,31 +560,64 @@ app.post('/api/restart-bot', (req, res) => {
           botStatus.botInfo = botInfo;
           botStatus.lastCheck = Date.now();
           
+          console.log(`Bot đã online: @${botInfo.username} (${botInfo.first_name})`);
+          
           res.json({
             success: true,
-            message: 'Bot restarted successfully',
+            message: 'Bot đã khởi động lại thành công',
             botInfo: botStatus.botInfo
           });
         })
         .catch(err => {
-          console.error('Error restarting Telegram bot:', err);
+          console.error('Lỗi khi khởi động lại bot Telegram:', err);
+          
+          // Log chi tiết về lỗi
+          let detailedError = {
+            message: err.message,
+            code: err.code,
+            name: err.name
+          };
+          
+          if (err.response) {
+            detailedError.response = err.response;
+          }
+          
+          console.error('Chi tiết lỗi:', JSON.stringify(detailedError, null, 2));
+          
+          // Cập nhật trạng thái bot
           botStatus.isLaunched = false;
           botStatus.error = err;
           botStatus.lastCheck = Date.now();
           
+          logErrorToFile('restart_bot', err, {
+            token_length: process.env.BOT_TOKEN ? process.env.BOT_TOKEN.length : 0,
+            token_preview: process.env.BOT_TOKEN ? `${process.env.BOT_TOKEN.substring(0, 5)}...` : 'none'
+          });
+          
           res.status(500).json({
             success: false,
-            message: 'Failed to restart bot',
-            error: err.message
+            message: 'Không thể khởi động lại bot',
+            error: err.message,
+            details: detailedError,
+            recommendations: [
+              'Kiểm tra token bot có đúng không',
+              'Đảm bảo bot chưa bị dừng bởi @BotFather',
+              'Kiểm tra kết nối internet',
+              'Xem logs để biết thêm chi tiết'
+            ]
           });
         });
     }, 1000); // Đợi 1 giây sau khi dừng bot để khởi động lại
   } catch (error) {
-    console.error('Exception during bot restart:', error);
+    console.error('Lỗi ngoại lệ khi khởi động lại bot:', error);
+    
+    const logFile = logErrorToFile('restart_bot_exception', error);
+    
     res.status(500).json({
       success: false,
-      message: 'Exception occurred during restart',
-      error: error.message
+      message: 'Lỗi ngoại lệ khi khởi động lại',
+      error: error.message,
+      logFile: path.basename(logFile || '')
     });
   }
 });
