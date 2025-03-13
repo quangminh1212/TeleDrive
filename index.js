@@ -1,13 +1,10 @@
-    
-    let errorMessage = `Xin lỗi, có lỗi khi xử lý file của bạn: ${error.message}.`;
-    if (error.message.includes('size') || error.message.includes('quá lớn')) {
-      errorMessage += ' Hãy thử gửi file nhỏ hơn 20MB.';
-    }
-    errorMessage += ' Log chi tiết đã được lưu để kiểm tra.';
-    function sendErrorMessage(ctx, errorMessage) {
-      return ctx.reply(errorMessage);
-    }
-  }
+let errorMessage = `Xin lỗi, có lỗi khi xử lý file của bạn: ${error.message}.`;
+if (error.message.includes('size') || error.message.includes('quá lớn')) {
+  errorMessage += ' Hãy thử gửi file nhỏ hơn 20MB.';
+}
+errorMessage += ' Log chi tiết đã được lưu để kiểm tra.';
+ctx.reply(errorMessage);
+}
 });
 
 bot.command('start', (ctx) => {
