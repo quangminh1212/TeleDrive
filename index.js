@@ -39,7 +39,37 @@ if (fs.existsSync(filesDbPath)) {
 
 // Helper function to save filesDb to disk
 function saveFilesDb() {
-  fs.writeFileSync(filesDbPath, JSON.stringify(filesDb, null, 2));
+  try {
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    fs.writeFileSync(filesDbPath, JSON.stringify(filesDb, null, 2), 'utf8');
+    console.log(`Đã lưu cơ sở dữ liệu vào ${filesDbPath} (${filesDb.length} files)`);
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi lưu cơ sở dữ liệu:', error);
+    return false;
+  }
+}
+
+// Cải thiện hàm đọc dữ liệu
+function loadFilesDb() {
+  try {
+    if (fs.existsSync(filesDbPath)) {
+      const fileContent = fs.readFileSync(filesDbPath, 'utf8');
+      filesDb = JSON.parse(fileContent);
+      console.log(`Files database loaded successfully (${filesDb.length} files)`);
+    } else {
+      filesDb = [];
+      console.log('Files database không tồn tại, tạo mới');
+      saveFilesDb();
+    }
+  } catch (error) {
+    console.error('Lỗi khi đọc cơ sở dữ liệu:', error);
+    console.log('Tạo cơ sở dữ liệu mới');
+    filesDb = [];
+    saveFilesDb();
+  }
 }
 
 // Log errors to file for debugging
@@ -744,6 +774,31 @@ app.get('/api/error-logs', (req, res) => {
     res.json({ logs });
   } catch (error) {
     res.status(500).json({ error: `Lỗi khi đọc log: ${error.message}` });
+  }
+});
+
+// Thêm API endpoint để lấy danh sách file
+app.get('/api/files', (req, res) => {
+  try {
+    // Đọc lại từ đĩa để đảm bảo dữ liệu mới nhất
+    loadFilesDb();
+    
+    // Sắp xếp theo thời gian tải lên, mới nhất lên đầu
+    const sortedFiles = [...filesDb].sort((a, b) => 
+      new Date(b.uploadDate) - new Date(a.uploadDate)
+    );
+    
+    res.json({
+      success: true,
+      count: sortedFiles.length,
+      files: sortedFiles
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách file:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 
