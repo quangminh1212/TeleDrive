@@ -1,6 +1,6 @@
 /**
  * Script khởi động TeleDrive
- * Chạy ứng dụng với file minimal.js
+ * Chạy ứng dụng với file minimal-fixed.js
  */
 
 const { spawn } = require('child_process');
@@ -30,8 +30,8 @@ if (!fs.existsSync(filesDbPath)) {
 
 console.log('Đang khởi động TeleDrive...');
 
-// Chạy ứng dụng với file minimal.js
-const app = spawn('node', ['minimal.js'], { stdio: 'inherit' });
+// Chạy ứng dụng với file minimal-fixed.js
+const app = spawn('node', ['minimal-fixed.js'], { stdio: 'inherit' });
 
 app.on('close', (code) => {
   console.log(`Ứng dụng đã dừng với mã thoát: ${code}`);
