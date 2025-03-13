@@ -81,4 +81,14 @@ chrome_profiles/
 temp-*.html
 temp-*.js
 check-*.html
+run.js
+minimal-upload.js
+temp/
+
+# Temporary files
+*-temp.html
+*-temp.js
+temp-*.html
+temp-*.js
+check-*.html
 run.js 
