@@ -469,28 +469,35 @@ app.get('/api/error-logs', (req, res) => {
   }
 });
 
-// Thêm API endpoint để lấy danh sách file
+// API endpoint để lấy danh sách file
 app.get('/api/files', (req, res) => {
   try {
-    // Đọc lại dữ liệu từ đĩa để đảm bảo dữ liệu mới nhất
+    // Đọc lại từ file để đảm bảo dữ liệu mới nhất
+    let files = [];
+    
     if (fs.existsSync(filesDbPath)) {
-      const content = fs.readFileSync(filesDbPath, 'utf8');
-      filesDb = JSON.parse(content);
+      try {
+        const content = fs.readFileSync(filesDbPath, 'utf8');
+        files = JSON.parse(content);
+      } catch (e) {
+        console.error('Lỗi đọc file dữ liệu:', e);
+        files = filesDb; // Sử dụng dữ liệu từ bộ nhớ nếu có lỗi
+      }
+    } else {
+      files = filesDb;
     }
     
     // Sắp xếp theo thời gian mới nhất
-    const sortedFiles = [...filesDb].sort((a, b) =>
+    const sortedFiles = [...files].sort((a, b) => 
       new Date(b.uploadDate) - new Date(a.uploadDate)
     );
     
     res.json({
-      success: true,
       files: sortedFiles
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách file:', error);
+    console.error('Error fetching files:', error);
     res.status(500).json({
-      success: false,
       error: error.message
     });
   }
