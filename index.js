@@ -4,7 +4,9 @@
       errorMessage += ' Hãy thử gửi file nhỏ hơn 20MB.';
     }
     errorMessage += ' Log chi tiết đã được lưu để kiểm tra.';
-    await ctx.reply(errorMessage);
+    function sendErrorMessage(ctx, errorMessage) {
+      return ctx.reply(errorMessage);
+    }
   }
 });
 
@@ -992,4 +994,57 @@ app.get('/emergency', (req, res) => {
     </html>
   `);
 });
+
+
+app.get('/files-view', (req, res) => {
+  res.sendFile(path.join(__dirname, 'temp-files.html'));
+});
+
+// Route API đơn giản để lấy dữ liệu file
+app.get('/api/files-list', (req, res) => {
+  try {
+    // Đọc trực tiếp từ file database
+    if (fs.existsSync(filesDbPath)) {
+      const content = fs.readFileSync(filesDbPath, 'utf8');
+      const files = JSON.parse(content);
+      res.json(files);
+    } else {
+      res.json([]);
+    }
+  } catch (error) {
+    console.error('Error reading files database:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/check-db', (req, res) => {
+  res.sendFile(path.join(__dirname, 'check-db.html'));
+});
+
+// Cho phép truy cập trực tiếp đến thư mục data để đọc files.json
+app.use('/data', express.static(path.join(__dirname, 'data')));
+
+// Đảm bảo thư mục data tồn tại
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+  console.log(`Created data directory at ${dataDir}`);
+}
+
+// Đảm bảo file database tồn tại
+if (!fs.existsSync(filesDbPath)) {
+  fs.writeFileSync(filesDbPath, '[]', 'utf8');
+  console.log(`Created empty database at ${filesDbPath}`);
+}
+
+// Đọc dữ liệu file database
+try {
+  const content = fs.readFileSync(filesDbPath, 'utf8');
+  filesDb = JSON.parse(content);
+  console.log(`Loaded ${filesDb.length} files from database`);
+} catch (error) {
+  console.error('Error reading files database:', error);
+  console.log('Initializing with empty database');
+  filesDb = [];
+  fs.writeFileSync(filesDbPath, '[]', 'utf8');
+}
 
