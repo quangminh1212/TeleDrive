@@ -1,14 +1,165 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
+const dotenv = require('dotenv');
+const { Telegraf } = require('telegraf');
+const axios = require('axios');
+
+// Đọc cấu hình từ file .env
+dotenv.config();
 
 const app = express();
-const PORT = 3005;
+const PORT = process.env.PORT || 3005;
+const BOT_TOKEN = process.env.BOT_TOKEN;
+
+// Khởi tạo bot Telegram nếu có token
+let bot = null;
+if (BOT_TOKEN) {
+  bot = new Telegraf(BOT_TOKEN);
+  
+  bot.command('start', (ctx) => {
+    ctx.reply('Chào mừng đến với TeleDrive! Gửi file (dưới 20MB) và tôi sẽ lưu trữ cho bạn.');
+  });
+  
+  bot.command('help', (ctx) => {
+    ctx.reply('Chỉ cần gửi file (tài liệu, hình ảnh, video, âm thanh) dưới 20MB, và tôi sẽ lưu trữ cho bạn. Bạn có thể quản lý file qua giao diện web.\n\nLưu ý: Telegram Bot API giới hạn kích thước file 20MB.');
+  });
+
+  // Khởi động bot
+  bot.launch()
+    .then(() => {
+      console.log('Bot Telegram đã khởi động thành công!');
+      bot.telegram.getMe().then(botInfo => {
+        console.log(`Bot đang online: @${botInfo.username}`);
+      });
+    })
+    .catch(err => {
+      console.error('Lỗi khởi động bot:', err);
+    });
+} else {
+  console.warn('Không tìm thấy BOT_TOKEN trong file .env. Tính năng bot không hoạt động.');
+}
 
 // Thư mục data chứa file JSON
 const dataDir = path.join(__dirname, 'data');
 const filesDbPath = path.join(dataDir, 'files.json');
 const uploadDir = path.join(__dirname, 'uploads');
+
+// Đảm bảo các thư mục tồn tại
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Middleware cho upload file
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Tạo tên file an toàn để lưu trữ
+    const originalName = file.originalname || 'unknown_file';
+    const timestamp = Date.now();
+    const fileHash = crypto.createHash('md5').update(originalName + timestamp).digest('hex').substring(0, 8);
+    
+    // Loại bỏ ký tự đặc biệt từ tên file
+    const safeName = originalName.replace(/[^\w\s.-]/g, '').replace(/\s+/g, ' ');
+    
+    cb(null, `${safeName}_${timestamp}_${fileHash}${path.extname(originalName)}`);
+  }
+});
+
+// Giới hạn kích thước file 20MB - giống giới hạn của Telegram Bot API
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB
+});
+
+// Đọc database files
+function readFilesDb() {
+  try {
+    if (fs.existsSync(filesDbPath)) {
+      const content = fs.readFileSync(filesDbPath, 'utf8');
+      return JSON.parse(content);
+    }
+    return [];
+  } catch (error) {
+    console.error('Lỗi đọc database:', error);
+    return [];
+  }
+}
+
+// Lưu database files
+function saveFilesDb(filesData) {
+  try {
+    fs.writeFileSync(filesDbPath, JSON.stringify(filesData, null, 2), 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Lỗi lưu database:', error);
+    return false;
+  }
+}
+
+// Lấy thông tin cơ bản của người dùng hiện tại
+function getCurrentUser() {
+  return {
+    userId: "web_upload",
+    firstName: "Web",
+    lastName: "Upload",
+    username: "web_uploader"
+  };
+}
+
+// Gửi file qua bot Telegram
+async function sendFileToTelegram(filePath, fileName, user) {
+  if (!bot) {
+    throw new Error('Bot không khả dụng. Kiểm tra BOT_TOKEN của bạn.');
+  }
+  
+  try {
+    // Tìm các admin chat đã tương tác với bot
+    const updates = await bot.telegram.getUpdates(0, 100, 0, ["message"]);
+    let chatId = null;
+    
+    if (updates && updates.length > 0) {
+      // Lấy chat ID đầu tiên từ tin nhắn gần nhất
+      for (const update of updates) {
+        if (update.message && update.message.chat) {
+          chatId = update.message.chat.id;
+          break;
+        }
+      }
+    }
+    
+    if (!chatId) {
+      throw new Error('Không tìm thấy chat ID nào để gửi file. Vui lòng gửi tin nhắn tới bot trước.');
+    }
+    
+    // Gửi file như một document
+    const sentMessage = await bot.telegram.sendDocument(
+      chatId,
+      { source: filePath },
+      { caption: `File uploaded by ${user.firstName} ${user.lastName || ''}` }
+    );
+    
+    console.log('Đã gửi file thành công qua Telegram bot');
+    
+    // Trả về thông tin Telegram
+    return {
+      fileId: sentMessage.document.file_id,
+      success: true
+    };
+  } catch (error) {
+    console.error('Lỗi khi gửi file qua Telegram:', error);
+    throw error;
+  }
+}
 
 // Phục vụ file tĩnh trong thư mục uploads
 app.use('/uploads', express.static(uploadDir));
@@ -24,32 +175,119 @@ app.get('/viewer', (req, res) => {
 // API để lấy danh sách file
 app.get('/api/files', (req, res) => {
   try {
-    // Đọc file database
-    if (fs.existsSync(filesDbPath)) {
-      const content = fs.readFileSync(filesDbPath, 'utf8');
-      const filesData = JSON.parse(content);
-      console.log(`API loaded ${filesData.length} files from database`);
-      res.json(filesData);
-    } else {
-      res.json([]);
-    }
+    const filesData = readFilesDb();
+    console.log(`API loaded ${filesData.length} files from database`);
+    res.json(filesData);
   } catch (error) {
     console.error('Error loading files:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
+// API để xóa file
+app.delete('/api/files/:id', (req, res) => {
+  try {
+    const filesData = readFilesDb();
+    const fileIndex = filesData.findIndex(f => f._id === req.params.id);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    const file = filesData[fileIndex];
+    
+    // Xóa file vật lý nếu có đường dẫn local
+    if (file.filePath && !file.directLink) {
+      const fullPath = path.join(__dirname, file.filePath);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+        console.log(`Đã xóa file: ${fullPath}`);
+      }
+    }
+    
+    // Xóa khỏi database
+    filesData.splice(fileIndex, 1);
+    saveFilesDb(filesData);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API upload file
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Không có file nào được gửi lên' });
+    }
+    
+    const file = req.file;
+    const user = getCurrentUser();
+    
+    console.log(`File đã upload: ${file.originalname} (${file.size} bytes)`);
+    
+    // Kiểm tra kích thước file
+    if (file.size > 20 * 1024 * 1024) {
+      // Xóa file vừa upload nếu vượt quá giới hạn
+      fs.unlinkSync(file.path);
+      return res.status(413).json({ 
+        error: 'Kích thước file vượt quá giới hạn 20MB (giới hạn của Telegram Bot API)' 
+      });
+    }
+    
+    // Thông tin file
+    const fileInfo = {
+      _id: uuidv4().replace(/-/g, '').substring(0, 12),
+      fileName: file.filename,
+      originalFileName: file.originalname,
+      fileType: file.mimetype.startsWith('image/') ? 'photo' : 
+                file.mimetype.startsWith('video/') ? 'video' : 
+                file.mimetype.startsWith('audio/') ? 'audio' : 'document',
+      filePath: `/uploads/${file.filename}`,
+      fileSize: file.size,
+      uploadDate: new Date().toISOString(),
+      uploadedBy: user
+    };
+    
+    // Đồng bộ với Telegram nếu bot khả dụng
+    if (bot) {
+      try {
+        const telegramInfo = await sendFileToTelegram(file.path, file.originalname, user);
+        fileInfo.fileId = telegramInfo.fileId;
+        fileInfo.sentToTelegram = true;
+      } catch (telegramError) {
+        console.error('Lỗi khi đồng bộ với Telegram:', telegramError);
+        fileInfo.sentToTelegram = false;
+        fileInfo.telegramError = telegramError.message;
+      }
+    } else {
+      fileInfo.sentToTelegram = false;
+      fileInfo.telegramError = 'Bot không khả dụng';
+    }
+    
+    // Lưu thông tin file vào database
+    const filesData = readFilesDb();
+    filesData.push(fileInfo);
+    saveFilesDb(filesData);
+    
+    res.json({
+      success: true,
+      file: fileInfo
+    });
+  } catch (error) {
+    console.error('Lỗi khi xử lý upload file:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Route để xem danh sách file
 app.get('/', (req, res) => {
-  let filesData = [];
+  let filesData = readFilesDb();
   
   try {
-    // Đọc file database
-    if (fs.existsSync(filesDbPath)) {
-      const content = fs.readFileSync(filesDbPath, 'utf8');
-      filesData = JSON.parse(content);
-      console.log(`Loaded ${filesData.length} files from database`);
-    }
+    console.log(`Loaded ${filesData.length} files from database`);
     
     // Tạo HTML với các file đã tìm thấy
     let fileGrid = '';
@@ -135,6 +373,70 @@ app.get('/', (req, res) => {
             vertical-align: middle; 
           }
           @keyframes spin { to { transform: rotate(360deg); } }
+          
+          /* Upload form styles */
+          .upload-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #eee;
+          }
+          .upload-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+          .upload-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .file-input-container {
+            position: relative;
+            flex-grow: 1;
+          }
+          .file-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+          }
+          .upload-btn {
+            padding: 10px 15px;
+            background: #4285F4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+          }
+          .upload-btn:hover {
+            background: #3b78e7;
+          }
+          .upload-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+          }
+          .upload-progress {
+            height: 5px;
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow: hidden;
+          }
+          .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #4CAF50;
+            transition: width 0.3s;
+          }
+          .upload-status {
+            margin-top: 10px;
+            font-size: 14px;
+          }
+          .success { color: #4CAF50; }
+          .error { color: #f44336; }
         </style>
       </head>
       <body>
@@ -148,6 +450,22 @@ app.get('/', (req, res) => {
                 Tự động làm mới
               </label>
               <span id="refresh-status" class="refresh-status"></span>
+            </div>
+          </div>
+          
+          <div class="upload-container">
+            <h3>Upload File</h3>
+            <div class="upload-form">
+              <div class="upload-input">
+                <div class="file-input-container">
+                  <input type="file" id="file-input" class="file-input">
+                </div>
+                <button id="upload-btn" class="upload-btn" onclick="uploadFile()">Upload</button>
+              </div>
+              <div class="upload-progress">
+                <div id="progress-bar" class="progress-bar"></div>
+              </div>
+              <div id="upload-status" class="upload-status"></div>
             </div>
           </div>
           
@@ -173,6 +491,10 @@ app.get('/', (req, res) => {
           const refreshStatus = document.getElementById('refresh-status');
           const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
           const fileContainer = document.getElementById('file-container');
+          const uploadBtn = document.getElementById('upload-btn');
+          const fileInput = document.getElementById('file-input');
+          const progressBar = document.getElementById('progress-bar');
+          const uploadStatus = document.getElementById('upload-status');
           
           // Hàm kiểm tra file mới từ server
           async function checkForNewFiles() {
@@ -226,6 +548,83 @@ app.get('/', (req, res) => {
             } else {
               clearInterval(autoRefreshInterval);
               refreshStatus.textContent = 'Auto refresh: Đã tắt';
+            }
+          }
+          
+          // Hàm upload file
+          async function uploadFile() {
+            const file = fileInput.files[0];
+            if (!file) {
+              uploadStatus.textContent = 'Vui lòng chọn file để upload';
+              uploadStatus.className = 'upload-status error';
+              return;
+            }
+            
+            // Kiểm tra kích thước file
+            if (file.size > 20 * 1024 * 1024) {
+              uploadStatus.textContent = 'Kích thước file vượt quá giới hạn 20MB';
+              uploadStatus.className = 'upload-status error';
+              return;
+            }
+            
+            // Disable upload button và hiển thị trạng thái
+            uploadBtn.disabled = true;
+            uploadStatus.textContent = 'Đang upload...';
+            uploadStatus.className = 'upload-status';
+            progressBar.style.width = '0%';
+            
+            // Tạo form data và thêm file
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+              // Upload file với progress
+              const xhr = new XMLHttpRequest();
+              
+              xhr.upload.addEventListener('progress', function(event) {
+                if (event.lengthComputable) {
+                  const percentComplete = (event.loaded / event.total) * 100;
+                  progressBar.style.width = percentComplete + '%';
+                  uploadStatus.textContent = 'Đang upload: ' + Math.round(percentComplete) + '%';
+                }
+              });
+              
+              xhr.addEventListener('load', function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                  const response = JSON.parse(xhr.responseText);
+                  uploadStatus.textContent = 'Upload thành công! File đã được lưu và đồng bộ với Telegram.';
+                  uploadStatus.className = 'upload-status success';
+                  
+                  // Clear file input và làm mới danh sách sau 1 giây
+                  fileInput.value = '';
+                  setTimeout(() => {
+                    refreshFiles();
+                  }, 1000);
+                } else {
+                  let errorMsg = 'Lỗi khi upload file';
+                  try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg = response.error || errorMsg;
+                  } catch (e) {}
+                  
+                  uploadStatus.textContent = errorMsg;
+                  uploadStatus.className = 'upload-status error';
+                }
+                uploadBtn.disabled = false;
+              });
+              
+              xhr.addEventListener('error', function() {
+                uploadStatus.textContent = 'Lỗi kết nối khi upload file';
+                uploadStatus.className = 'upload-status error';
+                uploadBtn.disabled = false;
+              });
+              
+              xhr.open('POST', '/api/upload');
+              xhr.send(formData);
+            } catch (error) {
+              uploadStatus.textContent = 'Lỗi: ' + error.message;
+              uploadStatus.className = 'upload-status error';
+              uploadBtn.disabled = false;
             }
           }
           
