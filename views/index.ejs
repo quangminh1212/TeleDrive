@@ -167,13 +167,16 @@
             </div>
         <% } else { %>
             <div class="alert alert-info">
-                <h4 class="alert-heading">No files yet!</h4>
-                <p>Send files to your Telegram bot to see them here.</p>
-                <hr>
-                <p class="mb-0">Your bot can receive documents, photos, videos, and audio files.</p>
+                <i class="bi bi-info-circle me-2"></i> No files have been uploaded yet. Send a file to your Telegram bot to get started.
             </div>
         <% } %>
     </div>
+
+    <footer class="bg-light py-3 mt-5">
+        <div class="container text-center">
+            <p class="mb-0 text-muted">TeleDrive &copy; <%= new Date().getFullYear() %> | <a href="https://github.com/yourusername/teledrive" target="_blank" class="text-decoration-none">GitHub</a></p>
+        </div>
+    </footer>
 
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
