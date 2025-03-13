@@ -169,23 +169,23 @@
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i> No files have been uploaded yet. Send a file to your Telegram bot to get started.
             </div>
-            
-            <div class="card mt-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-exclamation-circle me-2"></i> Giới hạn kích thước file</h5>
-                </div>
-                <div class="card-body">
-                    <p>Bot Telegram chỉ có thể tải xuống các file có kích thước <strong>tối đa 20MB</strong> do giới hạn của API Telegram.</p>
-                    <p>Nếu bạn gửi file lớn hơn, sẽ xuất hiện thông báo lỗi <code>"Bad Request: file is too big"</code>.</p>
-                    <h6 class="mt-3">Cách tải file lớn:</h6>
-                    <ol>
-                        <li>Chia nhỏ file lớn thành nhiều phần (mỗi phần dưới 20MB)</li>
-                        <li>Nén file để giảm kích thước trước khi gửi</li>
-                        <li>Sử dụng dịch vụ lưu trữ trực tuyến khác cho các file lớn</li>
-                    </ol>
-                </div>
-            </div>
         <% } %>
+            
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-circle me-2"></i> Giới hạn kích thước file</h5>
+            </div>
+            <div class="card-body">
+                <p>Bot Telegram chỉ có thể tải xuống các file có kích thước <strong>tối đa 20MB</strong> do giới hạn của API Telegram.</p>
+                <p>Nếu bạn gửi file lớn hơn, sẽ xuất hiện thông báo lỗi <code>"Bad Request: file is too big"</code>.</p>
+                <h6 class="mt-3">Cách tải file lớn:</h6>
+                <ol>
+                    <li>Chia nhỏ file lớn thành nhiều phần (mỗi phần dưới 20MB)</li>
+                    <li>Nén file để giảm kích thước trước khi gửi</li>
+                    <li>Sử dụng dịch vụ lưu trữ trực tuyến khác cho các file lớn</li>
+                </ol>
+            </div>
+        </div>
     </div>
 
     <footer class="bg-light py-3 mt-5">

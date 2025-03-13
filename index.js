@@ -296,43 +296,66 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
       const fileStream = fs.createWriteStream(filePath);
       console.log('Tạo stream để ghi file');
       
-      // Fix cho "response.body.pipe is not a function"
-      // Sử dụng phương pháp đọc arrayBuffer thay vì pipe
+      // Cải thiện phương pháp tải file với nhiều phương án dự phòng
+      let downloadSuccess = false;
+      
+      // Phương án 1: Sử dụng arrayBuffer (phương pháp ưu tiên)
       try {
-        console.log('Tải nội dung file...');
+        console.log('Tải nội dung file bằng phương thức arrayBuffer...');
         const buffer = await response.arrayBuffer();
         const nodeBuffer = Buffer.from(buffer);
         
         // Ghi file trực tiếp bằng fs
         fs.writeFileSync(filePath, nodeBuffer);
         console.log(`File đã lưu thành công vào ${filePath} bằng phương thức buffer`);
+        downloadSuccess = true;
       } catch (bufferError) {
-        console.error('Lỗi khi sử dụng phương thức buffer:', bufferError);
+        console.error('Lỗi khi sử dụng phương thức arrayBuffer:', bufferError);
         logErrorToFile('buffer_method_failed', bufferError, { fileLink: fileLink.toString() });
-        
-        // Thử phương pháp thay thế nếu arrayBuffer không hoạt động
-        console.log('Thử phương pháp thay thế sử dụng streams...');
-        
+      }
+      
+      // Phương án 2: Sử dụng streams nếu arrayBuffer thất bại
+      if (!downloadSuccess) {
         try {
-          // Đọc dữ liệu theo chunk
-          const chunks = [];
-          const reader = response.body.getReader();
+          console.log('Thử phương pháp thay thế sử dụng streams...');
           
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
+          // Sử dụng response.body trực tiếp nếu có thể
+          if (response.body && typeof response.body.getReader === 'function') {
+            // Đọc dữ liệu theo chunk
+            const chunks = [];
+            const reader = response.body.getReader();
+            
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+            }
+            
+            const allChunks = Buffer.concat(chunks);
+            fs.writeFileSync(filePath, allChunks);
+            console.log(`File đã lưu thành công vào ${filePath} bằng phương thức chunk`);
+            downloadSuccess = true;
+          } else {
+            throw new Error('response.body không có phương thức getReader');
           }
-          
-          const allChunks = Buffer.concat(chunks);
-          fs.writeFileSync(filePath, allChunks);
-          console.log(`File đã lưu thành công vào ${filePath} bằng phương thức chunk`);
         } catch (streamError) {
           console.error('Lỗi khi sử dụng phương thức stream:', streamError);
           logErrorToFile('stream_method_failed', streamError, { fileLink: fileLink.toString() });
-          
-          // Thử phương pháp cuối cùng: sử dụng thư viện 'axios' hoặc tải trực tiếp bằng http/https
-          throw new Error(`Không thể tải file với phương thức hiện tại. Lỗi: ${streamError.message}`);
+        }
+      }
+      
+      // Phương án 3: Sử dụng text() và Buffer.from nếu cả hai phương án trên thất bại
+      if (!downloadSuccess) {
+        try {
+          console.log('Thử phương pháp cuối cùng sử dụng text()...');
+          const text = await response.text();
+          fs.writeFileSync(filePath, Buffer.from(text));
+          console.log(`File đã lưu thành công vào ${filePath} bằng phương thức text`);
+          downloadSuccess = true;
+        } catch (textError) {
+          console.error('Lỗi khi sử dụng phương thức text:', textError);
+          logErrorToFile('text_method_failed', textError, { fileLink: fileLink.toString() });
+          throw new Error(`Không thể tải file với bất kỳ phương thức nào. Lỗi cuối cùng: ${textError.message}`);
         }
       }
       
@@ -404,7 +427,13 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
     console.error('Lỗi tổng quát khi xử lý file:', error);
     console.error('Stack trace đầy đủ:', error.stack);
     const logFile = logErrorToFile('general_file_processing', error, { message: ctx.message });
-    await ctx.reply(`Xin lỗi, có lỗi khi xử lý file của bạn: ${error.message}. Log chi tiết đã được lưu để kiểm tra.`);
+    
+    let errorMessage = `Xin lỗi, có lỗi khi xử lý file của bạn: ${error.message}.`;
+    if (error.message.includes('size') || error.message.includes('quá lớn')) {
+      errorMessage += ' Hãy thử gửi file nhỏ hơn 20MB.';
+    }
+    errorMessage += ' Log chi tiết đã được lưu để kiểm tra.';
+    await ctx.reply(errorMessage);
   }
 });
 
