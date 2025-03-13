@@ -323,23 +323,32 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
         console.log(`File đã lưu thành công vào ${filePath} bằng phương thức buffer`);
       } catch (bufferError) {
         console.error('Lỗi khi sử dụng phương thức buffer:', bufferError);
+        logErrorToFile('buffer_method_failed', bufferError, { fileLink: fileLink.toString() });
         
         // Thử phương pháp thay thế nếu arrayBuffer không hoạt động
-        console.log('Thử phương pháp thay thế...');
+        console.log('Thử phương pháp thay thế sử dụng streams...');
         
-        // Đọc dữ liệu theo chunk
-        const chunks = [];
-        const reader = response.body.getReader();
-        
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
+        try {
+          // Đọc dữ liệu theo chunk
+          const chunks = [];
+          const reader = response.body.getReader();
+          
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+          }
+          
+          const allChunks = Buffer.concat(chunks);
+          fs.writeFileSync(filePath, allChunks);
+          console.log(`File đã lưu thành công vào ${filePath} bằng phương thức chunk`);
+        } catch (streamError) {
+          console.error('Lỗi khi sử dụng phương thức stream:', streamError);
+          logErrorToFile('stream_method_failed', streamError, { fileLink: fileLink.toString() });
+          
+          // Thử phương pháp cuối cùng: sử dụng thư viện 'axios' hoặc tải trực tiếp bằng http/https
+          throw new Error(`Không thể tải file với phương thức hiện tại. Lỗi: ${streamError.message}`);
         }
-        
-        const allChunks = Buffer.concat(chunks);
-        fs.writeFileSync(filePath, allChunks);
-        console.log(`File đã lưu thành công vào ${filePath} bằng phương thức chunk`);
       }
       
       // Verify file was saved
@@ -415,11 +424,11 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
 });
 
 bot.command('start', (ctx) => {
-  ctx.reply('Welcome to TeleDrive! Send me any file, and I will save it for you.');
+  ctx.reply('Welcome to TeleDrive! Send me any file (under 20MB), and I will save it for you.');
 });
 
 bot.command('help', (ctx) => {
-  ctx.reply('Just send me any file (document, photo, video, audio), and I will save it for you. You can manage your files through the web interface.');
+  ctx.reply('Just send me any file (document, photo, video, audio) under 20MB, and I will save it for you. You can manage your files through the web interface.\n\nLưu ý: Telegram Bot API giới hạn tải xuống file 20MB. File lớn hơn sẽ không thể xử lý.');
 });
 
 // Express routes
