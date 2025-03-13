@@ -223,26 +223,11 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
     console.log(`Xử lý file: ${fileName} (${fileType}, ${fileSize} bytes)`);
     
     // Kiểm tra kích thước file
-    if (fileSize > 50 * 1024 * 1024) { // Giới hạn 50MB
-      const errorMsg = `File quá lớn (${Math.round(fileSize / (1024 * 1024))}MB). Telegram bot chỉ hỗ trợ file tối đa 50MB.`;
+    if (fileSize > 20 * 1024 * 1024) { // Giới hạn 20MB
+      const errorMsg = `File quá lớn (${Math.round(fileSize / (1024 * 1024))}MB). Telegram bot chỉ hỗ trợ file tối đa 20MB.`;
       console.error(errorMsg);
       await ctx.reply(errorMsg);
       return;
-    }
-    
-    // Thông báo đặc biệt nếu file lớn hơn 20MB
-    if (fileSize > 20 * 1024 * 1024) {
-      console.warn(`Cảnh báo: File có kích thước ${Math.round(fileSize / (1024 * 1024))}MB, vượt quá giới hạn 20MB của getFile API của Telegram.`);
-      await ctx.reply(`⚠️ Cảnh báo: File của bạn có kích thước ${Math.round(fileSize / (1024 * 1024))}MB. Telegram giới hạn file tối đa 20MB để bot có thể tải xuống. Đang thử phương pháp thay thế...`);
-      
-      // Log lỗi cho file quá lớn
-      logErrorToFile('file_size_limit', new Error('File exceeds Telegram 20MB limit'), { 
-        fileSize, 
-        fileName,
-        originalFileName
-      });
-      
-      return; // Không thể xử lý file lớn
     }
     
     // Kiểm tra file nguy hiểm
