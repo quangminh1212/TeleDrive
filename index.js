@@ -736,6 +736,50 @@ app.post('/api/update-token', (req, res) => {
   }
 });
 
+// API endpoint để xem log lỗi gần nhất
+app.get('/api/error-logs', (req, res) => {
+  try {
+    const errorLogDir = path.join(__dirname, 'logs');
+    
+    if (!fs.existsSync(errorLogDir)) {
+      return res.json({ logs: [] });
+    }
+    
+    // Đọc danh sách file log
+    const logFiles = fs.readdirSync(errorLogDir)
+      .filter(file => file.startsWith('error_') && file.endsWith('.json'))
+      .sort((a, b) => {
+        // Sắp xếp theo thời gian tạo file, mới nhất lên đầu
+        const statsA = fs.statSync(path.join(errorLogDir, a));
+        const statsB = fs.statSync(path.join(errorLogDir, b));
+        return statsB.mtime.getTime() - statsA.mtime.getTime();
+      })
+      .slice(0, 10); // Giới hạn chỉ 10 file log gần nhất
+    
+    // Đọc nội dung file log
+    const logs = logFiles.map(file => {
+      try {
+        const filePath = path.join(errorLogDir, file);
+        const content = fs.readFileSync(filePath, 'utf8');
+        return {
+          file,
+          time: fs.statSync(filePath).mtime,
+          content: JSON.parse(content)
+        };
+      } catch (error) {
+        return {
+          file,
+          error: `Không thể đọc file log: ${error.message}`
+        };
+      }
+    });
+    
+    res.json({ logs });
+  } catch (error) {
+    res.status(500).json({ error: `Lỗi khi đọc log: ${error.message}` });
+  }
+});
+
 // Handle errors from Telegram bot
 bot.catch((err, ctx) => {
   console.error('Telegram bot error:', err);
