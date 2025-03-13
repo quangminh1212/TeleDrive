@@ -612,6 +612,19 @@
                     }
                 });
             });
+
+            const refreshButton = document.getElementById('refresh-files');
+            const filesContainer = document.getElementById('files-container');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            
+            // Tự động làm mới danh sách file mỗi 10 giây
+            setInterval(refreshFiles, 10000);
+            
+            // Thêm thông báo làm mới tự động
+            const autoRefreshInfo = document.createElement('div');
+            autoRefreshInfo.className = 'alert alert-info mt-3';
+            autoRefreshInfo.innerHTML = '<i class="bi bi-info-circle me-2"></i> Danh sách file sẽ tự động làm mới sau mỗi 10 giây. Bạn cũng có thể nhấn nút <i class="bi bi-arrow-clockwise"></i> để làm mới ngay.';
+            document.querySelector('.container').insertAdjacentElement('beforeend', autoRefreshInfo);
         });
     </script>
 </body>

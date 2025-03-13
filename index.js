@@ -779,17 +779,19 @@ app.get('/api/error-logs', (req, res) => {
 // Thêm API endpoint để lấy danh sách file
 app.get('/api/files', (req, res) => {
   try {
-    // Đọc lại từ đĩa để đảm bảo dữ liệu mới nhất
-    loadFilesDb();
+    // Đọc lại dữ liệu từ đĩa để đảm bảo dữ liệu mới nhất
+    if (fs.existsSync(filesDbPath)) {
+      const content = fs.readFileSync(filesDbPath, 'utf8');
+      filesDb = JSON.parse(content);
+    }
     
-    // Sắp xếp theo thời gian tải lên, mới nhất lên đầu
-    const sortedFiles = [...filesDb].sort((a, b) => 
+    // Sắp xếp theo thời gian mới nhất
+    const sortedFiles = [...filesDb].sort((a, b) =>
       new Date(b.uploadDate) - new Date(a.uploadDate)
     );
     
     res.json({
       success: true,
-      count: sortedFiles.length,
       files: sortedFiles
     });
   } catch (error) {
