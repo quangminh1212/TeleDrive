@@ -6,6 +6,7 @@ TeleDrive là ứng dụng web cho phép bạn quản lý các file được g�
 
 - Nhận và lưu trữ file gửi đến bot Telegram (tài liệu, hình ảnh, video, âm thanh)
 - Xem tất cả file trong giao diện web trực quan
+- **Tự động làm mới** khi có file mới được gửi đến bot
 - Tải xuống file trực tiếp từ giao diện web
 - Xem thông tin chi tiết về từng file
 - Xóa file khi không cần thiết nữa
@@ -50,7 +51,7 @@ TeleDrive là ứng dụng web cho phép bạn quản lý các file được g�
    - Giao diện cơ bản: `http://localhost:3005`
    - Giao diện nâng cao: `http://localhost:3005/viewer`
 
-3. Gửi file đến bot Telegram của bạn, và chúng sẽ xuất hiện trong giao diện web
+3. Gửi file đến bot Telegram của bạn, và chúng sẽ **tự động xuất hiện** trong giao diện web (không cần làm mới trang)
 
 ## Thiết lập Bot
 
@@ -76,6 +77,14 @@ Nếu gặp lỗi khi chạy ứng dụng, bạn có thể:
 2. Đảm bảo token bot hợp lệ
 3. Kiểm tra quyền truy cập thư mục `uploads` và `data`
 4. Đảm bảo cổng không bị chiếm bởi ứng dụng khác
+
+## API
+
+Ứng dụng cung cấp các API endpoint sau:
+
+- `GET /api/files` - Lấy danh sách tất cả các file
+- `GET /api/error-logs` - Xem log lỗi gần nhất
+- `POST /api/restart-bot` - Khởi động lại bot Telegram
 
 ## License
 

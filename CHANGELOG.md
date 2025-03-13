@@ -2,6 +2,22 @@
 
 Tất cả các thay đổi đáng chú ý của dự án TeleDrive sẽ được ghi lại trong file này.
 
+## [1.2.0] - 2025-03-14
+
+### Thêm mới
+- Thêm tính năng tự động làm mới danh sách file khi có file mới
+- Thêm API endpoint `/api/files` để truy vấn danh sách file từ client
+- Thêm hiển thị thời gian kiểm tra file mới gần nhất
+
+### Thay đổi
+- Cải thiện logic hiển thị danh sách file để tránh lỗi cú pháp
+- Thay thế minimal.js bằng minimal-fixed.js với cú pháp chính xác hơn
+- Cập nhật start.js để sử dụng minimal-fixed.js
+
+### Sửa lỗi
+- Sửa lỗi cú pháp template string trong minimal.js
+- Sửa lỗi không tự động phát hiện file mới
+
 ## [1.1.0] - 2025-03-13
 
 ### Thêm mới
