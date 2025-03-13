@@ -612,12 +612,18 @@ bot.launch()
   });
 
 // Start Express server
-const PORT = process.env.PORT || 3003;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Web interface available at http://localhost:${PORT}`);
-  console.log(`Files will be stored in: ${path.resolve(uploadDir)}`);
-});
+const startServer = (port) => {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  }).on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+      console.log(`Port ${port} already in use, trying ${port + 1}`);
+      startServer(port + 1);
+    }
+  });
+};
+
+startServer(3002);
 
 // Enable graceful stop
 process.once('SIGINT', () => {
