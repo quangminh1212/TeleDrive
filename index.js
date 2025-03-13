@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const { Telegraf } = require('telegraf');
 const path = require('path');
@@ -798,6 +797,40 @@ app.get('/api/files', (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message
+    });
+  }
+});
+
+// API endpoint để kiểm tra lưu trữ dữ liệu
+app.get('/api/debug-files', (req, res) => {
+  try {
+    // Kiểm tra file trên đĩa
+    let diskData = null;
+    if (fs.existsSync(filesDbPath)) {
+      const fileContent = fs.readFileSync(filesDbPath, 'utf8');
+      diskData = JSON.parse(fileContent);
+    }
+    
+    // Trả về cả dữ liệu trong bộ nhớ và trên đĩa để so sánh
+    res.json({
+      success: true,
+      memoryData: {
+        count: filesDb.length,
+        files: filesDb
+      },
+      diskData: {
+        count: diskData ? diskData.length : 0,
+        files: diskData
+      },
+      fileDbPath: filesDbPath,
+      fileDbExists: fs.existsSync(filesDbPath)
+    });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
     });
   }
 });
