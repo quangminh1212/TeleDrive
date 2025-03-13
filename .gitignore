@@ -73,4 +73,12 @@ Desktop.ini
 .idea/
 
 # Chrome profiles
-chrome_profiles/ 
+chrome_profiles/
+
+# Temporary files
+*-temp.html
+*-temp.js
+temp-*.html
+temp-*.js
+check-*.html
+run.js 
