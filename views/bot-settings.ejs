@@ -319,10 +319,10 @@
       toggleTokenBtn.addEventListener('click', function() {
         if (botTokenInput.type === 'password') {
           botTokenInput.type = 'text';
-          toggleTokenBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+          toggleTokenBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
         } else {
           botTokenInput.type = 'password';
-          toggleTokenBtn.innerHTML = '<i class="fas fa-eye"></i>';
+          toggleTokenBtn.innerHTML = '<i class="bi bi-eye"></i>';
         }
       });
       
@@ -341,7 +341,7 @@
         
         const saveBtn = document.getElementById('save-token');
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        saveBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Saving...';
         addLogMessage('Updating bot token...', 'warning');
         
         fetch('/api/update-token', {
@@ -368,7 +368,7 @@
           })
           .finally(() => {
             saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save and Apply';
+            saveBtn.innerHTML = '<i class="bi bi-save"></i> Save and Apply';
           });
       });
       
