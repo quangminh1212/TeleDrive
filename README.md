@@ -1,68 +1,81 @@
 # TeleDrive - Telegram File Manager
 
-TeleDrive is a web application that allows you to manage files sent to your Telegram bot. It provides a user-friendly interface to view, download, and delete files that have been sent to your bot.
+TeleDrive là ứng dụng web cho phép bạn quản lý các file được gửi đến bot Telegram của bạn. Nó cung cấp giao diện thân thiện để xem, tải xuống và xóa các file đã được gửi đến bot.
 
-## Features
+## Tính năng
 
-- Receive and store files sent to your Telegram bot (documents, photos, videos, audio)
-- View all files in a clean web interface
-- Download files directly from the web interface
-- View detailed information about each file
-- Delete files when no longer needed
+- Nhận và lưu trữ file gửi đến bot Telegram (tài liệu, hình ảnh, video, âm thanh)
+- Xem tất cả file trong giao diện web trực quan
+- Tải xuống file trực tiếp từ giao diện web
+- Xem thông tin chi tiết về từng file
+- Xóa file khi không cần thiết nữa
+- Hỗ trợ xem trước hình ảnh
+- Hỗ trợ link trực tiếp từ Telegram (không cần lưu trên server)
 
-## Prerequisites
+## Yêu cầu
 
 - Node.js (v14+)
-- A Telegram bot (created via [@BotFather](https://t.me/botfather))
+- Bot Telegram (tạo qua [@BotFather](https://t.me/botfather))
 
-## Installation
+## Cài đặt
 
-1. Clone this repository:
+1. Clone repository:
    ```
    git clone https://github.com/your-username/teledrive.git
    cd teledrive
    ```
 
-2. Install dependencies:
+2. Cài đặt dependencies:
    ```
    npm install
    ```
 
-3. Create a `.env` file in the root directory:
+3. Tạo file `.env` trong thư mục gốc:
    ```
    cp .env.example .env
    ```
 
-4. Edit the `.env` file and add your:
-   - Telegram Bot Token (from BotFather)
-   - Port (optional, defaults to 3000)
+4. Chỉnh sửa file `.env` và thêm:
+   - Token Bot Telegram (từ BotFather)
+   - Port (tùy chọn, mặc định là 3005)
 
-## Usage
+## Sử dụng
 
-1. Start the application:
+1. Khởi động ứng dụng:
    ```
-   npm start
-   ```
-
-2. For development with auto-restart:
-   ```
-   npm run dev
+   node start.js
    ```
 
-3. Access the web interface at `http://localhost:3000` (or your configured port)
+2. Truy cập giao diện web tại:
+   - Giao diện cơ bản: `http://localhost:3005`
+   - Giao diện nâng cao: `http://localhost:3005/viewer`
 
-4. Send files to your Telegram bot, and they will appear in the web interface
+3. Gửi file đến bot Telegram của bạn, và chúng sẽ xuất hiện trong giao diện web
 
-## Setting Up Your Bot
+## Thiết lập Bot
 
-1. Create a bot through Telegram's [@BotFather](https://t.me/botfather)
-2. Get your bot token and add it to the `.env` file
-3. Start a conversation with your bot in Telegram
-4. Start sending files to your bot (documents, photos, videos, audio)
+1. Tạo bot thông qua [@BotFather](https://t.me/botfather) của Telegram
+2. Lấy token bot và thêm vào file `.env`
+3. Bắt đầu cuộc trò chuyện với bot của bạn trong Telegram
+4. Bắt đầu gửi file đến bot của bạn (tài liệu, hình ảnh, video, âm thanh)
 
-## File Storage
+## Lưu trữ File
 
-Files are stored locally in the `uploads` directory and file metadata is stored in a JSON file in the `data` directory. For production use, you might want to consider using cloud storage solutions.
+File được lưu trữ cục bộ trong thư mục `uploads` và metadata file được lưu trữ trong file JSON trong thư mục `data`. Đối với sử dụng trong môi trường production, bạn có thể cân nhắc sử dụng giải pháp lưu trữ đám mây.
+
+## Giới hạn
+
+- Bot Telegram chỉ hỗ trợ tải xuống file có kích thước tối đa 20MB
+- Các file lớn hơn sẽ hiển thị thông báo lỗi "Bad Request: file is too big"
+
+## Xử lý lỗi
+
+Nếu gặp lỗi khi chạy ứng dụng, bạn có thể:
+
+1. Kiểm tra logs trong thư mục `logs`
+2. Đảm bảo token bot hợp lệ
+3. Kiểm tra quyền truy cập thư mục `uploads` và `data`
+4. Đảm bảo cổng không bị chiếm bởi ứng dụng khác
 
 ## License
 
