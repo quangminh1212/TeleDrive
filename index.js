@@ -18,7 +18,48 @@ bot.command('help', (ctx) => {
 
 // Express routes
 app.get('/', (req, res) => {
-  res.render('index-simple');
+  try {
+    // Đảm bảo filesDb đã được khởi tạo
+    if (!Array.isArray(filesDb)) {
+      console.error('filesDb is not an array:', filesDb);
+      filesDb = [];
+    }
+    
+    // Đọc lại từ file để đảm bảo dữ liệu mới nhất
+    try {
+      if (fs.existsSync(filesDbPath)) {
+        const content = fs.readFileSync(filesDbPath, 'utf8');
+        filesDb = JSON.parse(content);
+        console.log(`Reloaded ${filesDb.length} files from database`);
+      }
+    } catch (readError) {
+      console.error('Error reading files database:', readError);
+    }
+    
+    // Sort files by date
+    const sortedFiles = [...filesDb].sort((a, b) => 
+      new Date(b.uploadDate) - new Date(a.uploadDate)
+    );
+    
+    // Render with empty message if no files
+    if (sortedFiles.length === 0) {
+      return res.render('empty-files', {
+        message: 'No files have been uploaded yet. Send a file to your Telegram bot to get started.'
+      });
+    }
+    
+    // Render with files
+    res.render('index', { 
+      files: sortedFiles,
+      hasFiles: true
+    });
+  } catch (error) {
+    console.error('Error rendering index:', error);
+    res.status(500).send(`
+      <h1>Server Error</h1>
+      <p>Lỗi khi hiển thị trang: ${error.message}</p>
+    `);
+  }
 });
 
 // Bot settings page
