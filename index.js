@@ -18,12 +18,7 @@ bot.command('help', (ctx) => {
 
 // Express routes
 app.get('/', (req, res) => {
-  try {
-    res.render('index'); // Không truyền data, sẽ lấy qua API
-  } catch (error) {
-    console.error('Error rendering index page:', error);
-    res.status(500).send('Server error');
-  }
+  res.render('index-simple');
 });
 
 // Bot settings page
@@ -521,6 +516,35 @@ app.get('/api/debug-files', (req, res) => {
       success: false,
       error: error.message,
       stack: error.stack
+    });
+  }
+});
+
+// API endpoint truy cập trực tiếp filesDb (KHÔNG kèm xử lý EJS)
+app.get('/api/raw-files', (req, res) => {
+  try {
+    // Đọc trực tiếp từ file trên đĩa
+    let files = [];
+    if (fs.existsSync(filesDbPath)) {
+      try {
+        const content = fs.readFileSync(filesDbPath, 'utf8');
+        files = JSON.parse(content);
+        console.log(`Loaded ${files.length} files from database`);
+      } catch (err) {
+        console.error('Error reading database file:', err);
+      }
+    }
+    
+    // Trả về dữ liệu dạng JSON
+    res.json({
+      files: files,
+      count: files.length,
+      time: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in /api/raw-files:', error);
+    res.status(500).json({
+      error: error.message
     });
   }
 });
