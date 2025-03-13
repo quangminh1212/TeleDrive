@@ -17,28 +17,12 @@ bot.command('help', (ctx) => {
 });
 
 // Express routes
-app.get('/', async (req, res) => {
+app.get('/', (req, res) => {
   try {
-    // Load dữ liệu mới nhất từ file
-    if (fs.existsSync(filesDbPath)) {
-      try {
-        const content = fs.readFileSync(filesDbPath, 'utf8');
-        filesDb = JSON.parse(content);
-        console.log(`Đã tải lại dữ liệu từ file: ${filesDb.length} files`);
-      } catch (fileError) {
-        console.error('Lỗi khi đọc file dữ liệu:', fileError);
-      }
-    }
-    
-    // Sort files by uploadDate, newest first
-    const files = [...filesDb].sort((a, b) => 
-      new Date(b.uploadDate) - new Date(a.uploadDate)
-    );
-    
-    res.render('index', { files: files });
+    res.render('index'); // Không truyền data, sẽ lấy qua API
   } catch (error) {
-    console.error('Lỗi khi render trang chủ:', error);
-    res.status(500).render('error', { message: 'Server error' });
+    console.error('Error rendering index page:', error);
+    res.status(500).send('Server error');
   }
 });
 
@@ -472,33 +456,37 @@ app.get('/api/error-logs', (req, res) => {
 // API endpoint để lấy danh sách file
 app.get('/api/files', (req, res) => {
   try {
-    // Đọc lại từ file để đảm bảo dữ liệu mới nhất
-    let files = [];
+    // Đọc lại dữ liệu từ file để đảm bảo dữ liệu mới nhất
+    let updatedFiles = [];
     
     if (fs.existsSync(filesDbPath)) {
       try {
         const content = fs.readFileSync(filesDbPath, 'utf8');
-        files = JSON.parse(content);
-      } catch (e) {
-        console.error('Lỗi đọc file dữ liệu:', e);
-        files = filesDb; // Sử dụng dữ liệu từ bộ nhớ nếu có lỗi
+        updatedFiles = JSON.parse(content);
+        console.log(`Đọc ${updatedFiles.length} files từ database`);
+      } catch (err) {
+        console.error('Lỗi đọc file database:', err);
+        updatedFiles = filesDb; // Dùng dữ liệu từ memory nếu không đọc được file
       }
     } else {
-      files = filesDb;
+      updatedFiles = filesDb;
     }
     
-    // Sắp xếp theo thời gian mới nhất
-    const sortedFiles = [...files].sort((a, b) => 
+    // Sắp xếp files theo thời gian mới nhất
+    const sortedFiles = [...updatedFiles].sort((a, b) => 
       new Date(b.uploadDate) - new Date(a.uploadDate)
     );
     
     res.json({
-      files: sortedFiles
+      files: sortedFiles,
+      count: sortedFiles.length,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     console.error('Error fetching files:', error);
     res.status(500).json({
-      error: error.message
+      error: error.message,
+      stack: process.env.NODE_ENV === 'production' ? null : error.stack
     });
   }
 });
