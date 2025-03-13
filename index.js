@@ -42,6 +42,48 @@ function saveFilesDb() {
   fs.writeFileSync(filesDbPath, JSON.stringify(filesDb, null, 2));
 }
 
+// Log errors to file for debugging
+function logErrorToFile(context, error, additionalInfo = {}) {
+  try {
+    const errorLogDir = path.join(__dirname, 'logs');
+    
+    // Create logs directory if it doesn't exist
+    if (!fs.existsSync(errorLogDir)) {
+      fs.mkdirSync(errorLogDir, { recursive: true });
+    }
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const errorLogFile = path.join(errorLogDir, `error_${timestamp}.json`);
+    
+    const errorData = {
+      timestamp: new Date().toISOString(),
+      context: context,
+      error: {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        code: error.code
+      },
+      additionalInfo: additionalInfo
+    };
+    
+    fs.writeFileSync(errorLogFile, JSON.stringify(errorData, null, 2));
+    console.log(`Lỗi đã được ghi vào file: ${errorLogFile}`);
+    return errorLogFile;
+  } catch (logError) {
+    console.error('Không thể ghi log lỗi vào file:', logError);
+    return null;
+  }
+}
+
+// Check if a file is potentially unsafe
+function isPotentiallyUnsafeFile(fileName) {
+  const unsafeExtensions = ['.exe', '.bat', '.cmd', '.msi', '.dll', '.vbs', '.js', '.ps1', '.sh'];
+  const lowerFileName = fileName.toLowerCase();
+  
+  return unsafeExtensions.some(ext => lowerFileName.endsWith(ext));
+}
+
 // Generate a unique ID for files
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -188,6 +230,16 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
       return;
     }
     
+    // Kiểm tra file nguy hiểm
+    if (isPotentiallyUnsafeFile(originalFileName)) {
+      console.warn(`Cảnh báo: Phát hiện file tiềm ẩn nguy hiểm: ${originalFileName}`);
+      
+      // Nếu là file .exe, cảnh báo người dùng nhưng vẫn tiếp tục xử lý
+      if (originalFileName.toLowerCase().endsWith('.exe')) {
+        await ctx.reply(`⚠️ Cảnh báo: File .exe có thể bị chặn bởi một số máy chủ vì lý do bảo mật. Sẽ thử tải lên nhưng có thể gặp lỗi.`);
+      }
+    }
+    
     // Get file link from Telegram
     console.log(`Đang lấy link file từ Telegram API với fileId: ${fileId}`);
     let fileLink;
@@ -197,6 +249,7 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
     } catch (getFileLinkError) {
       console.error('Lỗi lấy file link từ Telegram:', getFileLinkError);
       await ctx.reply(`Không thể lấy thông tin file từ Telegram. Lỗi: ${getFileLinkError.message}`);
+      const logFile = logErrorToFile('getFileLink', getFileLinkError, { fileId, fileType, originalFileName });
       return;
     }
     
@@ -217,6 +270,7 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
     } catch (dirError) {
       console.error('Lỗi quyền thư mục uploads:', dirError);
       await ctx.reply(`Lỗi quyền thư mục trên server: ${dirError.message}`);
+      const logFile = logErrorToFile('directory_access', dirError, { uploadDir, fileName });
       return;
     }
     
@@ -279,7 +333,14 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
     } catch (error) {
       console.error('Lỗi chi tiết khi tải file:', error);
       console.error('Stack trace:', error.stack);
-      await ctx.reply(`Lỗi khi tải file: ${error.message}`);
+      const logFile = logErrorToFile('download_file', error, { 
+        fileId, 
+        fileName, 
+        fileType, 
+        fileSize,
+        fileLink: fileLink.toString()
+      });
+      await ctx.reply(`Lỗi khi tải file: ${error.message}. Log lỗi đã được lưu để kiểm tra.`);
       return;
     }
     
@@ -314,12 +375,14 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
       await ctx.reply(`File "${originalFileName}" đã được lưu thành công! Truy cập nó từ web interface.`);
     } catch (dbError) {
       console.error('Lỗi lưu metadata file:', dbError);
+      const logFile = logErrorToFile('save_metadata', dbError, { fileName, fileId, filePath });
       await ctx.reply(`File đã tải lên nhưng có lỗi khi lưu thông tin: ${dbError.message}`);
     }
   } catch (error) {
     console.error('Lỗi tổng quát khi xử lý file:', error);
     console.error('Stack trace đầy đủ:', error.stack);
-    await ctx.reply(`Xin lỗi, có lỗi khi xử lý file của bạn: ${error.message}`);
+    const logFile = logErrorToFile('general_file_processing', error, { message: ctx.message });
+    await ctx.reply(`Xin lỗi, có lỗi khi xử lý file của bạn: ${error.message}. Log chi tiết đã được lưu để kiểm tra.`);
   }
 });
 
