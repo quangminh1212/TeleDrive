@@ -230,6 +230,21 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
       return;
     }
     
+    // Thông báo đặc biệt nếu file lớn hơn 20MB
+    if (fileSize > 20 * 1024 * 1024) {
+      console.warn(`Cảnh báo: File có kích thước ${Math.round(fileSize / (1024 * 1024))}MB, vượt quá giới hạn 20MB của getFile API của Telegram.`);
+      await ctx.reply(`⚠️ Cảnh báo: File của bạn có kích thước ${Math.round(fileSize / (1024 * 1024))}MB. Telegram giới hạn file tối đa 20MB để bot có thể tải xuống. Đang thử phương pháp thay thế...`);
+      
+      // Log lỗi cho file quá lớn
+      logErrorToFile('file_size_limit', new Error('File exceeds Telegram 20MB limit'), { 
+        fileSize, 
+        fileName,
+        originalFileName
+      });
+      
+      return; // Không thể xử lý file lớn
+    }
+    
     // Kiểm tra file nguy hiểm
     if (isPotentiallyUnsafeFile(originalFileName)) {
       console.warn(`Cảnh báo: Phát hiện file tiềm ẩn nguy hiểm: ${originalFileName}`);
@@ -292,27 +307,40 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
       const contentLength = response.headers.get('content-length');
       console.log(`Content-Length từ response: ${contentLength} bytes`);
       
+      // Tạo stream để ghi file
       const fileStream = fs.createWriteStream(filePath);
       console.log('Tạo stream để ghi file');
       
-      await new Promise((resolve, reject) => {
-        response.body.pipe(fileStream);
+      // Fix cho "response.body.pipe is not a function"
+      // Sử dụng phương pháp đọc arrayBuffer thay vì pipe
+      try {
+        console.log('Tải nội dung file...');
+        const buffer = await response.arrayBuffer();
+        const nodeBuffer = Buffer.from(buffer);
         
-        response.body.on('error', (err) => {
-          console.error('Lỗi trong quá trình tải dữ liệu từ Telegram:', err);
-          reject(err);
-        });
+        // Ghi file trực tiếp bằng fs
+        fs.writeFileSync(filePath, nodeBuffer);
+        console.log(`File đã lưu thành công vào ${filePath} bằng phương thức buffer`);
+      } catch (bufferError) {
+        console.error('Lỗi khi sử dụng phương thức buffer:', bufferError);
         
-        fileStream.on('finish', () => {
-          console.log(`File đã lưu thành công vào ${filePath}`);
-          resolve();
-        });
+        // Thử phương pháp thay thế nếu arrayBuffer không hoạt động
+        console.log('Thử phương pháp thay thế...');
         
-        fileStream.on('error', (err) => {
-          console.error('Lỗi ghi file xuống đĩa:', err);
-          reject(err);
-        });
-      });
+        // Đọc dữ liệu theo chunk
+        const chunks = [];
+        const reader = response.body.getReader();
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+        
+        const allChunks = Buffer.concat(chunks);
+        fs.writeFileSync(filePath, allChunks);
+        console.log(`File đã lưu thành công vào ${filePath} bằng phương thức chunk`);
+      }
       
       // Verify file was saved
       if (!fs.existsSync(filePath)) {
