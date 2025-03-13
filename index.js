@@ -147,23 +147,29 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
     let fileId, originalFileName, fileType, fileSize;
     let messageObj;
     
+    console.log('Nhận được file từ Telegram:', JSON.stringify(ctx.message, null, 2));
+    
     if (ctx.message.document) {
       messageObj = ctx.message.document;
       fileType = 'document';
       originalFileName = messageObj.file_name || `document_${Date.now()}`;
+      console.log(`File document "${originalFileName}" đã nhận, mime type: ${messageObj.mime_type}`);
     } else if (ctx.message.photo) {
       // Photos come in an array of different sizes, take the last one (highest quality)
       messageObj = ctx.message.photo[ctx.message.photo.length - 1];
       fileType = 'photo';
       originalFileName = `photo_${Date.now()}.jpg`;
+      console.log(`File ảnh đã nhận, ID: ${messageObj.file_id}`);
     } else if (ctx.message.video) {
       messageObj = ctx.message.video;
       fileType = 'video';
       originalFileName = messageObj.file_name || `video_${Date.now()}.mp4`;
+      console.log(`File video "${originalFileName}" đã nhận, mime type: ${messageObj.mime_type}`);
     } else if (ctx.message.audio) {
       messageObj = ctx.message.audio;
       fileType = 'audio';
       originalFileName = messageObj.file_name || `audio_${Date.now()}.mp3`;
+      console.log(`File audio "${originalFileName}" đã nhận, mime type: ${messageObj.mime_type}`);
     }
     
     // Generate a unique filename to prevent collisions
@@ -172,83 +178,148 @@ bot.on(['document', 'photo', 'video', 'audio'], async (ctx) => {
     fileId = messageObj.file_id;
     fileSize = messageObj.file_size;
     
-    console.log(`Processing file: ${fileName} (${fileType}, ${fileSize} bytes)`);
+    console.log(`Xử lý file: ${fileName} (${fileType}, ${fileSize} bytes)`);
+    
+    // Kiểm tra kích thước file
+    if (fileSize > 50 * 1024 * 1024) { // Giới hạn 50MB
+      const errorMsg = `File quá lớn (${Math.round(fileSize / (1024 * 1024))}MB). Telegram bot chỉ hỗ trợ file tối đa 50MB.`;
+      console.error(errorMsg);
+      await ctx.reply(errorMsg);
+      return;
+    }
     
     // Get file link from Telegram
-    const fileLink = await ctx.telegram.getFileLink(fileId);
-    console.log(`File link from Telegram: ${fileLink}`);
+    console.log(`Đang lấy link file từ Telegram API với fileId: ${fileId}`);
+    let fileLink;
+    try {
+      fileLink = await ctx.telegram.getFileLink(fileId);
+      console.log(`File link từ Telegram: ${fileLink}`);
+    } catch (getFileLinkError) {
+      console.error('Lỗi lấy file link từ Telegram:', getFileLinkError);
+      await ctx.reply(`Không thể lấy thông tin file từ Telegram. Lỗi: ${getFileLinkError.message}`);
+      return;
+    }
     
     // Prepare local file path
     const filePath = path.join(uploadDir, fileName);
-    console.log(`Saving file to: ${filePath}`);
+    console.log(`Lưu file vào: ${filePath}`);
+    
+    // Kiểm tra thư mục tồn tại và có quyền ghi
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        console.log(`Thư mục uploads không tồn tại, tạo thư mục: ${uploadDir}`);
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      // Kiểm tra quyền ghi
+      fs.accessSync(uploadDir, fs.constants.W_OK);
+      console.log('Đã xác nhận quyền ghi vào thư mục uploads');
+    } catch (dirError) {
+      console.error('Lỗi quyền thư mục uploads:', dirError);
+      await ctx.reply(`Lỗi quyền thư mục trên server: ${dirError.message}`);
+      return;
+    }
     
     // Download file from Telegram
     try {
+      console.log('Bắt đầu tải file từ Telegram...');
       const response = await fetch(fileLink);
       
       if (!response.ok) {
-        throw new Error(`Failed to download file: ${response.status} ${response.statusText}`);
+        throw new Error(`Lỗi tải file: ${response.status} ${response.statusText}`);
       }
       
+      console.log('Đã kết nối thành công, kiểm tra response:', {
+        status: response.status,
+        type: response.type,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
+      const contentLength = response.headers.get('content-length');
+      console.log(`Content-Length từ response: ${contentLength} bytes`);
+      
       const fileStream = fs.createWriteStream(filePath);
+      console.log('Tạo stream để ghi file');
       
       await new Promise((resolve, reject) => {
         response.body.pipe(fileStream);
+        
         response.body.on('error', (err) => {
-          console.error('Error during file download stream:', err);
+          console.error('Lỗi trong quá trình tải dữ liệu từ Telegram:', err);
           reject(err);
         });
+        
         fileStream.on('finish', () => {
-          console.log(`File successfully saved to ${filePath}`);
+          console.log(`File đã lưu thành công vào ${filePath}`);
           resolve();
         });
+        
         fileStream.on('error', (err) => {
-          console.error('Error writing file to disk:', err);
+          console.error('Lỗi ghi file xuống đĩa:', err);
           reject(err);
         });
       });
       
       // Verify file was saved
       if (!fs.existsSync(filePath)) {
-        throw new Error(`File was not saved properly to ${filePath}`);
+        throw new Error(`File không được lưu tại ${filePath}`);
       }
       
       const stats = fs.statSync(filePath);
-      console.log(`File saved, size on disk: ${stats.size} bytes`);
+      console.log(`File đã lưu, kích thước trên đĩa: ${stats.size} bytes`);
+      
+      // Kiểm tra nếu file có kích thước 0 byte
+      if (stats.size === 0) {
+        fs.unlinkSync(filePath); // Xóa file rỗng
+        throw new Error('File đã tải về nhưng rỗng (0 byte)');
+      }
       
       // Use the actual file size
       fileSize = stats.size;
     } catch (error) {
-      console.error('Error downloading file:', error);
-      await ctx.reply('Sorry, there was an error downloading your file.');
+      console.error('Lỗi chi tiết khi tải file:', error);
+      console.error('Stack trace:', error.stack);
+      await ctx.reply(`Lỗi khi tải file: ${error.message}`);
       return;
     }
     
+    // Kiểm tra file .exe
+    if (originalFileName.toLowerCase().endsWith('.exe')) {
+      console.log('Cảnh báo: File .exe có thể gặp vấn đề bảo mật trên một số máy chủ');
+    }
+    
     // Save file metadata to our JSON database
-    const newFile = {
-      _id: generateId(),
-      fileId: fileId,
-      fileName: fileName,
-      originalFileName: originalFileName,
-      fileType: fileType,
-      filePath: `/uploads/${fileName}`,
-      fileSize: fileSize,
-      uploadDate: new Date().toISOString(),
-      uploadedBy: {
-        userId: ctx.from.id.toString(),
-        firstName: ctx.from.first_name,
-        lastName: ctx.from.last_name,
-        username: ctx.from.username
-      }
-    };
-    
-    filesDb.push(newFile);
-    saveFilesDb();
-    
-    await ctx.reply(`File "${originalFileName}" has been saved successfully! Access it from the web interface.`);
+    try {
+      const newFile = {
+        _id: generateId(),
+        fileId: fileId,
+        fileName: fileName,
+        originalFileName: originalFileName,
+        fileType: fileType,
+        filePath: `/uploads/${fileName}`,
+        fileSize: fileSize,
+        uploadDate: new Date().toISOString(),
+        uploadedBy: {
+          userId: ctx.from.id.toString(),
+          firstName: ctx.from.first_name,
+          lastName: ctx.from.last_name,
+          username: ctx.from.username
+        }
+      };
+      
+      filesDb.push(newFile);
+      saveFilesDb();
+      console.log('Đã lưu metadata vào cơ sở dữ liệu JSON');
+      
+      await ctx.reply(`File "${originalFileName}" đã được lưu thành công! Truy cập nó từ web interface.`);
+    } catch (dbError) {
+      console.error('Lỗi lưu metadata file:', dbError);
+      await ctx.reply(`File đã tải lên nhưng có lỗi khi lưu thông tin: ${dbError.message}`);
+    }
   } catch (error) {
-    console.error('Error handling file:', error);
-    await ctx.reply('Sorry, there was an error processing your file.');
+    console.error('Lỗi tổng quát khi xử lý file:', error);
+    console.error('Stack trace đầy đủ:', error.stack);
+    await ctx.reply(`Xin lỗi, có lỗi khi xử lý file của bạn: ${error.message}`);
   }
 });
 
