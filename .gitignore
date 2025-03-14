@@ -196,4 +196,14 @@ dist
 uploads/*
 temp/*
 data/*
-storage/* 
+storage/*
+db/*
+!uploads/.gitkeep
+!temp/.gitkeep
+!data/.gitkeep
+!storage/.gitkeep
+!db/.gitkeep
+
+# Replit configs
+.replit
+replit.nix 
