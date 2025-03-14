@@ -1,0 +1,57 @@
+/* TeleDrive CSS */
+.file-card {
+    transition: transform 0.2s ease;
+    margin-bottom: 20px;
+}
+.file-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+.file-icon {
+    font-size: 2.5rem;
+    margin: 15px 0;
+}
+.document-icon { color: #4285F4; }
+.photo-icon { color: #34A853; }
+.video-icon { color: #EA4335; }
+.audio-icon { color: #FBBC05; }
+.file-error { color: #EA4335; }
+.file-thumb {
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+.loading-spinner {
+    text-align: center;
+    margin: 20px 0;
+}
+#refresh-files {
+    animation: rotate 1s linear infinite paused;
+}
+#refresh-files.spinning {
+    animation-play-state: running;
+}
+@keyframes rotate {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+.file-unavailable {
+    color: #EA4335;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+.file-details {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 5px 0;
+}
+.storage-info {
+    margin-bottom: 30px;
+}
+.storage-bar {
+    height: 10px;
+    margin: 10px 0;
+} 
