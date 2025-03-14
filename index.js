@@ -1032,60 +1032,58 @@ app.get('/api/files/:id/preview', async (req, res) => {
   }
 });
 
-// API endpoint để tải file từ Telegram (đảm bảo tải trực tiếp từ Telegram)
+// API tải file từ Telegram
 app.get('/api/files/:id/telegram-download', async (req, res) => {
   try {
     const fileId = req.params.id;
-    const filesData = readFilesDb();
-    const file = filesData.find(f => f.id === fileId);
+    const file = await db.getFile(fileId);
     
     if (!file) {
-      return res.status(404).json({ error: 'File không tồn tại' });
+      return res.status(404).send('File không tồn tại');
     }
     
-    // Kiểm tra xem file có Telegram File ID thật không
-    if (!file.telegramFileId || file.fakeTelegramId) {
-      return res.status(404).json({ error: 'File không có trên Telegram' });
-    }
-    
-    // Kiểm tra xem bot có hoạt động không
-    if (!botActive || !bot) {
-      return res.status(503).json({ error: 'Bot Telegram không hoạt động' });
+    if (!file.telegramFileId) {
+      return res.status(404).send('File không có telegramFileId');
     }
     
     try {
-      // Lấy link file từ Telegram
-      const fileLink = await bot.telegram.getFileLink(file.telegramFileId);
-      file.telegramUrl = fileLink.href;
-      file.fakeTelegramUrl = false;
-      
-      // Lưu lại vào database
-      const fileIndex = filesData.findIndex(f => f.id === fileId);
-      if (fileIndex !== -1) {
-        filesData[fileIndex].telegramUrl = file.telegramUrl;
-        saveFilesDb(filesData);
+      if (!botActive || !bot) {
+        // Nếu bot không hoạt động nhưng có telegramUrl, chuyển hướng
+        if (file.telegramUrl) {
+          return res.redirect(file.telegramUrl);
+        }
+        return res.status(503).send('Bot Telegram không hoạt động. Không thể tải file');
       }
       
-      // Tải file từ Telegram và stream về client
-      const response = await axios({
-        method: 'get',
-        url: file.telegramUrl,
-        responseType: 'stream'
-      });
-      
-      // Set header để tải xuống file với tên gốc
-      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`);
-      res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
-      
-      // Pipe response từ Telegram về client
-      response.data.pipe(res);
+      // Tạo stream từ Telegram và pipe đến response
+      try {
+        const fileStream = await downloadFileFromTelegram(file.telegramFileId);
+        
+        // Đặt headers
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.originalname)}"`);
+        if (file.mimetype) {
+          res.setHeader('Content-Type', file.mimetype);
+        }
+        
+        // Pipe stream trực tiếp đến response
+        fileStream.pipe(res);
+      } catch (telegramError) {
+        console.error('Lỗi khi tải file từ Telegram:', telegramError);
+        
+        // Nếu có telegramUrl, chuyển hướng người dùng đến đó
+        if (file.telegramUrl) {
+          return res.redirect(file.telegramUrl);
+        }
+        
+        return res.status(500).send(`Không thể tải file từ Telegram: ${telegramError.message}`);
+      }
     } catch (error) {
-      console.error('Lỗi tải file từ Telegram:', error);
-      return res.status(500).json({ error: 'Không thể tải file từ Telegram' });
+      console.error('Lỗi khi xử lý tải file từ Telegram:', error);
+      return res.status(500).send('Lỗi khi tải file');
     }
   } catch (error) {
-    console.error('Lỗi tải file từ Telegram:', error);
-    res.status(500).json({ error: 'Lỗi tải file từ Telegram' });
+    console.error('Lỗi khi xử lý request tải file:', error);
+    res.status(500).send('Lỗi server khi tải file');
   }
 });
 
