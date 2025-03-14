@@ -126,7 +126,7 @@ async function processIncomingFile(ctx, fileType) {
       throw new Error('Không hỗ trợ loại file này');
     }
     
-    // Lưu trữ tên file gốc cho hiển thị - đảm bảo không bị encoding
+    // Lưu trữ tên file gốc cho hiển thị
     const originalFileName = fileName;
     
     // Kiểm tra kích thước file
@@ -135,43 +135,11 @@ async function processIncomingFile(ctx, fileType) {
     }
     
     // Lấy thông tin file từ Telegram
-    ctx.reply('⏳ Đang tải xuống file... Vui lòng đợi.');
+    ctx.reply('⏳ Đang xử lý file... Vui lòng đợi.');
     const fileInfo = await ctx.telegram.getFile(fileId);
     const fileUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
     
-    // Tạo thư mục uploads nếu chưa tồn tại
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    // Tạo tên file an toàn cho lưu trữ
-    const timestamp = Date.now();
-    const fileHash = crypto.createHash('md5').update(fileName + timestamp).digest('hex').substring(0, 8);
-    // Mã hóa tên file để tránh lỗi encoding
-    const encodedFileName = encodeURIComponent(fileName);
-    const safeFileName = `file_${timestamp}_${fileHash}${path.extname(fileName)}`;
-    const filePath = path.join(uploadDir, safeFileName);
-    
-    // Tải xuống file
-    const response = await axios({
-      method: 'GET',
-      url: fileUrl,
-      responseType: 'stream'
-    });
-    
-    const writer = fs.createWriteStream(filePath);
-    response.data.pipe(writer);
-    
-    await new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
-    
-    // Lấy kích thước file thực tế
-    const stats = fs.statSync(filePath);
-    const realFileSize = stats.size;
-    
-    // Lưu thông tin người dùng
+    // Tạo thông tin người dùng
     const user = {
       userId: ctx.from.id.toString(),
       firstName: ctx.from.first_name || '',
@@ -179,20 +147,28 @@ async function processIncomingFile(ctx, fileType) {
       username: ctx.from.username || ''
     };
     
-    // Tạo thông tin file
+    // Tạo ID duy nhất cho file
+    const fileHash = crypto.createHash('md5').update(fileId + Date.now()).digest('hex').substring(0, 8);
+    const uniqueId = uuidv4().replace(/-/g, '').substring(0, 12);
+    
+    // Tạo thông tin file - không lưu file local mà chỉ lưu tham chiếu tới Telegram
     const fileData = {
-      _id: uuidv4().replace(/-/g, '').substring(0, 12),
-      fileName: safeFileName,
+      _id: uniqueId,
+      fileName: originalFileName,
       originalFileName: originalFileName,
       fileType: fileType,
-      fileSize: realFileSize,
-      filePath: `/uploads/${safeFileName}`,
+      fileSize: fileSize,
+      mimeType: mimeType,
       uploadDate: new Date().toISOString(),
       uploadedBy: user,
       fileId: fileId,
+      fileUrl: fileUrl,
+      telegramFileInfo: fileInfo,
       telegramMessageId: ctx.message.message_id,
       chatId: ctx.chat.id,
-      sentToTelegram: true
+      sentToTelegram: true,
+      storedOnTelegram: true,
+      localFileStored: false
     };
     
     // Lưu thông tin file vào database
@@ -201,8 +177,8 @@ async function processIncomingFile(ctx, fileType) {
     saveFilesDb(filesData);
     
     // Thông báo hoàn thành
-    ctx.reply(`✅ File "${fileName}" đã được lưu thành công!\nKích thước: ${(realFileSize / 1024 / 1024).toFixed(2)}MB\nTruy cập web để xem và tải xuống file.`);
-    console.log(`File đã được lưu: ${filePath} (${realFileSize} bytes)`);
+    ctx.reply(`✅ File "${fileName}" đã được lưu thành công!\nKích thước: ${(fileSize / 1024 / 1024).toFixed(2)}MB\nTruy cập web để xem và tải xuống file.`);
+    console.log(`Đã lưu thông tin file Telegram: ${fileId} (${fileSize} bytes)`);
     
   } catch (error) {
     console.error('Lỗi trong quá trình xử lý file:', error);
@@ -218,32 +194,32 @@ async function processIncomingFile(ctx, fileType) {
 }
 
 // Thư mục data chứa file JSON
-const dataDir = path.join(__dirname, 'data');
+const dataDir = path.join(__dirname, process.env.DATA_DIR || 'data');
 const filesDbPath = path.join(dataDir, 'files.json');
-const uploadDir = path.join(__dirname, 'uploads');
+const tempDir = path.join(__dirname, process.env.TEMP_DIR || 'temp'); // Thư mục tạm thời để upload file
 
 // Đảm bảo các thư mục tồn tại
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
 }
 
-// Middleware cho upload file
+// Middleware cho upload file tạm thời
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    cb(null, tempDir);
   },
   filename: (req, file, cb) => {
-    // Tạo tên file an toàn để lưu trữ
+    // Tạo tên file tạm thời để upload
     const originalName = file.originalname || 'unknown_file';
     const timestamp = Date.now();
     const fileHash = crypto.createHash('md5').update(originalName + timestamp).digest('hex').substring(0, 8);
     
-    // Tạo tên file an toàn để lưu trữ, không bao gồm tên gốc để tránh lỗi encoding
-    const safeFileName = `file_${timestamp}_${fileHash}${path.extname(originalName)}`;
+    // Tạo tên file an toàn để lưu trữ tạm thời
+    const safeFileName = `temp_${timestamp}_${fileHash}${path.extname(originalName)}`;
     cb(null, safeFileName);
   }
 });
@@ -351,7 +327,7 @@ async function sendFileToTelegram(filePath, fileName, user) {
 }
 
 // Phục vụ file tĩnh trong thư mục uploads
-app.use('/uploads', express.static(uploadDir));
+app.use('/uploads', express.static(tempDir));
 
 // Cho phép truy cập trực tiếp đến thư mục data để đọc files.json
 app.use('/data', express.static(dataDir));
@@ -384,15 +360,6 @@ app.delete('/api/files/:id', async (req, res) => {
     }
     
     const file = filesData[fileIndex];
-    
-    // Xóa file vật lý nếu có đường dẫn local
-    if (file.filePath && !file.directLink) {
-      const fullPath = path.join(__dirname, file.filePath);
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
-        console.log(`Đã xóa file: ${fullPath}`);
-      }
-    }
     
     // Xóa tin nhắn khỏi Telegram nếu có bot và messageId
     if (bot && file.telegramMessageId && file.chatId) {
@@ -434,7 +401,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     
     // Kiểm tra kích thước file
     if (file.size > 20 * 1024 * 1024) {
-      // Xóa file vừa upload nếu vượt quá giới hạn
+      // Xóa file tạm thời vừa upload nếu vượt quá giới hạn
       fs.unlinkSync(file.path);
       console.error('File vượt quá giới hạn kích thước');
       return res.status(413).json({ 
@@ -442,18 +409,18 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       });
     }
     
-    // Thông tin file
+    // Thông tin file ban đầu
     const fileInfo = {
       _id: uuidv4().replace(/-/g, '').substring(0, 12),
-      fileName: file.filename,
+      fileName: file.originalname,
       originalFileName: file.originalname,
       fileType: file.mimetype.startsWith('image/') ? 'photo' : 
                 file.mimetype.startsWith('video/') ? 'video' : 
                 file.mimetype.startsWith('audio/') ? 'audio' : 'document',
-      filePath: `/uploads/${file.filename}`,
       fileSize: file.size,
       uploadDate: new Date().toISOString(),
-      uploadedBy: user
+      uploadedBy: user,
+      localFileStored: false
     };
     
     console.log('Thông tin file đã tạo:', fileInfo);
@@ -463,20 +430,54 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       try {
         console.log('Bắt đầu gửi file đến Telegram');
         const telegramInfo = await sendFileToTelegram(file.path, file.originalname, user);
+        
+        // Cập nhật thông tin file với thông tin từ Telegram
         fileInfo.fileId = telegramInfo.fileId;
         fileInfo.telegramMessageId = telegramInfo.messageId;
         fileInfo.chatId = telegramInfo.chatId;
         fileInfo.sentToTelegram = true;
+        fileInfo.storedOnTelegram = true;
+        
         console.log('Đã gửi file đến Telegram thành công');
+        
+        // Sau khi đã gửi lên Telegram thành công, xóa file tạm thời
+        try {
+          fs.unlinkSync(file.path);
+          console.log(`Đã xóa file tạm thời: ${file.path}`);
+        } catch (deleteError) {
+          console.error('Lỗi khi xóa file tạm thời:', deleteError);
+        }
       } catch (telegramError) {
         console.error('Lỗi khi đồng bộ với Telegram:', telegramError);
         fileInfo.sentToTelegram = false;
         fileInfo.telegramError = telegramError.message;
+        
+        // Nếu không gửi được lên Telegram, vẫn xóa file tạm thời
+        try {
+          fs.unlinkSync(file.path);
+        } catch (deleteError) {
+          console.error('Lỗi khi xóa file tạm thời:', deleteError);
+        }
+        
+        return res.status(500).json({ 
+          error: 'Không thể gửi file lên Telegram. Vui lòng thử lại sau.' 
+        });
       }
     } else {
       console.warn('Bot không khả dụng, không thể gửi file đến Telegram');
       fileInfo.sentToTelegram = false;
       fileInfo.telegramError = 'Bot không khả dụng';
+      
+      // Nếu không có bot, xóa file tạm thời
+      try {
+        fs.unlinkSync(file.path);
+      } catch (deleteError) {
+        console.error('Lỗi khi xóa file tạm thời:', deleteError);
+      }
+      
+      return res.status(503).json({ 
+        error: 'Bot Telegram không khả dụng. Không thể lưu trữ file.' 
+      });
     }
     
     // Lưu thông tin file vào database
@@ -492,6 +493,16 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     console.log('Đã trả về kết quả thành công');
   } catch (error) {
     console.error('Lỗi khi xử lý upload file:', error);
+    
+    // Đảm bảo file tạm thời được xóa nếu có lỗi
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (deleteError) {
+        console.error('Lỗi khi xóa file tạm thời:', deleteError);
+      }
+    }
+    
     res.status(500).json({ error: error.message });
   }
 });
@@ -649,7 +660,7 @@ app.get('/', (req, res) => {
         
         let fileIcon = '';
         if (file.fileType === 'photo') {
-          fileIcon = `<img src="${file.fileLink || file.filePath}" alt="${displayName}" style="max-width:100%; max-height:150px; object-fit:contain; display:block; margin:0 auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          fileIcon = `<img src="/telegram-file/${file._id}" alt="${displayName}" style="max-width:100%; max-height:150px; object-fit:contain; display:block; margin:0 auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                      <div style="display:none">🖼️</div>`;
         } else if (file.fileType === 'video') {
           fileIcon = '🎬';
@@ -670,7 +681,7 @@ app.get('/', (req, res) => {
               ${new Date(file.uploadDate).toLocaleString()}
             </div>
             <div class="file-actions">
-              <a href="${file.fileLink || file.filePath}" download="${displayName}" class="download-btn">
+              <a href="/telegram-file/${file._id}?download=true" class="download-btn">
                 Download
               </a>
               <button onclick="renameFile('${file._id}', '${displayName.replace(/'/g, "\\'")}')" class="rename-btn">
@@ -1284,6 +1295,45 @@ function extractOriginalFileName(fileName) {
   return path.basename(fileName);
 }
 
+// Dọn dẹp thư mục tạm thời định kỳ
+function cleanupTempDir() {
+  try {
+    if (!fs.existsSync(tempDir)) {
+      return; // Thư mục không tồn tại
+    }
+    
+    console.log('Bắt đầu dọn dẹp thư mục tạm thời...');
+    const files = fs.readdirSync(tempDir);
+    let deletedCount = 0;
+    
+    for (const file of files) {
+      try {
+        const filePath = path.join(tempDir, file);
+        const stats = fs.statSync(filePath);
+        
+        // Kiểm tra xem file có cũ hơn 1 giờ không
+        const fileAge = Date.now() - stats.mtime.getTime();
+        if (fileAge > 60 * 60 * 1000) { // 1 giờ
+          fs.unlinkSync(filePath);
+          deletedCount++;
+        }
+      } catch (error) {
+        console.error(`Lỗi khi xóa file tạm thời ${file}:`, error);
+      }
+    }
+    
+    console.log(`Đã dọn dẹp ${deletedCount} file tạm thời.`);
+  } catch (error) {
+    console.error('Lỗi khi dọn dẹp thư mục tạm thời:', error);
+  }
+}
+
+// Đặt hàm dọn dẹp chạy mỗi giờ
+setInterval(cleanupTempDir, 60 * 60 * 1000); // 1 giờ
+
+// Dọn dẹp ngay khi khởi động
+cleanupTempDir();
+
 // Khởi động server
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
@@ -1292,4 +1342,75 @@ app.listen(PORT, () => {
   
   // Cập nhật tên file cho các file cũ khi khởi động
   upgradeExistingFiles();
+});
+
+// Route để lấy file từ Telegram
+app.get('/telegram-file/:fileId', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const download = req.query.download === 'true';
+    
+    // Tìm file trong database
+    const filesData = readFilesDb();
+    const file = filesData.find(f => f._id === fileId);
+    
+    if (!file) {
+      return res.status(404).send('File không tìm thấy');
+    }
+    
+    if (!file.fileId || !file.storedOnTelegram) {
+      return res.status(404).send('File này không được lưu trữ trên Telegram');
+    }
+    
+    // Lấy thông tin file từ Telegram
+    let fileInfo;
+    try {
+      if (!file.telegramFileInfo) {
+        fileInfo = await bot.telegram.getFile(file.fileId);
+      } else {
+        fileInfo = file.telegramFileInfo;
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin file từ Telegram:', error);
+      return res.status(500).send('Không thể lấy thông tin file từ Telegram');
+    }
+    
+    const fileUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
+    
+    // Nếu cần tải xuống, stream file từ Telegram qua response
+    if (download) {
+      try {
+        // Đặt headers cho tải xuống
+        const fileName = file.originalFileName || 'unknown_file';
+        res.setHeader('Content-Disposition', `attachment; filename=${encodeURIComponent(fileName)}`);
+        
+        // Stream file từ Telegram
+        const response = await axios({
+          method: 'GET',
+          url: fileUrl,
+          responseType: 'stream'
+        });
+        
+        // Đặt content-type và các headers khác
+        if (response.headers['content-type']) {
+          res.setHeader('Content-Type', response.headers['content-type']);
+        }
+        if (response.headers['content-length']) {
+          res.setHeader('Content-Length', response.headers['content-length']);
+        }
+        
+        // Stream dữ liệu
+        response.data.pipe(res);
+      } catch (error) {
+        console.error('Lỗi khi stream file từ Telegram:', error);
+        return res.status(500).send('Không thể tải file từ Telegram');
+      }
+    } else {
+      // Chuyển hướng đến URL file Telegram
+      res.redirect(fileUrl);
+    }
+  } catch (error) {
+    console.error('Lỗi khi xử lý request:', error);
+    res.status(500).send('Đã xảy ra lỗi khi xử lý yêu cầu');
+  }
 });

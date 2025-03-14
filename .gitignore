@@ -12,17 +12,12 @@ yarn.lock
 .env.test.local
 .env.production.local
 
-# Data và uploads
-data/*
+# Data directory
+data/
 !data/.gitkeep
-uploads/*
-!uploads/.gitkeep
 
-# IDE và editor
-.vscode/
-.idea/
-*.swp
-*.swo
+# Temporary files
+temp/
 
 # Logs
 logs/
@@ -59,15 +54,6 @@ temp-*.js
 check-*.html
 run.js
 minimal-upload.js
-temp/
-
-# Temporary files
-*-temp.html
-*-temp.js
-temp-*.html
-temp-*.js
-check-*.html
-run.js
 
 # Runtime data
 pids
