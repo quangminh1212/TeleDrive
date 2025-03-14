@@ -84,12 +84,17 @@ const initBot = () => {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
         reject(new Error('Timeout khi khởi động bot Telegram'));
-      }, 10000); // 10 giây timeout
+      }, 30000); // Tăng lên 30 giây timeout
     });
     
     // Promise để khởi động bot
     const launchPromise = new Promise(async (resolve, reject) => {
       try {
+        // Kiểm tra kết nối trước khi thêm handlers
+        console.log('Kiểm tra kết nối với Telegram API...');
+        const botInfo = await newBot.telegram.getMe();
+        console.log('Kết nối thành công! Bot: @' + botInfo.username);
+        
         // Thêm handlers cho bot
         newBot.command('start', (ctx) => {
           ctx.reply('Chào mừng đến với TeleDrive Bot! Bạn có thể gửi file để lưu trữ.');
@@ -103,8 +108,13 @@ const initBot = () => {
           ctx.reply('Đã nhận tin nhắn của bạn!');
         });
         
-        // Khởi chạy bot với webhook hoặc polling tùy thuộc vào môi trường
-        newBot.launch().then(() => {
+        // Khởi chạy bot với polling
+        console.log('Đang khởi động bot với chế độ polling...');
+        newBot.launch({
+          polling: {
+            timeout: 30 // Tăng timeout cho polling
+          }
+        }).then(() => {
           console.log('Bot Telegram đã khởi động thành công!');
           resolve(newBot);
         }).catch((err) => {
