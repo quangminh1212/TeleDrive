@@ -17,7 +17,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 
 // Khởi tạo bot Telegram nếu có token
 let bot = null;
-if (BOT_TOKEN) {
+if (BOT_TOKEN && BOT_TOKEN !== 'your_telegram_bot_token') {
   bot = new Telegraf(BOT_TOKEN);
   
   bot.command('start', (ctx) => {
@@ -79,9 +79,11 @@ if (BOT_TOKEN) {
     })
     .catch(err => {
       console.error('Lỗi khởi động bot:', err);
+      console.warn('Bot Telegram không hoạt động. Ứng dụng sẽ chạy ở chế độ chỉ có web.');
+      bot = null; // Reset bot to null if failed
     });
 } else {
-  console.warn('Không tìm thấy BOT_TOKEN trong file .env. Tính năng bot không hoạt động.');
+  console.warn('Không tìm thấy BOT_TOKEN hợp lệ trong file .env. Tính năng bot không hoạt động. Ứng dụng sẽ chạy ở chế độ chỉ có web.');
 }
 
 /**
@@ -479,64 +481,78 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 
 // Hàm trích xuất tên file hiển thị
 function getDisplayFileName(file) {
-  // Nếu có originalFileName, ưu tiên sử dụng
-  if (file.originalFileName) {
-    // Nếu tên file đã bị mã hóa, giải mã
-    try {
+  try {
+    // 1. Ưu tiên sử dụng originalFileName nếu có
+    if (file.originalFileName) {
+      // Giải mã nếu cần
       if (file.originalFileName.includes('%')) {
         return decodeURIComponent(file.originalFileName);
       }
       return file.originalFileName;
-    } catch (e) {
-      console.error('Lỗi giải mã tên file:', e);
-      return file.originalFileName;
     }
-  }
-  
-  // Nếu không có originalFileName, cố gắng trích xuất từ fileName
-  if (file.fileName) {
-    // Thử tách tên file theo format thông thường (name_timestamp_hash.ext)
-    const parts = file.fileName.split('_');
     
-    // Nếu là format mới: file_timestamp_hash.ext
-    if (parts.length >= 2 && 
-        (parts[0] === 'file' || 
-         parts[0] === 'photo' || 
-         parts[0] === 'document' || 
-         parts[0] === 'video' || 
-         parts[0] === 'audio')) {
-      // Vì đây là file được tạo bởi phiên bản mới, ta cần dựa vào extension
-      const ext = path.extname(file.fileName);
-      const fileType = parts[0];
+    // 2. Nếu không có originalFileName, xử lý fileName
+    if (file.fileName) {
+      // Trích xuất tên gốc từ fileName
+      let extractedName = '';
       
-      switch(fileType) {
-        case 'photo': return `image${ext}`;
-        case 'video': return `video${ext}`;
-        case 'audio': return `audio${ext}`;
-        case 'document': 
-        case 'file':
-        default: return `file${ext}`;
+      // Trường hợp 1: fileName dạng BraveBrowserSetup-BRV010.exe_1741870007961_68b877ce.exe
+      if (file.fileName.match(/\d{10,}_[a-f0-9]{8}\.[^_]+$/)) {
+        extractedName = file.fileName.replace(/(_\d{10,}_[a-f0-9]{8}\.[^_]+)$/, '');
+        return extractedName;
       }
-    }
-    
-    // Nếu là format cũ: originalname_timestamp_hash
-    if (parts.length >= 3) {
-      // Kiểm tra nếu phần thứ 2 trông giống timestamp (1~13 chữ số)
-      const isTimestamp = /^\d{8,13}$/.test(parts[parts.length-2]);
-      const isHash = /^[a-f0-9]{8,}$/i.test(parts[parts.length-1].split('.')[0]);
       
-      if (isTimestamp && isHash) {
-        // Loại bỏ timestamp và hash, lấy phần còn lại của tên
-        const nameWithoutTimestampHash = parts.slice(0, parts.length-2).join('_');
-        return nameWithoutTimestampHash;
+      // Trường hợp 2: fileName dạng file_1234567890_abcdef12.png
+      if (file.fileName.startsWith('file_') || 
+          file.fileName.startsWith('photo_') || 
+          file.fileName.startsWith('document_') || 
+          file.fileName.startsWith('video_') || 
+          file.fileName.startsWith('audio_')) {
+        // Lấy phần mở rộng
+        const ext = path.extname(file.fileName);
+        // Lấy loại file
+        const fileType = file.fileName.split('_')[0];
+        
+        // Nếu là thư mục /uploads/ thì cố gắng trích xuất
+        if (file.filePath && file.filePath.includes('/uploads/')) {
+          // Trả về tên file dựa trên loại file
+          switch(fileType) {
+            case 'photo': return `Hình ảnh${ext}`;
+            case 'video': return `Video${ext}`;
+            case 'audio': return `Âm thanh${ext}`;
+            case 'document': return `Tài liệu${ext}`;
+            case 'file': return `Tệp tin${ext}`;
+            default: return `Tệp tin${ext}`;
+          }
+        }
       }
+      
+      // Trường hợp 3: fileName với ký tự đặc biệt hoặc tiếng Việt
+      const parts = file.fileName.split('_');
+      if (parts.length >= 3) {
+        const timestamp = parts[parts.length - 2];
+        const hash = parts[parts.length - 1].split('.')[0];
+        
+        const isTimestamp = /^\d{10,}$/.test(timestamp);
+        const isHash = /^[a-f0-9]{8}$/i.test(hash);
+        
+        if (isTimestamp && isHash) {
+          // Lấy tất cả các phần trước timestamp và hash
+          return parts.slice(0, parts.length - 2).join('_');
+        }
+      }
+      
+      // Nếu không khớp với bất kỳ mẫu nào, trả về tên file gốc
+      return path.basename(file.fileName);
     }
     
-    // Nếu không xác định được format, trả về nguyên tên file
-    return file.fileName;
+    // Nếu không có gì, trả về tên mặc định
+    return 'Unknown file';
+  } catch (err) {
+    console.error('Lỗi khi xử lý tên file:', err);
+    // Trả về tên file gốc nếu có lỗi xảy ra
+    return file.fileName || file.originalFileName || 'Unknown file';
   }
-  
-  return 'Unknown file';
 }
 
 // Route để xem danh sách file
@@ -960,9 +976,73 @@ app.get('/', (req, res) => {
   }
 });
 
+// Cập nhật tên file cho các file cũ
+function upgradeExistingFiles() {
+  try {
+    console.log('Kiểm tra và cập nhật tên file cho các file cũ...');
+    const filesData = readFilesDb();
+    let updateCount = 0;
+    
+    for (const file of filesData) {
+      // Nếu không có originalFileName hoặc originalFileName trùng với fileName
+      if (!file.originalFileName || file.originalFileName === file.fileName) {
+        // Trích xuất tên gốc từ fileName
+        const extractedName = extractOriginalFileName(file.fileName);
+        
+        if (extractedName && extractedName !== file.originalFileName) {
+          console.log(`Cập nhật tên file cho: ${file.fileName} -> ${extractedName}`);
+          file.originalFileName = extractedName;
+          updateCount++;
+        }
+      }
+    }
+    
+    if (updateCount > 0) {
+      console.log(`Đã cập nhật ${updateCount} file.`);
+      saveFilesDb(filesData);
+    } else {
+      console.log('Không có file nào cần cập nhật.');
+    }
+  } catch (error) {
+    console.error('Lỗi khi cập nhật tên file:', error);
+  }
+}
+
+// Hàm trích xuất tên gốc từ tên file
+function extractOriginalFileName(fileName) {
+  if (!fileName) return null;
+  
+  // Trường hợp 1: fileName dạng name_timestamp_hash.ext
+  if (fileName.match(/\d{10,}_[a-f0-9]{8}\.[^_]+$/)) {
+    const extractedName = fileName.replace(/(_\d{10,}_[a-f0-9]{8}\.[^_]+)$/, '');
+    return extractedName;
+  }
+  
+  // Trường hợp 2: fileName dạng file_timestamp_hash.ext
+  if (fileName.match(/^(file|photo|document|video|audio)_\d{10,}_[a-f0-9]{8}\.[^_]+$/)) {
+    const parts = fileName.split('_');
+    const fileType = parts[0];
+    const ext = path.extname(fileName);
+    
+    switch(fileType) {
+      case 'photo': return `Hình ảnh${ext}`;
+      case 'video': return `Video${ext}`;
+      case 'audio': return `Âm thanh${ext}`;
+      case 'document': return `Tài liệu${ext}`;
+      case 'file': return `Tệp tin${ext}`;
+      default: return path.basename(fileName);
+    }
+  }
+  
+  return path.basename(fileName);
+}
+
 // Khởi động server
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
   console.log(`Data directory: ${dataDir}`);
   console.log(`Files database: ${filesDbPath}`);
+  
+  // Cập nhật tên file cho các file cũ khi khởi động
+  upgradeExistingFiles();
 }); 
