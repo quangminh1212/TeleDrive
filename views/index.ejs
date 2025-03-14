@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleDrive - Telegram File Manager</title>
+    <title><%= title %> - Telegram File Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         .file-card {
             transition: transform 0.2s ease;
@@ -96,6 +97,20 @@
             </div>
         </div>
 
+        <% if (storageInfo && storageInfo.total > 0) { %>
+        <div class="storage-info mb-4">
+            <div class="d-flex justify-content-between">
+                <span>Storage: <%= formatFileSize(storageInfo.used) %> / <%= formatFileSize(storageInfo.total) %></span>
+                <span><%= Math.round(storageInfo.percent) %>%</span>
+            </div>
+            <div class="progress storage-bar">
+                <div class="progress-bar <%= storageInfo.percent > 90 ? 'bg-danger' : storageInfo.percent > 70 ? 'bg-warning' : 'bg-success' %>" 
+                    role="progressbar" style="width: <%= storageInfo.percent %>%" 
+                    aria-valuenow="<%= storageInfo.percent %>" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+        <% } %>
+
         <div class="mb-4">
             <button id="refresh-btn" class="btn btn-primary">
                 <i class="bi bi-arrow-clockwise me-2"></i> Làm mới danh sách file
@@ -110,11 +125,11 @@
         </div>
 
         <div id="files-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
-            <!-- Files sẽ được tải bằng JavaScript -->
+            <!-- Files will be loaded with JavaScript -->
         </div>
 
         <div id="no-files-message" class="alert alert-info d-none">
-            <i class="bi bi-info-circle me-2"></i> No files have been uploaded yet. Send a file to your Telegram bot to get started.
+            <i class="bi bi-info-circle me-2"></i> Chưa có file nào được tải lên. Gửi file đến bot Telegram của bạn để bắt đầu.
         </div>
 
         <div class="card mt-4">
@@ -145,424 +160,36 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Confirm Delete</h5>
+                    <h5 class="modal-title">Xác nhận xóa</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to delete <span id="fileName"></span>?
+                    Bạn có chắc chắn muốn xóa file <span id="fileName" class="fw-bold"></span>?
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Xóa</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const filesContainer = document.getElementById('files-container');
-            const loadingContainer = document.getElementById('loading-container');
-            const noFilesMessage = document.getElementById('no-files-message');
-            const refreshBtn = document.getElementById('refresh-btn');
-            
-            // Load files khi trang được tải
-            loadFiles();
-            
-            // Thiết lập tự động làm mới (mỗi 30 giây)
-            setInterval(loadFiles, 30000);
-            
-            // Nút làm mới thủ công
-            refreshBtn.addEventListener('click', function() {
-                this.disabled = true;
-                loadingContainer.classList.remove('d-none');
-                filesContainer.innerHTML = '';
-                
-                loadFiles().finally(() => {
-                    this.disabled = false;
-                });
-            });
-            
-            // Hàm tải danh sách file
-            async function loadFiles() {
-                try {
-                    loadingContainer.classList.remove('d-none');
-                    noFilesMessage.classList.add('d-none');
-                    
-                    // Tải dữ liệu file từ server
-                    const response = await fetch('/api/files');
-                    const data = await response.json();
-                    
-                    // Hiển thị danh sách file
-                    filesContainer.innerHTML = '';
-                    
-                    if (data.files && data.files.length > 0) {
-                        data.files.forEach(file => {
-                            const fileCard = createFileCard(file);
-                            filesContainer.appendChild(fileCard);
-                        });
-                        
-                        // Kích hoạt các nút xóa
-                        document.querySelectorAll('.delete-file').forEach(btn => {
-                            btn.addEventListener('click', function() {
-                                const fileId = this.getAttribute('data-id');
-                                const fileName = this.getAttribute('data-name');
-                                
-                                // Hiển thị xác nhận xóa
-                                document.getElementById('fileName').textContent = fileName;
-                                const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-                                modal.show();
-                                
-                                // Xử lý xóa file
-                                document.getElementById('confirmDelete').onclick = function() {
-                                    deleteFile(fileId);
-                                    modal.hide();
-                                };
-                            });
-                        });
-                    } else {
-                        noFilesMessage.classList.remove('d-none');
-                    }
-                } catch (error) {
-                    console.error('Error loading files:', error);
-                    filesContainer.innerHTML = `
-                        <div class="col-12">
-                            <div class="alert alert-danger">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                Error loading files: ${error.message}
-                            </div>
-                        </div>
-                    `;
-                } finally {
-                    loadingContainer.classList.add('d-none');
-                }
-            }
-            
-            // Hàm tạo card cho file
-            function createFileCard(file) {
-                const col = document.createElement('div');
-                col.className = 'col file-item';
-                col.setAttribute('data-id', file._id);
-                
-                let fileIcon = '';
-                if (file.fileType === 'document') {
-                    fileIcon = '<i class="bi bi-file-earmark-text file-icon document-icon"></i>';
-                } else if (file.fileType === 'photo') {
-                    fileIcon = `<img src="${file.filePath}" alt="${file.fileName}" class="img-fluid mb-3" style="max-height: 150px; object-fit: cover;" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\\'bi bi-exclamation-triangle file-icon file-error\\'></i><p>Image preview unavailable</p>'">`; 
-                } else if (file.fileType === 'video') {
-                    fileIcon = '<i class="bi bi-film file-icon video-icon"></i>';
-                } else if (file.fileType === 'audio') {
-                    fileIcon = '<i class="bi bi-music-note-beamed file-icon audio-icon"></i>';
-                } else {
-                    fileIcon = '<i class="bi bi-file-earmark file-icon"></i>';
-                }
-                
-                col.innerHTML = `
-                    <div class="card h-100 file-card">
-                        <div class="card-body text-center">
-                            <div class="file-thumb">
-                                ${fileIcon}
-                            </div>
-                            
-                            <h5 class="card-title text-truncate" title="${file.originalFileName || file.fileName}">
-                                ${file.originalFileName || file.fileName}
-                            </h5>
-                            <p class="card-text">
-                                <small class="text-muted">
-                                    <% if (file.fileSize) { %>
-                                        <%= (file.fileSize / 1024).toFixed(2) %> KB
-                                    <% } %>
-                                    <br>
-                                    <%= new Date(file.uploadDate).toLocaleString() %>
-                                </small>
-                            </p>
-                            <div class="d-flex justify-content-center mt-3 file-actions">
-                                <a href="${file.filePath}" class="btn btn-sm btn-outline-primary me-2 download-btn" 
-                                   download="${file.originalFileName || file.fileName}" 
-                                   data-id="${file._id}">
-                                    <i class="bi bi-download"></i> Download
-                                </a>
-                                <a href="/files/${file._id}" class="btn btn-sm btn-outline-secondary me-2">
-                                    <i class="bi bi-info-circle"></i> Details
-                                </a>
-                                <button class="btn btn-sm btn-outline-danger delete-file" data-id="${file._id}" data-name="${file.originalFileName || file.fileName}">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-transparent file-status" data-id="${file._id}">
-                            <div class="d-flex align-items-center justify-content-center">
-                                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span class="visually-hidden">Checking...</span>
-                                </div>
-                                <span class="ms-2">Checking...</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                return col;
-            }
-            
-            // Check bot status
-            async function checkBotStatus() {
-                const statusElement = document.getElementById('bot-status');
-                
-                try {
-                    const response = await fetch('/api/bot-status');
-                    const data = await response.json();
-                    
-                    if (data.isLaunched) {
-                        statusElement.className = 'alert alert-success d-inline-block';
-                        let uptimeText = '';
-                        if (data.uptime) {
-                            const minutes = Math.floor(data.uptime / 60);
-                            const seconds = data.uptime % 60;
-                            uptimeText = ` (${minutes}m ${seconds}s)`;
-                        }
-                        
-                        let botInfoText = '';
-                        if (data.botInfo) {
-                            botInfoText = `<small class="d-block">@${data.botInfo.username} (${data.botInfo.first_name})</small>`;
-                        }
-                        
-                        statusElement.innerHTML = `
-                            <i class="bi bi-check-circle-fill me-2"></i>Bot online${uptimeText}
-                            ${botInfoText}
-                            <small class="d-block mt-1">Last checked: ${new Date(data.lastCheck).toLocaleTimeString()}</small>
-                        `;
-                    } else {
-                        statusElement.className = 'alert alert-danger d-inline-block';
-                        let errorMsg = data.error || 'Unknown error';
-                        
-                        statusElement.innerHTML = `
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Bot offline
-                            <small class="d-block">${errorMsg}</small>
-                            <small class="d-block mt-1">
-                                <a href="#" onclick="restartBot(event)" class="text-light text-decoration-underline">Khởi động lại bot</a> | 
-                                <a href="#" onclick="showBotHelp(event)" class="text-light text-decoration-underline">Cần trợ giúp?</a>
-                            </small>
-                            <small class="d-block mt-1">Token: ${data.token || 'N/A'}</small>
-                        `;
-                    }
-                } catch (error) {
-                    statusElement.className = 'alert alert-warning d-inline-block';
-                    statusElement.innerHTML = `
-                        <i class="bi bi-question-circle-fill me-2"></i>Bot status unknown
-                        <small class="d-block">Không thể kết nối với API</small>
-                        <small class="d-block mt-1">
-                            <a href="#" onclick="restartBot(event)" class="text-light text-decoration-underline">Thử khởi động lại</a>
-                        </small>
-                    `;
-                }
-            }
-            
-            // Khởi động lại bot
-            async function restartBot(event) {
-                event.preventDefault();
-                
-                const statusElement = document.getElementById('bot-status');
-                statusElement.innerHTML = `
-                    <div class="spinner-border spinner-border-sm text-light" role="status">
-                        <span class="visually-hidden">Restarting...</span>
-                    </div>
-                    <span class="ms-2">Đang khởi động lại bot...</span>
-                `;
-                
-                try {
-                    const response = await fetch('/api/restart-bot', {
-                        method: 'POST'
-                    });
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        // Bot restarted successfully
-                        setTimeout(() => {
-                            checkBotStatus(); // Refresh status
-                            alert('Bot khởi động lại thành công!');
-                        }, 1500);
-                    } else {
-                        statusElement.className = 'alert alert-danger d-inline-block';
-                        statusElement.innerHTML = `
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Lỗi khởi động lại
-                            <small class="d-block">${data.error || 'Unknown error'}</small>
-                            <small class="d-block mt-1">
-                                <a href="#" onclick="showBotHelp(event)" class="text-light text-decoration-underline">Cần trợ giúp?</a>
-                            </small>
-                        `;
-                    }
-                } catch (error) {
-                    console.error('Error restarting bot:', error);
-                    statusElement.className = 'alert alert-danger d-inline-block';
-                    statusElement.innerHTML = `
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Lỗi kết nối
-                        <small class="d-block">Không thể kết nối đến server</small>
-                    `;
-                }
-            }
-            
-            // Hiển thị hướng dẫn khắc phục bot offline
-            function showBotHelp(event) {
-                event.preventDefault();
-                alert(`Để bot online, hãy thực hiện các bước sau:
-1. Truy cập @BotFather trên Telegram
-2. Gửi lệnh /newbot để tạo bot mới
-3. Làm theo hướng dẫn và nhận token mới
-4. Cập nhật token mới vào file .env
-5. Khởi động lại ứng dụng`);
-            }
-            
-            window.showBotHelp = showBotHelp; // Expose to global scope
-            window.restartBot = restartBot; // Expose to global scope
-            
-            // Run bot status check
-            checkBotStatus();
-            
-            // Check file availability
-            function checkFiles() {
-                const fileItems = document.querySelectorAll('.file-item');
-                
-                fileItems.forEach(async (item) => {
-                    const fileId = item.dataset.id;
-                    const statusElement = item.querySelector('.file-status');
-                    const downloadBtn = item.querySelector('.download-btn');
-                    const fileActions = item.querySelector('.file-actions');
-                    const fileUnavailableMsg = item.querySelector('.file-unavailable');
-                    
-                    try {
-                        const response = await fetch(`/api/check-file/${fileId}`);
-                        const data = await response.json();
-                        
-                        if (data.exists) {
-                            statusElement.innerHTML = `
-                                <div class="d-flex align-items-center justify-content-center">
-                                    <span class="badge rounded-pill bg-success">
-                                        <i class="bi bi-check-circle me-1"></i> Ready
-                                    </span>
-                                </div>
-                            `;
-                            downloadBtn.classList.remove('disabled');
-                            fileUnavailableMsg.classList.add('d-none');
-                        } else {
-                            statusElement.innerHTML = `
-                                <div class="d-flex align-items-center justify-content-center">
-                                    <span class="badge rounded-pill bg-danger">
-                                        <i class="bi bi-exclamation-triangle me-1"></i> File unavailable
-                                    </span>
-                                </div>
-                            `;
-                            downloadBtn.classList.add('disabled');
-                            fileUnavailableMsg.classList.remove('d-none');
-                            
-                            // Replace image with error icon if it's a photo
-                            const imgElement = item.querySelector('img');
-                            if (imgElement) {
-                                imgElement.parentElement.innerHTML = `
-                                    <i class="bi bi-exclamation-triangle file-icon file-error"></i>
-                                    <p>Image unavailable</p>
-                                `;
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error checking file:', error);
-                        statusElement.innerHTML = `
-                            <div class="d-flex align-items-center justify-content-center">
-                                <span class="badge rounded-pill bg-warning">
-                                    <i class="bi bi-question-circle me-1"></i> Status unknown
-                                </span>
-                            </div>
-                        `;
-                    }
-                });
-            }
-            
-            // Run on page load
-            checkFiles();
-            
-            // Set up delete file functionality
-            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            let fileToDelete = null;
+    <script src="/js/main.js"></script>
 
-            document.querySelectorAll('.delete-file').forEach(button => {
-                button.addEventListener('click', () => {
-                    const fileId = button.getAttribute('data-id');
-                    const fileName = button.getAttribute('data-name');
-                    fileToDelete = fileId;
-                    document.getElementById('fileName').textContent = fileName;
-                    deleteModal.show();
-                });
-            });
-
-            document.getElementById('confirmDelete').addEventListener('click', async () => {
-                if (!fileToDelete) return;
-                
-                try {
-                    const response = await fetch(`/files/${fileToDelete}`, {
-                        method: 'DELETE'
-                    });
-                    
-                    if (response.ok) {
-                        deleteModal.hide();
-                        
-                        // Find the file item and update its UI instead of reloading
-                        const fileItem = document.querySelector(`.file-item[data-id="${fileToDelete}"]`);
-                        if (fileItem) {
-                            const statusElement = fileItem.querySelector('.file-status');
-                            const downloadBtn = fileItem.querySelector('.download-btn');
-                            const fileUnavailableMsg = fileItem.querySelector('.file-unavailable');
-                            
-                            statusElement.innerHTML = `
-                                <div class="d-flex align-items-center justify-content-center">
-                                    <span class="badge rounded-pill bg-danger">
-                                        <i class="bi bi-trash me-1"></i> Deleted
-                                    </span>
-                                </div>
-                            `;
-                            downloadBtn.classList.add('disabled');
-                            fileUnavailableMsg.classList.remove('d-none');
-                            
-                            // Replace image with deleted icon if it's a photo
-                            const imgContainer = fileItem.querySelector('.file-thumb');
-                            if (imgContainer) {
-                                imgContainer.innerHTML = `
-                                    <i class="bi bi-trash file-icon file-error"></i>
-                                    <p>File deleted</p>
-                                `;
-                            }
-                        } else {
-                            // If can't find item, reload the page
-                            window.location.reload();
-                        }
-                    } else {
-                        alert('Failed to delete file. Please try again.');
-                    }
-                } catch (error) {
-                    console.error('Error deleting file:', error);
-                    alert('An error occurred while deleting the file.');
-                }
-            });
-            
-            // Handle download button clicks to verify file exists first
-            document.querySelectorAll('.download-btn').forEach(btn => {
-                btn.addEventListener('click', async (event) => {
-                    const fileId = btn.getAttribute('data-id');
-                    
-                    try {
-                        const response = await fetch(`/api/check-file/${fileId}`);
-                        const data = await response.json();
-                        
-                        if (!data.exists) {
-                            event.preventDefault();
-                            alert('This file is not available for download. It may have been deleted or moved.');
-                        }
-                    } catch (error) {
-                        console.error('Error checking file before download:', error);
-                        // Let the download attempt proceed anyway
-                    }
-                });
-            });
-        });
-    </script>
+    <% 
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    %>
 </body>
 </html> 

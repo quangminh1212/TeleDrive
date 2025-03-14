@@ -81,6 +81,8 @@ app.use(cors());
 
 // Khởi tạo bot Telegram nếu có
 let bot = null;
+let botActive = false;
+
 if (BOT_TOKEN && BOT_TOKEN !== 'your_telegram_bot_token') {
   console.log('Khởi tạo Telegram Bot...');
   try {
@@ -123,17 +125,25 @@ if (BOT_TOKEN && BOT_TOKEN !== 'your_telegram_bot_token') {
     
     // Bắt đầu bot
     bot.launch()
-      .then(() => console.log('Bot Telegram đã khởi động'))
-      .catch(err => console.error('Lỗi khởi động bot:', err));
+      .then(() => {
+        console.log('Bot Telegram đã khởi động');
+        botActive = true;
+      })
+      .catch(err => {
+        console.error('Lỗi khởi động bot:', err);
+        botActive = false;
+      });
       
     process.once('SIGINT', () => bot.stop('SIGINT'));
     process.once('SIGTERM', () => bot.stop('SIGTERM'));
     
   } catch (error) {
     console.error('Lỗi khởi tạo bot:', error);
+    botActive = false;
   }
 } else {
   console.log('BOT_TOKEN không hợp lệ. Tính năng Bot không được kích hoạt.');
+  botActive = false;
 }
 
 /**
@@ -266,8 +276,6 @@ async function syncFiles() {
         const originalNameMatch = fileName.match(/\?originalName=(.+)$/);
         if (originalNameMatch) {
           originalName = decodeURIComponent(originalNameMatch[1]);
-          // Xóa phần query string khỏi tên file
-          originalName = originalName.replace(/\?.*$/, '');
         }
         
         // Tạo ID duy nhất cho file
@@ -277,12 +285,9 @@ async function syncFiles() {
         filesData.push({
           id: fileId,
           name: originalName,
-          originalName: originalName,
           size: fileStats.size,
           mimeType: getMimeType(fileExt),
           fileType: guessFileType(getMimeType(fileExt)),
-          telegramFileId: null,
-          telegramUrl: null,
           localPath: filePath,
           uploadDate: new Date(fileStats.mtime).toISOString(),
           user: null
