@@ -23,15 +23,6 @@ for /f "tokens=1,2,3 delims=." %%a in ('node -v') do (
 :: Cắt bỏ 'v' từ phiên bản Node
 set NODE_MAJOR=%NODE_MAJOR:~1%
 
-:: Kiểm tra phiên bản Node.js >= 14
-if %NODE_MAJOR% LSS 14 (
-    echo [CẢNH BÁO] Phiên bản Node.js quá cũ (%NODE_MAJOR%.%NODE_MINOR%)
-    echo Khuyến nghị nâng cấp lên Node.js v14 trở lên.
-    echo.
-    choice /C YN /M "Bạn vẫn muốn tiếp tục?"
-    if %ERRORLEVEL% equ 2 exit /b 1
-    echo.
-)
 
 :: Kiểm tra các thư mục cần thiết
 if not exist data mkdir data
