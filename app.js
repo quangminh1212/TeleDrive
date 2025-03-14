@@ -190,6 +190,8 @@ async function processIncomingFile(ctx, fileType) {
       uploadDate: new Date().toISOString(),
       uploadedBy: user,
       fileId: fileId,
+      telegramMessageId: ctx.message.message_id,
+      chatId: ctx.chat.id,
       sentToTelegram: true
     };
     
@@ -494,6 +496,62 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
+// API để đổi tên file
+app.put('/api/files/:id/rename', async (req, res) => {
+  try {
+    const { newName } = req.body;
+    
+    if (!newName || newName.trim() === '') {
+      return res.status(400).json({ error: 'Tên file mới không được để trống' });
+    }
+    
+    const filesData = readFilesDb();
+    const fileIndex = filesData.findIndex(f => f._id === req.params.id);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({ error: 'File không tìm thấy' });
+    }
+    
+    const file = filesData[fileIndex];
+    const oldName = file.originalFileName;
+    
+    // Cập nhật tên file
+    file.originalFileName = newName;
+    file.renamed = true;
+    file.lastModified = new Date().toISOString();
+    
+    // Cập nhật tin nhắn trong Telegram nếu có thể
+    if (bot && file.telegramMessageId && file.chatId) {
+      try {
+        const displayName = newName;
+        const user = file.uploadedBy || getCurrentUser();
+        
+        await bot.telegram.editMessageCaption(
+          file.chatId, 
+          file.telegramMessageId,
+          undefined,
+          `📁 File: "${displayName}" (đổi tên từ "${oldName}")\n👤 Uploaded by: ${user.firstName} ${user.lastName || ''}\n📅 Date: ${new Date(file.uploadDate).toLocaleString()}\n✏️ Renamed: ${new Date().toLocaleString()}`
+        );
+        console.log(`Đã cập nhật tin nhắn Telegram cho file: ${newName}`);
+      } catch (telegramError) {
+        console.error('Không thể cập nhật tin nhắn Telegram:', telegramError.message);
+        // Tiếp tục quy trình đổi tên ngay cả khi không thể cập nhật tin nhắn Telegram
+      }
+    }
+    
+    // Lưu thay đổi vào database
+    saveFilesDb(filesData);
+    
+    res.json({ 
+      success: true,
+      file: file
+    });
+  } catch (error) {
+    console.error('Lỗi khi đổi tên file:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Hàm trích xuất tên file hiển thị
 function getDisplayFileName(file) {
   try {
@@ -611,9 +669,17 @@ app.get('/', (req, res) => {
               ${file.fileSize ? (file.fileSize / 1024 / 1024).toFixed(2) + ' MB' : 'Unknown size'}<br>
               ${new Date(file.uploadDate).toLocaleString()}
             </div>
-            <a href="${file.fileLink || file.filePath}" download="${displayName}" class="download-btn">
-              Download
-            </a>
+            <div class="file-actions">
+              <a href="${file.fileLink || file.filePath}" download="${displayName}" class="download-btn">
+                Download
+              </a>
+              <button onclick="renameFile('${file._id}', '${displayName.replace(/'/g, "\\'")}')" class="rename-btn">
+                Rename
+              </button>
+              <button onclick="deleteFile('${file._id}')" class="delete-btn">
+                Delete
+              </button>
+            </div>
           </div>
         `;
       }
@@ -656,9 +722,8 @@ app.get('/', (req, res) => {
             min-height: 2.4em;
           }
           .file-meta { color: #666; font-size: 14px; margin-bottom: 10px; }
-          .download-btn { 
-            background: #4285F4; 
-            color: white; 
+          .file-actions { display: flex; flex-direction: column; gap: 5px; }
+          .download-btn, .rename-btn, .delete-btn { 
             padding: 8px 12px; 
             border: none; 
             border-radius: 4px; 
@@ -667,6 +732,83 @@ app.get('/', (req, res) => {
             display: inline-block; 
             width: 100%;
             text-align: center;
+            font-size: 14px;
+          }
+          .download-btn { 
+            background: #4285F4; 
+            color: white; 
+          }
+          .rename-btn {
+            background: #fbbc05;
+            color: white;
+          }
+          .delete-btn {
+            background: #ea4335;
+            color: white;
+          }
+          
+          /* Modal styles */
+          .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+          }
+          .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+          }
+          .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+          }
+          .modal-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+          }
+          .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+          }
+          .modal-body {
+            margin-bottom: 20px;
+          }
+          .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+          }
+          .modal-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+          }
+          .modal-btn-primary {
+            background-color: #4285F4;
+            color: white;
+          }
+          .modal-btn-secondary {
+            background-color: #ddd;
+            color: #333;
+          }
+          .modal-input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
           }
           .no-files { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
           .viewer-link { margin-top: 20px; text-align: center; }
@@ -793,6 +935,25 @@ app.get('/', (req, res) => {
             <h3>File Size Limits</h3>
             <p>Telegram Bot API limits file downloads to <strong>20MB</strong>.</p>
             <p>Larger files will show an error: "Bad Request: file is too big"</p>
+          </div>
+        </div>
+        
+        <!-- Rename Modal -->
+        <div id="renameModal" class="modal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <span class="modal-title">Đổi tên file</span>
+              <span class="close" onclick="closeRenameModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="fileIdToRename">
+              <label for="newFileName">Tên mới:</label>
+              <input type="text" id="newFileName" class="modal-input">
+            </div>
+            <div class="modal-footer">
+              <button class="modal-btn modal-btn-secondary" onclick="closeRenameModal()">Hủy</button>
+              <button class="modal-btn modal-btn-primary" onclick="submitRename()">Lưu</button>
+            </div>
           </div>
         </div>
         
@@ -977,6 +1138,77 @@ app.get('/', (req, res) => {
             // Kiểm tra ngay khi trang tải xong
             setTimeout(checkForNewFiles, 1000);
           });
+
+          // Hàm hiển thị modal đổi tên
+          function renameFile(fileId, currentName) {
+            document.getElementById('fileIdToRename').value = fileId;
+            document.getElementById('newFileName').value = currentName;
+            document.getElementById('renameModal').style.display = 'block';
+          }
+
+          // Đóng modal đổi tên
+          function closeRenameModal() {
+            document.getElementById('renameModal').style.display = 'none';
+          }
+
+          // Gửi yêu cầu đổi tên
+          async function submitRename() {
+            const fileId = document.getElementById('fileIdToRename').value;
+            const newName = document.getElementById('newFileName').value.trim();
+            
+            if (!newName) {
+              alert('Tên file không được để trống');
+              return;
+            }
+            
+            try {
+              const response = await fetch('/api/files/' + fileId + '/rename', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  newName: newName
+                })
+              });
+              
+              if (response.ok) {
+                closeRenameModal();
+                // Làm mới trang để hiển thị tên mới
+                refreshFiles();
+              } else {
+                const data = await response.json();
+                alert('Lỗi: ' + (data.error || 'Không thể đổi tên file'));
+              }
+            } catch (error) {
+              console.error('Lỗi khi đổi tên:', error);
+              alert('Lỗi kết nối: ' + error.message);
+            }
+          }
+
+          // Xóa file
+          async function deleteFile(fileId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa file này?')) {
+              return;
+            }
+            
+            try {
+              const response = await fetch('/api/files/' + fileId, {
+                method: 'DELETE'
+              });
+              
+              if (response.ok) {
+                // Làm mới trang để cập nhật danh sách
+                refreshFiles();
+              } else {
+                const data = await response.json();
+                alert('Lỗi: ' + (data.error || 'Không thể xóa file'));
+              }
+            } catch (error) {
+              console.error('Lỗi khi xóa file:', error);
+              alert('Lỗi kết nối: ' + error.message);
+            }
+          }
         </script>
       </body>
       </html>
@@ -1060,4 +1292,4 @@ app.listen(PORT, () => {
   
   // Cập nhật tên file cho các file cũ khi khởi động
   upgradeExistingFiles();
-}); 
+});
