@@ -336,10 +336,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="card-footer bg-transparent border-top-0">
                     <div class="d-flex justify-content-between">
-                        <a href="${downloadPath}" class="btn btn-sm ${downloadBtnClass}" 
-                           title="${downloadTooltip}" download="${file.name}">
-                            <i class="bi ${downloadIcon}"></i>
-                        </a>
+                        <div>
+                            <a href="/file/${file.id}" class="btn btn-sm btn-outline-info me-1" title="Xem trước">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="${downloadPath}" class="btn btn-sm ${downloadBtnClass}" 
+                               title="${downloadTooltip}" download="${file.name}">
+                                <i class="bi ${downloadIcon}"></i>
+                            </a>
+                        </div>
                         <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="${file.id}" title="Xóa file">
                             <i class="bi bi-trash"></i>
                         </button>

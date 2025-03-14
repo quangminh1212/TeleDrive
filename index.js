@@ -1089,6 +1089,87 @@ app.get('/api/files/:id/telegram-download', async (req, res) => {
   }
 });
 
+// API lấy thông tin bot đã cấu hình
+app.get('/api/bot-info', async (req, res) => {
+  try {
+    if (!botActive || !bot) {
+      return res.json({
+        status: 'inactive',
+        message: 'Bot không hoạt động hoặc chưa được cấu hình đúng',
+        token: BOT_TOKEN && BOT_TOKEN !== 'your_telegram_bot_token' ? BOT_TOKEN.substring(0, 8) + '...' : null
+      });
+    }
+    
+    try {
+      // Lấy thông tin bot với timeout
+      const getMePromise = bot.telegram.getMe();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout khi lấy thông tin bot')), 5000);
+      });
+      
+      const botInfo = await Promise.race([getMePromise, timeoutPromise]);
+      
+      res.json({
+        status: 'active',
+        message: 'Bot đang hoạt động',
+        bot: {
+          id: botInfo.id,
+          username: botInfo.username,
+          first_name: botInfo.first_name,
+          is_bot: botInfo.is_bot
+        },
+        token: BOT_TOKEN.substring(0, 8) + '...'
+      });
+    } catch (error) {
+      console.error('Lỗi lấy thông tin bot:', error);
+      res.json({
+        status: 'error',
+        message: 'Lỗi kết nối đến Telegram API: ' + error.message,
+        token: BOT_TOKEN.substring(0, 8) + '...'
+      });
+    }
+  } catch (error) {
+    console.error('Lỗi API bot-info:', error);
+    res.status(500).json({ error: 'Lỗi lấy thông tin bot' });
+  }
+});
+
+// API kiểm tra kết nối với bot
+app.post('/api/bot-check', async (req, res) => {
+  try {
+    if (!botActive || !bot) {
+      return res.json({
+        success: false,
+        message: 'Bot không hoạt động hoặc chưa được cấu hình'
+      });
+    }
+    
+    try {
+      // Kiểm tra kết nối với timeout
+      const pingPromise = bot.telegram.getUpdates({ limit: 1, timeout: 1 });
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout khi kiểm tra kết nối')), 5000);
+      });
+      
+      await Promise.race([pingPromise, timeoutPromise]);
+      
+      res.json({
+        success: true,
+        message: 'Kết nối với Telegram Bot API thành công'
+      });
+    } catch (error) {
+      console.error('Lỗi kiểm tra kết nối bot:', error);
+      res.json({
+        success: false,
+        message: 'Lỗi kết nối với Telegram Bot API: ' + error.message
+      });
+    }
+  } catch (error) {
+    console.error('Lỗi API bot-check:', error);
+    res.status(500).json({ error: 'Lỗi kiểm tra kết nối bot' });
+  }
+});
+
 /**
  * Hàm hỗ trợ
  */
