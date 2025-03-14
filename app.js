@@ -142,8 +142,8 @@ async function processIncomingFile(ctx, fileType) {
     // Tạo tên file an toàn
     const timestamp = Date.now();
     const fileHash = crypto.createHash('md5').update(fileName + timestamp).digest('hex').substring(0, 8);
-    const safeName = fileName.replace(/[^\w\s.-]/g, '').replace(/\s+/g, ' ');
-    const safeFileName = `${safeName}_${timestamp}_${fileHash}${path.extname(fileName)}`;
+    // Giữ nguyên tên file gốc, chỉ thêm timestamp và hash
+    const safeFileName = `${fileName}_${timestamp}_${fileHash}`;
     const filePath = path.join(uploadDir, safeFileName);
     
     // Tải xuống file
@@ -193,7 +193,7 @@ async function processIncomingFile(ctx, fileType) {
     saveFilesDb(filesData);
     
     // Thông báo hoàn thành
-    ctx.reply(`✅ File đã được lưu thành công! Truy cập web để xem và tải xuống file.`);
+    ctx.reply(`✅ File "${fileName}" đã được lưu thành công!\nKích thước: ${(realFileSize / 1024 / 1024).toFixed(2)}MB\nTruy cập web để xem và tải xuống file.`);
     console.log(`File đã được lưu: ${filePath} (${realFileSize} bytes)`);
     
   } catch (error) {
@@ -234,10 +234,8 @@ const storage = multer.diskStorage({
     const timestamp = Date.now();
     const fileHash = crypto.createHash('md5').update(originalName + timestamp).digest('hex').substring(0, 8);
     
-    // Loại bỏ ký tự đặc biệt từ tên file
-    const safeName = originalName.replace(/[^\w\s.-]/g, '').replace(/\s+/g, ' ');
-    
-    cb(null, `${safeName}_${timestamp}_${fileHash}${path.extname(originalName)}`);
+    // Giữ nguyên tên file gốc, chỉ thêm timestamp và hash
+    cb(null, `${originalName}_${timestamp}_${fileHash}`);
   }
 });
 
@@ -311,7 +309,9 @@ async function sendFileToTelegram(filePath, fileName, user) {
     const sentMessage = await bot.telegram.sendDocument(
       chatId,
       { source: filePath },
-      { caption: `File uploaded by ${user.firstName} ${user.lastName || ''}` }
+      { 
+        caption: `📁 File: ${fileName}\n👤 Uploaded by: ${user.firstName} ${user.lastName || ''}\n📅 Date: ${new Date().toLocaleString()}`
+      }
     );
     
     console.log('Đã gửi file thành công qua Telegram bot');
