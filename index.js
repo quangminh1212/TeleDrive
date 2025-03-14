@@ -697,6 +697,11 @@ if (args.includes('clean')) {
       console.error('Lỗi khi dọn dẹp uploads:', err);
       process.exit(1);
     });
+} else if (args.includes('no-bot')) {
+  console.log('Chế độ không khởi động bot được kích hoạt');
+  // Gán bot = null để bỏ qua việc khởi động bot
+  bot = null;
+  startServer();
 } else {
   // Khởi động server và bot
   startServer();
