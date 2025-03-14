@@ -1,6 +1,6 @@
 @echo off
 echo Khoi dong TeleDrive...
-echo.
+echo. 
 
 :: Kiem tra xem Node.js da duoc cai dat chua
 where node >nul 2>nul
