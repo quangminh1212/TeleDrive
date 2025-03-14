@@ -18,7 +18,7 @@ if %errorlevel% neq 0 (
 
 REM Kiểm tra các gói npm
 echo Đang cài đặt/cập nhật các gói phụ thuộc...
-call npm install express ejs dotenv telegraf axios multer uuid crypto fs-extra path child_process morgan helmet cors
+call npm install
 if %errorlevel% neq 0 (
   echo [CẢNH BÁO] Một số gói không thể cài đặt, nhưng ứng dụng vẫn có thể chạy.
 )
@@ -31,25 +31,6 @@ if not exist .env (
     echo [CẢNH BÁO] Vui lòng chỉnh sửa file .env để cấu hình BOT_TOKEN.
   ) else (
     echo [CẢNH BÁO] Không tìm thấy file .env hoặc .env.example!
-    echo # Server Configuration > .env
-    echo PORT=5000 >> .env
-    echo NODE_ENV=development >> .env
-    echo. >> .env
-    echo # Telegram API Credentials >> .env
-    echo API_ID=123456 >> .env
-    echo API_HASH=abcdef1234567890abcdef1234567890 >> .env
-    echo. >> .env
-    echo # BOT Token >> .env
-    echo BOT_TOKEN=your_telegram_bot_token >> .env
-    echo. >> .env
-    echo # Cấu hình lưu trữ >> .env
-    echo STORAGE_PATH=./storage >> .env
-    echo MAX_FILE_SIZE=2000 >> .env
-    echo. >> .env
-    echo # Thư mục lưu trữ tạm thời >> .env
-    echo TEMP_DIR=temp >> .env
-    echo DATA_DIR=data >> .env
-    echo [CẢNH BÁO] Đã tạo file .env mặc định. Vui lòng chỉnh sửa để cấu hình đúng.
   )
 )
 
@@ -60,6 +41,8 @@ if not exist data mkdir data
 if not exist logs mkdir logs
 if not exist storage mkdir storage
 if not exist public mkdir public
+if not exist public\css mkdir public\css
+if not exist public\js mkdir public\js
 
 echo ===============================
 echo       TeleDrive - Khởi động
@@ -68,8 +51,8 @@ echo.
 echo Đang khởi động TeleDrive...
 echo.
 
-REM Chạy trực tiếp lựa chọn 1
-node index.js
+REM Chạy ứng dụng
+npm run dev
 
 pause
 endlocal 
