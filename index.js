@@ -21,18 +21,174 @@ const cors = require('cors');
 // Đọc cấu hình từ file .env
 dotenv.config();
 
-// Biến môi trường
+// Cấu hình cơ bản
 const PORT = process.env.PORT || 5001;
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '2000', 10) * 1024 * 1024; // Convert MB to bytes
-const DATA_DIR = process.env.DATA_DIR || 'data';
-const TEMP_DIR = process.env.TEMP_DIR || 'temp';
-const UPLOADS_DIR = 'uploads';
+const MAX_FILE_SIZE = process.env.MAX_FILE_SIZE || 20 * 1024 * 1024; // 20MB mặc định
+const BOT_TOKEN = process.env.BOT_TOKEN || 'your_telegram_bot_token';
+const BOT_CHAT_ID = process.env.BOT_CHAT_ID || '';
+const FILES_DB_PATH = path.join(__dirname, 'db', 'files.json');
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+
+// Khai báo biến cho DB
+const db = {
+  getAllFiles: function() {
+    return readFilesDb();
+  },
+  getFile: function(fileId) {
+    const files = readFilesDb();
+    return files.find(f => f.id === fileId);
+  },
+  saveFile: function(fileData) {
+    const files = readFilesDb();
+    const existingIndex = files.findIndex(f => f.id === fileData.id);
+    
+    if (existingIndex !== -1) {
+      files[existingIndex] = fileData;
+    } else {
+      files.push(fileData);
+    }
+    
+    saveFilesDb(files);
+    return fileData;
+  },
+  deleteFile: function(fileId) {
+    let files = readFilesDb();
+    files = files.filter(f => f.id !== fileId);
+    saveFilesDb(files);
+    return { success: true };
+  }
+};
+
+// Cấu hình Express
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.set('view engine', 'ejs');
+app.use(cors());
+app.use(morgan('dev'));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+// Cấu hình multer để upload file
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, UPLOAD_DIR);
+  },
+  filename: function (req, file, cb) {
+    // Tạo tên file an toàn
+    const fileName = getSecureFilePath(file.originalname);
+    cb(null, fileName);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: MAX_FILE_SIZE }
+});
+
+// Biến lưu trạng thái bot
+let bot = null;
+let botActive = false;
+
+// Khởi tạo Telegram Bot với timeout
+const initBot = () => {
+  console.log('Khởi tạo Telegram Bot...');
+  
+  if (!BOT_TOKEN || BOT_TOKEN === 'your_telegram_bot_token') {
+    console.log('Bot token chưa được cấu hình. Vui lòng cập nhật file .env');
+    return Promise.resolve(null);
+  }
+  
+  try {
+    const newBot = new Telegraf(BOT_TOKEN);
+    
+    // Thiết lập timeout cho việc khởi động bot
+    const timeoutPromise = new Promise((resolve, reject) => {
+      setTimeout(() => {
+        reject(new Error('Timeout khi khởi động bot Telegram'));
+      }, 10000); // 10 giây timeout
+    });
+    
+    // Promise để khởi động bot
+    const launchPromise = new Promise(async (resolve, reject) => {
+      try {
+        // Thêm handlers cho bot
+        newBot.command('start', (ctx) => {
+          ctx.reply('Chào mừng đến với TeleDrive Bot! Bạn có thể gửi file để lưu trữ.');
+        });
+        
+        newBot.command('help', (ctx) => {
+          ctx.reply('Gửi file để lưu trữ. Sử dụng /list để xem danh sách file đã lưu trữ.');
+        });
+        
+        newBot.on('message', (ctx) => {
+          ctx.reply('Đã nhận tin nhắn của bạn!');
+        });
+        
+        // Khởi chạy bot với webhook hoặc polling tùy thuộc vào môi trường
+        newBot.launch().then(() => {
+          console.log('Bot Telegram đã khởi động thành công!');
+          resolve(newBot);
+        }).catch((err) => {
+          console.error('Lỗi khi khởi động bot Telegram:', err);
+          reject(err);
+        });
+      } catch (err) {
+        console.error('Lỗi khi thiết lập bot Telegram:', err);
+        reject(err);
+      }
+    });
+    
+    // Race giữa launch và timeout
+    return Promise.race([launchPromise, timeoutPromise])
+      .then((result) => {
+        return result; // Trả về bot nếu khởi động thành công
+      })
+      .catch((error) => {
+        console.error('Lỗi khởi động bot:', error.message);
+        console.log('Ứng dụng vẫn tiếp tục chạy mà không có bot.');
+        return null;
+      });
+  } catch (error) {
+    console.error('Lỗi khi khởi tạo bot:', error);
+    return Promise.resolve(null);
+  }
+};
+
+// Hàm kiểm tra xem bot có hoạt động không
+const checkBotActive = async () => {
+  if (!bot || !BOT_TOKEN || BOT_TOKEN === 'your_telegram_bot_token') {
+    return false;
+  }
+  
+  try {
+    // Thiết lập timeout cho việc kiểm tra bot
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Timeout khi kiểm tra bot Telegram'));
+      }, 5000); // 5 giây timeout
+    });
+    
+    // Kiểm tra bot bằng cách lấy thông tin
+    const checkPromise = bot.telegram.getMe()
+      .then(() => true)
+      .catch(() => false);
+    
+    // Race giữa check và timeout
+    return await Promise.race([checkPromise, timeoutPromise]);
+  } catch (error) {
+    console.error('Lỗi khi kiểm tra bot:', error);
+    return false;
+  }
+};
 
 // Đường dẫn file và thư mục
-const dataDir = path.join(__dirname, DATA_DIR);
-const tempDir = path.join(__dirname, TEMP_DIR);
-const uploadsDir = path.join(__dirname, UPLOADS_DIR);
+const dataDir = path.join(__dirname, 'data');
+const tempDir = path.join(__dirname, 'temp');
+const uploadsDir = path.join(__dirname, 'uploads');
 const filesDbPath = path.join(dataDir, 'files.json');
 const logsDir = path.join(__dirname, 'logs');
 
@@ -936,7 +1092,7 @@ app.get('/api/files/:id/local-download', (req, res) => {
 app.get('/file/:id', async (req, res) => {
   try {
     const fileId = req.params.id;
-    const file = await db.getFile(fileId);
+    const file = db.getFile(fileId);
     
     if (!file) {
       return res.status(404).render('error', { 
@@ -954,13 +1110,15 @@ app.get('/file/:id', async (req, res) => {
     const fileInfo = {
       id: file.id,
       name: file.originalname || file.name,
-      mimetype: file.mimetype || file.mimeType || 'application/octet-stream',
+      mimeType: file.mimetype || file.mimeType || 'application/octet-stream',
       size: file.size || 0,
-      createdAt: file.createdAt || new Date().toISOString(),
+      uploadDate: file.createdAt || file.uploadDate || new Date().toISOString(),
       telegramFileId: file.telegramFileId,
       telegramUrl: file.telegramUrl,
       localPath: file.localPath,
-      storageStatus
+      fakeTelegramId: file.fakeTelegramId || false,
+      fakeTelegramUrl: file.fakeTelegramUrl || false,
+      fileType: file.fileType || guessFileType(file.mimetype || file.mimeType || ''),
     };
     
     res.render('file-preview', {
@@ -1322,6 +1480,10 @@ function ensureDirectoriesExist() {
   try {
     // Đảm bảo các thư mục cần thiết tồn tại
     ensureDirectoriesExist();
+    
+    // Khởi tạo bot Telegram
+    bot = await initBot();
+    botActive = bot !== null;
     
     // Tự động đồng bộ file khi khởi động - chỉ đồng bộ local
     await syncFiles();
