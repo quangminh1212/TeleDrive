@@ -74,7 +74,18 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Khởi tạo bot Telegram
 let bot = null;
 if (BOT_TOKEN && BOT_TOKEN !== 'your_telegram_bot_token') {
-  bot = new Telegraf(BOT_TOKEN);
+  // Tạo cấu hình cho bot
+  const botConfig = {};
+  
+  // Nếu có proxy, thêm vào cấu hình
+  if (process.env.TELEGRAM_PROXY) {
+    console.log('Sử dụng proxy cho kết nối Telegram:', process.env.TELEGRAM_PROXY);
+    botConfig.telegram = {
+      apiRoot: process.env.TELEGRAM_PROXY
+    };
+  }
+  
+  bot = new Telegraf(BOT_TOKEN, botConfig);
   
   bot.command('start', (ctx) => {
     ctx.reply('Chào mừng đến với TeleDrive! Gửi file (dưới 20MB) và tôi sẽ lưu trữ cho bạn.');
@@ -408,8 +419,13 @@ async function cleanUploads() {
     let chatId;
     
     try {
-      // Lấy ID chat của bot
-      const botInfo = await bot.telegram.getMe();
+      // Lấy ID chat của bot với timeout
+      const getMePromise = bot.telegram.getMe();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout khi lấy thông tin bot')), 5000);
+      });
+      
+      const botInfo = await Promise.race([getMePromise, timeoutPromise]);
       chatId = botInfo.id;
     } catch (error) {
       console.error('Không thể lấy thông tin bot:', error);
@@ -426,25 +442,45 @@ async function cleanUploads() {
         
         console.log(`Đang gửi file "${file.name}" lên Telegram...`);
         
-        // Gửi file lên Telegram
+        // Gửi file lên Telegram với timeout
         let message;
+        const sendFilePromise = (() => {
+          if (file.fileType === 'image') {
+            return bot.telegram.sendPhoto(chatId, { source: file.localPath });
+          } else if (file.fileType === 'video') {
+            return bot.telegram.sendVideo(chatId, { source: file.localPath });
+          } else if (file.fileType === 'audio') {
+            return bot.telegram.sendAudio(chatId, { source: file.localPath });
+          } else {
+            return bot.telegram.sendDocument(chatId, { source: file.localPath });
+          }
+        })();
         
+        const sendTimeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout khi gửi file lên Telegram')), 30000);
+        });
+        
+        // Sử dụng Promise.race để đặt timeout
+        message = await Promise.race([sendFilePromise, sendTimeoutPromise]);
+        
+        // Lấy ID file tùy thuộc vào loại file
         if (file.fileType === 'image') {
-          message = await bot.telegram.sendPhoto(chatId, { source: file.localPath });
           file.telegramFileId = message.photo[message.photo.length - 1].file_id;
         } else if (file.fileType === 'video') {
-          message = await bot.telegram.sendVideo(chatId, { source: file.localPath });
           file.telegramFileId = message.video.file_id;
         } else if (file.fileType === 'audio') {
-          message = await bot.telegram.sendAudio(chatId, { source: file.localPath });
           file.telegramFileId = message.audio.file_id;
         } else {
-          message = await bot.telegram.sendDocument(chatId, { source: file.localPath });
           file.telegramFileId = message.document.file_id;
         }
         
-        // Lấy link file
-        const fileLink = await bot.telegram.getFileLink(file.telegramFileId);
+        // Lấy link file với timeout
+        const getLinkPromise = bot.telegram.getFileLink(file.telegramFileId);
+        const getLinkTimeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout khi lấy link file')), 5000);
+        });
+        
+        const fileLink = await Promise.race([getLinkPromise, getLinkTimeoutPromise]);
         file.telegramUrl = fileLink.href;
         
         // Xóa file local
@@ -706,6 +742,18 @@ const startServer = async () => {
 
 // Kiểm tra tham số dòng lệnh
 const args = process.argv.slice(2);
+
+// Xử lý các tham số proxy nếu có
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--proxy' && i + 1 < args.length) {
+    process.env.TELEGRAM_PROXY = args[i + 1];
+    console.log(`Đã thiết lập proxy: ${args[i + 1]}`);
+    // Xóa tham số proxy khỏi danh sách để không ảnh hưởng đến các điều kiện khác
+    args.splice(i, 2);
+    i -= 2;
+  }
+}
+
 if (args.includes('clean')) {
   console.log('Chế độ dọn dẹp được kích hoạt');
   cleanUploads()
