@@ -43,7 +43,36 @@ TeleDrive là ứng dụng web cho phép bạn quản lý các file được g�
 
 ## Sử dụng
 
-1. Khởi động ứng dụng:
+### Cách đơn giản nhất (Khuyến nghị)
+
+#### Windows
+Chỉ cần chạy file script `run-teledrive.bat`:
+1. Nhấp đúp vào file `run-teledrive.bat` trong File Explorer
+2. Hoặc mở Command Prompt và chạy:
+   ```
+   run-teledrive.bat
+   ```
+
+#### Linux/macOS
+Chỉ cần chạy file script `run-teledrive.sh`:
+1. Đầu tiên, cấp quyền thực thi cho file:
+   ```
+   chmod +x run-teledrive.sh
+   ```
+2. Sau đó chạy:
+   ```
+   ./run-teledrive.sh
+   ```
+
+Script sẽ tự động:
+- Kiểm tra môi trường và cài đặt
+- Tạo các thư mục cần thiết
+- Đồng bộ file từ thư mục uploads vào database
+- Khởi động ứng dụng với cấu hình phù hợp
+
+### Cách thủ công
+
+1. Khởi động ứng dụng bằng một trong các lệnh sau:
    ```
    node start-app.js
    ```
