@@ -37,7 +37,7 @@ if not exist node_modules (
 :: Khoi dong ung dung
 echo Khoi dong ung dung...
 echo.
-echo Truy cap ung dung tai: http://localhost:5001
+echo Truy cap ung dung tai: http://localhost:5002
 echo.
 echo Nhan Ctrl+C de dung ung dung
 echo.
