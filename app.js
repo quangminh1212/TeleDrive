@@ -338,6 +338,8 @@ async function sendFileToTelegram(filePath, fileName, user) {
     // Trả về thông tin Telegram
     return {
       fileId: sentMessage.document.file_id,
+      messageId: sentMessage.message_id,
+      chatId: chatId,
       success: true
     };
   } catch (error) {
@@ -370,7 +372,7 @@ app.get('/api/files', (req, res) => {
 });
 
 // API để xóa file
-app.delete('/api/files/:id', (req, res) => {
+app.delete('/api/files/:id', async (req, res) => {
   try {
     const filesData = readFilesDb();
     const fileIndex = filesData.findIndex(f => f._id === req.params.id);
@@ -387,6 +389,17 @@ app.delete('/api/files/:id', (req, res) => {
       if (fs.existsSync(fullPath)) {
         fs.unlinkSync(fullPath);
         console.log(`Đã xóa file: ${fullPath}`);
+      }
+    }
+    
+    // Xóa tin nhắn khỏi Telegram nếu có bot và messageId
+    if (bot && file.telegramMessageId && file.chatId) {
+      try {
+        await bot.telegram.deleteMessage(file.chatId, file.telegramMessageId);
+        console.log(`Đã xóa tin nhắn Telegram: ${file.telegramMessageId}`);
+      } catch (telegramError) {
+        console.error('Không thể xóa tin nhắn Telegram:', telegramError.message);
+        // Tiếp tục quy trình xóa ngay cả khi không thể xóa tin nhắn Telegram
       }
     }
     
@@ -449,6 +462,8 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         console.log('Bắt đầu gửi file đến Telegram');
         const telegramInfo = await sendFileToTelegram(file.path, file.originalname, user);
         fileInfo.fileId = telegramInfo.fileId;
+        fileInfo.telegramMessageId = telegramInfo.messageId;
+        fileInfo.chatId = telegramInfo.chatId;
         fileInfo.sentToTelegram = true;
         console.log('Đã gửi file đến Telegram thành công');
       } catch (telegramError) {
