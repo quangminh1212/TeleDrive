@@ -47,6 +47,8 @@ Desktop.ini
 
 # Chrome profiles
 chrome_profiles/
+**/chrome_profiles/
+**/user-data-dir/
 
 # Temporary files
 *-temp.html
@@ -85,4 +87,7 @@ jspm_packages/
 .node_repl_history
 
 # Output of 'npm pack'
-*.tgz 
+*.tgz
+
+# Thêm bất kỳ file tạm thời khác được tạo khi chạy ứng dụng
+tmp/ 
