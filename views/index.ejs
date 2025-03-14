@@ -3,160 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> - Telegram File Manager</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <title><%= title %></title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/style.css">
     <style>
         .file-card {
-            transition: transform 0.2s ease;
+            transition: transform 0.2s;
+            cursor: pointer;
+            height: 100%;
         }
         .file-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
-        .file-icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
         .document-icon { color: #4285F4; }
-        .photo-icon { color: #34A853; }
-        .video-icon { color: #EA4335; }
-        .audio-icon { color: #FBBC05; }
-        .file-error { color: #EA4335; }
-        .file-thumb {
-            height: 150px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 15px;
+        .photo-icon { color: #0F9D58; }
+        .video-icon { color: #F4B400; }
+        .audio-icon { color: #DB4437; }
+        .file-error { color: #9E9E9E; }
+        .file-thumbnail {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
         }
         .loading-spinner {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-        }
-        #refresh-files {
-            animation: rotate 1s linear infinite paused;
-        }
-        #refresh-files.spinning {
-            animation-play-state: running;
+            animation: rotate 1s linear infinite;
         }
         @keyframes rotate {
-            100% {
-                transform: rotate(360deg);
-            }
+            100% { transform: rotate(360deg); }
         }
-        .file-unavailable {
-            color: #EA4335;
-            font-size: 0.8rem;
-            margin-top: 5px;
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body>
+<body class="bg-light">
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="bi bi-telegram me-2"></i>TeleDrive
+                <i class="bi bi-cloud-arrow-up me-2"></i>TeleDrive
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="/">Files</a>
+                        <a class="nav-link active" href="/">
+                            <i class="bi bi-house-door me-1"></i>Trang chủ
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/bot-settings">Bot Settings</a>
+                        <a class="nav-link" href="/bot-settings">
+                            <i class="bi bi-robot me-1"></i>Cài đặt Bot
+                        </a>
                     </li>
                 </ul>
-            </div>
-            <div class="d-flex">
-                <button id="refresh-files" class="btn btn-outline-light" title="Refresh files">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
             </div>
         </div>
     </nav>
 
+    <!-- Main Content -->
     <div class="container py-5">
         <div class="row mb-4">
             <div class="col-md-6">
-                <h1>Your Telegram Files</h1>
-                <p class="text-muted">Manage files sent to your Telegram bot</p>
+                <h2 class="mb-3">
+                    <i class="bi bi-telegram me-2 text-primary"></i>TeleDrive
+                </h2>
+                <p class="text-muted">Lưu trữ file thông qua Telegram Bot</p>
             </div>
             <div class="col-md-6 text-md-end">
-                <div id="bot-status" class="alert alert-info d-inline-block">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                        <span class="visually-hidden">Checking...</span>
-                    </div>
-                    <span class="ms-2">Checking bot status...</span>
+                <!-- Bot status -->
+                <div class="mb-3">
+                    <span class="bot-status-text me-2">Đang kiểm tra trạng thái Bot...</span>
+                    <i class="bi bi-arrow-repeat loading-spinner bot-status-icon"></i>
                 </div>
+                <!-- Upload file button -->
+                <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="bi bi-upload me-1"></i>Tải lên file
+                </button>
+                <!-- Refresh button -->
+                <button id="refresh-btn" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-repeat me-1"></i>Làm mới
+                </button>
             </div>
         </div>
 
         <% if (storageInfo && storageInfo.total > 0) { %>
-        <div class="storage-info mb-4">
-            <div class="d-flex justify-content-between">
-                <span>Storage: <%= formatFileSize(storageInfo.used) %> / <%= formatFileSize(storageInfo.total) %></span>
-                <span><%= Math.round(storageInfo.percent) %>%</span>
-            </div>
-            <div class="progress storage-bar">
-                <div class="progress-bar <%= storageInfo.percent > 90 ? 'bg-danger' : storageInfo.percent > 70 ? 'bg-warning' : 'bg-success' %>" 
-                    role="progressbar" style="width: <%= storageInfo.percent %>%" 
-                    aria-valuenow="<%= storageInfo.percent %>" aria-valuemin="0" aria-valuemax="100"></div>
+        <!-- Storage info -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Thông tin lưu trữ</h5>
+                <div class="progress mb-2">
+                    <div class="progress-bar" role="progressbar" style="width: <%= storageInfo.percent %>%;" 
+                        aria-valuenow="<%= storageInfo.percent %>" aria-valuemin="0" aria-valuemax="100">
+                        <%= storageInfo.percent.toFixed(1) %>%
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span><%= (storageInfo.used / (1024 * 1024)).toFixed(2) %> MB đã sử dụng</span>
+                    <span><%= (storageInfo.total / (1024 * 1024)).toFixed(2) %> MB tổng dung lượng</span>
+                </div>
             </div>
         </div>
         <% } %>
 
-        <div class="mb-4">
-            <button id="refresh-btn" class="btn btn-primary">
-                <i class="bi bi-arrow-clockwise me-2"></i> Làm mới danh sách file
-            </button>
+        <!-- Error message if any -->
+        <% if (error) { %>
+        <div class="alert alert-danger mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
         </div>
+        <% } %>
 
-        <div id="loading-container" class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
+        <!-- Loading container -->
+        <div id="loading-container" class="text-center py-5 d-none">
+            <div class="loader"></div>
             <p class="mt-3">Đang tải danh sách file...</p>
         </div>
 
-        <div id="files-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
-            <!-- Files will be loaded with JavaScript -->
+        <!-- No files message -->
+        <div id="no-files-message" class="alert alert-info text-center d-none">
+            <i class="bi bi-info-circle me-2"></i>Chưa có file nào được tải lên
         </div>
 
-        <div id="no-files-message" class="alert alert-info d-none">
-            <i class="bi bi-info-circle me-2"></i> Chưa có file nào được tải lên. Gửi file đến bot Telegram của bạn để bắt đầu.
-        </div>
-
-        <div class="card mt-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-exclamation-circle me-2"></i> Giới hạn kích thước file</h5>
-            </div>
+        <!-- File size limit info -->
+        <div class="card mb-4">
             <div class="card-body">
-                <p>Bot Telegram chỉ có thể tải xuống các file có kích thước <strong>tối đa 20MB</strong> do giới hạn của API Telegram.</p>
-                <p>Nếu bạn gửi file lớn hơn, sẽ xuất hiện thông báo lỗi <code>"Bad Request: file is too big"</code>.</p>
-                <h6 class="mt-3">Cách tải file lớn:</h6>
-                <ol>
-                    <li>Chia nhỏ file lớn thành nhiều phần (mỗi phần dưới 20MB)</li>
-                    <li>Nén file để giảm kích thước trước khi gửi</li>
-                    <li>Sử dụng dịch vụ lưu trữ trực tuyến khác cho các file lớn</li>
-                </ol>
+                <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>Thông tin giới hạn file</h5>
+                <p>Do giới hạn của Telegram API, file lớn hơn 20MB không thể tải lên trực tiếp qua bot. 
+                   Để tải file lớn, hãy chia nhỏ file hoặc tải lên qua web.</p>
+                <ul>
+                    <li>Kích thước tối đa cho mỗi file: <strong><%= (maxSize/(1024*1024)).toFixed(0) %> MB</strong></li>
+                    <li>Các loại file hỗ trợ: Hình ảnh, Video, Tài liệu, Âm thanh, và các loại file khác</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Files Grid -->
+        <div class="row" id="files-container">
+            <% if (files && files.length > 0) { %>
+                <% files.forEach(function(file) { %>
+                    <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+                        <div class="card file-card h-100" data-file-id="<%= file.id %>">
+                            <div class="card-body">
+                                <% if (file.fileType === 'image') { %>
+                                    <div class="text-center mb-2">
+                                        <i class="bi bi-image fs-1 photo-icon"></i>
+                                    </div>
+                                <% } else if (file.fileType === 'video') { %>
+                                    <div class="text-center mb-2">
+                                        <i class="bi bi-film fs-1 video-icon"></i>
+                                    </div>
+                                <% } else if (file.fileType === 'audio') { %>
+                                    <div class="text-center mb-2">
+                                        <i class="bi bi-music-note-beamed fs-1 audio-icon"></i>
+                                    </div>
+                                <% } else { %>
+                                    <div class="text-center mb-2">
+                                        <i class="bi bi-file-earmark-text fs-1 document-icon"></i>
+                                    </div>
+                                <% } %>
+                                <h5 class="card-title text-truncate" title="<%= file.name %>"><%= file.name %></h5>
+                                <p class="card-text text-muted mb-1">
+                                    <small><%= (file.size / (1024 * 1024)).toFixed(2) %> MB</small>
+                                </p>
+                                <p class="card-text text-muted">
+                                    <small><%= new Date(file.uploadDate).toLocaleString('vi-VN') %></small>
+                                </p>
+                            </div>
+                            <div class="card-footer bg-transparent border-top-0">
+                                <div class="d-flex justify-content-between">
+                                    <a href="/uploads/<%= file.name %>" class="btn btn-sm btn-outline-primary" download>
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="<%= file.id %>">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tải lên file</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Chọn file để tải lên</label>
+                            <input type="file" class="form-control" id="file" name="file" required>
+                            <div class="form-text">Kích thước tối đa: <%= (maxSize/(1024*1024)).toFixed(0) %> MB</div>
+                        </div>
+                        <div class="progress d-none mb-3" id="upload-progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="upload-message" class="alert d-none"></div>
+                        <button type="submit" class="btn btn-primary w-100">Tải lên</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
-    <footer class="bg-light py-3 mt-5">
-        <div class="container text-center">
-            <p class="mb-0 text-muted">TeleDrive &copy; <%= new Date().getFullYear() %> | <a href="https://github.com/yourusername/teledrive" target="_blank" class="text-decoration-none">GitHub</a></p>
-        </div>
-    </footer>
-
     <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="deleteModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -164,32 +239,40 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Bạn có chắc chắn muốn xóa file <span id="fileName" class="fw-bold"></span>?
+                    <p>Bạn có chắc muốn xóa file này không?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-danger" id="confirmDelete">Xóa</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete-btn">Xóa</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Toast container -->
-    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+    <!-- File Details Modal -->
+    <div class="modal fade" id="fileDetailsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chi tiết file</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="file-details-content">
+                    <!-- File details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Toast container for notifications -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
     <script src="/js/main.js"></script>
-
-    <% 
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-    %>
 </body>
 </html> 

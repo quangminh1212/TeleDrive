@@ -1,279 +1,302 @@
 /**
- * TeleDrive Main JavaScript
+ * TeleDrive - Main JavaScript
+ * Xử lý tất cả các tương tác phía client cho ứng dụng TeleDrive
  */
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Elements
+    // Các phần tử DOM chính
     const filesContainer = document.getElementById('files-container');
     const loadingContainer = document.getElementById('loading-container');
     const noFilesMessage = document.getElementById('no-files-message');
     const refreshBtn = document.getElementById('refresh-btn');
-    const botStatus = document.getElementById('bot-status');
+    const botStatusIcon = document.querySelector('.bot-status-icon');
+    const botStatusText = document.querySelector('.bot-status-text');
     
-    // Check bot status
+    // Phần tử Modal và form
+    const uploadForm = document.getElementById('upload-form');
+    const uploadProgress = document.getElementById('upload-progress');
+    const uploadMessage = document.getElementById('upload-message');
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    
+    // ID của file đang được xử lý
+    let currentFileId = null;
+    
+    // Kiểm tra trạng thái bot
     checkBotStatus();
     
-    // Load files when the page loads
+    // Tải danh sách file khi trang được tải
     loadFiles();
     
-    // Set up auto-refresh (every 30 seconds)
+    // Tự động làm mới danh sách file mỗi 30 giây
     setInterval(loadFiles, 30000);
     
-    // Manual refresh button
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', function() {
-            this.disabled = true;
-            if (loadingContainer) loadingContainer.classList.remove('d-none');
-            if (filesContainer) filesContainer.innerHTML = '';
+    // Xử lý sự kiện nút làm mới
+    refreshBtn.addEventListener('click', function() {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat loading-spinner me-1"></i>Đang làm mới...';
+        loadFiles().finally(() => {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Làm mới';
+        });
+    });
+    
+    // Xử lý sự kiện form upload
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('file');
+            const file = fileInput.files[0];
             
-            loadFiles().finally(() => {
-                this.disabled = false;
+            if (!file) {
+                showUploadMessage('Vui lòng chọn file để tải lên', 'danger');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            uploadProgress.classList.remove('d-none');
+            uploadMessage.classList.add('d-none');
+            
+            // Gửi file lên server
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showUploadMessage('File đã được tải lên thành công!', 'success');
+                    fileInput.value = '';
+                    loadFiles(); // Làm mới danh sách file
+                    
+                    // Đóng modal sau 2 giây
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+                        uploadProgress.classList.add('d-none');
+                        uploadMessage.classList.add('d-none');
+                    }, 2000);
+                } else {
+                    showUploadMessage(data.error || 'Có lỗi xảy ra khi tải lên file', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi:', error);
+                showUploadMessage('Có lỗi xảy ra khi tải lên file', 'danger');
             });
         });
     }
     
-    // Check bot status
-    async function checkBotStatus() {
-        try {
-            if (!botStatus) return;
-            
-            const response = await fetch('/api/status');
-            const data = await response.json();
-            
-            if (data.botActive) {
-                botStatus.className = 'alert alert-success d-inline-block';
-                botStatus.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Bot đang hoạt động';
-            } else {
-                botStatus.className = 'alert alert-warning d-inline-block';
-                botStatus.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> Bot không hoạt động';
-            }
-        } catch (error) {
-            console.error('Error checking bot status:', error);
-            if (botStatus) {
-                botStatus.className = 'alert alert-danger d-inline-block';
-                botStatus.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i> Không thể kiểm tra trạng thái bot';
-            }
+    // Xử lý sự kiện click vào các nút xóa file
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-file-btn')) {
+            const btn = e.target.closest('.delete-file-btn');
+            currentFileId = btn.dataset.fileId;
+            deleteModal.show();
         }
+    });
+    
+    // Xử lý xác nhận xóa file
+    confirmDeleteBtn.addEventListener('click', function() {
+        if (!currentFileId) return;
+        
+        // Gửi yêu cầu xóa file
+        fetch(`/api/files/${currentFileId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            deleteModal.hide();
+            
+            if (data.success) {
+                // Xóa phần tử khỏi DOM
+                const fileElement = document.querySelector(`.file-card[data-file-id="${currentFileId}"]`);
+                if (fileElement) {
+                    const parentCol = fileElement.closest('.col-sm-6');
+                    if (parentCol) parentCol.remove();
+                }
+                showToast('File đã được xóa thành công', 'success');
+                
+                // Kiểm tra nếu không còn file nào
+                if (filesContainer.children.length === 0) {
+                    noFilesMessage.classList.remove('d-none');
+                }
+            } else {
+                showToast(data.error || 'Có lỗi xảy ra khi xóa file', 'danger');
+            }
+            
+            currentFileId = null;
+        })
+        .catch(error => {
+            console.error('Lỗi:', error);
+            deleteModal.hide();
+            showToast('Có lỗi xảy ra khi xóa file', 'danger');
+            currentFileId = null;
+        });
+    });
+    
+    // Hàm kiểm tra trạng thái bot
+    function checkBotStatus() {
+        fetch('/api/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.botActive) {
+                    botStatusText.textContent = 'Bot đang hoạt động';
+                    botStatusText.classList.add('text-success');
+                    botStatusText.classList.remove('text-danger', 'text-warning');
+                    botStatusIcon.classList.add('text-success');
+                    botStatusIcon.classList.remove('text-danger', 'text-warning', 'loading-spinner');
+                    botStatusIcon.classList.remove('bi-arrow-repeat');
+                    botStatusIcon.classList.add('bi-check-circle');
+                } else {
+                    botStatusText.textContent = 'Bot không hoạt động';
+                    botStatusText.classList.add('text-danger');
+                    botStatusText.classList.remove('text-success', 'text-warning');
+                    botStatusIcon.classList.add('text-danger');
+                    botStatusIcon.classList.remove('text-success', 'text-warning', 'loading-spinner');
+                    botStatusIcon.classList.remove('bi-arrow-repeat');
+                    botStatusIcon.classList.add('bi-x-circle');
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi kiểm tra trạng thái bot:', error);
+                botStatusText.textContent = 'Không thể kiểm tra trạng thái Bot';
+                botStatusText.classList.add('text-warning');
+                botStatusText.classList.remove('text-success', 'text-danger');
+                botStatusIcon.classList.add('text-warning');
+                botStatusIcon.classList.remove('text-success', 'text-danger', 'loading-spinner');
+                botStatusIcon.classList.remove('bi-arrow-repeat');
+                botStatusIcon.classList.add('bi-exclamation-triangle');
+            });
     }
     
-    // Load files function
+    // Hàm tải danh sách file
     async function loadFiles() {
         try {
-            if (loadingContainer) loadingContainer.classList.remove('d-none');
-            if (noFilesMessage) noFilesMessage.classList.add('d-none');
+            loadingContainer.classList.remove('d-none');
+            noFilesMessage.classList.add('d-none');
             
-            // Load file data from server
+            // Nếu đã có file được hiển thị và đang làm mới, không xóa file hiện tại
+            if (filesContainer.children.length === 0) {
+                filesContainer.innerHTML = '';
+            }
+            
             const response = await fetch('/api/files');
             const files = await response.json();
             
-            // Display files
-            if (filesContainer) filesContainer.innerHTML = '';
+            // Nếu đang làm mới danh sách file, xóa file hiện tại
+            filesContainer.innerHTML = '';
             
-            if (files && files.length > 0) {
-                files.forEach(file => {
-                    const fileCard = createFileCard(file);
-                    if (filesContainer) filesContainer.appendChild(fileCard);
-                });
-                
-                // Activate delete buttons
-                document.querySelectorAll('.delete-file').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const fileId = this.getAttribute('data-id');
-                        const fileName = this.getAttribute('data-name');
-                        
-                        // Show confirmation modal
-                        const fileNameElem = document.getElementById('fileName');
-                        if (fileNameElem) fileNameElem.textContent = fileName;
-                        
-                        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-                        modal.show();
-                        
-                        // Handle file deletion
-                        const confirmBtn = document.getElementById('confirmDelete');
-                        if (confirmBtn) {
-                            confirmBtn.onclick = function() {
-                                deleteFile(fileId);
-                                modal.hide();
-                            };
-                        }
-                    });
-                });
+            if (files.length === 0) {
+                noFilesMessage.classList.remove('d-none');
             } else {
-                if (noFilesMessage) noFilesMessage.classList.remove('d-none');
+                files.forEach(file => {
+                    filesContainer.appendChild(createFileCard(file));
+                });
             }
         } catch (error) {
-            console.error('Error loading files:', error);
-            if (filesContainer) {
-                filesContainer.innerHTML = `
-                    <div class="col-12">
-                        <div class="alert alert-danger">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            Lỗi tải danh sách file: ${error.message}
-                        </div>
-                    </div>
-                `;
-            }
+            console.error('Lỗi tải danh sách file:', error);
+            showToast('Có lỗi xảy ra khi tải danh sách file', 'danger');
         } finally {
-            if (loadingContainer) loadingContainer.classList.add('d-none');
+            loadingContainer.classList.add('d-none');
         }
     }
     
-    // Create file card
+    // Hàm tạo card cho file
     function createFileCard(file) {
-        const col = document.createElement('div');
-        col.className = 'col file-item';
-        col.setAttribute('data-id', file.id);
+        const colDiv = document.createElement('div');
+        colDiv.className = 'col-sm-6 col-md-4 col-lg-3 mb-4';
         
-        let fileIcon = '';
-        let fileType = file.fileType || guessFileType(file.mimeType);
+        // Xác định loại file và biểu tượng
+        let fileIcon = 'bi-file-earmark-text';
+        let fileIconClass = 'document-icon';
         
-        if (fileType === 'document') {
-            fileIcon = '<i class="bi bi-file-earmark-text file-icon document-icon"></i>';
-        } else if (fileType === 'photo' || fileType === 'image') {
-            if (file.telegramUrl) {
-                fileIcon = `<img src="${file.telegramUrl}" alt="${file.name}" class="img-fluid mb-3" style="max-height: 150px; object-fit: cover;" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\\'bi bi-exclamation-triangle file-icon file-error\\'></i><p>Không thể tải ảnh xem trước</p>'">`;
-            } else {
-                fileIcon = '<i class="bi bi-image file-icon photo-icon"></i>';
-            }
-        } else if (fileType === 'video') {
-            fileIcon = '<i class="bi bi-film file-icon video-icon"></i>';
-        } else if (fileType === 'audio') {
-            fileIcon = '<i class="bi bi-music-note-beamed file-icon audio-icon"></i>';
-        } else {
-            fileIcon = '<i class="bi bi-file-earmark file-icon"></i>';
+        if (file.fileType === 'image') {
+            fileIcon = 'bi-image';
+            fileIconClass = 'photo-icon';
+        } else if (file.fileType === 'video') {
+            fileIcon = 'bi-film';
+            fileIconClass = 'video-icon';
+        } else if (file.fileType === 'audio') {
+            fileIcon = 'bi-music-note-beamed';
+            fileIconClass = 'audio-icon';
         }
         
-        // Format file size
-        const fileSize = formatFileSize(file.size || 0);
+        // Định dạng kích thước file
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
         
-        // Format date
-        const uploadDate = new Date(file.uploadDate).toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+        // Định dạng ngày tải lên
+        const uploadDate = new Date(file.uploadDate).toLocaleString('vi-VN');
         
-        col.innerHTML = `
-            <div class="card h-100 file-card">
-                <div class="card-body text-center">
-                    <div class="file-thumb">
-                        ${fileIcon}
+        colDiv.innerHTML = `
+            <div class="card file-card h-100" data-file-id="${file.id}">
+                <div class="card-body">
+                    <div class="text-center mb-2">
+                        <i class="bi ${fileIcon} fs-1 ${fileIconClass}"></i>
                     </div>
                     <h5 class="card-title text-truncate" title="${file.name}">${file.name}</h5>
-                    <p class="card-text file-details">
-                        <span class="badge bg-secondary">${fileSize}</span>
-                        <span class="text-muted d-block mt-1">${uploadDate}</span>
+                    <p class="card-text text-muted mb-1">
+                        <small>${fileSizeMB} MB</small>
                     </p>
-                    <div class="btn-group w-100 mt-3">
-                        ${file.telegramUrl ? 
-                            `<a href="${file.telegramUrl}" class="btn btn-sm btn-primary" target="_blank" download="${file.name}">
-                                <i class="bi bi-download"></i> Tải xuống
-                            </a>` : 
-                            `<button class="btn btn-sm btn-secondary" disabled>
-                                <i class="bi bi-exclamation-triangle"></i> Không có sẵn
-                            </button>`
-                        }
-                        <button class="btn btn-sm btn-danger delete-file" data-id="${file.id}" data-name="${file.name}">
-                            <i class="bi bi-trash"></i> Xóa
+                    <p class="card-text text-muted">
+                        <small>${uploadDate}</small>
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <div class="d-flex justify-content-between">
+                        <a href="/uploads/${encodeURIComponent(file.name)}" class="btn btn-sm btn-outline-primary" download>
+                            <i class="bi bi-download"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="${file.id}">
+                            <i class="bi bi-trash"></i>
                         </button>
                     </div>
-                    ${!file.telegramUrl && file.localPath ? 
-                        `<p class="file-unavailable mt-2">
-                            <i class="bi bi-info-circle"></i> File đang chờ upload lên Telegram
-                        </p>` : ''
-                    }
                 </div>
             </div>
         `;
         
-        return col;
+        return colDiv;
     }
     
-    // Delete file function
-    async function deleteFile(fileId) {
-        try {
-            const response = await fetch(`/api/files/${fileId}`, {
-                method: 'DELETE'
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                // Remove the file card from the UI
-                const fileElement = document.querySelector(`.file-item[data-id="${fileId}"]`);
-                if (fileElement) fileElement.remove();
-                
-                // Show success message
-                showToast('File đã được xóa thành công.', 'success');
-                
-                // Check if there are no files left
-                if (filesContainer && filesContainer.children.length === 0) {
-                    if (noFilesMessage) noFilesMessage.classList.remove('d-none');
-                }
-            } else {
-                showToast(result.error || 'Lỗi khi xóa file.', 'danger');
-            }
-        } catch (error) {
-            console.error('Error deleting file:', error);
-            showToast('Lỗi khi xóa file: ' + error.message, 'danger');
-        }
+    // Hiển thị thông báo upload
+    function showUploadMessage(message, type) {
+        uploadMessage.textContent = message;
+        uploadMessage.className = `alert alert-${type} mt-3`;
+        uploadMessage.classList.remove('d-none');
     }
     
-    // Helper function to format file size
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
+    // Hiển thị toast thông báo
+    function showToast(message, type) {
+        const toastContainer = document.querySelector('.toast-container');
         
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
         
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-    
-    // Helper function to guess file type from MIME type
-    function guessFileType(mimeType) {
-        if (!mimeType) return 'document';
-        
-        if (mimeType.startsWith('image/')) return 'image';
-        if (mimeType.startsWith('video/')) return 'video';
-        if (mimeType.startsWith('audio/')) return 'audio';
-        
-        return 'document';
-    }
-    
-    // Toast notification function
-    function showToast(message, type = 'info') {
-        const toastContainer = document.getElementById('toast-container');
-        
-        if (!toastContainer) {
-            // Create toast container if it doesn't exist
-            const container = document.createElement('div');
-            container.id = 'toast-container';
-            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            document.body.appendChild(container);
-        }
-        
-        const toastId = 'toast-' + Date.now();
-        const toastHTML = `
-            <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header bg-${type} text-white">
-                    <strong class="me-auto">Thông báo</strong>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
+        toastEl.innerHTML = `
+            <div class="d-flex">
                 <div class="toast-body">
                     ${message}
                 </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         `;
         
-        document.getElementById('toast-container').insertAdjacentHTML('beforeend', toastHTML);
+        toastContainer.appendChild(toastEl);
         
-        const toastElement = document.getElementById(toastId);
-        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        const toast = new bootstrap.Toast(toastEl, {
+            autohide: true,
+            delay: 3000
+        });
+        
         toast.show();
         
-        // Auto-remove after hiding
-        toastElement.addEventListener('hidden.bs.toast', function() {
-            this.remove();
+        // Xóa toast sau khi ẩn
+        toastEl.addEventListener('hidden.bs.toast', function() {
+            toastEl.remove();
         });
     }
 }); 

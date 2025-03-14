@@ -483,37 +483,42 @@ app.get('/api/status', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'TeleDrive API đang hoạt động', 
-    botActive: !!bot,
+    botActive: botActive,
     version: '1.0.0'
   });
 });
 
 // API xóa file
 app.delete('/api/files/:id', (req, res) => {
-  const fileId = req.params.id;
-  let filesData = readFilesDb();
-  const fileIndex = filesData.findIndex(f => f.id === fileId);
-  
-  if (fileIndex === -1) {
-    return res.status(404).json({ error: 'File không tồn tại' });
-  }
-  
-  const file = filesData[fileIndex];
-  
-  // Xóa file local nếu có
-  if (file.localPath && fs.existsSync(file.localPath)) {
-    try {
-      fs.unlinkSync(file.localPath);
-    } catch (error) {
-      console.error(`Lỗi xóa file local: ${file.localPath}`, error);
+  try {
+    const fileId = req.params.id;
+    let filesData = readFilesDb();
+    const fileIndex = filesData.findIndex(f => f.id === fileId);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({ error: 'File không tồn tại' });
     }
+    
+    const file = filesData[fileIndex];
+    
+    // Xóa file local nếu có
+    if (file.localPath && fs.existsSync(file.localPath)) {
+      try {
+        fs.unlinkSync(file.localPath);
+      } catch (error) {
+        console.error(`Lỗi xóa file local: ${file.localPath}`, error);
+      }
+    }
+    
+    // Xóa thông tin file khỏi database
+    filesData.splice(fileIndex, 1);
+    saveFilesDb(filesData);
+    
+    res.json({ success: true, message: 'File đã được xóa thành công' });
+  } catch (error) {
+    console.error('Lỗi khi xóa file:', error);
+    res.status(500).json({ error: error.message });
   }
-  
-  // Xóa thông tin file khỏi database
-  filesData.splice(fileIndex, 1);
-  saveFilesDb(filesData);
-  
-  res.json({ success: true, message: 'File đã được xóa thành công' });
 });
 
 // Route upload file qua web
@@ -625,106 +630,52 @@ function cleanupTempDir() {
 // Chạy clean temp mỗi 12 giờ
 setInterval(cleanupTempDir, 12 * 60 * 60 * 1000);
 
-// Khởi động server và bot
-const startServer = async () => {
-  try {
-    console.log('Bắt đầu khởi động server...');
-    
-    // Đồng bộ file trước khi khởi động
-    console.log('Bắt đầu đồng bộ file...');
-    await syncFiles();
-    console.log('Đồng bộ file hoàn tất');
-    
-    // Khởi động bot nếu đã khởi tạo
-    console.log('Kiểm tra bot Telegram...');
-    if (bot) {
-      try {
-        console.log('Bắt đầu khởi động bot Telegram...');
-        
-        // Thêm timeout để đảm bảo không bị treo
-        const botLaunchPromise = bot.launch();
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout khi kết nối tới Telegram API')), 10000);
-        });
-        
-        try {
-          await Promise.race([botLaunchPromise, timeoutPromise]);
-          console.log('Bot Telegram đã khởi động thành công!');
-          
-          // Lấy thông tin bot
-          const botInfoPromise = bot.telegram.getMe();
-          const botInfoTimeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Timeout khi lấy thông tin bot')), 5000);
-          });
-          
-          const botInfo = await Promise.race([botInfoPromise, botInfoTimeoutPromise]);
-          console.log(`Bot đang online: @${botInfo.username}`);
-        } catch (timeoutError) {
-          console.error('Lỗi:', timeoutError.message);
-          console.log('Đang chuyển sang chế độ chỉ có web...');
-          bot = null;
-        }
-      } catch (botError) {
-        console.error('Lỗi khởi động Bot Telegram:', botError);
-        console.log('Ứng dụng vẫn sẽ chạy ở chế độ chỉ có web');
-        bot = null;
-      }
-    } else {
-      console.log('Không có bot Telegram được cấu hình. Ứng dụng sẽ chạy ở chế độ chỉ có web.');
+// Xử lý các routes không tồn tại
+app.use('*', (req, res) => {
+  res.status(404).render('index', { 
+    title: 'TeleDrive - Không tìm thấy',
+    files: [],
+    totalSize: 0,
+    maxSize: MAX_FILE_SIZE,
+    error: 'Không tìm thấy trang này',
+    storageInfo: {
+      used: 0,
+      total: MAX_FILE_SIZE * 10,
+      percent: 0
     }
+  });
+});
+
+// Xử lý lỗi
+app.use((err, req, res, next) => {
+  console.error('Lỗi server:', err);
+  res.status(500).render('index', { 
+    title: 'TeleDrive - Lỗi server',
+    files: [],
+    totalSize: 0,
+    maxSize: MAX_FILE_SIZE,
+    error: err.message || 'Đã xảy ra lỗi không xác định',
+    storageInfo: {
+      used: 0,
+      total: MAX_FILE_SIZE * 10,
+      percent: 0
+    }
+  });
+});
+
+// Khởi động server - đảm bảo luôn khởi động được ngay cả khi có lỗi với Telegram Bot
+(async () => {
+  try {
+    // Tự động đồng bộ file khi khởi động
+    await syncFiles();
     
-    // Khởi động web server
-    console.log('Bắt đầu khởi động web server...');
-    const server = app.listen(PORT, () => {
+    // Khởi động server
+    app.listen(PORT, () => {
       console.log(`TeleDrive đang chạy tại http://localhost:${PORT}`);
       console.log('Khởi động hoàn tất!');
     });
-    
-    server.on('error', (err) => {
-      console.error('Lỗi web server:', err);
-      if (err.code === 'EADDRINUSE') {
-        console.error(`Cổng ${PORT} đã được sử dụng bởi ứng dụng khác. Hãy thử cổng khác trong file .env`);
-      }
-      process.exit(1);
-    });
-    
   } catch (error) {
-    console.error('Lỗi khởi động ứng dụng:', error);
+    console.error('Lỗi khi khởi động ứng dụng:', error);
     process.exit(1);
   }
-};
-
-// Kiểm tra tham số dòng lệnh
-const args = process.argv.slice(2);
-
-// Xử lý các tham số proxy nếu có
-for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--proxy' && i + 1 < args.length) {
-    process.env.TELEGRAM_PROXY = args[i + 1];
-    console.log(`Đã thiết lập proxy: ${args[i + 1]}`);
-    // Xóa tham số proxy khỏi danh sách để không ảnh hưởng đến các điều kiện khác
-    args.splice(i, 2);
-    i -= 2;
-  }
-}
-
-if (args.includes('clean')) {
-  console.log('Chế độ dọn dẹp được kích hoạt');
-  cleanUploads()
-    .then(() => {
-      console.log('Hoàn tất dọn dẹp uploads');
-      process.exit(0);
-    })
-    .catch(err => {
-      console.error('Lỗi khi dọn dẹp uploads:', err);
-      process.exit(1);
-    });
-} else if (args.includes('no-bot')) {
-  console.log('Chế độ không khởi động bot được kích hoạt');
-  // Gán bot = null để bỏ qua việc khởi động bot
-  bot = null;
-  startServer();
-} else {
-  // Khởi động server và bot
-  startServer();
-} 
+})(); 
