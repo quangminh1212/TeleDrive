@@ -21,70 +21,45 @@ const cors = require('cors');
 // Đọc cấu hình từ file .env
 dotenv.config();
 
-// Cấu hình cơ bản
+// Biến môi trường
 const PORT = process.env.PORT || 5001;
-const MAX_FILE_SIZE = process.env.MAX_FILE_SIZE || 20 * 1024 * 1024; // 20MB mặc định
-const BOT_TOKEN = process.env.BOT_TOKEN || 'your_telegram_bot_token';
-const BOT_CHAT_ID = process.env.BOT_CHAT_ID || '';
-const FILES_DB_PATH = path.join(__dirname, 'db', 'files.json');
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '2000', 10) * 1024 * 1024; // Convert MB to bytes
+const DATA_DIR = process.env.DATA_DIR || 'data';
+const TEMP_DIR = process.env.TEMP_DIR || 'temp';
+const UPLOADS_DIR = 'uploads';
 
-// Khai báo biến cho DB
-const db = {
-  getAllFiles: function() {
-    return readFilesDb();
-  },
-  getFile: function(fileId) {
-    const files = readFilesDb();
-    return files.find(f => f.id === fileId);
-  },
-  saveFile: function(fileData) {
-    const files = readFilesDb();
-    const existingIndex = files.findIndex(f => f.id === fileData.id);
-    
-    if (existingIndex !== -1) {
-      files[existingIndex] = fileData;
-    } else {
-      files.push(fileData);
-    }
-    
-    saveFilesDb(files);
-    return fileData;
-  },
-  deleteFile: function(fileId) {
-    let files = readFilesDb();
-    files = files.filter(f => f.id !== fileId);
-    saveFilesDb(files);
-    return { success: true };
-  }
-};
+// Đường dẫn file và thư mục
+const dataDir = path.join(__dirname, DATA_DIR);
+const tempDir = path.join(__dirname, TEMP_DIR);
+const uploadsDir = path.join(__dirname, UPLOADS_DIR);
+const filesDbPath = path.join(dataDir, 'files.json');
+const logsDir = path.join(__dirname, 'logs');
 
-// Cấu hình Express
+// Khởi tạo Express
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
-app.use(cors());
 app.use(morgan('dev'));
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
 
-// Cấu hình multer để upload file
+// Cấu hình multer
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, UPLOAD_DIR);
+  destination: function(req, file, cb) {
+    cb(null, uploadsDir);
   },
-  filename: function (req, file, cb) {
-    // Tạo tên file an toàn
-    const fileName = getSecureFilePath(file.originalname);
-    cb(null, fileName);
+  filename: function(req, file, cb) {
+    // Đảm bảo tên file an toàn
+    cb(null, getSecureFilePath(file.originalname));
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: MAX_FILE_SIZE }
 });
@@ -106,7 +81,7 @@ const initBot = () => {
     const newBot = new Telegraf(BOT_TOKEN);
     
     // Thiết lập timeout cho việc khởi động bot
-    const timeoutPromise = new Promise((resolve, reject) => {
+    const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
         reject(new Error('Timeout khi khởi động bot Telegram'));
       }, 10000); // 10 giây timeout
@@ -185,18 +160,18 @@ const checkBotActive = async () => {
   }
 };
 
+// Đảm bảo các thư mục cần thiết tồn tại
+ensureDirectories([dataDir, tempDir, uploadsDir, logsDir]);
+
+// Kiểm tra xem file .env có tồn tại không
+checkEnvFile();
+
 // Đường dẫn file và thư mục
 const dataDir = path.join(__dirname, 'data');
 const tempDir = path.join(__dirname, 'temp');
 const uploadsDir = path.join(__dirname, 'uploads');
 const filesDbPath = path.join(dataDir, 'files.json');
 const logsDir = path.join(__dirname, 'logs');
-
-// Đảm bảo các thư mục cần thiết tồn tại
-ensureDirectories([dataDir, tempDir, uploadsDir, logsDir]);
-
-// Kiểm tra xem file .env có tồn tại không
-checkEnvFile();
 
 // Khởi tạo Express
 const app = express();
@@ -1092,7 +1067,8 @@ app.get('/api/files/:id/local-download', (req, res) => {
 app.get('/file/:id', async (req, res) => {
   try {
     const fileId = req.params.id;
-    const file = db.getFile(fileId);
+    const filesData = readFilesDb();
+    const file = filesData.find(f => f.id === fileId);
     
     if (!file) {
       return res.status(404).render('error', { 
