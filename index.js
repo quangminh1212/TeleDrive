@@ -1170,6 +1170,48 @@ app.post('/api/bot-check', async (req, res) => {
   }
 });
 
+// Hàm lấy link tải xuống từ Telegram với telegramFileId
+async function getTelegramFileLink(fileId) {
+  if (!bot || !botActive) {
+    throw new Error('Bot không hoạt động hoặc chưa được cấu hình đúng');
+  }
+  
+  try {
+    // Lấy thông tin file từ Telegram
+    const fileInfo = await bot.telegram.getFile(fileId);
+    
+    if (!fileInfo || !fileInfo.file_path) {
+      throw new Error('Không thể lấy được thông tin file từ Telegram');
+    }
+    
+    // Tạo link download trực tiếp
+    const downloadUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
+    return downloadUrl;
+  } catch (error) {
+    console.error('Lỗi khi lấy link download từ Telegram:', error);
+    throw error;
+  }
+}
+
+// Hàm tải nội dung file trực tiếp từ Telegram
+async function downloadFileFromTelegram(fileId) {
+  try {
+    const downloadUrl = await getTelegramFileLink(fileId);
+    
+    // Fetch nội dung file
+    const response = await fetch(downloadUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Không thể tải file từ Telegram: ${response.status} ${response.statusText}`);
+    }
+    
+    return response.body;
+  } catch (error) {
+    console.error('Lỗi khi tải file từ Telegram:', error);
+    throw error;
+  }
+}
+
 /**
  * Hàm hỗ trợ
  */

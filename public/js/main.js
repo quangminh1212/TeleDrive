@@ -23,9 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentFileId = null;
     
     // Kiểm tra trạng thái bot
-    if (botStatusIcon && botStatusText) {
-        checkBotStatus();
-    }
+    checkBotStatus();
     
     // Tải danh sách file khi trang được tải
     if (filesContainer) {
@@ -166,36 +164,64 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Hàm kiểm tra trạng thái bot
     function checkBotStatus() {
-        fetch('/api/status')
+        const botStatusIndicator = document.getElementById('botStatusIndicator');
+        const botStatusText = document.getElementById('botStatusText');
+        const botDetails = document.getElementById('botDetails');
+        const botUsername = document.getElementById('botUsername');
+        const checkBotConnection = document.getElementById('checkBotConnection');
+        
+        if (!botStatusIndicator || !botStatusText) return;
+        
+        fetch('/api/bot-info')
             .then(response => response.json())
             .then(data => {
-                if (data.botActive) {
-                    botStatusText.textContent = 'Bot đang hoạt động';
-                    botStatusText.classList.add('text-success');
-                    botStatusText.classList.remove('text-danger', 'text-warning');
-                    botStatusIcon.classList.add('text-success');
-                    botStatusIcon.classList.remove('text-danger', 'text-warning', 'loading-spinner');
-                    botStatusIcon.classList.remove('bi-arrow-repeat');
-                    botStatusIcon.classList.add('bi-check-circle');
+                // Đặt class cho trạng thái
+                botStatusIndicator.className = 'status-circle';
+                botStatusIndicator.classList.add(`status-${data.status}`);
+                
+                // Đặt text trạng thái
+                botStatusText.textContent = data.message;
+                
+                // Hiển thị thông tin chi tiết về bot nếu có
+                if (data.status === 'active' && data.bot) {
+                    botDetails.classList.remove('d-none');
+                    botUsername.textContent = `@${data.bot.username}`;
                 } else {
-                    botStatusText.textContent = 'Bot không hoạt động';
-                    botStatusText.classList.add('text-danger');
-                    botStatusText.classList.remove('text-success', 'text-warning');
-                    botStatusIcon.classList.add('text-danger');
-                    botStatusIcon.classList.remove('text-success', 'text-warning', 'loading-spinner');
-                    botStatusIcon.classList.remove('bi-arrow-repeat');
-                    botStatusIcon.classList.add('bi-x-circle');
+                    botDetails.classList.add('d-none');
+                }
+                
+                // Thêm event listener cho nút kiểm tra kết nối
+                if (checkBotConnection) {
+                    checkBotConnection.addEventListener('click', function() {
+                        checkBotConnection.disabled = true;
+                        checkBotConnection.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang kiểm tra...';
+                        
+                        fetch('/api/bot-check', {
+                            method: 'POST'
+                        })
+                            .then(response => response.json())
+                            .then(result => {
+                                showToast(result.message, result.success ? 'success' : 'danger');
+                                checkBotConnection.disabled = false;
+                                checkBotConnection.textContent = 'Kiểm tra kết nối';
+                                
+                                // Cập nhật lại trạng thái bot sau khi kiểm tra
+                                setTimeout(checkBotStatus, 500);
+                            })
+                            .catch(error => {
+                                console.error('Lỗi khi kiểm tra kết nối:', error);
+                                showToast('Lỗi khi kiểm tra kết nối với bot', 'danger');
+                                checkBotConnection.disabled = false;
+                                checkBotConnection.textContent = 'Kiểm tra kết nối';
+                            });
+                    });
                 }
             })
             .catch(error => {
-                console.error('Lỗi kiểm tra trạng thái bot:', error);
-                botStatusText.textContent = 'Không thể kiểm tra trạng thái Bot';
-                botStatusText.classList.add('text-warning');
-                botStatusText.classList.remove('text-success', 'text-danger');
-                botStatusIcon.classList.add('text-warning');
-                botStatusIcon.classList.remove('text-success', 'text-danger', 'loading-spinner');
-                botStatusIcon.classList.remove('bi-arrow-repeat');
-                botStatusIcon.classList.add('bi-exclamation-triangle');
+                console.error('Lỗi khi lấy thông tin bot:', error);
+                botStatusIndicator.className = 'status-circle status-error';
+                botStatusText.textContent = 'Lỗi khi lấy thông tin bot';
+                botDetails.classList.add('d-none');
             });
     }
     

@@ -90,9 +90,15 @@
             </div>
             <div class="col-md-6 text-md-end">
                 <!-- Bot status -->
-                <div class="mb-3">
-                    <span class="bot-status-text me-2">Đang kiểm tra trạng thái Bot...</span>
-                    <i class="bi bi-arrow-repeat loading-spinner bot-status-icon"></i>
+                <div class="bot-status-container mb-4">
+                    <div class="bot-status-indicator d-flex align-items-center">
+                        <div id="botStatusIndicator" class="status-circle status-unknown me-2"></div>
+                        <span id="botStatusText">Đang kiểm tra kết nối...</span>
+                    </div>
+                    <div id="botDetails" class="bot-details mt-2 d-none">
+                        <small id="botUsername" class="text-muted"></small>
+                        <button id="checkBotConnection" class="btn btn-sm btn-outline-secondary ms-2">Kiểm tra kết nối</button>
+                    </div>
                 </div>
                 <!-- Upload file button -->
                 <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#uploadModal">

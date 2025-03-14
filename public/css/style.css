@@ -240,4 +240,32 @@ body {
 .storage-bar {
     height: 10px;
     margin: 10px 0;
+}
+
+/* Bot Status Indicator */
+.status-circle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-unknown {
+  background-color: #6c757d;
+}
+
+.status-active {
+  background-color: #28a745;
+}
+
+.status-error {
+  background-color: #dc3545;
+}
+
+.status-inactive {
+  background-color: #ffc107;
+}
+
+.bot-details {
+  font-size: 0.85rem;
 } 
