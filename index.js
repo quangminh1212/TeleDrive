@@ -650,14 +650,34 @@ const startServer = async () => {
     if (bot) {
       try {
         console.log('Bắt đầu khởi động bot Telegram...');
-        await bot.launch();
-        console.log('Bot Telegram đã khởi động thành công!');
         
-        const botInfo = await bot.telegram.getMe();
-        console.log(`Bot đang online: @${botInfo.username}`);
+        // Thêm timeout để đảm bảo không bị treo
+        const botLaunchPromise = bot.launch();
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout khi kết nối tới Telegram API')), 10000);
+        });
+        
+        try {
+          await Promise.race([botLaunchPromise, timeoutPromise]);
+          console.log('Bot Telegram đã khởi động thành công!');
+          
+          // Lấy thông tin bot
+          const botInfoPromise = bot.telegram.getMe();
+          const botInfoTimeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Timeout khi lấy thông tin bot')), 5000);
+          });
+          
+          const botInfo = await Promise.race([botInfoPromise, botInfoTimeoutPromise]);
+          console.log(`Bot đang online: @${botInfo.username}`);
+        } catch (timeoutError) {
+          console.error('Lỗi:', timeoutError.message);
+          console.log('Đang chuyển sang chế độ chỉ có web...');
+          bot = null;
+        }
       } catch (botError) {
         console.error('Lỗi khởi động Bot Telegram:', botError);
         console.log('Ứng dụng vẫn sẽ chạy ở chế độ chỉ có web');
+        bot = null;
       }
     } else {
       console.log('Không có bot Telegram được cấu hình. Ứng dụng sẽ chạy ở chế độ chỉ có web.');
