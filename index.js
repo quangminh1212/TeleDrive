@@ -638,27 +638,66 @@ setInterval(cleanupTempDir, 12 * 60 * 60 * 1000);
 // Khởi động server và bot
 const startServer = async () => {
   try {
+    console.log('Bắt đầu khởi động server...');
+    
     // Đồng bộ file trước khi khởi động
+    console.log('Bắt đầu đồng bộ file...');
     await syncFiles();
+    console.log('Đồng bộ file hoàn tất');
     
     // Khởi động bot nếu đã khởi tạo
+    console.log('Kiểm tra bot Telegram...');
     if (bot) {
-      await bot.launch();
-      console.log('Bot Telegram đã khởi động thành công!');
-      
-      const botInfo = await bot.telegram.getMe();
-      console.log(`Bot đang online: @${botInfo.username}`);
+      try {
+        console.log('Bắt đầu khởi động bot Telegram...');
+        await bot.launch();
+        console.log('Bot Telegram đã khởi động thành công!');
+        
+        const botInfo = await bot.telegram.getMe();
+        console.log(`Bot đang online: @${botInfo.username}`);
+      } catch (botError) {
+        console.error('Lỗi khởi động Bot Telegram:', botError);
+        console.log('Ứng dụng vẫn sẽ chạy ở chế độ chỉ có web');
+      }
+    } else {
+      console.log('Không có bot Telegram được cấu hình. Ứng dụng sẽ chạy ở chế độ chỉ có web.');
     }
     
     // Khởi động web server
-    app.listen(PORT, () => {
+    console.log('Bắt đầu khởi động web server...');
+    const server = app.listen(PORT, () => {
       console.log(`TeleDrive đang chạy tại http://localhost:${PORT}`);
+      console.log('Khởi động hoàn tất!');
     });
+    
+    server.on('error', (err) => {
+      console.error('Lỗi web server:', err);
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Cổng ${PORT} đã được sử dụng bởi ứng dụng khác. Hãy thử cổng khác trong file .env`);
+      }
+      process.exit(1);
+    });
+    
   } catch (error) {
     console.error('Lỗi khởi động ứng dụng:', error);
     process.exit(1);
   }
 };
 
-// Bắt đầu ứng dụng
-startServer(); 
+// Kiểm tra tham số dòng lệnh
+const args = process.argv.slice(2);
+if (args.includes('clean')) {
+  console.log('Chế độ dọn dẹp được kích hoạt');
+  cleanUploads()
+    .then(() => {
+      console.log('Hoàn tất dọn dẹp uploads');
+      process.exit(0);
+    })
+    .catch(err => {
+      console.error('Lỗi khi dọn dẹp uploads:', err);
+      process.exit(1);
+    });
+} else {
+  // Khởi động server và bot
+  startServer();
+} 
