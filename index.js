@@ -78,22 +78,26 @@ const initBot = () => {
   }
   
   try {
-    const newBot = new Telegraf(BOT_TOKEN);
+    // Kiểm tra kết nối trước khi khởi tạo bot
+    console.log('Kiểm tra kết nối với Telegram API...');
     
-    // Thiết lập timeout cho việc khởi động bot
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('Timeout khi khởi động bot Telegram'));
-      }, 30000); // Tăng lên 30 giây timeout
-    });
-    
-    // Promise để khởi động bot
-    const launchPromise = new Promise(async (resolve, reject) => {
-      try {
-        // Kiểm tra kết nối trước khi thêm handlers
-        console.log('Kiểm tra kết nối với Telegram API...');
-        const botInfo = await newBot.telegram.getMe();
-        console.log('Kết nối thành công! Bot: @' + botInfo.username);
+    // Sử dụng fetch để kiểm tra kết nối
+    return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Lỗi kết nối: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (!data.ok) {
+          throw new Error(`Lỗi API: ${data.description}`);
+        }
+        
+        console.log(`Kết nối thành công! Bot: @${data.result.username}`);
+        
+        // Khởi tạo bot sau khi đã kiểm tra kết nối thành công
+        const newBot = new Telegraf(BOT_TOKEN);
         
         // Thêm handlers cho bot
         newBot.command('start', (ctx) => {
@@ -108,31 +112,30 @@ const initBot = () => {
           ctx.reply('Đã nhận tin nhắn của bạn!');
         });
         
-        // Khởi chạy bot với polling
-        console.log('Đang khởi động bot với chế độ polling...');
-        newBot.launch({
-          polling: {
-            timeout: 30 // Tăng timeout cho polling
-          }
-        }).then(() => {
-          console.log('Bot Telegram đã khởi động thành công!');
-          resolve(newBot);
-        }).catch((err) => {
-          console.error('Lỗi khi khởi động bot Telegram:', err);
-          reject(err);
+        // Khởi động bot trong một tiến trình riêng biệt để tránh treo
+        console.log('Khởi động bot trong tiến trình riêng biệt...');
+        
+        // Sử dụng spawn để khởi động bot trong tiến trình con
+        const botProcess = spawn('node', ['-e', `
+          const { Telegraf } = require('telegraf');
+          const bot = new Telegraf('${BOT_TOKEN}');
+          bot.launch().then(() => {
+            console.log('Bot đã khởi động thành công!');
+          }).catch(err => {
+            console.error('Lỗi khởi động bot:', err);
+          });
+        `], {
+          detached: true,
+          stdio: 'ignore'
         });
-      } catch (err) {
-        console.error('Lỗi khi thiết lập bot Telegram:', err);
-        reject(err);
-      }
-    });
-    
-    // Race giữa launch và timeout
-    return Promise.race([launchPromise, timeoutPromise])
-      .then((result) => {
-        return result; // Trả về bot nếu khởi động thành công
+        
+        // Tách tiến trình con ra khỏi tiến trình cha
+        botProcess.unref();
+        
+        console.log('Bot đã được khởi động trong tiến trình riêng biệt.');
+        return newBot;
       })
-      .catch((error) => {
+      .catch(error => {
         console.error('Lỗi khởi động bot:', error.message);
         console.log('Ứng dụng vẫn tiếp tục chạy mà không có bot.');
         return null;
