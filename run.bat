@@ -56,12 +56,14 @@ echo ===============================
 echo       TeleDrive - Khởi động
 echo ===============================
 echo.
-echo 1. Chạy TeleDrive
-echo 2. Dọn dẹp uploads (Gửi file lên Telegram)
-echo 3. Thoát
+echo 1. Chạy TeleDrive với bot
+echo 2. Chạy TeleDrive không có bot
+echo 3. Dọn dẹp uploads (Gửi file lên Telegram)
+echo 4. Chạy với proxy (nếu có vấn đề kết nối)
+echo 5. Thoát
 echo.
 
-set /p choice=Chọn một tùy chọn (1-3): 
+set /p choice=Chọn một tùy chọn (1-5): 
 
 if "%choice%"=="1" (
   cls
@@ -69,9 +71,34 @@ if "%choice%"=="1" (
   node index.js
 ) else if "%choice%"=="2" (
   cls
+  echo Đang khởi động TeleDrive (không có bot)...
+  node index.js no-bot
+) else if "%choice%"=="3" (
+  cls
   echo Đang dọn dẹp uploads...
   node index.js clean
-) else if "%choice%"=="3" (
+) else if "%choice%"=="4" (
+  cls
+  echo Chọn loại proxy:
+  echo 1. Free Telegram proxy (https://api.telegram.org)
+  echo 2. Nhập địa chỉ proxy tùy chỉnh
+  echo.
+  set /p proxy_choice=Chọn một tùy chọn (1-2): 
+  
+  if "!proxy_choice!"=="1" (
+    echo Đang khởi động với proxy mặc định...
+    node index.js --proxy https://api.telegram.org
+  ) else if "!proxy_choice!"=="2" (
+    set /p custom_proxy=Nhập địa chỉ proxy (ví dụ: https://your-proxy.com): 
+    echo Đang khởi động với proxy tùy chỉnh...
+    node index.js --proxy !custom_proxy!
+  ) else (
+    echo Lựa chọn không hợp lệ!
+    timeout /t 2 > nul
+    cls
+    call %0
+  )
+) else if "%choice%"=="5" (
   exit /b 0
 ) else (
   echo Lựa chọn không hợp lệ!
