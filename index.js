@@ -14,14 +14,17 @@ const { Telegraf } = require('telegraf');
 const axios = require('axios');
 const { spawn } = require('child_process');
 const os = require('os');
+const morgan = require('morgan');
+const helmet = require('helmet');
+const cors = require('cors');
 
 // Đọc cấu hình từ file .env
 dotenv.config();
 
 // Biến môi trường
-const PORT = process.env.PORT || 3010;
+const PORT = process.env.PORT || 5000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '20971520', 10); // 20MB mặc định
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '2000', 10) * 1024 * 1024; // Convert MB to bytes
 const DATA_DIR = process.env.DATA_DIR || 'data';
 const TEMP_DIR = process.env.TEMP_DIR || 'temp';
 const UPLOADS_DIR = 'uploads';
@@ -70,154 +73,67 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(morgan('dev'));
+app.use(helmet({
+  contentSecurityPolicy: false // Tắt CSP để tránh lỗi với các resource inline
+}));
+app.use(cors());
 
-// Khởi tạo bot Telegram
+// Khởi tạo bot Telegram nếu có
 let bot = null;
 if (BOT_TOKEN && BOT_TOKEN !== 'your_telegram_bot_token') {
-  // Tạo cấu hình cho bot
-  const botConfig = {};
-  
-  // Nếu có proxy, thêm vào cấu hình
-  if (process.env.TELEGRAM_PROXY) {
-    console.log('Sử dụng proxy cho kết nối Telegram:', process.env.TELEGRAM_PROXY);
-    botConfig.telegram = {
-      apiRoot: process.env.TELEGRAM_PROXY
-    };
-  }
-  
-  bot = new Telegraf(BOT_TOKEN, botConfig);
-  
-  bot.command('start', (ctx) => {
-    ctx.reply('Chào mừng đến với TeleDrive! Gửi file (dưới 20MB) và tôi sẽ lưu trữ cho bạn.');
-  });
-  
-  bot.command('help', (ctx) => {
-    ctx.reply('Chỉ cần gửi file (tài liệu, hình ảnh, video, âm thanh) dưới 20MB, và tôi sẽ lưu trữ cho bạn. Bạn có thể quản lý file qua giao diện web.\n\nLưu ý: Telegram Bot API giới hạn kích thước file 20MB.');
-  });
-
-  // Xử lý file từ người dùng
-  bot.on('document', async (ctx) => {
-    try {
-      console.log('Nhận file document từ user:', ctx.from.username || ctx.from.id);
-      await processIncomingFile(ctx, 'document');
-    } catch (error) {
-      console.error('Lỗi xử lý document:', error);
-      ctx.reply(`Có lỗi xảy ra khi xử lý file: ${error.message}`);
-    }
-  });
-  
-  bot.on('photo', async (ctx) => {
-    try {
-      console.log('Nhận file ảnh từ user:', ctx.from.username || ctx.from.id);
-      await processIncomingFile(ctx, 'photo');
-    } catch (error) {
-      console.error('Lỗi xử lý photo:', error);
-      ctx.reply(`Có lỗi xảy ra khi xử lý ảnh: ${error.message}`);
-    }
-  });
-  
-  bot.on('video', async (ctx) => {
-    try {
-      console.log('Nhận file video từ user:', ctx.from.username || ctx.from.id);
-      await processIncomingFile(ctx, 'video');
-    } catch (error) {
-      console.error('Lỗi xử lý video:', error);
-      ctx.reply(`Có lỗi xảy ra khi xử lý video: ${error.message}`);
-    }
-  });
-  
-  bot.on('audio', async (ctx) => {
-    try {
-      console.log('Nhận file audio từ user:', ctx.from.username || ctx.from.id);
-      await processIncomingFile(ctx, 'audio');
-    } catch (error) {
-      console.error('Lỗi xử lý audio:', error);
-      ctx.reply(`Có lỗi xảy ra khi xử lý audio: ${error.message}`);
-    }
-  });
-} else {
-  console.warn('Không tìm thấy BOT_TOKEN hợp lệ trong file .env. Tính năng bot không hoạt động. Ứng dụng sẽ chạy ở chế độ chỉ có web.');
-}
-
-/**
- * Xử lý file nhận từ Telegram Bot
- * @param {Object} ctx - Context từ Telegraf
- * @param {String} fileType - Loại file: document, photo, video, audio
- */
-async function processIncomingFile(ctx, fileType) {
+  console.log('Khởi tạo Telegram Bot...');
   try {
-    let fileId, fileName, fileSize, mimeType;
+    bot = new Telegraf(BOT_TOKEN);
     
-    // Lấy thông tin file dựa vào loại
-    if (fileType === 'photo') {
-      // Lấy phiên bản chất lượng cao nhất của ảnh
-      const photos = ctx.message.photo;
-      const photo = photos[photos.length - 1];
-      fileId = photo.file_id;
-      fileSize = photo.file_size;
-      fileName = `photo_${Date.now()}.jpg`;
-      mimeType = 'image/jpeg';
-    } else if (fileType === 'video') {
-      const video = ctx.message.video;
-      fileId = video.file_id;
-      fileName = video.file_name || `video_${Date.now()}.mp4`;
-      fileSize = video.file_size;
-      mimeType = video.mime_type || 'video/mp4';
-    } else if (fileType === 'audio') {
-      const audio = ctx.message.audio;
-      fileId = audio.file_id;
-      fileName = audio.file_name || audio.title || `audio_${Date.now()}.mp3`;
-      fileSize = audio.file_size;
-      mimeType = audio.mime_type || 'audio/mpeg';
-    } else if (fileType === 'document') {
-      const document = ctx.message.document;
-      fileId = document.file_id;
-      fileName = document.file_name || `document_${Date.now()}`;
-      fileSize = document.file_size;
-      mimeType = document.mime_type || 'application/octet-stream';
-    } else {
-      throw new Error('Loại file không được hỗ trợ');
-    }
-
-    // Lấy link file từ Telegram
-    const fileLink = await ctx.telegram.getFileLink(fileId);
+    bot.command('start', (ctx) => {
+      ctx.reply('Chào mừng đến với TeleDrive! Gửi file và tôi sẽ lưu trữ cho bạn.');
+    });
     
-    // Tạo ID duy nhất cho file
-    const fileUuid = uuidv4();
-    
-    // Lưu thông tin vào database
-    const filesData = readFilesDb();
-    
-    // Thêm thông tin file mới
-    filesData.push({
-      id: fileUuid,
-      name: fileName,
-      originalName: fileName,
-      size: fileSize,
-      mimeType: mimeType,
-      fileType: guessFileType(mimeType),
-      telegramFileId: fileId,
-      telegramUrl: fileLink.href,
-      localPath: null, // Không lưu local
-      uploadDate: new Date().toISOString(),
-      user: {
-        id: ctx.from.id,
-        username: ctx.from.username || null,
-        firstName: ctx.from.first_name || null,
-        lastName: ctx.from.last_name || null
+    bot.on('document', async (ctx) => {
+      try {
+        console.log('Nhận file document từ user:', ctx.from.username || ctx.from.id);
+        ctx.reply('Đã nhận file của bạn! Đang xử lý...');
+        
+        // Lưu thông tin vào database
+        const filesData = readFilesDb();
+        
+        // Thêm thông tin file mới
+        filesData.push({
+          id: uuidv4(),
+          name: ctx.message.document.file_name || 'file',
+          size: ctx.message.document.file_size || 0,
+          mimeType: ctx.message.document.mime_type || 'application/octet-stream',
+          uploadDate: new Date().toISOString(),
+          user: {
+            id: ctx.from.id,
+            username: ctx.from.username || null
+          }
+        });
+        
+        // Lưu lại vào database
+        saveFilesDb(filesData);
+        
+        ctx.reply('File đã được lưu trữ thành công!');
+      } catch (error) {
+        console.error('Lỗi xử lý document:', error);
+        ctx.reply(`Có lỗi xảy ra: ${error.message}`);
       }
     });
     
-    // Lưu lại vào database
-    saveFilesDb(filesData);
-    
-    // Trả lời người dùng
-    ctx.reply(`File đã được lưu trữ thành công!\nTên file: ${fileName}\nID: ${fileUuid}`);
+    // Bắt đầu bot
+    bot.launch()
+      .then(() => console.log('Bot Telegram đã khởi động'))
+      .catch(err => console.error('Lỗi khởi động bot:', err));
+      
+    process.once('SIGINT', () => bot.stop('SIGINT'));
+    process.once('SIGTERM', () => bot.stop('SIGTERM'));
     
   } catch (error) {
-    console.error('Lỗi xử lý file từ Telegram:', error);
-    throw error;
+    console.error('Lỗi khởi tạo bot:', error);
   }
+} else {
+  console.log('BOT_TOKEN không hợp lệ. Tính năng Bot không được kích hoạt.');
 }
 
 /**
@@ -230,6 +146,8 @@ function readFilesDb() {
       const content = fs.readFileSync(filesDbPath, 'utf8');
       return JSON.parse(content);
     }
+    // Tạo file mới nếu chưa tồn tại
+    fs.writeFileSync(filesDbPath, JSON.stringify([], null, 2), 'utf8');
     return [];
   } catch (error) {
     console.error('Lỗi đọc database:', error);
@@ -511,27 +429,58 @@ async function cleanUploads() {
 
 // Trang chủ
 app.get('/', (req, res) => {
-  const filesData = readFilesDb();
-  res.render('index', { files: filesData });
-});
-
-// API lấy danh sách file
-app.get('/api/files', (req, res) => {
-  const filesData = readFilesDb();
-  res.json(filesData);
-});
-
-// API lấy thông tin file theo ID
-app.get('/api/files/:id', (req, res) => {
-  const fileId = req.params.id;
-  const filesData = readFilesDb();
-  const file = filesData.find(f => f.id === fileId);
-  
-  if (!file) {
-    return res.status(404).json({ error: 'File không tồn tại' });
+  try {
+    const files = readFilesDb();
+    const totalSize = files.reduce((sum, file) => sum + (file.size || 0), 0);
+    
+    res.render('index', {
+      title: 'TeleDrive',
+      files: files,
+      totalSize: totalSize,
+      maxSize: MAX_FILE_SIZE,
+      error: null,
+      storageInfo: {
+        used: totalSize,
+        total: MAX_FILE_SIZE * 10, // Giả sử tổng dung lượng là 10 lần max file size
+        percent: (totalSize / (MAX_FILE_SIZE * 10)) * 100
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi trang chủ:', error);
+    res.status(500).render('index', { 
+      title: 'TeleDrive - Lỗi',
+      files: [],
+      totalSize: 0,
+      maxSize: MAX_FILE_SIZE,
+      error: error.message,
+      storageInfo: {
+        used: 0,
+        total: MAX_FILE_SIZE * 10,
+        percent: 0
+      }
+    });
   }
-  
-  res.json(file);
+});
+
+// API endpoint để lấy thông tin files
+app.get('/api/files', (req, res) => {
+  try {
+    const files = readFilesDb();
+    res.json(files);
+  } catch (error) {
+    console.error('Lỗi API files:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API status
+app.get('/api/status', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'TeleDrive API đang hoạt động', 
+    botActive: !!bot,
+    version: '1.0.0'
+  });
 });
 
 // API xóa file
