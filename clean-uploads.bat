@@ -1,6 +1,0 @@
-@echo off
-echo Running TeleDrive uploads directory cleanup...
-node clean-uploads.js
-echo.
-echo Press any key to exit...
-pause > nul 
