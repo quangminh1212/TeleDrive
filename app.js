@@ -124,7 +124,7 @@ async function processIncomingFile(ctx, fileType) {
       throw new Error('Không hỗ trợ loại file này');
     }
     
-    // Lưu trữ tên file gốc cho hiển thị
+    // Lưu trữ tên file gốc cho hiển thị - đảm bảo không bị encoding
     const originalFileName = fileName;
     
     // Kiểm tra kích thước file
@@ -310,12 +310,24 @@ async function sendFileToTelegram(filePath, fileName, user) {
       throw new Error('Không tìm thấy chat ID nào để gửi file. Vui lòng gửi tin nhắn tới bot trước.');
     }
     
+    // Đảm bảo tên file hiển thị chính xác
+    let displayName = fileName;
+    try {
+      // Nếu tên file chứa ký tự đặc biệt
+      if (displayName.includes('%')) {
+        displayName = decodeURIComponent(displayName);
+      }
+    } catch (e) {
+      console.error('Lỗi giải mã tên file:', e);
+    }
+    
     // Gửi file như một document
     const sentMessage = await bot.telegram.sendDocument(
       chatId,
       { source: filePath },
       { 
-        caption: `📁 File: ${fileName}\n👤 Uploaded by: ${user.firstName} ${user.lastName || ''}\n📅 Date: ${new Date().toLocaleString()}`
+        caption: `📁 File: "${displayName}"\n👤 Uploaded by: ${user.firstName} ${user.lastName || ''}\n📅 Date: ${new Date().toLocaleString()}`,
+        file_name: displayName
       }
     );
     
@@ -469,7 +481,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 function getDisplayFileName(file) {
   // Nếu có originalFileName, ưu tiên sử dụng
   if (file.originalFileName) {
-    // Thử giải mã nếu đã được mã hóa
+    // Nếu tên file đã bị mã hóa, giải mã
     try {
       if (file.originalFileName.includes('%')) {
         return decodeURIComponent(file.originalFileName);
@@ -481,22 +493,46 @@ function getDisplayFileName(file) {
     }
   }
   
-  // Nếu không có originalFileName, thử trích xuất từ fileName
+  // Nếu không có originalFileName, cố gắng trích xuất từ fileName
   if (file.fileName) {
-    // Nếu fileName có định dạng [tên]_[timestamp]_[hash].ext
+    // Thử tách tên file theo format thông thường (name_timestamp_hash.ext)
     const parts = file.fileName.split('_');
-    if (parts.length >= 3) {
-      // Kiểm tra nếu phần đầu là file, photo, document, video, audio
-      const prefixes = ['file', 'photo', 'document', 'video', 'audio'];
-      if (prefixes.includes(parts[0]) && parts[1].length > 5 && parts[2].length >= 8) {
-        // Đây là file mới đã được format lại, trả về phần mở rộng
-        return path.basename(file.fileName);
-      }
+    
+    // Nếu là format mới: file_timestamp_hash.ext
+    if (parts.length >= 2 && 
+        (parts[0] === 'file' || 
+         parts[0] === 'photo' || 
+         parts[0] === 'document' || 
+         parts[0] === 'video' || 
+         parts[0] === 'audio')) {
+      // Vì đây là file được tạo bởi phiên bản mới, ta cần dựa vào extension
+      const ext = path.extname(file.fileName);
+      const fileType = parts[0];
       
-      // Đây là file cũ, lấy phần đầu tiên (tên file gốc)
-      const basePart = parts[0];
-      return basePart;
+      switch(fileType) {
+        case 'photo': return `image${ext}`;
+        case 'video': return `video${ext}`;
+        case 'audio': return `audio${ext}`;
+        case 'document': 
+        case 'file':
+        default: return `file${ext}`;
+      }
     }
+    
+    // Nếu là format cũ: originalname_timestamp_hash
+    if (parts.length >= 3) {
+      // Kiểm tra nếu phần thứ 2 trông giống timestamp (1~13 chữ số)
+      const isTimestamp = /^\d{8,13}$/.test(parts[parts.length-2]);
+      const isHash = /^[a-f0-9]{8,}$/i.test(parts[parts.length-1].split('.')[0]);
+      
+      if (isTimestamp && isHash) {
+        // Loại bỏ timestamp và hash, lấy phần còn lại của tên
+        const nameWithoutTimestampHash = parts.slice(0, parts.length-2).join('_');
+        return nameWithoutTimestampHash;
+      }
+    }
+    
+    // Nếu không xác định được format, trả về nguyên tên file
     return file.fileName;
   }
   
