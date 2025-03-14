@@ -124,6 +124,9 @@ async function processIncomingFile(ctx, fileType) {
       throw new Error('Không hỗ trợ loại file này');
     }
     
+    // Lưu trữ tên file gốc cho hiển thị
+    const originalFileName = fileName;
+    
     // Kiểm tra kích thước file
     if (fileSize > 20 * 1024 * 1024) {
       return ctx.reply('File quá lớn (>20MB). Vui lòng gửi file nhỏ hơn.');
@@ -139,11 +142,12 @@ async function processIncomingFile(ctx, fileType) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     
-    // Tạo tên file an toàn
+    // Tạo tên file an toàn cho lưu trữ
     const timestamp = Date.now();
     const fileHash = crypto.createHash('md5').update(fileName + timestamp).digest('hex').substring(0, 8);
-    // Giữ nguyên tên file gốc, chỉ thêm timestamp và hash
-    const safeFileName = `${fileName}_${timestamp}_${fileHash}`;
+    // Mã hóa tên file để tránh lỗi encoding
+    const encodedFileName = encodeURIComponent(fileName);
+    const safeFileName = `file_${timestamp}_${fileHash}${path.extname(fileName)}`;
     const filePath = path.join(uploadDir, safeFileName);
     
     // Tải xuống file
@@ -177,7 +181,7 @@ async function processIncomingFile(ctx, fileType) {
     const fileData = {
       _id: uuidv4().replace(/-/g, '').substring(0, 12),
       fileName: safeFileName,
-      originalFileName: fileName,
+      originalFileName: originalFileName,
       fileType: fileType,
       fileSize: realFileSize,
       filePath: `/uploads/${safeFileName}`,
@@ -234,8 +238,9 @@ const storage = multer.diskStorage({
     const timestamp = Date.now();
     const fileHash = crypto.createHash('md5').update(originalName + timestamp).digest('hex').substring(0, 8);
     
-    // Giữ nguyên tên file gốc, chỉ thêm timestamp và hash
-    cb(null, `${originalName}_${timestamp}_${fileHash}`);
+    // Tạo tên file an toàn để lưu trữ, không bao gồm tên gốc để tránh lỗi encoding
+    const safeFileName = `file_${timestamp}_${fileHash}${path.extname(originalName)}`;
+    cb(null, safeFileName);
   }
 });
 
@@ -460,6 +465,44 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
+// Hàm trích xuất tên file hiển thị
+function getDisplayFileName(file) {
+  // Nếu có originalFileName, ưu tiên sử dụng
+  if (file.originalFileName) {
+    // Thử giải mã nếu đã được mã hóa
+    try {
+      if (file.originalFileName.includes('%')) {
+        return decodeURIComponent(file.originalFileName);
+      }
+      return file.originalFileName;
+    } catch (e) {
+      console.error('Lỗi giải mã tên file:', e);
+      return file.originalFileName;
+    }
+  }
+  
+  // Nếu không có originalFileName, thử trích xuất từ fileName
+  if (file.fileName) {
+    // Nếu fileName có định dạng [tên]_[timestamp]_[hash].ext
+    const parts = file.fileName.split('_');
+    if (parts.length >= 3) {
+      // Kiểm tra nếu phần đầu là file, photo, document, video, audio
+      const prefixes = ['file', 'photo', 'document', 'video', 'audio'];
+      if (prefixes.includes(parts[0]) && parts[1].length > 5 && parts[2].length >= 8) {
+        // Đây là file mới đã được format lại, trả về phần mở rộng
+        return path.basename(file.fileName);
+      }
+      
+      // Đây là file cũ, lấy phần đầu tiên (tên file gốc)
+      const basePart = parts[0];
+      return basePart;
+    }
+    return file.fileName;
+  }
+  
+  return 'Unknown file';
+}
+
 // Route để xem danh sách file
 app.get('/', (req, res) => {
   let filesData = readFilesDb();
@@ -478,7 +521,7 @@ app.get('/', (req, res) => {
       for (const file of filesData) {
         let fileIcon = '';
         if (file.fileType === 'photo') {
-          fileIcon = `<img src="${file.fileLink || file.filePath}" alt="${file.fileName}" style="max-width:100%; max-height:150px; object-fit:contain; display:block; margin:0 auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          fileIcon = `<img src="${file.fileLink || file.filePath}" alt="${getDisplayFileName(file)}" style="max-width:100%; max-height:150px; object-fit:contain; display:block; margin:0 auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                      <div style="display:none">🖼️</div>`;
         } else if (file.fileType === 'video') {
           fileIcon = '🎬';
@@ -493,12 +536,12 @@ app.get('/', (req, res) => {
             <div class="file-icon">
               ${fileIcon}
             </div>
-            <div class="file-name">${file.originalFileName || file.fileName}</div>
+            <div class="file-name">${getDisplayFileName(file)}</div>
             <div class="file-meta">
               ${file.fileSize ? (file.fileSize / 1024 / 1024).toFixed(2) + ' MB' : 'Unknown size'}<br>
               ${new Date(file.uploadDate).toLocaleString()}
             </div>
-            <a href="${file.fileLink || file.filePath}" download="${file.originalFileName || file.fileName}" class="download-btn">
+            <a href="${file.fileLink || file.filePath}" download="${getDisplayFileName(file)}" class="download-btn">
               Download
             </a>
           </div>
