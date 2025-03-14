@@ -14,32 +14,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Phần tử Modal và form
     const uploadForm = document.getElementById('upload-form');
-    const uploadProgress = document.getElementById('upload-progress');
-    const uploadMessage = document.getElementById('upload-message');
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const uploadProgress = uploadForm ? document.getElementById('upload-progress') : null;
+    const uploadMessage = uploadForm ? document.getElementById('upload-message') : null;
+    const deleteModal = document.getElementById('deleteModal') ? new bootstrap.Modal(document.getElementById('deleteModal')) : null;
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
     
     // ID của file đang được xử lý
     let currentFileId = null;
     
     // Kiểm tra trạng thái bot
-    checkBotStatus();
+    if (botStatusIcon && botStatusText) {
+        checkBotStatus();
+    }
     
     // Tải danh sách file khi trang được tải
-    loadFiles();
-    
-    // Tự động làm mới danh sách file mỗi 30 giây
-    setInterval(loadFiles, 30000);
+    if (filesContainer) {
+        loadFiles();
+        
+        // Tự động làm mới danh sách file mỗi 30 giây
+        setInterval(loadFiles, 30000);
+    }
     
     // Xử lý sự kiện nút làm mới
-    refreshBtn.addEventListener('click', function() {
-        refreshBtn.disabled = true;
-        refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat loading-spinner me-1"></i>Đang làm mới...';
-        loadFiles().finally(() => {
-            refreshBtn.disabled = false;
-            refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Làm mới';
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat loading-spinner me-1"></i>Đang làm mới...';
+            loadFiles().finally(() => {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Làm mới';
+            });
         });
-    });
+    }
     
     // Xử lý sự kiện form upload
     if (uploadForm) {
@@ -56,8 +62,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('file', file);
             
-            uploadProgress.classList.remove('d-none');
-            uploadMessage.classList.add('d-none');
+            if (uploadProgress) {
+                uploadProgress.classList.remove('d-none');
+            }
+            if (uploadMessage) {
+                uploadMessage.classList.add('d-none');
+            }
             
             // Gửi file lên server
             fetch('/upload', {
@@ -73,9 +83,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Đóng modal sau 2 giây
                     setTimeout(() => {
-                        bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
-                        uploadProgress.classList.add('d-none');
-                        uploadMessage.classList.add('d-none');
+                        const uploadModal = document.getElementById('uploadModal');
+                        if (uploadModal) {
+                            const modalInstance = bootstrap.Modal.getInstance(uploadModal);
+                            if (modalInstance) {
+                                modalInstance.hide();
+                            }
+                        }
+                        if (uploadProgress) {
+                            uploadProgress.classList.add('d-none');
+                        }
+                        if (uploadMessage) {
+                            uploadMessage.classList.add('d-none');
+                        }
                     }, 2000);
                 } else {
                     showUploadMessage(data.error || 'Có lỗi xảy ra khi tải lên file', 'danger');
@@ -93,48 +113,56 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.closest('.delete-file-btn')) {
             const btn = e.target.closest('.delete-file-btn');
             currentFileId = btn.dataset.fileId;
-            deleteModal.show();
+            if (deleteModal) {
+                deleteModal.show();
+            }
         }
     });
     
     // Xử lý xác nhận xóa file
-    confirmDeleteBtn.addEventListener('click', function() {
-        if (!currentFileId) return;
-        
-        // Gửi yêu cầu xóa file
-        fetch(`/api/files/${currentFileId}`, {
-            method: 'DELETE'
-        })
-        .then(response => response.json())
-        .then(data => {
-            deleteModal.hide();
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function() {
+            if (!currentFileId) return;
             
-            if (data.success) {
-                // Xóa phần tử khỏi DOM
-                const fileElement = document.querySelector(`.file-card[data-file-id="${currentFileId}"]`);
-                if (fileElement) {
-                    const parentCol = fileElement.closest('.col-sm-6');
-                    if (parentCol) parentCol.remove();
+            // Gửi yêu cầu xóa file
+            fetch(`/api/files/${currentFileId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (deleteModal) {
+                    deleteModal.hide();
                 }
-                showToast('File đã được xóa thành công', 'success');
                 
-                // Kiểm tra nếu không còn file nào
-                if (filesContainer.children.length === 0) {
-                    noFilesMessage.classList.remove('d-none');
+                if (data.success) {
+                    // Xóa phần tử khỏi DOM
+                    const fileElement = document.querySelector(`.file-card[data-file-id="${currentFileId}"]`);
+                    if (fileElement) {
+                        const parentCol = fileElement.closest('.col-sm-6');
+                        if (parentCol) parentCol.remove();
+                    }
+                    showToast('File đã được xóa thành công', 'success');
+                    
+                    // Kiểm tra nếu không còn file nào
+                    if (filesContainer && filesContainer.children.length === 0 && noFilesMessage) {
+                        noFilesMessage.classList.remove('d-none');
+                    }
+                } else {
+                    showToast(data.error || 'Có lỗi xảy ra khi xóa file', 'danger');
                 }
-            } else {
-                showToast(data.error || 'Có lỗi xảy ra khi xóa file', 'danger');
-            }
-            
-            currentFileId = null;
-        })
-        .catch(error => {
-            console.error('Lỗi:', error);
-            deleteModal.hide();
-            showToast('Có lỗi xảy ra khi xóa file', 'danger');
-            currentFileId = null;
+                
+                currentFileId = null;
+            })
+            .catch(error => {
+                console.error('Lỗi:', error);
+                if (deleteModal) {
+                    deleteModal.hide();
+                }
+                showToast('Có lỗi xảy ra khi xóa file', 'danger');
+                currentFileId = null;
+            });
         });
-    });
+    }
     
     // Hàm kiểm tra trạng thái bot
     function checkBotStatus() {
@@ -174,11 +202,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hàm tải danh sách file
     async function loadFiles() {
         try {
-            loadingContainer.classList.remove('d-none');
-            noFilesMessage.classList.add('d-none');
+            if (loadingContainer) {
+                loadingContainer.classList.remove('d-none');
+            }
+            if (noFilesMessage) {
+                noFilesMessage.classList.add('d-none');
+            }
             
             // Nếu đã có file được hiển thị và đang làm mới, không xóa file hiện tại
-            if (filesContainer.children.length === 0) {
+            if (filesContainer && filesContainer.children.length === 0) {
                 filesContainer.innerHTML = '';
             }
             
@@ -186,20 +218,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const files = await response.json();
             
             // Nếu đang làm mới danh sách file, xóa file hiện tại
-            filesContainer.innerHTML = '';
+            if (filesContainer) {
+                filesContainer.innerHTML = '';
             
-            if (files.length === 0) {
-                noFilesMessage.classList.remove('d-none');
-            } else {
-                files.forEach(file => {
-                    filesContainer.appendChild(createFileCard(file));
-                });
+                if (files.length === 0) {
+                    if (noFilesMessage) {
+                        noFilesMessage.classList.remove('d-none');
+                    }
+                } else {
+                    files.forEach(file => {
+                        filesContainer.appendChild(createFileCard(file));
+                    });
+                }
             }
         } catch (error) {
             console.error('Lỗi tải danh sách file:', error);
             showToast('Có lỗi xảy ra khi tải danh sách file', 'danger');
         } finally {
-            loadingContainer.classList.add('d-none');
+            if (loadingContainer) {
+                loadingContainer.classList.add('d-none');
+            }
         }
     }
     
@@ -261,6 +299,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Hiển thị thông báo upload
     function showUploadMessage(message, type) {
+        if (!uploadMessage) return;
+        
         uploadMessage.textContent = message;
         uploadMessage.className = `alert alert-${type} mt-3`;
         uploadMessage.classList.remove('d-none');
@@ -269,6 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hiển thị toast thông báo
     function showToast(message, type) {
         const toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) return;
         
         const toastEl = document.createElement('div');
         toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
@@ -287,16 +328,27 @@ document.addEventListener('DOMContentLoaded', function() {
         
         toastContainer.appendChild(toastEl);
         
-        const toast = new bootstrap.Toast(toastEl, {
-            autohide: true,
-            delay: 3000
-        });
-        
-        toast.show();
-        
-        // Xóa toast sau khi ẩn
-        toastEl.addEventListener('hidden.bs.toast', function() {
-            toastEl.remove();
-        });
+        // Kiểm tra xem Bootstrap đã được tải chưa
+        if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+            const toast = new bootstrap.Toast(toastEl, {
+                autohide: true,
+                delay: 3000
+            });
+            
+            toast.show();
+            
+            // Xóa toast sau khi ẩn
+            toastEl.addEventListener('hidden.bs.toast', function() {
+                toastEl.remove();
+            });
+        } else {
+            // Fallback nếu Bootstrap không có sẵn
+            setTimeout(() => {
+                toastEl.remove();
+            }, 3000);
+        }
     }
+    
+    // Thêm console.log để kiểm tra lỗi
+    console.log('TeleDrive JS đã được tải thành công');
 }); 

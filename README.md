@@ -1,27 +1,26 @@
-# TeleDrive
+# TeleDrive - Lưu trữ file thông qua Telegram
 
-Ứng dụng lưu trữ file thông qua Telegram Bot, cho phép người dùng tải lên, quản lý và chia sẻ file một cách dễ dàng.
+TeleDrive là một ứng dụng web cho phép bạn lưu trữ và quản lý file thông qua Telegram. Ứng dụng này sử dụng Telegram API để lưu trữ file và cung cấp giao diện web để quản lý chúng.
 
 ## Tính năng
 
-- **Tải lên file** thông qua giao diện web hoặc bot Telegram
-- **Quản lý file** dễ dàng với giao diện người dùng trực quan
-- **Hỗ trợ nhiều loại file** như hình ảnh, video, tài liệu, âm thanh,...
-- **Tự động phân loại file** dựa vào loại nội dung
-- **Đồng bộ file** giữa web và Telegram Bot
-- **Dọn dẹp tự động** file tạm thời
+- Tải lên file thông qua giao diện web
+- Tải lên file thông qua Telegram Bot (tùy chọn)
+- Quản lý file: xem, tải xuống, xóa
+- Hỗ trợ nhiều loại file: hình ảnh, video, âm thanh, tài liệu
+- Giao diện người dùng thân thiện, dễ sử dụng
 
 ## Yêu cầu
 
-- Node.js (v14+)
-- Telegram Bot Token (đăng ký qua @BotFather)
-- Telegram API Credentials (đăng ký tại https://my.telegram.org)
+- Node.js (v14 trở lên)
+- Telegram API ID và API Hash (đăng ký tại [my.telegram.org](https://my.telegram.org))
+- Telegram Bot Token (tùy chọn, tạo qua [@BotFather](https://t.me/BotFather))
 
 ## Cài đặt
 
 1. Clone repository:
    ```
-   git clone https://github.com/your-username/teledrive.git
+   git clone https://github.com/yourusername/teledrive.git
    cd teledrive
    ```
 
@@ -30,71 +29,73 @@
    npm install
    ```
 
-3. Cấu hình môi trường:
-   - Sao chép `.env.example` thành `.env`
-   - Cập nhật `BOT_TOKEN`, `API_ID` và `API_HASH` trong file `.env`
-
-4. Khởi động ứng dụng:
+3. Tạo file `.env` trong thư mục gốc với nội dung sau:
    ```
-   npm run dev
+   # Server Configuration
+   PORT=5002
+   NODE_ENV=development
+
+   # Telegram API Credentials
+   API_ID=your_api_id
+   API_HASH=your_api_hash
+
+   # Cấu hình lưu trữ
+   STORAGE_PATH=./storage
+   MAX_FILE_SIZE=2000 # MB
+
+   # Telegram Bot Token (nếu sử dụng bot)
+   BOT_TOKEN=your_bot_token
+
+   # Thư mục lưu trữ tạm thời
+   TEMP_DIR=temp
+   DATA_DIR=data
    ```
 
-5. Truy cập ứng dụng tại `http://localhost:5001`
+4. Tạo các thư mục cần thiết:
+   ```
+   mkdir -p uploads temp data storage logs
+   ```
+
+5. Khởi động ứng dụng:
+   ```
+   node index.js
+   ```
+
+## Sử dụng
+
+1. Truy cập ứng dụng web tại `http://localhost:5002` (hoặc port bạn đã cấu hình).
+2. Sử dụng nút "Tải lên file" để tải file lên từ máy tính của bạn.
+3. Nếu bạn đã cấu hình Telegram Bot, bạn có thể gửi file trực tiếp đến bot để lưu trữ.
+4. Quản lý file của bạn thông qua giao diện web: xem, tải xuống hoặc xóa.
 
 ## Cấu trúc thư mục
 
 ```
 teledrive/
-├── data/               # Thư mục lưu trữ dữ liệu
-├── logs/               # Thư mục lưu trữ log
-├── public/             # Tài nguyên tĩnh cho web
-│   ├── css/            # CSS files
-│   └── js/             # JavaScript files
-├── temp/               # Thư mục lưu trữ tạm thời
-├── uploads/            # Thư mục lưu trữ file người dùng tải lên
-├── views/              # EJS templates
-├── .env                # Cấu hình môi trường
-├── .env.example        # Mẫu cấu hình môi trường
-├── .gitignore          # Cấu hình Git ignore
-├── index.js            # File chính của ứng dụng
-├── package.json        # Cấu hình npm và dependencies
-└── run.bat             # Script chạy ứng dụng trên Windows
+├── index.js           # File chính của ứng dụng
+├── package.json       # Cấu hình npm
+├── .env               # Cấu hình môi trường
+├── public/            # File tĩnh (CSS, JS)
+│   ├── css/
+│   └── js/
+├── views/             # Template EJS
+├── uploads/           # Thư mục lưu trữ file tải lên
+├── temp/              # Thư mục tạm thời
+├── data/              # Dữ liệu ứng dụng
+└── logs/              # File log
 ```
 
 ## Các lệnh hữu ích
 
-- `npm start`: Khởi động ứng dụng
-- `npm run dev`: Khởi động ứng dụng với nodemon (tự động khởi động lại khi có thay đổi)
-- `npm run clean`: Chạy chức năng dọn dẹp (gửi file lên Telegram)
-- `npm run sync`: Đồng bộ file trong thư mục uploads với database
-- `npm run clear-temp`: Dọn dẹp thư mục tạm thời
+- Khởi động ứng dụng: `node index.js`
+- Khởi động với nodemon (tự động khởi động lại khi có thay đổi): `npx nodemon index.js`
 
-## Sử dụng Bot Telegram
+## Giấy phép
 
-1. Bắt đầu chat với Bot bằng cách gửi lệnh `/start`
-2. Gửi file để lưu trữ
-3. Bot sẽ tự động lưu trữ file và thông báo khi hoàn tất
+Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE` để biết thêm chi tiết.
 
-## Sử dụng Web Interface
+## Lưu ý
 
-1. Truy cập vào địa chỉ `http://localhost:5001`
-2. Tải lên file thông qua nút "Tải lên file"
-3. Xem và quản lý danh sách file
-4. Xóa file khi không cần thiết nữa
-
-## Cấu hình
-
-Các tùy chọn cấu hình có sẵn trong file `.env`:
-
-- `PORT`: Cổng chạy ứng dụng (mặc định: 5001)
-- `NODE_ENV`: Môi trường chạy ứng dụng (development/production)
-- `BOT_TOKEN`: Token của Telegram Bot
-- `API_ID` và `API_HASH`: Thông tin xác thực Telegram API
-- `MAX_FILE_SIZE`: Kích thước tối đa cho mỗi file (MB)
-- `STORAGE_PATH`: Đường dẫn thư mục lưu trữ
-- `TEMP_DIR`: Thư mục lưu trữ tạm thời
-- `DATA_DIR`: Thư mục lưu trữ dữ liệu
-
-## License
-
-MIT License 
+- Đối với file lớn hơn 20MB, Telegram API có thể yêu cầu xác thực bổ sung.
+- Đảm bảo rằng bạn có đủ dung lượng lưu trữ trên máy chủ của mình.
+- Không sử dụng ứng dụng này để lưu trữ nội dung bất hợp pháp hoặc vi phạm điều khoản dịch vụ của Telegram. 

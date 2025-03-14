@@ -1,68 +1,63 @@
 @echo off
-setlocal enabledelayedexpansion
-
-REM TeleDrive - Script chạy ứng dụng
-REM Phiên bản tối ưu và xử lý lỗi
-
-title TeleDrive
-
-REM Kiểm tra Node.js
-echo Đang kiểm tra Node.js...
-node --version > nul 2>&1
-if %errorlevel% neq 0 (
-  echo [LỖI] Node.js chưa được cài đặt!
-  echo Vui lòng cài đặt Node.js từ https://nodejs.org/
-  pause
-  exit /b 1
-)
-
-REM Tắt các process node đang chạy nếu cần
+echo TeleDrive - Ung dung luu tru file thong qua Telegram
+echo ===================================================
 echo.
-set /p kill_existing="Bạn có muốn kết thúc các process node đang chạy không? (y/n): "
-if /i "%kill_existing%"=="y" (
-  echo Đang kết thúc các process node...
-  taskkill /f /im node.exe > nul 2>&1
-  taskkill /f /im nodemon.exe > nul 2>&1
-  timeout /t 2 > nul
-)
 
-REM Kiểm tra các gói npm
-echo Đang cài đặt/cập nhật các gói phụ thuộc...
-call npm install
+REM Kiem tra xem Node.js da duoc cai dat chua
+where node >nul 2>nul
 if %errorlevel% neq 0 (
-  echo [CẢNH BÁO] Một số gói không thể cài đặt, nhưng ứng dụng vẫn có thể chạy.
+    echo Loi: Node.js chua duoc cai dat. Vui long cai dat Node.js truoc khi chay ung dung.
+    echo Tai Node.js tai: https://nodejs.org/
+    pause
+    exit /b
 )
 
-REM Kiểm tra file .env
-if not exist .env (
-  if exist .env.example (
-    echo Đang tạo file .env từ .env.example...
-    copy .env.example .env
-    echo [CẢNH BÁO] Vui lòng chỉnh sửa file .env để cấu hình BOT_TOKEN.
-  ) else (
-    echo [CẢNH BÁO] Không tìm thấy file .env hoặc .env.example!
-  )
+REM Kiem tra xem cac goi phu thuoc da duoc cai dat chua
+if not exist node_modules (
+    echo Dang cai dat cac goi phu thuoc...
+    call npm install
+    echo.
 )
 
-REM Đảm bảo thư mục tồn tại
+REM Kiem tra xem cac thu muc can thiet da ton tai chua
 if not exist uploads mkdir uploads
 if not exist temp mkdir temp
 if not exist data mkdir data
-if not exist logs mkdir logs
 if not exist storage mkdir storage
-if not exist public mkdir public
-if not exist public\css mkdir public\css
-if not exist public\js mkdir public\js
+if not exist logs mkdir logs
 
-echo ===============================
-echo       TeleDrive - Khởi động
-echo ===============================
+REM Kiem tra xem file .env da ton tai chua
+if not exist .env (
+    echo Dang tao file .env...
+    echo # Server Configuration > .env
+    echo PORT=5002 >> .env
+    echo NODE_ENV=development >> .env
+    echo. >> .env
+    echo # Telegram API Credentials >> .env
+    echo # Ban can dang ky tai https://my.telegram.org de lay API_ID va API_HASH >> .env
+    echo API_ID=your_api_id >> .env
+    echo API_HASH=your_api_hash >> .env
+    echo. >> .env
+    echo # Cau hinh luu tru >> .env
+    echo STORAGE_PATH=./storage >> .env
+    echo MAX_FILE_SIZE=2000 >> .env
+    echo. >> .env
+    echo # Telegram Bot Token (neu su dung bot) >> .env
+    echo BOT_TOKEN= >> .env
+    echo. >> .env
+    echo # Thu muc luu tru tam thoi >> .env
+    echo TEMP_DIR=temp >> .env
+    echo DATA_DIR=data >> .env
+    echo.
+    echo Da tao file .env. Vui long cap nhat cac thong tin can thiet trong file nay.
+    echo.
+)
+
+echo Dang khoi dong ung dung TeleDrive...
 echo.
-echo Đang khởi động TeleDrive...
+echo Truy cap ung dung tai: http://localhost:5002
+echo.
+echo Nhan Ctrl+C de dung ung dung
 echo.
 
-REM Chạy ứng dụng
-npm run dev
-
-pause
-endlocal 
+node index.js 
