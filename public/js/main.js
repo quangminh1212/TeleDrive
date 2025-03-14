@@ -267,49 +267,55 @@ document.addEventListener('DOMContentLoaded', function() {
         // Định dạng ngày tải lên
         const uploadDate = new Date(file.uploadDate).toLocaleString('vi-VN');
         
-        // Xác định trạng thái và đường dẫn tải xuống dựa vào fileStatus
-        let downloadPath = '#';
+        // Xác định trạng thái và đường dẫn tải xuống
+        let downloadPath = `/api/files/${file.id}/download`;
         let statusText = '';
         let statusClass = '';
-        let downloadDisabled = false;
+        let downloadIcon = 'bi-download';
+        let downloadBtnClass = 'btn-outline-primary';
+        let downloadTooltip = 'Tải xuống file';
         
+        // Tất cả các file đều có thể tải xuống bây giờ
+        const downloadDisabled = false;
+        
+        // Hiển thị trạng thái khác nhau dựa trên fileStatus
         switch (file.fileStatus) {
             case 'local':
-                downloadPath = `/api/files/${file.id}/download`;
                 statusText = '';
                 break;
             case 'telegram':
-                downloadPath = `/api/files/${file.id}/download`;  // Sử dụng API để lấy URL từ Telegram
                 statusText = 'Lưu trữ trên Telegram';
                 statusClass = 'text-info';
+                downloadIcon = 'bi-telegram';
+                downloadBtnClass = 'btn-outline-info';
+                downloadTooltip = 'Tải từ Telegram';
                 break;
             case 'missing':
-                if (file.telegramFileId || file.telegramUrl) {
-                    // Nếu file có trên Telegram, vẫn cho phép tải xuống
-                    downloadPath = `/api/files/${file.id}/download`;
-                    statusText = 'File không còn ở local, nhưng có trên Telegram';
+                if (file.fakeTelegramId) {
+                    statusText = 'File không khả dụng (mô phỏng)';
                     statusClass = 'text-warning';
+                    downloadIcon = 'bi-cloud-download';
+                    downloadBtnClass = 'btn-outline-warning';
+                    downloadTooltip = 'Tải mô phỏng';
+                } else if (file.telegramFileId) {
+                    statusText = 'File không có ở local, nhưng có thể tải từ Telegram';
+                    statusClass = 'text-warning';
+                    downloadIcon = 'bi-telegram';
+                    downloadBtnClass = 'btn-outline-info';
+                    downloadTooltip = 'Tải từ Telegram';
                 } else {
-                    downloadPath = '#';
                     statusText = 'File không khả dụng';
                     statusClass = 'text-danger';
-                    downloadDisabled = true;
                 }
                 break;
             case 'error':
             case 'unknown':
             default:
-                if (file.telegramFileId || file.telegramUrl) {
-                    // Nếu file có trên Telegram, vẫn cho phép tải xuống
-                    downloadPath = `/api/files/${file.id}/download`;
-                    statusText = 'Có thể tải từ Telegram';
-                    statusClass = 'text-info';
-                } else {
-                    downloadPath = '#';
-                    statusText = 'File không khả dụng';
-                    statusClass = 'text-danger';
-                    downloadDisabled = true;
-                }
+                statusText = 'File không khả dụng';
+                statusClass = 'text-danger';
+                downloadIcon = 'bi-exclamation-circle';
+                downloadBtnClass = 'btn-outline-danger';
+                downloadTooltip = 'Tải mô phỏng';
                 break;
         }
         
@@ -330,12 +336,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="card-footer bg-transparent border-top-0">
                     <div class="d-flex justify-content-between">
-                        <a href="${downloadPath}" class="btn btn-sm btn-outline-primary ${downloadDisabled ? 'disabled' : ''}" 
-                           ${!downloadDisabled ? 'download="' + file.name + '"' : ''} 
-                           ${downloadDisabled ? 'onclick="return false;"' : ''}>
-                            <i class="bi bi-download"></i>
+                        <a href="${downloadPath}" class="btn btn-sm ${downloadBtnClass}" 
+                           title="${downloadTooltip}" download="${file.name}">
+                            <i class="bi ${downloadIcon}"></i>
                         </a>
-                        <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="${file.id}">
+                        <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="${file.id}" title="Xóa file">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>

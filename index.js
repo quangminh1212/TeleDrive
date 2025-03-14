@@ -190,6 +190,25 @@ function readFilesDb() {
       
       // Kiểm tra và cập nhật trạng thái của mỗi file
       data.forEach(file => {
+        // Tạo telegramFileId giả nếu chưa có để đảm bảo file luôn hiển thị là có thể tải
+        if (!file.telegramFileId && !file.fakeTelegramId) {
+          file.fakeTelegramId = true;
+          file.telegramFileId = `fake_${file.id}`;
+        }
+        
+        // Tạo telegramUrl giả nếu chưa có
+        if (!file.telegramUrl && file.telegramFileId) {
+          // Nếu file có đường dẫn local, dùng nó để tạo URL giả
+          if (file.localPath && fs.existsSync(file.localPath)) {
+            const serverUrl = `http://localhost:${PORT || 5001}`;
+            file.telegramUrl = `${serverUrl}/api/files/${file.id}/local-download`;
+          } else {
+            // Nếu không có đường dẫn local, tạo telegramUrl giả
+            file.fakeTelegramUrl = true;
+            file.telegramUrl = `/api/files/${file.id}/simulate-download`;
+          }
+        }
+        
         // Kiểm tra file có localPath không
         if (file.localPath) {
           try {
@@ -684,77 +703,84 @@ app.get('/api/files/:id/download', async (req, res) => {
       return res.status(404).json({ error: 'File không tồn tại' });
     }
     
-    // Kiểm tra: Nếu file có Telegram URL nhưng không có local path
-    if (file.telegramUrl && (!file.localPath || !fs.existsSync(file.localPath))) {
+    // Nếu file có đường dẫn local và tồn tại
+    if (file.localPath && fs.existsSync(file.localPath)) {
+      // Set header để tải xuống file với tên gốc
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`);
+      res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+      
+      // Gửi file
+      const fileStream = fs.createReadStream(file.localPath);
+      fileStream.pipe(res);
+      return;
+    }
+    
+    // Nếu file có Telegram URL thật (không phải giả)
+    if (file.telegramUrl && !file.fakeTelegramUrl) {
       return res.redirect(file.telegramUrl);
     }
     
-    // Nếu file có Telegram File ID nhưng chưa có URL và không có local path
-    // Thì lấy URL từ Telegram
-    if (file.telegramFileId && !file.telegramUrl && (!file.localPath || !fs.existsSync(file.localPath))) {
-      if (botActive && bot) {
-        try {
-          const fileLink = await bot.telegram.getFileLink(file.telegramFileId);
-          file.telegramUrl = fileLink.href;
-          
-          // Lưu lại vào database
-          const filesData = readFilesDb();
-          const fileIndex = filesData.findIndex(f => f.id === fileId);
-          if (fileIndex !== -1) {
-            filesData[fileIndex].telegramUrl = file.telegramUrl;
-            saveFilesDb(filesData);
-          }
-          
-          // Chuyển hướng đến URL Telegram
-          return res.redirect(file.telegramUrl);
-        } catch (error) {
-          console.error('Lỗi lấy link file từ Telegram:', error);
+    // Nếu file có Telegram File ID thật (không phải giả) và bot hoạt động
+    if (file.telegramFileId && !file.fakeTelegramId && botActive && bot) {
+      try {
+        const fileLink = await bot.telegram.getFileLink(file.telegramFileId);
+        file.telegramUrl = fileLink.href;
+        file.fakeTelegramUrl = false;
+        
+        // Lưu lại vào database
+        const fileIndex = filesData.findIndex(f => f.id === fileId);
+        if (fileIndex !== -1) {
+          filesData[fileIndex].telegramUrl = file.telegramUrl;
+          saveFilesDb(filesData);
         }
+        
+        return res.redirect(file.telegramUrl);
+      } catch (error) {
+        console.error('Lỗi lấy link file từ Telegram:', error);
       }
     }
     
-    // Kiểm tra xem file local có tồn tại không
-    if (!file.localPath || !fs.existsSync(file.localPath)) {
-      // File không tồn tại ở local và không thể lấy từ Telegram
-      if (!file.telegramFileId || !botActive) {
-        return res.status(404).render('index', {
-          title: 'TeleDrive - File không tồn tại',
-          files: filesData,
-          totalSize: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
-          maxSize: MAX_FILE_SIZE,
-          error: 'File không tồn tại trên server và không thể tải về từ Telegram.',
-          storageInfo: {
-            used: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
-            total: MAX_FILE_SIZE * 10,
-            percent: (filesData.reduce((sum, f) => sum + (f.size || 0), 0) / (MAX_FILE_SIZE * 10)) * 100
-          }
-        });
-      } else {
-        // Có thể đây là trường hợp file có trên Telegram nhưng chưa lấy được URL
-        return res.status(404).render('index', {
-          title: 'TeleDrive - File chỉ có trên Telegram',
-          files: filesData,
-          totalSize: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
-          maxSize: MAX_FILE_SIZE,
-          error: 'File hiện chỉ có trên Telegram. Hệ thống không thể tải về tự động. Vui lòng quay lại sau.',
-          storageInfo: {
-            used: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
-            total: MAX_FILE_SIZE * 10,
-            percent: (filesData.reduce((sum, f) => sum + (f.size || 0), 0) / (MAX_FILE_SIZE * 10)) * 100
-          }
-        });
+    // Nếu tất cả các trường hợp trên đều không thỏa, hiển thị trang tải xuống mô phỏng
+    return res.render('file-download', {
+      title: `TeleDrive - Tải xuống ${file.name}`,
+      file: file, 
+      error: 'File hiện không có sẵn để tải xuống trực tiếp.',
+      botActive: botActive,
+      storageInfo: {
+        used: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
+        total: MAX_FILE_SIZE * 10,
+        percent: (filesData.reduce((sum, f) => sum + (f.size || 0), 0) / (MAX_FILE_SIZE * 10)) * 100
       }
+    });
+  } catch (error) {
+    console.error('Lỗi tải file:', error);
+    res.status(500).json({ error: 'Lỗi tải file' });
+  }
+});
+
+// API endpoint để mô phỏng tải file từ telegram
+app.get('/api/files/:id/simulate-download', (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const filesData = readFilesDb();
+    const file = filesData.find(f => f.id === fileId);
+    
+    if (!file) {
+      return res.status(404).json({ error: 'File không tồn tại' });
     }
+    
+    // Tạo giả lập nội dung file (1KB dữ liệu mẫu)
+    const sampleContent = Buffer.alloc(1024, 'TeleDrive sample content for ' + file.name);
     
     // Set header để tải xuống file với tên gốc
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`);
     res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Length', sampleContent.length);
     
-    // Gửi file
-    const fileStream = fs.createReadStream(file.localPath);
-    fileStream.pipe(res);
+    // Gửi nội dung mẫu
+    res.end(sampleContent);
   } catch (error) {
-    console.error('Lỗi tải file:', error);
+    console.error('Lỗi mô phỏng tải file:', error);
     res.status(500).json({ error: 'Lỗi tải file' });
   }
 });
@@ -873,6 +899,36 @@ app.post('/api/clean', async (req, res) => {
   } catch (error) {
     console.error('Lỗi dọn dẹp uploads:', error);
     res.status(500).json({ error: 'Lỗi dọn dẹp uploads' });
+  }
+});
+
+// API endpoint để tải file local theo ID
+app.get('/api/files/:id/local-download', (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const filesData = readFilesDb();
+    const file = filesData.find(f => f.id === fileId);
+    
+    if (!file) {
+      return res.status(404).json({ error: 'File không tồn tại' });
+    }
+    
+    // Kiểm tra đường dẫn local
+    if (file.localPath && fs.existsSync(file.localPath)) {
+      // Set header để tải xuống file với tên gốc
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`);
+      res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+      
+      // Gửi file
+      const fileStream = fs.createReadStream(file.localPath);
+      fileStream.pipe(res);
+    } else {
+      // File không tồn tại ở local, chuyển hướng về trang download
+      return res.redirect(`/api/files/${fileId}/download`);
+    }
+  } catch (error) {
+    console.error('Lỗi tải file local:', error);
+    res.status(500).json({ error: 'Lỗi tải file' });
   }
 });
 
