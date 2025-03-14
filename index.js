@@ -53,9 +53,12 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const uniqueFileName = `${Date.now()}-${uuidv4()}`;
     const originalExt = path.extname(file.originalname);
-    const originalName = encodeURIComponent(file.originalname);
     
-    cb(null, `${uniqueFileName}${originalExt}?originalName=${originalName}`);
+    // Lưu tên gốc vào database thay vì trong tên file
+    const fileName = `${uniqueFileName}${originalExt}`;
+    req.originalFileName = file.originalname; // Lưu tên gốc vào request để sử dụng sau
+    
+    cb(null, fileName);
   }
 });
 
@@ -263,6 +266,15 @@ function getMimeType(extension) {
   return mimeTypes[extension.toLowerCase()] || 'application/octet-stream';
 }
 
+// Hàm tạo đường dẫn an toàn cho file
+function getSecureFilePath(fileName) {
+  // Loại bỏ tham số query nếu có
+  if (fileName.includes('?')) {
+    fileName = fileName.split('?')[0];
+  }
+  return path.join(uploadsDir, fileName);
+}
+
 /**
  * Chức năng đồng bộ file - Quét thư mục uploads và cập nhật database
  */
@@ -275,9 +287,16 @@ async function syncFiles() {
     
     // Tạo map từ localPath để kiểm tra nhanh
     const filePathMap = new Map();
+    const fileNameMap = new Map();
+    
     filesData.forEach(file => {
       if (file.localPath) {
+        // Lưu cả localPath và tên file để kiểm tra
         filePathMap.set(file.localPath, file);
+        
+        // Trích xuất tên file từ đường dẫn
+        const fileName = path.basename(file.localPath);
+        fileNameMap.set(fileName, file);
       }
     });
     
@@ -294,18 +313,11 @@ async function syncFiles() {
         continue;
       }
       
-      // Kiểm tra xem file đã có trong database chưa
-      if (!filePathMap.has(filePath)) {
+      // Kiểm tra xem file đã có trong database chưa - dùng cả đường dẫn và tên file
+      if (!filePathMap.has(filePath) && !fileNameMap.has(fileName)) {
         // Thêm file mới vào database
         const fileStats = fs.statSync(filePath);
         const fileExt = path.extname(fileName);
-        let originalName = fileName;
-        
-        // Trích xuất tên gốc nếu có
-        const originalNameMatch = fileName.match(/\?originalName=(.+)$/);
-        if (originalNameMatch) {
-          originalName = decodeURIComponent(originalNameMatch[1]);
-        }
         
         // Tạo ID duy nhất cho file
         const fileId = uuidv4();
@@ -313,10 +325,13 @@ async function syncFiles() {
         // Thêm thông tin file mới
         filesData.push({
           id: fileId,
-          name: originalName,
+          name: fileName,
+          originalName: fileName,
           size: fileStats.size,
           mimeType: getMimeType(fileExt),
           fileType: guessFileType(getMimeType(fileExt)),
+          telegramFileId: null,
+          telegramUrl: null,
           localPath: filePath,
           uploadDate: new Date(fileStats.mtime).toISOString(),
           user: null
@@ -332,6 +347,40 @@ async function syncFiles() {
       console.log(`Đã thêm ${newFilesCount} file mới vào database`);
     } else {
       console.log('Không có file mới cần thêm');
+    }
+    
+    // Kiểm tra file đã lưu trong database còn tồn tại không
+    const missingFiles = [];
+    
+    filesData.forEach(file => {
+      if (file.localPath) {
+        try {
+          // Sử dụng đường dẫn an toàn
+          const secureFilePath = file.localPath;
+          if (!fs.existsSync(secureFilePath)) {
+            missingFiles.push(file.id);
+          }
+        } catch (error) {
+          console.error(`Lỗi kiểm tra file ${file.name}:`, error);
+        }
+      }
+    });
+    
+    // Đánh dấu các file không tồn tại
+    if (missingFiles.length > 0) {
+      console.log(`Phát hiện ${missingFiles.length} file không tồn tại trên hệ thống`);
+      
+      // Cập nhật lại database - đánh dấu file không tồn tại
+      for (const fileId of missingFiles) {
+        const fileIndex = filesData.findIndex(f => f.id === fileId);
+        if (fileIndex !== -1) {
+          filesData[fileIndex].localPath = null;
+          filesData[fileIndex].missingLocal = true;
+        }
+      }
+      
+      // Lưu lại database
+      saveFilesDb(filesData);
     }
     
     console.log('Đồng bộ file hoàn tất');
@@ -500,7 +549,27 @@ app.get('/', (req, res) => {
 app.get('/api/files', (req, res) => {
   try {
     const files = readFilesDb();
-    res.json(files);
+    
+    // Lọc bỏ file không tồn tại trên local (nếu không có telegramFileId)
+    const activeFiles = files.filter(file => {
+      // Nếu có telegramFileId thì luôn giữ lại
+      if (file.telegramFileId) return true;
+      
+      // Kiểm tra nếu file còn tồn tại trên local
+      if (file.localPath) {
+        try {
+          // Sử dụng đường dẫn an toàn
+          return fs.existsSync(file.localPath);
+        } catch (error) {
+          console.error(`Lỗi kiểm tra file ${file.name}:`, error);
+          return false;
+        }
+      }
+      
+      return false;
+    });
+    
+    res.json(activeFiles);
   } catch (error) {
     console.error('Lỗi API files:', error);
     res.status(500).json({ error: error.message });
@@ -557,15 +626,31 @@ app.post('/upload', upload.single('file'), (req, res) => {
       return res.status(400).json({ error: 'Không có file nào được tải lên' });
     }
     
-    // Đồng bộ file mới vào database
-    syncFiles()
-      .then(() => {
-        res.json({ success: true, message: 'File đã được tải lên thành công' });
-      })
-      .catch(error => {
-        console.error('Lỗi đồng bộ sau khi upload:', error);
-        res.status(500).json({ error: 'Lỗi xử lý file sau khi upload' });
-      });
+    // Thêm file vào database ngay lập tức thay vì đợi đồng bộ
+    const fileName = req.file.filename;
+    const filePath = path.join(uploadsDir, fileName);
+    const fileStats = fs.statSync(filePath);
+    const fileExt = path.extname(fileName);
+    const mimeType = getMimeType(fileExt);
+    
+    // Thêm vào database
+    const filesData = readFilesDb();
+    filesData.push({
+      id: uuidv4(),
+      name: req.originalFileName || fileName, // Sử dụng tên gốc từ request
+      originalName: req.originalFileName || fileName,
+      size: fileStats.size,
+      mimeType: mimeType,
+      fileType: guessFileType(mimeType),
+      telegramFileId: null,
+      telegramUrl: null,
+      localPath: filePath,
+      uploadDate: new Date().toISOString(),
+      user: null
+    });
+    saveFilesDb(filesData);
+    
+    res.json({ success: true, message: 'File đã được tải lên thành công' });
   } catch (error) {
     console.error('Lỗi upload file:', error);
     res.status(500).json({ error: 'Lỗi xử lý file' });
@@ -586,7 +671,8 @@ app.post('/api/sync', async (req, res) => {
 // API dọn dẹp uploads
 app.post('/api/clean', async (req, res) => {
   try {
-    if (!bot) {
+    // Kiểm tra nếu bot không hoạt động
+    if (!bot || !botActive) {
       return res.status(400).json({ error: 'Bot Telegram không hoạt động. Không thể dọn dẹp uploads.' });
     }
     
