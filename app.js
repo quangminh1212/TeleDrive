@@ -555,9 +555,12 @@ app.get('/', (req, res) => {
       fileGrid = '<div class="file-grid">';
       
       for (const file of filesData) {
+        // Lấy tên hiển thị phù hợp
+        const displayName = getDisplayFileName(file);
+        
         let fileIcon = '';
         if (file.fileType === 'photo') {
-          fileIcon = `<img src="${file.fileLink || file.filePath}" alt="${getDisplayFileName(file)}" style="max-width:100%; max-height:150px; object-fit:contain; display:block; margin:0 auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          fileIcon = `<img src="${file.fileLink || file.filePath}" alt="${displayName}" style="max-width:100%; max-height:150px; object-fit:contain; display:block; margin:0 auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                      <div style="display:none">🖼️</div>`;
         } else if (file.fileType === 'video') {
           fileIcon = '🎬';
@@ -572,12 +575,12 @@ app.get('/', (req, res) => {
             <div class="file-icon">
               ${fileIcon}
             </div>
-            <div class="file-name">${getDisplayFileName(file)}</div>
+            <div class="file-name" title="${displayName}">${displayName}</div>
             <div class="file-meta">
               ${file.fileSize ? (file.fileSize / 1024 / 1024).toFixed(2) + ' MB' : 'Unknown size'}<br>
               ${new Date(file.uploadDate).toLocaleString()}
             </div>
-            <a href="${file.fileLink || file.filePath}" download="${getDisplayFileName(file)}" class="download-btn">
+            <a href="${file.fileLink || file.filePath}" download="${displayName}" class="download-btn">
               Download
             </a>
           </div>
@@ -610,9 +613,30 @@ app.get('/', (req, res) => {
           .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
           .file-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
           .file-icon { font-size: 48px; margin-bottom: 10px; text-align: center; }
-          .file-name { font-weight: bold; margin-bottom: 5px; word-break: break-word; }
+          .file-name { 
+            font-weight: bold; 
+            margin-bottom: 5px; 
+            word-break: break-word; 
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            text-overflow: ellipsis;
+            min-height: 2.4em;
+          }
           .file-meta { color: #666; font-size: 14px; margin-bottom: 10px; }
-          .download-btn { background: #4285F4; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+          .download-btn { 
+            background: #4285F4; 
+            color: white; 
+            padding: 8px 12px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            text-decoration: none; 
+            display: inline-block; 
+            width: 100%;
+            text-align: center;
+          }
           .no-files { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
           .viewer-link { margin-top: 20px; text-align: center; }
           .viewer-link a { color: #4285F4; text-decoration: none; font-weight: bold; }
