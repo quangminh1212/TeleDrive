@@ -267,20 +267,36 @@ document.addEventListener('DOMContentLoaded', function() {
         // Định dạng ngày tải lên
         const uploadDate = new Date(file.uploadDate).toLocaleString('vi-VN');
         
-        // Tạo đường dẫn tải xuống an toàn
-        const downloadPath = file.localPath ? `/api/files/${file.id}/download` : 
-                             (file.telegramUrl ? file.telegramUrl : '#');
-        
-        // Xác định trạng thái file
+        // Xác định trạng thái và đường dẫn tải xuống dựa vào fileStatus
+        let downloadPath = '#';
         let statusText = '';
         let statusClass = '';
+        let downloadDisabled = false;
         
-        if (!file.localPath && !file.telegramUrl) {
-            statusText = 'File không khả dụng';
-            statusClass = 'text-danger';
-        } else if (file.telegramUrl && !file.localPath) {
-            statusText = 'Lưu trữ trên Telegram';
-            statusClass = 'text-info';
+        switch (file.fileStatus) {
+            case 'local':
+                downloadPath = `/api/files/${file.id}/download`;
+                statusText = '';
+                break;
+            case 'telegram':
+                downloadPath = file.telegramUrl || `/api/files/${file.id}/download`;
+                statusText = 'Lưu trữ trên Telegram';
+                statusClass = 'text-info';
+                break;
+            case 'missing':
+                downloadPath = '#';
+                statusText = 'File không còn tồn tại trên máy chủ';
+                statusClass = 'text-warning';
+                downloadDisabled = true;
+                break;
+            case 'error':
+            case 'unknown':
+            default:
+                downloadPath = '#';
+                statusText = 'File không khả dụng';
+                statusClass = 'text-danger';
+                downloadDisabled = true;
+                break;
         }
         
         colDiv.innerHTML = `
@@ -300,7 +316,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="card-footer bg-transparent border-top-0">
                     <div class="d-flex justify-content-between">
-                        <a href="/api/files/${file.id}/download" class="btn btn-sm btn-outline-primary" download="${file.name}">
+                        <a href="${downloadPath}" class="btn btn-sm btn-outline-primary ${downloadDisabled ? 'disabled' : ''}" 
+                           ${!downloadDisabled ? 'download="' + file.name + '"' : ''} 
+                           ${downloadDisabled ? 'onclick="return false;"' : ''}>
                             <i class="bi bi-download"></i>
                         </a>
                         <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="${file.id}">

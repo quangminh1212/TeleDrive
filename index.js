@@ -374,13 +374,24 @@ async function syncFiles() {
       for (const fileId of missingFiles) {
         const fileIndex = filesData.findIndex(f => f.id === fileId);
         if (fileIndex !== -1) {
-          filesData[fileIndex].localPath = null;
-          filesData[fileIndex].missingLocal = true;
+          // Nếu file có trên Telegram, có thể tải về và khôi phục
+          const file = filesData[fileIndex];
+          if (file.telegramFileId && botActive && bot) {
+            // Đánh dấu để tải về sau
+            file.needsRecovery = true;
+          }
+          
+          // Đánh dấu file không còn tồn tại local
+          file.localPath = null;
+          file.missingLocal = true;
         }
       }
       
       // Lưu lại database
       saveFilesDb(filesData);
+      
+      // Thử khôi phục file từ Telegram nếu có thể
+      await recoverFilesFromTelegram(filesData);
     }
     
     console.log('Đồng bộ file hoàn tất');
@@ -388,6 +399,83 @@ async function syncFiles() {
   } catch (error) {
     console.error('Lỗi đồng bộ file:', error);
     throw error;
+  }
+}
+
+/**
+ * Tự động khôi phục file từ Telegram khi file local bị mất
+ */
+async function recoverFilesFromTelegram(filesData) {
+  // Nếu bot không hoạt động, không thể khôi phục
+  if (!botActive || !bot) {
+    console.log('Bot Telegram không hoạt động. Không thể khôi phục file từ Telegram.');
+    return;
+  }
+  
+  // Lọc các file cần khôi phục
+  const filesToRecover = filesData.filter(file => file.needsRecovery && file.telegramFileId);
+  
+  if (filesToRecover.length === 0) {
+    console.log('Không có file nào cần khôi phục từ Telegram.');
+    return;
+  }
+  
+  console.log(`Bắt đầu khôi phục ${filesToRecover.length} file từ Telegram...`);
+  
+  let recoveredCount = 0;
+  
+  for (const file of filesToRecover) {
+    try {
+      console.log(`Đang khôi phục file "${file.name}" từ Telegram...`);
+      
+      // Lấy link file
+      if (!file.telegramUrl) {
+        try {
+          const fileLink = await bot.telegram.getFileLink(file.telegramFileId);
+          file.telegramUrl = fileLink.href;
+        } catch (error) {
+          console.error(`Không thể lấy link file từ Telegram: ${error.message}`);
+          continue;
+        }
+      }
+      
+      // Tải file từ Telegram
+      const response = await axios({
+        method: 'get',
+        url: file.telegramUrl,
+        responseType: 'stream'
+      });
+      
+      // Tạo tên file mới
+      const fileName = `${Date.now()}-recovered-${file.name}`;
+      const filePath = path.join(uploadsDir, fileName);
+      
+      // Lưu file vào thư mục uploads
+      const writer = fs.createWriteStream(filePath);
+      response.data.pipe(writer);
+      
+      await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+      
+      // Cập nhật thông tin file
+      file.localPath = filePath;
+      file.missingLocal = false;
+      file.needsRecovery = false;
+      file.recoveredAt = new Date().toISOString();
+      
+      recoveredCount++;
+      console.log(`Đã khôi phục file "${file.name}" thành công.`);
+    } catch (error) {
+      console.error(`Lỗi khôi phục file "${file.name}":`, error);
+    }
+  }
+  
+  // Lưu lại database
+  if (recoveredCount > 0) {
+    saveFilesDb(filesData);
+    console.log(`Đã khôi phục ${recoveredCount}/${filesToRecover.length} file từ Telegram.`);
   }
 }
 
@@ -550,26 +638,32 @@ app.get('/api/files', (req, res) => {
   try {
     const files = readFilesDb();
     
-    // Lọc bỏ file không tồn tại trên local (nếu không có telegramFileId)
-    const activeFiles = files.filter(file => {
-      // Nếu có telegramFileId thì luôn giữ lại
-      if (file.telegramFileId) return true;
-      
-      // Kiểm tra nếu file còn tồn tại trên local
+    // Chuyển đổi dữ liệu để hiển thị tất cả các file, bao gồm cả file không tồn tại
+    const processedFiles = files.map(file => {
+      // Kiểm tra nếu file có localPath, xem file có tồn tại không
       if (file.localPath) {
         try {
-          // Sử dụng đường dẫn an toàn
-          return fs.existsSync(file.localPath);
+          const fileExists = fs.existsSync(file.localPath);
+          if (!fileExists) {
+            // Đánh dấu file không tồn tại nhưng vẫn trả về thông tin
+            file.fileStatus = 'missing';
+          } else {
+            file.fileStatus = 'local';
+          }
         } catch (error) {
           console.error(`Lỗi kiểm tra file ${file.name}:`, error);
-          return false;
+          file.fileStatus = 'error';
         }
+      } else if (file.telegramFileId) {
+        file.fileStatus = 'telegram';
+      } else {
+        file.fileStatus = 'unknown';
       }
       
-      return false;
+      return file;
     });
     
-    res.json(activeFiles);
+    res.json(processedFiles);
   } catch (error) {
     console.error('Lỗi API files:', error);
     res.status(500).json({ error: error.message });
@@ -588,13 +682,25 @@ app.get('/api/files/:id/download', (req, res) => {
     }
     
     // Nếu file có telegramUrl và không có local path thì redirect
-    if (file.telegramUrl && !file.localPath) {
+    if (file.telegramUrl && (!file.localPath || !fs.existsSync(file.localPath))) {
       return res.redirect(file.telegramUrl);
     }
     
     // Kiểm tra xem file local có tồn tại không
     if (!file.localPath || !fs.existsSync(file.localPath)) {
-      return res.status(404).json({ error: 'File không tồn tại trên server' });
+      // Trả về trang lỗi thân thiện với người dùng
+      return res.status(404).render('index', {
+        title: 'TeleDrive - File không tồn tại',
+        files: filesData,
+        totalSize: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
+        maxSize: MAX_FILE_SIZE,
+        error: 'File không tồn tại trên server. Có thể file đã bị xóa hoặc chuyển sang lưu trữ trên Telegram.',
+        storageInfo: {
+          used: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
+          total: MAX_FILE_SIZE * 10,
+          percent: (filesData.reduce((sum, f) => sum + (f.size || 0), 0) / (MAX_FILE_SIZE * 10)) * 100
+        }
+      });
     }
     
     // Set header để tải xuống file với tên gốc
