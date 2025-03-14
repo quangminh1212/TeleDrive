@@ -576,6 +576,40 @@ app.get('/api/files', (req, res) => {
   }
 });
 
+// API endpoint để tải file theo ID
+app.get('/api/files/:id/download', (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const filesData = readFilesDb();
+    const file = filesData.find(f => f.id === fileId);
+    
+    if (!file) {
+      return res.status(404).json({ error: 'File không tồn tại' });
+    }
+    
+    // Nếu file có telegramUrl và không có local path thì redirect
+    if (file.telegramUrl && !file.localPath) {
+      return res.redirect(file.telegramUrl);
+    }
+    
+    // Kiểm tra xem file local có tồn tại không
+    if (!file.localPath || !fs.existsSync(file.localPath)) {
+      return res.status(404).json({ error: 'File không tồn tại trên server' });
+    }
+    
+    // Set header để tải xuống file với tên gốc
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`);
+    res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+    
+    // Gửi file
+    const fileStream = fs.createReadStream(file.localPath);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error('Lỗi tải file:', error);
+    res.status(500).json({ error: 'Lỗi tải file' });
+  }
+});
+
 // API status
 app.get('/api/status', (req, res) => {
   res.json({ 
