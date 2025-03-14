@@ -267,6 +267,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // Định dạng ngày tải lên
         const uploadDate = new Date(file.uploadDate).toLocaleString('vi-VN');
         
+        // Tạo đường dẫn tải xuống an toàn
+        const downloadPath = file.localPath ? `/api/files/${file.id}/download` : 
+                             (file.telegramUrl ? file.telegramUrl : '#');
+        
+        // Xác định trạng thái file
+        let statusText = '';
+        let statusClass = '';
+        
+        if (!file.localPath && !file.telegramUrl) {
+            statusText = 'File không khả dụng';
+            statusClass = 'text-danger';
+        } else if (file.telegramUrl && !file.localPath) {
+            statusText = 'Lưu trữ trên Telegram';
+            statusClass = 'text-info';
+        }
+        
         colDiv.innerHTML = `
             <div class="card file-card h-100" data-file-id="${file.id}">
                 <div class="card-body">
@@ -280,10 +296,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="card-text text-muted">
                         <small>${uploadDate}</small>
                     </p>
+                    ${statusText ? `<p class="card-text ${statusClass}"><small>${statusText}</small></p>` : ''}
                 </div>
                 <div class="card-footer bg-transparent border-top-0">
                     <div class="d-flex justify-content-between">
-                        <a href="/uploads/${encodeURIComponent(file.name)}" class="btn btn-sm btn-outline-primary" download>
+                        <a href="/api/files/${file.id}/download" class="btn btn-sm btn-outline-primary" download="${file.name}">
                             <i class="bi bi-download"></i>
                         </a>
                         <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="${file.id}">
