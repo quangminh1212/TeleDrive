@@ -22,7 +22,7 @@ const cors = require('cors');
 dotenv.config();
 
 // Biến môi trường
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '2000', 10) * 1024 * 1024; // Convert MB to bytes
 const DATA_DIR = process.env.DATA_DIR || 'data';

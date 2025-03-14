@@ -1,12 +1,14 @@
 {
   "name": "teledrive",
   "version": "1.0.0",
-  "description": "An application to manage files sent to a Telegram bot",
+  "description": "Ứng dụng lưu trữ file thông qua Telegram Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "clean": "node index.js clean"
+    "clean": "node index.js clean",
+    "sync": "node -e \"require('./index.js').syncFiles()\"",
+    "clear-temp": "node -e \"require('./index.js').cleanupTempDir()\""
   },
   "dependencies": {
     "axios": "^1.8.3",
