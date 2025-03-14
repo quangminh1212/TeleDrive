@@ -1,136 +1,86 @@
 # TeleDrive
 
-Ứng dụng quản lý file và lưu trữ thông qua Telegram Bot. Sử dụng Telegram làm nơi lưu trữ dữ liệu.
+TeleDrive là ứng dụng lưu trữ file sử dụng Telegram Bot làm nơi lưu trữ. Ứng dụng cho phép người dùng tải lên file thông qua giao diện web hoặc gửi trực tiếp qua Telegram Bot, sau đó quản lý và chia sẻ các file này.
 
-## Tính năng chính
+## Tính năng
 
-- **Web Interface**: Quản lý, xem và tải file thông qua giao diện web
-- **Telegram Bot**: Gửi file qua bot để lưu trữ
-- **Lưu trữ đám mây miễn phí**: Tận dụng Telegram làm nơi lưu trữ dữ liệu
-- **Tải lên từ Web**: Tải file thông qua giao diện web
-- **Đồng bộ tự động**: Sao lưu file lên Telegram để giải phóng không gian đĩa
+- Tải lên file thông qua giao diện web
+- Gửi file trực tiếp qua Telegram Bot
+- Quản lý file (xem, tải xuống, xóa)
+- Hỗ trợ nhiều loại file (hình ảnh, video, tài liệu, v.v.)
+- Giao diện người dùng thân thiện
 
 ## Yêu cầu
 
-- Node.js 14.x trở lên
-- Bot Telegram (tạo qua BotFather)
+- Node.js (v14 trở lên)
+- Telegram Bot Token (tạo bot qua BotFather)
 
-## Cài đặt & Sử dụng
-
-### Cách 1: Chạy từ source code
+## Cài đặt
 
 1. Clone repository:
    ```
-   git clone https://github.com/username/teledrive.git
+   git clone https://github.com/yourusername/teledrive.git
    cd teledrive
    ```
 
-2. Cài đặt các gói phụ thuộc:
+2. Cài đặt dependencies:
    ```
    npm install
    ```
 
-3. Tạo file `.env` từ `.env.example`:
+3. Cấu hình file `.env`:
    ```
-   cp .env.example .env
-   ```
+   # Server Configuration
+   PORT=5000
+   NODE_ENV=development
 
-4. Cấu hình thông tin bot trong file `.env`:
-   ```
-   BOT_TOKEN=your_telegram_bot_token
-   PORT=3010
-   MAX_FILE_SIZE=20971520  # 20MB
+   # Telegram API Credentials
+   API_ID=your_api_id
+   API_HASH=your_api_hash
+
+   # Telegram Bot Token
+   BOT_TOKEN=your_bot_token
+
+   # Cấu hình lưu trữ
+   STORAGE_PATH=./storage
+   MAX_FILE_SIZE=2000 # MB
+
+   # Thư mục lưu trữ tạm thời
    TEMP_DIR=temp
    DATA_DIR=data
    ```
 
-5. Khởi động ứng dụng:
+4. Khởi động ứng dụng:
    ```
    npm start
    ```
    
-   Hoặc sử dụng script đã cung cấp:
+   Hoặc sử dụng file batch:
    ```
-   # Windows
    .\run.bat
-   
-   # Linux/Mac
-   chmod +x run.sh
-   ./run.sh
    ```
 
-6. Truy cập ứng dụng: http://localhost:3010
+## Sử dụng
 
-### Cách 2: Chạy với Docker (sắp cập nhật)
+1. Truy cập ứng dụng web tại `http://localhost:5000`
+2. Tải lên file thông qua giao diện web
+3. Hoặc gửi file trực tiếp đến Telegram Bot đã cấu hình
 
-## Cấu trúc dự án (Sau khi tối ưu)
+## Cấu trúc thư mục
 
-```
-TeleDrive/
-├── index.js           # File chính của ứng dụng
-├── run.bat            # Script chạy trên Windows
-├── run.sh             # Script chạy trên Linux/Mac
-├── .env               # Cấu hình ứng dụng
-├── .env.example       # Mẫu cấu hình
-├── package.json       # Quản lý phụ thuộc
-├── data/              # Thư mục lưu trữ dữ liệu
-│   └── files.json     # Database file
-├── uploads/           # Thư mục tạm để lưu file tải lên
-├── temp/              # Thư mục tạm
-├── logs/              # Log ứng dụng
-└── views/             # Giao diện người dùng
-    └── index.ejs      # Trang chủ
-```
+- `data/`: Lưu trữ dữ liệu ứng dụng
+- `uploads/`: Thư mục tạm thời cho file tải lên
+- `temp/`: Thư mục tạm thời
+- `views/`: Template EJS
+- `public/`: File tĩnh (CSS, JS, hình ảnh)
 
-## Cách sử dụng
+## Lệnh hữu ích
 
-### Bot Telegram
-
-1. Tìm bot của bạn trên Telegram (tên do bạn đặt khi tạo với BotFather)
-2. Gửi file cho bot (ảnh, video, document...)
-3. Bot sẽ lưu trữ và gửi lại ID của file
-
-### Giao diện Web
-
-1. Truy cập http://localhost:3010
-2. Xem danh sách file đã lưu trữ
-3. Tải lên file mới
-4. Xem và tải xuống các file
-
-## Các lệnh CLI
-
-```
-# Khởi động ứng dụng
-npm start
-
-# Chế độ phát triển
-npm run dev
-
-# Dọn dẹp uploads (gửi lên Telegram)
-npm run clean
-```
-
-## Phát triển
-
-Dự án đã được tối ưu và tích hợp tất cả chức năng chính vào một file duy nhất `index.js`. Trước đây, dự án sử dụng nhiều file riêng biệt (`app.js`, `start-app.js`, `sync-files.js`, `clean-uploads.js`).
-
-### Quy trình hoạt động
-
-1. **Tải file lên**:
-   - Người dùng gửi file qua Telegram hoặc giao diện web
-   - File được lưu vào `/uploads` (tạm thời) hoặc trực tiếp vào Telegram
-
-2. **Đồng bộ**:
-   - Chức năng `syncFiles()` quét thư mục uploads và cập nhật database
-
-3. **Dọn dẹp**:
-   - Chức năng `cleanUploads()` gửi file lên Telegram và xóa bản local
-   - Giúp giảm dung lượng ổ đĩa nhưng vẫn giữ thông tin file
-
-## Đóng góp
-
-Mọi đóng góp đều được chào đón! Vui lòng gửi Pull Request hoặc báo lỗi qua Issues.
+- `npm start`: Khởi động ứng dụng
+- `npm run dev`: Khởi động ứng dụng với nodemon (tự động khởi động lại khi có thay đổi)
+- `.\run.bat`: Khởi động ứng dụng bằng file batch
+- `.\run-test.bat`: Khởi động phiên bản test của ứng dụng
 
 ## Giấy phép
 
-MIT License 
+MIT 
