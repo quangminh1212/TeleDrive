@@ -815,7 +815,7 @@ app.use((err, req, res, next) => {
 // Khởi động server - đảm bảo luôn khởi động được ngay cả khi có lỗi với Telegram Bot
 (async () => {
   try {
-    // Tự động đồng bộ file khi khởi động
+    // Tự động đồng bộ file khi khởi động - chỉ đồng bộ local
     await syncFiles();
     
     // Kiểm tra port trước khi khởi động
@@ -849,6 +849,16 @@ app.use((err, req, res, next) => {
       console.log(`TeleDrive đang chạy tại http://localhost:${finalPort}`);
       console.log('Khởi động hoàn tất!');
     });
+    
+    // Thiết lập kiểm tra định kỳ cho file
+    setInterval(async () => {
+      try {
+        await syncFiles();
+        console.log('Đồng bộ file định kỳ hoàn tất');
+      } catch (error) {
+        console.error('Lỗi đồng bộ file định kỳ:', error);
+      }
+    }, 30 * 60 * 1000); // 30 phút một lần
   } catch (error) {
     console.error('Lỗi khi khởi động ứng dụng:', error);
     process.exit(1);
