@@ -384,8 +384,11 @@ app.delete('/api/files/:id', (req, res) => {
 
 // API upload file
 app.post('/api/upload', upload.single('file'), async (req, res) => {
+  console.log('API upload được gọi');
+  
   try {
     if (!req.file) {
+      console.error('Không có file nào được gửi lên');
       return res.status(400).json({ error: 'Không có file nào được gửi lên' });
     }
     
@@ -393,11 +396,13 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     const user = getCurrentUser();
     
     console.log(`File đã upload: ${file.originalname} (${file.size} bytes)`);
+    console.log('File path:', file.path);
     
     // Kiểm tra kích thước file
     if (file.size > 20 * 1024 * 1024) {
       // Xóa file vừa upload nếu vượt quá giới hạn
       fs.unlinkSync(file.path);
+      console.error('File vượt quá giới hạn kích thước');
       return res.status(413).json({ 
         error: 'Kích thước file vượt quá giới hạn 20MB (giới hạn của Telegram Bot API)' 
       });
@@ -417,18 +422,23 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       uploadedBy: user
     };
     
+    console.log('Thông tin file đã tạo:', fileInfo);
+    
     // Đồng bộ với Telegram nếu bot khả dụng
     if (bot) {
       try {
+        console.log('Bắt đầu gửi file đến Telegram');
         const telegramInfo = await sendFileToTelegram(file.path, file.originalname, user);
         fileInfo.fileId = telegramInfo.fileId;
         fileInfo.sentToTelegram = true;
+        console.log('Đã gửi file đến Telegram thành công');
       } catch (telegramError) {
         console.error('Lỗi khi đồng bộ với Telegram:', telegramError);
         fileInfo.sentToTelegram = false;
         fileInfo.telegramError = telegramError.message;
       }
     } else {
+      console.warn('Bot không khả dụng, không thể gửi file đến Telegram');
       fileInfo.sentToTelegram = false;
       fileInfo.telegramError = 'Bot không khả dụng';
     }
@@ -437,11 +447,13 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     const filesData = readFilesDb();
     filesData.push(fileInfo);
     saveFilesDb(filesData);
+    console.log('Đã lưu thông tin file vào database');
     
     res.json({
       success: true,
       file: fileInfo
     });
+    console.log('Đã trả về kết quả thành công');
   } catch (error) {
     console.error('Lỗi khi xử lý upload file:', error);
     res.status(500).json({ error: error.message });
@@ -744,6 +756,8 @@ app.get('/', (req, res) => {
             formData.append('file', file);
             
             try {
+              console.log('Bắt đầu upload file:', file.name);
+              
               // Upload file với progress
               const xhr = new XMLHttpRequest();
               
@@ -752,26 +766,38 @@ app.get('/', (req, res) => {
                   const percentComplete = (event.loaded / event.total) * 100;
                   progressBar.style.width = percentComplete + '%';
                   uploadStatus.textContent = 'Đang upload: ' + Math.round(percentComplete) + '%';
+                  console.log('Upload progress:', Math.round(percentComplete) + '%');
                 }
               });
               
               xhr.addEventListener('load', function() {
+                console.log('Upload completed with status:', xhr.status);
                 if (xhr.status >= 200 && xhr.status < 300) {
-                  const response = JSON.parse(xhr.responseText);
-                  uploadStatus.textContent = 'Upload thành công! File đã được lưu và đồng bộ với Telegram.';
-                  uploadStatus.className = 'upload-status success';
-                  
-                  // Clear file input và làm mới danh sách sau 1 giây
-                  fileInput.value = '';
-                  setTimeout(() => {
-                    refreshFiles();
-                  }, 1000);
+                  try {
+                    const response = JSON.parse(xhr.responseText);
+                    console.log('Upload response:', response);
+                    uploadStatus.textContent = 'Upload thành công! File đã được lưu và đồng bộ với Telegram.';
+                    uploadStatus.className = 'upload-status success';
+                    
+                    // Clear file input và làm mới danh sách sau 1 giây
+                    fileInput.value = '';
+                    setTimeout(() => {
+                      refreshFiles();
+                    }, 1000);
+                  } catch (e) {
+                    console.error('Error parsing response:', e);
+                    uploadStatus.textContent = 'Lỗi khi xử lý phản hồi từ server';
+                    uploadStatus.className = 'upload-status error';
+                  }
                 } else {
                   let errorMsg = 'Lỗi khi upload file';
                   try {
                     const response = JSON.parse(xhr.responseText);
                     errorMsg = response.error || errorMsg;
-                  } catch (e) {}
+                    console.error('Upload error response:', response);
+                  } catch (e) {
+                    console.error('Error parsing error response:', e, 'Raw response:', xhr.responseText);
+                  }
                   
                   uploadStatus.textContent = errorMsg;
                   uploadStatus.className = 'upload-status error';
@@ -779,15 +805,28 @@ app.get('/', (req, res) => {
                 uploadBtn.disabled = false;
               });
               
-              xhr.addEventListener('error', function() {
+              xhr.addEventListener('error', function(e) {
+                console.error('XHR error:', e);
                 uploadStatus.textContent = 'Lỗi kết nối khi upload file';
                 uploadStatus.className = 'upload-status error';
                 uploadBtn.disabled = false;
               });
               
-              xhr.open('POST', '/api/upload');
+              xhr.addEventListener('abort', function() {
+                console.log('Upload aborted');
+                uploadStatus.textContent = 'Upload đã bị hủy';
+                uploadStatus.className = 'upload-status error';
+                uploadBtn.disabled = false;
+              });
+              
+              // Đảm bảo URL đúng
+              const uploadUrl = '/api/upload';
+              console.log('Sending upload request to:', uploadUrl);
+              
+              xhr.open('POST', uploadUrl);
               xhr.send(formData);
             } catch (error) {
+              console.error('Upload error:', error);
               uploadStatus.textContent = 'Lỗi: ' + error.message;
               uploadStatus.className = 'upload-status error';
               uploadBtn.disabled = false;
