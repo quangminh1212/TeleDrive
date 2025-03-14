@@ -46,21 +46,26 @@ TeleDrive là ứng dụng web cho phép bạn quản lý các file được g�
 ### Cách đơn giản nhất (Khuyến nghị)
 
 #### Windows
-Chỉ cần chạy file script `run-teledrive.bat`:
-1. Nhấp đúp vào file `run-teledrive.bat` trong File Explorer
-2. Hoặc mở Command Prompt và chạy:
+Có 2 cách để chạy ứng dụng:
+
+1. Sử dụng PowerShell (Khuyến nghị):
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File run-teledrive.ps1
    ```
+
+2. Sử dụng Command Prompt:
+   ```cmd
    run-teledrive.bat
    ```
 
 #### Linux/macOS
 Chỉ cần chạy file script `run-teledrive.sh`:
 1. Đầu tiên, cấp quyền thực thi cho file:
-   ```
+   ```bash
    chmod +x run-teledrive.sh
    ```
 2. Sau đó chạy:
-   ```
+   ```bash
    ./run-teledrive.sh
    ```
 
