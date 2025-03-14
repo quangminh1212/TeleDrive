@@ -932,6 +932,163 @@ app.get('/api/files/:id/local-download', (req, res) => {
   }
 });
 
+// Route xem chi tiết và xem trước file
+app.get('/file/:id', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const filesData = readFilesDb();
+    const file = filesData.find(f => f.id === fileId);
+    
+    if (!file) {
+      return res.status(404).render('index', { 
+        title: 'TeleDrive - File không tồn tại',
+        files: filesData,
+        totalSize: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
+        maxSize: MAX_FILE_SIZE,
+        error: 'File không tồn tại',
+        storageInfo: {
+          used: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
+          total: MAX_FILE_SIZE * 10,
+          percent: (filesData.reduce((sum, f) => sum + (f.size || 0), 0) / (MAX_FILE_SIZE * 10)) * 100
+        }
+      });
+    }
+    
+    // Render trang xem trước
+    res.render('file-preview', {
+      title: `TeleDrive - Xem trước ${file.name}`,
+      file: file,
+      botActive: botActive
+    });
+  } catch (error) {
+    console.error('Lỗi xem chi tiết file:', error);
+    res.status(500).json({ error: 'Lỗi xem chi tiết file' });
+  }
+});
+
+// API endpoint để xem trước file
+app.get('/api/files/:id/preview', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const filesData = readFilesDb();
+    const file = filesData.find(f => f.id === fileId);
+    
+    if (!file) {
+      return res.status(404).json({ error: 'File không tồn tại' });
+    }
+    
+    // Nếu file có đường dẫn local và tồn tại
+    if (file.localPath && fs.existsSync(file.localPath)) {
+      // Set Content-Type để trình duyệt hiển thị đúng
+      res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+      
+      // Gửi file để xem trước
+      const fileStream = fs.createReadStream(file.localPath);
+      fileStream.pipe(res);
+      return;
+    }
+    
+    // Nếu file có Telegram URL thật (không phải giả)
+    if (file.telegramFileId && !file.fakeTelegramId && botActive && bot) {
+      try {
+        // Nếu chưa có URL, lấy từ Telegram
+        if (!file.telegramUrl || file.fakeTelegramUrl) {
+          const fileLink = await bot.telegram.getFileLink(file.telegramFileId);
+          file.telegramUrl = fileLink.href;
+          file.fakeTelegramUrl = false;
+          
+          // Lưu lại vào database
+          const fileIndex = filesData.findIndex(f => f.id === fileId);
+          if (fileIndex !== -1) {
+            filesData[fileIndex].telegramUrl = file.telegramUrl;
+            saveFilesDb(filesData);
+          }
+        }
+        
+        // Tải file từ Telegram và stream về client
+        const response = await axios({
+          method: 'get',
+          url: file.telegramUrl,
+          responseType: 'stream'
+        });
+        
+        // Chuyển tiếp headers từ Telegram
+        res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+        
+        // Pipe response từ Telegram về client
+        response.data.pipe(res);
+        return;
+      } catch (error) {
+        console.error('Lỗi lấy file từ Telegram để xem trước:', error);
+        return res.status(500).json({ error: 'Không thể xem trước file từ Telegram' });
+      }
+    }
+    
+    // Nếu file không có ở local và không thể lấy từ Telegram, trả về lỗi
+    return res.status(404).json({ error: 'File không có sẵn để xem trước' });
+  } catch (error) {
+    console.error('Lỗi xem trước file:', error);
+    res.status(500).json({ error: 'Lỗi xem trước file' });
+  }
+});
+
+// API endpoint để tải file từ Telegram (đảm bảo tải trực tiếp từ Telegram)
+app.get('/api/files/:id/telegram-download', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const filesData = readFilesDb();
+    const file = filesData.find(f => f.id === fileId);
+    
+    if (!file) {
+      return res.status(404).json({ error: 'File không tồn tại' });
+    }
+    
+    // Kiểm tra xem file có Telegram File ID thật không
+    if (!file.telegramFileId || file.fakeTelegramId) {
+      return res.status(404).json({ error: 'File không có trên Telegram' });
+    }
+    
+    // Kiểm tra xem bot có hoạt động không
+    if (!botActive || !bot) {
+      return res.status(503).json({ error: 'Bot Telegram không hoạt động' });
+    }
+    
+    try {
+      // Lấy link file từ Telegram
+      const fileLink = await bot.telegram.getFileLink(file.telegramFileId);
+      file.telegramUrl = fileLink.href;
+      file.fakeTelegramUrl = false;
+      
+      // Lưu lại vào database
+      const fileIndex = filesData.findIndex(f => f.id === fileId);
+      if (fileIndex !== -1) {
+        filesData[fileIndex].telegramUrl = file.telegramUrl;
+        saveFilesDb(filesData);
+      }
+      
+      // Tải file từ Telegram và stream về client
+      const response = await axios({
+        method: 'get',
+        url: file.telegramUrl,
+        responseType: 'stream'
+      });
+      
+      // Set header để tải xuống file với tên gốc
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`);
+      res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+      
+      // Pipe response từ Telegram về client
+      response.data.pipe(res);
+    } catch (error) {
+      console.error('Lỗi tải file từ Telegram:', error);
+      return res.status(500).json({ error: 'Không thể tải file từ Telegram' });
+    }
+  } catch (error) {
+    console.error('Lỗi tải file từ Telegram:', error);
+    res.status(500).json({ error: 'Lỗi tải file từ Telegram' });
+  }
+});
+
 /**
  * Hàm hỗ trợ
  */
