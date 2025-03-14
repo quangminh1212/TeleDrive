@@ -46,12 +46,14 @@ echo "==============================="
 echo "      TeleDrive - Khởi động"
 echo "==============================="
 echo ""
-echo "1. Chạy TeleDrive"
-echo "2. Dọn dẹp uploads (Gửi file lên Telegram)"
-echo "3. Thoát"
+echo "1. Chạy TeleDrive với bot"
+echo "2. Chạy TeleDrive không có bot"
+echo "3. Dọn dẹp uploads (Gửi file lên Telegram)"
+echo "4. Chạy với proxy (nếu có vấn đề kết nối)"
+echo "5. Thoát"
 echo ""
 
-read -p "Chọn một tùy chọn (1-3): " choice
+read -p "Chọn một tùy chọn (1-5): " choice
 
 case $choice in
   1)
@@ -61,10 +63,37 @@ case $choice in
     ;;
   2)
     clear
+    echo "Đang khởi động TeleDrive (không có bot)..."
+    node index.js no-bot
+    ;;
+  3)
+    clear
     echo "Đang dọn dẹp uploads..."
     node index.js clean
     ;;
-  3)
+  4)
+    clear
+    echo "Chọn loại proxy:"
+    echo "1. Free Telegram proxy (https://api.telegram.org)"
+    echo "2. Nhập địa chỉ proxy tùy chỉnh"
+    echo ""
+    read -p "Chọn một tùy chọn (1-2): " proxy_choice
+    
+    if [ "$proxy_choice" == "1" ]; then
+      echo "Đang khởi động với proxy mặc định..."
+      node index.js --proxy https://api.telegram.org
+    elif [ "$proxy_choice" == "2" ]; then
+      read -p "Nhập địa chỉ proxy (ví dụ: https://your-proxy.com): " custom_proxy
+      echo "Đang khởi động với proxy tùy chỉnh..."
+      node index.js --proxy "$custom_proxy"
+    else
+      echo "Lựa chọn không hợp lệ!"
+      sleep 2
+      clear
+      exec $0
+    fi
+    ;;
+  5)
     exit 0
     ;;
   *)
