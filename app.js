@@ -447,12 +447,22 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         } catch (deleteError) {
           console.error('Lỗi khi xóa file tạm thời:', deleteError);
         }
+        
+        // Lưu thông tin file vào database
+        const filesData = readFilesDb();
+        filesData.push(fileInfo);
+        saveFilesDb(filesData);
+        console.log('Đã lưu thông tin file vào database');
+        
+        res.json({
+          success: true,
+          file: fileInfo
+        });
+        console.log('Đã trả về kết quả thành công');
       } catch (telegramError) {
         console.error('Lỗi khi đồng bộ với Telegram:', telegramError);
-        fileInfo.sentToTelegram = false;
-        fileInfo.telegramError = telegramError.message;
         
-        // Nếu không gửi được lên Telegram, vẫn xóa file tạm thời
+        // Xóa file tạm thời
         try {
           fs.unlinkSync(file.path);
         } catch (deleteError) {
@@ -465,10 +475,8 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       }
     } else {
       console.warn('Bot không khả dụng, không thể gửi file đến Telegram');
-      fileInfo.sentToTelegram = false;
-      fileInfo.telegramError = 'Bot không khả dụng';
       
-      // Nếu không có bot, xóa file tạm thời
+      // Xóa file tạm thời
       try {
         fs.unlinkSync(file.path);
       } catch (deleteError) {
@@ -479,18 +487,6 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         error: 'Bot Telegram không khả dụng. Không thể lưu trữ file.' 
       });
     }
-    
-    // Lưu thông tin file vào database
-    const filesData = readFilesDb();
-    filesData.push(fileInfo);
-    saveFilesDb(filesData);
-    console.log('Đã lưu thông tin file vào database');
-    
-    res.json({
-      success: true,
-      file: fileInfo
-    });
-    console.log('Đã trả về kết quả thành công');
   } catch (error) {
     console.error('Lỗi khi xử lý upload file:', error);
     

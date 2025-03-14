@@ -1,6 +1,6 @@
 @echo off
-echo Cleaning uploads directory...
-del /Q uploads\* 
-copy NUL uploads\.gitkeep
-echo # This file is used to keep the directory structure in git. > uploads\.gitkeep
-echo Done! 
+echo Running TeleDrive uploads directory cleanup...
+node clean-uploads.js
+echo.
+echo Press any key to exit...
+pause > nul 

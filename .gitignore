@@ -18,6 +18,8 @@ data/
 
 # Temporary files
 temp/
+uploads/
+!uploads/.gitkeep
 
 # Logs
 logs/
