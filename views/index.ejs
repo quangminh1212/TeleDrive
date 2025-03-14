@@ -152,6 +152,13 @@
                     <li>Kích thước tối đa cho mỗi file: <strong><%= (maxSize/(1024*1024)).toFixed(0) %> MB</strong></li>
                     <li>Các loại file hỗ trợ: Hình ảnh, Video, Tài liệu, Âm thanh, và các loại file khác</li>
                 </ul>
+                <p class="mt-2 mb-0">
+                    <small>
+                        <strong>Chú ý:</strong> TeleDrive sẽ hiển thị tất cả các file đã tải lên trước đó, kể cả khi 
+                        chúng đã không còn tồn tại trên máy chủ. Nếu file được lưu trữ trên Telegram, bạn vẫn có 
+                        thể tải xuống từ đó.
+                    </small>
+                </p>
             </div>
         </div>
 
@@ -186,12 +193,32 @@
                                 <p class="card-text text-muted">
                                     <small><%= new Date(file.uploadDate).toLocaleString('vi-VN') %></small>
                                 </p>
+                                
+                                <% if (!file.localPath && file.telegramFileId) { %>
+                                    <p class="card-text text-info">
+                                        <small>Lưu trữ trên Telegram</small>
+                                    </p>
+                                <% } else if (!file.localPath && !file.telegramFileId) { %>
+                                    <p class="card-text text-danger">
+                                        <small>File không khả dụng</small>
+                                    </p>
+                                <% } %>
                             </div>
                             <div class="card-footer bg-transparent border-top-0">
                                 <div class="d-flex justify-content-between">
-                                    <a href="/uploads/<%= file.name %>" class="btn btn-sm btn-outline-primary" download>
-                                        <i class="bi bi-download"></i>
-                                    </a>
+                                    <% if (file.localPath) { %>
+                                        <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-outline-primary" download>
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    <% } else if (file.telegramFileId) { %>
+                                        <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-outline-primary" download>
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    <% } else { %>
+                                        <button class="btn btn-sm btn-outline-primary disabled">
+                                            <i class="bi bi-download"></i>
+                                        </button>
+                                    <% } %>
                                     <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="<%= file.id %>">
                                         <i class="bi bi-trash"></i>
                                     </button>
