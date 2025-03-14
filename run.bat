@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 REM TeleDrive - Script chạy ứng dụng
-REM Phiên bản tối ưu
+REM Phiên bản tối ưu và xử lý lỗi
 
 title TeleDrive
 
@@ -14,6 +14,16 @@ if %errorlevel% neq 0 (
   echo Vui lòng cài đặt Node.js từ https://nodejs.org/
   pause
   exit /b 1
+)
+
+REM Tắt các process node đang chạy nếu cần
+echo.
+set /p kill_existing="Bạn có muốn kết thúc các process node đang chạy không? (y/n): "
+if /i "%kill_existing%"=="y" (
+  echo Đang kết thúc các process node...
+  taskkill /f /im node.exe > nul 2>&1
+  taskkill /f /im nodemon.exe > nul 2>&1
+  timeout /t 2 > nul
 )
 
 REM Kiểm tra các gói npm

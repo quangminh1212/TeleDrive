@@ -86,59 +86,88 @@ let botActive = false;
 if (BOT_TOKEN && BOT_TOKEN !== 'your_telegram_bot_token') {
   console.log('Khởi tạo Telegram Bot...');
   try {
-    bot = new Telegraf(BOT_TOKEN);
-    
-    bot.command('start', (ctx) => {
-      ctx.reply('Chào mừng đến với TeleDrive! Gửi file và tôi sẽ lưu trữ cho bạn.');
-    });
-    
-    bot.on('document', async (ctx) => {
-      try {
-        console.log('Nhận file document từ user:', ctx.from.username || ctx.from.id);
-        ctx.reply('Đã nhận file của bạn! Đang xử lý...');
-        
-        // Lưu thông tin vào database
-        const filesData = readFilesDb();
-        
-        // Thêm thông tin file mới
-        filesData.push({
-          id: uuidv4(),
-          name: ctx.message.document.file_name || 'file',
-          size: ctx.message.document.file_size || 0,
-          mimeType: ctx.message.document.mime_type || 'application/octet-stream',
-          uploadDate: new Date().toISOString(),
-          user: {
-            id: ctx.from.id,
-            username: ctx.from.username || null
-          }
-        });
-        
-        // Lưu lại vào database
-        saveFilesDb(filesData);
-        
-        ctx.reply('File đã được lưu trữ thành công!');
-      } catch (error) {
-        console.error('Lỗi xử lý document:', error);
-        ctx.reply(`Có lỗi xảy ra: ${error.message}`);
-      }
-    });
-    
-    // Bắt đầu bot
-    bot.launch()
-      .then(() => {
-        console.log('Bot Telegram đã khởi động');
-        botActive = true;
-      })
-      .catch(err => {
-        console.error('Lỗi khởi động bot:', err);
-        botActive = false;
+    // Kiểm tra định dạng token
+    const tokenPattern = /^\d+:[A-Za-z0-9_-]+$/;
+    if (!tokenPattern.test(BOT_TOKEN)) {
+      console.warn('BOT_TOKEN không đúng định dạng. Bot Telegram sẽ không hoạt động.');
+      console.warn('Token đúng có dạng: 123456789:ABCDefGhIJKlmNoPQRsTUVwxyZ');
+    } else {
+      bot = new Telegraf(BOT_TOKEN);
+      
+      bot.command('start', (ctx) => {
+        ctx.reply('Chào mừng đến với TeleDrive! Gửi file và tôi sẽ lưu trữ cho bạn.');
       });
       
-    process.once('SIGINT', () => bot.stop('SIGINT'));
-    process.once('SIGTERM', () => bot.stop('SIGTERM'));
-    
+      bot.on('document', async (ctx) => {
+        try {
+          console.log('Nhận file document từ user:', ctx.from.username || ctx.from.id);
+          ctx.reply('Đã nhận file của bạn! Đang xử lý...');
+          
+          // Lưu thông tin vào database
+          const filesData = readFilesDb();
+          
+          // Thêm thông tin file mới
+          filesData.push({
+            id: uuidv4(),
+            name: ctx.message.document.file_name || 'file',
+            size: ctx.message.document.file_size || 0,
+            mimeType: ctx.message.document.mime_type || 'application/octet-stream',
+            uploadDate: new Date().toISOString(),
+            user: {
+              id: ctx.from.id,
+              username: ctx.from.username || null
+            }
+          });
+          
+          // Lưu lại vào database
+          saveFilesDb(filesData);
+          
+          ctx.reply('File đã được lưu trữ thành công!');
+        } catch (error) {
+          console.error('Lỗi xử lý document:', error);
+          ctx.reply(`Có lỗi xảy ra: ${error.message}`);
+        }
+      });
+      
+      // Bắt đầu bot với timeout
+      const launchWithTimeout = async () => {
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Timeout khi khởi động bot Telegram.'));
+          }, 10000);
+          
+          bot.launch()
+            .then(() => {
+              clearTimeout(timeout);
+              resolve();
+            })
+            .catch(err => {
+              clearTimeout(timeout);
+              reject(err);
+            });
+        });
+      };
+      
+      // Khởi động bot không chặn ứng dụng
+      launchWithTimeout()
+        .then(() => {
+          console.log('Bot Telegram đã khởi động thành công');
+          botActive = true;
+        })
+        .catch(err => {
+          console.error('Lỗi khởi động bot:', err.message);
+          console.log('Ứng dụng vẫn tiếp tục chạy mà không có bot.');
+          bot = null;
+          botActive = false;
+        });
+        
+      process.once('SIGINT', () => bot && bot.stop('SIGINT'));
+      process.once('SIGTERM', () => bot && bot.stop('SIGTERM'));
+    }
   } catch (error) {
     console.error('Lỗi khởi tạo bot:', error);
+    console.log('Ứng dụng vẫn tiếp tục chạy mà không có bot.');
+    bot = null;
     botActive = false;
   }
 } else {
@@ -669,9 +698,35 @@ app.use((err, req, res, next) => {
     // Tự động đồng bộ file khi khởi động
     await syncFiles();
     
+    // Kiểm tra port trước khi khởi động
+    const checkPortAvailable = () => {
+      return new Promise((resolve, reject) => {
+        const net = require('net');
+        const tester = net.createServer()
+          .once('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+              console.error(`Port ${PORT} đã được sử dụng bởi ứng dụng khác.`);
+              const newPort = PORT + 1;
+              console.log(`Đang thử với port ${newPort}...`);
+              process.env.PORT = newPort;
+              resolve(newPort);
+            } else {
+              reject(err);
+            }
+          })
+          .once('listening', () => {
+            tester.close();
+            resolve(PORT);
+          })
+          .listen(PORT);
+      });
+    };
+    
+    const finalPort = await checkPortAvailable();
+    
     // Khởi động server
-    app.listen(PORT, () => {
-      console.log(`TeleDrive đang chạy tại http://localhost:${PORT}`);
+    app.listen(finalPort, () => {
+      console.log(`TeleDrive đang chạy tại http://localhost:${finalPort}`);
       console.log('Khởi động hoàn tất!');
     });
   } catch (error) {
