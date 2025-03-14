@@ -196,30 +196,30 @@
                                 
                                 <% if (!file.localPath && file.telegramFileId) { %>
                                     <p class="card-text text-info">
-                                        <small>Lưu trữ trên Telegram</small>
+                                        <small><i class="bi bi-telegram me-1"></i>Lưu trữ trên Telegram</small>
                                     </p>
                                 <% } else if (!file.localPath && !file.telegramFileId) { %>
                                     <p class="card-text text-danger">
-                                        <small>File không khả dụng</small>
+                                        <small><i class="bi bi-exclamation-triangle me-1"></i>File không khả dụng</small>
                                     </p>
                                 <% } %>
                             </div>
                             <div class="card-footer bg-transparent border-top-0">
                                 <div class="d-flex justify-content-between">
                                     <% if (file.localPath) { %>
-                                        <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-outline-primary" download>
+                                        <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-outline-primary" title="Tải xuống từ máy chủ local" download>
                                             <i class="bi bi-download"></i>
                                         </a>
                                     <% } else if (file.telegramFileId) { %>
-                                        <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-outline-primary" download>
-                                            <i class="bi bi-download"></i>
+                                        <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-outline-info" title="Tải xuống từ Telegram" download>
+                                            <i class="bi bi-telegram"></i>
                                         </a>
                                     <% } else { %>
-                                        <button class="btn btn-sm btn-outline-primary disabled">
+                                        <button class="btn btn-sm btn-outline-primary disabled" title="Không thể tải xuống">
                                             <i class="bi bi-download"></i>
                                         </button>
                                     <% } %>
-                                    <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="<%= file.id %>">
+                                    <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="<%= file.id %>" title="Xóa file">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>

@@ -279,23 +279,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusText = '';
                 break;
             case 'telegram':
-                downloadPath = file.telegramUrl || `/api/files/${file.id}/download`;
+                downloadPath = `/api/files/${file.id}/download`;  // Sử dụng API để lấy URL từ Telegram
                 statusText = 'Lưu trữ trên Telegram';
                 statusClass = 'text-info';
                 break;
             case 'missing':
-                downloadPath = '#';
-                statusText = 'File không còn tồn tại trên máy chủ';
-                statusClass = 'text-warning';
-                downloadDisabled = true;
+                if (file.telegramFileId || file.telegramUrl) {
+                    // Nếu file có trên Telegram, vẫn cho phép tải xuống
+                    downloadPath = `/api/files/${file.id}/download`;
+                    statusText = 'File không còn ở local, nhưng có trên Telegram';
+                    statusClass = 'text-warning';
+                } else {
+                    downloadPath = '#';
+                    statusText = 'File không khả dụng';
+                    statusClass = 'text-danger';
+                    downloadDisabled = true;
+                }
                 break;
             case 'error':
             case 'unknown':
             default:
-                downloadPath = '#';
-                statusText = 'File không khả dụng';
-                statusClass = 'text-danger';
-                downloadDisabled = true;
+                if (file.telegramFileId || file.telegramUrl) {
+                    // Nếu file có trên Telegram, vẫn cho phép tải xuống
+                    downloadPath = `/api/files/${file.id}/download`;
+                    statusText = 'Có thể tải từ Telegram';
+                    statusClass = 'text-info';
+                } else {
+                    downloadPath = '#';
+                    statusText = 'File không khả dụng';
+                    statusClass = 'text-danger';
+                    downloadDisabled = true;
+                }
                 break;
         }
         
