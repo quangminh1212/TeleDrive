@@ -1600,3 +1600,350 @@ app.get('/api/status', (req, res) => {
     botActive: botActive
   });
 });
+
+// Mở rộng dữ liệu file để hỗ trợ thư mục
+function createVirtualFolderStructure(files) {
+  // Tạo cấu trúc thư mục ảo
+  const rootFolder = {
+    id: 'root',
+    name: 'Root',
+    type: 'folder',
+    parent: null,
+    children: [],
+    createdAt: new Date().toISOString()
+  };
+  
+  // Lưu tất cả thư mục bằng ID
+  const foldersById = { 'root': rootFolder };
+  
+  // Trích xuất tất cả thư mục từ đường dẫn file
+  files.forEach(file => {
+    // Lấy tên file và đường dẫn thư mục
+    let filePath = file.name;
+    let folders = [];
+    
+    // Nếu file có dấu / hoặc \, phân tách thành thư mục
+    if (filePath.includes('/') || filePath.includes('\\')) {
+      // Chuẩn hóa đường dẫn
+      const normalizedPath = filePath.replace(/\\/g, '/');
+      const parts = normalizedPath.split('/');
+      
+      // File là phần tử cuối cùng
+      const fileName = parts.pop();
+      
+      // Các phần còn lại là thư mục
+      folders = parts;
+      
+      // Cập nhật tên file không bao gồm đường dẫn
+      file.displayName = fileName;
+    } else {
+      file.displayName = filePath;
+    }
+    
+    // Tạo các thư mục nếu chưa tồn tại
+    let currentParent = 'root';
+    let currentPath = '';
+    
+    folders.forEach(folderName => {
+      currentPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+      const folderId = `folder_${currentPath.replace(/[^a-z0-9]/gi, '_')}`;
+      
+      if (!foldersById[folderId]) {
+        // Tạo thư mục mới
+        const newFolder = {
+          id: folderId,
+          name: folderName,
+          type: 'folder',
+          parent: currentParent,
+          children: [],
+          path: currentPath,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Thêm vào danh sách thư mục
+        foldersById[folderId] = newFolder;
+        
+        // Thêm vào thư mục cha
+        foldersById[currentParent].children.push(folderId);
+      }
+      
+      currentParent = folderId;
+    });
+    
+    // Gán file vào thư mục cha
+    file.parent = currentParent;
+    file.type = 'file';
+    
+    // Thêm file vào thư mục cha
+    foldersById[currentParent].children.push(file.id);
+  });
+  
+  return {
+    rootFolder,
+    foldersById,
+    folderTree: buildFolderTree(rootFolder, foldersById, files)
+  };
+}
+
+// Xây dựng cây thư mục từ thư mục gốc
+function buildFolderTree(folder, foldersById, files) {
+  // Tạo bản sao để tránh thay đổi dữ liệu gốc
+  const result = {
+    ...folder,
+    children: []
+  };
+  
+  // Duyệt qua từng children ID
+  folder.children.forEach(childId => {
+    // Nếu ID bắt đầu bằng "folder_", đó là thư mục
+    if (typeof childId === 'string' && foldersById[childId]) {
+      // Đệ quy xây dựng cây con
+      const childFolder = buildFolderTree(foldersById[childId], foldersById, files);
+      result.children.push(childFolder);
+    } else {
+      // Đây là file, thêm vào danh sách
+      const file = files.find(f => f.id === childId);
+      if (file) {
+        result.children.push({
+          ...file,
+          children: []
+        });
+      }
+    }
+  });
+  
+  return result;
+}
+
+// API endpoint để lấy cấu trúc thư mục
+app.get('/api/folders', (req, res) => {
+  try {
+    const filesData = readFilesDb();
+    const folderStructure = createVirtualFolderStructure(filesData);
+    
+    res.json({
+      success: true,
+      folders: folderStructure.folderTree
+    });
+  } catch (error) {
+    console.error('Lỗi lấy cấu trúc thư mục:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi lấy cấu trúc thư mục: ' + error.message
+    });
+  }
+});
+
+// API endpoint để lấy nội dung của thư mục
+app.get('/api/folders/:folderId', (req, res) => {
+  try {
+    const folderId = req.params.folderId;
+    const filesData = readFilesDb();
+    const folderStructure = createVirtualFolderStructure(filesData);
+    
+    // Nếu folderId là 'root', trả về thư mục gốc
+    if (folderId === 'root') {
+      return res.json({
+        success: true,
+        folder: folderStructure.folderTree
+      });
+    }
+    
+    // Tìm thư mục theo ID
+    const folder = folderStructure.foldersById[folderId];
+    if (!folder) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy thư mục'
+      });
+    }
+    
+    // Xây dựng cây thư mục từ thư mục này
+    const folderTree = buildFolderTree(folder, folderStructure.foldersById, filesData);
+    
+    res.json({
+      success: true,
+      folder: folderTree
+    });
+  } catch (error) {
+    console.error('Lỗi lấy nội dung thư mục:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi lấy nội dung thư mục: ' + error.message
+    });
+  }
+});
+
+// API để tìm kiếm file
+app.get('/api/search', (req, res) => {
+  try {
+    const query = req.query.q?.toLowerCase();
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu từ khóa tìm kiếm'
+      });
+    }
+    
+    const filesData = readFilesDb();
+    
+    // Tìm kiếm file theo tên
+    const results = filesData.filter(file => 
+      file.name.toLowerCase().includes(query) || 
+      (file.displayName && file.displayName.toLowerCase().includes(query))
+    );
+    
+    // Định dạng kết quả
+    const formattedResults = results.map(file => ({
+      id: file.id,
+      name: file.displayName || file.name,
+      fullPath: file.name,
+      size: file.size,
+      formattedSize: formatBytes(file.size),
+      uploadDate: file.uploadDate,
+      formattedDate: formatDate(file.uploadDate),
+      fileType: file.fileType || getFileType(file.name),
+      previewUrl: `/file/${file.id}`,
+      downloadUrl: `/api/files/${file.id}/download`
+    }));
+    
+    res.json({
+      success: true,
+      query: query,
+      results: formattedResults,
+      count: formattedResults.length
+    });
+  } catch (error) {
+    console.error('Lỗi tìm kiếm file:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi tìm kiếm: ' + error.message
+    });
+  }
+});
+
+// API để chia sẻ file
+app.post('/api/files/:id/share', express.json(), (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { isPublic, expiryDate } = req.body;
+    
+    const filesData = readFilesDb();
+    const fileIndex = filesData.findIndex(f => f.id === fileId);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'File không tồn tại'
+      });
+    }
+    
+    // Tạo mã chia sẻ ngẫu nhiên nếu chưa có
+    if (!filesData[fileIndex].shareCode) {
+      const shareCode = crypto.randomBytes(6).toString('hex');
+      filesData[fileIndex].shareCode = shareCode;
+    }
+    
+    // Cập nhật thông tin chia sẻ
+    filesData[fileIndex].isPublic = isPublic === true;
+    
+    // Đặt ngày hết hạn nếu có
+    if (expiryDate) {
+      filesData[fileIndex].shareExpiry = new Date(expiryDate).toISOString();
+    } else {
+      filesData[fileIndex].shareExpiry = null;
+    }
+    
+    // Lưu lại database
+    saveFilesDb(filesData);
+    
+    // Tạo URL chia sẻ
+    const shareUrl = `/share/${filesData[fileIndex].shareCode}`;
+    
+    res.json({
+      success: true,
+      message: 'Đã cập nhật thiết lập chia sẻ',
+      shareInfo: {
+        fileId: fileId,
+        fileName: filesData[fileIndex].name,
+        isPublic: filesData[fileIndex].isPublic,
+        shareCode: filesData[fileIndex].shareCode,
+        shareUrl: shareUrl,
+        expiryDate: filesData[fileIndex].shareExpiry
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi cập nhật chia sẻ file:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi cập nhật chia sẻ: ' + error.message
+    });
+  }
+});
+
+// Trang xem file được chia sẻ
+app.get('/share/:shareCode', async (req, res) => {
+  try {
+    const shareCode = req.params.shareCode;
+    const filesData = readFilesDb();
+    
+    // Tìm file theo mã chia sẻ
+    const file = filesData.find(f => f.shareCode === shareCode);
+    
+    if (!file) {
+      return res.status(404).render('error', {
+        title: 'TeleDrive - Link không tồn tại',
+        message: 'Link chia sẻ không tồn tại hoặc đã hết hạn',
+        error: { status: 404, stack: 'File không tồn tại hoặc link chia sẻ đã bị xóa' }
+      });
+    }
+    
+    // Kiểm tra xem link đã hết hạn chưa
+    if (file.shareExpiry) {
+      const expiryDate = new Date(file.shareExpiry);
+      if (expiryDate < new Date()) {
+        return res.status(410).render('error', {
+          title: 'TeleDrive - Link hết hạn',
+          message: 'Link chia sẻ đã hết hạn',
+          error: { status: 410, stack: 'Link chia sẻ này đã quá hạn sử dụng' }
+        });
+      }
+    }
+    
+    // Kiểm tra xem file có được chia sẻ công khai không
+    if (!file.isPublic) {
+      return res.status(403).render('error', {
+        title: 'TeleDrive - Không có quyền truy cập',
+        message: 'File này không được chia sẻ công khai',
+        error: { status: 403, stack: 'Bạn không có quyền truy cập file này' }
+      });
+    }
+    
+    // Định dạng dữ liệu file
+    const formattedFile = {
+      id: file.id,
+      name: file.name,
+      size: file.size,
+      formattedSize: formatBytes(file.size),
+      uploadDate: file.uploadDate,
+      formattedDate: formatDate(file.uploadDate),
+      fileType: file.fileType || getFileType(file.name),
+      downloadUrl: `/api/files/${file.id}/download?shareCode=${shareCode}`
+    };
+    
+    // Render trang xem file được chia sẻ
+    res.render('file-details', {
+      title: `TeleDrive - ${file.name}`,
+      file: formattedFile,
+      isSharedView: true,
+      shareCode: shareCode
+    });
+  } catch (error) {
+    console.error('Lỗi xử lý file chia sẻ:', error);
+    res.status(500).render('error', {
+      title: 'TeleDrive - Lỗi',
+      message: 'Lỗi xử lý yêu cầu',
+      error: { status: 500, stack: error.message }
+    });
+  }
+});
