@@ -645,15 +645,58 @@ async function cleanUploads() {
  * Routes
  */
 
+// Thêm các hàm utility cho template
+/**
+ * Format số byte thành đơn vị dễ đọc
+ * @param {Number} bytes - Số byte cần format
+ * @param {Number} decimals - Số chữ số thập phân
+ * @returns {String} Chuỗi đã format (ví dụ: "1.5 MB")
+ */
+function formatBytes(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+/**
+ * Format date thành định dạng dễ đọc
+ * @param {String|Date} dateString - Chuỗi ngày hoặc đối tượng Date
+ * @returns {String} Chuỗi ngày đã format
+ */
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('vi-VN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 // Trang chủ
 app.get('/', (req, res) => {
   try {
     const files = readFilesDb();
     const totalSize = files.reduce((sum, file) => sum + (file.size || 0), 0);
     
+    // Thiết lập trạng thái file
+    const processedFiles = files.map(file => {
+      let fileStatus = 'missing';
+      if (file.localPath && fs.existsSync(file.localPath)) {
+        fileStatus = 'local';
+      } else if (file.telegramFileId) {
+        fileStatus = 'telegram';
+      }
+      return { ...file, fileStatus };
+    });
+    
     res.render('index', {
       title: 'TeleDrive',
-      files: files,
+      files: processedFiles,
       totalSize: totalSize,
       maxSize: MAX_FILE_SIZE,
       error: null,
@@ -661,7 +704,9 @@ app.get('/', (req, res) => {
         used: totalSize,
         total: MAX_FILE_SIZE * 10, // Giả sử tổng dung lượng là 10 lần max file size
         percent: (totalSize / (MAX_FILE_SIZE * 10)) * 100
-      }
+      },
+      formatBytes,
+      formatDate
     });
   } catch (error) {
     console.error('Lỗi trang chủ:', error);
@@ -675,7 +720,9 @@ app.get('/', (req, res) => {
         used: 0,
         total: MAX_FILE_SIZE * 10,
         percent: 0
-      }
+      },
+      formatBytes,
+      formatDate
     });
   }
 });
@@ -1280,7 +1327,9 @@ app.use('*', (req, res) => {
       used: 0,
       total: MAX_FILE_SIZE * 10,
       percent: 0
-    }
+    },
+    formatBytes,
+    formatDate
   });
 });
 
@@ -1297,7 +1346,9 @@ app.use((err, req, res, next) => {
       used: 0,
       total: MAX_FILE_SIZE * 10,
       percent: 0
-    }
+    },
+    formatBytes,
+    formatDate
   });
 });
 
