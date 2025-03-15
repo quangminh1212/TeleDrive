@@ -1018,34 +1018,24 @@ app.get('/api/files/:id/local-download', (req, res) => {
 app.get('/file/:id', async (req, res) => {
     try {
         const fileId = req.params.id;
-        const filesDb = readFilesDb();
-        const file = filesDb.find(f => f.id === fileId);
-
+        const filesData = readFilesDb();
+        const file = filesData.find(f => f.id === fileId);
+        
         if (!file) {
             return res.status(404).render('error', { 
-                title: 'TeleDrive - Không tìm thấy',
-                message: 'Không tìm thấy file',
-                error: { status: 404, stack: 'File không tồn tại hoặc đã bị xóa' }
+                title: 'TeleDrive - Không tìm thấy file',
+                message: 'File không tồn tại hoặc đã bị xóa',
+                error: { status: 404 } 
             });
         }
-
-        // Xác định loại file
-        const fileType = getFileType(file.name);
         
-        // Định dạng dữ liệu
+        // Định dạng thông tin file
+        const fileType = getFileType(file.name);
         const formattedFile = {
-            id: file.id,
-            name: file.name,
-            originalName: file.originalName,
-            size: file.size,
+            ...file,
+            fileType,
             formattedSize: formatBytes(file.size),
-            uploadDate: file.uploadDate,
-            formattedDate: formatDate(file.uploadDate),
-            mimeType: file.mimeType,
-            fileType: fileType,
-            localPath: file.localPath,
-            telegramFileId: file.telegramFileId,
-            fakeTelegramId: file.fakeTelegramId
+            formattedDate: formatDate(file.uploadDate)
         };
         
         // Kiểm tra trạng thái file
