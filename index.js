@@ -210,7 +210,10 @@ const checkBotActive = async () => {
   }
 };
 
-// Đảm bảo các thư mục cần thiết tồn tại
+/**
+ * Đảm bảo các thư mục cần thiết tồn tại
+ * @param {Array} directories - Danh sách các thư mục cần kiểm tra
+ */
 function ensureDirectories(directories) {
   directories.forEach(dir => {
     if (!fs.existsSync(dir)) {
@@ -220,7 +223,7 @@ function ensureDirectories(directories) {
   });
 }
 
-// Thêm gọi hàm ensureDirectories
+// Đảm bảo các thư mục cần thiết tồn tại
 ensureDirectories([dataDir, tempDir, uploadsDir, logsDir]);
 
 // Kiểm tra xem file .env có tồn tại không
@@ -1586,4 +1589,14 @@ app.get('/api/reset-database', async (req, res) => {
       message: 'Lỗi khởi tạo lại database: ' + error.message
     });
   }
+});
+
+// API endpoint để kiểm tra trạng thái hoạt động
+app.get('/api/status', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'TeleDrive API đang hoạt động',
+    version: '1.0.0',
+    botActive: botActive
+  });
 });
