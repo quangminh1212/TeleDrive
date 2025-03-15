@@ -226,22 +226,14 @@ function readFilesDb() {
       const content = fs.readFileSync(filesDbPath, 'utf8');
       const data = JSON.parse(content);
       
-      // Kiểm tra và cập nhật trạng thái của mỗi file
+      // Kiểm tra và cập nhật trạng thái tất cả file trong một lần lặp
       data.forEach(file => {
         // Xác định loại file
-        file.fileType = getFileType(file.name);
+        file.fileType = file.fileType || getFileType(file.name);
         
         // Đảm bảo các thuộc tính cần thiết tồn tại
-        if (typeof file.fakeTelegramId === 'undefined') {
-          file.fakeTelegramId = false;
-        }
-        
-        if (typeof file.fakeTelegramUrl === 'undefined') {
-          file.fakeTelegramUrl = false;
-        }
-        
-        // Luôn đặt fakeTelegramId = false để đảm bảo không có file giả
-        file.fakeTelegramId = false;
+        file.fakeTelegramId = false; // Luôn đặt false để đảm bảo không có file giả
+        file.fakeTelegramUrl = false;
         
         // Kiểm tra trạng thái file
         if (file.localPath && fs.existsSync(file.localPath)) {
@@ -250,11 +242,7 @@ function readFilesDb() {
           file.fileStatus = 'telegram';
         } else {
           file.fileStatus = 'missing';
-          
-          // Nếu file không có telegramFileId, đánh dấu là cần đồng bộ
-          if (!file.telegramFileId) {
-            file.needsSync = true;
-          }
+          file.needsSync = true; // Đánh dấu cần đồng bộ nếu file không có ở đâu cả
         }
       });
       
@@ -874,14 +862,11 @@ async function getTelegramFileLink(fileId) {
     
     // Thiết lập timeout cho việc lấy file
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Timeout khi lấy link file từ Telegram')), 30000); // 30 giây timeout
+      setTimeout(() => reject(new Error('Timeout khi lấy link file từ Telegram')), 30000);
     });
     
-    // Lấy thông tin file từ Telegram
-    const getFilePromise = bot.telegram.getFile(fileId);
-    
-    // Race giữa lấy file và timeout
-    const fileInfo = await Promise.race([getFilePromise, timeoutPromise]);
+    // Sử dụng Promise.race cho cả getFile và timeout
+    const fileInfo = await Promise.race([bot.telegram.getFile(fileId), timeoutPromise]);
     
     if (!fileInfo || !fileInfo.file_path) {
       throw new Error('Không lấy được thông tin file từ Telegram');
