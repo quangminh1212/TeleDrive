@@ -1336,10 +1336,10 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       fileType: fileType,
       telegramFileId: null,
       telegramUrl: null,
-      fakeTelegramId: true,
-      fakeTelegramUrl: true,
+      fakeTelegramId: false,
+      fakeTelegramUrl: false,
       localPath: filePath,
-      uploadDate: new Date().toISOString(),
+      uploadDate: fileStats.mtime.toISOString(),
       user: null
     };
     
@@ -1513,6 +1513,82 @@ app.get('/api/check-files', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi kiểm tra dữ liệu files: ' + error.message
+    });
+  }
+});
+
+// API để khởi tạo lại database và sửa tất cả dữ liệu
+app.get('/api/reset-database', async (req, res) => {
+  try {
+    console.log('Bắt đầu khởi tạo lại database');
+    // Đọc tất cả file trong thư mục uploads
+    const uploadedFiles = fs.readdirSync(uploadsDir);
+    
+    // Tạo danh sách file mới
+    let newFilesData = [];
+    
+    // Duyệt qua từng file và tạo metadata
+    for (const fileName of uploadedFiles) {
+      const filePath = path.join(uploadsDir, fileName);
+      const stats = fs.statSync(filePath);
+      
+      if (!stats.isFile()) continue;
+      
+      const originalName = fileName; // Tên gốc là tên file
+      const fileExt = path.extname(originalName);
+      const mimeType = getMimeType(fileExt);
+      
+      // Tạo thông tin file mới
+      const newFile = {
+        id: uuidv4(),
+        name: originalName,
+        originalName: originalName,
+        size: stats.size,
+        mimeType: mimeType,
+        fileType: getFileType(originalName),
+        telegramFileId: null,
+        telegramUrl: null,
+        fakeTelegramId: false,
+        fakeTelegramUrl: false,
+        localPath: filePath,
+        uploadDate: stats.mtime.toISOString(),
+        user: null,
+        fileStatus: 'local',
+        needsSync: true
+      };
+      
+      newFilesData.push(newFile);
+    }
+    
+    // Lưu dữ liệu mới
+    saveFilesDb(newFilesData);
+    
+    // Đọc dữ liệu vừa lưu
+    const filesData = readFilesDb();
+    
+    // Thử đồng bộ với Telegram nếu có thể
+    let syncResult = { success: false, syncedFiles: 0 };
+    if (botActive && bot) {
+      try {
+        const syncedCount = await syncFiles();
+        syncResult = { success: true, syncedFiles: syncedCount };
+      } catch (syncError) {
+        console.error('Lỗi đồng bộ sau khi khởi tạo lại database:', syncError);
+        syncResult = { success: false, error: syncError.message };
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Đã khởi tạo lại database thành công',
+      totalFiles: filesData.length,
+      sync: syncResult
+    });
+  } catch (error) {
+    console.error('Lỗi khởi tạo lại database:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khởi tạo lại database: ' + error.message
     });
   }
 });

@@ -319,6 +319,9 @@
                                     <a href="/api/sync" class="btn btn-info ml-2" id="btnSync">
                                         <i class="fas fa-sync"></i> Đồng bộ lại với Telegram
                                     </a>
+                                    <a href="/api/reset-database" class="btn btn-danger ml-2" id="btnResetDb">
+                                        <i class="fas fa-database"></i> Khởi tạo lại database
+                                    </a>
                                     <div id="checkResult" class="mt-2"></div>
                                 </div>
                             </div>
@@ -502,6 +505,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const btnCheckFiles = document.getElementById('btnCheckFiles');
             const btnSync = document.getElementById('btnSync');
+            const btnResetDb = document.getElementById('btnResetDb');
             const checkResult = document.getElementById('checkResult');
             
             if (btnCheckFiles) {
@@ -552,6 +556,39 @@
                         } else {
                             checkResult.innerHTML = `<div class="alert alert-danger">
                                 <p>${data.error || 'Lỗi đồng bộ'}</p>
+                            </div>`;
+                        }
+                    } catch (error) {
+                        checkResult.innerHTML = `<div class="alert alert-danger">
+                            <p>Lỗi: ${error.message}</p>
+                        </div>`;
+                    }
+                });
+            }
+
+            if (btnResetDb) {
+                btnResetDb.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    
+                    if (!confirm('Thao tác này sẽ xóa toàn bộ dữ liệu hiện tại và tạo lại database từ các file trong thư mục uploads. Bạn có chắc chắn muốn tiếp tục?')) {
+                        return;
+                    }
+                    
+                    try {
+                        checkResult.innerHTML = '<div class="alert alert-info">Đang khởi tạo lại database...</div>';
+                        
+                        const response = await fetch('/api/reset-database');
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            checkResult.innerHTML = `<div class="alert alert-success">
+                                <p>${data.message}. Đã tìm thấy ${data.totalFiles} file.</p>
+                                <p>Đồng bộ: ${data.sync.success ? `Thành công, đã đồng bộ ${data.sync.syncedFiles} file` : 'Không thành công'}</p>
+                                <button class="btn btn-sm btn-primary" onclick="location.reload()">Tải lại trang</button>
+                            </div>`;
+                        } else {
+                            checkResult.innerHTML = `<div class="alert alert-danger">
+                                <p>${data.message || 'Lỗi khởi tạo lại database'}</p>
                             </div>`;
                         }
                     } catch (error) {
