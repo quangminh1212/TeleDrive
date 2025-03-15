@@ -1129,9 +1129,14 @@ app.get('/file/:id', async (req, res) => {
             formattedFile.fileStatus = 'local';
         } else if (formattedFile.telegramFileId && !formattedFile.fakeTelegramId) {
             formattedFile.fileStatus = 'telegram';
+            // Thêm URL tải xuống trực tiếp
+            formattedFile.directDownloadUrl = `/api/files/${fileId}/direct-download`;
         } else {
             formattedFile.fileStatus = 'missing';
         }
+        
+        // Thêm URL để reset file
+        formattedFile.resetUrl = `/api/files/${fileId}/reset`;
 
         // Nếu là file text, đọc nội dung
         let fileContent = '';
@@ -1144,10 +1149,17 @@ app.get('/file/:id', async (req, res) => {
             }
         }
 
+        // Kiểm tra xem bot có hoạt động không
+        const botStatus = {
+            active: botActive,
+            lastChecked: new Date().toISOString()
+        };
+
         res.render('file-preview', { 
             title: `TeleDrive - ${formattedFile.name}`,
             file: formattedFile,
-            fileContent
+            fileContent,
+            botStatus
         });
     } catch (error) {
         console.error('Lỗi xem trước file:', error);
