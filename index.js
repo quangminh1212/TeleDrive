@@ -1038,22 +1038,37 @@ app.get('/file/:id', async (req, res) => {
 
         // Xác định loại file
         const fileType = getFileType(file.name);
-        file.fileType = fileType;
-
+        
+        // Định dạng dữ liệu
+        const formattedFile = {
+            id: file.id,
+            name: file.name,
+            originalName: file.originalName,
+            size: file.size,
+            formattedSize: formatBytes(file.size),
+            uploadDate: file.uploadDate,
+            formattedDate: formatDate(file.uploadDate),
+            mimeType: file.mimeType,
+            fileType: fileType,
+            localPath: file.localPath,
+            telegramFileId: file.telegramFileId,
+            fakeTelegramId: file.fakeTelegramId
+        };
+        
         // Kiểm tra trạng thái file
-        if (file.localPath && fs.existsSync(file.localPath)) {
-            file.fileStatus = 'local';
-        } else if (file.telegramFileId && !file.fakeTelegramId) {
-            file.fileStatus = 'telegram';
+        if (formattedFile.localPath && fs.existsSync(formattedFile.localPath)) {
+            formattedFile.fileStatus = 'local';
+        } else if (formattedFile.telegramFileId && !formattedFile.fakeTelegramId) {
+            formattedFile.fileStatus = 'telegram';
         } else {
-            file.fileStatus = 'missing';
+            formattedFile.fileStatus = 'missing';
         }
 
         // Nếu là file text, đọc nội dung
         let fileContent = '';
-        if (fileType === 'text' && file.fileStatus === 'local') {
+        if (fileType === 'text' && formattedFile.fileStatus === 'local') {
             try {
-                fileContent = fs.readFileSync(file.localPath, 'utf8');
+                fileContent = fs.readFileSync(formattedFile.localPath, 'utf8');
             } catch (err) {
                 console.error('Lỗi đọc file text:', err);
                 fileContent = 'Không thể đọc nội dung file';
@@ -1061,11 +1076,9 @@ app.get('/file/:id', async (req, res) => {
         }
 
         res.render('file-preview', { 
-            title: `TeleDrive - ${file.name}`,
-            file,
-            fileContent,
-            formatBytes,
-            formatDate
+            title: `TeleDrive - ${formattedFile.name}`,
+            file: formattedFile,
+            fileContent
         });
     } catch (error) {
         console.error('Lỗi xem trước file:', error);

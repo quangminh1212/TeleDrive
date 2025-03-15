@@ -256,8 +256,8 @@
                             <div class="preview-header">
                                 <h4 class="preview-title"><%= file.name %></h4>
                                 <div class="preview-info">
-                                    <div class="mr-3"><i class="fas fa-file mr-1"></i> <%= formatBytes(file.size) %></div>
-                                    <div class="mr-3"><i class="fas fa-calendar mr-1"></i> <%= formatDate(file.uploadDate) %></div>
+                                    <div class="mr-3"><i class="fas fa-file mr-1"></i> <%= file.formattedSize %></div>
+                                    <div class="mr-3"><i class="fas fa-calendar mr-1"></i> <%= file.formattedDate %></div>
                                     <div>
                                         <% if (file.fileStatus === 'local') { %>
                                             <span class="badge badge-info"><i class="fas fa-hdd"></i> Local</span>
