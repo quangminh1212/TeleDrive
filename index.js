@@ -806,14 +806,23 @@ app.get('/api/files/:id/download', async (req, res) => {
   try {
     const fileId = req.params.id;
     const filesData = readFilesDb();
-    const file = filesData.find(f => f.id === fileId);
+    const fileIndex = filesData.findIndex(f => f.id === fileId);
     
-    if (!file) {
+    if (fileIndex === -1) {
       return res.status(404).render('error', { 
         title: 'TeleDrive - Không tìm thấy',
         message: 'Không tìm thấy file',
         error: { status: 404, stack: 'File không tồn tại hoặc đã bị xóa' }
       });
+    }
+    
+    const file = filesData[fileIndex];
+    
+    // Cập nhật trạng thái file trước khi xử lý
+    if (file.fakeTelegramId === true) {
+      console.log(`Cập nhật trạng thái file ${file.name} để tải xuống...`);
+      file.fakeTelegramId = false;
+      saveFilesDb(filesData);
     }
     
     // PHẦN 1: KIỂM TRA FILE LOCAL
@@ -831,7 +840,7 @@ app.get('/api/files/:id/download', async (req, res) => {
     // PHẦN 2: KIỂM TRA VÀ TẢI TỪ TELEGRAM
     // Kiểm tra bot hoạt động
     if (!botActive || !bot) {
-      if (file.telegramFileId && !file.fakeTelegramId) {
+      if (file.telegramFileId) {
         return res.status(503).render('error', {
           title: 'TeleDrive - Bot không hoạt động',
           message: 'Bot Telegram đang không hoạt động',
@@ -846,8 +855,8 @@ app.get('/api/files/:id/download', async (req, res) => {
       }
     }
     
-    // Nếu file có Telegram File ID hợp lệ
-    if (file.telegramFileId && file.fakeTelegramId !== true) {
+    // Nếu file có Telegram File ID
+    if (file.telegramFileId) {
       try {
         console.log(`Đang tải file từ Telegram với ID: ${file.telegramFileId}`);
         
@@ -856,13 +865,10 @@ app.get('/api/files/:id/download', async (req, res) => {
         console.log(`Đã lấy được URL tải xuống: ${downloadUrl}`);
         
         // Cập nhật URL cho lần sau
-        const fileIndex = filesData.findIndex(f => f.id === fileId);
-        if (fileIndex !== -1) {
-          filesData[fileIndex].telegramUrl = downloadUrl;
-          filesData[fileIndex].fakeTelegramUrl = false;
-          filesData[fileIndex].fakeTelegramId = false;
-          saveFilesDb(filesData);
-        }
+        filesData[fileIndex].telegramUrl = downloadUrl;
+        filesData[fileIndex].fakeTelegramUrl = false;
+        filesData[fileIndex].fakeTelegramId = false;
+        saveFilesDb(filesData);
 
         try {
           // Tải file từ Telegram và stream trực tiếp đến người dùng
@@ -896,55 +902,21 @@ app.get('/api/files/:id/download', async (req, res) => {
       } catch (error) {
         console.error(`Lỗi khi lấy file từ Telegram: ${error.message}`);
         
-        // Thử cập nhật telegramFileId bằng cách đồng bộ
-        try {
-          await syncFiles();
-          
-          // Kiểm tra lại sau khi đồng bộ
-          const updatedFilesData = readFilesDb();
-          const updatedFile = updatedFilesData.find(f => f.id === fileId);
-          
-          if (updatedFile && updatedFile.telegramFileId && !updatedFile.fakeTelegramId) {
-            return res.redirect(`/api/files/${fileId}/download`);
-          }
-        } catch (syncError) {
-          console.error(`Lỗi đồng bộ để cập nhật file: ${syncError.message}`);
-        }
-        
         return res.status(500).render('error', {
           title: 'TeleDrive - Lỗi tải file',
-          message: 'Lỗi khi tải file từ Telegram',
+          message: 'Lỗi khi tải file từ Telegram. Hãy truy cập /api/files/' + fileId + '/fix để khắc phục.',
           error: { status: 500, stack: error.message }
         });
       }
     }
     
     // PHẦN 3: KHÔNG TÌM THẤY FILE
-    // Nếu file không có Telegram File ID hợp lệ
-    console.log(`File ${fileId} không có Telegram File ID hợp lệ`);
-    
-    // Thử đồng bộ một lần nữa
-    try {
-      await syncFiles();
-      
-      // Kiểm tra lại sau khi đồng bộ
-      const updatedFilesData = readFilesDb();
-      const updatedFile = updatedFilesData.find(f => f.id === fileId);
-      
-      if (updatedFile && ((updatedFile.localPath && fs.existsSync(updatedFile.localPath)) || 
-          (updatedFile.telegramFileId && !updatedFile.fakeTelegramId))) {
-        return res.redirect(`/api/files/${fileId}/download`);
-      }
-    } catch (syncError) {
-      console.error(`Lỗi đồng bộ để cập nhật file: ${syncError.message}`);
-    }
-    
     return res.status(404).render('error', {
       title: 'TeleDrive - File không khả dụng',
       message: 'File không khả dụng để tải xuống',
       error: { 
         status: 404, 
-        stack: 'File không tồn tại ở local và không có trên Telegram. Vui lòng tải lên lại file.' 
+        stack: 'File không tồn tại ở local và không có trên Telegram. Vui lòng truy cập /api/files/' + fileId + '/fix để khắc phục hoặc tải lên lại file.' 
       }
     });
   } catch (error) {
