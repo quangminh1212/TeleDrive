@@ -1731,4 +1731,88 @@ app.post('/api/create-file', express.json(), async (req, res) => {
       message: 'Lỗi khi tạo/cập nhật file: ' + error.message
     });
   }
+});
+
+// API để tải trực tiếp file từ Telegram
+app.get('/api/files/:id/direct-download', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const filesData = readFilesDb();
+    const file = filesData.find(f => f.id === fileId);
+    
+    if (!file) {
+      return res.status(404).json({ error: 'File không tồn tại' });
+    }
+    
+    if (!file.telegramFileId || file.fakeTelegramId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'File không có ID Telegram hợp lệ'
+      });
+    }
+    
+    if (!botActive || !bot) {
+      return res.status(503).json({ 
+        success: false, 
+        message: 'Bot Telegram không hoạt động'
+      });
+    }
+    
+    try {
+      console.log(`Đang tải xuống file từ Telegram với ID: ${file.telegramFileId}`);
+      const downloadUrl = await getTelegramFileLink(file.telegramFileId);
+      
+      // Lưu URL vào database để sử dụng sau
+      const fileIndex = filesData.findIndex(f => f.id === fileId);
+      if (fileIndex !== -1) {
+        filesData[fileIndex].telegramUrl = downloadUrl;
+        filesData[fileIndex].fakeTelegramUrl = false;
+        saveFilesDb(filesData);
+      }
+      
+      // Tải file từ Telegram và chuyển tiếp đến client
+      try {
+        console.log(`Tải nội dung từ URL: ${downloadUrl}`);
+        const response = await axios({
+          method: 'get',
+          url: downloadUrl,
+          responseType: 'stream'
+        });
+        
+        // Thiết lập header tương ứng
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`);
+        
+        if (response.headers['content-type']) {
+          res.setHeader('Content-Type', response.headers['content-type']);
+        } else {
+          res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+        }
+        
+        if (response.headers['content-length']) {
+          res.setHeader('Content-Length', response.headers['content-length']);
+        }
+        
+        // Stream dữ liệu đến client
+        response.data.pipe(res);
+      } catch (axiosError) {
+        console.error('Lỗi tải file từ Telegram:', axiosError);
+        return res.status(500).json({
+          success: false,
+          message: `Lỗi khi tải file từ Telegram: ${axiosError.message}`
+        });
+      }
+    } catch (error) {
+      console.error('Lỗi lấy link file từ Telegram:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: `Lỗi khi lấy link file từ Telegram: ${error.message}`
+      });
+    }
+  } catch (error) {
+    console.error('Lỗi xử lý download trực tiếp:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: `Lỗi server khi tải file: ${error.message}`
+    });
+  }
 }); 
