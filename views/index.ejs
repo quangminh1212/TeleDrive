@@ -212,6 +212,54 @@
                     </div>
                     <% } %>
 
+                    <!-- Thêm tính năng tìm kiếm vào phần đầu trang -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm tên file...">
+                                <div class="input-group-append">
+                                    <button class="btn btn-primary" type="button" id="searchButton">
+                                        <i class="fas fa-search"></i> Tìm kiếm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thêm phần hiển thị thư mục -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-folder"></i> Thư mục
+                                        <button class="btn btn-sm btn-outline-primary float-right" id="refreshFolders">
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <nav aria-label="breadcrumb" id="folderBreadcrumb">
+                                        <ol class="breadcrumb">
+                                            <li class="breadcrumb-item active">
+                                                <a href="#" data-folder-id="root">
+                                                    <i class="fas fa-home"></i> Root
+                                                </a>
+                                            </li>
+                                        </ol>
+                                    </nav>
+                                    <div id="folderContents" class="row">
+                                        <div class="d-flex justify-content-center w-100">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="sr-only">Đang tải...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Thông tin lưu trữ -->
                     <div class="card card-primary card-outline">
                         <div class="card-header">
@@ -599,6 +647,150 @@
                 });
             }
         });
+
+        let currentFolderId = 'root';
+        let folderStructure = null;
+        let currentPath = [];
+        
+        // Hàm tải cấu trúc thư mục
+        async function loadFolders() {
+            try {
+                const response = await fetch('/api/folders');
+                const data = await response.json();
+                
+                if (data.success) {
+                    folderStructure = data.folders;
+                    renderFolder(folderStructure);
+                } else {
+                    console.error('Lỗi tải thư mục:', data.message);
+                    showError('Không thể tải cấu trúc thư mục');
+                }
+            } catch (error) {
+                console.error('Lỗi gọi API thư mục:', error);
+                showError('Lỗi kết nối đến server');
+            }
+        }
+        
+        // Hàm mở thư mục
+        async function openFolder(folderId) {
+            try {
+                const response = await fetch(`/api/folders/${folderId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentFolderId = folderId;
+                    renderFolder(data.folder);
+                    updateBreadcrumb();
+                } else {
+                    console.error('Lỗi mở thư mục:', data.message);
+                    showError('Không thể mở thư mục');
+                }
+            } catch (error) {
+                console.error('Lỗi gọi API thư mục:', error);
+                showError('Lỗi kết nối đến server');
+            }
+        }
+        
+        // Hàm hiển thị thư mục
+        function renderFolder(folder) {
+            const folderContents = document.getElementById('folderContents');
+            folderContents.innerHTML = '';
+            
+            if (!folder || !folder.children || folder.children.length === 0) {
+                folderContents.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Thư mục trống</p></div>';
+                return;
+            }
+            
+            // Hiển thị thư mục con trước
+            const folders = folder.children.filter(item => item.type === 'folder');
+            folders.forEach(subFolder => {
+                const folderCard = document.createElement('div');
+                folderCard.className = 'col-md-3 col-sm-4 col-6 mb-3';
+                folderCard.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <a href="#" class="folder-link" data-folder-id="${subFolder.id}">
+                                <i class="fas fa-folder fa-3x text-warning"></i>
+                                <p class="mt-2 mb-0 text-truncate">${subFolder.name}</p>
+                            </a>
+                        </div>
+                    </div>
+                `;
+                folderContents.appendChild(folderCard);
+            });
+            
+            // Hiển thị file
+            const files = folder.children.filter(item => item.type === 'file');
+            files.forEach(file => {
+                const fileCard = document.createElement('div');
+                fileCard.className = 'col-md-3 col-sm-4 col-6 mb-3';
+                
+                let fileIcon = '';
+                switch (file.fileType) {
+                    case 'image':
+                        fileIcon = '<i class="fas fa-image fa-3x text-info"></i>';
+                        break;
+                    case 'video':
+                        fileIcon = '<i class="fas fa-video fa-3x text-danger"></i>';
+                        break;
+                    case 'audio':
+                        fileIcon = '<i class="fas fa-music fa-3x text-success"></i>';
+                        break;
+                    case 'pdf':
+                        fileIcon = '<i class="fas fa-file-pdf fa-3x text-danger"></i>';
+                        break;
+                    case 'text':
+                        fileIcon = '<i class="fas fa-file-alt fa-3x text-primary"></i>';
+                        break;
+                    default:
+                        fileIcon = '<i class="fas fa-file fa-3x text-secondary"></i>';
+                }
+                
+                fileCard.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <a href="/file/${file.id}" class="file-link">
+                                ${fileIcon}
+                                <p class="mt-2 mb-0 text-truncate">${file.displayName || file.name}</p>
+                            </a>
+                        </div>
+                        <div class="card-footer p-1">
+                            <div class="btn-group btn-group-sm w-100">
+                                <a href="/api/files/${file.id}/download" class="btn btn-outline-primary" title="Tải xuống">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button class="btn btn-outline-success share-btn" data-file-id="${file.id}" title="Chia sẻ">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                folderContents.appendChild(fileCard);
+            });
+            
+            // Thêm sự kiện cho các nút thư mục
+            document.querySelectorAll('.folder-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const folderId = link.getAttribute('data-folder-id');
+                    openFolder(folderId);
+                });
+            });
+            
+            // Thêm sự kiện cho nút chia sẻ
+            document.querySelectorAll('.share-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const fileId = btn.getAttribute('data-file-id');
+                    showShareDialog(fileId);
+                });
+            });
+        }
+        
+        // Cập nhật đường dẫn thư mục
+        function updateBreadcrumb() {
+            // Đơn giản hóa cho ví dụ này - trong thực tế cần tìm đường dẫn đầy đủ từ root đến folder hiện tại
     </script>
 </body>
 </html> 
