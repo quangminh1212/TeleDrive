@@ -211,6 +211,16 @@ const checkBotActive = async () => {
 };
 
 // Đảm bảo các thư mục cần thiết tồn tại
+function ensureDirectories(directories) {
+  directories.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`Đã tạo thư mục: ${dir}`);
+    }
+  });
+}
+
+// Thêm gọi hàm ensureDirectories
 ensureDirectories([dataDir, tempDir, uploadsDir, logsDir]);
 
 // Kiểm tra xem file .env có tồn tại không
