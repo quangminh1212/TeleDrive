@@ -1,44 +1,26 @@
 @echo off
-echo Khoi dong TeleDrive...
-echo. 
+echo === STARTING TELEDRIVE APPLICATION ===
+echo.
 
-:: Kiem tra xem Node.js da duoc cai dat chua
-where node >nul 2>nul
-if %errorlevel% neq 0 (
-  echo Loi: Node.js chua duoc cai dat.
-  echo Vui long cai dat Node.js tu https://nodejs.org/
-  echo.
+:: Đảm bảo các thư mục cần thiết tồn tại
+if not exist "data" mkdir data
+if not exist "temp" mkdir temp
+if not exist "logs" mkdir logs
+if not exist "uploads" mkdir uploads
+if not exist "storage" mkdir storage
+if not exist "db" mkdir db
+
+:: Kiểm tra tệp .env tồn tại
+if not exist ".env" (
+  echo WARNING: .env file not found. Copying from .env.example...
+  copy .env.example .env
+  echo Please update the BOT_TOKEN in .env file before continuing.
   pause
-  exit /b
 )
 
-:: Kiem tra xem cac thu muc can thiet co ton tai khong
-if not exist uploads mkdir uploads
-if not exist temp mkdir temp
-if not exist data mkdir data
-if not exist db mkdir db
-if not exist logs mkdir logs
+:: Chạy ứng dụng
+echo Starting TeleDrive on port 5002...
+node index.js
 
-:: Kiem tra xem file .env co ton tai khong
-if not exist .env (
-  echo Loi: File .env khong ton tai.
-  echo Vui long tao file .env tu .env.example
-  echo.
-  pause
-  exit /b
-)
-
-:: Kiem tra xem cac goi phu thuoc da duoc cai dat chua
-if not exist node_modules (
-  echo Cai dat cac goi phu thuoc...
-  npm install
-)
-
-:: Khoi dong ung dung
-echo Khoi dong ung dung...
-echo.
-echo Truy cap ung dung tai: http://localhost:5001
-echo.
-echo Nhan Ctrl+C de dung ung dung
-echo.
-node index.js 
+:: Dừng lại khi kết thúc
+pause 
