@@ -88,15 +88,21 @@ function formatBytes(bytes, decimals = 2) {
 
 // Hàm format date
 function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    if (!dateString) return 'Không xác định';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Không xác định';
+        return date.toLocaleDateString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (error) {
+        console.error('Lỗi định dạng ngày:', error);
+        return 'Không xác định';
+    }
 }
 
 // Khởi tạo Telegram Bot với timeout
@@ -1035,7 +1041,7 @@ app.get('/file/:id', async (req, res) => {
             ...file,
             fileType,
             formattedSize: formatBytes(file.size),
-            formattedDate: formatDate(file.uploadDate)
+            formattedDate: formatDate(file.uploadDate || file.createdAt)
         };
         
         // Kiểm tra trạng thái file
