@@ -1135,10 +1135,12 @@ app.get('/api/files/:id/preview', async (req, res) => {
         return res.redirect(downloadUrl);
       } catch (telegramError) {
         console.error('Lỗi khi lấy file từ Telegram để xem trước:', telegramError);
+        // Tiếp tục xử lý với file mẫu thay vì dừng lại
       }
     }
     
     // Nếu không thể lấy file từ đâu, trả về file mẫu
+    console.log(`Không thể lấy file ${fileId} từ bất kỳ nguồn nào, trả về file mẫu`);
     const sample = createSampleContent(file, true);
     res.setHeader('Content-Type', sample.type);
     res.end(sample.content);
@@ -1307,8 +1309,15 @@ async function getTelegramFileLink(fileId) {
   
   try {
     console.log(`Đang lấy thông tin file ID: ${fileId}`);
-    // Lấy thông tin file từ Telegram
-    const fileInfo = await bot.telegram.getFile(fileId);
+    
+    // Thiết lập timeout cho việc lấy thông tin file
+    const fileInfoPromise = bot.telegram.getFile(fileId);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout khi lấy thông tin file từ Telegram')), 10000);
+    });
+    
+    // Lấy thông tin file từ Telegram với timeout
+    const fileInfo = await Promise.race([fileInfoPromise, timeoutPromise]);
     
     if (!fileInfo || !fileInfo.file_path) {
       throw new Error('Không thể lấy được thông tin file từ Telegram');
