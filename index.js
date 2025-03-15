@@ -17,6 +17,7 @@ const os = require('os');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 
 // Đọc cấu hình từ file .env
 dotenv.config();
@@ -74,6 +75,29 @@ const upload = multer({
 // Biến lưu trạng thái bot
 let bot = null;
 let botActive = false;
+
+// Hàm format bytes
+function formatBytes(bytes, decimals = 2) {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+// Hàm format date
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
 
 // Khởi tạo Telegram Bot với timeout
 const initBot = () => {
@@ -653,37 +677,6 @@ async function cleanUploads() {
  */
 
 // Thêm các hàm utility cho template
-/**
- * Format số byte thành đơn vị dễ đọc
- * @param {Number} bytes - Số byte cần format
- * @param {Number} decimals - Số chữ số thập phân
- * @returns {String} Chuỗi đã format (ví dụ: "1.5 MB")
- */
-function formatBytes(bytes, decimals = 2) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
-
-/**
- * Format date thành định dạng dễ đọc
- * @param {String|Date} dateString - Chuỗi ngày hoặc đối tượng Date
- * @returns {String} Chuỗi ngày đã format
- */
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('vi-VN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
-
 // Hàm xác định loại file dựa trên tên file
 function getFileType(filename) {
     const ext = path.extname(filename).toLowerCase();
