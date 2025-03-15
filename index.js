@@ -684,6 +684,39 @@ function formatDate(dateString) {
   });
 }
 
+// Hàm xác định loại file dựa trên tên file
+function getFileType(filename) {
+    const ext = path.extname(filename).toLowerCase();
+    
+    // Ảnh
+    if (['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'].includes(ext)) {
+        return 'image';
+    }
+    
+    // Video
+    if (['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.flv', '.mkv'].includes(ext)) {
+        return 'video';
+    }
+    
+    // Audio
+    if (['.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac'].includes(ext)) {
+        return 'audio';
+    }
+    
+    // PDF
+    if (ext === '.pdf') {
+        return 'pdf';
+    }
+    
+    // Text
+    if (['.txt', '.md', '.json', '.xml', '.csv', '.html', '.css', '.js', '.log'].includes(ext)) {
+        return 'text';
+    }
+    
+    // Mặc định
+    return 'document';
+}
+
 // Trang chủ
 app.get('/', (req, res) => {
   try {
@@ -988,52 +1021,60 @@ app.get('/api/files/:id/local-download', (req, res) => {
   }
 });
 
-// Trang xem trước file
+// Route xem trước file
 app.get('/file/:id', async (req, res) => {
-  try {
-    const fileId = req.params.id;
-    const filesData = readFilesDb();
-    const file = filesData.find(f => f.id === fileId);
-    
-    if (!file) {
-      return res.status(404).render('error', { 
-        title: 'Lỗi',
-        message: 'File không tồn tại hoặc đã bị xóa'
-      });
+    try {
+        const fileId = req.params.id;
+        const filesDb = readFilesDb();
+        const file = filesDb.find(f => f.id === fileId);
+
+        if (!file) {
+            return res.status(404).render('error', { 
+                title: 'TeleDrive - Không tìm thấy',
+                message: 'Không tìm thấy file',
+                error: { status: 404, stack: 'File không tồn tại hoặc đã bị xóa' }
+            });
+        }
+
+        // Xác định loại file
+        const fileType = getFileType(file.name);
+        file.fileType = fileType;
+
+        // Kiểm tra trạng thái file
+        if (file.localPath && fs.existsSync(file.localPath)) {
+            file.fileStatus = 'local';
+        } else if (file.telegramFileId && !file.fakeTelegramId) {
+            file.fileStatus = 'telegram';
+        } else {
+            file.fileStatus = 'missing';
+        }
+
+        // Nếu là file text, đọc nội dung
+        let fileContent = '';
+        if (fileType === 'text' && file.fileStatus === 'local') {
+            try {
+                fileContent = fs.readFileSync(file.localPath, 'utf8');
+            } catch (err) {
+                console.error('Lỗi đọc file text:', err);
+                fileContent = 'Không thể đọc nội dung file';
+            }
+        }
+
+        res.render('file-preview', { 
+            title: `TeleDrive - ${file.name}`,
+            file,
+            fileContent,
+            formatBytes,
+            formatDate
+        });
+    } catch (error) {
+        console.error('Lỗi xem trước file:', error);
+        res.status(500).render('error', { 
+            title: 'TeleDrive - Lỗi server',
+            message: 'Lỗi server khi xem trước file',
+            error: { status: 500, stack: error.stack }
+        });
     }
-    
-    // Kiểm tra tình trạng lưu trữ của file
-    let storageStatus = {
-      local: file.localPath && fs.existsSync(file.localPath),
-      telegram: !!file.telegramFileId
-    };
-    
-    const fileInfo = {
-      id: file.id,
-      name: file.originalname || file.name,
-      mimeType: file.mimetype || file.mimeType || 'application/octet-stream',
-      size: file.size || 0,
-      uploadDate: file.createdAt || file.uploadDate || new Date().toISOString(),
-      telegramFileId: file.telegramFileId,
-      telegramUrl: file.telegramUrl,
-      localPath: file.localPath,
-      fakeTelegramId: file.fakeTelegramId || false,
-      fakeTelegramUrl: file.fakeTelegramUrl || false,
-      fileType: file.fileType || guessFileType(file.mimetype || file.mimeType || ''),
-    };
-    
-    res.render('file-preview', {
-      title: 'Xem trước file: ' + (file.originalname || file.name),
-      file: fileInfo,
-      botActive
-    });
-  } catch (error) {
-    console.error('Lỗi trang xem trước file:', error);
-    res.status(500).render('error', {
-      title: 'Lỗi',
-      message: 'Lỗi khi tải trang xem trước file'
-    });
-  }
 });
 
 // API tạo mô phỏng cho file từ Telegram khi không thể kết nối hoặc không tồn tại
