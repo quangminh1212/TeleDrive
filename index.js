@@ -1947,3 +1947,24 @@ app.get('/share/:shareCode', async (req, res) => {
     });
   }
 });
+
+/**
+ * Kiểm tra file .env
+ * Nếu file .env không tồn tại, tạo từ file .env.example
+ */
+function checkEnvFile() {
+  try {
+    if (!fs.existsSync('.env')) {
+      console.log('File .env không tồn tại, tạo từ file .env.example');
+      if (fs.existsSync('.env.example')) {
+        fs.copyFileSync('.env.example', '.env');
+        console.log('Đã tạo file .env từ file .env.example');
+      } else {
+        console.log('File .env.example không tồn tại, tạo file .env trống');
+        fs.writeFileSync('.env', 'PORT=5002\nBOT_TOKEN=\nMAX_FILE_SIZE=1000\n');
+      }
+    }
+  } catch (error) {
+    console.error('Lỗi kiểm tra file .env:', error);
+  }
+}
