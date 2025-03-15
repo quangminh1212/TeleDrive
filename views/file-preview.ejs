@@ -240,79 +240,89 @@
                     <% } %>
 
                     <!-- Thêm nút tải xuống trực tiếp từ Telegram -->
-                    <!-- Nội dung xem trước -->
-                    <div class="card card-primary card-outline">
+                    <div class="card mb-3">
                         <div class="card-header">
-                            <h3 class="card-title">Thông tin file</h3>
-                            <div class="card-tools">
-                                <a href="/" class="btn btn-sm btn-default">
-                                    <i class="fas fa-arrow-left"></i> Quay lại
-                                </a>
-                                <% if (file.fileStatus === 'telegram' && file.directDownloadUrl) { %>
-                                <a href="<%= file.directDownloadUrl %>" class="btn btn-sm btn-success">
-                                    <i class="fas fa-cloud-download-alt"></i> Tải xuống trực tiếp từ Telegram
-                                </a>
-                                <% } %>
-                                <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-download"></i> Tải xuống
-                                </a>
-                            </div>
+                            <h5>
+                                <i class="fas fa-file"></i> <%= file.name %>
+                                <span class="badge badge-info float-right"><%= file.formattedSize %></span>
+                            </h5>
                         </div>
                         <div class="card-body">
-                            <div class="preview-header">
-                                <h4 class="preview-title"><%= file.name %></h4>
-                                <div class="preview-info">
-                                    <div class="mr-3"><i class="fas fa-file mr-1"></i> <%= file.formattedSize %></div>
-                                    <div class="mr-3"><i class="fas fa-calendar mr-1"></i> <%= file.formattedDate %></div>
-                                    <div>
-                                        <% if (file.fileStatus === 'local') { %>
-                                            <span class="badge badge-info"><i class="fas fa-hdd"></i> Local</span>
-                                        <% } else if (file.fileStatus === 'telegram') { %>
-                                            <span class="badge badge-success"><i class="fas fa-paper-plane"></i> Telegram</span>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="file-preview-container text-center">
+                                        <% if (file.fileType === 'image') { %>
+                                            <img src="/api/files/<%= file.id %>/preview" class="img-fluid" alt="<%= file.name %>">
+                                        <% } else if (file.fileType === 'video') { %>
+                                            <video controls class="w-100">
+                                                <source src="/api/files/<%= file.id %>/preview" type="<%= file.mimeType %>">
+                                                Trình duyệt của bạn không hỗ trợ video.
+                                            </video>
+                                        <% } else if (file.fileType === 'audio') { %>
+                                            <audio controls class="w-100">
+                                                <source src="/api/files/<%= file.id %>/preview" type="<%= file.mimeType %>">
+                                                Trình duyệt của bạn không hỗ trợ audio.
+                                            </audio>
+                                        <% } else if (file.fileType === 'pdf') { %>
+                                            <iframe src="/api/files/<%= file.id %>/preview" width="100%" height="500" frameborder="0"></iframe>
                                         <% } else { %>
-                                            <span class="badge badge-danger"><i class="fas fa-exclamation-circle"></i> Không khả dụng</span>
+                                            <div class="file-icon-large mb-3">
+                                                <i class="fas fa-file fa-6x text-secondary"></i>
+                                                <p class="mt-3 text-muted">Không thể xem trước nội dung file này</p>
+                                            </div>
                                         <% } %>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="preview-content">
-                                <% if (file.fileType === 'image') { %>
-                                    <div class="text-center">
-                                        <img src="/api/files/<%= file.id %>/preview" class="img-fluid" alt="<%= file.name %>">
-                                    </div>
-                                <% } else if (file.fileType === 'video') { %>
-                                    <div class="text-center">
-                                        <video controls class="img-fluid">
-                                            <source src="/api/files/<%= file.id %>/preview" type="<%= file.mimeType %>">
-                                            Trình duyệt của bạn không hỗ trợ xem video.
-                                        </video>
-                                    </div>
-                                <% } else if (file.fileType === 'audio') { %>
-                                    <div class="text-center">
-                                        <audio controls class="w-100">
-                                            <source src="/api/files/<%= file.id %>/preview" type="<%= file.mimeType %>">
-                                            Trình duyệt của bạn không hỗ trợ nghe audio.
-                                        </audio>
-                                    </div>
-                                <% } else if (file.fileType === 'text') { %>
-                                    <div class="bg-light p-3 rounded">
-                                        <pre class="mb-0"><%= fileContent %></pre>
-                                    </div>
-                                <% } else if (file.fileType === 'pdf') { %>
-                                    <div class="text-center">
-                                        <iframe src="/api/files/<%= file.id %>/preview" width="100%" height="600" style="border: none;"></iframe>
-                                    </div>
-                                <% } else { %>
-                                    <div class="text-center py-5">
-                                        <i class="fas fa-file-alt fa-5x text-muted"></i>
-                                        <h4 class="mt-3">Không thể xem trước file này</h4>
-                                        <p class="text-muted">Vui lòng tải xuống để xem nội dung</p>
-                                        <a href="/api/files/<%= file.id %>/download" class="btn btn-primary mt-2">
-                                            <i class="fas fa-download"></i> Tải xuống
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6 mb-3">
+                                    <h5>Thông tin file</h5>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <th width="30%">Tên file:</th>
+                                            <td><%= file.name %></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Kích thước:</th>
+                                            <td><%= file.formattedSize %></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Ngày tải lên:</th>
+                                            <td><%= file.formattedDate %></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Loại file:</th>
+                                            <td><%= file.fileType %></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Trạng thái:</th>
+                                            <td id="fileStatus">
+                                                <span class="badge badge-<%= telegramStatus ? 'success' : 'warning' %>">
+                                                    <%= telegramStatus ? 'Đã đồng bộ với Telegram' : 'Chưa đồng bộ' %>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <div class="d-flex flex-column justify-content-center h-100">
+                                        <div class="btn-group mb-3">
+                                            <a href="/api/files/<%= file.id %>/download" class="btn btn-primary btn-lg">
+                                                <i class="fas fa-download"></i> Tải xuống
+                                            </a>
+                                            <a href="/file/<%= file.id %>" class="btn btn-info btn-lg">
+                                                <i class="fas fa-info-circle"></i> Chi tiết
+                                            </a>
+                                        </div>
+                                        
+                                        <a href="/api/files/<%= file.id %>/fix" class="btn btn-warning" id="btnFixFile">
+                                            <i class="fas fa-sync"></i> Sửa lỗi file
                                         </a>
+                                        
+                                        <div class="mt-3" id="fixStatus"></div>
                                     </div>
-                                <% } %>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -536,6 +546,45 @@
                         <p>Lỗi: ${error.message}</p>
                     </div>`;
                 }
+            });
+        });
+
+        // Script xử lý chức năng sửa lỗi file
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sự kiện nhấn nút sửa lỗi file
+            document.getElementById('btnFixFile').addEventListener('click', async function(e) {
+                e.preventDefault();
+                const fixStatus = document.getElementById('fixStatus');
+                const fileStatus = document.getElementById('fileStatus');
+                const url = this.getAttribute('href');
+                
+                fixStatus.innerHTML = '<div class="alert alert-info">Đang sửa lỗi file...</div>';
+                
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        fixStatus.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+                        
+                        // Cập nhật trạng thái file
+                        fileStatus.innerHTML = '<span class="badge badge-success">Đã đồng bộ với Telegram</span>';
+                        
+                        // Thêm nút download lại
+                        fixStatus.innerHTML += `
+                            <a href="/api/files/<%= file.id %>/download" class="btn btn-primary mt-2">
+                                <i class="fas fa-download"></i> Tải xuống ngay
+                            </a>
+                        `;
+                    } else {
+                        fixStatus.innerHTML = '<div class="alert alert-danger">' + (data.message || 'Lỗi không xác định') + '</div>';
+                    }
+                } catch (error) {
+                    console.error('Lỗi sửa file:', error);
+                    fixStatus.innerHTML = '<div class="alert alert-danger">Lỗi kết nối đến server</div>';
+                }
+                
+                return false;
             });
         });
     </script>
