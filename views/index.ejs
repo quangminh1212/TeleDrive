@@ -497,6 +497,71 @@
                 uploadFile(document.getElementById('fileInput'));
             }
         });
+
+        // Script xử lý sửa dữ liệu
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnCheckFiles = document.getElementById('btnCheckFiles');
+            const btnSync = document.getElementById('btnSync');
+            const checkResult = document.getElementById('checkResult');
+            
+            if (btnCheckFiles) {
+                btnCheckFiles.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    
+                    try {
+                        checkResult.innerHTML = '<div class="alert alert-info">Đang kiểm tra và sửa dữ liệu...</div>';
+                        
+                        const response = await fetch('/api/check-files');
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            checkResult.innerHTML = `<div class="alert alert-success">
+                                <p>${data.message}</p>
+                                <button class="btn btn-sm btn-primary" onclick="location.reload()">Tải lại trang</button>
+                            </div>`;
+                        } else {
+                            checkResult.innerHTML = `<div class="alert alert-danger">
+                                <p>${data.message || 'Lỗi kiểm tra dữ liệu'}</p>
+                            </div>`;
+                        }
+                    } catch (error) {
+                        checkResult.innerHTML = `<div class="alert alert-danger">
+                            <p>Lỗi: ${error.message}</p>
+                        </div>`;
+                    }
+                });
+            }
+            
+            if (btnSync) {
+                btnSync.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    
+                    try {
+                        checkResult.innerHTML = '<div class="alert alert-info">Đang đồng bộ với Telegram...</div>';
+                        
+                        const response = await fetch('/api/sync', {
+                            method: 'POST'
+                        });
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            checkResult.innerHTML = `<div class="alert alert-success">
+                                <p>Đồng bộ thành công! ${data.newFiles} file được đồng bộ.</p>
+                                <button class="btn btn-sm btn-primary" onclick="location.reload()">Tải lại trang</button>
+                            </div>`;
+                        } else {
+                            checkResult.innerHTML = `<div class="alert alert-danger">
+                                <p>${data.error || 'Lỗi đồng bộ'}</p>
+                            </div>`;
+                        }
+                    } catch (error) {
+                        checkResult.innerHTML = `<div class="alert alert-danger">
+                            <p>Lỗi: ${error.message}</p>
+                        </div>`;
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html> 
