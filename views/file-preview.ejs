@@ -4,325 +4,335 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
-    <!-- PDF.js for PDF preview -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .file-icon {
-            font-size: 6rem;
-            margin-bottom: 20px;
+        :root {
+            --primary-color: #0088cc;
+            --hover-color: #006699;
         }
-        .document-icon { color: #4285F4; }
-        .photo-icon { color: #0F9D58; }
-        .video-icon { color: #F4B400; }
-        .audio-icon { color: #DB4437; }
-        .preview-container {
-            width: 100%;
-            max-height: 600px;
-            overflow: auto;
-            margin-bottom: 20px;
-            text-align: center;
+        body {
             background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
-        .preview-container img {
+        .navbar {
+            background-color: var(--primary-color) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand, .nav-link {
+            color: white !important;
+        }
+        .nav-link:hover {
+            color: rgba(255,255,255,0.8) !important;
+        }
+        .preview-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .preview-header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .preview-title {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+        }
+        .preview-info {
+            color: #666;
+            font-size: 0.9rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .preview-content {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            max-height: 70vh;
+            overflow: auto;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .btn-primary:hover {
+            background-color: var(--hover-color);
+            border-color: var(--hover-color);
+        }
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        img.preview-image, video.preview-video {
             max-width: 100%;
-            max-height: 500px;
+            max-height: 70vh;
             object-fit: contain;
         }
-        .preview-container video, .preview-container audio {
+        .text-preview {
             width: 100%;
-            max-height: 500px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            padding: 1rem;
+            background: #f7f7f7;
+            border-radius: 5px;
+            border: 1px solid #eee;
         }
-        #pdf-container {
+        .pdf-preview {
             width: 100%;
-            height: 500px;
-            overflow: auto;
+            height: 70vh;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
-        #pdf-canvas {
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-        }
-        .document-preview {
-            width: 100%;
-            height: 500px;
-            border: none;
-        }
-        .preview-error {
-            padding: 50px;
-            color: #dc3545;
-        }
-        .btn-telegram {
-            background-color: #0088cc;
-            border-color: #0088cc;
-            color: white;
-        }
-        .btn-telegram:hover {
-            background-color: #0077b5;
-            border-color: #0077b5;
-            color: white;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 9999;
         }
         .loading-spinner {
-            width: 3rem;
-            height: 3rem;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .storage-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        .storage-local {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+        }
+        .storage-telegram {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+        }
+        .storage-missing {
+            background-color: #ffebee;
+            color: #b71c1c;
         }
     </style>
 </head>
-<body class="bg-light">
+<body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
         <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="bi bi-cloud-arrow-up me-2"></i>TeleDrive
-            </a>
+            <a class="navbar-brand" href="/"><i class="bi bi-cloud-arrow-up me-2"></i>TeleDrive</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="/">
-                            <i class="bi bi-house-door me-1"></i>Trang chủ
-                        </a>
+                        <a class="nav-link" href="/"><i class="bi bi-house-door me-1"></i>Trang chủ</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="card shadow mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0"><%= file.name %></h4>
-                        <div>
-                            <small class="text-muted me-3">
-                                <%= (file.size / (1024 * 1024)).toFixed(2) %> MB | 
-                                <%= new Date(file.uploadDate).toLocaleString('vi-VN') %>
-                            </small>
-                        </div>
+    <div class="container">
+        <div class="preview-container">
+            <div class="preview-header">
+                <h4 class="preview-title"><%= file.name %></h4>
+                <div class="preview-info">
+                    <div>
+                        <i class="bi bi-hdd me-1"></i>
+                        <% if (file.localPath) { %>
+                            <span class="storage-badge storage-local">Lưu trên máy chủ</span>
+                        <% } else if (file.telegramFileId && !file.fakeTelegramId) { %>
+                            <span class="storage-badge storage-telegram">Lưu trên Telegram</span>
+                        <% } else { %>
+                            <span class="storage-badge storage-missing">Không khả dụng</span>
+                        <% } %>
                     </div>
-                    <div class="card-body">
-                        <div class="preview-container" id="preview-container">
-                            <div class="text-center" id="loading-preview">
-                                <div class="spinner-border loading-spinner text-primary" role="status">
-                                    <span class="visually-hidden">Đang tải xem trước...</span>
-                                </div>
-                                <p class="mt-3">Đang tải xem trước...</p>
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <a href="/" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-left me-1"></i> Quay lại
-                                </a>
-                            </div>
-                            <div class="d-flex">
-                                <% if (file.telegramFileId && !file.fakeTelegramId) { %>
-                                    <a href="/api/files/<%= file.id %>/telegram-download" class="btn btn-telegram me-2">
-                                        <i class="bi bi-telegram me-1"></i> Tải từ Telegram
-                                    </a>
-                                <% } %>
-                                
-                                <% if (file.localPath) { %>
-                                    <a href="/api/files/<%= file.id %>/local-download" class="btn btn-primary" download="<%= file.name %>">
-                                        <i class="bi bi-download me-1"></i> Tải xuống
-                                    </a>
-                                <% } else { %>
-                                    <a href="/api/files/<%= file.id %>/download" class="btn btn-primary" download="<%= file.name %>">
-                                        <i class="bi bi-download me-1"></i> Tải xuống
-                                    </a>
-                                <% } %>
-                            </div>
-                        </div>
+                    <div><i class="bi bi-file me-1"></i><%= Math.round(file.size / 1024) %> KB</div>
+                    <div><i class="bi bi-calendar me-1"></i><%= new Date(file.uploadDate).toLocaleDateString('vi-VN') %></div>
+                    <div>
+                        <i class="bi bi-filetype-<%= file.fileType === 'document' ? 'doc' : file.fileType %> me-1"></i>
+                        <%= file.mimeType %>
                     </div>
                 </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Thông tin chi tiết</h5>
+            </div>
+            
+            <div class="preview-content" id="previewContent">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Tên file:</strong> <%= file.name %></p>
-                                <p><strong>Kích thước:</strong> <%= (file.size / (1024 * 1024)).toFixed(2) %> MB</p>
-                                <p><strong>Loại file:</strong> <%= file.mimeType %></p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>Ngày tải lên:</strong> <%= new Date(file.uploadDate).toLocaleString('vi-VN') %></p>
-                                <p><strong>Trạng thái:</strong> 
-                                    <% if (file.localPath) { %>
-                                        <span class="badge bg-success">Có sẵn ở local</span>
-                                    <% } else if (file.telegramFileId && !file.fakeTelegramId) { %>
-                                        <span class="badge bg-info">Lưu trữ trên Telegram</span>
-                                    <% } else { %>
-                                        <span class="badge bg-warning">Chỉ có bản mô phỏng</span>
-                                    <% } %>
-                                </p>
-                                <% if (file.recoveredAt) { %>
-                                    <p><strong>Thời gian khôi phục:</strong> <%= new Date(file.recoveredAt).toLocaleString('vi-VN') %></p>
-                                <% } %>
-                            </div>
-                        </div>
-                    </div>
+                    <p class="mt-2">Đang tải nội dung xem trước...</p>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Quay lại
+                </a>
+                <div>
+                    <% if (file.localPath) { %>
+                        <a href="/api/files/<%= file.id %>/local-download" class="btn btn-primary" download>
+                            <i class="bi bi-download me-1"></i>Tải xuống từ máy chủ
+                        </a>
+                    <% } %>
+                    
+                    <% if (file.telegramFileId && !file.fakeTelegramId) { %>
+                        <a href="/api/files/<%= file.id %>/telegram-download" class="btn btn-primary" download>
+                            <i class="bi bi-telegram me-1"></i>Tải xuống từ Telegram
+                        </a>
+                    <% } %>
+                    
+                    <% if ((!file.localPath && !file.telegramFileId) || file.fakeTelegramId) { %>
+                        <button class="btn btn-primary disabled">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Không thể tải xuống
+                        </button>
+                    <% } %>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const previewContainer = document.getElementById('preview-container');
-            const loadingPreview = document.getElementById('loading-preview');
-            const fileId = '<%= file.id %>';
+            const previewContent = document.getElementById('previewContent');
+            const fileType = '<%= file.fileType %>';
             const mimeType = '<%= file.mimeType %>';
+            const fileId = '<%= file.id %>';
             
-            // Lấy URL xem trước
-            let previewUrl = '/api/files/' + fileId + '/preview';
+            // Hiển thị loading
+            function showLoading() {
+                document.getElementById('loadingOverlay').style.display = 'block';
+            }
             
-            // Xóa loading khi đã tải xong xem trước
+            // Ẩn loading
             function hideLoading() {
-                if (loadingPreview) {
-                    loadingPreview.style.display = 'none';
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+            
+            // Hàm tải nội dung xem trước
+            async function loadPreview() {
+                try {
+                    // Nếu là ảnh
+                    if (fileType === 'image') {
+                        previewContent.innerHTML = `<img src="/api/files/${fileId}/preview" class="preview-image" alt="Ảnh xem trước">`;
+                    }
+                    // Nếu là video
+                    else if (fileType === 'video') {
+                        previewContent.innerHTML = `
+                            <video class="preview-video" controls>
+                                <source src="/api/files/${fileId}/preview" type="${mimeType}">
+                                Trình duyệt của bạn không hỗ trợ tag video.
+                            </video>
+                        `;
+                    }
+                    // Nếu là audio
+                    else if (fileType === 'audio') {
+                        previewContent.innerHTML = `
+                            <audio controls style="width: 100%;">
+                                <source src="/api/files/${fileId}/preview" type="${mimeType}">
+                                Trình duyệt của bạn không hỗ trợ tag audio.
+                            </audio>
+                        `;
+                    }
+                    // Nếu là PDF
+                    else if (mimeType === 'application/pdf') {
+                        previewContent.innerHTML = `
+                            <iframe src="/api/files/${fileId}/preview" class="pdf-preview"></iframe>
+                        `;
+                    }
+                    // Nếu là file text
+                    else if (mimeType === 'text/plain' || mimeType.includes('text/') || 
+                             mimeType.includes('application/json') || mimeType.includes('application/xml')) {
+                        try {
+                            const response = await fetch(`/api/files/${fileId}/preview`);
+                            if (response.ok) {
+                                const text = await response.text();
+                                previewContent.innerHTML = `<pre class="text-preview">${escapeHtml(text)}</pre>`;
+                            } else {
+                                throw new Error('Không thể tải nội dung text');
+                            }
+                        } catch (error) {
+                            previewContent.innerHTML = `
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    Không thể xem trước nội dung văn bản. 
+                                    <a href="/api/files/${fileId}/download" class="alert-link">Tải xuống</a> để xem.
+                                </div>
+                            `;
+                        }
+                    }
+                    // Các loại file khác
+                    else {
+                        previewContent.innerHTML = `
+                            <div class="text-center">
+                                <i class="bi bi-file-earmark-${getFileIcon(mimeType)}" style="font-size: 5rem; color: var(--primary-color);"></i>
+                                <h5 class="mt-3">Không thể xem trước file này</h5>
+                                <p>Hãy tải xuống để xem nội dung.</p>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Lỗi tải xem trước:', error);
+                    previewContent.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Đã xảy ra lỗi khi tải nội dung xem trước. Vui lòng thử lại sau.
+                        </div>
+                    `;
                 }
             }
             
-            // Hiển thị lỗi xem trước
-            function showPreviewError(message) {
-                hideLoading();
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'preview-error';
-                errorDiv.innerHTML = `
-                    <i class="bi bi-exclamation-triangle-fill fs-1 d-block mb-3"></i>
-                    <h4>Không thể xem trước file</h4>
-                    <p>${message || 'File này không hỗ trợ xem trước hoặc không còn tồn tại.'}</p>
-                `;
-                previewContainer.appendChild(errorDiv);
+            // Hàm escape HTML entities
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
             }
             
-            // Xử lý xem trước dựa trên loại file
-            if (mimeType.startsWith('image/')) {
-                const img = document.createElement('img');
-                img.onload = hideLoading;
-                img.onerror = function() {
-                    showPreviewError('Không thể tải hình ảnh để xem trước.');
-                };
-                img.src = previewUrl;
-                previewContainer.appendChild(img);
-            } 
-            else if (mimeType.startsWith('video/')) {
-                const video = document.createElement('video');
-                video.controls = true;
-                video.autoplay = false;
-                video.preload = 'metadata';
-                video.onloadedmetadata = hideLoading;
-                video.onerror = function() {
-                    showPreviewError('Không thể tải video để xem trước.');
-                };
-                video.src = previewUrl;
-                previewContainer.appendChild(video);
+            // Hàm lấy icon cho loại file
+            function getFileIcon(mimeType) {
+                if (mimeType.includes('image/')) return 'image';
+                if (mimeType.includes('video/')) return 'play';
+                if (mimeType.includes('audio/')) return 'music';
+                if (mimeType.includes('pdf')) return 'pdf';
+                if (mimeType.includes('word') || mimeType.includes('document')) return 'word';
+                if (mimeType.includes('excel') || mimeType.includes('sheet')) return 'excel';
+                if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return 'ppt';
+                if (mimeType.includes('text/') || mimeType.includes('json')) return 'text';
+                if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('compressed')) return 'zip';
+                return 'earmark';
             }
-            else if (mimeType.startsWith('audio/')) {
-                const audio = document.createElement('audio');
-                audio.controls = true;
-                audio.autoplay = false;
-                audio.preload = 'metadata';
-                audio.onloadedmetadata = hideLoading;
-                audio.onerror = function() {
-                    showPreviewError('Không thể tải âm thanh để xem trước.');
-                };
-                audio.src = previewUrl;
-                previewContainer.appendChild(audio);
-            }
-            else if (mimeType === 'application/pdf') {
-                // Tạo container cho PDF
-                const pdfContainer = document.createElement('div');
-                pdfContainer.id = 'pdf-container';
-                
-                const canvas = document.createElement('canvas');
-                canvas.id = 'pdf-canvas';
-                pdfContainer.appendChild(canvas);
-                previewContainer.appendChild(pdfContainer);
-                
-                // Sử dụng PDF.js để hiển thị PDF
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-                
-                // Tải và render PDF
-                fetch(previewUrl)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Không thể tải PDF');
-                        }
-                        return response.arrayBuffer();
-                    })
-                    .then(arrayBuffer => {
-                        return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                    })
-                    .then(pdf => {
-                        hideLoading();
-                        // Render trang đầu tiên
-                        return pdf.getPage(1);
-                    })
-                    .then(page => {
-                        const viewport = page.getViewport({ scale: 1.5 });
-                        const context = canvas.getContext('2d');
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-                        
-                        const renderContext = {
-                            canvasContext: context,
-                            viewport: viewport
-                        };
-                        
-                        return page.render(renderContext).promise;
-                    })
-                    .catch(error => {
-                        console.error('Error rendering PDF:', error);
-                        showPreviewError('Không thể tải PDF để xem trước.');
-                    });
-            } 
-            else if (mimeType.includes('text/') || 
-                     mimeType === 'application/json' || 
-                     mimeType === 'application/javascript') {
-                // Xem trước file văn bản
-                fetch(previewUrl)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Không thể tải file văn bản');
-                        }
-                        return response.text();
-                    })
-                    .then(text => {
-                        hideLoading();
-                        const pre = document.createElement('pre');
-                        pre.className = 'bg-light p-3 text-start';
-                        pre.style.maxHeight = '500px';
-                        pre.style.overflow = 'auto';
-                        pre.textContent = text;
-                        previewContainer.appendChild(pre);
-                    })
-                    .catch(error => {
-                        console.error('Error previewing text:', error);
-                        showPreviewError('Không thể tải file văn bản để xem trước.');
-                    });
-            }
-            else {
-                // Loại file không hỗ trợ xem trước
-                hideLoading();
-                showPreviewError('Loại file này không hỗ trợ xem trước. Vui lòng tải xuống để xem nội dung.');
-            }
+            
+            // Tải xem trước
+            loadPreview();
         });
     </script>
 </body>
