@@ -226,6 +226,130 @@
                 <% } %>
             </div>
         </div>
+
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="fileTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="details-tab" data-toggle="tab" href="#details" role="tab" aria-controls="details" aria-selected="true">
+                            <i class="fas fa-info-circle"></i> Thông tin
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="share-tab" data-toggle="tab" href="#share" role="tab" aria-controls="share" aria-selected="false">
+                            <i class="fas fa-share-alt"></i> Chia sẻ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="fileTabsContent">
+                    <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Thông tin file</h5>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th>Tên file:</th>
+                                        <td><%= file.name %></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Kích thước:</th>
+                                        <td><%= file.formattedSize %></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Ngày tải lên:</th>
+                                        <td><%= file.formattedDate %></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Loại file:</th>
+                                        <td><%= file.fileType %></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Trạng thái:</th>
+                                        <td>
+                                            <% if (file.telegramStatus === 'real') { %>
+                                                <span class="badge badge-success">Đã đồng bộ với Telegram</span>
+                                            <% } else { %>
+                                                <span class="badge badge-warning">Chưa đồng bộ</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6 text-center">
+                                <div class="file-preview-container my-3">
+                                    <% if (file.fileType === 'image') { %>
+                                        <img src="/api/files/<%= file.id %>/preview" class="img-fluid" alt="<%= file.name %>">
+                                    <% } else if (file.fileType === 'video') { %>
+                                        <video controls class="w-100">
+                                            <source src="/api/files/<%= file.id %>/preview" type="<%= file.mimeType %>">
+                                            Trình duyệt của bạn không hỗ trợ video.
+                                        </video>
+                                    <% } else if (file.fileType === 'audio') { %>
+                                        <audio controls class="w-100">
+                                            <source src="/api/files/<%= file.id %>/preview" type="<%= file.mimeType %>">
+                                            Trình duyệt của bạn không hỗ trợ audio.
+                                        </audio>
+                                    <% } else if (file.fileType === 'pdf') { %>
+                                        <iframe src="/api/files/<%= file.id %>/preview" width="100%" height="400" frameborder="0"></iframe>
+                                    <% } else { %>
+                                        <div class="file-icon-large">
+                                            <i class="fas fa-file fa-5x text-secondary"></i>
+                                            <p class="mt-3">Không thể xem trước file này</p>
+                                        </div>
+                                    <% } %>
+                                </div>
+                                <div class="btn-group mt-3">
+                                    <a href="<%= file.downloadUrl %>" class="btn btn-primary">
+                                        <i class="fas fa-download"></i> Tải xuống
+                                    </a>
+                                    <a href="/api/files/<%= file.id %>/fix" class="btn btn-warning">
+                                        <i class="fas fa-sync"></i> Sửa lỗi file
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="share" role="tabpanel" aria-labelledby="share-tab">
+                        <h5>Thiết lập chia sẻ</h5>
+                        <form id="shareForm">
+                            <div class="form-group">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="isPublic" checked>
+                                    <label class="custom-control-label" for="isPublic">Công khai file</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="expiryDate">Ngày hết hạn (tùy chọn)</label>
+                                <input type="date" class="form-control" id="expiryDate">
+                            </div>
+                            <button type="button" class="btn btn-primary" id="saveShareSettings">
+                                <i class="fas fa-save"></i> Lưu thiết lập
+                            </button>
+                        </form>
+
+                        <div id="shareResult" class="mt-4" style="display:none;">
+                            <h5>Link chia sẻ</h5>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="shareLink" readonly>
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" type="button" id="copyButton">
+                                        <i class="fas fa-copy"></i> Sao chép
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-outline-secondary" id="qrCodeButton">
+                                    <i class="fas fa-qrcode"></i> Tạo mã QR
+                                </button>
+                                <div id="qrCodeContainer" class="text-center mt-3" style="display:none;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -335,6 +459,80 @@
                 } catch (error) {
                     console.error('Error deleting file:', error);
                     alert('An error occurred while deleting the file.');
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sự kiện lưu thiết lập chia sẻ
+            document.getElementById('saveShareSettings').addEventListener('click', async function() {
+                const isPublic = document.getElementById('isPublic').checked;
+                const expiryDate = document.getElementById('expiryDate').value;
+                
+                try {
+                    const response = await fetch('/api/files/<%= file.id %>/share', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            isPublic,
+                            expiryDate: expiryDate || null
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        const shareResult = document.getElementById('shareResult');
+                        const shareLink = document.getElementById('shareLink');
+                        
+                        shareResult.style.display = 'block';
+                        shareLink.value = window.location.origin + data.shareInfo.shareUrl;
+                        
+                        // Hiển thị thông báo thành công
+                        alert('Đã cập nhật thiết lập chia sẻ!');
+                    } else {
+                        console.error('Lỗi chia sẻ file:', data.message);
+                        alert('Lỗi: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Lỗi gọi API chia sẻ:', error);
+                    alert('Lỗi kết nối đến server');
+                }
+            });
+            
+            // Sự kiện sao chép link
+            document.getElementById('copyButton').addEventListener('click', function() {
+                const shareLink = document.getElementById('shareLink');
+                shareLink.select();
+                document.execCommand('copy');
+                alert('Đã sao chép link chia sẻ!');
+            });
+            
+            // Sự kiện tạo mã QR
+            document.getElementById('qrCodeButton').addEventListener('click', function() {
+                const qrCodeContainer = document.getElementById('qrCodeContainer');
+                const shareLink = document.getElementById('shareLink').value;
+                
+                if (shareLink) {
+                    qrCodeContainer.style.display = 'block';
+                    qrCodeContainer.innerHTML = '';
+                    
+                    // Tạo QR code (cần thêm thư viện qrcode.js)
+                    if (typeof QRCode !== 'undefined') {
+                        new QRCode(qrCodeContainer, {
+                            text: shareLink,
+                            width: 200,
+                            height: 200
+                        });
+                    } else {
+                        qrCodeContainer.innerHTML = `
+                            <div class="alert alert-warning">
+                                Không thể tạo mã QR. Thư viện QRCode chưa được tải.
+                            </div>
+                        `;
+                    }
                 }
             });
         });
