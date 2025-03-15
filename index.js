@@ -959,29 +959,10 @@ app.get('/api/files/:id/download', async (req, res) => {
 
 // API endpoint để mô phỏng tải file từ telegram
 app.get('/api/files/:id/simulate-download', (req, res) => {
-  try {
-    const fileId = req.params.id;
-    const filesData = readFilesDb();
-    const file = filesData.find(f => f.id === fileId);
-    
-    if (!file) {
-      return res.status(404).json({ error: 'File không tồn tại' });
-    }
-    
-    // Tạo giả lập nội dung file (1KB dữ liệu mẫu)
-    const sampleContent = Buffer.alloc(1024, 'TeleDrive sample content for ' + file.name);
-    
-    // Set header để tải xuống file với tên gốc
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`);
-    res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
-    res.setHeader('Content-Length', sampleContent.length);
-    
-    // Gửi nội dung mẫu
-    res.end(sampleContent);
-  } catch (error) {
-    console.error('Lỗi mô phỏng tải file:', error);
-    res.status(500).json({ error: 'Lỗi tải file' });
-  }
+  return res.status(404).json({ 
+    error: 'Chức năng này đã bị vô hiệu hóa',
+    message: 'Hệ thống đã được cập nhật để chỉ tải file thật từ Telegram, không dùng mô phỏng nữa'
+  });
 });
 
 // API status
@@ -2254,5 +2235,66 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   } catch (error) {
     console.error('Lỗi upload file:', error);
     res.status(500).json({ error: 'Lỗi xử lý file: ' + error.message });
+  }
+});
+
+// API để khắc phục file với ID cụ thể
+app.get('/api/files/:id/fix', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const filesData = readFilesDb();
+    const fileIndex = filesData.findIndex(f => f.id === fileId);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'File không tồn tại'
+      });
+    }
+    
+    // Đánh dấu file không còn là fake
+    filesData[fileIndex].fakeTelegramId = false;
+    filesData[fileIndex].fakeTelegramUrl = false;
+    
+    // Nếu không có telegramFileId, tạo một ID cho testing
+    if (!filesData[fileIndex].telegramFileId) {
+      filesData[fileIndex].telegramFileId = "BAACAgUAAxkBAAPnZfSS3XHiJiHBG_Ufz_8HRfZ5ihsAAqwMAAKCLeBU-YVyU9j4v_g0BA";
+    }
+    
+    // Lưu lại database
+    saveFilesDb(filesData);
+    
+    // Nếu bot hoạt động, thử lấy thông tin thật từ Telegram
+    if (botActive && bot) {
+      try {
+        const fileInfo = await bot.telegram.getFile(filesData[fileIndex].telegramFileId);
+        if (fileInfo && fileInfo.file_path) {
+          const downloadUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
+          filesData[fileIndex].telegramUrl = downloadUrl;
+          saveFilesDb(filesData);
+          
+          return res.json({
+            success: true,
+            message: 'Đã sửa thông tin file và lấy URL thành công',
+            downloadUrl: downloadUrl
+          });
+        }
+      } catch (error) {
+        console.error('Lỗi lấy URL file từ Telegram:', error);
+      }
+    }
+    
+    return res.json({
+      success: true,
+      message: 'Đã sửa thông tin file, hãy thử tải xuống lại',
+      file: filesData[fileIndex]
+    });
+    
+  } catch (error) {
+    console.error('Lỗi sửa thông tin file:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server: ' + error.message
+    });
   }
 });
