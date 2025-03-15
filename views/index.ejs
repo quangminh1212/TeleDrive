@@ -4,233 +4,228 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #0088cc;
+            --hover-color: #006699;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .navbar {
+            background-color: var(--primary-color) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand, .nav-link {
+            color: white !important;
+        }
+        .nav-link:hover {
+            color: rgba(255,255,255,0.8) !important;
+        }
         .file-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             transition: transform 0.2s;
-            cursor: pointer;
-            height: 100%;
+            margin-bottom: 1rem;
         }
         .file-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        .document-icon { color: #4285F4; }
-        .photo-icon { color: #0F9D58; }
-        .video-icon { color: #F4B400; }
-        .audio-icon { color: #DB4437; }
-        .file-error { color: #9E9E9E; }
-        .file-thumbnail {
+        .file-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+        .file-name {
+            color: #333;
+            font-weight: 500;
+            margin: 0.5rem 0;
+            word-break: break-word;
+        }
+        .file-info {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .btn-primary:hover {
+            background-color: var(--hover-color);
+            border-color: var(--hover-color);
+        }
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: #f8f9fa;
+        }
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        .storage-info {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .progress {
+            height: 8px;
+            margin-top: 0.5rem;
+        }
+        .progress-bar {
+            background-color: var(--primary-color);
+        }
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .status-local {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+        }
+        .status-telegram {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+        }
+        .status-missing {
+            background-color: #ffebee;
+            color: #b71c1c;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 140px;
-            object-fit: cover;
-            border-radius: 8px;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 9999;
         }
         .loading-spinner {
-            animation: rotate 1s linear infinite;
-        }
-        @keyframes rotate {
-            100% { transform: rotate(360deg); }
-        }
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
     </style>
 </head>
-<body class="bg-light">
+<body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
         <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="bi bi-cloud-arrow-up me-2"></i>TeleDrive
-            </a>
+            <a class="navbar-brand" href="/"><i class="bi bi-cloud-arrow-up me-2"></i>TeleDrive</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link active" href="/">
-                            <i class="bi bi-house-door me-1"></i>Trang chủ
-                        </a>
+                        <a class="nav-link" href="/"><i class="bi bi-house-door me-1"></i>Trang chủ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/bot-settings">
-                            <i class="bi bi-robot me-1"></i>Cài đặt Bot
-                        </a>
+                        <a class="nav-link" href="#" onclick="syncFiles()"><i class="bi bi-arrow-repeat me-1"></i>Đồng bộ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="cleanUploads()"><i class="bi bi-cloud-arrow-up me-1"></i>Tải lên Telegram</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="container py-5">
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <h2 class="mb-3">
-                    <i class="bi bi-telegram me-2 text-primary"></i>TeleDrive
-                </h2>
-                <p class="text-muted">Lưu trữ file thông qua Telegram Bot</p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                <!-- Bot status -->
-                <div class="bot-status-container mb-4">
-                    <div class="bot-status-indicator d-flex align-items-center">
-                        <div id="botStatusIndicator" class="status-circle status-unknown me-2"></div>
-                        <span id="botStatusText">Đang kiểm tra kết nối...</span>
-                    </div>
-                    <div id="botDetails" class="bot-details mt-2 d-none">
-                        <small id="botUsername" class="text-muted"></small>
-                        <button id="checkBotConnection" class="btn btn-sm btn-outline-secondary ms-2">Kiểm tra kết nối</button>
-                    </div>
-                </div>
-                <!-- Upload file button -->
-                <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                    <i class="bi bi-upload me-1"></i>Tải lên file
-                </button>
-                <!-- Refresh button -->
-                <button id="refresh-btn" class="btn btn-outline-primary">
-                    <i class="bi bi-arrow-repeat me-1"></i>Làm mới
-                </button>
-            </div>
-        </div>
-
-        <% if (storageInfo && storageInfo.total > 0) { %>
-        <!-- Storage info -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Thông tin lưu trữ</h5>
-                <div class="progress mb-2">
-                    <div class="progress-bar" role="progressbar" style="width: <%= storageInfo.percent %>%;" 
-                        aria-valuenow="<%= storageInfo.percent %>" aria-valuemin="0" aria-valuemax="100">
-                        <%= storageInfo.percent.toFixed(1) %>%
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span><%= (storageInfo.used / (1024 * 1024)).toFixed(2) %> MB đã sử dụng</span>
-                    <span><%= (storageInfo.total / (1024 * 1024)).toFixed(2) %> MB tổng dung lượng</span>
-                </div>
-            </div>
-        </div>
-        <% } %>
-
-        <!-- Error message if any -->
+    <div class="container">
+        <!-- Thông báo lỗi -->
         <% if (error) { %>
-        <div class="alert alert-danger mb-4">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         <% } %>
 
-        <!-- Loading container -->
-        <div id="loading-container" class="text-center py-5 d-none">
-            <div class="loader"></div>
-            <p class="mt-3">Đang tải danh sách file...</p>
-        </div>
-
-        <!-- No files message -->
-        <div id="no-files-message" class="alert alert-info text-center d-none">
-            <i class="bi bi-info-circle me-2"></i>Chưa có file nào được tải lên
-        </div>
-
-        <!-- File size limit info -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>Thông tin giới hạn file</h5>
-                <p>Do giới hạn của Telegram API, file lớn hơn 20MB không thể tải lên trực tiếp qua bot. 
-                   Để tải file lớn, hãy chia nhỏ file hoặc tải lên qua web.</p>
-                <ul>
-                    <li>Kích thước tối đa cho mỗi file: <strong><%= (maxSize/(1024*1024)).toFixed(0) %> MB</strong></li>
-                    <li>Các loại file hỗ trợ: Hình ảnh, Video, Tài liệu, Âm thanh, và các loại file khác</li>
-                </ul>
-                <p class="mt-2 mb-0">
-                    <small>
-                        <strong>Chú ý:</strong> TeleDrive sẽ hiển thị tất cả các file đã tải lên trước đó, kể cả khi 
-                        chúng đã không còn tồn tại trên máy chủ. Nếu file được lưu trữ trên Telegram, bạn vẫn có 
-                        thể tải xuống từ đó.
-                    </small>
-                </p>
+        <!-- Thông tin lưu trữ -->
+        <div class="storage-info mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Dung lượng sử dụng</h5>
+                    <small class="text-muted"><%= formatBytes(storageInfo.used) %> / <%= formatBytes(storageInfo.total) %></small>
+                </div>
+                <div class="text-end">
+                    <span class="text-muted"><%= storageInfo.percent.toFixed(1) %>%</span>
+                </div>
+            </div>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: <%= storageInfo.percent %>%"></div>
             </div>
         </div>
 
-        <!-- Files Grid -->
-        <div class="row" id="files-container">
+        <!-- Khu vực tải lên -->
+        <div class="upload-area mb-4" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" style="display: none" onchange="uploadFile(this)">
+            <i class="bi bi-cloud-arrow-up upload-icon"></i>
+            <h4>Kéo thả file vào đây</h4>
+            <p class="text-muted mb-0">hoặc click để chọn file</p>
+        </div>
+
+        <!-- Danh sách file -->
+        <div class="row" id="fileList">
             <% if (files && files.length > 0) { %>
                 <% files.forEach(function(file) { %>
-                    <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
-                        <div class="card file-card h-100" data-file-id="<%= file.id %>">
-                            <div class="card-body">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="file-card p-3">
+                            <div class="d-flex align-items-center mb-2">
                                 <% if (file.fileType === 'image') { %>
-                                    <div class="text-center mb-2">
-                                        <i class="bi bi-image fs-1 photo-icon"></i>
-                                    </div>
+                                    <i class="bi bi-image file-icon me-2"></i>
                                 <% } else if (file.fileType === 'video') { %>
-                                    <div class="text-center mb-2">
-                                        <i class="bi bi-film fs-1 video-icon"></i>
-                                    </div>
+                                    <i class="bi bi-camera-video file-icon me-2"></i>
                                 <% } else if (file.fileType === 'audio') { %>
-                                    <div class="text-center mb-2">
-                                        <i class="bi bi-music-note-beamed fs-1 audio-icon"></i>
-                                    </div>
+                                    <i class="bi bi-music-note file-icon me-2"></i>
                                 <% } else { %>
-                                    <div class="text-center mb-2">
-                                        <i class="bi bi-file-earmark-text fs-1 document-icon"></i>
+                                    <i class="bi bi-file-earmark file-icon me-2"></i>
+                                <% } %>
+                                <div class="flex-grow-1">
+                                    <h6 class="file-name"><%= file.name %></h6>
+                                    <div class="file-info">
+                                        <%= formatBytes(file.size) %> • <%= formatDate(file.uploadDate) %>
                                     </div>
-                                <% } %>
-                                <h5 class="card-title text-truncate" title="<%= file.name %>"><%= file.name %></h5>
-                                <p class="card-text text-muted mb-1">
-                                    <small><%= (file.size / (1024 * 1024)).toFixed(2) %> MB</small>
-                                </p>
-                                <p class="card-text text-muted">
-                                    <small><%= new Date(file.uploadDate).toLocaleString('vi-VN') %></small>
-                                </p>
-                                
-                                <% if (!file.localPath && file.telegramFileId) { %>
-                                    <p class="card-text text-info">
-                                        <small><i class="bi bi-telegram me-1"></i>Lưu trữ trên Telegram</small>
-                                    </p>
-                                <% } else if (!file.localPath && !file.telegramFileId) { %>
-                                    <p class="card-text text-danger">
-                                        <small><i class="bi bi-exclamation-triangle me-1"></i>File không khả dụng</small>
-                                    </p>
-                                <% } %>
+                                </div>
                             </div>
-                            <div class="card-footer bg-transparent border-top-0">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <a href="/file/<%= file.id %>" class="btn btn-sm btn-outline-info me-1" title="Xem trước">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <% if (file.localPath) { %>
-                                            <a href="/api/files/<%= file.id %>/local-download" class="btn btn-sm btn-outline-primary" title="Tải xuống từ máy chủ local" download>
-                                                <i class="bi bi-download"></i>
-                                            </a>
-                                        <% } else if (file.telegramFileId) { %>
-                                            <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-outline-info" title="Tải xuống từ Telegram" download>
-                                                <i class="bi bi-telegram"></i>
-                                            </a>
-                                        <% } else { %>
-                                            <button class="btn btn-sm btn-outline-primary disabled" title="Không thể tải xuống">
-                                                <i class="bi bi-download"></i>
-                                            </button>
-                                        <% } %>
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-danger delete-file-btn" data-file-id="<%= file.id %>" title="Xóa file">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="status-badge <%= file.fileStatus === 'local' ? 'status-local' : (file.fileStatus === 'telegram' ? 'status-telegram' : 'status-missing') %>">
+                                    <i class="bi <%= file.fileStatus === 'local' ? 'bi-hdd' : (file.fileStatus === 'telegram' ? 'bi-telegram' : 'bi-exclamation-circle') %>"></i>
+                                    <%= file.fileStatus === 'local' ? 'Local' : (file.fileStatus === 'telegram' ? 'Telegram' : 'Không khả dụng') %>
+                                </span>
+                                <div class="btn-group">
+                                    <a href="/file/<%= file.id %>" class="btn btn-sm btn-outline-primary" title="Xem trước">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-primary" title="Tải xuống">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteFile('<%= file.id %>')" title="Xóa">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
@@ -238,79 +233,168 @@
                         </div>
                     </div>
                 <% }); %>
+            <% } else { %>
+                <div class="col-12 text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h3 class="mt-3">Chưa có file nào</h3>
+                    <p class="text-muted">Hãy tải lên file đầu tiên của bạn</p>
+                </div>
             <% } %>
         </div>
     </div>
 
-    <!-- Upload Modal -->
-    <div class="modal fade" id="uploadModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Tải lên file</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="file" class="form-label">Chọn file để tải lên</label>
-                            <input type="file" class="form-control" id="file" name="file" required>
-                            <div class="form-text">Kích thước tối đa: <%= (maxSize/(1024*1024)).toFixed(0) %> MB</div>
-                        </div>
-                        <div class="progress d-none mb-3" id="upload-progress">
-                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                        </div>
-                        <div id="upload-message" class="alert d-none"></div>
-                        <button type="submit" class="btn btn-primary w-100">Tải lên</button>
-                    </form>
-                </div>
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
             </div>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Xác nhận xóa</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Bạn có chắc muốn xóa file này không?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-danger" id="confirm-delete-btn">Xóa</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Hàm format bytes
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
 
-    <!-- File Details Modal -->
-    <div class="modal fade" id="fileDetailsModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Chi tiết file</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="file-details-content">
-                    <!-- File details will be loaded here -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                </div>
-            </div>
-        </div>
-    </div>
+        // Hàm format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
 
-    <!-- Toast container for notifications -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+        // Hiển thị loading
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'block';
+        }
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS -->
-    <script src="/js/main.js"></script>
+        // Ẩn loading
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // Upload file
+        async function uploadFile(input) {
+            if (!input.files || input.files.length === 0) return;
+
+            showLoading();
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Upload failed');
+
+                // Reload page after successful upload
+                window.location.reload();
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Lỗi khi tải lên file: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Đồng bộ files
+        async function syncFiles() {
+            showLoading();
+            try {
+                const response = await fetch('/api/sync', {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Sync failed');
+
+                window.location.reload();
+            } catch (error) {
+                console.error('Sync error:', error);
+                alert('Lỗi khi đồng bộ: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Dọn dẹp uploads
+        async function cleanUploads() {
+            if (!confirm('Bạn có chắc muốn tải tất cả file lên Telegram?')) return;
+
+            showLoading();
+            try {
+                const response = await fetch('/api/clean', {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Clean failed');
+
+                window.location.reload();
+            } catch (error) {
+                console.error('Clean error:', error);
+                alert('Lỗi khi dọn dẹp: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Xóa file
+        async function deleteFile(fileId) {
+            if (!confirm('Bạn có chắc muốn xóa file này?')) return;
+
+            showLoading();
+            try {
+                const response = await fetch(`/api/files/${fileId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Delete failed');
+
+                window.location.reload();
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('Lỗi khi xóa file: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Drag and drop
+        const uploadArea = document.querySelector('.upload-area');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--primary-color)';
+            uploadArea.style.background = '#f8f9fa';
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.background = 'white';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.background = 'white';
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                uploadFile(document.getElementById('fileInput'));
+            }
+        });
+    </script>
 </body>
 </html> 
