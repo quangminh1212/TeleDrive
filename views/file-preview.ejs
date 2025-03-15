@@ -247,6 +247,11 @@
                                 <a href="/" class="btn btn-sm btn-default">
                                     <i class="fas fa-arrow-left"></i> Quay lại
                                 </a>
+                                <% if (file.fileStatus === 'telegram' && file.directDownloadUrl) { %>
+                                <a href="<%= file.directDownloadUrl %>" class="btn btn-sm btn-success">
+                                    <i class="fas fa-cloud-download-alt"></i> Tải xuống trực tiếp từ Telegram
+                                </a>
+                                <% } %>
                                 <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-primary">
                                     <i class="fas fa-download"></i> Tải xuống
                                 </a>
@@ -307,6 +312,76 @@
                                         </a>
                                     </div>
                                 <% } %>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card thông tin chẩn đoán -->
+                    <div class="card card-primary card-outline mt-3">
+                        <div class="card-header">
+                            <h3 class="card-title">Thông tin chẩn đoán</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <dl>
+                                        <dt>ID File</dt>
+                                        <dd><code><%= file.id %></code></dd>
+                                        
+                                        <dt>Trạng thái file</dt>
+                                        <dd>
+                                            <% if (file.fileStatus === 'local') { %>
+                                                <span class="badge badge-info"><i class="fas fa-hdd"></i> Local</span>
+                                            <% } else if (file.fileStatus === 'telegram') { %>
+                                                <span class="badge badge-success"><i class="fas fa-paper-plane"></i> Telegram</span>
+                                            <% } else { %>
+                                                <span class="badge badge-danger"><i class="fas fa-exclamation-circle"></i> Không khả dụng</span>
+                                            <% } %>
+                                        </dd>
+                                        
+                                        <dt>Đường dẫn local</dt>
+                                        <dd><%= file.localPath || 'Không có' %></dd>
+                                    </dl>
+                                </div>
+                                <div class="col-md-6">
+                                    <dl>
+                                        <dt>Telegram File ID</dt>
+                                        <dd><code><%= file.telegramFileId || 'Không có' %></code></dd>
+                                        
+                                        <dt>Fake Telegram ID</dt>
+                                        <dd><%= file.fakeTelegramId === true ? 'Có' : 'Không' %></dd>
+                                        
+                                        <dt>Fake Telegram URL</dt>
+                                        <dd><%= file.fakeTelegramUrl === true ? 'Có' : 'Không' %></dd>
+                                        
+                                        <dt>Bot Telegram</dt>
+                                        <dd>
+                                            <% if (botStatus && botStatus.active) { %>
+                                                <span class="badge badge-success">Hoạt động</span>
+                                            <% } else { %>
+                                                <span class="badge badge-danger">Không hoạt động</span>
+                                            <% } %>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <a href="<%= file.resetUrl %>" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-sync"></i> Reset trạng thái file
+                                    </a>
+                                    <a href="/api/telegram-file-info/<%= file.telegramFileId %>" target="_blank" class="btn btn-info btn-sm ml-2">
+                                        <i class="fas fa-info-circle"></i> Kiểm tra thông tin file Telegram
+                                    </a>
+                                    <a href="/api/files/<%= file.id %>/direct-download" class="btn btn-success btn-sm ml-2">
+                                        <i class="fas fa-download"></i> Tải xuống trực tiếp
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
