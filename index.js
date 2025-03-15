@@ -54,8 +54,15 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: function(req, file, cb) {
-    // Đảm bảo tên file an toàn
-    cb(null, getSecureFilePath(file.originalname));
+    // Đảm bảo tên file an toàn, tránh lỗi đường dẫn
+    const originalName = file.originalname;
+    const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const uniqueName = Date.now() + '-' + sanitizedName;
+    
+    // Lưu tên gốc vào request để sử dụng sau này
+    req.originalFileName = originalName;
+    
+    cb(null, uniqueName);
   }
 });
 
@@ -885,17 +892,18 @@ app.post('/upload', upload.single('file'), (req, res) => {
     
     // Thêm file vào database ngay lập tức thay vì đợi đồng bộ
     const fileName = req.file.filename;
-    const filePath = path.join(uploadsDir, fileName);
+    const originalName = req.originalFileName || req.file.originalname;
+    const filePath = req.file.path; // Sử dụng đường dẫn từ multer thay vì tự tạo
     const fileStats = fs.statSync(filePath);
-    const fileExt = path.extname(fileName);
+    const fileExt = path.extname(originalName); // Lấy extension từ tên gốc
     const mimeType = getMimeType(fileExt);
     
     // Thêm vào database
     const filesData = readFilesDb();
     filesData.push({
       id: uuidv4(),
-      name: req.originalFileName || fileName, // Sử dụng tên gốc từ request
-      originalName: req.originalFileName || fileName,
+      name: originalName,
+      originalName: originalName,
       size: fileStats.size,
       mimeType: mimeType,
       fileType: guessFileType(mimeType),
