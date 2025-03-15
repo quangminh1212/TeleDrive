@@ -1921,3 +1921,88 @@ app.get('/api/telegram-file-info/:fileId', async (req, res) => {
     });
   }
 });
+
+// API để thủ công cập nhật Telegram File ID cho file
+app.post('/api/update-file/:id', express.json(), async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { telegramFileId } = req.body;
+    
+    if (!telegramFileId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu telegramFileId trong request body'
+      });
+    }
+    
+    // Đọc database
+    const filesData = readFilesDb();
+    const fileIndex = filesData.findIndex(f => f.id === fileId);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy file với ID đã cung cấp'
+      });
+    }
+    
+    // Kiểm tra xem telegramFileId có hợp lệ không
+    if (!botActive || !bot) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bot Telegram không hoạt động, không thể xác minh File ID'
+      });
+    }
+    
+    try {
+      // Thử lấy thông tin file từ Telegram để xác minh ID
+      console.log(`Xác minh Telegram File ID: ${telegramFileId}`);
+      const fileInfo = await bot.telegram.getFile(telegramFileId);
+      
+      if (!fileInfo || !fileInfo.file_path) {
+        return res.status(400).json({
+          success: false,
+          message: 'Telegram File ID không hợp lệ hoặc không tồn tại'
+        });
+      }
+      
+      // Cập nhật thông tin file
+      filesData[fileIndex].telegramFileId = telegramFileId;
+      filesData[fileIndex].fakeTelegramId = false;
+      filesData[fileIndex].telegramUrl = null;
+      filesData[fileIndex].fakeTelegramUrl = false;
+      
+      // Lấy URL download
+      const downloadUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
+      filesData[fileIndex].telegramUrl = downloadUrl;
+      
+      // Cập nhật database
+      saveFilesDb(filesData);
+      
+      return res.json({
+        success: true,
+        message: 'Đã cập nhật Telegram File ID thành công',
+        fileInfo: {
+          id: filesData[fileIndex].id,
+          name: filesData[fileIndex].name,
+          telegramFileId: filesData[fileIndex].telegramFileId,
+          fakeTelegramId: filesData[fileIndex].fakeTelegramId,
+          telegramUrl: filesData[fileIndex].telegramUrl,
+          downloadUrl: downloadUrl
+        }
+      });
+    } catch (error) {
+      console.error(`Lỗi xác minh Telegram File ID: ${error.message}`);
+      return res.status(500).json({
+        success: false,
+        message: `Lỗi xác minh Telegram File ID: ${error.message}`
+      });
+    }
+  } catch (error) {
+    console.error(`Lỗi cập nhật file: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: `Lỗi server: ${error.message}`
+    });
+  }
+});

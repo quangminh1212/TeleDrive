@@ -385,6 +385,35 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Form cập nhật Telegram File ID -->
+                    <div class="card card-warning card-outline mt-3">
+                        <div class="card-header">
+                            <h3 class="card-title">Cập nhật Telegram File ID</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Nếu bạn có Telegram File ID của file này, bạn có thể cập nhật thủ công tại đây:</p>
+                            <form id="updateFileIdForm">
+                                <div class="form-group">
+                                    <label for="telegramFileId">Telegram File ID</label>
+                                    <input type="text" class="form-control" id="telegramFileId" name="telegramFileId" 
+                                           placeholder="Nhập Telegram File ID" value="<%= file.telegramFileId || '' %>">
+                                    <small class="form-text text-muted">ID này có thể lấy từ Telegram khi gửi file đến bot</small>
+                                </div>
+                                <div class="form-group">
+                                    <button type="button" id="btnUpdateFileId" class="btn btn-warning">
+                                        <i class="fas fa-save"></i> Cập nhật
+                                    </button>
+                                    <div id="updateResult" class="mt-2"></div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!-- /.content -->
@@ -463,6 +492,51 @@
                 alert('Lỗi khi dọn dẹp: ' + error.message);
             }
         }
+
+        // Script cập nhật Telegram File ID
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnUpdateFileId = document.getElementById('btnUpdateFileId');
+            const updateResult = document.getElementById('updateResult');
+            const fileId = '<%= file.id %>';
+            
+            btnUpdateFileId.addEventListener('click', async function() {
+                const telegramFileId = document.getElementById('telegramFileId').value.trim();
+                
+                if (!telegramFileId) {
+                    updateResult.innerHTML = '<div class="alert alert-danger">Vui lòng nhập Telegram File ID</div>';
+                    return;
+                }
+                
+                try {
+                    updateResult.innerHTML = '<div class="alert alert-info">Đang xử lý...</div>';
+                    
+                    const response = await fetch(`/api/update-file/${fileId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ telegramFileId })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        updateResult.innerHTML = `<div class="alert alert-success">
+                            <p>${data.message}</p>
+                            <a href="/file/${fileId}" class="btn btn-sm btn-info">Tải lại trang</a>
+                        </div>`;
+                    } else {
+                        updateResult.innerHTML = `<div class="alert alert-danger">
+                            <p>${data.message || 'Lỗi cập nhật Telegram File ID'}</p>
+                        </div>`;
+                    }
+                } catch (error) {
+                    updateResult.innerHTML = `<div class="alert alert-danger">
+                        <p>Lỗi: ${error.message}</p>
+                    </div>`;
+                }
+            });
+        });
     </script>
 </body>
 </html> 
