@@ -778,7 +778,10 @@ app.get('/', async (req, res) => {
       files: formattedFiles,
       botActive: isBotActive,
       storageInfo,
-      problemFiles
+      problemFiles,
+      error: null,
+      formatBytes: formatBytes,
+      formatDate: formatDate
     });
   } catch (error) {
     console.error('Lỗi hiển thị trang chủ:', error);
