@@ -56,6 +56,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware xác thực API key
 app.use((req, res, next) => {
+  // Bỏ qua xác thực cho route đăng nhập Telegram
+  if (req.path === '/api/auth/telegram') {
+    return next();
+  }
+  
   // Nếu là API request và có API key
   if (req.path.startsWith('/api/') && req.headers['x-api-key']) {
     if (req.headers['x-api-key'] === config.API_KEY) {

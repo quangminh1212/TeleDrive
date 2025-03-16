@@ -95,6 +95,49 @@ function isBotActive() {
 }
 
 /**
+ * Xác thực bot token
+ * @returns {Promise<Object>} Kết quả xác thực token
+ */
+async function verifyBotToken() {
+  try {
+    const telegramToken = config.TELEGRAM_BOT_TOKEN;
+    
+    if (!telegramToken) {
+      console.error('Thiếu TELEGRAM_BOT_TOKEN trong cấu hình');
+      return { 
+        success: false, 
+        error: 'Thiếu TELEGRAM_BOT_TOKEN trong cấu hình' 
+      };
+    }
+    
+    // Gọi API getMe của Telegram để kiểm tra token
+    const response = await axios.get(`https://api.telegram.org/bot${telegramToken}/getMe`);
+    
+    if (response.data && response.data.ok) {
+      const botInfo = response.data.result;
+      console.log(`Xác thực token thành công. Bot: ${botInfo.username}`);
+      return { 
+        success: true, 
+        botInfo: botInfo,
+        botUsername: botInfo.username
+      };
+    } else {
+      console.error('Không thể xác thực token Telegram');
+      return { 
+        success: false, 
+        error: 'Không thể xác thực token Telegram' 
+      };
+    }
+  } catch (error) {
+    console.error('Lỗi khi xác thực token Telegram:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Lỗi không xác định khi xác thực token Telegram' 
+    };
+  }
+}
+
+/**
  * Xử lý khi nhận được file từ Telegram
  * @param {Object} ctx Context của bot
  */
@@ -358,6 +401,7 @@ module.exports = {
   initBot,
   stopBot,
   isBotActive,
+  verifyBotToken,
   sendFileToTelegram,
   getFileLink,
   downloadFileFromTelegram,
