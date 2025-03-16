@@ -1,6 +1,6 @@
 ﻿/**
  * TeleDrive - á»¨ng dá»¥ng quáº£n lÃ½ file vá»›i Telegram Bot
- * File chÃ­nh káº¿t há»£p táº¥t cáº£ chá»©c nÄƒng: web server, bot Telegram, Ä‘á»“ng bá»™ file vÃ  dá»n dáº¹p
+ * File chÃ­nh káº¿t há»£p táº¥t cáº£ chá»©c nÄƒng: web server, bot Telegram, Ä‘á»“ng bá»™ file vÃ dá»n dáº¹p
  */
 
 const express = require('express');
@@ -22,7 +22,7 @@ const bodyParser = require('body-parser');
 // Load environment variables from .env file
 dotenv.config();
 
-// Äá»‹nh nghÄ©a Ä‘Æ°á»ng dáº«n lÆ°u trá»¯ vÃ  biáº¿n toÃ n cá»¥c
+// Äá»‹nh nghÄ©a Ä‘Æ°á»ng dáº«n lÆ°u trá»¯ vÃ biáº¿n toÃ n cá»¥c
 const DB_PATH = path.join(__dirname, 'files_db.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const LOGS_DIR = path.join(__dirname, 'logs');
@@ -33,7 +33,7 @@ const CHAT_ID = process.env.CHAT_ID;
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '2000', 10) * 1024 * 1024; // Convert MB to bytes
 const DATA_DIR = process.env.DATA_DIR || 'data';
 
-// ÄÆ°á»ng dáº«n file vÃ  thÆ° má»¥c
+// ÄÆ°á»ng dáº«n file vÃ thÆ° má»¥c
 const dataDir = path.join(__dirname, DATA_DIR);
 const tempDir = TEMP_DIR;  // Sá»­ dá»¥ng Ä‘Æ°á»ng dáº«n Ä‘Ã£ Ä‘á»‹nh nghÄ©a
 const uploadsDir = UPLOADS_DIR; // Sá»­ dá»¥ng Ä‘Æ°á»ng dáº«n Ä‘Ã£ Ä‘á»‹nh nghÄ©a
@@ -62,12 +62,12 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: function(req, file, cb) {
-    // Äáº£m báº£o tÃªn file an toÃ n, trÃ¡nh lá»—i Ä‘Æ°á»ng dáº«n
+    // Äáº£m báº£o tÃªn file an toÃ n, trÃ¡nh lá»—i Ä‘Æ°á»ng dáº«n
     const originalName = file.originalname;
     const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
     const uniqueName = Date.now() + '-' + sanitizedName;
     
-    // LÆ°u tÃªn gá»‘c vÃ o request Ä‘á»ƒ sá»­ dá»¥ng sau nÃ y
+    // LÆ°u tÃªn gá»‘c vÃ o request Ä‘á»ƒ sá»­ dá»¥ng sau nÃ y
     req.originalFileName = originalName;
     
     cb(null, uniqueName);
@@ -84,7 +84,7 @@ let bot = null;
 let botActive = false;
 let needRestartBot = false;
 
-// HÃ m format bytes
+// HÃ m format bytes
 function formatBytes(bytes, decimals = 2) {
     if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -94,12 +94,12 @@ function formatBytes(bytes, decimals = 2) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-// HÃ m format date
+// HÃ m format date
 function formatDate(dateString) {
-    if (!dateString) return 'KhÃ´ng xÃ¡c Ä‘á»‹nh';
+    if (!dateString) return 'KhÃ´ng xÃ¡c Ä'á»‹nh';
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'KhÃ´ng xÃ¡c Ä‘á»‹nh';
+        if (isNaN(date.getTime())) return 'KhÃ´ng xÃ¡c Ä'á»‹nh';
         return date.toLocaleDateString('vi-VN', {
             year: 'numeric',
             month: '2-digit',
@@ -2334,7 +2334,6 @@ async function handleCommandLineArgs() {
     success: false,
     error: 'Lá»—i server: ' + (err.message || 'KhÃ´ng xÃ¡c Ä‘á»‹nh')
   });
-});
 
 // Khá»Ÿi Ä‘á»™ng chÆ°Æ¡ng trÃ¬nh
 (async function startApplication() {
