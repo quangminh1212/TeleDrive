@@ -519,6 +519,45 @@
                 });
             }
         }
+
+        // Lấy thông tin người dùng từ session
+        fetch('/dashboard', {
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Cập nhật thông tin người dùng trên giao diện
+                const user = data.data.user;
+                
+                // Cập nhật avatar và tên
+                if (user) {
+                    const avatar = document.querySelector('.user-menu .avatar');
+                    const username = document.querySelector('.user-menu span');
+                    
+                    if (data.data.useTelegram && user.photoUrl) {
+                        // Nếu là user Telegram và có ảnh đại diện
+                        avatar.innerHTML = `<img src="${user.photoUrl}" alt="${user.username}" style="width: 100%; height: 100%; border-radius: 50%;">`;
+                    } else {
+                        // Nếu không có ảnh, hiển thị chữ cái đầu
+                        avatar.textContent = user.username.charAt(0).toUpperCase();
+                    }
+                    
+                    // Cập nhật tên hiển thị
+                    if (data.data.useTelegram) {
+                        const displayName = user.firstName ? `${user.firstName} ${user.lastName || ''}` : user.username;
+                        username.textContent = displayName.trim();
+                    } else {
+                        username.textContent = user.username;
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching user data:', error);
+        });
     </script>
 </body>
 </html> 
