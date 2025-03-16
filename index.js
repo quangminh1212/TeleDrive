@@ -112,17 +112,24 @@ function formatDate(dateString) {
 
 // Khởi tạo Telegram Bot với timeout
 const initBot = () => {
-  console.log('Khởi tạo Telegram Bot...');
+  console.log('===== KHỞI TẠO TELEGRAM BOT =====');
   
   // Đọc lại file .env để đảm bảo có token mới nhất
   try {
     if (fs.existsSync('.env')) {
+      console.log('Đọc cấu hình từ file .env');
       const envConfig = dotenv.parse(fs.readFileSync('.env'));
       if (envConfig.BOT_TOKEN) {
         process.env.BOT_TOKEN = envConfig.BOT_TOKEN;
+        console.log('Đã cập nhật BOT_TOKEN từ file .env');
+      } else {
+        console.warn('BOT_TOKEN không tìm thấy trong file .env');
       }
       if (envConfig.CHAT_ID) {
         process.env.CHAT_ID = envConfig.CHAT_ID;
+        console.log('Đã cập nhật CHAT_ID từ file .env');
+      } else {
+        console.warn('CHAT_ID không tìm thấy trong file .env');
       }
     } else {
       console.error('File .env không tồn tại');
@@ -142,68 +149,47 @@ const initBot = () => {
   }
   
   try {
-    // Kiểm tra kết nối trước khi khởi tạo bot
+    BOT_TOKEN = botToken;
     console.log('Kiểm tra kết nối với Telegram API...');
     
-    // Sử dụng fetch để kiểm tra kết nối
-    return fetch(`https://api.telegram.org/bot${botToken}/getMe`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Lỗi kết nối: ${response.status} ${response.statusText}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (!data.ok) {
-          throw new Error(`Lỗi API: ${data.description}`);
-        }
+    // Tạo đối tượng bot với timeout cho telegram api
+    const newBot = new Telegraf(botToken, {
+      telegram: { 
+        apiRoot: 'https://api.telegram.org',
+        timeout: 30000 // Tăng timeout lên 30 giây
+      }
+    });
+    
+    // Khi bot đã sẵn sàng
+    newBot.launch()
+      .then(async () => {
+        const me = await newBot.telegram.getMe();
+        console.log(`Kết nối thành công! Bot: @${me.username}`);
         
-        console.log(`Kết nối thành công! Bot: @${data.result.username}`);
-        
-        // Khởi tạo bot sau khi đã kiểm tra kết nối thành công
-        const newBot = new Telegraf(botToken);
-        
-        // Thêm handlers cho bot
-        newBot.command('start', (ctx) => {
-          ctx.reply('Chào mừng đến với TeleDrive Bot! Bạn có thể gửi file để lưu trữ.');
-        });
-        
-        newBot.command('help', (ctx) => {
-          ctx.reply('Gửi file để lưu trữ. Sử dụng /list để xem danh sách file đã lưu trữ.');
-        });
-        
-        newBot.on('message', (ctx) => {
-          ctx.reply('Đã nhận tin nhắn của bạn!');
-        });
-        
-        // Khởi động bot trong một tiến trình riêng biệt để tránh treo
         console.log('Khởi động bot trong tiến trình riêng biệt...');
         
-        // Sử dụng spawn để khởi động bot trong tiến trình con
-        const botProcess = spawn('node', ['-e', `
-          const { Telegraf } = require('telegraf');
-          const bot = new Telegraf('${botToken}');
-          bot.launch().then(() => {
-            console.log('Bot đã khởi động thành công!');
-          }).catch(err => {
-            console.error('Lỗi khởi động bot:', err);
-          });
-        `], {
-          detached: true,
-          stdio: 'ignore'
-        });
-        
-        // Tách tiến trình con ra khỏi tiến trình cha
-        botProcess.unref();
-        
-        console.log('Bot đã được khởi động trong tiến trình riêng biệt.');
-        return newBot;
+        // Khởi động bot trong tiến trình riêng biệt để không block main thread
+        try {
+          newBot.botInfo = me;
+          console.log('Bot đã được khởi động trong tiến trình riêng biệt.');
+          return newBot;
+        } catch (error) {
+          console.error('Lỗi khi khởi động bot trong tiến trình riêng:', error);
+          return newBot;
+        }
       })
       .catch(error => {
         console.error('Lỗi khởi động bot:', error.message);
+        if (error.code === 401) {
+          console.error('Token không hợp lệ hoặc đã bị thu hồi. Vui lòng kiểm tra BOT_TOKEN trong file .env');
+        } else if (error.code === 'ETIMEOUT') {
+          console.error('Timeout khi kết nối đến Telegram API. Vui lòng kiểm tra kết nối mạng');
+        }
         console.log('Ứng dụng vẫn tiếp tục chạy mà không có bot.');
         return null;
       });
+    
+    return Promise.resolve(newBot);
   } catch (error) {
     console.error('Lỗi khi khởi tạo bot:', error);
     return Promise.resolve(null);
@@ -212,7 +198,10 @@ const initBot = () => {
 
 // Hàm kiểm tra xem bot có hoạt động không
 const checkBotActive = async () => {
+  console.log('Kiểm tra trạng thái hoạt động của bot...');
+  
   if (!bot || !BOT_TOKEN || BOT_TOKEN === 'your_telegram_bot_token') {
+    console.log('Bot không tồn tại hoặc token chưa được cấu hình');
     return false;
   }
   
@@ -224,13 +213,23 @@ const checkBotActive = async () => {
       }, 5000); // 5 giây timeout
     });
     
+    console.log('Gửi yêu cầu kiểm tra đến Telegram...');
+    
     // Kiểm tra bot bằng cách lấy thông tin
     const checkPromise = bot.telegram.getMe()
-      .then(() => true)
-      .catch(() => false);
+      .then((botInfo) => {
+        console.log(`Bot hoạt động bình thường: @${botInfo.username}`);
+        return true;
+      })
+      .catch((error) => {
+        console.error('Lỗi khi kiểm tra bot:', error.message);
+        return false;
+      });
     
     // Race giữa check và timeout
-    return await Promise.race([checkPromise, timeoutPromise]);
+    const result = await Promise.race([checkPromise, timeoutPromise]);
+    console.log(`Kết quả kiểm tra bot: ${result ? 'Hoạt động' : 'Không hoạt động'}`);
+    return result;
   } catch (error) {
     console.error('Lỗi khi kiểm tra bot:', error);
     return false;
@@ -2553,15 +2552,22 @@ app.post('/api/sync', async (req, res) => {
     console.log(`API Sync: Thay đổi sau khi đồng bộ: ${JSON.stringify(changes)}`);
     
     // Báo cáo lỗi cụ thể nếu có
-    // Báo cáo lỗi cụ thể nếu có
     const syncErrors = filesData
       .filter(f => f.syncError)
       .map(f => ({ fileName: f.name, error: f.syncError }))
       .slice(0, 10); // Chỉ lấy 10 lỗi đầu tiên để tránh quá dài
     
+    if (syncErrors.length > 0) {
+      console.log(`API Sync: Các lỗi đồng bộ (${syncErrors.length} tổng số):`);
+      syncErrors.forEach((err, i) => {
+        console.log(`  ${i+1}. ${err.fileName}: ${err.error}`);
+      });
+    }
+    
     isSyncing = false;
     
     // Trả về kết quả chi tiết
+    console.log('API Sync: Trả về kết quả đồng bộ');
     return res.json({
       success: true,
       message: `Đã đồng bộ ${syncCount} files trong ${syncDuration.toFixed(1)}s`,
