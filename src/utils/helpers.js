@@ -18,57 +18,28 @@ function ensureDirectories() {
     // Đảm bảo config đã được nạp
     const config = require('../config/config');
     
-    // Danh sách thư mục cần kiểm tra
+    // Danh sách thư mục cần thiết
     const directories = [
       'data',
       'data/db',
       'temp',
       'uploads',
-      'downloads',
-      'storage',
-      'storage/db',
-      'storage/temp',
-      'storage/uploads',
-      'storage/downloads'
+      'downloads'
     ];
     
-    // Thêm các thư mục từ config nếu có
-    if (config.TEMP_DIR) directories.push(config.TEMP_DIR);
-    if (config.DATA_DIR) directories.push(config.DATA_DIR);
-    if (config.DATA_DIR) directories.push(path.join(config.DATA_DIR, 'db'));
-    if (config.STORAGE_PATH) {
-      directories.push(config.STORAGE_PATH);
-      directories.push(path.join(config.STORAGE_PATH, 'db'));
-      directories.push(path.join(config.STORAGE_PATH, 'temp'));
-      directories.push(path.join(config.STORAGE_PATH, 'uploads'));
-      directories.push(path.join(config.STORAGE_PATH, 'downloads'));
-    }
-    
-    // Lọc các đường dẫn không xác định
-    const validDirectories = directories.filter(dir => dir !== undefined && dir !== null);
-    
-    for (const dir of validDirectories) {
+    // Tạo tất cả thư mục
+    for (const dir of directories) {
       const fullPath = path.resolve(dir);
       
-      // Kiểm tra và tạo thư mục nếu chưa tồn tại
       if (!fs.existsSync(fullPath)) {
         console.log(`Tạo thư mục: ${fullPath}`);
         fs.mkdirSync(fullPath, { recursive: true });
-      } else {
-        // Kiểm tra quyền ghi
-        try {
-          const testFile = path.join(fullPath, '.test');
-          fs.writeFileSync(testFile, 'test');
-          fs.unlinkSync(testFile);
-        } catch (permError) {
-          console.error(`Thư mục ${fullPath} không có quyền ghi: ${permError.message}`);
-        }
       }
     }
     
-    console.log('Đã kiểm tra và tạo các thư mục cần thiết');
+    console.log('Đã tạo các thư mục cần thiết');
   } catch (error) {
-    console.error('Lỗi khi tạo thư mục:', error);
+    console.error('Lỗi khi tạo thư mục:', error.message);
   }
 }
 
