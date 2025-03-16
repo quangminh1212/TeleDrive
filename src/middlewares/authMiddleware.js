@@ -10,6 +10,11 @@ const config = require('../config/config');
  * Kiểm tra xem người dùng đã đăng nhập chưa
  */
 function authenticate(req, res, next) {
+  // Bỏ qua xác thực cho route đăng nhập Telegram
+  if (req.path === '/auth/telegram') {
+    return next();
+  }
+  
   // Nếu người dùng đã đăng nhập qua session, cho phép truy cập
   if (req.session && req.session.authenticated) {
     return next();
