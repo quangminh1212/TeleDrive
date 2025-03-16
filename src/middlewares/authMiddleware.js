@@ -22,7 +22,7 @@ function authenticate(req, res, next) {
   }
   
   // Kiểm tra session
-  if (req.session && req.session.isLoggedIn) {
+  if (req.session && (req.session.isLoggedIn || req.session.authenticated)) {
     return next();
   }
   
@@ -30,7 +30,7 @@ function authenticate(req, res, next) {
   if (req.path.startsWith('/api/')) {
     return res.status(401).json({ 
       success: false, 
-      message: 'Unauthorized' 
+      error: 'Unauthorized' 
     });
   }
   

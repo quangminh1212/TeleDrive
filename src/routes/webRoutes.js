@@ -112,16 +112,22 @@ router.get('/', async (req, res) => {
 
 // Trang đăng nhập
 router.get('/login', (req, res) => {
-  // Vô hiệu hóa kiểm tra đăng nhập do chưa cài express-session
-  /*
-  // Nếu đã đăng nhập, redirect đến dashboard
-  if (req.session && req.session.authenticated) {
+  // Kiểm tra nếu user đã đăng nhập thì chuyển hướng đến dashboard
+  if (req.session && (req.session.authenticated || req.session.isLoggedIn)) {
     return res.redirect('/dashboard');
   }
-  */
   
-  // Render trang đăng nhập
-  res.sendFile(path.join(process.cwd(), 'public', 'login.html'));
+  // Nếu chưa đăng nhập, hiển thị trang login với thông báo lỗi nếu có
+  const errorMessage = req.query.error || '';
+  
+  res.render('login', {
+    title: 'Đăng nhập - TeleDrive',
+    errorMessage,
+    config: {
+      botToken: '',
+      telegramBotUsername: ''
+    }
+  });
 });
 
 // Trang dashboard
