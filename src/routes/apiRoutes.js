@@ -92,15 +92,18 @@ router.get('/auth/telegram', async (req, res) => {
     
     // Kiểm tra xem có đủ thông tin cần thiết không
     if (!telegramData.id || !telegramData.auth_date || !telegramData.hash) {
-      return res.status(400).json({
-        success: false,
-        message: 'Thiếu thông tin xác thực từ Telegram'
+      console.error('Thiếu thông tin xác thực từ Telegram:', { 
+        providedData: Object.keys(req.query) 
       });
+      return res.redirect('/login?error=' + encodeURIComponent('Thiếu thông tin xác thực từ Telegram, vui lòng thử lại'));
     }
     
-    // Xác minh dữ liệu và hash từ Telegram
-    // (Sử dụng bot token để tạo secret key cho việc xác thực)
+    // Kiểm tra xem bot token đã được cấu hình chưa
     const botToken = config.TELEGRAM_BOT_TOKEN;
+    if (!botToken) {
+      console.error('Chưa cấu hình TELEGRAM_BOT_TOKEN');
+      return res.redirect('/login?error=' + encodeURIComponent('Lỗi cấu hình Telegram Bot, vui lòng liên hệ quản trị viên'));
+    }
     
     // Tạo secret key từ token của bot theo đúng chuẩn Telegram
     // secret_key = SHA256(bot_token)
@@ -111,10 +114,12 @@ router.get('/auth/telegram', async (req, res) => {
     const authTime = parseInt(telegramData.auth_date);
     const currentTime = Math.floor(Date.now() / 1000);
     if (currentTime - authTime > 3600) {
-      return res.status(401).json({
-        success: false,
-        message: 'Xác thực đã hết hạn, vui lòng thử lại'
+      console.error('Xác thực Telegram hết hạn:', { 
+        authTime, 
+        currentTime, 
+        diff: currentTime - authTime 
       });
+      return res.redirect('/login?error=' + encodeURIComponent('Xác thực đã hết hạn, vui lòng thử lại'));
     }
     
     // Tạo data string để kiểm tra hash
@@ -132,10 +137,11 @@ router.get('/auth/telegram', async (req, res) => {
     
     // Nếu hash không khớp, từ chối yêu cầu
     if (hash !== calculatedHash) {
-      return res.status(401).json({
-        success: false,
-        message: 'Dữ liệu xác thực không hợp lệ'
+      console.error('Hash Telegram không khớp', { 
+        expected: calculatedHash, 
+        received: hash 
       });
+      return res.redirect('/login?error=' + encodeURIComponent('Dữ liệu xác thực không hợp lệ, vui lòng thử lại'));
     }
     
     // Tạo session và lưu thông tin người dùng Telegram
@@ -155,10 +161,7 @@ router.get('/auth/telegram', async (req, res) => {
     res.redirect('/dashboard');
   } catch (error) {
     console.error('Lỗi khi xác thực Telegram:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi xác thực Telegram'
-    });
+    res.redirect('/login?error=' + encodeURIComponent('Lỗi server khi xác thực Telegram: ' + error.message));
   }
 });
 
