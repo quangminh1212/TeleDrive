@@ -3954,11 +3954,10 @@ app.post('/api/settings', express.json(), async (req, res) => {
     });
   }
 });
-
-// API endpoint để kiểm tra và sửa dữ liệu file
 app.post('/api/check-files', async (req, res) => {
   try {
     if (!bot || !botActive) {
+// API endpoint để kiểm tra và sửa dữ liệu file
       return res.status(400).json({
         success: false,
         error: 'Bot Telegram không hoạt động'
