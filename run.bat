@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 > nul
 echo ===== STARTING TELEDRIVE APPLICATION =====
 echo.
 
@@ -32,6 +33,27 @@ if not exist "node_modules" (
   npm install
 )
 
+:: Kiểm tra cổng trong .env
+set DEFAULT_PORT=5002
+for /f "tokens=1,2 delims==" %%a in (.env) do (
+  if "%%a"=="PORT" set PORT=%%b
+)
+if "%PORT%"=="" set PORT=%DEFAULT_PORT%
+
+:: Kiểm tra nếu cổng đã được sử dụng
+netstat -ano | findstr ":%PORT%" >nul 2>nul
+if %ERRORLEVEL% EQU 0 (
+  echo WARNING: Cổng %PORT% đã được sử dụng.
+  set /p use_custom_port="Bạn có muốn sử dụng cổng khác không? (y/n, mặc định y): "
+  
+  if not "%use_custom_port%"=="n" (
+    set /p custom_port="Nhập cổng mới (mặc định 3000): "
+    if "%custom_port%"=="" set custom_port=3000
+    echo Sẽ sử dụng cổng %custom_port% thay vì %PORT%
+    set PORT=%custom_port%
+  )
+)
+
 :: Kiểm tra ngõ vào người dùng về chế độ
 echo Chọn chế độ chạy:
 echo 1. Chế độ phát triển (development) - sử dụng nodemon, tự động khởi động lại khi có thay đổi
@@ -39,15 +61,20 @@ echo 2. Chế độ sản xuất (production) - chạy ứng dụng thông thư�
 echo.
 set /p mode="Nhập lựa chọn của bạn (1 hoặc 2, mặc định 1): "
 
+:: Thiết lập biến môi trường PORT
+set "NODE_ENV=development"
+if "%mode%"=="2" set "NODE_ENV=production"
+
+:: Khởi động ứng dụng với cổng đã chọn
+echo.
+echo Khởi động TeleDrive trên cổng %PORT%...
+
 if "%mode%"=="2" (
-  echo.
-  echo Khởi động TeleDrive ở chế độ sản xuất...
-  node index.js
+  echo Chế độ sản xuất được chọn.
+  set PORT=%PORT% && node index.js
 ) else (
-  echo.
-  echo Khởi động TeleDrive ở chế độ phát triển với nodemon...
-  echo Ứng dụng sẽ tự động khởi động lại khi có thay đổi mã nguồn.
-  npx nodemon index.js
+  echo Chế độ phát triển được chọn. Ứng dụng sẽ tự động khởi động lại khi có thay đổi.
+  set PORT=%PORT% && npx nodemon index.js
 )
 
 :: Dừng lại khi kết thúc
