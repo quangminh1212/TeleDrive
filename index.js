@@ -411,7 +411,7 @@ async function syncFiles() {
       
       if (needsSync && !fileExists) {
         console.log(`File "${file.name}" cáº§n Ä‘á»“ng bá»™ nhÆ°ng không tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n: ${file.localPath}`);
-        // ÄÃ¡nh dáº¥u file lÃ  Ä'Ã£ xóa náº¿u không tÃ¬m tháº¥y
+        // ÄÃ¡nh dáº¥u file lÃ  Ä‘Ã£ xóa náº¿u không tÃ¬m tháº¥y
         file.deleted = true;
         file.needsSync = false;
       }
@@ -419,18 +419,18 @@ async function syncFiles() {
       return needsSync && fileExists;
     });
     
-    console.log(`TÃ¬m tháº¥y ${filesToSync.length} file cáº§n Ä‘á»“ng bá»™ vÃ  tá»“n táº¡i trÃªn á»• Ä'Ä©a`);
+    console.log(`TÃ¬m tháº¥y ${filesToSync.length} file cáº§n Ä‘á»“ng bá»™ vÃ  tá»“n táº¡i trÃªn á»• Ä‘Ä©a`);
     
     if (filesToSync.length > 0) {
       console.log('Danh sÃ¡ch má»™t sá»‘ file cáº§n Ä‘á»“ng bá»™:');
       filesToSync.slice(0, 5).forEach((file, index) => {
         console.log(`${index + 1}. ${file.name} (${file.size} bytes)`);
         console.log(`   - ÄÆ°á»ng dáº«n: ${file.localPath}`);
-        console.log(`   - Tráº¡ng thÃ¡i: ${file.needsSync ? 'Cáº§n Ä'á»“ng bá»™' : 'ChÆ°a cÃ³ fileId'}`);
+        console.log(`   - Tráº¡ng thÃ¡i: ${file.needsSync ? 'Cáº§n Ä‘á»“ng bá»™' : 'ChÆ°a cÃ³ fileId'}`);
         console.log(`   - Loáº¡i file: ${file.fileType}`);
       });
     } else {
-      console.log('Không cÃ³ file nÃ o cáº§n Ä'á»“ng bá»™');
+      console.log('Không cÃ³ file nÃ o cáº§n Ä‘á»“ng bá»™');
       return {
         success: true,
         syncedCount: 0,
@@ -443,30 +443,30 @@ async function syncFiles() {
     let retryCount = 0;
     const maxRetries = 3;
     
-    // Vá»›i má»—i file cáº§n Ä'á»“ng bá»™
+    // Vá»›i má»—i file cáº§n Ä‘á»“ng bá»™
     for (const file of filesToSync) {
       try {
-        console.log(`Äang Ä'á»“ng bá»™ file "${file.name}"...`);
+        console.log(`Äang Ä‘á»“ng bá»™ file "${file.name}"...`);
         
-        // Ä'áº£m báº£o encode tên file tiáº¿ng Viá»‡t Ä'Ãºng
+        // Äáº£m báº£o encode tên file tiáº¿ng Viá»‡t Ä‘Ãºng
         const filePath = Buffer.from(file.localPath, 'utf8').toString();
-        console.log(`Ä'Æ°á»ng dáº«n file: ${filePath}`);
+        console.log(`ÄÆ°á»ng dáº«n file: ${filePath}`);
         
         // Kiá»ƒm tra xem file cÃ³ tá»“n táº¡i không
         if (!fs.existsSync(filePath)) {
-          console.error(`File không tá»"n táº¡i: ${filePath}`);
-          file.syncError = `File không tá»"n táº¡i táº¡i Ä'Æ°á»ng dáº«n: ${filePath}`;
+          console.error(`File không tá»“n táº¡i: ${filePath}`);
+          file.syncError = `File không tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n: ${filePath}`;
           file.needsSync = true;
           continue;
         }
         
-        // Kiá»ƒm tra kÃ­ch thÆ°á»›c file
+        // Kiá»ƒm tra kÃ­ch thưá»›c file
         const stats = fs.statSync(filePath);
-        console.log(`KÃ­ch thÆ°á»›c file: ${formatBytes(stats.size)}`);
+        console.log(`KÃ­ch thưá»›c file: ${formatBytes(stats.size)}`);
         
         if (stats.size > MAX_FILE_SIZE) {
-          console.error(`File "${file.name}" quÃ¡ lá»›n (${formatBytes(stats.size)}) Ä'á»ƒ gá»­i qua Telegram.`);
-          file.syncError = `File quÃ¡ lá»›n (${formatBytes(stats.size)}) Ä'á»ƒ Ä'á»"ng bá»™ vá»›i Telegram`;
+          console.error(`File "${file.name}" quÃ¡ lá»›n (${formatBytes(stats.size)}) Ä‘á»ƒ gá»­i qua Telegram.`);
+          file.syncError = `File quÃ¡ lá»›n (${formatBytes(stats.size)}) Ä‘á»ƒ Ä‘á»“ng bá»™ vá»›i Telegram`;
           file.needsSync = true;
           continue;
         }
@@ -476,18 +476,18 @@ async function syncFiles() {
         console.log(`Chuáº©n bá»‹ gá»­i file lÃªn Telegram vá»›i caption: "${caption}"`);
         
         // Gá»­i file lÃªn Telegram vá»›i timeout 2 phÃºt
-        console.log(`Ä'ang gá»­i file "${file.name}" lÃªn Telegram (chatId: ${CHAT_ID})...`);
+        console.log(`Äang gá»­i file "${file.name}" lÃªn Telegram (chatId: ${CHAT_ID})...`);
         
         try {
           // Gá»­i file lÃªn Telegram dá»±a vÃ o loáº¡i file
           const sendFilePromise = (async () => {
-            // Táº¡o caption vá»›i tên file Ä'Ã£ Ä'Æ°á»£c giáº£i mÃ£ UTF-8 Ä'Ãºng
+            // Táº¡o caption vá»›i tên file Ä‘Ã£ Ä‘Æ°á»£c giáº£i mÃ£ UTF-8 Ä‘Ãºng
             let normalizedFileName = file.name;
             try {
               // Thá»­ normalize tên file Unicode
               normalizedFileName = decodeURIComponent(escape(file.name));
             } catch(e) {
-              console.log(`Không thá»ƒ chuáº©n hÃ³a tên file: ${file.name}, sá»­ dụng tên gá»'c`);
+              console.log(`Không thá»ƒ chuáº©n hÃ³a tên file: ${file.name}, sá»­ dụng tên gá»‘c`);
             }
             
             const caption = `File: ${normalizedFileName}`;
@@ -496,11 +496,11 @@ async function syncFiles() {
               filename: normalizedFileName
             };
             
-            // Gá»­i táº¥t cả file dÆ°á»›i dáº¡ng document Ä'á»ƒ trÃ¡nh lá»—i PHOTO_INVALID_DIMENSIONS
-            console.log(`Gá»­i file "${file.name}" nhÆ° document Ä'á»ƒ trÃ¡nh lá»—i format`);
+            // Gá»­i táº¥t cả file dÆ°á»›i dáº¡ng document Ä‘á»ƒ trÃ¡nh lá»—i PHOTO_INVALID_DIMENSIONS
+            console.log(`Gá»­i file "${file.name}" nhÆ° document Ä‘á»ƒ trÃ¡nh lá»—i format`);
             return bot.telegram.sendDocument(CHAT_ID, fileOptions, { caption: caption });
             
-            /* Không cÃ²n sá»­ dụng code nÃ y Ä'á»ƒ trÃ¡nh lá»—i
+            /* Không cÃ²n sá»­ dụng code nÃ y Ä‘á»ƒ trÃ¡nh lá»—i
             if (file.fileType === 'image') {
               console.log(`Gá»­i file "${file.name}" nhÆ° hÃ¬nh áº£nh`);
               try {
@@ -554,10 +554,10 @@ async function syncFiles() {
             setTimeout(() => reject(new Error('Timeout khi gá»­i file lÃªn Telegram')), 120000); // 2 phÃºt
           });
           
-          console.log(`Ä'ang chá» káº¿t quáº£ gá»­i file "${file.name}"...`);
+          console.log(`Äang chá» káº¿t quáº£ gá»­i file "${file.name}"...`);
           const result = await Promise.race([sendFilePromise, timeoutPromise]);
           
-          console.log(`Ä'Ã£ nháº­n pháº£n há»"i tá»« Telegram cho file "${file.name}"`);
+          console.log(`ÄÃ£ nháº­n pháº£n há»“i tá»« Telegram cho file "${file.name}"`);
           
           // Láº¥y file_id dá»±a trÃªn loáº¡i file
           let fileId = null;
@@ -582,13 +582,13 @@ async function syncFiles() {
           file.syncError = null;
           
           syncedCount++;
-          console.log(`Ä'Ã£ Ä'á»"ng bá»™ file "${file.name}" thÃ nh công (file_id: ${fileId})`);
+          console.log(`ÄÃ£ Ä‘á»“ng bá»™ file "${file.name}" thÃ nh công (file_id: ${fileId})`);
         } catch (sendError) {
           console.error(`Lỗi khi gá»­i file "${file.name}" lÃªn Telegram:`, sendError);
-          throw sendError; // Ä'á»ƒ xá»­ lÃ½ á»Ÿ pháº§n catch bên ngoÃ i
+          throw sendError; // Äá»ƒ xá»­ lÃ½ á»Ÿ pháº§n catch bên ngoÃ i
         }
       } catch (error) {
-        console.error(`Lỗi Ä'á»"ng bá»™ file "${file.name}":`, error);
+        console.error(`Lỗi Ä‘á»“ng bá»™ file "${file.name}":`, error);
         
         // Thá»­ láº¡i náº¿u cáº§n
         if (retryCount < maxRetries) {
@@ -597,11 +597,11 @@ async function syncFiles() {
           // Chá» 2 giÃ¢y trÆ°á»›c khi thá»­ láº¡i
           await new Promise(resolve => setTimeout(resolve, 2000));
           file.needsSync = true;
-          file.syncError = `Lỗi Ä'á»"ng bá»™: ${error.message}. Ä'Ã£ thá»­ ${retryCount}/${maxRetries} láº§n.`;
+          file.syncError = `Lỗi Ä‘á»“ng bá»™: ${error.message}. ÄÃ£ thá»­ ${retryCount}/${maxRetries} láº§n.`;
         } else {
-          file.syncError = `Lỗi Ä'á»"ng bá»™ sau ${maxRetries} láº§n thá»­: ${error.message}`;
+          file.syncError = `Lỗi Ä‘á»“ng bá»™ sau ${maxRetries} láº§n thá»­: ${error.message}`;
           file.needsSync = true;
-          console.error(`Ä'Ã£ vÆ°á»£t quÃ¡ sá»' láº§n thá»­ láº¡i cho file "${file.name}". Bá» qua file nÃ y.`);
+          console.error(`ÄÃ£ vÆ°á»£t quÃ¡ sá»‘ láº§n thá»­ láº¡i cho file "${file.name}". Bá» qua file nÃ y.`);
         }
       }
     }
@@ -610,8 +610,8 @@ async function syncFiles() {
     console.log(`LÆ°u thÃ´ng tin ${filesData.length} files vÃ o database...`);
     saveFilesDb(filesData);
     
-    console.log(`===== Káº¾T THÃšC QUÃ TRÃŒNH Ä'á»'NG Bá»˜ =====`);
-    console.log(`Ä'Ã£ Ä'á»"ng bá»™ thÃ nh công ${syncedCount}/${filesToSync.length} files vá»›i Telegram`);
+    console.log(`===== Káº¾T THÃšC QUÃ TRÃŒNH Äá»’NG Bá»˜ =====`);
+    console.log(`ÄÃ£ Ä‘á»“ng bá»™ thÃ nh công ${syncedCount}/${filesToSync.length} files vá»›i Telegram`);
     return {
       success: true,
       syncedCount: syncedCount,
@@ -619,10 +619,10 @@ async function syncFiles() {
       filesNeedingSync: filesToSync.length
     };
   } catch (error) {
-    console.error('Lỗi Ä'á»"ng bá»™ files:', error);
+    console.error('Lỗi Ä‘á»“ng bá»™ files:', error);
     return {
       success: false,
-      error: error.message || 'Lỗi server khi Ä'á»"ng bá»™ files'
+      error: error.message || 'Lỗi server khi Ä‘á»“ng bá»™ files'
     };
   }
 }
@@ -633,21 +633,21 @@ async function syncFiles() {
 async function getFilesFromTelegram() {
   try {
     if (!bot || !botActive) {
-      console.error('Bot Telegram không hoáº¡t Ä'á»™ng. Không thá»ƒ láº¥y file tá»« Telegram.');
+      console.error('Bot Telegram không hoáº¡t Ä‘á»™ng. Không thá»ƒ láº¥y file tá»« Telegram.');
       return;
     }
     
-    console.log('Ä'áº¥y danh sÃ¡ch file tá»« Telegram...');
+    console.log('Äang láº¥y danh sÃ¡ch file tá»« Telegram...');
     
     // Láº¥y chat id
     const chatId = CHAT_ID;
     if (!chatId || chatId === 'your_chat_id_here') {
-      console.error('CHAT_ID chÆ°a Ä'Æ°á»£c cáº¥u hÃ¬nh trong file .env.');
+      console.error('CHAT_ID chÆ°a Ä‘Æ°á»£c cáº¥u hÃ¬nh trong file .env.');
       return;
     }
     
     try {
-      // Ä'á»c dá»¯ liá»‡u hiá»‡n táº¡i
+      // Äá»c dá»¯ liá»‡u hiá»‡n táº¡i
       const filesData = readFilesDb();
       let newFileCount = 0;
       
@@ -659,9 +659,9 @@ async function getFilesFromTelegram() {
         return;
       }
       
-      console.log(`TÃ¬m tháº¥y ${messages.length} tin nháº¯n, Ä'ang xá»­ lÃ½...`);
+      console.log(`TÃ¬m tháº¥y ${messages.length} tin nháº¯n, Ä‘ang xá»­ lÃ½...`);
       
-      // Duyá»‡t qua tá»«ng tin nháº¯n Ä'á»ƒ tÃ¬m file
+      // Duyá»‡t qua tá»«ng tin nháº¯n Ä‘á»ƒ tÃ¬m file
       for (const message of messages) {
         let fileObj = null;
         let fileId = null;
@@ -698,11 +698,11 @@ async function getFilesFromTelegram() {
         
         // Náº¿u tÃ¬m tháº¥y file
         if (fileId) {
-          // Kiá»ƒm tra xem file Ä'Ã£ tá»"n táº¡i trong database chÆ°a
+          // Kiá»ƒm tra xem file Ä‘Ã£ tá»“n táº¡i trong database chÆ°a
           const existingFile = filesData.find(f => f.telegramFileId === fileId);
           
           if (!existingFile) {
-            // Láº¥y Ä'Æ°á»ng dáº«n táº£i xuá»'ng
+            // Láº¥y Ä‘Æ°á»ng dáº«n táº£i xuá»‘ng
             const fileInfo = await bot.telegram.getFile(fileId);
             let telegramUrl = null;
             
@@ -733,7 +733,7 @@ async function getFilesFromTelegram() {
       }
       
       if (newFileCount > 0) {
-        console.log(`Ä'Ã£ tÃ¬m tháº¥y ${newFileCount} file má»›i tá»« Telegram. LÆ°u vÃ o database...`);
+        console.log(`ÄÃ£ tÃ¬m tháº¥y ${newFileCount} file má»›i tá»« Telegram. LÆ°u vÃ o database...`);
         saveFilesDb(filesData);
       } else {
         console.log('Không tÃ¬m tháº¥y file má»›i tá»« Telegram.');
@@ -749,12 +749,12 @@ async function getFilesFromTelegram() {
 }
 
 /**
- * Tá»± Ä'á»™ng khÃ´i phá»¥c file tá»« Telegram khi file local bá»‹ máº¥t
+ * Tá»± Ä‘á»™ng khÃ´i phá»¥c file tá»« Telegram khi file local bá»‹ máº¥t
  */
 async function recoverFilesFromTelegram(filesData) {
-  // Náº¿u bot không hoáº¡t Ä'á»™ng, không thá»ƒ khÃ´i phá»¥c
+  // Náº¿u bot không hoáº¡t Ä‘á»™ng, không thá»ƒ khÃ´i phá»¥c
   if (!botActive || !bot) {
-    console.log('Bot Telegram không hoáº¡t Ä'á»™ng. Không thá»ƒ khÃ´i phá»¥c file tá»« Telegram.');
+    console.log('Bot Telegram không hoáº¡t Ä‘á»™ng. Không thá»ƒ khÃ´i phá»¥c file tá»« Telegram.');
     return;
   }
   
@@ -766,13 +766,13 @@ async function recoverFilesFromTelegram(filesData) {
     return;
   }
   
-  console.log(`Báº¯t Ä'áº§u khÃ´i phá»¥c ${filesToRecover.length} file tá»« Telegram...`);
+  console.log(`Báº¯t Ä‘áº§u khÃ´i phá»¥c ${filesToRecover.length} file tá»« Telegram...`);
   
   let recoveredCount = 0;
   
   for (const file of filesToRecover) {
     try {
-      console.log(`Ä'ang khÃ´i phá»¥c file "${file.name}" tá»« Telegram...`);
+      console.log(`Äang khÃ´i phá»¥c file "${file.name}" tá»« Telegram...`);
       
       // Láº¥y link file
       if (!file.telegramUrl) {
@@ -812,7 +812,7 @@ async function recoverFilesFromTelegram(filesData) {
       file.recoveredAt = new Date().toISOString();
       
       recoveredCount++;
-      console.log(`Ä'Ã£ khÃ´i phá»¥c file "${file.name}" thÃ nh công.`);
+      console.log(`ÄÃ£ khÃ´i phá»¥c file "${file.name}" thÃ nh công.`);
     } catch (error) {
       console.error(`Lỗi khÃ´i phá»¥c file "${file.name}":`, error);
     }
@@ -821,7 +821,7 @@ async function recoverFilesFromTelegram(filesData) {
   // LÆ°u láº¡i database
   if (recoveredCount > 0) {
     saveFilesDb(filesData);
-    console.log(`Ä'Ã£ khÃ´i phá»¥c ${recoveredCount}/${filesToRecover.length} file tá»« Telegram.`);
+    console.log(`ÄÃ£ khÃ´i phá»¥c ${recoveredCount}/${filesToRecover.length} file tá»« Telegram.`);
   }
 }
 
@@ -830,14 +830,14 @@ async function recoverFilesFromTelegram(filesData) {
  */
 async function cleanUploads() {
   if (!bot || !botActive) {
-    console.error('Bot Telegram không khá»Ÿi Ä'á»™ng. Không thá»ƒ dá»n dáº¹p uploads.');
-    throw new Error('Bot Telegram không hoáº¡t Ä'á»™ng');
+    console.error('Bot Telegram không khá»Ÿi Ä‘á»™ng. Không thá»ƒ dá»n dáº¹p uploads.');
+    throw new Error('Bot Telegram không hoáº¡t Ä‘á»™ng');
   }
   
   try {
-    console.log('Báº¯t Ä'áº§u dá»n dáº¹p thư mục uploads...');
+    console.log('Báº¯t Ä‘áº§u dá»n dáº¹p thư mục uploads...');
     
-    // Ä'á»c database
+    // Äá»c database
     const filesData = readFilesDb();
     
     // Lá»c cÃ¡c file chá»‰ lÆ°u á»Ÿ local
@@ -854,7 +854,7 @@ async function cleanUploads() {
     
     console.log(`TÃ¬m tháº¥y ${localOnlyFiles.length} file cáº§n gá»­i lÃªn Telegram`);
     
-    // ID chat Ä'á»ƒ gá»­i file
+    // ID chat Ä‘á»ƒ gá»­i file
     let chatId;
     
     try {
@@ -866,21 +866,21 @@ async function cleanUploads() {
       
       const botInfo = await Promise.race([getMePromise, timeoutPromise]);
       chatId = botInfo.id;
-      console.log(`Sáº½ gá»­i file Ä'áº¿n chat ID: ${chatId}`);
+      console.log(`Sáº½ gá»­i file Ä‘áº¿n chat ID: ${chatId}`);
     } catch (error) {
       console.error('Không thá»ƒ láº¥y thÃ´ng tin bot:', error);
-      throw new Error('Không thá»ƒ láº¥y thÃ´ng tin bot Ä'á»ƒ gá»­i file');
+      throw new Error('Không thá»ƒ láº¥y thÃ´ng tin bot Ä‘á»ƒ gá»­i file');
     }
     
     // Xá»­ lÃ½ tá»«ng file
     for (const file of localOnlyFiles) {
       try {
         if (!fs.existsSync(file.localPath)) {
-          console.warn(`File không tá»"n táº¡i: ${file.localPath}`);
+          console.warn(`File không tá»“n táº¡i: ${file.localPath}`);
           continue;
         }
         
-        console.log(`Ä'ang gá»­i file "${file.name}" (${formatBytes(file.size)}) lÃªn Telegram...`);
+        console.log(`Äang gá»­i file "${file.name}" (${formatBytes(file.size)}) lÃªn Telegram...`);
         
         // Gá»­i file lÃªn Telegram vá»›i timeout
         let message;
@@ -900,9 +900,9 @@ async function cleanUploads() {
           setTimeout(() => reject(new Error('Timeout khi gá»­i file lÃªn Telegram')), 60000); // TÄƒng timeout lÃªn 60 giÃ¢y
         });
         
-        // Sử dụng Promise.race Ä'á»ƒ Ä'áº·t timeout
+        // Sử dụng Promise.race Ä‘á»ƒ Ä‘áº·t timeout
         message = await Promise.race([sendFilePromise, sendTimeoutPromise]);
-        console.log(`Ä'Ã£ gá»­i file "${file.name}" thÃ nh công lÃªn Telegram`);
+        console.log(`ÄÃ£ gá»­i file "${file.name}" thÃ nh công lÃªn Telegram`);
         
         // Láº¥y ID file tÃ¹y thuá»™c vÃ o loáº¡i file
         let telegramFileId = null;
@@ -917,7 +917,7 @@ async function cleanUploads() {
         }
         
         if (!telegramFileId) {
-          throw new Error('Không láº¥y Ä'Æ°á»£c Telegram File ID sau khi upload');
+          throw new Error('Không láº¥y Ä‘Æ°á»£c Telegram File ID sau khi upload');
         }
         
         // Cáº­p nháº­t thÃ´ng tin file
@@ -927,15 +927,15 @@ async function cleanUploads() {
         try {
           const downloadUrl = await getTelegramFileLink(telegramFileId);
           file.telegramUrl = downloadUrl;
-          console.log(`Ä'Ã£ láº¥y Ä'Æ°á»£c URL file: ${downloadUrl}`);
+          console.log(`ÄÃ£ láº¥y Ä‘Æ°á»£c URL file: ${downloadUrl}`);
         } catch (linkError) {
           console.error(`Lỗi láº¥y link file: ${linkError.message}`);
-          // Váº«n tiáº¿p tá»¥c xá»­ lÃ½ ngay cáº£ khi không láº¥y Ä'Æ°á»£c link
+          // Váº«n tiáº¿p tá»¥c xá»­ lÃ½ ngay cả khi không láº¥y Ä‘Æ°á»£c link
         }
         
         // XÃ³a file local
         fs.unlinkSync(file.localPath);
-        console.log(`Ä'Ã£ xóa file local: ${file.localPath}`);
+        console.log(`ÄÃ£ xóa file local: ${file.localPath}`);
         
         // Cáº­p nháº­t thÃ´ng tin file
         file.localPath = null;
@@ -943,13 +943,13 @@ async function cleanUploads() {
         // LÆ°u láº¡i database sau má»—i file
         saveFilesDb(filesData);
         
-        console.log(`Ä'Ã£ xá»­ lÃ½ file "${file.name}" thÃ nh công`);
+        console.log(`ÄÃ£ xá»­ lÃ½ file "${file.name}" thÃ nh công`);
       } catch (error) {
         console.error(`Lỗi xá»­ lÃ½ file "${file.name}":`, error);
       }
     }
     
-    console.log('QuÃ¡ trÃ¬nh dá»n dáº¹p Ä'Ã£ hoÃ n táº¥t');
+    console.log('QuÃ¡ trÃ¬nh dá»n dáº¹p Ä‘Ã£ hoÃ n táº¥t');
     return localOnlyFiles.length;
   } catch (error) {
     console.error('Lỗi dá»n dáº¹p uploads:', error);
@@ -961,8 +961,8 @@ async function cleanUploads() {
  * Routes
  */
 
-// ThÃªm cÃ¡c hÃ m utility cho template
-// HÃ m xác Ä'á»‹nh loáº¡i file dá»±a trÃªn tên file
+// ThÃªm cÃ¡c hÃ m utility cho template
+// HÃ m xác Ä‘á»‹nh loáº¡i file dá»±a trÃªn tên file
 function getFileType(filename) {
     const ext = path.extname(filename).toLowerCase();
     
@@ -991,20 +991,20 @@ function getFileType(filename) {
         return 'text';
     }
     
-    // Máº·c Ä'á»‹nh
+    // Máº·c Ä‘á»‹nh
     return 'document';
 }
 
 // Trang chá»§
 app.get('/', async (req, res) => {
   try {
-    // Ä'á»c database
+    // Äá»c database
     const filesData = readFilesDb();
     
     // Kiá»ƒm tra tráº¡ng thÃ¡i bot
     const isBotActive = await checkBotActive();
     
-    // Ä'á»‹nh dáº¡ng dá»¯ liá»‡u trÆ°á»›c khi gá»­i tá»›i template
+    // Äá»‹nh dáº¡ng dá»¯ liá»‡u trÆ°á»›c khi gá»­i tá»›i template
     const formattedFiles = filesData.map(file => ({
       id: file.id,
       name: file.name,
@@ -1018,14 +1018,14 @@ app.get('/', async (req, res) => {
       fixUrl: `/api/files/${file.id}/fix`
     }));
     
-    // TÃ­nh toÃ¡n thá»'ng kÃª
+    // TÃ­nh toÃ¡n thá»‘ng kÃª
     const storageInfo = {
       used: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
       total: MAX_FILE_SIZE * 10,
       percent: (filesData.reduce((sum, f) => sum + (f.size || 0), 0) / (MAX_FILE_SIZE * 10)) * 100
     };
     
-    // Kiá»ƒm tra file cÃ³ váº¥n Ä'á»
+    // Kiá»ƒm tra file cÃ³ váº¥n Ä‘á»
     const problemFiles = filesData.filter(f => 
       !f.telegramFileId || 
       (!f.localPath && !f.telegramUrl)
@@ -1055,12 +1055,12 @@ app.get('/', async (req, res) => {
   }
 });
 
-// API endpoint Ä'á»ƒ láº¥y thÃ´ng tin files
+// API endpoint Ä‘á»ƒ láº¥y thÃ´ng tin files
 app.get('/api/files', (req, res) => {
   try {
     const filesData = readFilesDb();
     
-    // Ä'á»‹nh dáº¡ng dá»¯ liá»‡u trÆ°á»›c khi gá»­i Ä'i
+    // Äá»‹nh dáº¡ng dá»¯ liá»‡u trÆ°á»›c khi gá»­i Ä‘i
     const formattedFiles = filesData.map(file => ({
       id: file.id,
       name: file.name,
@@ -1082,7 +1082,7 @@ app.get('/api/files', (req, res) => {
   }
 });
 
-// API Ä'á»ƒ láº¥y thÃ´ng tin má»™t file
+// API Ä‘á»ƒ láº¥y thÃ´ng tin má»™t file
 app.get('/api/files/:id', (req, res) => {
   try {
     const fileId = req.params.id;
@@ -1090,10 +1090,10 @@ app.get('/api/files/:id', (req, res) => {
     const file = filesData.find(f => f.id === fileId);
     
     if (!file) {
-      return res.status(404).json({ error: 'File không tá»"n táº¡i' });
+      return res.status(404).json({ error: 'File không tá»“n táº¡i' });
     }
     
-    // Ä'á»‹nh dáº¡ng dá»¯ liá»‡u trÆ°á»›c khi gá»­i Ä'i
+    // Äá»‹nh dáº¡ng dá»¯ liá»‡u trÆ°á»›c khi gá»­i Ä‘i
     const formattedFile = {
       id: file.id,
       name: file.name,
@@ -1115,30 +1115,30 @@ app.get('/api/files/:id', (req, res) => {
   }
 });
 
-// HÃ m láº¥y link download tá»« Telegram vá»›i timeout
+// HÃ m láº¥y link download tá»« Telegram vá»›i timeout
 async function getTelegramFileLink(fileId) {
   if (!bot || !botActive) {
-    throw new Error('Bot Telegram không hoáº¡t Ä'á»™ng');
+    throw new Error('Bot Telegram không hoáº¡t Ä‘á»™ng');
   }
   
   try {
-    console.log(`Ä'ang láº¥y file link cho Telegram file ID: ${fileId}`);
+    console.log(`Äang láº¥y file link cho Telegram file ID: ${fileId}`);
     
     // Thiáº¿t láº­p timeout cho viá»‡c láº¥y file
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Timeout khi láº¥y link file tá»« Telegram')), 30000);
     });
     
-    // Sử dụng Promise.race cho cáº£ getFile vÃ  timeout
+    // Sử dụng Promise.race cho cả getFile vÃ  timeout
     const fileInfo = await Promise.race([bot.telegram.getFile(fileId), timeoutPromise]);
     
     if (!fileInfo || !fileInfo.file_path) {
-      throw new Error('Không láº¥y Ä'Æ°á»£c thÃ´ng tin file tá»« Telegram');
+      throw new Error('Không láº¥y Ä‘Æ°á»£c thÃ´ng tin file tá»« Telegram');
     }
     
     // Táº¡o URL download
     const downloadUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
-    console.log(`Ä'Ã£ láº¥y Ä'Æ°á»£c link file: ${downloadUrl}`);
+    console.log(`ÄÃ£ láº¥y Ä‘Æ°á»£c link file: ${downloadUrl}`);
     
     return downloadUrl;
   } catch (error) {
@@ -1147,7 +1147,7 @@ async function getTelegramFileLink(fileId) {
   }
 }
 
-// API endpoint Ä'á»ƒ táº£i file theo ID - sá»­a Ä'á»•i Ä'á»ƒ luôn táº£i tá»« Telegram
+// API endpoint Ä‘á»ƒ táº£i file theo ID - sá»­a Ä‘á»•i Ä‘á»ƒ luÃ´n táº£i tá»« Telegram
 app.get('/api/files/:id/download', async (req, res) => {
   try {
     const fileId = req.params.id;
@@ -1158,12 +1158,12 @@ app.get('/api/files/:id/download', async (req, res) => {
       return res.status(404).render('error', { 
         title: 'TeleDrive - Không tÃ¬m tháº¥y',
         message: 'Không tÃ¬m tháº¥y file',
-        error: { status: 404, stack: 'File không tá»"n táº¡i hoáº·c Ä'Ã£ bá»‹ xóa' }
+        error: { status: 404, stack: 'File không tá»“n táº¡i hoáº·c Ä‘Ã£ bá»‹ xóa' }
       });
     }
     
     // PHáº¦N 1: KIá»‚M TRA FILE LOCAL
-    // Náº¿u file cÃ³ Ä'Æ°á»ng dáº«n local vÃ  tá»"n táº¡i, Æ°u tiÃªn táº£i tá»« local
+    // Náº¿u file cÃ³ Ä‘Æ°á»ng dáº«n local vÃ  tá»“n táº¡i, Æ°u tiÃªn táº£i tá»« local
     if (file.localPath && fs.existsSync(file.localPath)) {
       console.log(`Táº£i file tá»« local: ${file.localPath}`);
       res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`);
@@ -1175,23 +1175,23 @@ app.get('/api/files/:id/download', async (req, res) => {
     }
     
     // PHáº¦N 2: KIá»‚M TRA VÃ€ Táº¢I Tá»ª TELEGRAM
-    // Kiá»ƒm tra bot hoáº¡t Ä'á»™ng
+    // Kiá»ƒm tra bot hoáº¡t Ä‘á»™ng
     if (!botActive || !bot) {
       return res.status(503).render('error', {
-        title: 'TeleDrive - Bot không hoáº¡t Ä'á»™ng',
-        message: 'Bot Telegram Ä'ang không hoáº¡t Ä'á»™ng',
-        error: { status: 503, stack: 'Bot cáº§n Ä'Æ°á»£c káº¿t ná»'i Ä'á»ƒ táº£i file tá»« Telegram. Vui lÃ²ng thá»­ láº¡i sau.' }
+        title: 'TeleDrive - Bot không hoáº¡t Ä‘á»™ng',
+        message: 'Bot Telegram Ä‘ang không hoáº¡t Ä‘á»™ng',
+        error: { status: 503, stack: 'Bot cáº§n Ä‘Æ°á»£c káº¿t ná»‘i Ä‘á»ƒ táº£i file tá»« Telegram. Vui lÃ²ng thá»­ láº¡i sau.' }
       });
     }
     
     // Náº¿u file cÃ³ Telegram File ID
     if (file.telegramFileId) {
       try {
-        console.log(`Ä'ang táº£i file tá»« Telegram vá»›i ID: ${file.telegramFileId}`);
+        console.log(`Äang táº£i file tá»« Telegram vá»›i ID: ${file.telegramFileId}`);
         
         // Láº¥y link file tá»« Telegram
         const downloadUrl = await getTelegramFileLink(file.telegramFileId);
-        console.log(`Ä'Ã£ láº¥y Ä'Æ°á»£c URL táº£i xuá»'ng: ${downloadUrl}`);
+        console.log(`ÄÃ£ láº¥y Ä‘Æ°á»£c URL táº£i xuá»‘ng: ${downloadUrl}`);
         
         // Cáº­p nháº­t URL cho láº§n sau
         const fileIndex = filesData.findIndex(f => f.id === fileId);
@@ -1201,8 +1201,8 @@ app.get('/api/files/:id/download', async (req, res) => {
         }
 
         try {
-          // Táº£i file tá»« Telegram vÃ  stream trá»±c tiáº¿p Ä'áº¿n ngÆ°á»i dÃ¹ng
-          console.log(`Ä'ang táº£i nội dung file tá»« URL: ${downloadUrl}`);
+          // Táº£i file tá»« Telegram vÃ  stream trá»±c tiáº¿p Ä‘áº¿n ngÆ°á»i dÃ¹ng
+          console.log(`Äang táº£i nội dung file tá»« URL: ${downloadUrl}`);
           const response = await axios({
             method: 'get',
             url: downloadUrl,
@@ -1222,7 +1222,7 @@ app.get('/api/files/:id/download', async (req, res) => {
             res.setHeader('Content-Length', response.headers['content-length']);
           }
           
-          // Stream dá»¯ liá»‡u Ä'áº¿n client
+          // Stream dá»¯ liá»‡u Ä‘áº¿n client
           response.data.pipe(res);
           return;
         } catch (axiosError) {
@@ -1232,11 +1232,11 @@ app.get('/api/files/:id/download', async (req, res) => {
       } catch (error) {
         console.error(`Lỗi khi láº¥y file tá»« Telegram: ${error.message}`);
         
-        // Thá»­ Ä'á»"ng bá»™ láº¡i Ä'á»ƒ cáº­p nháº­t telegramFileId
+        // Thá»­ Ä‘á»“ng bá»™ láº¡i Ä‘á»ƒ cáº­p nháº­t telegramFileId
         try {
           await syncFiles();
           
-          // Kiá»ƒm tra láº¡i sau khi Ä'á»"ng bá»™
+          // Kiá»ƒm tra láº¡i sau khi Ä‘á»“ng bá»™
           const updatedFilesData = readFilesDb();
           const updatedFile = updatedFilesData.find(f => f.id === fileId);
           
@@ -1244,21 +1244,17 @@ app.get('/api/files/:id/download', async (req, res) => {
             return res.redirect(`/api/files/${fileId}/download`);
           }
         } catch (syncError) {
-          console.error(`Lỗi Ä'á»"ng bá»™ Ä'á»ƒ cáº­p nháº­t file: ${syncError.message}`);
+          console.error(`Lỗi Ä‘á»“ng bá»™ Ä‘á»ƒ cáº­p nháº­t file: ${syncError.message}`);
         }
         
         return res.status(500).render('error', {
           title: 'TeleDrive - Lỗi táº£i file',
-          message: 'Lỗi khi táº£i file tá»« Telegram. HÃ£y truy cáº­p /api/files/' + fileId + '/fix Ä'á»ƒ kháº¯c phá»¥c.',
+          message: 'Lỗi khi táº£i file tá»« Telegram. HÃ£y truy cáº­p /api/files/' + fileId + '/fix Ä‘á»ƒ kháº¯c phá»¥c.',
           error: { status: 500, stack: error.message }
         });
       }
     }
     
-    // PHáº¦N 3: KHÃ"NG TÃ"M THáº¤Y FILE
-    // Náº¿u không cÃ³ file á»Ÿ local vÃ  không cÃ³ telegramFileId, thá»­ Ä'á»"ng bá»™
-    try {
-      // Thá»­ Ä'á»"ng bá»™ file
     // PHáº¦N 3: KHÃ”NG TÃŒM THáº¤Y FILE
     // Náº¿u không cÃ³ file á»Ÿ local vÃ  không cÃ³ telegramFileId, thá»­ Ä‘á»“ng bá»™
     try {
@@ -2328,10 +2324,13 @@ async function handleCommandLineArgs() {
       console.log(`Lá»‡nh không há»£p lá»‡: ${command}`);
       return false;
   }
+}
+
+// Make sure to place this right above the last middleware error handlers
 // Move the error and 404 handlers to the very end of routes
 
-// Khởi động chương trình
-(async function startApplication() {
+  console.error('Lỗi server:', err);
+  res.status(500).json({
     success: false,
     error: 'Lỗi server: ' + (err.message || 'Không xác Ä‘á»‹nh')
   });
