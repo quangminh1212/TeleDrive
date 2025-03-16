@@ -709,83 +709,72 @@ async function downloadFileFromTelegram(fileId, savePath) {
 
 /**
  * Gửi file lên Telegram
- * @param {String} filePath Đường dẫn file cần gửi
+ * @param {String} filePath Đường dẫn đến file cần gửi
  * @param {String} caption Chú thích cho file
- * @returns {Promise<Object>} Kết quả gửi file
+ * @param {Object} options Tùy chọn bổ sung
+ * @returns {Promise<Object|null>} Kết quả gửi file hoặc null nếu thất bại
  */
-async function sendFileToTelegram(filePath, caption = '') {
+async function sendFile(filePath, caption = '', options = {}) {
   try {
-    console.log(`Đang gửi file lên Telegram: ${filePath}`);
-    
-    // Kiểm tra file tồn tại
-    if (!fs.existsSync(filePath)) {
-      console.error(`File không tồn tại: ${filePath}`);
-      return {
-        success: false,
-        error: 'File không tồn tại'
-      };
+    // Kiểm tra bot có sẵn sàng không
+    if (!isBotActive()) {
+      if (simulationMode) {
+        console.log(`[Chế độ giả lập] Gửi file: ${filePath}`);
+        return { ok: true, simulated: true, file_path: filePath, caption };
+      }
+      
+      console.log('Bot chưa sẵn sàng, không thể gửi file');
+      return null;
     }
     
     // Kiểm tra chat ID
     if (!chatId) {
-      console.error('Chưa thiết lập chat ID, không thể gửi file');
-      return {
-        success: false,
-        error: 'Chưa thiết lập chat ID'
-      };
+      console.log('Chưa có chat ID, không thể gửi file');
+      return null;
     }
     
-    // Kiểm tra bot đã sẵn sàng chưa
-    if (!isBotActive()) {
-      // Thử khởi tạo bot
-      await initBot();
-      
-      // Kiểm tra lại sau khi khởi tạo
-      if (!isBotActive()) {
-        console.error('Không thể khởi động bot để gửi file');
-        return {
-          success: false,
-          error: 'Bot không hoạt động, không thể gửi file'
-        };
-      }
+    // Kiểm tra file tồn tại
+    if (!fs.existsSync(filePath)) {
+      console.error(`File không tồn tại: ${filePath}`);
+      return null;
     }
     
-    // Lấy tên file
-    const fileName = path.basename(filePath);
+    // Chuẩn bị options
+    const sendOptions = {
+      parse_mode: 'HTML',
+      disable_notification: false,
+      ...options
+    };
     
-    // Gửi file lên Telegram
-    const message = await bot.telegram.sendDocument(chatId, {
-      source: fs.createReadStream(filePath),
-      filename: fileName
-    }, {
-      caption: caption || fileName
+    // Giới hạn độ dài caption
+    const MAX_CAPTION_LENGTH = 1024;
+    if (caption && caption.length > MAX_CAPTION_LENGTH) {
+      console.log(`Caption quá dài (${caption.length} ký tự), cắt bớt xuống ${MAX_CAPTION_LENGTH} ký tự`);
+      caption = caption.substring(0, MAX_CAPTION_LENGTH - 50) + '...\n\n<i>[Đã cắt ngắn]</i>';
+    }
+    
+    if (caption) {
+      sendOptions.caption = caption;
+    }
+    
+    // Gửi file với timeout
+    const result = await Promise.race([
+      bot.telegram.sendDocument(chatId, {
+        source: filePath,
+        filename: path.basename(filePath)
+      }, sendOptions),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout khi gửi file')), 30000)
+      )
+    ]).catch(error => {
+      console.error('Lỗi khi gửi file:', error.message);
+      return null;
     });
     
-    // Lấy file_id từ kết quả trả về
-    const fileId = message?.document?.file_id;
-    
-    if (!fileId) {
-      console.error('Không lấy được file ID sau khi gửi');
-      return {
-        success: false,
-        error: 'Không lấy được file ID'
-      };
-    }
-    
-    console.log(`Đã gửi file thành công lên Telegram, ID: ${fileId}`);
-    
-    return {
-      success: true,
-      fileId: fileId,
-      messageId: message.message_id,
-      fileUrl: null // Telegram không trả về URL trực tiếp
-    };
+    return result;
   } catch (error) {
-    console.error(`Lỗi khi gửi file lên Telegram: ${error.message}`);
-    return {
-      success: false,
-      error: error.message || 'Lỗi không xác định khi gửi file'
-    };
+    console.error('Lỗi khi gửi file lên Telegram:', error.message);
+    return null;
   }
 }
 
@@ -1313,7 +1302,7 @@ module.exports = {
   isBotActive,
   verifyBotToken,
   handleIncomingFile,
-  sendFileToTelegram,
+  sendFile,
   getFileLink,
   downloadFileFromTelegram,
   sendMessage,
