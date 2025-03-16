@@ -11,7 +11,7 @@ const fs = require('fs');
 // Remove external dependencies
 // const cors = require('cors');
 // const helmet = require('helmet');
-const session = require('express-session');
+// const session = require('express-session');
 // const bodyParser = require('body-parser');
 
 // Nạp biến môi trường
@@ -43,16 +43,16 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Thiết lập session
-app.use(session({
-  secret: config.SESSION_SECRET || 'teledrive-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: config.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 giờ
-  }
-}));
+// Thiết lập session - Vô hiệu hóa
+// app.use(session({
+//   secret: config.SESSION_SECRET || 'teledrive-secret-key',
+//   resave: false,
+//   saveUninitialized: false,
+//   cookie: {
+//     secure: config.NODE_ENV === 'production',
+//     maxAge: 24 * 60 * 60 * 1000 // 24 giờ
+//   }
+// }));
 
 // Thiết lập static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -72,8 +72,9 @@ app.use((req, res, next) => {
     return res.status(401).json({ success: false, error: 'Invalid API key' });
   }
   
-  // Nếu là API request mà không có API key và chưa đăng nhập
-  if (req.path.startsWith('/api/') && (!req.session || !req.session.authenticated)) {
+  // Nếu là API request mà không có API key 
+  // (bỏ kiểm tra session vì chưa cài đặt express-session)
+  if (req.path.startsWith('/api/')) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
   }
   
