@@ -3610,3 +3610,185 @@ app.post('/api/check-files', async (req, res) => {
 });
 
 // ... existing code ...
+
+// API endpoint để lấy nội dung thùng rác
+app.get('/api/trash', (req, res) => {
+  try {
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Lọc các file đã xóa
+    const trashedFiles = filesData.filter(file => file.isDeleted);
+    
+    // Định dạng dữ liệu trước khi gửi đi
+    const formattedFiles = trashedFiles.map(file => ({
+      id: file.id,
+      name: file.name,
+      size: file.size,
+      formattedSize: formatBytes(file.size),
+      uploadDate: file.uploadDate,
+      formattedDate: formatDate(file.uploadDate),
+      deletedDate: file.deletedDate,
+      formattedDeletedDate: formatDate(file.deletedDate),
+      mimeType: file.mimeType,
+      fileType: file.fileType,
+      telegramFileId: file.telegramFileId ? true : false,
+      restoreUrl: `/api/trash/${file.id}/restore`,
+      deleteUrl: `/api/trash/${file.id}/delete`
+    }));
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      count: formattedFiles.length,
+      files: formattedFiles
+    });
+  } catch (error) {
+    console.error('Lỗi lấy danh sách thùng rác:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi lấy danh sách thùng rác'
+    });
+  }
+});
+
+// API endpoint để khôi phục file từ thùng rác
+app.post('/api/trash/:id/restore', (req, res) => {
+  try {
+    const fileId = req.params.id;
+    
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
+    }
+    
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Tìm file cần khôi phục
+    const fileIndex = filesData.findIndex(file => file.id === fileId && file.isDeleted);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại trong thùng rác'
+      });
+    }
+    
+    // Khôi phục file
+    filesData[fileIndex].isDeleted = false;
+    filesData[fileIndex].deletedDate = null;
+    
+    // Lưu lại database
+    saveFilesDb(filesData);
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: 'Đã khôi phục file thành công',
+      file: {
+        id: filesData[fileIndex].id,
+        name: filesData[fileIndex].name
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi khôi phục file:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi khôi phục file'
+    });
+  }
+});
+
+// API endpoint để xóa vĩnh viễn file từ thùng rác
+app.delete('/api/trash/:id', (req, res) => {
+  try {
+    const fileId = req.params.id;
+    
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
+    }
+    
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Tìm file cần xóa
+    const fileIndex = filesData.findIndex(file => file.id === fileId && file.isDeleted);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại trong thùng rác'
+      });
+    }
+    
+    const file = filesData[fileIndex];
+    
+    // Xóa file khỏi database
+    filesData.splice(fileIndex, 1);
+    
+    // Lưu lại database
+    saveFilesDb(filesData);
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: 'Đã xóa vĩnh viễn file thành công',
+      deletedFile: {
+        id: file.id,
+        name: file.name
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi xóa vĩnh viễn file:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi xóa vĩnh viễn file'
+    });
+  }
+});
+
+// API endpoint để làm trống thùng rác
+app.delete('/api/trash', (req, res) => {
+  try {
+    // Đọc database
+    let filesData = readFilesDb();
+    
+    // Đếm số file trong thùng rác
+    const trashedCount = filesData.filter(file => file.isDeleted).length;
+    
+    if (trashedCount === 0) {
+      return res.json({
+        success: true,
+        message: 'Thùng rác đã trống',
+        deletedCount: 0
+      });
+    }
+    
+    // Xóa tất cả file trong thùng rác
+    filesData = filesData.filter(file => !file.isDeleted);
+    
+    // Lưu lại database
+    saveFilesDb(filesData);
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: 'Đã làm trống thùng rác',
+      deletedCount: trashedCount
+    });
+  } catch (error) {
+    console.error('Lỗi làm trống thùng rác:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi làm trống thùng rác'
+    });
+  }
+});
+
+// ... existing code ...
