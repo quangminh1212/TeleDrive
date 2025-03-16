@@ -31,6 +31,10 @@ ensureDirectories();
 // Khởi tạo app
 const app = express();
 
+// Thiết lập view engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 // Thiết lập middleware cơ bản
 // app.use(cors());
 // app.use(helmet({
