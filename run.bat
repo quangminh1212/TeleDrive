@@ -28,11 +28,10 @@ if not exist ".env" (
 ) else (
   :: Kiểm tra BOT_TOKEN trong .env
   findstr /C:"BOT_TOKEN=your_telegram_bot_token" .env >nul 2>nul
-  findstr /C:"BOT_TOKEN=" .env | findstr /V /C:"BOT_TOKEN=your_telegram_bot_token" | findstr /V /C:"# BOT_TOKEN" >nul 2>nul
-  if %ERRORLEVEL% NEQ 0 (
-    echo WARNING: BOT_TOKEN chua duoc cau hinh dung trong .env
-    echo Ban co muon cap nhat BOT_TOKEN khong?
-    set /p update_token="Nhap 'y' de cap nhat, bat ky phim nao khac de bo qua: "
+  if %ERRORLEVEL% EQU 0 (
+    echo WARNING: BOT_TOKEN chua duoc cau hinh trong .env
+    echo Ban can cap nhat BOT_TOKEN de su dung day du tinh nang
+    set /p update_token="Nhap 'y' de cap nhat ngay, bat ky phim nao khac de bo qua: "
     if /i "%update_token%"=="y" (
       notepad .env
     )
@@ -66,7 +65,18 @@ if %ERRORLEVEL% EQU 0 (
   )
 )
 
+:: Kiểm tra đồng bộ ban đầu
+echo.
+set /p sync_files="Ban co muon dong bo tat ca file voi Telegram khi khoi dong? (y/n, mac dinh n): "
+if /i "%sync_files%"=="y" (
+  echo Se thuc hien dong bo khi khoi dong.
+  set SYNC_ON_START=true
+) else (
+  set SYNC_ON_START=false
+)
+
 :: Kiểm tra ngõ vào người dùng về chế độ
+echo.
 echo Chon che do chay:
 echo 1. Che do phat trien (development) - su dung nodemon, tu dong khoi dong lai khi co thay doi
 echo 2. Che do san xuat (production) - chay ung dung thong thuong
@@ -83,10 +93,18 @@ echo Khoi dong TeleDrive tren cong %PORT%...
 
 if "%mode%"=="2" (
   echo Che do san xuat duoc chon.
-  set PORT=%PORT% && node index.js
+  if /i "%SYNC_ON_START%"=="true" (
+    set PORT=%PORT% && node index.js sync
+  ) else (
+    set PORT=%PORT% && node index.js
+  )
 ) else (
   echo Che do phat trien duoc chon. Ung dung se tu dong khoi dong lai khi co thay doi.
-  set PORT=%PORT% && npx nodemon index.js
+  if /i "%SYNC_ON_START%"=="true" (
+    set PORT=%PORT% && npx nodemon index.js -- sync
+  ) else (
+    set PORT=%PORT% && npx nodemon index.js
+  )
 )
 
 :: Dừng lại khi kết thúc

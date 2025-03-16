@@ -7,8 +7,9 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "clean": "node index.js clean",
-    "sync": "node -e \"require('./index.js').syncFiles()\"",
-    "clear-temp": "node -e \"require('./index.js').cleanupTempDir()\""
+    "sync": "node index.js sync",
+    "clear-temp": "node -e \"require('./index.js').cleanupTempDir()\"",
+    "windows": "run.bat"
   },
   "dependencies": {
     "axios": "^1.8.3",
