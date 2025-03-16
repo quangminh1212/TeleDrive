@@ -12,31 +12,31 @@ const config = require('../config/config');
 const fileService = require('../services/fileService');
 const telegramService = require('../services/telegramService');
 const authMiddleware = require('../middlewares/authMiddleware');
-const { getMimeType, guessFileType, log } = require('../utils/helpers');
+const { getMimeType, guessFileType, log, ensureDirectoryExists } = require('../utils/helpers');
 
 const router = express.Router();
 
 // Cấu hình multer cho upload file
+const uploadDir = path.join(__dirname, '../../temp/uploads');
+ensureDirectoryExists(uploadDir);
+
 const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    // Tạo thư mục uploads nếu chưa tồn tại
-    const uploadDir = path.join(config.STORAGE_PATH, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+  destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
-  filename: function(req, file, cb) {
-    // Tạo tên file bảo mật
-    const secureFilename = fileService.getSecureFilePath(file.originalname);
-    cb(null, secureFilename);
+  filename: (req, file, cb) => {
+    // Use original filename but ensure uniqueness
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const fileExt = path.extname(file.originalname);
+    const fileName = `${path.basename(file.originalname, fileExt)}-${uniqueSuffix}${fileExt}`;
+    cb(null, fileName);
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: {
-    fileSize: config.MAX_FILE_SIZE
+    fileSize: 2 * 1024 * 1024 * 1024 // 2GB (Telegram max file size)
   }
 });
 
@@ -117,7 +117,6 @@ router.get('/auth/telegram', async (req, res) => {
       
       // Tạo secret key từ token của bot theo đúng chuẩn Telegram
       // secret_key = SHA256(bot_token)
-      const crypto = require('crypto');
       const secretKey = crypto.createHash('sha256').update(botToken).digest();
       
       // Kiểm tra xem thời gian xác thực có quá cũ không (> 1 giờ)
@@ -255,7 +254,6 @@ router.get('/auth/telegram-callback', async (req, res) => {
     
     // Tạo secret key từ token của bot theo đúng chuẩn Telegram
     // secret_key = SHA256(bot_token)
-    const crypto = require('crypto');
     const secretKey = crypto.createHash('sha256').update(botToken).digest();
     
     // Kiểm tra xem thời gian xác thực có quá cũ không (> 1 giờ)
