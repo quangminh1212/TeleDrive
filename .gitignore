@@ -365,4 +365,46 @@ yarn-error.log*
 # Thư mục tạm khác
 .DS_Store
 .idea/
-Thumbs.db 
+Thumbs.db
+
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Log files
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode/*
+!.vscode/extensions.json
+
+# Application directories and files
+downloads/
+temp/
+.temp/
+dist/
+build/
+coverage/
+
+# Session files
+sessions/
+.sessions/ 
