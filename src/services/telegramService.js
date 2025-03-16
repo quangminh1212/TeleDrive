@@ -28,8 +28,22 @@ function initBot() {
       return bot;
     }
     
+    // Dừng bot cũ nếu tồn tại
+    if (bot) {
+      try {
+        bot.stop();
+        console.log('Đã dừng bot cũ để tránh xung đột');
+      } catch (stopErr) {
+        console.error('Lỗi khi dừng bot cũ:', stopErr.message);
+      }
+      
+      // Đợi một chút để đảm bảo bot cũ đã dừng hoàn toàn
+      // Tuy nhiên không thể sử dụng await ở đây
+    }
+    
     // Reset trạng thái
     isReady = false;
+    bot = null;
     
     const telegramToken = config.TELEGRAM_BOT_TOKEN;
     let targetChatId = config.TELEGRAM_CHAT_ID;
@@ -45,107 +59,127 @@ function initBot() {
     // Chuẩn hóa chat ID
     targetChatId = targetChatId.toString();
     
-    // Tạo instance bot
-    bot = new Telegraf(telegramToken);
-    chatId = targetChatId;
-    
-    // Kiểm tra thông tin bot
-    bot.telegram.getMe().then(botInfo => {
-      console.log(`Bot đã khởi tạo: ${botInfo.username} (${botInfo.first_name})`);
-      bot.botInfo = botInfo; // Lưu thông tin bot
-    }).catch(err => {
-      console.error('Không thể lấy thông tin bot:', err.message);
-    });
-    
-    // Cấu hình các sự kiện
-    
-    // Sự kiện khi bot được khởi động
-    bot.start(async (ctx) => {
-      const userChatId = ctx.chat.id;
-      ctx.reply(`Bot đã sẵn sàng. Chat ID của bạn là: ${userChatId}`);
-      console.log(`Bot đã được khởi động bởi user với chat ID: ${userChatId}`);
+    try {
+      // Tạo instance bot mới
+      bot = new Telegraf(telegramToken);
+      chatId = targetChatId;
       
-      // Kiểm tra nếu chat ID khác với cấu hình
-      if (userChatId.toString() !== chatId.toString()) {
-        console.log(`Chat ID người dùng ${userChatId} khác với cấu hình ${chatId}`);
-        await ctx.reply(`⚠️ Chat ID của bạn (${userChatId}) khác với chat ID đã cấu hình (${chatId}).\nBạn có muốn cập nhật ID? Sử dụng lệnh /updatechatid`);
-      }
-    });
-    
-    // Thêm lệnh cập nhật chat ID
-    bot.command('updatechatid', async (ctx) => {
-      const newChatId = ctx.message.text.split(' ')[1] || ctx.chat.id.toString();
+      // Tạo cấu hình polling để tránh xung đột
+      const options = {
+        dropPendingUpdates: true,
+        allowedUpdates: ['message', 'callback_query']
+      };
       
-      console.log(`Nhận lệnh cập nhật chat ID thành: ${newChatId}`);
+      // Đặt webhook thành null trước để đảm bảo dùng polling
+      bot.telegram.deleteWebhook({ dropPendingUpdates: true })
+        .then(() => {
+          console.log('Đã xóa webhook để tránh xung đột');
+          
+          // Cấu hình sự kiện bot
+          configureBot();
+          
+          // Khởi động bot với polling
+          return bot.launch(options);
+        })
+        .then(() => {
+          console.log(`Bot Telegram đã được khởi tạo thành công`);
+          console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${targetChatId}`);
+          isReady = true;
+          
+          // Gửi ping định kỳ để giữ bot hoạt động
+          if (global.botKeepAliveInterval) {
+            clearInterval(global.botKeepAliveInterval);
+          }
+          
+          global.botKeepAliveInterval = setInterval(() => {
+            if (bot && isReady) {
+              bot.telegram.getMe()
+                .then(() => console.log('Bot keep-alive: OK'))
+                .catch(err => console.error('Bot keep-alive failed:', err.message));
+            }
+          }, 60000); // Ping mỗi phút
+        })
+        .catch(err => {
+          console.error(`Không thể khởi động bot: ${err.message}`);
+          isReady = false;
+        });
       
-      try {
-        // Cập nhật chat ID
-        const result = await updateChatId(newChatId);
-        
-        if (result.success) {
-          await ctx.reply(`✅ Đã cập nhật chat ID thành ${newChatId}`);
-          console.log(`Đã cập nhật chat ID thành: ${newChatId}`);
-        } else {
-          await ctx.reply(`❌ Lỗi: ${result.error}`);
-          console.error(`Lỗi khi cập nhật chat ID: ${result.error}`);
-        }
-      } catch (error) {
-        await ctx.reply(`❌ Lỗi không xác định: ${error.message}`);
-        console.error(`Lỗi không xác định khi cập nhật chat ID: ${error.message}`);
-      }
-    });
-    
-    // Sự kiện khi bot nhận được tin nhắn
-    bot.on('message', ctx => {
-      const message = ctx.message;
-      const chatId = ctx.chat.id;
-      
-      console.log(`Nhận tin nhắn từ chat ID ${chatId}: ${message.text || '[không phải tin nhắn văn bản]'}`);
-      
-      // Kiểm tra xem tin nhắn có phải là file không
-      if (message.document) {
-        handleIncomingFile(ctx);
-      }
-    });
-    
-    // Khởi động bot ở chế độ polling
-    bot.launch({
-      // Chỉ lắng nghe các loại cập nhật cần thiết
-      allowedUpdates: ['message', 'callback_query', 'inline_query'],
-      // Thiết lập polling params
-      polling: {
-        timeout: 30,
-        limit: 100
-      }
-    }).then(() => {
-      console.log(`Bot Telegram đã được khởi tạo thành công`);
-      console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${targetChatId}`);
-      isReady = true;
-      
-      // Gửi ping định kỳ để giữ bot hoạt động
-      if (global.botKeepAliveInterval) {
-        clearInterval(global.botKeepAliveInterval);
-      }
-      
-      global.botKeepAliveInterval = setInterval(() => {
-        if (bot && isReady) {
-          bot.telegram.getMe()
-            .then(() => console.log('Bot keep-alive: OK'))
-            .catch(err => console.error('Bot keep-alive failed:', err.message));
-        }
-      }, 60000); // Ping mỗi phút
-      
-    }).catch(err => {
-      console.error(`Không thể khởi động bot: ${err.message}`);
+      return bot;
+    } catch (error) {
+      console.error('Lỗi khi khởi tạo Telegram Bot:', error);
       isReady = false;
-    });
-    
-    return bot;
+      bot = null;
+      return null;
+    }
   } catch (error) {
-    console.error('Lỗi khi khởi tạo Telegram Bot:', error);
+    console.error('Lỗi không xác định khi khởi tạo bot:', error);
     isReady = false;
     return null;
   }
+}
+
+/**
+ * Cấu hình các sự kiện cho bot
+ */
+function configureBot() {
+  if (!bot) return;
+  
+  // Kiểm tra thông tin bot
+  bot.telegram.getMe().then(botInfo => {
+    console.log(`Bot đã khởi tạo: ${botInfo.username} (${botInfo.first_name})`);
+    bot.botInfo = botInfo; // Lưu thông tin bot
+  }).catch(err => {
+    console.error('Không thể lấy thông tin bot:', err.message);
+  });
+  
+  // Sự kiện khi bot được khởi động
+  bot.start(async (ctx) => {
+    const userChatId = ctx.chat.id;
+    ctx.reply(`Bot đã sẵn sàng. Chat ID của bạn là: ${userChatId}`);
+    console.log(`Bot đã được khởi động bởi user với chat ID: ${userChatId}`);
+    
+    // Kiểm tra nếu chat ID khác với cấu hình
+    if (userChatId.toString() !== chatId.toString()) {
+      console.log(`Chat ID người dùng ${userChatId} khác với cấu hình ${chatId}`);
+      await ctx.reply(`⚠️ Chat ID của bạn (${userChatId}) khác với chat ID đã cấu hình (${chatId}).\nBạn có muốn cập nhật ID? Sử dụng lệnh /updatechatid`);
+    }
+  });
+  
+  // Thêm lệnh cập nhật chat ID
+  bot.command('updatechatid', async (ctx) => {
+    const newChatId = ctx.message.text.split(' ')[1] || ctx.chat.id.toString();
+    
+    console.log(`Nhận lệnh cập nhật chat ID thành: ${newChatId}`);
+    
+    try {
+      // Cập nhật chat ID
+      const result = await updateChatId(newChatId);
+      
+      if (result.success) {
+        await ctx.reply(`✅ Đã cập nhật chat ID thành ${newChatId}`);
+        console.log(`Đã cập nhật chat ID thành: ${newChatId}`);
+      } else {
+        await ctx.reply(`❌ Lỗi: ${result.error}`);
+        console.error(`Lỗi khi cập nhật chat ID: ${result.error}`);
+      }
+    } catch (error) {
+      await ctx.reply(`❌ Lỗi không xác định: ${error.message}`);
+      console.error(`Lỗi không xác định khi cập nhật chat ID: ${error.message}`);
+    }
+  });
+  
+  // Sự kiện khi bot nhận được tin nhắn
+  bot.on('message', ctx => {
+    const message = ctx.message;
+    const chatId = ctx.chat.id;
+    
+    console.log(`Nhận tin nhắn từ chat ID ${chatId}: ${message.text || '[không phải tin nhắn văn bản]'}`);
+    
+    // Kiểm tra xem tin nhắn có phải là file không
+    if (message.document) {
+      handleIncomingFile(ctx);
+    }
+  });
 }
 
 /**
