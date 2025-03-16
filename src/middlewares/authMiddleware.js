@@ -1,72 +1,104 @@
 /**
- * TeleDrive - Auth Middleware
- * Kiểm tra xác thực và cấp quyền
+ * TeleDrive - Authentication Middleware
+ * Middleware xác thực người dùng
  */
 
 const config = require('../config/config');
 
 /**
- * Middleware xác thực: Kiểm tra xem người dùng đã đăng nhập hay chưa
+ * Middleware xác thực cho API
+ * @param {Object} req Request object
+ * @param {Object} res Response object
+ * @param {Function} next Next middleware
  */
-function authenticate(req, res, next) {
-  // Các đường dẫn không cần xác thực
-  const publicPaths = [
-    '/login',
-    '/api/auth/telegram',
-    '/api/auth/telegram-callback',
-    '/api/login'
-  ];
+function apiAuth(req, res, next) {
+  // Kiểm tra API key trong header
+  const apiKey = req.headers['x-api-key'];
   
-  // Kiểm tra wildcard path
-  const wildcardPaths = [
-    '/images/', 
-    '/css/', 
-    '/js/', 
-    '/assets/',
-    '/public/'
-  ];
+  if (!apiKey) {
+    return res.status(401).json({
+      success: false,
+      error: 'Không có API key'
+    });
+  }
   
-  // Kiểm tra nếu đường dẫn là public
-  if (publicPaths.includes(req.path) || wildcardPaths.some(prefix => req.path.startsWith(prefix))) {
+  // So sánh với API key từ config
+  const adminUsername = config.ADMIN_USERNAME;
+  const adminPassword = config.ADMIN_PASSWORD;
+  
+  // Tạo API key cơ bản từ username và password
+  const validApiKey = Buffer.from(`${adminUsername}:${adminPassword}`).toString('base64');
+  
+  if (apiKey !== validApiKey) {
+    return res.status(401).json({
+      success: false,
+      error: 'API key không hợp lệ'
+    });
+  }
+  
+  next();
+}
+
+/**
+ * Middleware xác thực cho Web UI
+ * @param {Object} req Request object
+ * @param {Object} res Response object
+ * @param {Function} next Next middleware
+ */
+function webAuth(req, res, next) {
+  // Bỏ qua xác thực cho một số route công khai
+  const publicRoutes = ['/login', '/api/auth/login'];
+  
+  if (publicRoutes.includes(req.path)) {
     return next();
   }
   
   // Kiểm tra session
-  if (req.session && (req.session.isLoggedIn || req.session.authenticated)) {
+  if (req.session && req.session.isLoggedIn) {
     return next();
   }
   
   // Nếu là API request, trả về lỗi 401
   if (req.path.startsWith('/api/')) {
-    return res.status(401).json({ 
-      success: false, 
-      error: 'Unauthorized' 
+    return res.status(401).json({
+      success: false,
+      error: 'Chưa đăng nhập'
     });
   }
   
-  // Chuyển hướng đến trang login
-  res.redirect('/login');
+  // Chuyển hướng đến trang đăng nhập
+  return res.redirect('/login');
 }
 
 /**
- * Middleware xác thực vai trò admin
- * Kiểm tra xem người dùng đăng nhập đã có vai trò admin chưa
+ * Middleware xác thực admin
+ * @param {Object} req Request object
+ * @param {Object} res Response object
+ * @param {Function} next Next middleware
  */
-function requireAdmin(req, res, next) {
-  // Kiểm tra xem người dùng đã đăng nhập chưa
-  if (!req.session || !req.session.authenticated) {
-    return res.status(401).json({
+function adminAuth(req, res, next) {
+  // Kiểm tra quyền admin
+  if (req.session && req.session.isLoggedIn && req.session.isAdmin) {
+    return next();
+  }
+  
+  // Nếu là API request, trả về lỗi 403
+  if (req.path.startsWith('/api/')) {
+    return res.status(403).json({
       success: false,
-      message: 'Unauthorized: Bạn cần đăng nhập trước'
+      error: 'Không có quyền admin'
     });
   }
   
-  // Kiểm tra vai trò admin 
-  // Hiện tại mọi người dùng đăng nhập qua Telegram đều được quyền quản trị
-  return next();
+  // Chuyển hướng đến trang lỗi
+  return res.render('error', {
+    error: 'Bạn không có quyền truy cập trang này',
+    title: '403 - Cấm truy cập'
+  });
 }
 
 module.exports = {
-  authenticate,
-  requireAdmin
+  apiAuth,
+  webAuth,
+  adminAuth
 }; 

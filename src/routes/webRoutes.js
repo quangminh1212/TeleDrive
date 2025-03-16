@@ -11,6 +11,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const telegramService = require('../services/telegramService');
 const fs = require('fs');
 const helpers = require('../utils/helpers');
+const { log } = require('../utils/helpers');
 
 const router = express.Router();
 
@@ -45,69 +46,154 @@ function checkAuth(req, res, next) {
 // Áp dụng middleware cho tất cả các routes
 router.use(checkAuth);
 
-// Route trang chủ
+/**
+ * Trang chủ
+ */
 router.get('/', async (req, res) => {
   try {
-    // Lấy danh sách file từ thư mục downloads
-    const downloadDir = path.join(process.cwd(), 'downloads');
-    let files = [];
+    // Lấy danh sách file để hiển thị
+    const files = fileService.getFiles({ 
+      sortBy: 'uploadDate', 
+      sortOrder: 'desc' 
+    });
     
-    if (fs.existsSync(downloadDir)) {
-      files = fs.readdirSync(downloadDir)
-        .filter(file => !file.startsWith('.'))
-        .map(file => {
-          const filePath = path.join(downloadDir, file);
-          const stats = fs.statSync(filePath);
-          
-          return {
-            name: file,
-            path: `/downloads/${file}`,
-            size: helpers.formatFileSize(stats.size),
-            date: stats.mtime,
-            isFile: stats.isFile()
-          };
-        })
-        .filter(file => file.isFile)
-        .sort((a, b) => b.date - a.date);
-    }
-    
-    // Kiểm tra trạng thái bot
-    const isBotActive = telegramService.isBotActive();
-    
-    // Đảm bảo chat ID đã được thiết lập
-    const chatId = process.env.TELEGRAM_CHAT_ID || config.TELEGRAM_CHAT_ID || '';
-    const botToken = process.env.TELEGRAM_BOT_TOKEN || config.TELEGRAM_BOT_TOKEN || '';
-    const hasBotConfig = !!botToken && !!chatId;
-    
-    // Render trang chủ với danh sách file
-    res.render('index', {
-      title: 'TeleDrive',
-      files,
-      isBotActive: isBotActive,
-      error: null,
-      hasBotConfig,
-      chatId,
-      config: {
-        sync: config.ENABLE_AUTO_SYNC,
-        interval: config.SYNC_INTERVAL
-      }
+    return res.render('index', { 
+      files, 
+      title: 'TeleDrive - Telegram File Manager',
+      active: 'home'
     });
   } catch (error) {
-    console.error('Lỗi khi hiển thị trang chủ:', error);
-    
-    res.render('index', {
-      title: 'TeleDrive',
-      files: [],
-      isBotActive: false,
-      error: `Lỗi: ${error.message}`,
-      hasBotConfig: false,
-      chatId: '',
-      config: {
-        sync: config.ENABLE_AUTO_SYNC,
-        interval: config.SYNC_INTERVAL
-      }
+    log(`Lỗi khi tải trang chủ: ${error.message}`, 'error');
+    return res.render('error', { 
+      error: error.message || 'Lỗi khi tải trang chủ'
     });
   }
+});
+
+/**
+ * Trang xem chi tiết file
+ */
+router.get('/files/:id', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const file = fileService.getFileById(fileId);
+    
+    if (!file) {
+      return res.render('error', { 
+        error: 'Không tìm thấy file' 
+      });
+    }
+    
+    return res.render('file-details', { 
+      file, 
+      title: `${file.name} - TeleDrive`,
+      active: 'files'
+    });
+  } catch (error) {
+    log(`Lỗi khi xem chi tiết file: ${error.message}`, 'error');
+    return res.render('error', { 
+      error: error.message || 'Lỗi khi xem chi tiết file'
+    });
+  }
+});
+
+/**
+ * Trang tải xuống file
+ */
+router.get('/files/:id/download', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const file = fileService.getFileById(fileId);
+    
+    if (!file) {
+      return res.render('error', { 
+        error: 'Không tìm thấy file' 
+      });
+    }
+    
+    // Kiểm tra xem file đã được tải về chưa
+    if (!file.localPath) {
+      // Hiển thị trang đang tải file
+      return res.render('file-download', { 
+        file, 
+        title: `Đang tải ${file.name} - TeleDrive`,
+        active: 'files',
+        processing: true
+      });
+    } else {
+      // Hiển thị trang tải file (link tải đã sẵn sàng)
+      return res.render('file-download', { 
+        file, 
+        title: `Tải ${file.name} - TeleDrive`,
+        active: 'files',
+        processing: false
+      });
+    }
+  } catch (error) {
+    log(`Lỗi khi tải file: ${error.message}`, 'error');
+    return res.render('error', { 
+      error: error.message || 'Lỗi khi tải file'
+    });
+  }
+});
+
+/**
+ * API xem trước file (nếu có thể)
+ */
+router.get('/files/:id/preview', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const file = fileService.getFileById(fileId);
+    
+    if (!file) {
+      return res.render('error', { 
+        error: 'Không tìm thấy file' 
+      });
+    }
+    
+    return res.render('file-preview', { 
+      file, 
+      title: `Xem trước ${file.name} - TeleDrive`,
+      active: 'files'
+    });
+  } catch (error) {
+    log(`Lỗi khi xem trước file: ${error.message}`, 'error');
+    return res.render('error', { 
+      error: error.message || 'Lỗi khi xem trước file'
+    });
+  }
+});
+
+/**
+ * Trang thùng rác
+ */
+router.get('/trash', async (req, res) => {
+  try {
+    const trashFiles = fileService.getTrashFiles();
+    
+    return res.render('index', { 
+      files: trashFiles, 
+      title: 'Thùng rác - TeleDrive',
+      active: 'trash',
+      isTrash: true
+    });
+  } catch (error) {
+    log(`Lỗi khi tải trang thùng rác: ${error.message}`, 'error');
+    return res.render('error', { 
+      error: error.message || 'Lỗi khi tải trang thùng rác'
+    });
+  }
+});
+
+/**
+ * Trang tải file lên
+ */
+router.get('/upload', (req, res) => {
+  return res.render('index', { 
+    title: 'Tải lên - TeleDrive',
+    active: 'upload',
+    showUploadForm: true
+  });
 });
 
 // Trang đăng nhập
@@ -161,11 +247,6 @@ router.get('/dashboard', (req, res) => {
 // Trang quản lý file
 router.get('/files', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'files.html'));
-});
-
-// Trang quản lý thùng rác
-router.get('/trash', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'trash.html'));
 });
 
 // Trang cài đặt

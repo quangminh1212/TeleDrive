@@ -5,26 +5,18 @@
 
 // Imports
 const express = require('express');
-const dotenv = require('dotenv');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const session = require('express-session');
-// Remove external dependencies
-// const helmet = require('helmet');
-// const bodyParser = require('body-parser');
-
-// Nạp biến môi trường
-dotenv.config();
 
 // Imports từ modules 
 const config = require('./src/config/config');
 const telegramService = require('./src/services/telegramService');
-const fileService = require('./src/services/fileService');
 const apiRoutes = require('./src/routes/apiRoutes');
 const webRoutes = require('./src/routes/webRoutes');
-const { ensureDirectories, log } = require('./src/utils/helpers');
+const { ensureDirectories, log, cleanupTempDir } = require('./src/utils/helpers');
 
 // Đảm bảo các thư mục cần thiết tồn tại
 ensureDirectories();
@@ -38,15 +30,12 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Thiết lập middleware cơ bản
 app.use(cors());
-// app.use(helmet({
-//   contentSecurityPolicy: false
-// }));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// Thiết lập session - Vô hiệu hóa
+// Thiết lập session
 app.use(session({
-  secret: config.SESSION_SECRET || 'teledrive-secret-key',
+  secret: config.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -59,40 +48,13 @@ app.use(session({
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/downloads', express.static(path.join(__dirname, 'downloads')));
 
-// Middleware xác thực API key
-app.use((req, res, next) => {
-  // Bỏ qua xác thực cho route đăng nhập Telegram
-  if (req.path === '/api/auth/telegram') {
-    return next();
-  }
-  
-  // Nếu là API request và có API key
-  if (req.path.startsWith('/api/') && req.headers['x-api-key']) {
-    if (req.headers['x-api-key'] === config.API_KEY) {
-      return next();
-    }
-    return res.status(401).json({ success: false, error: 'Invalid API key' });
-  }
-  
-  // Nếu là API request mà không có API key 
-  // (bỏ kiểm tra session vì chưa cài đặt express-session)
-  if (req.path.startsWith('/api/')) {
-    return res.status(401).json({ success: false, error: 'Unauthorized' });
-  }
-  
-  next();
-});
-
 // Thêm middleware cho dữ liệu chung trong tất cả view
 app.use((req, res, next) => {
   // Dữ liệu chung cho tất cả view
-  res.locals.user = req.session.telegramUser || null;
+  res.locals.user = req.session.user || null;
   res.locals.isLoggedIn = req.session.isLoggedIn || false;
-  res.locals.config = {
-    isSimulationMode: telegramService.isSimulationMode ? telegramService.isSimulationMode() : false,
-    botToken: config.TELEGRAM_BOT_TOKEN?.slice(0, 5) ? config.TELEGRAM_BOT_TOKEN.slice(0, 5) + '...' + config.TELEGRAM_BOT_TOKEN.slice(-5) : '',
-    chatId: config.TELEGRAM_CHAT_ID
-  };
+  res.locals.appName = 'TeleDrive';
+  res.locals.botActive = telegramService.isBotActive();
   
   next();
 });
@@ -101,179 +63,111 @@ app.use((req, res, next) => {
 app.use('/api', apiRoutes);
 app.use('/', webRoutes);
 
-// Xử lý 404
+// Middleware xử lý lỗi 404
 app.use((req, res) => {
-  if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
-    return res.status(404).json({
-      success: false,
-      message: 'Route not found'
-    });
-  }
-  
-  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+  res.status(404).render('error', { 
+    error: 'Không tìm thấy trang',
+    title: '404 - Không tìm thấy'
+  });
 });
 
-// Xử lý lỗi
+// Middleware xử lý lỗi
 app.use((err, req, res, next) => {
-  log(`Error: ${err.message}`, 'error');
-  console.error(err);
+  log(`Lỗi server: ${err.message}`, 'error');
   
-  if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
-    return res.status(500).json({
-      success: false,
-      message: config.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
-    });
-  }
-  
-  res.status(500).sendFile(path.join(__dirname, 'public', '500.html'));
+  res.status(500).render('error', { 
+    error: err.message || 'Lỗi máy chủ',
+    title: '500 - Lỗi máy chủ'
+  });
 });
 
-// Hàm khởi động ứng dụng
+// Khởi động server và bot
 async function startApp() {
   try {
-    // Khởi tạo Telegram bot (nếu cấu hình sẵn)
-    if (config.TELEGRAM_BOT_TOKEN && config.TELEGRAM_CHAT_ID) {
-      telegramService.initBot();
-    } else {
-      log('Thiếu cấu hình Telegram Bot. Một số chức năng có thể không hoạt động đúng.', 'warn');
-    }
+    // Khởi động bot Telegram
+    await telegramService.initBot();
     
-    // Lắng nghe trên cổng đã cấu hình
-    const server = app.listen(config.PORT, () => {
-      log(`Server đang chạy tại http://${config.HOST}:${config.PORT}`);
-      log(`Môi trường: ${config.NODE_ENV}`);
-    }).on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        log(`Cổng ${config.PORT} đã được sử dụng, thử cổng khác`, 'error');
-        // Thử lại với cổng khác
-        const newPort = parseInt(config.PORT) + 1;
-        app.listen(newPort, () => {
-          log(`Server đang chạy tại http://${config.HOST}:${newPort} (cổng dự phòng)`);
-          log(`Môi trường: ${config.NODE_ENV}`);
-        });
-      } else {
-        log(`Lỗi khi khởi động server: ${err.message}`, 'error');
-      }
-    });
+    // Dọn dẹp thư mục tạm
+    cleanupTempDir();
     
-    // Xử lý tắt server
-    process.on('SIGINT', async () => {
-      log('Đang dừng server...');
-      
-      // Dừng Telegram bot
-      telegramService.stopBot();
-      
-      // Thoát
-      process.exit(0);
-    });
-    
-    // Đồng bộ files khi khởi động
-    setTimeout(async () => {
-      try {
-        log('Bắt đầu đồng bộ file ban đầu...');
-        const syncResult = await fileService.syncFiles();
-        if (syncResult.success) {
-          log(`Đồng bộ ban đầu hoàn tất: ${syncResult.syncedCount} file đồng bộ, ${syncResult.newFiles} file mới, ${syncResult.skippedCount} file bỏ qua, ${syncResult.errorCount} lỗi`);
-        } else {
-          log(`Đồng bộ ban đầu thất bại: ${syncResult.error}`, 'error');
-        }
-      } catch (error) {
-        log(`Lỗi khi đồng bộ ban đầu: ${error.message}`, 'error');
-      }
-    }, 5000); // Đợi 5 giây sau khi khởi động
-    
-    // Lập lịch đồng bộ file
+    // Khởi động đồng bộ tự động
     if (config.AUTO_SYNC) {
-      log(`Đã bật đồng bộ tự động. Sẽ đồng bộ mỗi ${config.SYNC_INTERVAL / (60 * 60 * 1000)} giờ.`);
+      // Đồng bộ ngay khi khởi động
+      telegramService.syncFilesFromTelegram().catch(err => {
+        log(`Lỗi khi đồng bộ ban đầu: ${err.message}`, 'error');
+      });
       
-      // Đồng bộ lần đầu sau khi khởi động
-      setTimeout(() => {
-        fileService.syncFiles()
-          .then(result => {
-            if (result.success) {
-              log(`Đồng bộ tự động hoàn tất: ${result.syncedCount} file đồng bộ, ${result.newFiles} file mới, ${result.skippedCount} file bỏ qua, ${result.errorCount} lỗi`);
-            } else {
-              log(`Đồng bộ tự động thất bại: ${result.error}`, 'error');
-            }
-          })
-          .catch(error => {
-            log(`Lỗi khi đồng bộ tự động: ${error.message}`, 'error');
-          });
-      }, 10000); // Đợi 10 giây sau khi khởi động
-      
-      // Lập lịch đồng bộ định kỳ
+      // Thiết lập đồng bộ định kỳ
       setInterval(() => {
-        fileService.syncFiles()
-          .then(result => {
-            if (result.success) {
-              log(`Đồng bộ tự động hoàn tất: ${result.syncedCount} file đồng bộ, ${result.newFiles} file mới, ${result.skippedCount} file bỏ qua, ${result.errorCount} lỗi`);
-            } else {
-              log(`Đồng bộ tự động thất bại: ${result.error}`, 'error');
-            }
-          })
-          .catch(error => {
-            log(`Lỗi khi đồng bộ tự động: ${error.message}`, 'error');
-          });
-      }, config.SYNC_INTERVAL);
-    } else {
-      log('Tự động đồng bộ đã bị tắt trong cấu hình.', 'warn');
-    }
-    
-    // Lập lịch dọn dẹp tự động
-    if (config.CLEANUP_ENABLED) {
-      log(`Đã bật dọn dẹp tự động. Sẽ dọn dẹp mỗi ${config.CLEANUP_INTERVAL / (60 * 60 * 1000)} giờ.`);
-      
-      // Dọn dẹp lần đầu sau 15 phút
-      setTimeout(() => {
-        fileService.cleanupFiles()
-          .then(result => {
-            if (result.success) {
-              log(`Dọn dẹp tự động hoàn tất: Đã xóa ${result.stats.cleaned} files thừa`);
-            } else {
-              log(`Dọn dẹp tự động thất bại: ${result.error}`, 'error');
-            }
-          })
-          .catch(error => {
-            log(`Lỗi khi dọn dẹp tự động: ${error.message}`, 'error');
-          });
-      }, 15 * 60 * 1000); // Đợi 15 phút
-      
-      // Lập lịch dọn dẹp định kỳ
-      setInterval(() => {
-        fileService.cleanupFiles()
-          .then(result => {
-            if (result.success) {
-              log(`Dọn dẹp tự động hoàn tất: Đã xóa ${result.stats.cleaned} files thừa`);
-            } else {
-              log(`Dọn dẹp tự động thất bại: ${result.error}`, 'error');
-            }
-          })
-          .catch(error => {
-            log(`Lỗi khi dọn dẹp tự động: ${error.message}`, 'error');
-          });
-      }, config.CLEANUP_INTERVAL);
-    }
-    
-    // Kiểm tra trạng thái file
-    setTimeout(() => {
-      fileService.checkFiles()
-        .then(result => {
-          if (result.success) {
-            log(`Kiểm tra file hoàn tất: ${result.stats.fixed} file đã được sửa`);
-          } else {
-            log(`Kiểm tra file thất bại: ${result.error}`, 'error');
-          }
-        })
-        .catch(error => {
-          log(`Lỗi khi kiểm tra file: ${error.message}`, 'error');
+        telegramService.syncFilesFromTelegram().catch(err => {
+          log(`Lỗi khi đồng bộ tự động: ${err.message}`, 'error');
         });
-    }, 5 * 60 * 1000); // Đợi 5 phút
+      }, config.SYNC_INTERVAL * 60 * 60 * 1000); // Đơn vị giờ -> ms
+      
+      log(`Đã thiết lập đồng bộ tự động mỗi ${config.SYNC_INTERVAL} giờ`);
+    }
+    
+    // Thiết lập dọn dẹp thư mục tạm định kỳ
+    if (config.CLEANUP_ENABLED) {
+      setInterval(() => {
+        cleanupTempDir();
+      }, config.CLEANUP_INTERVAL * 60 * 60 * 1000); // Đơn vị giờ -> ms
+      
+      log(`Đã thiết lập dọn dẹp tự động mỗi ${config.CLEANUP_INTERVAL} giờ`);
+    }
+    
+    // Khởi động server
+    app.listen(config.PORT, () => {
+      log(`Server đang chạy tại http://localhost:${config.PORT}`);
+    });
   } catch (error) {
-    log(`Lỗi khi khởi động server: ${error.message}`, 'error');
-    console.error(error);
+    log(`Lỗi khởi động ứng dụng: ${error.message}`, 'error');
     process.exit(1);
   }
 }
 
-// Khởi động ứng dụng
-startApp(); 
+// Xử lý khi app kết thúc
+process.on('SIGINT', async () => {
+  log('Nhận tín hiệu kết thúc, đang dọn dẹp...');
+  
+  try {
+    await telegramService.stopBot();
+    log('Đã dừng bot Telegram');
+  } catch (error) {
+    log(`Lỗi khi dừng bot: ${error.message}`, 'error');
+  }
+  
+  log('Tạm biệt!');
+  process.exit(0);
+});
+
+// Kiểm tra tham số dòng lệnh
+const args = process.argv.slice(2);
+
+if (args.includes('sync')) {
+  // Chỉ thực hiện đồng bộ và thoát
+  telegramService.initBot().then(() => {
+    return telegramService.syncFilesFromTelegram();
+  }).then(result => {
+    log(`Đồng bộ hoàn tất: ${result.added} file mới, ${result.updated} cập nhật, ${result.unchanged} không thay đổi`);
+    process.exit(0);
+  }).catch(error => {
+    log(`Lỗi khi đồng bộ: ${error.message}`, 'error');
+    process.exit(1);
+  });
+} else if (args.includes('clean')) {
+  // Chỉ thực hiện dọn dẹp và thoát
+  cleanupTempDir();
+  log('Đã dọn dẹp thư mục tạm');
+  process.exit(0);
+} else {
+  // Khởi động ứng dụng bình thường
+  startApp();
+}
+
+// Export cho module khác sử dụng
+module.exports = {
+  app,
+  startApp,
+  cleanupTempDir
+}; 
