@@ -1532,8 +1532,6 @@ app.get('/api/reset-database', async (req, res) => {
         fileType: getFileType(originalName),
         telegramFileId: null,
         telegramUrl: null,
-        fakeTelegramId: false,
-        fakeTelegramUrl: false,
         localPath: filePath,
         uploadDate: stats.mtime.toISOString(),
         user: null,
