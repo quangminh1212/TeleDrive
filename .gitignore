@@ -285,4 +285,7 @@ Thumbs.db
 /temp-*
 /tmp/
 *.tmp
-*.temp 
+*.temp
+
+# Tệp cấu hình nodemon
+nodemon.json 

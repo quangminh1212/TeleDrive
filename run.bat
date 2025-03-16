@@ -3,6 +3,11 @@ chcp 65001 > nul
 echo ===== STARTING TELEDRIVE APPLICATION =====
 echo.
 
+:: Kết thúc tất cả các tiến trình node.exe trước khi khởi động
+echo Dang ket thuc cac tien trinh node.exe...
+taskkill /F /IM node.exe >nul 2>&1
+timeout /t 2 >nul
+
 :: Đảm bảo các thư mục cần thiết tồn tại
 if not exist "data" mkdir data
 if not exist "temp" mkdir temp
@@ -31,19 +36,16 @@ if not exist "node_modules" (
   npm install
 )
 
-:: Kiểm tra và thiết lập cổng
-set DEFAULT_PORT=5002
-for /f "tokens=1,2 delims==" %%a in (.env) do (
-  if "%%a"=="PORT" set PORT=%%b
-)
-if "%PORT%"=="" set PORT=%DEFAULT_PORT%
+:: Chọn cổng tự động
+set PORT=3000
+echo Su dung cong %PORT%
 
-:: Tự động thay đổi cổng nếu đã được sử dụng
-netstat -ano | findstr ":%PORT%" >nul 2>nul
-if %ERRORLEVEL% EQU 0 (
-  set PORT=3000
-  echo Cong %DEFAULT_PORT% da duoc su dung. Su dung cong 3000 thay the.
-)
+:: Tạo tệp nodemon.json để tránh restart liên tục
+echo Tao cau hinh nodemon...
+echo {^
+  "ignore": ["data/*", "uploads/*", "temp/*", "logs/*", "storage/*", "db/*"],^
+  "delay": "2000"^
+} > nodemon.json
 
 :: Thiết lập biến môi trường
 set "NODE_ENV=development"
@@ -54,7 +56,7 @@ echo.
 echo Khoi dong TeleDrive tren cong %PORT%...
 echo Che do phat trien voi dong bo tu dong duoc kich hoat.
 
-set PORT=%PORT% && npx nodemon index.js -- sync
+set PORT=%PORT% && npx nodemon --ignore "data/" --ignore "uploads/" --ignore "temp/" --ignore "logs/" --ignore "storage/" --ignore "db/" index.js
 
 :: Dừng lại khi kết thúc
 echo.
