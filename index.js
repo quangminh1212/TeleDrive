@@ -481,8 +481,26 @@ async function syncFiles() {
         try {
           // Gửi file lên Telegram dựa vào loại file
           const sendFilePromise = (async () => {
-            const caption = `File: ${file.name}`;
+            // Tạo caption với tên file đã được giải mã UTF-8 đúng
+            let normalizedFileName = file.name;
+            try {
+              // Thử normalize tên file Unicode
+              normalizedFileName = decodeURIComponent(escape(file.name));
+            } catch(e) {
+              console.log(`Không thể chuẩn hóa tên file: ${file.name}, sử dụng tên gốc`);
+            }
             
+            const caption = `File: ${normalizedFileName}`;
+            const fileOptions = {
+              source: filePath,
+              filename: normalizedFileName
+            };
+            
+            // Gửi tất cả file dưới dạng document để tránh lỗi PHOTO_INVALID_DIMENSIONS
+            console.log(`Gửi file "${file.name}" như document để tránh lỗi format`);
+            return bot.telegram.sendDocument(CHAT_ID, fileOptions, { caption: caption });
+            
+            /* Không còn sử dụng code này để tránh lỗi
             if (file.fileType === 'image') {
               console.log(`Gửi file "${file.name}" như hình ảnh`);
               try {
@@ -529,6 +547,7 @@ async function syncFiles() {
                 filename: file.name
               }, { caption: caption });
             }
+            */
           })();
           
           const timeoutPromise = new Promise((_, reject) => {
