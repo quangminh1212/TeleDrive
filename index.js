@@ -512,7 +512,6 @@ async function syncFiles() {
     }
     
     console.log(`Đồng bộ hoàn tất. Đã đồng bộ ${syncedCount}/${filesToSync.length} file. Lỗi: ${errorCount}`);
-    console.log(`Đồng bộ hoàn tất. Đã đồng bộ ${syncedCount}/${filesToSync.length} file.`);
     
     // Thực hiện tự động khôi phục file từ Telegram nếu cần
     if (syncedCount > 0) {
