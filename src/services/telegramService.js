@@ -457,8 +457,43 @@ async function getFilesFromChat(limit = 100) {
       console.error('Bot hoặc chatId chưa được cấu hình');
       return [];
     }
-    
+
     console.log(`Đang thử lấy các file gần đây từ chat ID: ${chatId}`);
+    
+    // Kiểm tra kết nối với chat
+    try {
+      // Gửi tin nhắn kiểm tra
+      const sentMessage = await bot.telegram.sendMessage(chatId, 
+        'Đang đồng bộ các file... Vui lòng đợi trong giây lát.');
+      
+      console.log('Đã gửi tin nhắn kiểm tra thành công đến chat ID:', chatId);
+      
+      // Nếu gửi được tin nhắn thì chat ID hợp lệ, tiếp tục lấy updates
+    } catch (chatError) {
+      console.error(`Lỗi khi kiểm tra chat ID ${chatId}:`, chatError);
+      
+      // Thử với định dạng khác của chat ID
+      const altChatId = chatId.toString().startsWith('-') ? 
+        chatId.toString().substring(1) : 
+        `-${chatId.toString()}`;
+      
+      console.log(`Thử lại với chat ID thay thế: ${altChatId}`);
+      
+      try {
+        // Gửi tin nhắn kiểm tra với chat ID thay thế
+        const sentMessage = await bot.telegram.sendMessage(altChatId, 
+          'Đang đồng bộ các file... Vui lòng đợi trong giây lát.');
+        
+        console.log('Đã gửi tin nhắn kiểm tra thành công đến chat ID thay thế:', altChatId);
+        
+        // Cập nhật lại chatId
+        chatId = altChatId;
+      } catch (altChatError) {
+        console.error('Không thể kết nối tới chat với cả hai định dạng chat ID.');
+        console.log('Vui lòng kiểm tra lại TELEGRAM_CHAT_ID trong file .env');
+        return [];
+      }
+    }
     
     try {
       // Sử dụng phương thức getUpdates để lấy tin nhắn gần đây
@@ -470,38 +505,30 @@ async function getFilesFromChat(limit = 100) {
       }
       
       // Lọc những update có file và thuộc về chat cần lấy
+      const validChatIds = [chatId.toString()];
+      // Thêm cả dạng có dấu - và không có dấu - cho chat ID
+      if (chatId.toString().startsWith('-')) {
+        validChatIds.push(chatId.toString().substring(1));
+      } else {
+        validChatIds.push(`-${chatId.toString()}`);
+      }
+      
       const fileUpdates = updates.filter(update => 
         update.message && 
         update.message.chat && 
-        update.message.chat.id.toString() === chatId.toString() && 
+        validChatIds.includes(update.message.chat.id.toString()) && 
         update.message.document
       );
       
       if (fileUpdates.length === 0) {
         console.log('Không tìm thấy file nào trong updates');
         
-        // Phương pháp thay thế: Sử dụng phương thức getChat
-        console.log('Thử phương pháp thay thế để lấy file từ chat...');
-        
+        // Gửi tin nhắn hướng dẫn để kiểm tra kết nối
         try {
-          // Lấy các message mới nhất từ chat
-          // Chú ý: Phương thức này có thể không được hỗ trợ trong một số trường hợp
-          const chatInfo = await bot.telegram.getChat(chatId);
-          
-          // Kiểm tra xem có thể lấy được tin nhắn mới nhất không
-          if (!chatInfo || !chatInfo.pinned_message) {
-            console.log('Không có thông tin hữu ích từ chat');
-            
-            // Phương pháp cuối cùng: Gửi tin nhắn hỏi các file đã gửi
-            const sentMessage = await bot.telegram.sendMessage(chatId, 
-              'Đang đồng bộ các file... Vui lòng gửi lại file nếu không thấy xuất hiện trong ứng dụng.');
-            
-            // Không có cách để lấy file từ lịch sử chat
-            return [];
-          }
+          await bot.telegram.sendMessage(chatId, 
+            'Không thể tìm thấy file trong lịch sử. Vui lòng gửi một file vào chat này để đồng bộ.');
         } catch (error) {
-          console.error('Lỗi khi lấy thông tin chat:', error);
-          return [];
+          console.error('Không thể gửi tin nhắn:', error);
         }
         
         return [];
@@ -535,11 +562,8 @@ async function getFilesFromChat(limit = 100) {
     } catch (error) {
       console.error('Lỗi khi lấy updates từ Telegram:', error);
       
-      // Thử phương pháp khác: Kiểm tra xem có thể nhận được file từ download API không
-      console.log('Thử phương pháp thay thế...');
-      
+      // Gửi thông báo cho người dùng
       try {
-        // Gửi thông báo cho người dùng
         await bot.telegram.sendMessage(chatId, 
           'Không thể lấy lịch sử file tự động. Vui lòng gửi lại các file vào chat này để đồng bộ.');
       } catch (notifyError) {
