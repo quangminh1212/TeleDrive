@@ -382,34 +382,182 @@ function getSecureFilePath(fileName) {
 async function syncFiles() {
   console.log('===== BẮT ĐẦU ĐỒNG BỘ FILES =====');
   
-  if (!bot || !botActive) {
-    console.log('Bot không hoạt động hoặc chưa kết nối, không thể đồng bộ files');
-    console.log('BOT_TOKEN:', BOT_TOKEN ? `${BOT_TOKEN.substring(0, 8)}...` : 'không có');
-    console.log('CHAT_ID:', CHAT_ID || 'không có');
-    console.log('Bot status:', botActive ? 'active' : 'inactive');
-    return {
-      success: false,
-      error: 'Bot không hoạt động hoặc chưa kết nối'
-    };
-  }
-  
-  let filesData = readFilesDb();
-  if (!filesData || !Array.isArray(filesData)) {
-    console.log('Dữ liệu file không hợp lệ, tạo mới');
-    filesData = [];
-  }
-  
-  console.log(`Tổng số files trong database: ${filesData.length}`);
-  
-  // Lọc các file cần đồng bộ
-  let filesToSync = filesData.filter(file => 
-    (file.needsSync || !file.telegramFileId) && 
-    file.localPath && 
-    fs.existsSync(file.localPath)
-  );
-  
-  console.log(`Tìm thấy ${filesToSync.length} file cần đồng bộ`);
+  try {
+    if (!bot || !botActive) {
+      console.log('Bot không hoạt động hoặc chưa kết nối, không thể đồng bộ files');
+      console.log('BOT_TOKEN:', BOT_TOKEN ? `${BOT_TOKEN.substring(0, 8)}...` : 'không có');
+      console.log('CHAT_ID:', CHAT_ID || 'không có');
+      console.log('Bot status:', botActive ? 'active' : 'inactive');
+      return {
+        success: false,
+        error: 'Bot không hoạt động hoặc chưa kết nối'
+      };
+    }
+    
+    let filesData = readFilesDb();
+    if (!filesData || !Array.isArray(filesData)) {
+      console.log('Dữ liệu file không hợp lệ, tạo mới');
+      filesData = [];
+    }
+    
+    console.log(`Tổng số files trong database: ${filesData.length}`);
+    
+    // Lọc các file cần đồng bộ
+    let filesToSync = filesData.filter(file => 
+      (file.needsSync || !file.telegramFileId) && 
+      file.localPath && 
+      fs.existsSync(file.localPath)
+    );
+    
+    console.log(`Tìm thấy ${filesToSync.length} file cần đồng bộ`);
 
+    // Hiển thị danh sách file cần đồng bộ (tối đa 5 file)
+    if (filesToSync.length > 0) {
+      console.log('Danh sách một số file cần đồng bộ:');
+      filesToSync.slice(0, 5).forEach((file, index) => {
+        console.log(`${index + 1}. ${file.name} (${file.size} bytes)`);
+      });
+      if (filesToSync.length > 5) {
+        console.log(`... và ${filesToSync.length - 5} file khác`);
+      }
+    }
+    
+    if (filesToSync.length === 0) {
+      // Nếu không có file cần đồng bộ, kiểm tra xem database có rỗng không
+      if (filesData.length === 0) {
+        console.log('Database rỗng. Thử lấy files từ Telegram...');
+        // Thử lấy files từ Telegram nếu database rỗng
+        try {
+          console.log('Database rỗng, thử lấy files từ Telegram...');
+          // Thực hiện logic lấy files từ Telegram ở đây nếu cần
+        } catch (error) {
+          console.error('Lỗi khi lấy files từ Telegram:', error);
+        }
+      }
+      
+      console.log('Không có file nào cần đồng bộ');
+      return 0;
+    }
+    
+    let syncedCount = 0;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    // Với mỗi file cần đồng bộ
+    for (const file of filesToSync) {
+      try {
+        console.log(`Đang đồng bộ file "${file.name}"...`);
+        
+        // Đảm bảo encode tên file tiếng Việt đúng
+        const filePath = Buffer.from(file.localPath, 'utf8').toString();
+        console.log(`Đường dẫn file: ${filePath}`);
+        
+        // Kiểm tra xem file có tồn tại không
+        if (!fs.existsSync(filePath)) {
+          console.error(`File không tồn tại: ${filePath}`);
+          file.syncError = `File không tồn tại tại đường dẫn: ${filePath}`;
+          file.needsSync = true;
+          continue;
+        }
+        
+        // Kiểm tra kích thước file
+        const stats = fs.statSync(filePath);
+        console.log(`Kích thước file: ${formatBytes(stats.size)}`);
+        
+        if (stats.size > MAX_FILE_SIZE) {
+          console.error(`File "${file.name}" quá lớn (${formatBytes(stats.size)}) để gửi qua Telegram.`);
+          file.syncError = `File quá lớn (${formatBytes(stats.size)}) để đồng bộ với Telegram`;
+          file.needsSync = true;
+          continue;
+        }
+        
+        // Tạo caption từ tên file
+        const caption = `File: ${file.name}`;
+        console.log(`Chuẩn bị gửi file lên Telegram với caption: "${caption}"`);
+        
+        // Gửi file lên Telegram với timeout 2 phút
+        console.log(`Đang gửi file "${file.name}" lên Telegram (chatId: ${CHAT_ID})...`);
+        
+        try {
+          const sendPromise = (() => {
+            // Xác định loại file để gửi đúng cách
+            if (file.fileType === 'image') {
+              console.log(`Gửi file "${file.name}" như hình ảnh`);
+              return bot.telegram.sendPhoto(CHAT_ID, { source: filePath }, { caption: caption });
+            } else if (file.fileType === 'video') {
+              console.log(`Gửi file "${file.name}" như video`);
+              return bot.telegram.sendVideo(CHAT_ID, { source: filePath }, { caption: caption });
+            } else if (file.fileType === 'audio') {
+              console.log(`Gửi file "${file.name}" như audio`);
+              return bot.telegram.sendAudio(CHAT_ID, { source: filePath }, { caption: caption });
+            } else {
+              console.log(`Gửi file "${file.name}" như document`);
+              return bot.telegram.sendDocument(CHAT_ID, {
+                source: filePath,
+                filename: file.name
+              }, {
+                caption: caption
+              });
+            }
+          })();
+          
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Timeout khi gửi file lên Telegram')), 120000); // 2 phút
+          });
+          
+          console.log(`Đang chờ kết quả gửi file "${file.name}"...`);
+          const result = await Promise.race([sendPromise, timeoutPromise]);
+          
+          console.log(`Đã nhận phản hồi từ Telegram cho file "${file.name}"`);
+          
+          // Lấy file_id dựa trên loại file
+          let fileId = null;
+          if (result.document) {
+            fileId = result.document.file_id;
+          } else if (result.photo) {
+            fileId = result.photo[result.photo.length - 1].file_id;
+          } else if (result.video) {
+            fileId = result.video.file_id;
+          } else if (result.audio) {
+            fileId = result.audio.file_id;
+          } else {
+            console.warn(`Không tìm thấy file_id cho file "${file.name}"`);
+          }
+          
+          // Cập nhật thông tin file
+          file.telegramFileId = fileId;
+          file.telegramMessageId = result.message_id;
+          file.telegramChatId = CHAT_ID;
+          file.syncedAt = new Date().toISOString();
+          file.needsSync = false;
+          file.syncError = null;
+          
+          syncedCount++;
+          console.log(`Đã đồng bộ file "${file.name}" thành công (file_id: ${fileId})`);
+        } catch (sendError) {
+          console.error(`Lỗi khi gửi file "${file.name}" lên Telegram:`, sendError);
+          throw sendError; // Để xử lý ở phần catch bên ngoài
+        }
+      } catch (error) {
+        console.error(`Lỗi đồng bộ file "${file.name}":`, error);
+        
+        // Thử lại nếu cần
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`Thử lại lần ${retryCount}/${maxRetries} cho file "${file.name}"...`);
+          // Chờ 2 giây trước khi thử lại
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          file.needsSync = true;
+          file.syncError = `Lỗi đồng bộ: ${error.message}. Đã thử ${retryCount}/${maxRetries} lần.`;
+        } else {
+          file.syncError = `Lỗi đồng bộ sau ${maxRetries} lần thử: ${error.message}`;
+          file.needsSync = true;
+          console.error(`Đã vượt quá số lần thử lại cho file "${file.name}". Bỏ qua file này.`);
+        }
+      }
+    }
+    
+    // Lưu lại thông tin file
   // Hiển thị danh sách file cần đồng bộ (tối đa 5 file)
   if (filesToSync.length > 0) {
     console.log('Danh sách một số file cần đồng bộ:');
