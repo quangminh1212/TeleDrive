@@ -40,53 +40,15 @@ const upload = multer({
   }
 });
 
-// Áp dụng middleware xác thực cho tất cả các routes ngoại trừ login
+// Áp dụng middleware xác thực cho tất cả các routes ngoại trừ telegram login
 router.use((req, res, next) => {
-  if (req.path === '/auth/login') {
+  if (req.path === '/auth/telegram') {
     return next();
   }
   authMiddleware.authenticate(req, res, next);
 });
 
 // ===== ROUTES CHO XÁC THỰC =====
-
-// Đăng nhập
-router.post('/auth/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    
-    // Kiểm tra thông tin đăng nhập
-    if (!username || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng nhập tên đăng nhập và mật khẩu'
-      });
-    }
-    
-    // Kiểm tra đúng thông tin đăng nhập trong config
-    if (username === config.ADMIN_USERNAME && password === config.ADMIN_PASSWORD) {
-      // Tạo session
-      req.session.isLoggedIn = true;
-      req.session.username = username;
-      
-      return res.json({
-        success: true,
-        message: 'Đăng nhập thành công'
-      });
-    } else {
-      return res.status(401).json({
-        success: false,
-        message: 'Tên đăng nhập hoặc mật khẩu không đúng'
-      });
-    }
-  } catch (error) {
-    console.error('Lỗi khi đăng nhập:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server: ' + (error.message || 'Lỗi không xác định')
-    });
-  }
-});
 
 // Đăng xuất
 router.post('/auth/logout', async (req, res) => {
@@ -114,36 +76,7 @@ router.post('/auth/logout', async (req, res) => {
   }
 });
 
-// Đổi mật khẩu
-router.post('/auth/change-password', async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    
-    // Kiểm tra mật khẩu hiện tại
-    if (currentPassword !== config.ADMIN_PASSWORD) {
-      return res.status(401).json({
-        success: false,
-        message: 'Mật khẩu hiện tại không đúng'
-      });
-    }
-    
-    // TODO: Cập nhật mật khẩu mới trong file .env
-    // (Cần triển khai phương thức để cập nhật file .env)
-    
-    res.json({
-      success: true,
-      message: 'Đã đổi mật khẩu thành công'
-    });
-  } catch (error) {
-    console.error('Lỗi khi đổi mật khẩu:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server: ' + (error.message || 'Lỗi không xác định')
-    });
-  }
-});
-
-// Thêm route đăng nhập bằng Telegram
+// Route đăng nhập bằng Telegram
 router.get('/auth/telegram', async (req, res) => {
   try {
     // Lấy thông tin từ query params (được chuyển từ Telegram Login Widget)
@@ -207,6 +140,7 @@ router.get('/auth/telegram', async (req, res) => {
     
     // Tạo session và lưu thông tin người dùng Telegram
     req.session.authenticated = true;
+    req.session.isLoggedIn = true;
     req.session.telegramUser = {
       id: telegramData.id,
       username: telegramData.username || `user_${telegramData.id}`,
@@ -215,8 +149,7 @@ router.get('/auth/telegram', async (req, res) => {
       photoUrl: telegramData.photo_url
     };
     
-    // Lưu vào file hoặc database nếu cần
-    // (Có thể thêm logic lưu thông tin người dùng Telegram vào DB)
+    console.log(`Người dùng Telegram đăng nhập thành công: ${telegramData.username || telegramData.id}`);
     
     // Chuyển hướng người dùng đến dashboard
     res.redirect('/dashboard');

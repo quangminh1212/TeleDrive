@@ -38,72 +38,17 @@
             display: flex;
             justify-content: center;
         }
-        .or-divider {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            margin: 15px 0;
-        }
-        .or-divider::before, .or-divider::after {
-            content: "";
-            flex: 1;
-            border-bottom: 1px solid #ddd;
-        }
-        .or-divider span {
-            padding: 0 10px;
-            color: #999;
+        .telegram-instructions {
+            margin-top: 20px;
+            color: #777;
             font-size: 14px;
+            line-height: 1.5;
+            text-align: center;
         }
-        .login-form {
-            display: none; /* Ẩn form đăng nhập thông thường */
-            flex-direction: column;
-            width: 100%;
-        }
-        .show-form-button {
-            background: none;
-            border: none;
+        .telegram-logo {
+            margin-bottom: 15px;
             color: #0088cc;
-            cursor: pointer;
-            text-decoration: underline;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #0088cc;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            width: 100%;
-        }
-        button:hover {
-            background-color: #0077b3;
-        }
-        .error-message {
-            color: #e74c3c;
-            margin-top: 10px;
-            display: none;
+            font-size: 48px;
         }
     </style>
 </head>
@@ -124,74 +69,17 @@
                         data-request-access="write"></script>
             </div>
             
-            <div class="or-divider">
-                <span>hoặc</span>
+            <div class="telegram-instructions">
+                <div class="telegram-logo">
+                    <i class="fas fa-paper-plane"></i>
+                </div>
+                <p>Nhấn vào nút đăng nhập phía trên để xác thực qua Telegram.<br>
+                Bạn sẽ được chuyển hướng đến trang Telegram để cấp quyền truy cập.</p>
             </div>
-            
-            <button class="show-form-button" id="showLoginForm">Đăng nhập bằng tài khoản</button>
-            
-            <form class="login-form" id="loginForm" action="/api/auth/login" method="POST">
-                <div class="form-group">
-                    <label for="username">Tên đăng nhập</label>
-                    <input type="text" id="username" name="username" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Mật khẩu</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                
-                <button type="submit">Đăng nhập</button>
-                
-                <div class="error-message" id="errorMessage"></div>
-            </form>
         </div>
     </div>
 
-    <script>
-        // Hiện/ẩn form đăng nhập thông thường
-        document.getElementById('showLoginForm').addEventListener('click', function() {
-            const loginForm = document.getElementById('loginForm');
-            if (loginForm.style.display === 'flex') {
-                loginForm.style.display = 'none';
-                this.textContent = 'Đăng nhập bằng tài khoản';
-            } else {
-                loginForm.style.display = 'flex';
-                this.textContent = 'Ẩn form đăng nhập';
-            }
-        });
-        
-        // Xử lý form đăng nhập thông thường
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            fetch('/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = '/dashboard';
-                } else {
-                    const errorMessage = document.getElementById('errorMessage');
-                    errorMessage.textContent = data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
-                    errorMessage.style.display = 'block';
-                }
-            })
-            .catch(error => {
-                const errorMessage = document.getElementById('errorMessage');
-                errorMessage.textContent = 'Lỗi kết nối đến server. Vui lòng thử lại sau.';
-                errorMessage.style.display = 'block';
-                console.error('Error:', error);
-            });
-        });
-    </script>
+    <!-- Font Awesome for Telegram icon -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html> 
