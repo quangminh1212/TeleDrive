@@ -468,7 +468,12 @@ async function updateChatId(newChatId) {
  */
 function isBotActive() {
   try {
-    // Kiểm tra xem bot có tồn tại và đã sẵn sàng không
+    // Nếu đang ở chế độ giả lập, vẫn trả về true để hệ thống hoạt động
+    if (simulationMode) {
+      return true;
+    }
+    
+    // Kiểm tra xem bot có tồn tại không
     if (!bot) {
       console.log('Bot chưa được khởi tạo');
       return false;
@@ -482,30 +487,14 @@ function isBotActive() {
     
     // Kiểm tra bot có botInfo không
     if (!bot.botInfo) {
-      console.log('Bot không có thông tin, đang thử lấy thông tin');
-      
-      // Gửi yêu cầu lấy thông tin bot một cách bất đồng bộ
-      if (!isInitializing) {
-        setTimeout(async () => {
-          try {
-            // Thử lấy thông tin bot
-            const botInfo = await bot.telegram.getMe();
-            bot.botInfo = botInfo;
-            isReady = true;
-            console.log(`Cập nhật thông tin bot thành công: ${botInfo.username}`);
-          } catch (err) {
-            console.log('Không thể lấy thông tin bot:', err.message);
-          }
-        }, 0);
-      }
-      
+      console.log('Bot không có thông tin');
       return false;
     }
     
     return true;
   } catch (error) {
     console.error('Lỗi khi kiểm tra trạng thái bot:', error.message);
-    return false;
+    return simulationMode; // Trả về true nếu đang ở chế độ giả lập
   }
 }
 
