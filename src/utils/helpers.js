@@ -13,16 +13,21 @@ const mime = require('mime-types');
  */
 function ensureDirectories() {
   const dirs = [
-    config.STORAGE_PATH,
-    config.TEMP_DIR,
-    config.DATA_DIR,
-    config.DOWNLOAD_DIR,
-    config.UPLOAD_DIR,
-    path.join(config.STORAGE_PATH, 'db')
+    path.resolve(config.STORAGE_PATH),
+    path.resolve(process.cwd(), 'temp'),
+    path.resolve(process.cwd(), 'data'),
+    path.resolve(process.cwd(), 'downloads'),
+    path.resolve(process.cwd(), 'uploads'),
+    path.resolve(config.STORAGE_PATH, 'db')
   ];
   
   for (const dir of dirs) {
-    fs.ensureDirSync(dir);
+    try {
+      fs.ensureDirSync(dir);
+      log(`Đảm bảo thư mục tồn tại: ${dir}`);
+    } catch (error) {
+      log(`Lỗi khi tạo thư mục ${dir}: ${error.message}`, 'error');
+    }
   }
 }
 
