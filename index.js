@@ -116,12 +116,16 @@ const initBot = () => {
   
   // Đọc lại file .env để đảm bảo có token mới nhất
   try {
-    const envConfig = dotenv.parse(fs.readFileSync('.env'));
-    if (envConfig.BOT_TOKEN) {
-      process.env.BOT_TOKEN = envConfig.BOT_TOKEN;
-    }
-    if (envConfig.CHAT_ID) {
-      process.env.CHAT_ID = envConfig.CHAT_ID;
+    if (fs.existsSync('.env')) {
+      const envConfig = dotenv.parse(fs.readFileSync('.env'));
+      if (envConfig.BOT_TOKEN) {
+        process.env.BOT_TOKEN = envConfig.BOT_TOKEN;
+      }
+      if (envConfig.CHAT_ID) {
+        process.env.CHAT_ID = envConfig.CHAT_ID;
+      }
+    } else {
+      console.error('File .env không tồn tại');
     }
   } catch (e) {
     console.error('Không thể đọc file .env:', e.message);
@@ -129,6 +133,8 @@ const initBot = () => {
   
   // Cập nhật biến toàn cục
   const botToken = process.env.BOT_TOKEN;
+  
+  console.log('Debug - Bot Token read from env:', botToken ? `${botToken.substring(0, 8)}...${botToken.substring(botToken.length - 5)}` : 'not set');
   
   if (!botToken || botToken === 'your_telegram_bot_token') {
     console.log('Bot token chưa được cấu hình. Vui lòng cập nhật file .env');
