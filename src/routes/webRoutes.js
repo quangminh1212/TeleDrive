@@ -55,6 +55,26 @@ router.get('/login', (req, res) => {
 
 // Trang dashboard
 router.get('/dashboard', (req, res) => {
+  // Kiểm tra xem người dùng đã đăng nhập chưa
+  if (!req.session || !req.session.authenticated) {
+    return res.redirect('/login');
+  }
+  
+  // Chuẩn bị data để render
+  const viewData = {
+    user: req.session.telegramUser || { username: 'Admin' },
+    useTelegram: !!req.session.telegramUser,
+    pageTitle: 'Dashboard'
+  };
+  
+  // Render trang dashboard với dữ liệu người dùng
+  if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.json({
+      success: true,
+      data: viewData
+    });
+  }
+  
   res.sendFile(path.join(process.cwd(), 'public', 'dashboard.html'));
 });
 
