@@ -37,6 +37,8 @@ const tempDir = path.join(__dirname, TEMP_DIR);
 const uploadsDir = path.join(__dirname, UPLOADS_DIR);
 const filesDbPath = path.join(dataDir, 'files.json');
 const logsDir = path.join(__dirname, 'logs');
+// Đường dẫn lưu trữ chính
+const STORAGE_PATH = __dirname;
 
 // Khởi tạo Express
 const app = express();
