@@ -130,52 +130,57 @@ function ensureDirectories() {
 // Tạo các thư mục cần thiết
 ensureDirectories();
 
-/**
- * Cập nhật biến môi trường và lưu vào file .env
- * @param {Object} updates Đối tượng chứa các cập nhật
- * @returns {Object} Kết quả cập nhật
- */
-function updateEnv(updates) {
-  if (!updates || typeof updates !== 'object') {
-    return { success: false, error: 'Invalid updates' };
-  }
-  
+// Cập nhật file .env
+async function updateEnv(updates) {
   try {
-    // Đọc nội dung hiện tại của file .env
-    let envContent = '';
-    if (fs.existsSync(envFile)) {
-      envContent = fs.readFileSync(envFile, 'utf8');
+    if (!updates || Object.keys(updates).length === 0) {
+      return {
+        success: false,
+        error: 'Không có thông tin cập nhật'
+      };
     }
     
-    // Cập nhật từng biến môi trường
+    // Đọc nội dung file .env
+    const envPath = path.join(process.cwd(), '.env');
+    let envContent = fs.readFileSync(envPath, 'utf8');
+    
+    // Cập nhật từng biến
     for (const [key, value] of Object.entries(updates)) {
-      // Kiểm tra xem biến đã tồn tại trong file .env chưa
-      const regex = new RegExp(`^${key}=.*$`, 'm');
+      // Tạo regex để tìm và thay thế giá trị
+      const regex = new RegExp(`${key}=.*`, 'g');
       
       if (envContent.match(regex)) {
-        // Cập nhật biến đã tồn tại
+        // Nếu biến đã tồn tại, cập nhật giá trị
         envContent = envContent.replace(regex, `${key}=${value}`);
+        console.log(`Cập nhật biến ${key}=${value}`);
       } else {
-        // Thêm biến mới
+        // Nếu biến chưa tồn tại, thêm vào cuối file
         envContent += `\n${key}=${value}`;
-      }
-      
-      // Cập nhật biến trong process.env
-      process.env[key] = value;
-      
-      // Cập nhật biến trong config
-      if (key in config) {
-        config[key] = value;
+        console.log(`Thêm biến mới ${key}=${value}`);
       }
     }
     
-    // Ghi nội dung đã cập nhật vào file .env
-    fs.writeFileSync(envFile, envContent);
+    // Ghi lại vào file .env
+    fs.writeFileSync(envPath, envContent, 'utf8');
+    console.log('Đã cập nhật file .env thành công');
     
-    return { success: true, message: 'Đã cập nhật biến môi trường' };
+    // Cập nhật biến trong process.env
+    for (const [key, value] of Object.entries(updates)) {
+      process.env[key] = value;
+      // Cập nhật lại giá trị trong module này
+      module.exports[key] = value;
+    }
+    
+    return {
+      success: true,
+      updates
+    };
   } catch (error) {
-    console.error('Lỗi khi cập nhật biến môi trường:', error);
-    return { success: false, error: error.message };
+    console.error('Lỗi khi cập nhật file .env:', error);
+    return {
+      success: false,
+      error: error.message || 'Lỗi không xác định khi cập nhật .env'
+    };
   }
 }
 

@@ -23,24 +23,66 @@ function initBot() {
     console.log('===== KHỞI TẠO BOT TELEGRAM =====');
     
     const telegramToken = config.TELEGRAM_BOT_TOKEN;
-    const targetChatId = config.TELEGRAM_CHAT_ID;
+    let targetChatId = config.TELEGRAM_CHAT_ID;
     
     if (!telegramToken || !targetChatId) {
       console.error('Thiếu cấu hình Telegram Bot. Vui lòng kiểm tra .env');
       return null;
     }
     
+    console.log(`Đang khởi tạo bot với token: ${telegramToken.slice(0, 5)}...${telegramToken.slice(-5)}`);
+    console.log(`Chat ID cấu hình: ${targetChatId}`);
+    
+    // Chuẩn hóa chat ID
+    targetChatId = targetChatId.toString();
+    
     // Tạo instance bot
     bot = new Telegraf(telegramToken);
     chatId = targetChatId;
     
+    // Kiểm tra thông tin bot
+    bot.telegram.getMe().then(botInfo => {
+      console.log(`Bot đã khởi tạo: ${botInfo.username} (${botInfo.first_name})`);
+    }).catch(err => {
+      console.error('Không thể lấy thông tin bot:', err.message);
+    });
+    
     // Cấu hình các sự kiện
     
     // Sự kiện khi bot được khởi động
-    bot.start(ctx => {
-      const chatId = ctx.chat.id;
-      ctx.reply(`Bot đã sẵn sàng. Chat ID của bạn là: ${chatId}`);
-      console.log(`Bot đã được khởi động bởi user với chat ID: ${chatId}`);
+    bot.start(async (ctx) => {
+      const userChatId = ctx.chat.id;
+      ctx.reply(`Bot đã sẵn sàng. Chat ID của bạn là: ${userChatId}`);
+      console.log(`Bot đã được khởi động bởi user với chat ID: ${userChatId}`);
+      
+      // Kiểm tra nếu chat ID khác với cấu hình
+      if (userChatId.toString() !== chatId.toString()) {
+        console.log(`Chat ID người dùng ${userChatId} khác với cấu hình ${chatId}`);
+        await ctx.reply(`⚠️ Chat ID của bạn (${userChatId}) khác với chat ID đã cấu hình (${chatId}).\nBạn có muốn cập nhật ID? Sử dụng lệnh /updatechatid`);
+      }
+    });
+    
+    // Thêm lệnh cập nhật chat ID
+    bot.command('updatechatid', async (ctx) => {
+      const newChatId = ctx.message.text.split(' ')[1] || ctx.chat.id.toString();
+      
+      console.log(`Nhận lệnh cập nhật chat ID thành: ${newChatId}`);
+      
+      try {
+        // Cập nhật chat ID
+        const result = await updateChatId(newChatId);
+        
+        if (result.success) {
+          await ctx.reply(`✅ Đã cập nhật chat ID thành ${newChatId}`);
+          console.log(`Đã cập nhật chat ID thành: ${newChatId}`);
+        } else {
+          await ctx.reply(`❌ Lỗi: ${result.error}`);
+          console.error(`Lỗi khi cập nhật chat ID: ${result.error}`);
+        }
+      } catch (error) {
+        await ctx.reply(`❌ Lỗi không xác định: ${error.message}`);
+        console.error(`Lỗi không xác định khi cập nhật chat ID: ${error.message}`);
+      }
     });
     
     // Sự kiện khi bot nhận được tin nhắn
@@ -57,17 +99,70 @@ function initBot() {
     });
     
     // Khởi động bot ở chế độ polling
-    bot.launch();
+    bot.launch().then(() => {
+      console.log(`Bot Telegram đã được khởi tạo thành công`);
+      console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${targetChatId}`);
+      isReady = true;
+    }).catch(err => {
+      console.error(`Không thể khởi động bot: ${err.message}`);
+      isReady = false;
+    });
     
-    console.log(`Bot Telegram đã được khởi tạo thành công`);
-    console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${targetChatId}`);
-    
-    isReady = true;
     return bot;
   } catch (error) {
     console.error('Lỗi khi khởi tạo Telegram Bot:', error);
     isReady = false;
     return null;
+  }
+}
+
+/**
+ * Cập nhật chat ID
+ * @param {String|Number} newChatId Chat ID mới
+ * @returns {Object} Kết quả cập nhật
+ */
+async function updateChatId(newChatId) {
+  try {
+    if (!newChatId) {
+      return {
+        success: false,
+        error: 'Chat ID không hợp lệ'
+      };
+    }
+    
+    // Chuẩn hóa chat ID
+    const normalizedChatId = newChatId.toString();
+    
+    // Cập nhật biến local
+    chatId = normalizedChatId;
+    
+    // Cập nhật trong config
+    try {
+      await config.updateEnv({
+        TELEGRAM_CHAT_ID: normalizedChatId
+      });
+      
+      console.log(`Đã cập nhật TELEGRAM_CHAT_ID trong .env thành ${normalizedChatId}`);
+      
+      return {
+        success: true,
+        chatId: normalizedChatId
+      };
+    } catch (configError) {
+      console.error(`Lỗi khi cập nhật config: ${configError.message}`);
+      
+      return {
+        success: false,
+        error: `Không thể cập nhật file .env: ${configError.message}`
+      };
+    }
+  } catch (error) {
+    console.error(`Lỗi khi cập nhật chat ID: ${error.message}`);
+    
+    return {
+      success: false,
+      error: error.message || 'Lỗi không xác định'
+    };
   }
 }
 
@@ -588,5 +683,6 @@ module.exports = {
   getFileLink,
   downloadFileFromTelegram,
   sendNotification,
-  getFilesFromChat
+  getFilesFromChat,
+  updateChatId
 }; 

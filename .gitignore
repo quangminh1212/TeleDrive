@@ -295,4 +295,34 @@ nodemon.json
 *~
 *.bak
 *.fixed
-*.new 
+*.new
+
+# Thư mục runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Thư mục lưu trữ dữ liệu
+data/
+temp/
+uploads/
+downloads/
+db/
+
+# File cấu hình nhạy cảm
+.env
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# File hệ thống
+.DS_Store
+Thumbs.db
+
+# Các file tạm thời
+*.tmp
+*.temp 
