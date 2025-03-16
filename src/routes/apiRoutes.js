@@ -5,128 +5,255 @@
 
 const express = require('express');
 const router = express.Router();
-const fileController = require('../controllers/fileController');
-const folderController = require('../controllers/folderController');
-const authController = require('../controllers/authController');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+
+const fileController = require('../controllers/fileController');
+const folderController = require('../controllers/folderController');
+const authController = require('../controllers/authController');
+const { ensureDirectories, getMimeType, guessFileType } = require('../utils/helpers');
 const config = require('../config/config');
+
+// Middleware kiểm tra xác thực
+function checkAuth(req, res, next) {
+  // Skip authentication for login route
+  if (req.path === '/auth/login') {
+    return next();
+  }
+  
+  // Skip authentication if they have valid API key
+  if (req.headers['x-api-key']) {
+    // TODO: Implement API key validation
+    return next();
+  }
+  
+  // Check session authentication
+  if (!req.session || !req.session.authenticated) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Unauthorized' 
+    });
+  }
+  
+  next();
+}
 
 // Cấu hình multer để upload file
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Đảm bảo thư mục uploads tồn tại
-    const uploadDir = path.join(config.STORAGE_PATH, 'uploads');
+  destination: function(req, file, cb) {
+    const uploadDir = req.query.folder 
+      ? path.join(config.UPLOADS_DIR, req.query.folder) 
+      : config.UPLOADS_DIR;
+    
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
+    
     cb(null, uploadDir);
   },
-  filename: function (req, file, cb) {
-    // Tạo tên file duy nhất
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
+  filename: function(req, file, cb) {
+    // Đảm bảo tên file an toàn, tránh lỗi đường dẫn
+    const originalName = file.originalname;
+    const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const uniqueName = Date.now() + '-' + sanitizedName;
+    
+    // Lưu tên gốc vào request để sử dụng sau này
+    req.originalFileName = originalName;
+    
     cb(null, uniqueName);
   }
 });
 
 const upload = multer({ 
   storage: storage,
-  limits: {
-    fileSize: 50 * 1024 * 1024, // Giới hạn 50MB
-  } 
+  limits: { fileSize: parseInt(config.MAX_FILE_SIZE) } 
 });
 
-// Middleware kiểm tra xác thực nếu cần
-function checkAuth(req, res, next) {
-  // Kiểm tra xác thực ở đây nếu cần
-  // Ví dụ: kiểm tra token, session, v.v.
-  next();
-}
+// Auth routes
+router.post('/auth/login', authController.login);
+router.get('/auth/logout', checkAuth, authController.logout);
+router.post('/auth/change-password', checkAuth, authController.changePassword);
+router.get('/auth/settings', checkAuth, authController.getSettings);
+router.post('/auth/settings', checkAuth, authController.updateSettings);
 
-// =================== FILE API ROUTES ===================
-
-// Đồng bộ files với Telegram
-router.post('/sync', checkAuth, fileController.syncFiles);
-
-// Kiểm tra và sửa dữ liệu file
-router.post('/check-files', checkAuth, fileController.checkFiles);
-
-// Lấy danh sách file
+// File routes
 router.get('/files', checkAuth, fileController.getFiles);
-
-// Lấy thông tin chi tiết file
 router.get('/files/:id', checkAuth, fileController.getFileDetails);
-
-// Tải file
-router.get('/download/:id', checkAuth, fileController.downloadFile);
-
-// Thống kê file
-router.get('/stats', checkAuth, fileController.getFileStats);
-
-// Kiểm tra trạng thái file
-router.get('/file-status', checkAuth, fileController.getFileStatus);
-
-// =================== FOLDER API ROUTES ===================
-
-// Lấy danh sách thư mục
-router.get('/folders', checkAuth, folderController.getFolders);
-
-// Tạo thư mục mới
-router.post('/folders', checkAuth, folderController.createFolder);
-
-// Đổi tên thư mục
-router.put('/folders/:id/rename', checkAuth, folderController.renameFolder);
-
-// Xóa thư mục
-router.delete('/folders/:id', checkAuth, folderController.deleteFolder);
-
-// =================== UPLOAD API ROUTES ===================
-
-// Upload file
-router.post('/upload', checkAuth, upload.single('file'), (req, res) => {
+router.get('/files/:id/download', checkAuth, fileController.downloadFile);
+router.post('/files/:id/share', checkAuth, (req, res) => {
+  // TODO: Move to fileController
   try {
-    if (!req.file) {
+    const fileId = req.params.id;
+    if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'Không có file nào được upload'
+        error: 'ID file không được để trống'
       });
     }
-
-    // Lấy thông tin file đã upload
-    const fileInfo = {
-      id: req.file.filename,
-      name: req.file.originalname,
-      size: req.file.size,
-      localPath: req.file.path,
-      relativePath: req.body.folder || '',
-      uploadDate: new Date().toISOString(),
-      fileType: path.extname(req.file.originalname).slice(1).toLowerCase() || 'unknown',
-      mimeType: req.file.mimetype,
-      needsSync: true,
-      fileStatus: 'local'
-    };
-
-    // Đọc cơ sở dữ liệu file hiện tại
+    
+    const { expiryTime } = req.body;
+    
+    // Đọc database
     const filesData = fileController.readFilesDb();
     
-    // Thêm file mới vào danh sách
-    filesData.push(fileInfo);
+    // Tìm file
+    const fileIndex = filesData.findIndex(file => file.id === fileId);
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại'
+      });
+    }
     
-    // Lưu cơ sở dữ liệu file
+    // Tạo token chia sẻ
+    const shareToken = require('crypto').randomBytes(16).toString('hex');
+    
+    // Cập nhật thông tin chia sẻ
+    filesData[fileIndex].shareToken = shareToken;
+    
+    // Tạo hoặc cập nhật thời gian hết hạn
+    if (expiryTime) {
+      // Chuyển đổi giờ thành milliseconds
+      const expiryHours = parseInt(expiryTime);
+      if (!isNaN(expiryHours) && expiryHours > 0) {
+        const expiryDate = new Date();
+        expiryDate.setHours(expiryDate.getHours() + expiryHours);
+        
+        filesData[fileIndex].shareExpiry = expiryDate.toISOString();
+      }
+    } else {
+      // Không có thời hạn
+      filesData[fileIndex].shareExpiry = null;
+    }
+    
+    // Lưu thay đổi
     fileController.saveFilesDb(filesData);
     
-    // Tự động đồng bộ file với Telegram nếu cấu hình cho phép
-    if (config.AUTO_SYNC === 'true') {
-      fileController.autoSyncFile(fileInfo);
+    // Tạo URL chia sẻ
+    const shareUrl = `${req.protocol}://${req.get('host')}/share/${shareToken}`;
+    
+    return res.json({
+      success: true,
+      shareUrl,
+      shareToken,
+      shareExpiry: filesData[fileIndex].shareExpiry
+    });
+  } catch (error) {
+    console.error('Lỗi khi chia sẻ file:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Lỗi server: ' + (error.message || 'Không xác định')
+    });
+  }
+});
+
+router.delete('/files/:id/share', checkAuth, (req, res) => {
+  // TODO: Move to fileController
+  try {
+    const fileId = req.params.id;
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
     }
+    
+    // Đọc database
+    const filesData = fileController.readFilesDb();
+    
+    // Tìm file
+    const fileIndex = filesData.findIndex(file => file.id === fileId);
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại'
+      });
+    }
+    
+    const file = filesData[fileIndex];
+    
+    // Kiểm tra file có đang được chia sẻ không
+    if (!file.shareToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'File này không được chia sẻ'
+      });
+    }
+    
+    // Hủy chia sẻ
+    filesData[fileIndex].shareToken = null;
+    filesData[fileIndex].shareExpiry = null;
+    
+    // Lưu thay đổi
+    fileController.saveFilesDb(filesData);
+    
+    return res.json({
+      success: true,
+      message: 'Đã hủy chia sẻ file'
+    });
+  } catch (error) {
+    console.error('Lỗi khi hủy chia sẻ file:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Lỗi server: ' + (error.message || 'Không xác định')
+    });
+  }
+});
+
+// Folder routes
+router.get('/folders', checkAuth, folderController.getFolders);
+router.post('/folders', checkAuth, folderController.createFolder);
+router.put('/folders/:id', checkAuth, folderController.renameFolder);
+router.delete('/folders/:id', checkAuth, folderController.deleteFolder);
+
+// Upload route
+router.post('/upload', checkAuth, upload.single('file'), (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Không có file nào được tải lên'
+      });
+    }
+    
+    const originalName = req.originalFileName || file.originalname;
+    const relativePath = req.query.folder || '';
+    
+    // Extract file info
+    const fileInfo = {
+      id: 'file_' + Date.now() + '_' + Math.round(Math.random() * 1000000),
+      name: originalName,
+      originalName: originalName,
+      filename: file.filename,
+      localPath: file.path,
+      relativePath: relativePath,
+      size: file.size,
+      mimeType: file.mimetype || getMimeType(path.extname(originalName)),
+      fileType: guessFileType(file.mimetype || getMimeType(path.extname(originalName))),
+      uploadDate: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
+      needsSync: config.AUTO_SYNC === 'true',
+      fileStatus: 'local',
+      shareToken: null,
+      shareExpiry: null,
+      telegramFileId: null,
+      telegramUrl: null,
+      isDeleted: false
+    };
+    
+    // Lưu thông tin file vào database
+    const filesData = fileController.readFilesDb();
+    filesData.push(fileInfo);
+    fileController.saveFilesDb(filesData);
     
     return res.json({
       success: true,
       file: fileInfo
     });
   } catch (error) {
-    console.error('Lỗi khi upload file:', error);
+    console.error('Lỗi khi tải file lên:', error);
     return res.status(500).json({
       success: false,
       error: 'Lỗi server: ' + (error.message || 'Không xác định')
@@ -134,109 +261,42 @@ router.post('/upload', checkAuth, upload.single('file'), (req, res) => {
   }
 });
 
-// Upload nhiều file
-router.post('/upload-multiple', checkAuth, upload.array('files', 10), (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Không có file nào được upload'
-      });
-    }
+// Sync route
+router.post('/sync', checkAuth, fileController.syncFiles);
 
-    // Lấy thông tin các file đã upload
-    const uploadedFiles = req.files.map(file => ({
-      id: file.filename,
-      name: file.originalname,
-      size: file.size,
-      localPath: file.path,
-      relativePath: req.body.folder || '',
-      uploadDate: new Date().toISOString(),
-      fileType: path.extname(file.originalname).slice(1).toLowerCase() || 'unknown',
-      mimeType: file.mimetype,
-      needsSync: true,
-      fileStatus: 'local'
-    }));
+// Stats routes
+router.get('/stats', checkAuth, fileController.getFileStats);
+router.get('/files-status', checkAuth, fileController.getFileStatus);
+router.post('/check-files', checkAuth, fileController.checkFiles);
 
-    // Đọc cơ sở dữ liệu file hiện tại
-    const filesData = fileController.readFilesDb();
-    
-    // Thêm các file mới vào danh sách
-    filesData.push(...uploadedFiles);
-    
-    // Lưu cơ sở dữ liệu file
-    fileController.saveFilesDb(filesData);
-    
-    // Tự động đồng bộ các file với Telegram nếu cấu hình cho phép
-    if (config.AUTO_SYNC === 'true') {
-      for (const file of uploadedFiles) {
-        fileController.autoSyncFile(file);
-      }
-    }
-    
-    return res.json({
-      success: true,
-      files: uploadedFiles,
-      count: uploadedFiles.length
-    });
-  } catch (error) {
-    console.error('Lỗi khi upload nhiều file:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Lỗi server: ' + (error.message || 'Không xác định')
-    });
-  }
-});
-
-// =================== TRASH API ROUTES ===================
-
-// Chuyển file vào thùng rác
-router.post('/trash/:id', checkAuth, (req, res) => {
-  try {
-    const fileId = req.params.id;
-    const filesData = fileController.readFilesDb();
-    const fileIndex = filesData.findIndex(f => f.id === fileId);
-    
-    if (fileIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        error: 'File không tồn tại'
-      });
-    }
-    
-    // Đánh dấu file đã bị xóa (vào thùng rác)
-    filesData[fileIndex].deleted = true;
-    filesData[fileIndex].deleteDate = new Date().toISOString();
-    
-    // Lưu cơ sở dữ liệu file
-    fileController.saveFilesDb(filesData);
-    
-    return res.json({
-      success: true,
-      message: 'File đã được chuyển vào thùng rác'
-    });
-  } catch (error) {
-    console.error('Lỗi khi chuyển file vào thùng rác:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Lỗi server: ' + (error.message || 'Không xác định')
-    });
-  }
-});
-
-// Lấy danh sách file trong thùng rác
+// Trash routes
 router.get('/trash', checkAuth, (req, res) => {
   try {
+    // Đọc database
     const filesData = fileController.readFilesDb();
-    const trashedFiles = filesData.filter(file => file.deleted);
+    
+    // Lọc các file đã xóa
+    const trashedFiles = filesData.filter(file => file.isDeleted);
+    
+    // Định dạng dữ liệu trước khi gửi đi
+    const formattedFiles = trashedFiles.map(file => ({
+      id: file.id,
+      name: file.name,
+      size: file.size,
+      mimeType: file.mimeType,
+      fileType: file.fileType,
+      uploadDate: file.uploadDate,
+      deletedDate: file.deletedDate || file.lastModified,
+      hasTelegramCopy: !!file.telegramFileId
+    }));
     
     return res.json({
       success: true,
-      files: trashedFiles,
+      files: formattedFiles,
       total: trashedFiles.length
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách file trong thùng rác:', error);
+    console.error('Lỗi khi lấy thùng rác:', error);
     return res.status(500).json({
       success: false,
       error: 'Lỗi server: ' + (error.message || 'Không xác định')
@@ -244,41 +304,45 @@ router.get('/trash', checkAuth, (req, res) => {
   }
 });
 
-// Khôi phục file từ thùng rác
-router.post('/restore/:id', checkAuth, (req, res) => {
+router.post('/trash/:id/restore', checkAuth, (req, res) => {
   try {
     const fileId = req.params.id;
-    const filesData = fileController.readFilesDb();
-    const fileIndex = filesData.findIndex(f => f.id === fileId);
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
+    }
     
+    // Đọc database
+    const filesData = fileController.readFilesDb();
+    
+    // Tìm file
+    const fileIndex = filesData.findIndex(file => file.id === fileId && file.isDeleted);
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'File không tồn tại'
+        error: 'File không tồn tại trong thùng rác'
       });
     }
     
-    // Nếu file không ở trong thùng rác
-    if (!filesData[fileIndex].deleted) {
-      return res.status(400).json({
-        success: false,
-        error: 'File không ở trong thùng rác'
-      });
-    }
+    // Khôi phục file
+    filesData[fileIndex].isDeleted = false;
+    filesData[fileIndex].lastModified = new Date().toISOString();
     
-    // Khôi phục file từ thùng rác
-    filesData[fileIndex].deleted = false;
-    delete filesData[fileIndex].deleteDate;
-    
-    // Lưu cơ sở dữ liệu file
+    // Lưu thay đổi
     fileController.saveFilesDb(filesData);
     
     return res.json({
       success: true,
-      message: 'File đã được khôi phục từ thùng rác'
+      message: 'Đã khôi phục file thành công',
+      file: {
+        id: filesData[fileIndex].id,
+        name: filesData[fileIndex].name
+      }
     });
   } catch (error) {
-    console.error('Lỗi khi khôi phục file từ thùng rác:', error);
+    console.error('Lỗi khi khôi phục file:', error);
     return res.status(500).json({
       success: false,
       error: 'Lỗi server: ' + (error.message || 'Không xác định')
@@ -286,45 +350,48 @@ router.post('/restore/:id', checkAuth, (req, res) => {
   }
 });
 
-// Xóa vĩnh viễn file từ thùng rác
 router.delete('/trash/:id', checkAuth, (req, res) => {
   try {
     const fileId = req.params.id;
-    const filesData = fileController.readFilesDb();
-    const fileIndex = filesData.findIndex(f => f.id === fileId);
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
+    }
     
+    // Đọc database
+    const filesData = fileController.readFilesDb();
+    
+    // Tìm file
+    const fileIndex = filesData.findIndex(file => file.id === fileId && file.isDeleted);
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'File không tồn tại'
+        error: 'File không tồn tại trong thùng rác'
       });
     }
     
-    // Nếu file không ở trong thùng rác
-    if (!filesData[fileIndex].deleted) {
-      return res.status(400).json({
-        success: false,
-        error: 'File không ở trong thùng rác'
-      });
-    }
-    
-    // Lấy thông tin file trước khi xóa
     const file = filesData[fileIndex];
     
-    // Xóa file khỏi cơ sở dữ liệu
-    filesData.splice(fileIndex, 1);
-    
-    // Lưu cơ sở dữ liệu file
-    fileController.saveFilesDb(filesData);
-    
-    // Xóa file khỏi đĩa nếu tồn tại
+    // Xóa file từ local nếu có
     if (file.localPath && fs.existsSync(file.localPath)) {
       fs.unlinkSync(file.localPath);
     }
     
+    // Xóa file từ database
+    const deletedFile = filesData.splice(fileIndex, 1)[0];
+    
+    // Lưu thay đổi
+    fileController.saveFilesDb(filesData);
+    
     return res.json({
       success: true,
-      message: 'File đã được xóa vĩnh viễn'
+      message: 'Đã xóa vĩnh viễn file thành công',
+      deletedFile: {
+        id: deletedFile.id,
+        name: deletedFile.name
+      }
     });
   } catch (error) {
     console.error('Lỗi khi xóa vĩnh viễn file:', error);
@@ -335,129 +402,175 @@ router.delete('/trash/:id', checkAuth, (req, res) => {
   }
 });
 
-// Làm trống thùng rác
-router.delete('/empty-trash', checkAuth, (req, res) => {
+router.delete('/trash', checkAuth, (req, res) => {
   try {
-    const filesData = fileController.readFilesDb();
+    // Đọc database
+    let filesData = fileController.readFilesDb();
     
-    // Lọc ra các file đã bị xóa (trong thùng rác)
-    const trashedFiles = filesData.filter(file => file.deleted);
+    // Đếm số file trong thùng rác
+    const trashedCount = filesData.filter(file => file.isDeleted).length;
     
-    // Xóa các file khỏi đĩa nếu tồn tại
-    for (const file of trashedFiles) {
-      if (file.localPath && fs.existsSync(file.localPath)) {
-        fs.unlinkSync(file.localPath);
-      }
-    }
-    
-    // Lọc ra các file không bị xóa (không ở trong thùng rác)
-    const remainingFiles = filesData.filter(file => !file.deleted);
-    
-    // Lưu cơ sở dữ liệu file chỉ với các file không bị xóa
-    fileController.saveFilesDb(remainingFiles);
-    
-    return res.json({
-      success: true,
-      message: `Đã xóa vĩnh viễn ${trashedFiles.length} file từ thùng rác`
-    });
-  } catch (error) {
-    console.error('Lỗi khi làm trống thùng rác:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Lỗi server: ' + (error.message || 'Không xác định')
-    });
-  }
-});
-
-// =================== SEARCH API ROUTES ===================
-
-// Tìm kiếm file
-router.get('/search', checkAuth, (req, res) => {
-  try {
-    const query = req.query.q || '';
-    const filesData = fileController.readFilesDb();
-    
-    // Nếu không có từ khóa tìm kiếm
-    if (!query.trim()) {
+    if (trashedCount === 0) {
       return res.json({
         success: true,
-        files: [],
-        total: 0,
-        query: ''
+        message: 'Thùng rác đã trống',
+        deletedCount: 0
       });
     }
     
-    // Tìm kiếm file theo tên
-    const searchResults = filesData.filter(file => {
-      // Chỉ tìm kiếm file không ở trong thùng rác
-      if (file.deleted) return false;
-      
-      // Tìm kiếm không phân biệt chữ hoa/thường
-      const fileName = (file.name || '').toLowerCase();
-      const searchQuery = query.toLowerCase();
-      
-      return fileName.includes(searchQuery);
+    // Xóa các file local nếu có
+    filesData.forEach(file => {
+      if (file.isDeleted && file.localPath && fs.existsSync(file.localPath)) {
+        try {
+          fs.unlinkSync(file.localPath);
+        } catch (err) {
+          console.error(`Không thể xóa file ${file.localPath}:`, err);
+        }
+      }
     });
+    
+    // Lọc ra các file không bị xóa
+    filesData = filesData.filter(file => !file.isDeleted);
+    
+    // Lưu thay đổi
+    fileController.saveFilesDb(filesData);
     
     return res.json({
       success: true,
-      files: searchResults,
-      total: searchResults.length,
-      query: query
+      message: 'Đã làm trống thùng rác',
+      deletedCount: trashedCount
     });
   } catch (error) {
-    console.error('Lỗi khi tìm kiếm file:', error);
+    console.error('Lỗi làm trống thùng rác:', error);
     return res.status(500).json({
       success: false,
-      error: 'Lỗi server: ' + (error.message || 'Không xác định')
+      error: error.message || 'Lỗi server khi làm trống thùng rác'
     });
   }
 });
 
-// =================== BOT API ROUTES ===================
-
-// Kiểm tra trạng thái bot
-router.get('/bot-status', checkAuth, (req, res) => {
+// Settings routes
+router.post('/settings', express.json(), async (req, res) => {
   try {
-    const botActive = fileController.isBotActive();
-    const botInfo = {
-      active: botActive,
-      token: process.env.BOT_TOKEN ? '***' + process.env.BOT_TOKEN.slice(-8) : 'Not configured',
-      chatId: process.env.CHAT_ID || 'Not configured'
-    };
+    const { apiKey, chatId, maxFileSize, enableSync } = req.body;
     
-    return res.json({
+    // Đọc file .env
+    const envPath = path.join(__dirname, '../../.env');
+    let envContent = '';
+    
+    if (fs.existsSync(envPath)) {
+      envContent = fs.readFileSync(envPath, 'utf8');
+    }
+    
+    let newEnvContent = envContent;
+    let restartAfterSave = false;
+    
+    // Cập nhật BOT_TOKEN nếu có thay đổi
+    if (apiKey && apiKey !== process.env.BOT_TOKEN) {
+      newEnvContent = newEnvContent.replace(/BOT_TOKEN=.*(\r?\n|$)/, `BOT_TOKEN=${apiKey}$1`);
+      if (!newEnvContent.includes('BOT_TOKEN=')) {
+        newEnvContent += `\nBOT_TOKEN=${apiKey}`;
+      }
+      process.env.BOT_TOKEN = apiKey;
+      restartAfterSave = true;
+    }
+    
+    // Cập nhật CHAT_ID nếu có thay đổi
+    if (chatId && chatId !== process.env.CHAT_ID) {
+      newEnvContent = newEnvContent.replace(/CHAT_ID=.*(\r?\n|$)/, `CHAT_ID=${chatId}$1`);
+      if (!newEnvContent.includes('CHAT_ID=')) {
+        newEnvContent += `\nCHAT_ID=${chatId}`;
+      }
+      process.env.CHAT_ID = chatId;
+      restartAfterSave = true;
+    }
+    
+    // Cập nhật MAX_FILE_SIZE nếu có thay đổi
+    if (maxFileSize && maxFileSize !== process.env.MAX_FILE_SIZE / (1024 * 1024)) {
+      const maxFileSizeBytes = maxFileSize * 1024 * 1024;
+      newEnvContent = newEnvContent.replace(/MAX_FILE_SIZE=.*(\r?\n|$)/, `MAX_FILE_SIZE=${maxFileSizeBytes}$1`);
+      if (!newEnvContent.includes('MAX_FILE_SIZE=')) {
+        newEnvContent += `\nMAX_FILE_SIZE=${maxFileSizeBytes}`;
+      }
+      process.env.MAX_FILE_SIZE = maxFileSizeBytes.toString();
+    }
+    
+    // Cập nhật ENABLE_SYNC nếu có thay đổi
+    if (enableSync !== undefined) {
+      const enableSyncValue = enableSync ? 'true' : 'false';
+      newEnvContent = newEnvContent.replace(/AUTO_SYNC=.*(\r?\n|$)/, `AUTO_SYNC=${enableSyncValue}$1`);
+      if (!newEnvContent.includes('AUTO_SYNC=')) {
+        newEnvContent += `\nAUTO_SYNC=${enableSyncValue}`;
+      }
+      process.env.AUTO_SYNC = enableSyncValue;
+    }
+    
+    // Lưu file .env nếu có thay đổi
+    if (newEnvContent !== envContent) {
+      fs.writeFileSync(envPath, newEnvContent);
+      
+      // Khởi động lại bot nếu cần
+      if (restartAfterSave) {
+        setTimeout(async () => {
+          try {
+            // Khởi động lại bot
+            const telegramService = require('../services/telegramService');
+            await telegramService.restartBot();
+          } catch (error) {
+            console.error('Lỗi khởi động lại bot:', error);
+          }
+        }, 1000);
+      }
+    }
+    
+    res.json({
       success: true,
-      bot: botInfo
+      message: 'Đã lưu cài đặt thành công',
+      needsRestart: restartAfterSave
     });
   } catch (error) {
-    console.error('Lỗi khi kiểm tra trạng thái bot:', error);
-    return res.status(500).json({
+    console.error('Lỗi cập nhật cài đặt:', error);
+    res.status(500).json({
       success: false,
-      error: 'Lỗi server: ' + (error.message || 'Không xác định')
+      error: 'Lỗi server khi cập nhật cài đặt'
     });
   }
 });
 
-// Khởi động lại bot
-router.post('/restart-bot', checkAuth, async (req, res) => {
+// Share route (public)
+router.get('/share/:token', (req, res) => {
   try {
-    console.log('===== RESTART BOT REQUEST =====');
+    const shareToken = req.params.token;
     
-    // Khởi động lại bot
-    const result = await fileController.restartBot();
+    // Tìm file được chia sẻ
+    const filesData = fileController.readFilesDb();
+    const file = filesData.find(file => file.shareToken === shareToken);
     
-    return res.json({
-      success: result.success,
-      message: result.success ? 'Bot đã được khởi động lại thành công' : 'Không thể khởi động lại bot',
-      details: result
-    });
+    if (!file) {
+      return res.status(404).send('Link chia sẻ không tồn tại hoặc đã hết hạn');
+    }
+    
+    // Kiểm tra thời hạn chia sẻ
+    if (file.shareExpiry && new Date(file.shareExpiry) < new Date()) {
+      // Xóa thông tin chia sẻ đã hết hạn
+      file.shareToken = null;
+      file.shareExpiry = null;
+      fileController.saveFilesDb(filesData);
+      
+      return res.status(400).send('Link chia sẻ đã hết hạn');
+    }
+    
+    // Redirect đến trang xem trước hoặc tải file
+    const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(file.fileType);
+    
+    if (isPreviewable) {
+      return res.redirect(`/preview/${file.id}?token=${shareToken}`);
+    } else {
+      return res.redirect(`/download/${file.id}?token=${shareToken}`);
+    }
   } catch (error) {
-    console.error('Lỗi khi khởi động lại bot:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Lỗi server: ' + (error.message || 'Không xác định')
-    });
+    console.error('Lỗi khi xử lý link chia sẻ:', error);
+    return res.status(500).send('Lỗi server khi xử lý link chia sẻ');
   }
 });
 

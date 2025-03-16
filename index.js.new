@@ -1,0 +1,213 @@
+/**
+ * TeleDrive - Ứng dụng quản lý file với Telegram Bot
+ * File chính kết hợp tất cả chức năng: web server, bot Telegram, đồng bộ file và dọn dẹp
+ */
+
+// Import các module cần thiết
+const express = require('express');
+const dotenv = require('dotenv');
+const path = require('path');
+const fs = require('fs');
+const morgan = require('morgan');
+const cors = require('cors');
+const helmet = require('helmet');
+const session = require('express-session');
+const bodyParser = require('body-parser');
+
+// Import các module tự tạo
+const config = require('./src/config/config');
+const telegramService = require('./src/services/telegramService');
+const fileService = require('./src/services/fileService');
+const apiRoutes = require('./src/routes/apiRoutes');
+const webRoutes = require('./src/routes/webRoutes');
+const { ensureDirectories } = require('./src/utils/helpers');
+
+// Load biến môi trường
+dotenv.config();
+
+// Đường dẫn lưu trữ và biến toàn cục
+const { 
+  PORT = 5002, 
+  BOT_TOKEN, 
+  CHAT_ID, 
+  AUTO_SYNC = 'true',
+  SESSION_SECRET = 'teledrive-session-secret',
+  STORAGE_PATH = process.cwd()
+} = process.env;
+
+// Đường dẫn file và thư mục
+const UPLOADS_DIR = path.join(STORAGE_PATH, 'uploads');
+const TEMP_DIR = path.join(STORAGE_PATH, 'temp');
+const DATA_DIR = path.join(STORAGE_PATH, 'data');
+const DB_DIR = path.join(STORAGE_PATH, 'db');
+
+// Đảm bảo các thư mục tồn tại
+ensureDirectories([UPLOADS_DIR, TEMP_DIR, DATA_DIR, DB_DIR]);
+
+// Tạo application Express
+const app = express();
+
+// Thiết lập view engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.use(morgan('dev'));
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
+app.use(cors());
+
+// Thiết lập session
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 giờ
+}));
+
+// Biến global cho bot
+let bot = null;
+let botActive = false;
+
+// Middleware tự động check xác thực nếu cần
+app.use((req, res, next) => {
+  // Skip authentication for public routes
+  if (req.path === '/login' || req.path === '/api/auth/login' || 
+      req.path.startsWith('/public') || req.path.startsWith('/css') || 
+      req.path.startsWith('/js') || req.path.startsWith('/img') ||
+      req.path.startsWith('/api/share/')) {
+    return next();
+  }
+  
+  // Skip authentication for API routes if they have valid API key
+  if (req.path.startsWith('/api/') && req.headers['x-api-key']) {
+    // TODO: Implement API key validation
+    return next();
+  }
+  
+  // Redirect to login if not authenticated
+  if (!req.session || !req.session.authenticated) {
+    if (req.path.startsWith('/api/')) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    } else {
+      return res.redirect('/login');
+    }
+  }
+  
+  next();
+});
+
+// Router API và Web
+app.use('/api', apiRoutes);
+app.use('/', webRoutes);
+
+// Khởi động chương trình
+(async function startApplication() {
+  // Thử khởi tạo bot Telegram với tối đa 3 lần
+  let botInitAttempts = 0;
+  const maxBotInitAttempts = 3;
+  
+  while (botInitAttempts < maxBotInitAttempts) {
+    try {
+      botInitAttempts++;
+      console.log(`Thử khởi tạo bot lần ${botInitAttempts}...`);
+      
+      if (!BOT_TOKEN || !CHAT_ID) {
+        console.log('Chưa cấu hình BOT_TOKEN hoặc CHAT_ID. Bot không được khởi tạo.');
+        break;
+      }
+      
+      const result = await telegramService.startBot();
+      bot = result.bot;
+      botActive = result.botActive;
+      
+      if (botActive) {
+        console.log('Bot Telegram đã được khởi tạo thành công! 🎉');
+        break;
+      } else {
+        console.log('Không thể khởi tạo bot.');
+        
+        if (botInitAttempts < maxBotInitAttempts) {
+          console.log(`Thử lại sau ${botInitAttempts * 2} giây...`);
+          await new Promise(resolve => setTimeout(resolve, botInitAttempts * 2000));
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi khi khởi tạo bot:', error);
+      
+      if (botInitAttempts < maxBotInitAttempts) {
+        console.log(`Thử lại sau ${botInitAttempts * 2} giây...`);
+        await new Promise(resolve => setTimeout(resolve, botInitAttempts * 2000));
+      }
+    }
+  }
+  
+  // Khởi động server
+  const server = app.listen(PORT, () => {
+    console.log(`Server đang chạy trên cổng ${PORT}`);
+    console.log(`Truy cập: http://localhost:${PORT}`);
+  });
+  
+  // Xử lý tín hiệu để tắt server an toàn
+  process.on('SIGTERM', shutDown);
+  process.on('SIGINT', shutDown);
+  
+  function shutDown() {
+    console.log('Đang tắt server...');
+    server.close(() => {
+      console.log('Server đã đóng kết nối.');
+      process.exit(0);
+    });
+    
+    // Nếu server không đóng trong 5s thì buộc tắt
+    setTimeout(() => {
+      console.error('Không thể đóng kết nối server, buộc tắt!');
+      process.exit(1);
+    }, 5000);
+  }
+  
+  // Bắt đầu đồng bộ file và dọn dẹp
+  if (AUTO_SYNC === 'true') {
+    setTimeout(async () => {
+      try {
+        await fileService.syncFiles();
+      } catch (error) {
+        console.error('Lỗi khi đồng bộ files lần đầu:', error);
+      }
+    }, 5000);
+  }
+  
+  // Định kỳ dọn dẹp files
+  const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 giờ
+  setInterval(async () => {
+    try {
+      console.log('Bắt đầu dọn dẹp files...');
+      await fileService.cleanupFiles();
+      console.log('Dọn dẹp files hoàn tất');
+    } catch (error) {
+      console.error('Lỗi khi dọn dẹp files:', error);
+    }
+  }, CLEANUP_INTERVAL);
+})();
+
+// Middleware xử lý lỗi
+app.use((err, req, res, next) => {
+  console.error('Lỗi server:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Lỗi server: ' + (err.message || 'Không xác định')
+  });
+});
+
+// Middleware xử lý route không tồn tại - phải đặt sau tất cả các routes
+app.use((req, res) => {
+  console.log(`Route không tồn tại: ${req.method} ${req.path}`);
+  res.status(404).json({
+    success: false,
+    error: 'API endpoint không tồn tại'
+  });
+}); 
