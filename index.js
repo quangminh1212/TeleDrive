@@ -114,7 +114,23 @@ function formatDate(dateString) {
 const initBot = () => {
   console.log('Khởi tạo Telegram Bot...');
   
-  if (!BOT_TOKEN || BOT_TOKEN === 'your_telegram_bot_token') {
+  // Đọc lại file .env để đảm bảo có token mới nhất
+  try {
+    const envConfig = dotenv.parse(fs.readFileSync('.env'));
+    if (envConfig.BOT_TOKEN) {
+      process.env.BOT_TOKEN = envConfig.BOT_TOKEN;
+    }
+    if (envConfig.CHAT_ID) {
+      process.env.CHAT_ID = envConfig.CHAT_ID;
+    }
+  } catch (e) {
+    console.error('Không thể đọc file .env:', e.message);
+  }
+  
+  // Cập nhật biến toàn cục
+  const botToken = process.env.BOT_TOKEN;
+  
+  if (!botToken || botToken === 'your_telegram_bot_token') {
     console.log('Bot token chưa được cấu hình. Vui lòng cập nhật file .env');
     return Promise.resolve(null);
   }
@@ -124,7 +140,7 @@ const initBot = () => {
     console.log('Kiểm tra kết nối với Telegram API...');
     
     // Sử dụng fetch để kiểm tra kết nối
-    return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`)
+    return fetch(`https://api.telegram.org/bot${botToken}/getMe`)
       .then(response => {
         if (!response.ok) {
           throw new Error(`Lỗi kết nối: ${response.status} ${response.statusText}`);
@@ -139,7 +155,7 @@ const initBot = () => {
         console.log(`Kết nối thành công! Bot: @${data.result.username}`);
         
         // Khởi tạo bot sau khi đã kiểm tra kết nối thành công
-        const newBot = new Telegraf(BOT_TOKEN);
+        const newBot = new Telegraf(botToken);
         
         // Thêm handlers cho bot
         newBot.command('start', (ctx) => {
@@ -160,7 +176,7 @@ const initBot = () => {
         // Sử dụng spawn để khởi động bot trong tiến trình con
         const botProcess = spawn('node', ['-e', `
           const { Telegraf } = require('telegraf');
-          const bot = new Telegraf('${BOT_TOKEN}');
+          const bot = new Telegraf('${botToken}');
           bot.launch().then(() => {
             console.log('Bot đã khởi động thành công!');
           }).catch(err => {
