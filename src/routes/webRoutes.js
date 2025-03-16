@@ -39,7 +39,59 @@ router.use(checkAuth);
 
 // Trang chủ - redirect đến dashboard
 router.get('/', (req, res) => {
-  res.redirect('/dashboard');
+  try {
+    // Đọc database
+    const filesData = fileService.readFilesDb();
+    
+    // Định dạng dữ liệu trước khi gửi tới template
+    const formattedFiles = filesData.map(file => ({
+      id: file.id,
+      name: file.name,
+      size: file.size,
+      formattedSize: formatBytes(file.size),
+      uploadDate: file.uploadDate,
+      formattedDate: formatDate(file.uploadDate),
+      fileType: getFileType(file.name),
+      downloadUrl: `/api/files/${file.id}/download`,
+      previewUrl: `/file/${file.id}`,
+      fixUrl: `/api/files/${file.id}/fix`
+    }));
+    
+    // Tính toán thống kê
+    const storageInfo = {
+      used: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
+      total: config.MAX_FILE_SIZE * 10,
+      percent: (filesData.reduce((sum, f) => sum + (f.size || 0), 0) / (config.MAX_FILE_SIZE * 10)) * 100
+    };
+    
+    // Kiểm tra file có vấn đề
+    const problemFiles = filesData.filter(f => 
+      !f.telegramFileId || 
+      (!f.localPath && !f.telegramUrl)
+    ).length;
+    
+    // Render trang chủ
+    res.render('index', {
+      title: 'TeleDrive',
+      files: formattedFiles,
+      botActive: true,
+      storageInfo,
+      problemFiles,
+      error: null,
+      formatBytes,
+      formatDate
+    });
+  } catch (error) {
+    console.error('Lỗi hiển thị trang chủ:', error);
+    res.status(500).render('error', {
+      title: 'TeleDrive - Lỗi',
+      message: 'Lỗi trong quá trình xử lý yêu cầu',
+      error: {
+        status: 500,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : ''
+      }
+    });
+  }
 });
 
 // Trang đăng nhập
@@ -136,5 +188,50 @@ router.get('/logout', (req, res) => {
     res.redirect('/login');
   });
 });
+
+// Helper functions
+function formatBytes(bytes, decimals = 2) {
+  if (!bytes || bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'Không xác định';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (e) {
+    return dateString;
+  }
+}
+
+function getFileType(filename) {
+  if (!filename) return 'unknown';
+  const ext = filename.split('.').pop().toLowerCase();
+  
+  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+  const videoExts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
+  const audioExts = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'];
+  const docExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
+  const textExts = ['txt', 'md', 'html', 'css', 'js', 'json', 'xml'];
+  
+  if (imageExts.includes(ext)) return 'image';
+  if (videoExts.includes(ext)) return 'video';
+  if (audioExts.includes(ext)) return 'audio';
+  if (docExts.includes(ext)) return 'document';
+  if (textExts.includes(ext)) return 'text';
+  
+  return 'other';
+}
 
 module.exports = router; 
