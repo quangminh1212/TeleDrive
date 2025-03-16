@@ -169,9 +169,10 @@
             const top = (window.innerHeight - height) / 2;
             
             const botName = 'TeleDriveStorageBot';
-            const callbackUrl = 'http://localhost:5002/api/auth/telegram';
+            const origin = window.location.origin;
+            const callbackUrl = `${origin}/api/auth/telegram`;
             
-            const telegramUrl = `https://oauth.telegram.org/auth?bot_id=${botName}&origin=${encodeURIComponent(window.location.origin)}&return_to=${encodeURIComponent(callbackUrl)}`;
+            const telegramUrl = `https://oauth.telegram.org/auth?bot_id=${botName}&origin=${encodeURIComponent(origin)}&return_to=${encodeURIComponent(callbackUrl)}`;
             
             const popup = window.open(
                 telegramUrl,
@@ -184,6 +185,25 @@
                 if (popup.closed) {
                     clearInterval(popupInterval);
                     document.getElementById('loadingIndicator').style.display = 'none';
+                    
+                    // Thử kiểm tra đã đăng nhập thành công chưa sau 2 giây
+                    setTimeout(function() {
+                        fetch('/dashboard', {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                // Đã đăng nhập thành công, chuyển hướng đến dashboard
+                                window.location.href = '/dashboard';
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Lỗi khi kiểm tra trạng thái đăng nhập:', err);
+                        });
+                    }, 2000);
                 }
             }, 500);
         });
