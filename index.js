@@ -2619,3 +2619,25 @@ function getAllFiles(dirPath, arrayOfFiles = []) {
   
   return arrayOfFiles;
 }
+
+// API endpoint để tạo thư mục mới
+app.post('/api/folders', (req, res) => {
+  try {
+    const { name, parentFolder } = req.body;
+    
+    // Validate input
+    if (!name || name.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Tên thư mục không được để trống'
+      });
+    }
+    
+    // Kiểm tra tên thư mục hợp lệ (không chứa ký tự đặc biệt)
+    if (!/^[a-zA-Z0-9_\-\.ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s]+$/.test(name)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Tên thư mục chứa ký tự không hợp lệ'
+      });
+    }
+    
