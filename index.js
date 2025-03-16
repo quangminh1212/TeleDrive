@@ -379,9 +379,36 @@ function getSecureFilePath(fileName) {
  * Đồng bộ file từ uploads vào bot Telegram
  */
 async function syncFiles() {
+  // Đọc lại file .env để đảm bảo có token mới nhất
+  try {
+    if (fs.existsSync('.env')) {
+      const envConfig = dotenv.parse(fs.readFileSync('.env'));
+      if (envConfig.BOT_TOKEN) {
+        process.env.BOT_TOKEN = envConfig.BOT_TOKEN;
+      }
+      if (envConfig.CHAT_ID) {
+        process.env.CHAT_ID = envConfig.CHAT_ID;
+      }
+    }
+  } catch (e) {
+    console.error('Không thể đọc file .env:', e.message);
+  }
+
+  // Kiểm tra bot và khởi tạo lại nếu cần
   if (!bot || !botActive) {
-    console.error('Không thể đồng bộ files: Bot Telegram không hoạt động');
-    return 0;
+    console.log('Bot Telegram không hoạt động. Thử khởi tạo lại...');
+    try {
+      bot = await initBot();
+      botActive = await checkBotActive();
+      
+      if (!bot || !botActive) {
+        console.error('Không thể đồng bộ files: Bot Telegram không hoạt động sau khi thử khởi tạo lại');
+        return 0;
+      }
+    } catch (error) {
+      console.error('Lỗi khởi tạo lại bot:', error);
+      return 0;
+    }
   }
 
   // Cập nhật biến môi trường để đảm bảo đã có giá trị mới nhất
