@@ -49,6 +49,7 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
+app.use(cors());
 
 // Cấu hình multer
 const storage = multer.diskStorage({
@@ -76,6 +77,7 @@ const upload = multer({
 // Biến lưu trạng thái bot
 let bot = null;
 let botActive = false;
+let needRestartBot = false;
 
 // Hàm format bytes
 function formatBytes(bytes, decimals = 2) {
@@ -2052,3 +2054,113 @@ module.exports = {
   syncFiles,
   cleanUploads
 };
+
+// API endpoint để lấy cài đặt
+app.get('/api/settings', (req, res) => {
+  try {
+    // Lấy cài đặt từ file .env
+    const settings = {
+      botToken: BOT_TOKEN || '',
+      chatId: CHAT_ID || ''
+    };
+    
+    // Che giấu một phần bot token nếu đã được cài đặt
+    if (settings.botToken && settings.botToken !== 'your_telegram_bot_token') {
+      // Lấy 8 ký tự đầu và 5 ký tự cuối
+      const firstPart = settings.botToken.substring(0, 8);
+      const lastPart = settings.botToken.substring(settings.botToken.length - 5);
+      settings.botToken = `${firstPart}...${lastPart}`;
+    }
+    
+    res.json({
+      success: true,
+      settings
+    });
+  } catch (error) {
+    console.error('Lỗi lấy cài đặt:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi server khi lấy cài đặt'
+    });
+  }
+});
+
+// API endpoint để cập nhật cài đặt
+app.post('/api/settings', (req, res) => {
+  try {
+    const { botToken, chatId, restartAfterSave } = req.body;
+    
+    if (!botToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bot Token không được để trống'
+      });
+    }
+    
+    // Đọc nội dung file .env
+    const envPath = path.join(__dirname, '.env');
+    let envContent = fs.readFileSync(envPath, 'utf8');
+    
+    // Cập nhật BOT_TOKEN
+    envContent = envContent.replace(/BOT_TOKEN=.*$/m, `BOT_TOKEN=${botToken}`);
+    
+    // Cập nhật CHAT_ID nếu có
+    if (chatId) {
+      if (envContent.includes('CHAT_ID=')) {
+        envContent = envContent.replace(/CHAT_ID=.*$/m, `CHAT_ID=${chatId}`);
+      } else {
+        // Thêm CHAT_ID nếu chưa có
+        envContent += `\nCHAT_ID=${chatId}\n`;
+      }
+    }
+    
+    // Ghi file .env
+    fs.writeFileSync(envPath, envContent);
+    
+    // Đánh dấu cần khởi động lại bot
+    needRestartBot = true;
+    
+    // Nếu cần khởi động lại server
+    if (restartAfterSave) {
+      // Khởi động lại bot
+      setTimeout(async () => {
+        try {
+          // Khởi động lại bot
+          bot = await initBot();
+          botActive = await checkBotActive();
+        } catch (error) {
+          console.error('Lỗi khởi động lại bot:', error);
+        }
+      }, 1000);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Đã lưu cài đặt thành công',
+      needsRestart: restartAfterSave
+    });
+  } catch (error) {
+    console.error('Lỗi cập nhật cài đặt:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi server khi cập nhật cài đặt'
+    });
+  }
+});
+
+// Middleware xử lý lỗi
+app.use((err, req, res, next) => {
+  console.error('Lỗi server:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Lỗi server: ' + (err.message || 'Không xác định')
+  });
+});
+
+// Middleware xử lý route không tồn tại
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'API endpoint không tồn tại'
+  });
+});
