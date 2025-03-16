@@ -767,6 +767,111 @@ function emptyTrash() {
   }
 }
 
+/**
+ * Gửi file lên Telegram
+ * @param {String|Object} filePathOrInfo Đường dẫn file hoặc thông tin file cần gửi
+ * @param {String} originalFileName Tên file gốc (tùy chọn)
+ * @returns {Promise<Object>} Kết quả gửi file
+ */
+async function sendFileToTelegram(filePathOrInfo, originalFileName) {
+  try {
+    // Xử lý tham số đầu vào
+    let filePath, fileName;
+    
+    if (typeof filePathOrInfo === 'string') {
+      filePath = filePathOrInfo;
+      fileName = originalFileName || path.basename(filePath);
+    } else if (filePathOrInfo && filePathOrInfo.localPath) {
+      filePath = filePathOrInfo.localPath;
+      fileName = originalFileName || filePathOrInfo.originalName || filePathOrInfo.name || path.basename(filePath);
+    } else {
+      console.error('Không thể gửi file: Không đúng định dạng tham số');
+      return { 
+        success: false,
+        error: 'Không đúng định dạng tham số' 
+      };
+    }
+
+    if (!fs.existsSync(filePath)) {
+      console.error(`Không thể gửi file: File không tồn tại tại ${filePath}`);
+      return { 
+        success: false,
+        error: `File không tồn tại tại ${filePath}` 
+      };
+    }
+
+    if (!isReady || !bot) {
+      console.error('Bot Telegram chưa sẵn sàng');
+      return {
+        success: false,
+        error: 'Bot chưa sẵn sàng'
+      };
+    }
+    
+    // Kiểm tra kích thước file (giới hạn của Telegram là 50MB)
+    const fileStats = fs.statSync(filePath);
+    const fileSizeMB = fileStats.size / (1024 * 1024);
+    
+    if (fileSizeMB > 50) {
+      console.error(`Không thể gửi file: Kích thước file (${fileSizeMB.toFixed(2)}MB) vượt quá giới hạn 50MB của Telegram`);
+      return { 
+        success: false,
+        error: `Kích thước file (${fileSizeMB.toFixed(2)}MB) vượt quá giới hạn 50MB của Telegram` 
+      };
+    }
+    
+    // Gửi file lên Telegram
+    console.log(`Đang gửi file "${fileName}" lên Telegram...`);
+    
+    let teleMsg;
+    try {
+      teleMsg = await bot.telegram.sendDocument(chatId, {
+        source: filePath,
+        filename: fileName
+      });
+    } catch (error) {
+      console.error('Lỗi khi gửi file lên Telegram:', error);
+      return { 
+        success: false,
+        error: error.message || 'Lỗi khi gửi file lên Telegram' 
+      };
+    }
+    
+    if (!teleMsg || !teleMsg.document) {
+      console.error('Không thể lấy thông tin document từ response của Telegram');
+      return { 
+        success: false,
+        error: 'Không thể lấy thông tin document từ response của Telegram' 
+      };
+    }
+    
+    const fileId = teleMsg.document.file_id;
+    console.log(`File đã được gửi thành công với ID: ${fileId}`);
+    
+    // Lấy file URL ngay lập tức
+    let fileUrl = null;
+    try {
+      const fileLink = await bot.telegram.getFileLink(fileId);
+      fileUrl = fileLink.href;
+    } catch (urlError) {
+      console.log('Không thể lấy URL file ngay, sẽ lấy sau khi cần: ', urlError.message);
+    }
+    
+    return {
+      success: true,
+      fileId: fileId,
+      fileUrl: fileUrl,
+      messageId: teleMsg.message_id
+    };
+  } catch (error) {
+    console.error('Lỗi không xác định khi gửi file lên Telegram:', error);
+    return { 
+      success: false,
+      error: error.message || 'Lỗi không xác định khi gửi file lên Telegram' 
+    };
+  }
+}
+
 module.exports = {
   readFilesDb,
   saveFilesDb,
