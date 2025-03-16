@@ -1,51 +1,52 @@
 /**
  * TeleDrive - Auth Middleware
- * File này chứa middleware xác thực
+ * Kiểm tra xác thực và cấp quyền
  */
 
 const config = require('../config/config');
 
 /**
- * Middleware xác thực
- * Kiểm tra xem user đã đăng nhập chưa hoặc có API key hợp lệ không
+ * Middleware xác thực người dùng
+ * Kiểm tra xem người dùng đã đăng nhập chưa
  */
-exports.authenticate = (req, res, next) => {
-  // Nếu đây là route đăng nhập thì cho đi tiếp
-  if (req.path === '/auth/login') {
+function authenticate(req, res, next) {
+  // Nếu người dùng đã đăng nhập qua session, cho phép truy cập
+  if (req.session && req.session.authenticated) {
     return next();
   }
   
-  // Kiểm tra API key
-  const apiKey = req.query.apiKey || req.headers['x-api-key'];
+  // Nếu có API key hợp lệ, cho phép truy cập
+  const apiKey = req.headers['x-api-key'] || req.query.api_key;
   if (apiKey && apiKey === config.API_KEY) {
     return next();
   }
   
-  // Kiểm tra session đăng nhập
+  // Nếu người dùng chưa đăng nhập thì gửi lỗi 401
+  return res.status(401).json({
+    success: false,
+    message: 'Unauthorized: Bạn cần đăng nhập trước'
+  });
+}
+
+/**
+ * Middleware xác thực vai trò admin
+ * Kiểm tra xem người dùng đăng nhập đã có vai trò admin chưa
+ */
+function requireAdmin(req, res, next) {
+  // Kiểm tra xem người dùng đã đăng nhập chưa
   if (!req.session || !req.session.authenticated) {
     return res.status(401).json({
       success: false,
-      message: 'Không có quyền truy cập. Vui lòng đăng nhập.'
+      message: 'Unauthorized: Bạn cần đăng nhập trước'
     });
   }
   
-  // Đã đăng nhập, cho đi tiếp
-  next();
-};
+  // Kiểm tra vai trò admin 
+  // Hiện tại mọi người dùng đăng nhập qua Telegram đều được quyền quản trị
+  return next();
+}
 
-/**
- * Middleware kiểm tra quyền admin
- * Xác minh rằng user hiện tại là admin
- */
-exports.requireAdmin = (req, res, next) => {
-  // Kiểm tra quyền admin
-  if (!req.session || !req.session.authenticated || req.session.username !== config.ADMIN_USERNAME) {
-    return res.status(403).json({
-      success: false,
-      message: 'Yêu cầu quyền quản trị viên để thực hiện thao tác này'
-    });
-  }
-  
-  // Là admin, cho đi tiếp
-  next();
+module.exports = {
+  authenticate,
+  requireAdmin
 }; 

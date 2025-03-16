@@ -38,6 +38,30 @@
             display: flex;
             justify-content: center;
             margin-bottom: 15px;
+            min-height: 50px;
+        }
+        .telegram-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #0088cc;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            height: 50px;
+            padding: 0 20px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .telegram-button:hover {
+            background-color: #0077b3;
+        }
+        .telegram-button i {
+            margin-right: 10px;
+            font-size: 20px;
         }
         .telegram-instructions {
             margin-top: 20px;
@@ -77,8 +101,9 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .tg-widget-container {
-            min-height: 50px;
+        #telegram-login-TeleDriveStorageBot {
+            display: block;
+            margin: 0 auto;
         }
     </style>
 </head>
@@ -90,21 +115,16 @@
         </div>
         
         <div class="login-options">
-            <div class="telegram-login">
-                <div class="tg-widget-container">
-                    <!-- Telegram Login Widget -->
-                    <script async src="https://telegram.org/js/telegram-widget.js?22" 
-                            data-telegram-login="TeleDriveStorageBot" 
-                            data-size="large" 
-                            data-auth-url="/api/auth/telegram"
-                            data-request-access="write"
-                            data-radius="8"
-                            data-onauth="onTelegramAuth(user)"></script>
-                </div>
-            </div>
-            
             <div id="errorMessage" class="error-message">
                 <!-- Hiển thị thông báo lỗi nếu có -->
+            </div>
+            
+            <div class="telegram-login">
+                <!-- Nút đăng nhập Telegram tùy chỉnh -->
+                <button id="customTelegramLogin" class="telegram-button">
+                    <i class="fab fa-telegram-plane"></i>
+                    Đăng nhập bằng Telegram
+                </button>
             </div>
             
             <div id="loadingIndicator" class="loading-indicator">
@@ -132,21 +152,41 @@
             if (error) {
                 errorElement.textContent = decodeURIComponent(error);
                 errorElement.style.display = 'block';
+                // Cuộn lên đầu trang để hiển thị thông báo lỗi
+                window.scrollTo(0, 0);
             }
         };
         
-        // Callback khi người dùng xác thực qua Telegram
-        function onTelegramAuth(user) {
+        // Xử lý khi người dùng nhấn nút đăng nhập Telegram tùy chỉnh
+        document.getElementById('customTelegramLogin').addEventListener('click', function() {
+            // Hiển thị loading indicator
             document.getElementById('loadingIndicator').style.display = 'block';
             
-            // Chuyển hướng đến API đăng nhập với dữ liệu người dùng
-            let authUrl = '/api/auth/telegram?';
-            authUrl += Object.entries(user)
-                .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-                .join('&');
-                
-            window.location.href = authUrl;
-        }
+            // Mở cửa sổ popup để đăng nhập Telegram
+            const width = 550;
+            const height = 520;
+            const left = (window.innerWidth - width) / 2;
+            const top = (window.innerHeight - height) / 2;
+            
+            const botName = 'TeleDriveStorageBot';
+            const callbackUrl = 'http://localhost:5002/api/auth/telegram';
+            
+            const telegramUrl = `https://oauth.telegram.org/auth?bot_id=${botName}&origin=${encodeURIComponent(window.location.origin)}&return_to=${encodeURIComponent(callbackUrl)}`;
+            
+            const popup = window.open(
+                telegramUrl,
+                'Đăng nhập Telegram',
+                `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+            );
+            
+            // Kiểm tra đóng popup và xử lý
+            const popupInterval = setInterval(function() {
+                if (popup.closed) {
+                    clearInterval(popupInterval);
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                }
+            }, 500);
+        });
     </script>
 </body>
 </html> 
