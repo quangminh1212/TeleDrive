@@ -232,59 +232,6 @@ const formatFileSize = (bytes, decimals = 2) => {
 };
 
 /**
- * Định dạng thời gian
- * @param {Date|String|Number} date Thời gian cần định dạng
- * @returns {String} Thời gian đã định dạng
- */
-function formatDate(date) {
-  const d = new Date(date);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
-}
-
-/**
- * Lấy MIME type từ tên file
- * @param {String} fileName Tên file
- * @returns {String} MIME type
- */
-function getMimeType(fileName) {
-  const ext = path.extname(fileName).toLowerCase();
-  
-  const mimeTypes = {
-    '.html': 'text/html',
-    '.htm': 'text/html',
-    '.css': 'text/css',
-    '.js': 'application/javascript',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.pdf': 'application/pdf',
-    '.doc': 'application/msword',
-    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    '.xls': 'application/vnd.ms-excel',
-    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    '.ppt': 'application/vnd.ms-powerpoint',
-    '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    '.zip': 'application/zip',
-    '.rar': 'application/x-rar-compressed',
-    '.mp3': 'audio/mpeg',
-    '.mp4': 'video/mp4',
-    '.txt': 'text/plain',
-    '.csv': 'text/csv'
-  };
-  
-  return mimeTypes[ext] || 'application/octet-stream';
-}
-
-/**
  * Clean up temporary files older than specified age
  * @param {string} directory - Directory to clean
  * @param {number} maxAgeMinutes - Maximum age in minutes

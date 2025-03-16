@@ -552,6 +552,24 @@ const cleanupTempDownloads = async (maxAge = 60) => {
   }
 };
 
+/**
+ * Move a file to trash
+ * @param {string} fileId - ID of the file to trash
+ * @returns {object} Updated file object
+ */
+const moveToTrash = (fileId) => {
+  return trashFile(fileId);
+};
+
+/**
+ * Restore a file from trash
+ * @param {string} fileId - ID of the file to restore
+ * @returns {object} Updated file object
+ */
+const restoreFromTrash = (fileId) => {
+  return restoreFile(fileId);
+};
+
 module.exports = {
   getFiles,
   getFileById,
