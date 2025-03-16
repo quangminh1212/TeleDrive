@@ -69,10 +69,16 @@ const config = {
   // Telegram Bot
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
-
+  
   // Telegram API
   TELEGRAM_API_ID: process.env.API_ID,
   TELEGRAM_API_HASH: process.env.API_HASH,
+  
+  // Telegram API timeout và cấu hình
+  TELEGRAM_API_TIMEOUT: parseInt(process.env.TELEGRAM_API_TIMEOUT || 15000), // 15 giây timeout mặc định
+  TELEGRAM_POLLING_TIMEOUT: parseInt(process.env.TELEGRAM_POLLING_TIMEOUT || 10), // 10 giây cho polling
+  TELEGRAM_RETRY_DELAY: parseInt(process.env.TELEGRAM_RETRY_DELAY || 3000), // 3 giây delay giữa các lần retry
+  TELEGRAM_MAX_RETRIES: parseInt(process.env.TELEGRAM_MAX_RETRIES || 3), // tối đa 3 lần retry
   
   // Đường dẫn storage
   STORAGE_PATH: process.env.STORAGE_PATH ? 
