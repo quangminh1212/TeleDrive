@@ -325,4 +325,44 @@ Thumbs.db
 
 # Các file tạm thời
 *.tmp
-*.temp 
+*.temp
+
+# Thư mục node_modules
+node_modules/
+
+# Thư mục build và dist
+dist/
+build/
+
+# Thư mục lưu trữ và database tạm
+data/
+temp/
+uploads/
+downloads/
+
+# File logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# File môi trường
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache
+.cache/
+.npm
+.eslintcache
+
+# VS Code
+.vscode/
+
+# Thư mục tạm khác
+.DS_Store
+.idea/
+Thumbs.db 

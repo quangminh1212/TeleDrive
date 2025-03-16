@@ -13,12 +13,7 @@ const config = require('../config/config');
  */
 function ensureDirectories() {
   try {
-    console.log('===== KIỂM TRA THƯ MỤC TRONG HỆ THỐNG =====');
-    
-    // Đảm bảo config đã được nạp
-    const config = require('../config/config');
-    
-    // Danh sách thư mục cần thiết
+    // Danh sách các thư mục cần thiết
     const directories = [
       'data',
       'data/db',
@@ -27,17 +22,16 @@ function ensureDirectories() {
       'downloads'
     ];
     
-    // Tạo tất cả thư mục
-    for (const dir of directories) {
-      const fullPath = path.resolve(dir);
-      
-      if (!fs.existsSync(fullPath)) {
-        console.log(`Tạo thư mục: ${fullPath}`);
-        fs.mkdirSync(fullPath, { recursive: true });
+    // Tạo từng thư mục
+    directories.forEach(dir => {
+      const dirPath = path.join(process.cwd(), dir);
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+        console.log(`Đã tạo thư mục: ${dirPath}`);
       }
-    }
+    });
     
-    console.log('Đã tạo các thư mục cần thiết');
+    console.log('Đã đảm bảo tất cả thư mục cần thiết tồn tại');
   } catch (error) {
     console.error('Lỗi khi tạo thư mục:', error.message);
   }

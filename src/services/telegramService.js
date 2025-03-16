@@ -4,10 +4,10 @@
  */
 
 const { Telegraf } = require('telegraf');
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const config = require('../config/config');
-const axios = require('axios');
+const config = require('../config');
 
 // Khởi tạo bot Telegram
 let bot = null;

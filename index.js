@@ -8,6 +8,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const bodyParser = require('body-parser');
 // Remove external dependencies
 // const cors = require('cors');
 // const helmet = require('helmet');
@@ -40,8 +41,8 @@ app.set('views', path.join(__dirname, 'views'));
 // app.use(helmet({
 //   contentSecurityPolicy: false
 // }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 // Thiết lập session - Vô hiệu hóa
 // app.use(session({
@@ -56,6 +57,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Thiết lập static files
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/downloads', express.static(path.join(__dirname, 'downloads')));
 
 // Middleware xác thực API key
 app.use((req, res, next) => {
@@ -84,6 +86,100 @@ app.use((req, res, next) => {
 // Đăng ký routes
 app.use('/api', apiRoutes);
 app.use('/', webRoutes);
+
+// Trang chủ - hiển thị danh sách file
+app.get('/', (req, res) => {
+  try {
+    // Lấy danh sách file từ thư mục downloads
+    const downloadDir = path.join(__dirname, 'downloads');
+    let files = [];
+    
+    if (fs.existsSync(downloadDir)) {
+      files = fs.readdirSync(downloadDir)
+        .filter(file => !file.startsWith('.')) // Lọc bỏ các file ẩn
+        .map(file => {
+          const filePath = path.join(downloadDir, file);
+          const stats = fs.statSync(filePath);
+          
+          return {
+            name: file,
+            path: `/downloads/${file}`,
+            size: helpers.formatFileSize(stats.size),
+            date: stats.mtime,
+            isFile: stats.isFile()
+          };
+        })
+        .filter(file => file.isFile)
+        .sort((a, b) => b.date - a.date); // Sắp xếp theo thời gian giảm dần
+    }
+    
+    // Kiểm tra trạng thái bot
+    const isBotActive = telegramService.isBotActive();
+    
+    // Render trang chủ với danh sách file
+    res.render('index', { 
+      files,
+      isBotActive,
+      error: null,
+      config: {
+        sync: config.ENABLE_AUTO_SYNC,
+        interval: config.SYNC_INTERVAL
+      }
+    });
+  } catch (error) {
+    res.render('index', { 
+      files: [], 
+      isBotActive: false,
+      error: `Lỗi: ${error.message}`,
+      config: {
+        sync: config.ENABLE_AUTO_SYNC,
+        interval: config.SYNC_INTERVAL
+      }
+    });
+  }
+});
+
+// Endpoint đồng bộ thủ công
+app.post('/sync', async (req, res) => {
+  try {
+    // Đồng bộ file từ Telegram
+    const results = await telegramService.syncFiles();
+    res.json({ success: true, results });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Đồng bộ file ban đầu
+async function initialSync() {
+  try {
+    console.log('Đang tiến hành đồng bộ file ban đầu...');
+    const results = await telegramService.syncFiles();
+    console.log('Đồng bộ ban đầu hoàn tất:', results);
+  } catch (error) {
+    console.error('Lỗi khi đồng bộ ban đầu:', error.message);
+  }
+}
+
+// Thiết lập đồng bộ tự động
+if (config.ENABLE_AUTO_SYNC) {
+  // Đồng bộ ngay khi khởi động
+  initialSync();
+  
+  // Thiết lập đồng bộ theo định kỳ
+  const interval = config.SYNC_INTERVAL || 60; // Mặc định là 60 phút nếu không cấu hình
+  console.log(`Đã bật đồng bộ tự động, sẽ đồng bộ mỗi ${interval} phút`);
+  
+  setInterval(async () => {
+    console.log('Đang thực hiện đồng bộ tự động...');
+    try {
+      const results = await telegramService.syncFiles();
+      console.log('Đồng bộ tự động hoàn tất:', results);
+    } catch (error) {
+      console.error('Lỗi khi đồng bộ tự động:', error.message);
+    }
+  }, interval * 60 * 1000); // Chuyển phút thành mili giây
+}
 
 // Xử lý 404
 app.use((req, res) => {
