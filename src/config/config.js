@@ -51,6 +51,10 @@ checkEnvFile();
 // Load biến môi trường
 dotenv.config({ path: envFile });
 
+const DEFAULT_MAX_RETRIES = 3;
+const DEFAULT_TELEGRAM_TIMEOUT = 10000; // 10 seconds
+const DEFAULT_POLLING_TIMEOUT = 5;       // 5 seconds
+
 /**
  * Cấu hình ứng dụng
  */
@@ -59,12 +63,12 @@ const config = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   
   // Server
-  PORT: process.env.PORT || 3000,
+  PORT: process.env.PORT || 5002,
   HOST: process.env.HOST || 'localhost',
-  BASE_URL: process.env.BASE_URL || 'http://localhost:3000',
+  BASE_URL: process.env.BASE_URL || 'http://localhost:5002',
   
   // Thông tin đăng nhập
-  API_KEY: process.env.API_KEY || 'changeme',
+  API_KEY: process.env.API_KEY || 'defaultapikey',
   
   // Telegram Bot
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
@@ -75,54 +79,45 @@ const config = {
   TELEGRAM_API_HASH: process.env.API_HASH,
   
   // Telegram API timeout và cấu hình
-  TELEGRAM_API_TIMEOUT: parseInt(process.env.TELEGRAM_API_TIMEOUT || 15000), // 15 giây timeout mặc định
-  TELEGRAM_POLLING_TIMEOUT: parseInt(process.env.TELEGRAM_POLLING_TIMEOUT || 10), // 10 giây cho polling
-  TELEGRAM_RETRY_DELAY: parseInt(process.env.TELEGRAM_RETRY_DELAY || 3000), // 3 giây delay giữa các lần retry
-  TELEGRAM_MAX_RETRIES: parseInt(process.env.TELEGRAM_MAX_RETRIES || 3), // tối đa 3 lần retry
+  TELEGRAM_API_TIMEOUT: parseInt(process.env.TELEGRAM_API_TIMEOUT) || DEFAULT_TELEGRAM_TIMEOUT,
+  TELEGRAM_POLLING_TIMEOUT: parseInt(process.env.TELEGRAM_POLLING_TIMEOUT) || DEFAULT_POLLING_TIMEOUT,
+  TELEGRAM_RETRY_DELAY: parseInt(process.env.TELEGRAM_RETRY_DELAY) || 3000,
+  TELEGRAM_MAX_RETRIES: parseInt(process.env.TELEGRAM_MAX_RETRIES) || DEFAULT_MAX_RETRIES,
+  TELEGRAM_SIMULATION_MODE: process.env.TELEGRAM_SIMULATION_MODE === 'true',
   
   // Đường dẫn storage
-  STORAGE_PATH: process.env.STORAGE_PATH ? 
-    path.resolve(process.env.STORAGE_PATH) : 
-    path.join(process.cwd(), 'storage'),
+  STORAGE_PATH: process.env.STORAGE_PATH || path.join(process.cwd(), 'storage'),
   
-  // Giới hạn kích thước file (mặc định 2GB)
-  MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || 2 * 1024 * 1024 * 1024),
+  // Giới hạn kích thước file (mặc định 50MB)
+  MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE) || 50 * 1024 * 1024,
   
   // Cấu hình session
-  SESSION_SECRET: process.env.SESSION_SECRET || 'changeme',
+  SESSION_SECRET: process.env.SESSION_SECRET || 'teledrivesecret',
   
   // Cài đặt đồng bộ
-  AUTO_SYNC: process.env.AUTO_SYNC === 'true',
-  SYNC_INTERVAL: parseInt(process.env.SYNC_INTERVAL || 60) * 60 * 1000, // Giờ -> ms
+  AUTO_SYNC: process.env.AUTO_SYNC !== 'false',
+  SYNC_INTERVAL: parseInt(process.env.SYNC_INTERVAL) || 6 * 60 * 60 * 1000, // 6 hours
   
   // Tự động dọn dẹp
-  CLEANUP_ENABLED: process.env.CLEANUP_ENABLED === 'true',
-  CLEANUP_INTERVAL: parseInt(process.env.CLEANUP_INTERVAL || 24) * 60 * 60 * 1000 // Giờ -> ms
+  CLEANUP_ENABLED: process.env.CLEANUP_ENABLED !== 'false',
+  CLEANUP_INTERVAL: parseInt(process.env.CLEANUP_INTERVAL) || 24 * 60 * 60 * 1000, // 24 hours
+  
+  // Tạo các đường dẫn phụ thuộc
+  UPLOADS_DIR: path.join(config.STORAGE_PATH, 'uploads'),
+  TEMP_DIR: path.join(config.STORAGE_PATH, 'temp'),
+  DB_DIR: path.join(config.STORAGE_PATH, 'db'),
+  TEMP_PATH: process.env.TEMP_PATH || path.join(process.cwd(), 'temp'),
+  DOWNLOAD_PATH: process.env.DOWNLOAD_PATH || path.join(process.cwd(), 'downloads')
 };
-
-// Tạo các đường dẫn phụ thuộc
-config.UPLOADS_DIR = path.join(config.STORAGE_PATH, 'uploads');
-config.TEMP_DIR = path.join(config.STORAGE_PATH, 'temp');
-config.DB_DIR = path.join(config.STORAGE_PATH, 'db');
-
-// Lấy tên bot từ token
-if (config.TELEGRAM_BOT_TOKEN) {
-  try {
-    const botTokenParts = config.TELEGRAM_BOT_TOKEN.split(':');
-    if (botTokenParts.length >= 1) {
-      config.TELEGRAM_BOT_ID = botTokenParts[0];
-    }
-  } catch (e) {
-    console.error('Không thể phân tích bot token:', e);
-  }
-}
 
 // Đảm bảo các thư mục cần thiết tồn tại
 function ensureDirectories() {
   const dirs = [
     config.DB_DIR,
     config.UPLOADS_DIR,
-    config.TEMP_DIR
+    config.TEMP_DIR,
+    config.TEMP_PATH,
+    config.DOWNLOAD_PATH
   ];
   
   for (const dir of dirs) {
@@ -136,10 +131,22 @@ function ensureDirectories() {
 // Tạo các thư mục cần thiết
 ensureDirectories();
 
-// Cập nhật file .env
-async function updateEnv(updates) {
+// Lấy tên bot từ token
+if (config.TELEGRAM_BOT_TOKEN) {
   try {
-    if (!updates || Object.keys(updates).length === 0) {
+    const botTokenParts = config.TELEGRAM_BOT_TOKEN.split(':');
+    if (botTokenParts.length >= 1) {
+      config.TELEGRAM_BOT_ID = botTokenParts[0];
+    }
+  } catch (e) {
+    console.error('Không thể phân tích bot token:', e);
+  }
+}
+
+// Cập nhật file .env
+async function updateEnv(newValues) {
+  try {
+    if (!newValues || Object.keys(newValues).length === 0) {
       return {
         success: false,
         error: 'Không có thông tin cập nhật'
@@ -151,35 +158,56 @@ async function updateEnv(updates) {
     let envContent = fs.readFileSync(envPath, 'utf8');
     
     // Cập nhật từng biến
-    for (const [key, value] of Object.entries(updates)) {
-      // Tạo regex để tìm và thay thế giá trị
-      const regex = new RegExp(`${key}=.*`, 'g');
+    const envLines = envContent.split('\n');
+    const updatedLines = [];
+    const updatedKeys = new Set();
+    
+    // First pass: update existing keys
+    for (const line of envLines) {
+      // Skip empty lines and comments
+      if (!line.trim() || line.trim().startsWith('#')) {
+        updatedLines.push(line);
+        continue;
+      }
       
-      if (envContent.match(regex)) {
-        // Nếu biến đã tồn tại, cập nhật giá trị
-        envContent = envContent.replace(regex, `${key}=${value}`);
-        console.log(`Cập nhật biến ${key}=${value}`);
+      // Check if the line contains a key that needs to be updated
+      const match = line.match(/^([A-Za-z0-9_]+)=/);
+      if (match) {
+        const key = match[1];
+        if (newValues.hasOwnProperty(key)) {
+          updatedLines.push(`${key}=${newValues[key]}`);
+          updatedKeys.add(key);
+          
+          // Also update the runtime config
+          config[key] = newValues[key];
+        } else {
+          updatedLines.push(line);
+        }
       } else {
-        // Nếu biến chưa tồn tại, thêm vào cuối file
-        envContent += `\n${key}=${value}`;
-        console.log(`Thêm biến mới ${key}=${value}`);
+        updatedLines.push(line);
+      }
+    }
+    
+    // Second pass: add new keys
+    for (const [key, value] of Object.entries(newValues)) {
+      if (!updatedKeys.has(key)) {
+        updatedLines.push(`${key}=${value}`);
+        
+        // Also update the runtime config
+        config[key] = value;
       }
     }
     
     // Ghi lại vào file .env
-    fs.writeFileSync(envPath, envContent, 'utf8');
+    fs.writeFileSync(envPath, updatedLines.join('\n'));
     console.log('Đã cập nhật file .env thành công');
     
-    // Cập nhật biến trong process.env
-    for (const [key, value] of Object.entries(updates)) {
-      process.env[key] = value;
-      // Cập nhật lại giá trị trong module này
-      module.exports[key] = value;
-    }
+    // Reload dotenv
+    dotenv.config();
     
     return {
       success: true,
-      updates
+      updates: newValues
     };
   } catch (error) {
     console.error('Lỗi khi cập nhật file .env:', error);
@@ -190,8 +218,23 @@ async function updateEnv(updates) {
   }
 }
 
+// Function to log info about the configuration
+function logConfig() {
+  console.log('==== Configuration ====');
+  console.log(`Environment: ${config.NODE_ENV}`);
+  console.log(`Server: ${config.HOST}:${config.PORT}`);
+  console.log(`Telegram Bot: ${config.TELEGRAM_BOT_TOKEN ? 'Configured' : 'Not configured'}`);
+  console.log(`Telegram Chat ID: ${config.TELEGRAM_CHAT_ID || 'Not configured'}`);
+  console.log(`Auto Sync: ${config.AUTO_SYNC ? 'Enabled' : 'Disabled'}`);
+  console.log(`Sync Interval: ${config.SYNC_INTERVAL / (60 * 60 * 1000)} hours`);
+  console.log(`Cleanup: ${config.CLEANUP_ENABLED ? 'Enabled' : 'Disabled'}`);
+  console.log(`Max File Size: ${config.MAX_FILE_SIZE / (1024 * 1024)}MB`);
+  console.log('=====================');
+}
+
 module.exports = {
   ...config,
   updateEnv,
-  checkEnvFile
+  checkEnvFile,
+  logConfig
 }; 
