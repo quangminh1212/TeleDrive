@@ -161,6 +161,9 @@ function initBot() {
       }
     });
     
+    // Biến để kiểm soát lỗi bot info
+    let botInfoSet = false;
+    
     // Khởi động bot với polling
     bot.launch({
       dropPendingUpdates: true,
@@ -170,18 +173,27 @@ function initBot() {
       
       // Lấy thông tin bot
       bot.telegram.getMe().then(botInfo => {
-        console.log(`Bot đã khởi tạo: ${botInfo.username} (${botInfo.first_name})`);
-        bot.botInfo = botInfo;
-        
-        if (chatId) {
-          console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${chatId}`);
+        // Kiểm tra lại bot còn tồn tại không trước khi gán
+        if (bot) {
+          console.log(`Bot đã khởi tạo: ${botInfo.username} (${botInfo.first_name})`);
+          bot.botInfo = botInfo;
+          botInfoSet = true;
+          
+          if (chatId) {
+            console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${chatId}`);
+          } else {
+            console.log('Chưa có chat ID, hãy nhắn tin với bot để lấy chat ID');
+            console.log(`Link truy cập bot: https://t.me/${botInfo.username}`);
+            console.log(getStartInstructions());
+          }
         } else {
-          console.log('Chưa có chat ID, hãy nhắn tin với bot để lấy chat ID');
-          console.log(`Link truy cập bot: https://t.me/${botInfo.username}`);
-          console.log(getStartInstructions());
+          console.log('Bot đã bị hủy trước khi thiết lập thông tin');
         }
         
-        isReady = true;
+        isReady = bot !== null && botInfoSet;
+      }).catch(err => {
+        console.error('Lỗi khi lấy thông tin bot:', err.message);
+        isReady = false;
       });
     }).catch(err => {
       console.error(`Không thể khởi động bot: ${err.message}`);
@@ -331,20 +343,26 @@ function stopBot() {
       console.log('Đang dừng bot...');
       
       try {
-        bot.stop('Dừng theo yêu cầu');
+        const tempBot = bot;
+        // Đặt biến bot thành null trước để tránh các lỗi gọi lại sau khi đã dừng
+        bot = null;
+        isReady = false;
+        
+        // Dừng bot
+        tempBot.stop('Dừng theo yêu cầu');
         console.log('Đã dừng bot thành công');
       } catch (err) {
         console.error('Lỗi khi dừng bot:', err.message);
+        // Đảm bảo bot được set null dù có lỗi
+        bot = null;
+        isReady = false;
       }
-      
-      // Xóa reference đến bot
-      bot = null;
     } else {
       console.log('Bot không được khởi tạo, không cần dừng');
+      bot = null;
+      isReady = false;
     }
     
-    // Reset trạng thái
-    isReady = false;
     console.log('Bot Telegram đã bị dừng và giải phóng');
   } catch (error) {
     console.error('Lỗi khi dừng bot:', error.message);
@@ -828,58 +846,77 @@ async function getFilesFromChat() {
     // Biến để lưu danh sách file
     let fileList = [];
     
-    // Phương pháp 1: Sử dụng getHistory (nếu được hỗ trợ)
+    // Phương pháp 1: Sử dụng getUpdates để lấy tin nhắn gần đây
     try {
-      console.log('Phương pháp 1: Đang thử sử dụng getHistory...');
-      const historyMessages = await bot.telegram.getChatHistory(validChatId, {
-        limit: 100
+      console.log('Phương pháp 1: Đang thử sử dụng getUpdates...');
+      const updates = await bot.telegram.getUpdates({
+        limit: 100,
+        allowed_updates: ['message']
       });
       
-      console.log(`Nhận được ${historyMessages.length} tin nhắn từ lịch sử`);
+      console.log(`Nhận được ${updates.length} updates từ getUpdates`);
       
-      for (const msg of historyMessages) {
-        if (msg.document) {
-          console.log(`Tìm thấy file: ${msg.document.file_name}`);
+      // Lọc ra các updates có chứa tin nhắn từ chat ID cần tìm
+      const targetUpdates = updates.filter(update => 
+        update.message?.chat?.id.toString() === validChatId.toString()
+      );
+      
+      console.log(`Có ${targetUpdates.length} updates từ chat ID ${validChatId}`);
+      
+      // Lấy các file từ tin nhắn
+      for (const update of targetUpdates) {
+        if (update.message?.document) {
+          console.log(`Tìm thấy file: ${update.message.document.file_name}`);
           fileList.push({
-            id: msg.document.file_id,
-            name: msg.document.file_name,
-            size: msg.document.file_size
+            id: update.message.document.file_id,
+            name: update.message.document.file_name,
+            size: update.message.document.file_size
           });
         }
       }
-    } catch (historyError) {
-      console.log(`Không thể sử dụng phương pháp getHistory: ${historyError.message}`);
-      
-      // Phương pháp 2: Sử dụng getUpdates để lấy tin nhắn gần đây
+    } catch (updatesError) {
+      console.error('Lỗi khi lấy updates:', updatesError.message);
+    }
+    
+    // Phương pháp 2: Truy vấn trực tiếp API Telegram
+    if (fileList.length === 0) {
       try {
-        console.log('Phương pháp 2: Đang thử sử dụng getUpdates...');
-        const updates = await bot.telegram.getUpdates({
-          limit: 100,
-          allowed_updates: ['message']
-        });
+        console.log('Phương pháp 2: Sử dụng API trực tiếp để lấy tin nhắn gần đây');
+        const telegramToken = config.TELEGRAM_BOT_TOKEN;
         
-        console.log(`Nhận được ${updates.length} updates từ getUpdates`);
+        const response = await axios.get(`https://api.telegram.org/bot${telegramToken}/getUpdates?limit=100&allowed_updates=["message"]`);
         
-        // Lọc ra các updates có chứa tin nhắn từ chat ID cần tìm
-        const targetUpdates = updates.filter(update => 
-          update.message?.chat?.id.toString() === validChatId.toString()
-        );
-        
-        console.log(`Có ${targetUpdates.length} updates từ chat ID ${validChatId}`);
-        
-        // Lấy các file từ tin nhắn
-        for (const update of targetUpdates) {
-          if (update.message?.document) {
-            console.log(`Tìm thấy file: ${update.message.document.file_name}`);
-            fileList.push({
-              id: update.message.document.file_id,
-              name: update.message.document.file_name,
-              size: update.message.document.file_size
-            });
+        if (response.data && response.data.ok && response.data.result) {
+          const apiUpdates = response.data.result;
+          console.log(`Nhận được ${apiUpdates.length} updates từ API trực tiếp`);
+          
+          // Lọc tin nhắn từ chat ID cần tìm
+          const filteredUpdates = apiUpdates.filter(update => 
+            update.message?.chat?.id.toString() === validChatId.toString()
+          );
+          
+          console.log(`Có ${filteredUpdates.length} tin nhắn từ chat ID ${validChatId}`);
+          
+          // Lấy các file từ tin nhắn
+          for (const update of filteredUpdates) {
+            if (update.message?.document) {
+              const doc = update.message.document;
+              console.log(`Tìm thấy file: ${doc.file_name}`);
+              
+              // Kiểm tra trùng lặp
+              const exists = fileList.some(f => f.id === doc.file_id);
+              if (!exists) {
+                fileList.push({
+                  id: doc.file_id,
+                  name: doc.file_name,
+                  size: doc.file_size
+                });
+              }
+            }
           }
         }
-      } catch (updatesError) {
-        console.error('Lỗi khi lấy updates:', updatesError.message);
+      } catch (apiError) {
+        console.error('Lỗi khi truy vấn API Telegram:', apiError.message);
       }
     }
     
@@ -910,7 +947,7 @@ async function getFilesFromChat() {
  * @returns {Promise<Object>} Kết quả đồng bộ hóa
  */
 async function syncFiles() {
-  console.log('===== BẮT ĐẦU ĐỒNG BỘ FILE =====');
+  console.log('===== BẮT ĐẦU ĐỒNG BỘ FILES =====');
   const results = {
     total: 0,
     new: 0,
@@ -921,18 +958,37 @@ async function syncFiles() {
   try {
     // Kiểm tra và khởi tạo bot nếu chưa sẵn sàng
     if (!isBotActive()) {
-      console.log('Bot không hoạt động, khởi tạo lại...');
+      console.log('Bot không hoạt động, thử khởi động lại...');
       initBot();
       
-      // Đợi bot khởi động
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Đợi bot khởi động với timeout
+      const timeout = 5000; // 5 giây
+      const startTime = Date.now();
       
-      // Kiểm tra lại sau khi khởi động
+      while (!isBotActive() && (Date.now() - startTime < timeout)) {
+        // Đợi 200ms mỗi lần kiểm tra
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Kiểm tra nếu vẫn không hoạt động sau khi đợi
       if (!isBotActive()) {
-        console.error('Không thể khởi động bot Telegram');
+        if (Date.now() - startTime >= timeout) {
+          console.error('Không thể khởi động bot Telegram do timeout');
+        } else {
+          console.error('Không thể khởi động bot Telegram');
+        }
         return results;
       }
+      
+      console.log('Đã khởi động lại bot thành công, tiếp tục đồng bộ');
     }
+    
+    // Đồng bộ từ local lên Telegram
+    console.log('===== ĐỒNG BỘ TỪ LOCAL LÊN TELEGRAM =====');
+    // TODO: Triển khai đồng bộ từ local lên Telegram
+    
+    // Đồng bộ từ Telegram xuống local
+    console.log('===== ĐỒNG BỘ TỪ TELEGRAM XUỐNG LOCAL =====');
     
     // Retry lấy danh sách file nếu cần
     let files = [];
@@ -976,7 +1032,15 @@ async function syncFiles() {
           stopBot();
           await new Promise(resolve => setTimeout(resolve, 1000));
           initBot();
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Đợi bot khởi động với timeout
+          const timeout = 3000; // 3 giây
+          const startTime = Date.now();
+          
+          while (!isBotActive() && (Date.now() - startTime < timeout)) {
+            // Đợi 200ms mỗi lần kiểm tra
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
         }
       }
     }
@@ -984,7 +1048,7 @@ async function syncFiles() {
     results.total = files.length;
     
     if (files.length === 0) {
-      console.log('Không có file nào để đồng bộ sau khi đã thử nhiều lần');
+      console.log('Không tìm thấy file nào trên Telegram hoặc không thể lấy danh sách file');
       return results;
     }
     
@@ -1039,7 +1103,8 @@ async function syncFiles() {
       }
     }
     
-    console.log(`===== KẾT QUẢ ĐỒNG BỘ: Tổng ${results.total}, Mới ${results.new}, Bỏ qua ${results.skipped}, Lỗi ${results.errors} =====`);
+    console.log(`===== KẾT THÚC ĐỒNG BỘ FILES =====`);
+    console.log(`Đã đồng bộ: ${results.total} | File mới: ${results.new} | Lỗi: ${results.errors} | Bỏ qua: ${results.skipped}`);
     return results;
     
   } catch (error) {
