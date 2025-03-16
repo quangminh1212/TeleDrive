@@ -8,10 +8,15 @@ const axios = require('axios');
 const fs = require('fs-extra');
 const path = require('path');
 const config = require('../config/config');
-const { log, generateId } = require('../utils/helpers');
+const { log, generateId, ensureDirectoryExists } = require('../utils/helpers');
 const { message } = require('telegraf/filters');
 const fileService = require('./fileService');
 const dbService = require('./dbService');
+
+// Ensure temp directories exist
+const tempDir = path.join(__dirname, '../../temp');
+const uploadsDir = path.join(tempDir, 'uploads');
+ensureDirectoryExists(uploadsDir);
 
 // Biến trạng thái
 let bot = null;
