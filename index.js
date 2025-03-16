@@ -2840,7 +2840,7 @@ app.post('/api/folders', express.json(), (req, res) => {
     }
     
     // Kiá»ƒm tra tên thư mục há»£p lá»‡ (không chá»©a kÃ½ tá»± Ä‘áº·c biá»‡t)
-    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä‘Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»“á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ’Ã“á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(folderName)) {
+    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä'Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»"á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ'Ã"á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(folderName)) {
       return res.status(400).json({
         success: false,
         error: 'TÃªn thư mục chá»©a kÃ½ tá»± không há»£p lá»‡'
@@ -2871,7 +2871,7 @@ app.post('/api/folders', express.json(), (req, res) => {
     if (fs.existsSync(folderPath)) {
       return res.status(400).json({
         success: false,
-        error: 'ThÆ° mục Ä‘Ã£ tá»“n táº¡i'
+        error: 'ThÆ° mục Ä‘Ã£ tá»"n táº¡i'
       });
     }
     
@@ -2918,7 +2918,7 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     }
     
     // Kiá»ƒm tra tên thư mục há»£p lá»‡
-    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä'Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»"á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ'Ã"á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(newName)) {
+    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä'Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»'á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ'Ã"á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(newName)) {
       return res.status(400).json({
         success: false,
         error: 'TÃªn má»›i chá»©a kÃ½ tá»± không há»£p lá»‡'
@@ -2932,7 +2932,7 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     if (!fs.existsSync(fullFolderPath) || !fs.statSync(fullFolderPath).isDirectory()) {
       return res.status(404).json({
         success: false,
-        error: 'ThÆ° mục không tá»“n táº¡i'
+        error: 'ThÆ° mục không tá»"n táº¡i'
       });
     }
     
@@ -2940,11 +2940,11 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     const parentPath = path.dirname(fullFolderPath);
     const newFolderPath = path.join(parentPath, newName);
     
-    // Kiá»ƒm tra thư mục má»›i Ä‘Ã£ tá»“n táº¡i chÆ°a
+    // Kiá»ƒm tra thư mục má»›i Ä'Ã£ tá»"n táº¡i chÆ°a
     if (fs.existsSync(newFolderPath)) {
       return res.status(400).json({
         success: false,
-        error: 'ThÆ° mục má»›i Ä‘Ã£ tá»"n táº¡i'
+        error: 'ThÆ° mục má»›i Ä'Ã£ tá»"n táº¡i'
       });
     }
     
@@ -3002,7 +3002,7 @@ app.delete('/api/folders', express.json(), (req, res) => {
     const baseFolder = path.join(STORAGE_PATH, 'uploads');
     const fullFolderPath = path.join(baseFolder, folderPath);
     
-    // Kiá»ƒm tra thư mục tá»“n táº¡i
+    // Kiá»ƒm tra thư mục tá»"n táº¡i
     if (!fs.existsSync(fullFolderPath) || !fs.statSync(fullFolderPath).isDirectory()) {
       return res.status(404).json({
         success: false,
@@ -3010,7 +3010,7 @@ app.delete('/api/folders', express.json(), (req, res) => {
       });
     }
     
-    // Kiá»ƒm tra thư mục cÃ³ trá»‘ng không
+    // Kiá»ƒm tra thư mục cÃ³ trá»"ng không
     const folderContents = fs.readdirSync(fullFolderPath);
     if (folderContents.length > 0 && !deleteFiles) {
       return res.status(400).json({
