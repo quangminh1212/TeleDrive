@@ -8,10 +8,11 @@ const express = require('express');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
-const cors = require('cors');
-const helmet = require('helmet');
-const session = require('express-session');
-const bodyParser = require('body-parser');
+// Remove external dependencies
+// const cors = require('cors');
+// const helmet = require('helmet');
+// const session = require('express-session');
+// const bodyParser = require('body-parser');
 
 // Nạp biến môi trường
 dotenv.config();
@@ -31,23 +32,23 @@ ensureDirectories();
 const app = express();
 
 // Thiết lập middleware cơ bản
-app.use(cors());
-app.use(helmet({
-  contentSecurityPolicy: false
-}));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// app.use(cors());
+// app.use(helmet({
+//   contentSecurityPolicy: false
+// }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Thiết lập session
-app.use(session({
-  secret: config.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: config.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 giờ
-  }
-}));
+// app.use(session({
+//   secret: config.SESSION_SECRET,
+//   resave: false,
+//   saveUninitialized: false,
+//   cookie: {
+//     secure: config.NODE_ENV === 'production',
+//     maxAge: 24 * 60 * 60 * 1000 // 24 giờ
+//   }
+// }));
 
 // Thiết lập static files
 app.use(express.static(path.join(__dirname, 'public')));
