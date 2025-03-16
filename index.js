@@ -366,7 +366,7 @@ async function syncFiles() {
     // Đọc danh sách file từ database
     const filesData = readFilesDb();
     
-    // Lọc các file chưa có trên Telegram hoặc có fake telegram ID
+    // Lọc các file chưa có trên Telegram hoặc cần đồng bộ
     const filesToSync = filesData.filter(file => 
       file.needsSync || 
       !file.telegramFileId
@@ -374,6 +374,13 @@ async function syncFiles() {
     
     if (filesToSync.length === 0) {
       console.log('Không có file cần đồng bộ');
+      
+      // Thử lấy danh sách file từ Telegram nếu database trống
+      if (filesData.length === 0) {
+        console.log('Database trống, thử lấy file từ Telegram...');
+        await getFilesFromTelegram();
+      }
+      
       return 0;
     }
     
@@ -417,18 +424,21 @@ async function syncFiles() {
         
         console.log(`Đang gửi file "${file.name}" (${formatBytes(file.size)}) lên Telegram...`);
         
+        // Xử lý tên file tiếng Việt
+        const fileName = Buffer.from(file.name).toString('utf8');
+        
         // Lựa chọn phương thức gửi file phù hợp dựa vào loại file
         let message;
         const sendFilePromise = (async () => {
           try {
             if (file.fileType === 'image') {
-              return await bot.telegram.sendPhoto(chatId, { source: file.localPath });
+              return await bot.telegram.sendPhoto(chatId, { source: file.localPath }, { caption: fileName });
             } else if (file.fileType === 'video') {
-              return await bot.telegram.sendVideo(chatId, { source: file.localPath });
+              return await bot.telegram.sendVideo(chatId, { source: file.localPath }, { caption: fileName });
             } else if (file.fileType === 'audio') {
-              return await bot.telegram.sendAudio(chatId, { source: file.localPath });
+              return await bot.telegram.sendAudio(chatId, { source: file.localPath }, { caption: fileName });
             } else {
-              return await bot.telegram.sendDocument(chatId, { source: file.localPath });
+              return await bot.telegram.sendDocument(chatId, { source: file.localPath }, { caption: fileName });
             }
           } catch (err) {
             console.error(`Lỗi gửi file lên Telegram: ${err.message}`);
@@ -438,7 +448,7 @@ async function syncFiles() {
         
         // Sử dụng Promise với timeout
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout khi gửi file lên Telegram')), 60000);
+          setTimeout(() => reject(new Error('Timeout khi gửi file lên Telegram')), 120000); // 2 phút timeout
         });
         
         message = await Promise.race([sendFilePromise, timeoutPromise]);
@@ -464,6 +474,7 @@ async function syncFiles() {
         // Cập nhật thông tin file
         file.telegramFileId = telegramFileId;
         file.needsSync = false;
+        file.fileStatus = 'telegram';
         
         // Lấy đường dẫn tải xuống
         const fileInfo = await bot.telegram.getFile(telegramFileId);
@@ -480,6 +491,10 @@ async function syncFiles() {
         
       } catch (error) {
         console.error(`Lỗi đồng bộ file "${file.name}":`, error);
+        // Đánh dấu file cần đồng bộ lại sau
+        file.needsSync = true;
+        file.syncError = error.message;
+        saveFilesDb(filesData);
       }
     }
     
@@ -494,6 +509,127 @@ async function syncFiles() {
   } catch (error) {
     console.error('Lỗi đồng bộ file:', error);
     throw error;
+  }
+}
+
+/**
+ * Lấy danh sách file từ Telegram
+ */
+async function getFilesFromTelegram() {
+  try {
+    if (!bot || !botActive) {
+      console.error('Bot Telegram không hoạt động. Không thể lấy file từ Telegram.');
+      return;
+    }
+    
+    console.log('Đang lấy danh sách file từ Telegram...');
+    
+    // Lấy chat id
+    const chatId = CHAT_ID;
+    if (!chatId || chatId === 'your_chat_id_here') {
+      console.error('CHAT_ID chưa được cấu hình trong file .env.');
+      return;
+    }
+    
+    try {
+      // Đọc dữ liệu hiện tại
+      const filesData = readFilesDb();
+      let newFileCount = 0;
+      
+      // Thử lấy 100 message gần nhất từ chat
+      const messages = await bot.telegram.getChatHistory(chatId, { limit: 100 });
+      
+      if (!messages || messages.length === 0) {
+        console.log('Không tìm thấy tin nhắn nào trong chat.');
+        return;
+      }
+      
+      console.log(`Tìm thấy ${messages.length} tin nhắn, đang xử lý...`);
+      
+      // Duyệt qua từng tin nhắn để tìm file
+      for (const message of messages) {
+        let fileObj = null;
+        let fileId = null;
+        let fileType = 'document';
+        let fileSize = 0;
+        let fileName = '';
+        
+        // Kiểm tra loại file
+        if (message.photo && message.photo.length > 0) {
+          fileObj = message.photo[message.photo.length - 1];
+          fileId = fileObj.file_id;
+          fileType = 'image';
+          fileSize = fileObj.file_size || 0;
+          fileName = message.caption || `photo_${new Date(message.date * 1000).toISOString().replace(/[:.]/g, '-')}.jpg`;
+        } else if (message.video) {
+          fileObj = message.video;
+          fileId = fileObj.file_id;
+          fileType = 'video';
+          fileSize = fileObj.file_size || 0;
+          fileName = message.caption || fileObj.file_name || `video_${new Date(message.date * 1000).toISOString().replace(/[:.]/g, '-')}.mp4`;
+        } else if (message.audio) {
+          fileObj = message.audio;
+          fileId = fileObj.file_id;
+          fileType = 'audio';
+          fileSize = fileObj.file_size || 0;
+          fileName = message.caption || fileObj.file_name || `audio_${new Date(message.date * 1000).toISOString().replace(/[:.]/g, '-')}.mp3`;
+        } else if (message.document) {
+          fileObj = message.document;
+          fileId = fileObj.file_id;
+          fileType = getFileType(fileObj.file_name || '');
+          fileSize = fileObj.file_size || 0;
+          fileName = message.caption || fileObj.file_name || `document_${new Date(message.date * 1000).toISOString().replace(/[:.]/g, '-')}`;
+        }
+        
+        // Nếu tìm thấy file
+        if (fileId) {
+          // Kiểm tra xem file đã tồn tại trong database chưa
+          const existingFile = filesData.find(f => f.telegramFileId === fileId);
+          
+          if (!existingFile) {
+            // Lấy đường dẫn tải xuống
+            const fileInfo = await bot.telegram.getFile(fileId);
+            let telegramUrl = null;
+            
+            if (fileInfo && fileInfo.file_path) {
+              telegramUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
+            }
+            
+            // Thêm file mới vào database
+            const newFile = {
+              id: uuidv4(),
+              name: fileName,
+              originalName: fileName,
+              size: fileSize,
+              mimeType: getMimeType(path.extname(fileName)),
+              fileType: fileType,
+              telegramFileId: fileId,
+              telegramUrl: telegramUrl,
+              localPath: null,
+              uploadDate: new Date(message.date * 1000).toISOString(),
+              fileStatus: 'telegram',
+              user: null
+            };
+            
+            filesData.push(newFile);
+            newFileCount++;
+          }
+        }
+      }
+      
+      if (newFileCount > 0) {
+        console.log(`Đã tìm thấy ${newFileCount} file mới từ Telegram. Lưu vào database...`);
+        saveFilesDb(filesData);
+      } else {
+        console.log('Không tìm thấy file mới từ Telegram.');
+      }
+      
+      return newFileCount;
+    } catch (error) {
+      console.error('Lỗi lấy tin nhắn từ Telegram:', error);
+    }
+  } catch (error) {
+    console.error('Lỗi lấy danh sách file từ Telegram:', error);
   }
 }
 
