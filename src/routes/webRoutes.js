@@ -27,7 +27,7 @@ function checkAuth(req, res, next) {
   }
 
   // Kiểm tra xem đã đăng nhập chưa
-  if (!req.session || !req.session.isLoggedIn) {
+  if (!req.session || !req.session.authenticated) {
     return res.redirect('/login');
   }
 
@@ -45,7 +45,7 @@ router.get('/', (req, res) => {
 // Trang đăng nhập
 router.get('/login', (req, res) => {
   // Nếu đã đăng nhập, redirect đến dashboard
-  if (req.session && req.session.isLoggedIn) {
+  if (req.session && req.session.authenticated) {
     return res.redirect('/dashboard');
   }
   

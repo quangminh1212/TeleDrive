@@ -56,25 +56,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware xác thực API key
 app.use((req, res, next) => {
-  // Kiểm tra API key cho các request đến API
-  if (req.path.startsWith('/api/') && req.path !== '/api/auth/login') {
-    const apiKey = req.query.apiKey || req.headers['x-api-key'];
-    if (apiKey && apiKey === config.API_KEY) {
+  // Nếu là API request và có API key
+  if (req.path.startsWith('/api/') && req.headers['x-api-key']) {
+    if (req.headers['x-api-key'] === config.API_KEY) {
       return next();
     }
-    
-    // Nếu không có API key, kiểm tra session
-    if (!req.session.isLoggedIn) {
-      // Nếu là API request, trả về lỗi JSON
-      if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
-        return res.status(401).json({
-          success: false,
-          message: 'Unauthorized'
-        });
-      }
-      // Redirect đến trang login nếu là web request
-      return res.redirect('/login');
-    }
+    return res.status(401).json({ success: false, error: 'Invalid API key' });
+  }
+  
+  // Nếu là API request mà không có API key và chưa đăng nhập
+  if (req.path.startsWith('/api/') && (!req.session || !req.session.authenticated)) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
   }
   
   next();

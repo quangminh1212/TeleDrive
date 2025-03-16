@@ -40,8 +40,13 @@ const upload = multer({
   }
 });
 
-// Middleware kiểm tra đăng nhập
-const checkAuth = authMiddleware.authenticate;
+// Áp dụng middleware xác thực cho tất cả các routes ngoại trừ login
+router.use((req, res, next) => {
+  if (req.path === '/auth/login') {
+    return next();
+  }
+  authMiddleware.authenticate(req, res, next);
+});
 
 // ===== ROUTES CHO XÁC THỰC =====
 
@@ -84,7 +89,7 @@ router.post('/auth/login', async (req, res) => {
 });
 
 // Đăng xuất
-router.post('/auth/logout', checkAuth, (req, res) => {
+router.post('/auth/logout', async (req, res) => {
   try {
     // Xóa session
     req.session.destroy(err => {
@@ -110,7 +115,7 @@ router.post('/auth/logout', checkAuth, (req, res) => {
 });
 
 // Đổi mật khẩu
-router.post('/auth/change-password', checkAuth, async (req, res) => {
+router.post('/auth/change-password', async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     
@@ -141,7 +146,7 @@ router.post('/auth/change-password', checkAuth, async (req, res) => {
 // ===== ROUTES CHO FILE =====
 
 // Lấy danh sách file
-router.get('/files', checkAuth, async (req, res) => {
+router.get('/files', async (req, res) => {
   try {
     // Lấy danh sách file từ DB
     const files = fileService.readFilesDb();
@@ -169,7 +174,7 @@ router.get('/files', checkAuth, async (req, res) => {
 });
 
 // Upload file mới
-router.post('/files/upload', checkAuth, upload.single('file'), async (req, res) => {
+router.post('/files/upload', upload.single('file'), async (req, res) => {
   try {
     // Kiểm tra file đã upload chưa
     if (!req.file) {
@@ -354,7 +359,7 @@ router.get('/files/download/:fileId', async (req, res) => {
 });
 
 // Xem thông tin file
-router.get('/files/:fileId', checkAuth, async (req, res) => {
+router.get('/files/:fileId', async (req, res) => {
   try {
     const fileId = req.params.fileId;
     
@@ -383,7 +388,7 @@ router.get('/files/:fileId', checkAuth, async (req, res) => {
 });
 
 // Đổi tên file
-router.put('/files/:fileId/rename', checkAuth, async (req, res) => {
+router.put('/files/:fileId/rename', async (req, res) => {
   try {
     const fileId = req.params.fileId;
     const { newName } = req.body;
@@ -427,7 +432,7 @@ router.put('/files/:fileId/rename', checkAuth, async (req, res) => {
 });
 
 // Di chuyển file
-router.put('/files/:fileId/move', checkAuth, async (req, res) => {
+router.put('/files/:fileId/move', async (req, res) => {
   try {
     const fileId = req.params.fileId;
     const { targetFolder } = req.body;
@@ -464,7 +469,7 @@ router.put('/files/:fileId/move', checkAuth, async (req, res) => {
 });
 
 // Xóa file (chuyển vào thùng rác)
-router.delete('/files/:fileId', checkAuth, async (req, res) => {
+router.delete('/files/:fileId', async (req, res) => {
   try {
     const fileId = req.params.fileId;
     
@@ -501,7 +506,7 @@ router.delete('/files/:fileId', checkAuth, async (req, res) => {
 });
 
 // Tạo link chia sẻ file
-router.post('/files/:fileId/share', checkAuth, async (req, res) => {
+router.post('/files/:fileId/share', async (req, res) => {
   try {
     const fileId = req.params.fileId;
     
@@ -536,7 +541,7 @@ router.post('/files/:fileId/share', checkAuth, async (req, res) => {
 // ===== ROUTES CHO THƯ MỤC =====
 
 // Lấy danh sách thư mục
-router.get('/folders', checkAuth, async (req, res) => {
+router.get('/folders', async (req, res) => {
   try {
     // Lấy danh sách file từ DB
     const files = fileService.readFilesDb();
@@ -561,7 +566,7 @@ router.get('/folders', checkAuth, async (req, res) => {
 });
 
 // Tạo thư mục mới
-router.post('/folders', checkAuth, async (req, res) => {
+router.post('/folders', async (req, res) => {
   try {
     const { folderName } = req.body;
     
@@ -621,7 +626,7 @@ router.post('/folders', checkAuth, async (req, res) => {
 });
 
 // Đổi tên thư mục
-router.put('/folders/:folderName/rename', checkAuth, async (req, res) => {
+router.put('/folders/:folderName/rename', async (req, res) => {
   try {
     const folderName = req.params.folderName;
     const { newName } = req.body;
@@ -670,7 +675,7 @@ router.put('/folders/:folderName/rename', checkAuth, async (req, res) => {
 });
 
 // Xóa thư mục
-router.delete('/folders/:folderName', checkAuth, async (req, res) => {
+router.delete('/folders/:folderName', async (req, res) => {
   try {
     const folderName = req.params.folderName;
     
@@ -714,7 +719,7 @@ router.delete('/folders/:folderName', checkAuth, async (req, res) => {
 // ===== ROUTES CHO THÙNG RÁC =====
 
 // Lấy danh sách file trong thùng rác
-router.get('/trash', checkAuth, async (req, res) => {
+router.get('/trash', async (req, res) => {
   try {
     // Lấy danh sách file từ DB
     const files = fileService.readFilesDb();
@@ -736,7 +741,7 @@ router.get('/trash', checkAuth, async (req, res) => {
 });
 
 // Khôi phục file từ thùng rác
-router.post('/trash/:fileId/restore', checkAuth, async (req, res) => {
+router.post('/trash/:fileId/restore', async (req, res) => {
   try {
     const fileId = req.params.fileId;
     
@@ -773,7 +778,7 @@ router.post('/trash/:fileId/restore', checkAuth, async (req, res) => {
 });
 
 // Xóa vĩnh viễn file
-router.delete('/trash/:fileId', checkAuth, async (req, res) => {
+router.delete('/trash/:fileId', async (req, res) => {
   try {
     const fileId = req.params.fileId;
     
@@ -821,7 +826,7 @@ router.delete('/trash/:fileId', checkAuth, async (req, res) => {
 });
 
 // Xóa vĩnh viễn tất cả file trong thùng rác
-router.delete('/trash', checkAuth, async (req, res) => {
+router.delete('/trash', async (req, res) => {
   try {
     // Lấy danh sách file từ DB
     const files = fileService.readFilesDb();
@@ -872,7 +877,7 @@ router.delete('/trash', checkAuth, async (req, res) => {
 // ===== ROUTES CHO CÀI ĐẶT =====
 
 // Cập nhật cài đặt
-router.post('/settings', checkAuth, async (req, res) => {
+router.post('/settings', async (req, res) => {
   try {
     const { setting, value } = req.body;
     
@@ -903,7 +908,7 @@ router.post('/settings', checkAuth, async (req, res) => {
 });
 
 // Route đồng bộ tất cả các file với Telegram
-router.post('/sync', checkAuth, async (req, res) => {
+router.post('/sync', async (req, res) => {
   try {
     // Thực hiện đồng bộ
     const syncResult = await fileService.syncFiles();

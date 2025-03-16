@@ -22,7 +22,7 @@ exports.authenticate = (req, res, next) => {
   }
   
   // Kiểm tra session đăng nhập
-  if (!req.session || !req.session.isLoggedIn) {
+  if (!req.session || !req.session.authenticated) {
     return res.status(401).json({
       success: false,
       message: 'Không có quyền truy cập. Vui lòng đăng nhập.'
@@ -39,7 +39,7 @@ exports.authenticate = (req, res, next) => {
  */
 exports.requireAdmin = (req, res, next) => {
   // Kiểm tra quyền admin
-  if (!req.session || !req.session.isLoggedIn || req.session.username !== config.ADMIN_USERNAME) {
+  if (!req.session || !req.session.authenticated || req.session.username !== config.ADMIN_USERNAME) {
     return res.status(403).json({
       success: false,
       message: 'Yêu cầu quyền quản trị viên để thực hiện thao tác này'

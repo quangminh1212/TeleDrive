@@ -440,6 +440,185 @@ async function cleanupFiles() {
   }
 }
 
+/**
+ * Xóa file
+ * @param {String} fileId ID của file cần xóa
+ * @param {Boolean} permanently Xóa vĩnh viễn hay không
+ * @returns {Object} Kết quả xóa file
+ */
+function deleteFile(fileId, permanently = false) {
+  try {
+    if (!fileId) {
+      return {
+        success: false,
+        error: 'ID file không hợp lệ'
+      };
+    }
+    
+    // Đọc danh sách file
+    const files = readFilesDb();
+    
+    // Tìm file cần xóa
+    const fileIndex = files.findIndex(file => file.id === fileId);
+    
+    if (fileIndex === -1) {
+      return {
+        success: false,
+        error: 'Không tìm thấy file'
+      };
+    }
+    
+    const fileInfo = files[fileIndex];
+    
+    if (permanently) {
+      // Xóa file vật lý nếu tồn tại
+      if (fileInfo.localPath && fs.existsSync(fileInfo.localPath)) {
+        fs.unlinkSync(fileInfo.localPath);
+        console.log(`Đã xóa file vật lý: ${fileInfo.localPath}`);
+      }
+      
+      // Xóa file khỏi DB
+      files.splice(fileIndex, 1);
+      
+      // Lưu lại danh sách file
+      saveFilesDb(files);
+      
+      return {
+        success: true,
+        message: 'Đã xóa vĩnh viễn file'
+      };
+    } else {
+      // Đánh dấu file là đã xóa
+      files[fileIndex].isDeleted = true;
+      files[fileIndex].deletedAt = new Date().toISOString();
+      
+      // Lưu lại danh sách file
+      saveFilesDb(files);
+      
+      return {
+        success: true,
+        message: 'Đã chuyển file vào thùng rác'
+      };
+    }
+  } catch (error) {
+    console.error('Lỗi khi xóa file:', error);
+    return {
+      success: false,
+      error: error.message || 'Lỗi không xác định'
+    };
+  }
+}
+
+/**
+ * Khôi phục file từ thùng rác
+ * @param {String} fileId ID của file cần khôi phục
+ * @returns {Object} Kết quả khôi phục file
+ */
+function restoreFile(fileId) {
+  try {
+    if (!fileId) {
+      return {
+        success: false,
+        error: 'ID file không hợp lệ'
+      };
+    }
+    
+    // Đọc danh sách file
+    const files = readFilesDb();
+    
+    // Tìm file cần khôi phục
+    const fileIndex = files.findIndex(file => file.id === fileId);
+    
+    if (fileIndex === -1) {
+      return {
+        success: false,
+        error: 'Không tìm thấy file'
+      };
+    }
+    
+    const fileInfo = files[fileIndex];
+    
+    // Kiểm tra xem file có trong thùng rác không
+    if (!fileInfo.isDeleted) {
+      return {
+        success: false,
+        error: 'File không nằm trong thùng rác'
+      };
+    }
+    
+    // Khôi phục file
+    files[fileIndex].isDeleted = false;
+    delete files[fileIndex].deletedAt;
+    
+    // Lưu lại danh sách file
+    saveFilesDb(files);
+    
+    return {
+      success: true,
+      message: 'Đã khôi phục file từ thùng rác',
+      file: files[fileIndex]
+    };
+  } catch (error) {
+    console.error('Lỗi khi khôi phục file:', error);
+    return {
+      success: false,
+      error: error.message || 'Lỗi không xác định'
+    };
+  }
+}
+
+/**
+ * Làm trống thùng rác
+ * @returns {Object} Kết quả làm trống thùng rác
+ */
+function emptyTrash() {
+  try {
+    // Đọc danh sách file
+    const files = readFilesDb();
+    
+    // Lọc ra các file đã bị xóa
+    const deletedFiles = files.filter(file => file.isDeleted);
+    
+    if (deletedFiles.length === 0) {
+      return {
+        success: true,
+        message: 'Thùng rác đã trống',
+        deletedCount: 0
+      };
+    }
+    
+    // Xóa các file vật lý
+    for (const file of deletedFiles) {
+      if (file.localPath && fs.existsSync(file.localPath)) {
+        try {
+          fs.unlinkSync(file.localPath);
+          console.log(`Đã xóa file vật lý: ${file.localPath}`);
+        } catch (error) {
+          console.error(`Lỗi khi xóa file vật lý ${file.localPath}:`, error);
+        }
+      }
+    }
+    
+    // Lọc bỏ các file đã bị xóa khỏi DB
+    const remainingFiles = files.filter(file => !file.isDeleted);
+    
+    // Lưu lại danh sách file
+    saveFilesDb(remainingFiles);
+    
+    return {
+      success: true,
+      message: `Đã xóa vĩnh viễn ${deletedFiles.length} file từ thùng rác`,
+      deletedCount: deletedFiles.length
+    };
+  } catch (error) {
+    console.error('Lỗi khi làm trống thùng rác:', error);
+    return {
+      success: false,
+      error: error.message || 'Lỗi không xác định'
+    };
+  }
+}
+
 module.exports = {
   readFilesDb,
   saveFilesDb,
@@ -447,5 +626,8 @@ module.exports = {
   syncFiles,
   autoSyncFile,
   checkFiles,
-  cleanupFiles
+  cleanupFiles,
+  deleteFile,
+  restoreFile,
+  emptyTrash
 }; 

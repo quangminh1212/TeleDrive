@@ -163,12 +163,19 @@ async function handleIncomingFile(ctx) {
 
 /**
  * Gửi file lên Telegram
- * @param {String} filePath Đường dẫn đến file
- * @param {String} caption Mô tả file
- * @returns {Object} Kết quả gửi file
+ * @param {Object} fileInfo Thông tin file cần gửi
+ * @returns {Promise<Object>} Kết quả gửi file
  */
-async function sendFileToTelegram(filePath, caption = '') {
+async function sendFileToTelegram(fileInfo) {
   try {
+    if (!fileInfo || !fileInfo.localPath) {
+      console.error('Không thể gửi file: Thiếu thông tin file');
+      return { 
+        success: false,
+        error: 'Thiếu thông tin file' 
+      };
+    }
+
     if (!isReady || !bot) {
       console.error('Bot Telegram chưa sẵn sàng');
       return {
@@ -177,59 +184,78 @@ async function sendFileToTelegram(filePath, caption = '') {
       };
     }
     
-    if (!fs.existsSync(filePath)) {
-      console.error(`File không tồn tại: ${filePath}`);
-      return {
+    // Kiểm tra kích thước file (giới hạn của Telegram là 50MB)
+    const fileStats = fs.statSync(fileInfo.localPath);
+    const fileSizeMB = fileStats.size / (1024 * 1024);
+    
+    if (fileSizeMB > 50) {
+      console.error(`Không thể gửi file: Kích thước file (${fileSizeMB.toFixed(2)}MB) vượt quá giới hạn 50MB của Telegram`);
+      return { 
         success: false,
-        error: 'File không tồn tại'
+        error: `Kích thước file (${fileSizeMB.toFixed(2)}MB) vượt quá giới hạn 50MB của Telegram` 
       };
     }
-    
-    // Lấy kích thước file
-    const fileStats = fs.statSync(filePath);
-    const fileSize = fileStats.size;
-    
-    if (fileSize > config.MAX_FILE_SIZE) {
-      console.error(`File quá lớn: ${fileSize} bytes (giới hạn ${config.MAX_FILE_SIZE} bytes)`);
-      return {
-        success: false,
-        error: 'File quá lớn'
-      };
-    }
-    
-    console.log(`Đang gửi file lên Telegram: ${filePath} (${fileSize} bytes)`);
-    
-    // Tạo stream đọc file
-    const fileStream = fs.createReadStream(filePath);
-    
-    // Lấy tên file từ đường dẫn
-    const fileName = path.basename(filePath);
     
     // Gửi file lên Telegram
-    const message = await bot.telegram.sendDocument(chatId, {
-      source: fileStream,
-      filename: fileName
-    }, {
-      caption: caption || fileName
-    });
+    console.log(`Đang gửi file "${fileInfo.originalName}" lên Telegram...`);
     
-    // Trích xuất file_id từ kết quả
-    const fileId = message.document.file_id;
+    let teleMsg;
+    try {
+      teleMsg = await bot.telegram.sendDocument(chatId, {
+        source: fileInfo.localPath,
+        filename: fileInfo.originalName
+      });
+    } catch (error) {
+      console.error('Lỗi khi gửi file lên Telegram:', error);
+      return { 
+        success: false,
+        error: error.message || 'Lỗi khi gửi file lên Telegram' 
+      };
+    }
     
-    console.log(`Đã gửi file thành công với file_id: ${fileId}`);
+    if (!teleMsg || !teleMsg.document) {
+      console.error('Không thể lấy thông tin document từ response của Telegram');
+      return { 
+        success: false,
+        error: 'Không thể lấy thông tin document từ response của Telegram' 
+      };
+    }
+    
+    const fileId = teleMsg.document.file_id;
+    console.log(`File đã được gửi thành công với ID: ${fileId}`);
     
     return {
       success: true,
       fileId: fileId,
-      messageId: message.message_id,
-      fileUrl: `https://api.telegram.org/file/bot${config.TELEGRAM_BOT_TOKEN}/${fileId}`
+      fileUrl: null, // URL sẽ được lấy từ getFileLink khi cần
+      messageId: teleMsg.message_id
     };
   } catch (error) {
-    console.error('Lỗi khi gửi file lên Telegram:', error);
-    return {
+    console.error('Lỗi không xác định khi gửi file lên Telegram:', error);
+    return { 
       success: false,
-      error: error.message || 'Lỗi không xác định'
+      error: error.message || 'Lỗi không xác định khi gửi file lên Telegram' 
     };
+  }
+}
+
+/**
+ * Lấy URL để tải file từ Telegram
+ * @param {String} fileId ID của file trên Telegram
+ * @returns {Promise<String>} URL để tải file
+ */
+async function getFileLink(fileId) {
+  try {
+    if (!isReady || !bot) {
+      console.error('Bot Telegram chưa sẵn sàng');
+      return null;
+    }
+    
+    const fileLink = await bot.telegram.getFileLink(fileId);
+    return fileLink.href;
+  } catch (error) {
+    console.error('Lỗi khi lấy link file từ Telegram:', error);
+    throw error;
   }
 }
 
@@ -333,6 +359,7 @@ module.exports = {
   stopBot,
   isBotActive,
   sendFileToTelegram,
+  getFileLink,
   downloadFileFromTelegram,
   sendNotification
 }; 
