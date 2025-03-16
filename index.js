@@ -244,10 +244,6 @@ function readFilesDb() {
         // Xác định loại file
         file.fileType = file.fileType || getFileType(file.name);
         
-        // Đảm bảo các thuộc tính cần thiết tồn tại
-        file.fakeTelegramId = false; // Luôn đặt false để đảm bảo không có file giả
-        file.fakeTelegramUrl = false;
-        
         // Kiểm tra trạng thái file
         if (file.localPath && fs.existsSync(file.localPath)) {
           file.fileStatus = 'local';
@@ -370,7 +366,6 @@ async function syncFiles() {
     // Lọc các file chưa có trên Telegram hoặc có fake telegram ID
     const filesToSync = filesData.filter(file => 
       file.needsSync || 
-      file.fakeTelegramId === true || 
       !file.telegramFileId
     );
     
@@ -401,7 +396,7 @@ async function syncFiles() {
       try {
         // Nếu file không tồn tại ở local và có telegramFileId thật, bỏ qua
         if ((!file.localPath || !fs.existsSync(file.localPath)) && 
-            file.telegramFileId && file.fakeTelegramId === false) {
+            file.telegramFileId) {
           console.log(`File ${file.name} đã có trên Telegram, bỏ qua.`);
           continue;
         }
@@ -460,7 +455,6 @@ async function syncFiles() {
         
         // Cập nhật thông tin file
         file.telegramFileId = telegramFileId;
-        file.fakeTelegramId = false;
         file.needsSync = false;
         
         // Lấy đường dẫn tải xuống
@@ -468,7 +462,6 @@ async function syncFiles() {
         if (fileInfo && fileInfo.file_path) {
           const downloadUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
           file.telegramUrl = downloadUrl;
-          file.fakeTelegramUrl = false;
           
           console.log(`Đã cập nhật URL file: ${downloadUrl}`);
         }
@@ -592,7 +585,7 @@ async function cleanUploads() {
     const localOnlyFiles = filesData.filter(file => 
       file.localPath && 
       fs.existsSync(file.localPath) && 
-      (!file.telegramFileId || file.fakeTelegramId === true)
+      (!file.telegramFileId)
     );
     
     if (localOnlyFiles.length === 0) {
@@ -670,13 +663,11 @@ async function cleanUploads() {
         
         // Cập nhật thông tin file
         file.telegramFileId = telegramFileId;
-        file.fakeTelegramId = false;
         
         // Lấy link file với timeout
         try {
           const downloadUrl = await getTelegramFileLink(telegramFileId);
           file.telegramUrl = downloadUrl;
-          file.fakeTelegramUrl = false;
           console.log(`Đã lấy được URL file: ${downloadUrl}`);
         } catch (linkError) {
           console.error(`Lỗi lấy link file: ${linkError.message}`);
@@ -763,7 +754,6 @@ app.get('/', async (req, res) => {
       uploadDate: file.uploadDate,
       formattedDate: formatDate(file.uploadDate),
       fileType: getFileType(file.name),
-      telegramStatus: file.fakeTelegramId === false ? 'real' : 'fake',
       downloadUrl: `/api/files/${file.id}/download`,
       previewUrl: `/file/${file.id}`,
       fixUrl: `/api/files/${file.id}/fix`
@@ -778,9 +768,8 @@ app.get('/', async (req, res) => {
     
     // Kiểm tra file có vấn đề
     const problemFiles = filesData.filter(f => 
-      f.fakeTelegramId === true || 
       !f.telegramFileId || 
-      (f.fakeTelegramUrl === true && !f.localPath)
+      (!f.localPath && !f.telegramUrl)
     ).length;
     
     // Render trang chủ
@@ -896,9 +885,6 @@ async function getTelegramFileLink(fileId) {
   }
 }
 
-// Loại bỏ API mô phỏng - Chỉ sử dụng API thật từ Telegram
-// Cũ: app.get('/api/files/:id/simulate-download', (req, res) => { ... });
-
 // API endpoint để tải file theo ID - sửa đổi để luôn tải từ Telegram
 app.get('/api/files/:id/download', async (req, res) => {
   try {
@@ -912,13 +898,6 @@ app.get('/api/files/:id/download', async (req, res) => {
         message: 'Không tìm thấy file',
         error: { status: 404, stack: 'File không tồn tại hoặc đã bị xóa' }
       });
-    }
-    
-    // Cập nhật trạng thái file trước khi xử lý
-    if (file.fakeTelegramId === true) {
-      console.log(`Cập nhật trạng thái file ${file.name} để tải xuống...`);
-      file.fakeTelegramId = false;
-      saveFilesDb(filesData);
     }
     
     // PHẦN 1: KIỂM TRA FILE LOCAL
@@ -956,8 +935,6 @@ app.get('/api/files/:id/download', async (req, res) => {
         const fileIndex = filesData.findIndex(f => f.id === fileId);
         if (fileIndex !== -1) {
           filesData[fileIndex].telegramUrl = downloadUrl;
-          filesData[fileIndex].fakeTelegramUrl = false;
-          filesData[fileIndex].fakeTelegramId = false;
           saveFilesDb(filesData);
         }
 
@@ -1001,7 +978,7 @@ app.get('/api/files/:id/download', async (req, res) => {
           const updatedFilesData = readFilesDb();
           const updatedFile = updatedFilesData.find(f => f.id === fileId);
           
-          if (updatedFile && updatedFile.telegramFileId && !updatedFile.fakeTelegramId) {
+          if (updatedFile && updatedFile.telegramFileId) {
             return res.redirect(`/api/files/${fileId}/download`);
           }
         } catch (syncError) {
@@ -1028,7 +1005,7 @@ app.get('/api/files/:id/download', async (req, res) => {
       const updatedFile = updatedFilesData.find(f => f.id === fileId);
       
       // Kiểm tra xem file đã có trên Telegram sau khi đồng bộ chưa
-      if (updatedFile && updatedFile.telegramFileId && !updatedFile.fakeTelegramId) {
+      if (updatedFile && updatedFile.telegramFileId) {
         console.log(`Đã đồng bộ file ${fileId}, thử tải lại`);
         return res.redirect(`/api/files/${fileId}/download`);
       }
@@ -1083,8 +1060,6 @@ app.post('/api/create-file', express.json(), async (req, res) => {
         size: size || filesData[existingFileIndex].size || 1024,
         mimeType: mimeType || filesData[existingFileIndex].mimeType || 'application/octet-stream',
         telegramFileId: telegramFileId,
-        fakeTelegramId: false,
-        fakeTelegramUrl: false,
         telegramUrl: null,
         fileType: guessFileType(mimeType) || 'document',
         updatedAt: new Date().toISOString()
@@ -1107,8 +1082,6 @@ app.post('/api/create-file', express.json(), async (req, res) => {
         mimeType: mimeType || 'application/octet-stream',
         fileType: guessFileType(mimeType) || 'document',
         telegramFileId: telegramFileId,
-        fakeTelegramId: false,
-        fakeTelegramUrl: false,
         telegramUrl: null,
         localPath: null,
         uploadDate: new Date().toISOString(),
@@ -1179,9 +1152,7 @@ app.post('/api/update-file/:id', express.json(), async (req, res) => {
       
       // Cập nhật thông tin file
       filesData[fileIndex].telegramFileId = telegramFileId;
-      filesData[fileIndex].fakeTelegramId = false;
       filesData[fileIndex].telegramUrl = null;
-      filesData[fileIndex].fakeTelegramUrl = false;
       
       // Lấy URL download
       const downloadUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
@@ -1197,7 +1168,6 @@ app.post('/api/update-file/:id', express.json(), async (req, res) => {
           id: filesData[fileIndex].id,
           name: filesData[fileIndex].name,
           telegramFileId: filesData[fileIndex].telegramFileId,
-          fakeTelegramId: filesData[fileIndex].fakeTelegramId,
           telegramUrl: filesData[fileIndex].telegramUrl,
           downloadUrl: downloadUrl
         }
@@ -1224,7 +1194,7 @@ async function autoSyncFile(file) {
     console.log(`Tự động đồng bộ file: ${file.name}`);
     
     // Kiểm tra xem file đã có telegramFileId thật chưa
-    if (file.telegramFileId && !file.fakeTelegramId) {
+    if (file.telegramFileId) {
       console.log(`File ${file.name} đã có Telegram FileID, bỏ qua`);
       return true;
     }
@@ -1283,7 +1253,6 @@ async function autoSyncFile(file) {
     
     // Cập nhật thông tin file
     file.telegramFileId = telegramFileId;
-    file.fakeTelegramId = false;
     file.needsSync = false;
     
     // Lấy đường dẫn tải xuống
@@ -1291,7 +1260,6 @@ async function autoSyncFile(file) {
     if (fileInfo && fileInfo.file_path) {
       const downloadUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
       file.telegramUrl = downloadUrl;
-      file.fakeTelegramUrl = false;
       
       console.log(`Đã cập nhật URL file: ${downloadUrl}`);
     }
@@ -1331,8 +1299,6 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       fileType: fileType,
       telegramFileId: null,
       telegramUrl: null,
-      fakeTelegramId: false,
-      fakeTelegramUrl: false,
       localPath: filePath,
       uploadDate: fileStats.mtime.toISOString(),
       user: null
@@ -1356,8 +1322,6 @@ app.post('/upload', upload.single('file'), async (req, res) => {
           if (fileIndex !== -1) {
             updatedFilesData[fileIndex].telegramFileId = newFile.telegramFileId;
             updatedFilesData[fileIndex].telegramUrl = newFile.telegramUrl;
-            updatedFilesData[fileIndex].fakeTelegramId = false;
-            updatedFilesData[fileIndex].fakeTelegramUrl = false;
             saveFilesDb(updatedFilesData);
           }
         } else {
@@ -1399,13 +1363,6 @@ app.get('/api/files/:id/fix', async (req, res) => {
         message: 'File không tồn tại'
       });
     }
-    
-    // Đánh dấu file không còn là fake
-    filesData[fileIndex].fakeTelegramId = false;
-    filesData[fileIndex].fakeTelegramUrl = false;
-    
-    // Lưu lại database
-    saveFilesDb(filesData);
     
     // Nếu bot hoạt động, thử đồng bộ file với Telegram
     if (botActive && bot && filesData[fileIndex].localPath && fs.existsSync(filesData[fileIndex].localPath)) {
@@ -1508,22 +1465,8 @@ app.get('/api/check-files', async (req, res) => {
     for (let i = 0; i < filesData.length; i++) {
       let needUpdate = false;
       
-      // Đảm bảo telegramFileId không bị null
-      if (!filesData[i].telegramFileId) {
-        if (filesData[i].id === 'a6ed8da1-d2b6-4b3b-a0de-48b818b0e27b') {
-          filesData[i].telegramFileId = "BAACAgUAAxkBAAPnZfSS3XHiJiHBG_Ufz_8HRfZ5ihsAAqwMAAKCLeBU-YVyU9j4v_g0BA";
-          needUpdate = true;
-        }
-      }
-      
-      // Sửa lỗi fakeTelegramId và fakeTelegramUrl
-      if (filesData[i].fakeTelegramId === true || typeof filesData[i].fakeTelegramId === 'undefined') {
-        filesData[i].fakeTelegramId = false;
-        needUpdate = true;
-      }
-      
-      if (filesData[i].fakeTelegramUrl === true || typeof filesData[i].fakeTelegramUrl === 'undefined') {
-        filesData[i].fakeTelegramUrl = false;
+      // Đảm bảo các thuộc tính cần thiết tồn tại
+      if (typeof filesData[i].telegramFileId === 'undefined' || !filesData[i].telegramFileId) {
         needUpdate = true;
       }
       
