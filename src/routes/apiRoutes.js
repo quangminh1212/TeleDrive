@@ -216,6 +216,116 @@ router.get('/auth/telegram', async (req, res) => {
   }
 });
 
+// Route callback cho Telegram Login Widget
+router.get('/auth/telegram-callback', async (req, res) => {
+  try {
+    console.log('=== Xử lý callback từ Telegram Widget ===');
+    console.log('Dữ liệu nhận được:', req.query);
+    
+    const telegramData = {
+      id: req.query.id,
+      first_name: req.query.first_name,
+      last_name: req.query.last_name,
+      username: req.query.username,
+      photo_url: req.query.photo_url,
+      auth_date: req.query.auth_date,
+      hash: req.query.hash
+    };
+    
+    // Kiểm tra xem có đủ thông tin cần thiết không
+    if (!telegramData.id || !telegramData.auth_date || !telegramData.hash) {
+      console.error('Thiếu thông tin xác thực từ Telegram Widget:', { 
+        providedData: Object.keys(req.query) 
+      });
+      return res.status(400).json({
+        success: false,
+        error: 'Thiếu thông tin xác thực từ Telegram'
+      });
+    }
+    
+    // Lấy bot token từ config
+    const botToken = config.TELEGRAM_BOT_TOKEN;
+    if (!botToken) {
+      console.error('Chưa cấu hình TELEGRAM_BOT_TOKEN');
+      return res.status(500).json({
+        success: false,
+        error: 'Lỗi cấu hình Telegram Bot'
+      });
+    }
+    
+    // Tạo secret key từ token của bot theo đúng chuẩn Telegram
+    // secret_key = SHA256(bot_token)
+    const crypto = require('crypto');
+    const secretKey = crypto.createHash('sha256').update(botToken).digest();
+    
+    // Kiểm tra xem thời gian xác thực có quá cũ không (> 1 giờ)
+    const authTime = parseInt(telegramData.auth_date);
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (currentTime - authTime > 3600) {
+      console.error('Xác thực Telegram Widget hết hạn:', { 
+        authTime, 
+        currentTime, 
+        diff: currentTime - authTime 
+      });
+      return res.status(401).json({
+        success: false,
+        error: 'Xác thực đã hết hạn'
+      });
+    }
+    
+    // Tạo data string để kiểm tra hash
+    // Loại bỏ hash từ object và sắp xếp theo key
+    const { hash, ...checkData } = telegramData;
+    const dataCheckString = Object.keys(checkData)
+      .sort()
+      .map(key => `${key}=${checkData[key]}`)
+      .join('\n');
+    
+    // Tính hash HMAC để so sánh
+    const calculatedHash = crypto.createHmac('sha256', secretKey)
+      .update(dataCheckString)
+      .digest('hex');
+    
+    // Nếu hash không khớp, từ chối yêu cầu
+    if (hash !== calculatedHash) {
+      console.error('Hash Telegram Widget không khớp', { 
+        expected: calculatedHash, 
+        received: hash 
+      });
+      return res.status(401).json({
+        success: false,
+        error: 'Dữ liệu xác thực không hợp lệ'
+      });
+    }
+    
+    // Tạo session và lưu thông tin người dùng Telegram
+    req.session.authenticated = true;
+    req.session.isLoggedIn = true;
+    req.session.telegramUser = {
+      id: telegramData.id,
+      username: telegramData.username || `user_${telegramData.id}`,
+      firstName: telegramData.first_name,
+      lastName: telegramData.last_name,
+      photoUrl: telegramData.photo_url
+    };
+    
+    console.log(`Người dùng Telegram đăng nhập thành công qua Widget: ${telegramData.username || telegramData.id}`);
+    
+    // Trả về kết quả thành công
+    return res.json({
+      success: true,
+      user: req.session.telegramUser,
+      message: 'Đăng nhập thành công'
+    });
+  } catch (error) {
+    console.error('Lỗi khi xử lý callback từ Telegram Widget:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Lỗi server: ' + error.message
+    });
+  }
+});
+
 // ===== ROUTES CHO FILE =====
 
 // Lấy danh sách file
