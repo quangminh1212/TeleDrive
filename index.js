@@ -403,16 +403,22 @@ async function syncFiles() {
     // Gửi từng file lên Telegram
     for (const file of filesToSync) {
       try {
+        // Kiểm tra file có tồn tại không
+        if (!file.localPath) {
+          console.log(`File ${file.name} không có đường dẫn local, không thể đồng bộ.`);
+          continue;
+        }
+        
+        // Kiểm tra file có tồn tại trên hệ thống không
+        if (!fs.existsSync(file.localPath)) {
+          console.log(`File ${file.name} không tồn tại tại đường dẫn ${file.localPath}, không thể đồng bộ.`);
+          continue;
+        }
+        
         // Nếu file không tồn tại ở local và có telegramFileId thật, bỏ qua
         if ((!file.localPath || !fs.existsSync(file.localPath)) && 
             file.telegramFileId) {
           console.log(`File ${file.name} đã có trên Telegram, bỏ qua.`);
-          continue;
-        }
-        
-        // Nếu file không tồn tại local và không có telegramFileId, không thể đồng bộ
-        if (!file.localPath || !fs.existsSync(file.localPath)) {
-          console.log(`File ${file.name} không tồn tại local và không có trên Telegram, không thể đồng bộ.`);
           continue;
         }
         
