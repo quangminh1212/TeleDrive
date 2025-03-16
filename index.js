@@ -123,9 +123,21 @@ async function startApp() {
     }
     
     // Lắng nghe trên cổng đã cấu hình
-    app.listen(config.PORT, () => {
+    const server = app.listen(config.PORT, () => {
       log(`Server đang chạy tại http://${config.HOST}:${config.PORT}`);
       log(`Môi trường: ${config.NODE_ENV}`);
+    }).on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        log(`Cổng ${config.PORT} đã được sử dụng, thử cổng khác`, 'error');
+        // Thử lại với cổng khác
+        const newPort = parseInt(config.PORT) + 1;
+        app.listen(newPort, () => {
+          log(`Server đang chạy tại http://${config.HOST}:${newPort} (cổng dự phòng)`);
+          log(`Môi trường: ${config.NODE_ENV}`);
+        });
+      } else {
+        log(`Lỗi khi khởi động server: ${err.message}`, 'error');
+      }
     });
     
     // Xử lý tắt server

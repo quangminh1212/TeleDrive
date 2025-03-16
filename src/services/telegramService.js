@@ -22,23 +22,14 @@ function initBot() {
   try {
     console.log('===== KHỞI TẠO BOT TELEGRAM =====');
     
-    // Nếu bot đã tồn tại và đang hoạt động, trả về bot đó
-    if (bot && isReady) {
-      console.log('Bot đã được khởi tạo trước đó, sử dụng lại');
-      return bot;
-    }
-    
     // Dừng bot cũ nếu tồn tại
     if (bot) {
       try {
-        bot.stop();
+        stopBot();
         console.log('Đã dừng bot cũ để tránh xung đột');
       } catch (stopErr) {
         console.error('Lỗi khi dừng bot cũ:', stopErr.message);
       }
-      
-      // Đợi một chút để đảm bảo bot cũ đã dừng hoàn toàn
-      // Tuy nhiên không thể sử dụng await ở đây
     }
     
     // Reset trạng thái
@@ -59,61 +50,66 @@ function initBot() {
     // Chuẩn hóa chat ID
     targetChatId = targetChatId.toString();
     
+    // Tạo instance bot mới
+    bot = new Telegraf(telegramToken);
+    chatId = targetChatId;
+    
+    // Cấu hình sự kiện
+    configureBot();
+    
+    // Kiểm tra thông tin bot (đồng bộ)
     try {
-      // Tạo instance bot mới
-      bot = new Telegraf(telegramToken);
-      chatId = targetChatId;
+      const meResponse = require('axios').get(`https://api.telegram.org/bot${telegramToken}/getMe`);
+      const botInfo = meResponse.data && meResponse.data.result;
       
-      // Tạo cấu hình polling để tránh xung đột
-      const options = {
-        dropPendingUpdates: true,
-        allowedUpdates: ['message', 'callback_query']
-      };
+      if (botInfo) {
+        console.log(`Bot đã khởi tạo: ${botInfo.username} (${botInfo.first_name})`);
+        bot.botInfo = botInfo;
+      }
+    } catch (infoError) {
+      console.warn('Không thể lấy thông tin bot (đồng bộ):', infoError.message);
+    }
+    
+    // Xóa webhook trước khi khởi động polling
+    try {
+      require('axios').post(`https://api.telegram.org/bot${telegramToken}/deleteWebhook?drop_pending_updates=true`);
+      console.log('Đã xóa webhook để tránh xung đột');
+    } catch (webhookError) {
+      console.warn('Lỗi khi xóa webhook:', webhookError.message);
+    }
+    
+    // Khởi động bot với polling
+    bot.launch({
+      dropPendingUpdates: true,
+      allowedUpdates: ['message', 'callback_query']
+    }).then(() => {
+      console.log(`Bot Telegram đã được khởi tạo thành công`);
+      console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${targetChatId}`);
+      isReady = true;
       
-      // Đặt webhook thành null trước để đảm bảo dùng polling
-      bot.telegram.deleteWebhook({ dropPendingUpdates: true })
-        .then(() => {
-          console.log('Đã xóa webhook để tránh xung đột');
-          
-          // Cấu hình sự kiện bot
-          configureBot();
-          
-          // Khởi động bot với polling
-          return bot.launch(options);
-        })
-        .then(() => {
-          console.log(`Bot Telegram đã được khởi tạo thành công`);
-          console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${targetChatId}`);
-          isReady = true;
-          
-          // Gửi ping định kỳ để giữ bot hoạt động
-          if (global.botKeepAliveInterval) {
-            clearInterval(global.botKeepAliveInterval);
-          }
-          
-          global.botKeepAliveInterval = setInterval(() => {
-            if (bot && isReady) {
-              bot.telegram.getMe()
-                .then(() => console.log('Bot keep-alive: OK'))
-                .catch(err => console.error('Bot keep-alive failed:', err.message));
-            }
-          }, 60000); // Ping mỗi phút
-        })
-        .catch(err => {
-          console.error(`Không thể khởi động bot: ${err.message}`);
-          isReady = false;
-        });
+      // Gửi ping định kỳ để giữ bot hoạt động
+      if (global.botKeepAliveInterval) {
+        clearInterval(global.botKeepAliveInterval);
+      }
       
-      return bot;
-    } catch (error) {
-      console.error('Lỗi khi khởi tạo Telegram Bot:', error);
+      global.botKeepAliveInterval = setInterval(() => {
+        if (bot && isReady) {
+          bot.telegram.getMe()
+            .then(() => console.log('Bot keep-alive: OK'))
+            .catch(err => console.error('Bot keep-alive failed:', err.message));
+        }
+      }, 60000); // Ping mỗi phút
+    }).catch(err => {
+      console.error(`Không thể khởi động bot: ${err.message}`);
       isReady = false;
       bot = null;
-      return null;
-    }
+    });
+    
+    return bot;
   } catch (error) {
-    console.error('Lỗi không xác định khi khởi tạo bot:', error);
+    console.error('Lỗi khi khởi tạo Telegram Bot:', error);
     isReady = false;
+    bot = null;
     return null;
   }
 }
