@@ -35,10 +35,11 @@ const DATA_DIR = process.env.DATA_DIR || 'data';
 
 // Đường dẫn file và thư mục
 const dataDir = path.join(__dirname, DATA_DIR);
-const tempDir = path.join(__dirname, TEMP_DIR);
-const uploadsDir = path.join(__dirname, UPLOADS_DIR);
+const tempDir = TEMP_DIR;  // Sử dụng đường dẫn đã định nghĩa
+const uploadsDir = UPLOADS_DIR; // Sử dụng đường dẫn đã định nghĩa
+const logsDir = LOGS_DIR; // Sử dụng đường dẫn đã định nghĩa
 const filesDbPath = path.join(dataDir, 'files.json');
-const logsDir = path.join(__dirname, 'logs');
+
 // Đường dẫn lưu trữ chính
 const STORAGE_PATH = __dirname;
 
