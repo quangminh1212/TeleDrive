@@ -213,6 +213,9 @@ async function initBot(forceInit = false) {
     try {
       console.log('PHƯƠNG PHÁP 3: Khởi tạo bot với timeout ngắn');
       
+      // Đợi thêm một chút thời gian để đảm bảo bot cũ đã hoàn toàn dừng
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
       // Tạo instance bot mới với timeout ngắn
       const botOptions = {
         telegram: {
@@ -243,7 +246,7 @@ async function initBot(forceInit = false) {
           }
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout khi khởi động bot')), 7000)
+          setTimeout(() => reject(new Error('Timeout khi khởi động bot')), 10000)
         )
       ]);
       
@@ -255,16 +258,28 @@ async function initBot(forceInit = false) {
       isReady = true;
       isInitializing = false;
       
+      // Reset retry count khi thành công
+      initRetryCount = 0;
+      
       return bot;
     } catch (launchError) {
       console.error(`PHƯƠNG PHÁP 3 thất bại: ${launchError.message}`);
       
       // Xử lý các trường hợp lỗi
       if (launchError.message.includes('Conflict') || 
-          launchError.message.includes('Timeout') || 
-          launchError.message.includes('ETIMEOUT')) {
+          launchError.message.includes('409: Conflict') || 
+          launchError.message.includes('terminated by other getUpdates')) {
         
-        console.log('Phát hiện lỗi kết nối, thử PHƯƠNG PHÁP 4...');
+        // Nếu có lỗi conflict nhiều lần, chuyển sang chế độ giả lập
+        if (initRetryCount >= 2) {
+          console.log('Không thể khởi động bot: ' + launchError.message);
+          console.log('Không thể khởi động lại bot, chuyển sang chế độ giả lập');
+          simulationMode = true;
+          isInitializing = false;
+          return null;
+        }
+        
+        console.log('Phát hiện lỗi kết nối, đang thử khởi động lại...');
         
         // Dừng bot hiện tại
         try {
@@ -273,6 +288,13 @@ async function initBot(forceInit = false) {
         
         bot = null;
         isReady = false;
+        
+        // Đợi lâu hơn giữa các lần thử
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        // Thử khởi động lại với PHƯƠNG PHÁP 3
+        isInitializing = false;
+        return await initBot(true);
       }
     }
     
@@ -1043,10 +1065,22 @@ async function getFilesFromChat(limit = 10, options = {}) {
     
     // Lấy tin nhắn bằng getUpdates thay vì getChatHistory (không tồn tại)
     const updates = await Promise.race([
-      bot.telegram.getUpdates({ 
-        limit: fetchOptions.limit,
-        allowed_updates: ['message', 'channel_post']
-      }),
+      (async () => {
+        // Kiểm tra xem bot và bot.telegram có tồn tại không
+        if (!bot || !bot.telegram) {
+          console.log('Bot hoặc bot.telegram không tồn tại');
+          return [];
+        }
+        try {
+          return await bot.telegram.getUpdates({ 
+            limit: fetchOptions.limit,
+            allowed_updates: ['message', 'channel_post']
+          });
+        } catch (err) {
+          console.error('Lỗi khi gọi bot.telegram.getUpdates:', err.message);
+          return [];
+        }
+      })(),
       new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout khi lấy updates')), 15000)
       )
