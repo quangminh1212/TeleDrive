@@ -8,7 +8,6 @@ const express = require('express');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
-const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
 const session = require('express-session');
@@ -32,7 +31,6 @@ ensureDirectories();
 const app = express();
 
 // Thiết lập middleware cơ bản
-app.use(morgan('dev'));
 app.use(cors());
 app.use(helmet({
   contentSecurityPolicy: false
