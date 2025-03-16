@@ -1,64 +1,84 @@
 # TeleDrive
 
-Ứng dụng lưu trữ và chia sẻ file qua Telegram Bot.
+TeleDrive là ứng dụng lưu trữ file sử dụng Telegram làm nơi lưu trữ dữ liệu. Ứng dụng cho phép bạn tải lên, quản lý và chia sẻ file thông qua Telegram, tận dụng không gian lưu trữ không giới hạn của Telegram.
+
+## Tính năng
+
+- Tải file lên Telegram và quản lý thông qua giao diện web
+- Tự động đồng bộ file từ Telegram
+- Xem trước file (hình ảnh, video, âm thanh)
+- Tải xuống file
+- Thùng rác với khả năng khôi phục
+- Tìm kiếm file
+- Giao diện người dùng thân thiện
+
+## Yêu cầu
+
+- Node.js (v14 trở lên)
+- Telegram Bot Token (từ [@BotFather](https://t.me/BotFather))
+- Telegram Chat ID (có thể là ID của bạn hoặc một nhóm/kênh)
 
 ## Cài đặt
 
 1. Clone repository:
-```
-git clone https://github.com/yourusername/TeleDrive.git
-cd TeleDrive
+```bash
+git clone https://github.com/yourusername/teledrive.git
+cd teledrive
 ```
 
 2. Cài đặt các gói phụ thuộc:
-```
+```bash
 npm install
 ```
 
-3. Tạo file `.env` từ `.env.example`:
-```
+3. Tạo file `.env` từ file mẫu:
+```bash
 cp .env.example .env
 ```
 
-4. Cấu hình file `.env`:
-   - Tạo bot Telegram mới tại [BotFather](https://t.me/BotFather)
-   - Cập nhật `BOT_TOKEN` với token được cung cấp
-
-## Sử dụng
-
-1. Khởi động ứng dụng:
+4. Chỉnh sửa file `.env` và thêm thông tin Telegram Bot Token và Chat ID:
 ```
-node index.js
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_CHAT_ID=your_telegram_chat_id
 ```
 
-2. Truy cập ứng dụng tại: http://localhost:5001
+5. Khởi động ứng dụng:
+```bash
+npm start
+```
 
-## Cấu hình Bot Telegram
+Ứng dụng sẽ chạy tại http://localhost:3000 (hoặc cổng được cấu hình trong file `.env`).
 
-1. Truy cập [BotFather](https://t.me/BotFather) trên Telegram
-2. Gõ lệnh `/newbot`
-3. Đặt tên cho bot (ví dụ: My TeleDrive)
-4. Đặt username cho bot (phải kết thúc bằng "bot", ví dụ: my_teledrive_bot)
-5. Sao chép token được cung cấp
-6. Cập nhật token vào file `.env`
+## Cách sử dụng
 
-## Xử lý sự cố
+1. Truy cập vào ứng dụng qua trình duyệt web
+2. Đăng nhập với thông tin mặc định (hoặc đã cấu hình trong file `.env`):
+   - Tên đăng nhập: `admin`
+   - Mật khẩu: `password`
+3. Tải file lên bằng cách sử dụng trang "Tải lên"
+4. Quản lý file trong trang chính
+5. Xem và khôi phục file đã xóa trong "Thùng rác"
 
-### Bot không hoạt động
+## Đồng bộ với Telegram
 
-Nếu bot không hoạt động, hãy kiểm tra:
+Ứng dụng sẽ tự động đồng bộ với Telegram theo khoảng thời gian được cấu hình. Bạn cũng có thể đồng bộ thủ công bằng cách:
 
-1. Token bot có đúng định dạng không (dạng: 123456789:ABCDefGhIJKlmNoPQRsTUVwxyZ)
-2. Bot có đang hoạt động không (kiểm tra bằng cách nhắn tin cho bot)
-3. Kiểm tra log lỗi trong terminal
+1. Nhấn vào nút "Đồng bộ với Telegram" trong giao diện
+2. Hoặc chạy lệnh: `npm run sync`
 
-### Lỗi khi tải file
+## Cấu hình nâng cao
 
-Nếu gặp lỗi khi tải file, hãy kiểm tra:
+Bạn có thể tùy chỉnh các cài đặt trong file `.env`:
 
-1. Kích thước file có vượt quá giới hạn không (mặc định: 2000MB)
-2. Thư mục `uploads` có tồn tại và có quyền ghi không
-3. Bot có quyền truy cập vào file không
+- `PORT`: Cổng máy chủ (mặc định: 3000)
+- `ADMIN_USERNAME` và `ADMIN_PASSWORD`: Thông tin đăng nhập
+- `SYNC_INTERVAL`: Khoảng thời gian đồng bộ tự động (phút)
+- `CLEANUP_INTERVAL`: Khoảng thời gian dọn dẹp tự động (phút)
+- `TRASH_RETENTION`: Thời gian lưu giữ file trong thùng rác (ngày)
+
+## Đóng góp
+
+Mọi đóng góp đều được hoan nghênh! Vui lòng tạo issue hoặc pull request nếu bạn muốn cải thiện ứng dụng.
 
 ## Giấy phép
 
