@@ -109,7 +109,15 @@ function initBot() {
     });
     
     // Khởi động bot ở chế độ polling
-    bot.launch().then(() => {
+    bot.launch({
+      // Chỉ lắng nghe các loại cập nhật cần thiết
+      allowedUpdates: ['message', 'callback_query', 'inline_query'],
+      // Thiết lập polling params
+      polling: {
+        timeout: 30,
+        limit: 100
+      }
+    }).then(() => {
       console.log(`Bot Telegram đã được khởi tạo thành công`);
       console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${targetChatId}`);
       isReady = true;
