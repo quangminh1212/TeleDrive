@@ -562,7 +562,12 @@ async function syncFiles() {
   
   console.log(`===== KẾT THÚC QUÁ TRÌNH ĐỒNG BỘ =====`);
   console.log(`Đã đồng bộ thành công ${syncedCount}/${filesToSync.length} files với Telegram`);
-  return syncedCount;
+  return {
+    success: true,
+    syncedCount: syncedCount,
+    totalFiles: filesData.length,
+    filesNeedingSync: filesToSync.length
+  };
 }
 
 /**
