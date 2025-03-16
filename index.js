@@ -3658,106 +3658,83 @@ function formatDate(dateString) {
 // API endpoint để kiểm tra và sửa dữ liệu file
 app.post('/api/check-files', async (req, res) => {
   try {
-    if (!bot || !botActive) {
-      return res.status(400).json({
-        success: false,
-        error: 'Bot Telegram không hoạt động'
-      });
-    }
+    console.log('===== KIỂM TRA VÀ SỬA DỮ LIỆU FILES =====');
+    const files = readFilesDb();
     
-    // Đọc database
-    let filesData = readFilesDb();
-    const totalFiles = filesData.length;
-    
-    // Số lượng file đã sửa
-    let fixedCount = 0;
-    
-    // Kiểm tra từng file
-    for (let i = 0; i < filesData.length; i++) {
-      const file = filesData[i];
-      let isFixed = false;
-      
-      // Kiểm tra trạng thái file
-      if (file.localPath && fs.existsSync(file.localPath)) {
-        if (file.fileStatus !== 'local') {
-          file.fileStatus = 'local';
-          isFixed = true;
-        }
-      } else if (file.telegramFileId) {
-        if (file.fileStatus !== 'telegram') {
-          file.fileStatus = 'telegram';
-          isFixed = true;
-        }
-      } else {
-        if (file.fileStatus !== 'missing') {
-          file.fileStatus = 'missing';
-          file.needsSync = true;
-          isFixed = true;
-        }
-      }
-      
-      // Kiểm tra và sửa tên file nếu có encoding sai
-      if (file.name && file.name.includes('%')) {
-        try {
-          file.name = decodeURIComponent(file.name);
-          isFixed = true;
-        } catch (e) {
-          console.error(`Không thể decode tên file: ${file.name}`, e);
-        }
-      }
-      
-      // Kiểm tra và thêm trường mimeType nếu thiếu
-      if (!file.mimeType && file.name) {
-        file.mimeType = getMimeType(file.name);
-        isFixed = true;
-      }
-      
-      // Kiểm tra và thêm trường fileType nếu thiếu
-      if (!file.fileType && file.name) {
-        file.fileType = getFileType(file.name);
-        isFixed = true;
-      }
-      
-      // Đánh dấu đã sửa nếu có thay đổi
-      if (isFixed) {
-        fixedCount++;
-      }
-    }
-    
-    // Lưu lại database nếu có thay đổi
-    if (fixedCount > 0) {
-      saveFilesDb(filesData);
-    }
-    
-    // Đọc lại database để có thông tin mới nhất
-    filesData = readFilesDb();
-    
-    // Thống kê
+    // Thống kê ban đầu
     const stats = {
-      total: totalFiles,
-      fixed: fixedCount,
-      local: filesData.filter(f => f.fileStatus === 'local').length,
-      telegram: filesData.filter(f => f.fileStatus === 'telegram').length,
-      missing: filesData.filter(f => f.fileStatus === 'missing').length,
-      needsSync: filesData.filter(f => f.needsSync).length
+      total: files.length,
+      fixed: 0,
+      local: 0,
+      telegram: 0,
+      missing: 0,
+      needsSync: 0
     };
     
-    // Trả về kết quả
-    return res.json({
+    // Kiểm tra từng file
+    for (const file of files) {
+      // Kiểm tra file local
+      const hasLocalFile = file.localPath && fs.existsSync(file.localPath);
+      if (hasLocalFile) {
+        stats.local++;
+        file.fileStatus = 'local';
+        
+        // Nếu file tồn tại ở local nhưng chưa có trên Telegram, đánh dấu cần đồng bộ
+        if (!file.telegramFileId) {
+          file.needsSync = true;
+          stats.needsSync++;
+          stats.fixed++;
+          console.log(`Đánh dấu file "${file.name}" cần đồng bộ lên Telegram`);
+        }
+      } else {
+        if (file.localPath) {
+          console.log(`File "${file.name}" không tồn tại tại đường dẫn: ${file.localPath}`);
+        } else {
+          console.log(`File "${file.name}" không có đường dẫn local`);
+        }
+        
+        // Nếu file có trên Telegram, đánh dấu là telegram-only
+        if (file.telegramFileId) {
+          file.fileStatus = 'telegram';
+          stats.telegram++;
+        } else {
+          // Nếu file không có ở cả local và Telegram, đánh dấu là missing
+          file.fileStatus = 'missing';
+          stats.missing++;
+        }
+      }
+      
+      // Đồng bộ ngay lập tức các file cần thiết
+      if (file.needsSync && hasLocalFile) {
+        console.log(`Thực hiện đồng bộ file "${file.name}" ngay lập tức`);
+        try {
+          await autoSyncFile(file);
+          stats.fixed++;
+          console.log(`Đã đồng bộ thành công file "${file.name}"`);
+        } catch (error) {
+          console.error(`Lỗi khi đồng bộ file "${file.name}":`, error);
+        }
+      }
+    }
+    
+    // Lưu lại dữ liệu đã cập nhật
+    saveFilesDb(files);
+    console.log(`Đã kiểm tra và sửa ${stats.fixed} files`);
+    
+    res.json({
       success: true,
-      message: `Đã kiểm tra và sửa ${fixedCount} files`,
+      message: `Đã kiểm tra và sửa ${stats.fixed} files`,
       stats: stats,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Lỗi API kiểm tra file:', error);
-    return res.status(500).json({
+    console.error('Lỗi khi kiểm tra files:', error);
+    res.status(500).json({
       success: false,
       error: error.message || 'Lỗi server khi kiểm tra files'
     });
   }
 });
-
 // ... existing code ...
 
 // API endpoint để lấy nội dung thùng rác
