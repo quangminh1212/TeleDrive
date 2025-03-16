@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thùng rác - TeleDrive</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .navbar-brand {
+      font-weight: 600;
+    }
+    .sidebar {
+      position: fixed;
+      top: 56px;
+      bottom: 0;
+      left: 0;
+      width: 250px;
+      padding: 20px 0;
+      z-index: 100;
+      overflow-y: auto;
+      background-color: #fff;
+      border-right: 1px solid #dee2e6;
+    }
+    .sidebar .nav-link {
+      padding: 10px 20px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      border-radius: 0;
+    }
+    .sidebar .nav-link.active {
+      background-color: #e9ecef;
+      color: #0d6efd;
+    }
+    .sidebar .nav-link i {
+      margin-right: 10px;
+      width: 20px;
+    }
+    .main-content {
+      margin-left: 250px;
+      padding: 20px;
+    }
+    .file-card {
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      height: 100%;
+    }
+    .file-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    .file-icon {
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f1f3f5;
+      color: #495057;
+      font-size: 48px;
+    }
+    .file-icon.image {
+      color: #20c997;
+    }
+    .file-icon.video {
+      color: #fd7e14;
+    }
+    .file-icon.audio {
+      color: #6f42c1;
+    }
+    .file-icon.document {
+      color: #0d6efd;
+    }
+    .file-icon.archive {
+      color: #dc3545;
+    }
+    .file-icon.other {
+      color: #6c757d;
+    }
+    .file-info {
+      padding: 15px;
+    }
+    .file-name {
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-bottom: 5px;
+    }
+    .file-meta {
+      font-size: 12px;
+      color: #6c757d;
+    }
+    .file-actions {
+      padding: 10px 15px;
+      border-top: 1px solid #dee2e6;
+      background-color: #f8f9fa;
+    }
+    .trash-header {
+      background-color: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    .trash-info {
+      font-size: 14px;
+      color: #6c757d;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        position: static;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">
+        <i class="bi bi-telegram"></i> TeleDrive
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <form class="d-flex ms-auto">
+          <input class="form-control me-2" type="search" placeholder="Tìm kiếm file..." aria-label="Search">
+          <button class="btn btn-light" type="submit">
+            <i class="bi bi-search"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link" href="/">
+          <i class="bi bi-house-door"></i> Trang chủ
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/upload">
+          <i class="bi bi-cloud-arrow-up"></i> Tải lên
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link active" href="/trash">
+          <i class="bi bi-trash"></i> Thùng rác
+        </a>
+      </li>
+      <li class="nav-item mt-3">
+        <div class="px-3">
+          <a href="/api/sync" class="btn btn-outline-primary btn-sm w-100">
+            <i class="bi bi-arrow-repeat"></i> Đồng bộ với Telegram
+          </a>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Trash Header -->
+    <div class="trash-header d-flex justify-content-between align-items-center">
+      <div>
+        <h4 class="mb-1"><i class="bi bi-trash"></i> Thùng rác</h4>
+        <p class="trash-info mb-0">
+          Các file trong thùng rác sẽ bị xóa vĩnh viễn sau 30 ngày kể từ ngày xóa.
+        </p>
+      </div>
+      <div>
+        <button id="emptyTrashBtn" class="btn btn-danger">
+          <i class="bi bi-trash"></i> Dọn sạch thùng rác
+        </button>
+      </div>
+    </div>
+
+    <!-- Files Display -->
+    <% if (typeof files !== 'undefined' && files.length > 0) { %>
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+        <% files.forEach(function(file) { %>
+          <div class="col">
+            <div class="file-card">
+              <div class="file-icon <%= file.type %>">
+                <% if (file.type === 'image') { %>
+                  <i class="bi bi-file-image"></i>
+                <% } else if (file.type === 'video') { %>
+                  <i class="bi bi-file-play"></i>
+                <% } else if (file.type === 'audio') { %>
+                  <i class="bi bi-file-music"></i>
+                <% } else if (file.type === 'document') { %>
+                  <i class="bi bi-file-text"></i>
+                <% } else if (file.type === 'archive') { %>
+                  <i class="bi bi-file-zip"></i>
+                <% } else { %>
+                  <i class="bi bi-file-earmark"></i>
+                <% } %>
+              </div>
+              <div class="file-info">
+                <h6 class="file-name" title="<%= file.name %>"><%= file.name %></h6>
+                <div class="file-meta">
+                  <div><%= typeof file.size === 'number' ? (file.size / (1024 * 1024)).toFixed(2) + ' MB' : file.size %></div>
+                  <div>Xóa lúc: <%= new Date(file.deletedAt).toLocaleDateString('vi-VN') %></div>
+                  <div class="text-danger">
+                    Còn <span class="days-left" data-deleted-at="<%= file.deletedAt %>">...</span> ngày sẽ bị xóa vĩnh viễn
+                  </div>
+                </div>
+              </div>
+              <div class="file-actions">
+                <div class="d-flex">
+                  <a href="/api/files/<%= file.id %>/restore" class="btn btn-sm btn-outline-success me-1">
+                    <i class="bi bi-arrow-counterclockwise"></i> Khôi phục
+                  </a>
+                  <a href="javascript:void(0)" class="btn btn-sm btn-outline-danger delete-permanently-btn" data-id="<%= file.id %>">
+                    <i class="bi bi-trash"></i> Xóa vĩnh viễn
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <div class="text-center py-5">
+        <i class="bi bi-trash2" style="font-size: 64px; color: #dee2e6;"></i>
+        <h4 class="mt-3">Thùng rác trống</h4>
+        <p class="text-muted">Không có file nào trong thùng rác</p>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Empty Trash Confirmation Modal -->
+  <div class="modal fade" id="emptyTrashModal" tabindex="-1" aria-labelledby="emptyTrashModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="emptyTrashModalLabel">Xác nhận dọn sạch thùng rác</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo: Hành động này không thể hoàn tác!
+          </div>
+          <p>Bạn có chắc chắn muốn xóa vĩnh viễn tất cả các file trong thùng rác? Các file này sẽ không thể khôi phục sau khi xóa.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button type="button" class="btn btn-danger" id="confirmEmptyTrashBtn">
+            <i class="bi bi-trash"></i> Xóa vĩnh viễn tất cả
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Permanently Confirmation Modal -->
+  <div class="modal fade" id="deletePermanentlyModal" tabindex="-1" aria-labelledby="deletePermanentlyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deletePermanentlyModalLabel">Xác nhận xóa vĩnh viễn</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo: Hành động này không thể hoàn tác!
+          </div>
+          <p>Bạn có chắc chắn muốn xóa vĩnh viễn file này? File này sẽ không thể khôi phục sau khi xóa.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button type="button" class="btn btn-danger" id="confirmDeletePermanentlyBtn">
+            <i class="bi bi-trash"></i> Xóa vĩnh viễn
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Calculate days left for each file
+      document.querySelectorAll('.days-left').forEach(span => {
+        const deletedAt = new Date(span.getAttribute('data-deleted-at'));
+        const expiryDate = new Date(deletedAt);
+        expiryDate.setDate(expiryDate.getDate() + 30); // 30 days retention
+        
+        const today = new Date();
+        const daysLeft = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+        
+        span.textContent = daysLeft > 0 ? daysLeft : 0;
+      });
+      
+      // Empty trash button
+      const emptyTrashBtn = document.getElementById('emptyTrashBtn');
+      const emptyTrashModal = new bootstrap.Modal(document.getElementById('emptyTrashModal'));
+      const confirmEmptyTrashBtn = document.getElementById('confirmEmptyTrashBtn');
+      
+      emptyTrashBtn.addEventListener('click', function() {
+        emptyTrashModal.show();
+      });
+      
+      confirmEmptyTrashBtn.addEventListener('click', function() {
+        // Call API to empty trash
+        fetch('/api/trash/empty', {
+          method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            window.location.reload();
+          } else {
+            alert('Lỗi khi dọn thùng rác: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Có lỗi xảy ra khi dọn thùng rác.');
+        })
+        .finally(() => {
+          emptyTrashModal.hide();
+        });
+      });
+      
+      // Delete permanently buttons
+      const deletePermanentlyBtns = document.querySelectorAll('.delete-permanently-btn');
+      const deletePermanentlyModal = new bootstrap.Modal(document.getElementById('deletePermanentlyModal'));
+      const confirmDeletePermanentlyBtn = document.getElementById('confirmDeletePermanentlyBtn');
+      let fileIdToDelete = null;
+      
+      deletePermanentlyBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          fileIdToDelete = this.getAttribute('data-id');
+          deletePermanentlyModal.show();
+        });
+      });
+      
+      confirmDeletePermanentlyBtn.addEventListener('click', function() {
+        if (!fileIdToDelete) return;
+        
+        // Call API to delete permanently
+        fetch(`/api/files/${fileIdToDelete}/permanent`, {
+          method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            window.location.reload();
+          } else {
+            alert('Lỗi khi xóa file: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Có lỗi xảy ra khi xóa file.');
+        })
+        .finally(() => {
+          deletePermanentlyModal.hide();
+          fileIdToDelete = null;
+        });
+      });
+    });
+  </script>
+</body>
+</html> 
