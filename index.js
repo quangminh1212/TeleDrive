@@ -2267,7 +2267,27 @@ async function handleCommandLineArgs() {
   }
 }
 
-// Khởi tạo server khi mô-đun được nạp trực tiếp
+// Make sure to place this right above the last middleware error handlers
+// Move the error and 404 handlers to the very end of routes
+
+// Middleware xử lý lỗi (move to end)
+app.use((err, req, res, next) => {
+  console.error('Lỗi server:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Lỗi server: ' + (err.message || 'Không xác định')
+  });
+});
+
+// Middleware xử lý route không tồn tại (move to end)
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'API endpoint không tồn tại'
+  });
+});
+
+// Start the application
 if (require.main === module) {
   (async () => {
     // Kiểm tra file .env
@@ -2310,6 +2330,10 @@ if (require.main === module) {
         }
       }
     }
+    
+    // Print bot and chat id info for debugging
+    console.log('Current BOT_TOKEN:', process.env.BOT_TOKEN ? `${process.env.BOT_TOKEN.substring(0, 8)}...` : 'not set');
+    console.log('Current CHAT_ID:', process.env.CHAT_ID || 'not set');
     
     // Xử lý tham số dòng lệnh nếu có
     const shouldExit = await handleCommandLineArgs();
@@ -2432,23 +2456,6 @@ app.post('/api/settings', (req, res) => {
       error: 'Lỗi server khi cập nhật cài đặt'
     });
   }
-});
-
-// Middleware xử lý lỗi
-app.use((err, req, res, next) => {
-  console.error('Lỗi server:', err);
-  res.status(500).json({
-    success: false,
-    error: 'Lỗi server: ' + (err.message || 'Không xác định')
-  });
-});
-
-// Middleware xử lý route không tồn tại
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'API endpoint không tồn tại'
-  });
 });
 
 // API endpoint để đồng bộ file
@@ -3128,9 +3135,6 @@ function createVirtualFolderStructure(files) {
   
   return rootFolder;
 }
-
-// Middleware xử lý lỗi
-// ... existing code ...
 
 // API endpoint để xem trước file
 app.get('/api/files/:id/preview', async (req, res) => {
