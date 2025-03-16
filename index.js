@@ -139,6 +139,21 @@ async function startApp() {
       process.exit(0);
     });
     
+    // Đồng bộ files khi khởi động
+    setTimeout(async () => {
+      try {
+        log('Bắt đầu đồng bộ file ban đầu...');
+        const syncResult = await fileService.syncFiles();
+        if (syncResult.success) {
+          log(`Đồng bộ ban đầu hoàn tất: ${syncResult.syncedCount} file đồng bộ, ${syncResult.newFiles} file mới, ${syncResult.skippedCount} file bỏ qua, ${syncResult.errorCount} lỗi`);
+        } else {
+          log(`Đồng bộ ban đầu thất bại: ${syncResult.error}`, 'error');
+        }
+      } catch (error) {
+        log(`Lỗi khi đồng bộ ban đầu: ${error.message}`, 'error');
+      }
+    }, 5000); // Đợi 5 giây sau khi khởi động
+    
     // Lập lịch đồng bộ file
     if (config.AUTO_SYNC) {
       log(`Đã bật đồng bộ tự động. Sẽ đồng bộ mỗi ${config.SYNC_INTERVAL / (60 * 60 * 1000)} giờ.`);
@@ -148,7 +163,7 @@ async function startApp() {
         fileService.syncFiles()
           .then(result => {
             if (result.success) {
-              log(`Đồng bộ tự động hoàn tất: ${result.syncedCount} file đồng bộ, ${result.skippedCount} file bỏ qua, ${result.errorCount} lỗi`);
+              log(`Đồng bộ tự động hoàn tất: ${result.syncedCount} file đồng bộ, ${result.newFiles} file mới, ${result.skippedCount} file bỏ qua, ${result.errorCount} lỗi`);
             } else {
               log(`Đồng bộ tự động thất bại: ${result.error}`, 'error');
             }
@@ -163,7 +178,7 @@ async function startApp() {
         fileService.syncFiles()
           .then(result => {
             if (result.success) {
-              log(`Đồng bộ tự động hoàn tất: ${result.syncedCount} file đồng bộ, ${result.skippedCount} file bỏ qua, ${result.errorCount} lỗi`);
+              log(`Đồng bộ tự động hoàn tất: ${result.syncedCount} file đồng bộ, ${result.newFiles} file mới, ${result.skippedCount} file bỏ qua, ${result.errorCount} lỗi`);
             } else {
               log(`Đồng bộ tự động thất bại: ${result.error}`, 'error');
             }
@@ -172,6 +187,8 @@ async function startApp() {
             log(`Lỗi khi đồng bộ tự động: ${error.message}`, 'error');
           });
       }, config.SYNC_INTERVAL);
+    } else {
+      log('Tự động đồng bộ đã bị tắt trong cấu hình.', 'warn');
     }
     
     // Lập lịch dọn dẹp tự động
