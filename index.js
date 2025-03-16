@@ -2353,11 +2353,24 @@ app.post('/api/sync', async (req, res) => {
     // Đồng bộ files
     const syncCount = await syncFiles();
     
+    // Đọc lại database để có thông tin mới nhất
+    const filesData = readFilesDb();
+    
+    // Thống kê
+    const stats = {
+      total: filesData.length,
+      synced: filesData.filter(f => f.telegramFileId && !f.needsSync).length,
+      needsSync: filesData.filter(f => f.needsSync).length,
+      errors: filesData.filter(f => f.syncError).length
+    };
+    
     // Trả về kết quả
     return res.json({
       success: true,
       message: `Đã đồng bộ thành công ${syncCount} files với Telegram`,
-      newFiles: syncCount
+      syncedCount: syncCount,
+      stats: stats,
+      lastSync: new Date().toISOString()
     });
   } catch (error) {
     console.error('Lỗi API đồng bộ:', error);
@@ -3610,4 +3623,110 @@ function formatDate(dateString) {
     return dateString || '';
   }
 }
+
+// ... existing code ...
+
+// API endpoint để kiểm tra và sửa dữ liệu file
+app.post('/api/check-files', async (req, res) => {
+  try {
+    if (!bot || !botActive) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bot Telegram không hoạt động'
+      });
+    }
+    
+    // Đọc database
+    let filesData = readFilesDb();
+    const totalFiles = filesData.length;
+    
+    // Số lượng file đã sửa
+    let fixedCount = 0;
+    
+    // Kiểm tra từng file
+    for (let i = 0; i < filesData.length; i++) {
+      const file = filesData[i];
+      let isFixed = false;
+      
+      // Kiểm tra trạng thái file
+      if (file.localPath && fs.existsSync(file.localPath)) {
+        if (file.fileStatus !== 'local') {
+          file.fileStatus = 'local';
+          isFixed = true;
+        }
+      } else if (file.telegramFileId) {
+        if (file.fileStatus !== 'telegram') {
+          file.fileStatus = 'telegram';
+          isFixed = true;
+        }
+      } else {
+        if (file.fileStatus !== 'missing') {
+          file.fileStatus = 'missing';
+          file.needsSync = true;
+          isFixed = true;
+        }
+      }
+      
+      // Kiểm tra và sửa tên file nếu có encoding sai
+      if (file.name && file.name.includes('%')) {
+        try {
+          file.name = decodeURIComponent(file.name);
+          isFixed = true;
+        } catch (e) {
+          console.error(`Không thể decode tên file: ${file.name}`, e);
+        }
+      }
+      
+      // Kiểm tra và thêm trường mimeType nếu thiếu
+      if (!file.mimeType && file.name) {
+        file.mimeType = getMimeType(file.name);
+        isFixed = true;
+      }
+      
+      // Kiểm tra và thêm trường fileType nếu thiếu
+      if (!file.fileType && file.name) {
+        file.fileType = getFileType(file.name);
+        isFixed = true;
+      }
+      
+      // Đánh dấu đã sửa nếu có thay đổi
+      if (isFixed) {
+        fixedCount++;
+      }
+    }
+    
+    // Lưu lại database nếu có thay đổi
+    if (fixedCount > 0) {
+      saveFilesDb(filesData);
+    }
+    
+    // Đọc lại database để có thông tin mới nhất
+    filesData = readFilesDb();
+    
+    // Thống kê
+    const stats = {
+      total: totalFiles,
+      fixed: fixedCount,
+      local: filesData.filter(f => f.fileStatus === 'local').length,
+      telegram: filesData.filter(f => f.fileStatus === 'telegram').length,
+      missing: filesData.filter(f => f.fileStatus === 'missing').length,
+      needsSync: filesData.filter(f => f.needsSync).length
+    };
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: `Đã kiểm tra và sửa ${fixedCount} files`,
+      stats: stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Lỗi API kiểm tra file:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi kiểm tra files'
+    });
+  }
+});
+
 // ... existing code ...
