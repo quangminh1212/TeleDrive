@@ -4013,7 +4013,7 @@ app.use((req, res) => {
 
 // ... existing code ...
 // API endpoint để xem chi tiết các file và trạng thái đồng bộ
-app.get('/api/files/status', (req, res) => {
+app.get('/api/files-status', (req, res) => {
   try {
     console.log('===== KIỂM TRA TRẠNG THÁI CÁC FILE =====');
     const files = readFilesDb();
