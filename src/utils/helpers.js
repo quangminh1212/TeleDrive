@@ -135,29 +135,6 @@ function guessFileType(fileName) {
 }
 
 /**
- * Ghi log ra console
- * @param {String} message Nội dung log
- * @param {String} type Loại log (info, error, warning)
- */
-function log(message, type = 'info') {
-  const date = new Date();
-  const formattedDate = formatDate(date);
-  
-  switch (type) {
-    case 'error':
-      console.error(`[${formattedDate}] ERROR: ${message}`);
-      break;
-    case 'warning':
-      console.warn(`[${formattedDate}] WARNING: ${message}`);
-      break;
-    case 'info':
-    default:
-      console.log(`[${formattedDate}] INFO: ${message}`);
-      break;
-  }
-}
-
-/**
  * Dọn dẹp thư mục tạm
  */
 function cleanupTempDir() {
@@ -255,33 +232,57 @@ const formatFileSize = (bytes, decimals = 2) => {
 };
 
 /**
- * Format date to localized string
- * @param {string|Date} date - Date to format
- * @returns {string} Formatted date string
+ * Định dạng thời gian
+ * @param {Date|String|Number} date Thời gian cần định dạng
+ * @returns {String} Thời gian đã định dạng
  */
-const formatDate = (date) => {
-  if (!date) return '';
+function formatDate(date) {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
   
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  return dateObj.toLocaleString('vi-VN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
 
 /**
- * Get MIME type from file extension
- * @param {string} filename - Filename with extension
- * @returns {string} MIME type or default
+ * Lấy MIME type từ tên file
+ * @param {String} fileName Tên file
+ * @returns {String} MIME type
  */
-const getMimeType = (filename) => {
-  const mimeType = mime.lookup(filename);
-  return mimeType || 'application/octet-stream';
-};
+function getMimeType(fileName) {
+  const ext = path.extname(fileName).toLowerCase();
+  
+  const mimeTypes = {
+    '.html': 'text/html',
+    '.htm': 'text/html',
+    '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.pdf': 'application/pdf',
+    '.doc': 'application/msword',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.xls': 'application/vnd.ms-excel',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.ppt': 'application/vnd.ms-powerpoint',
+    '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    '.zip': 'application/zip',
+    '.rar': 'application/x-rar-compressed',
+    '.mp3': 'audio/mpeg',
+    '.mp4': 'video/mp4',
+    '.txt': 'text/plain',
+    '.csv': 'text/csv'
+  };
+  
+  return mimeTypes[ext] || 'application/octet-stream';
+}
 
 /**
  * Clean up temporary files older than specified age
@@ -356,7 +357,6 @@ module.exports = {
   cleanupTempDir,
   ensureDirectoryExists,
   formatFileSize,
-  getMimeType,
   cleanupTempFiles,
   createSecureFilename,
   sleep
