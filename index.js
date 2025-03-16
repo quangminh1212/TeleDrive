@@ -2210,7 +2210,6 @@ async function handleCommandLineArgs() {
 // Make sure to place this right above the last middleware error handlers
 // Move the error and 404 handlers to the very end of routes
 
-// Middleware xử lý lỗi (move to end)
 app.use((err, req, res, next) => {
   console.error('Lỗi server:', err);
   res.status(500).json({
@@ -2219,7 +2218,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Middleware xử lý route không tồn tại (move to end)
 app.use((req, res) => {
   res.status(404).json({
     success: false,
