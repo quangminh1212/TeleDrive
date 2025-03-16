@@ -856,227 +856,91 @@ async function sendMessage(message, options = {}) {
 }
 
 /**
- * Lấy danh sách file từ Telegram
- * @returns {Promise<Array>} Mảng chứa các file từ Telegram
+ * Lấy danh sách file từ chat
+ * @param {Number} limit Số lượng file tối đa cần lấy
+ * @param {Object} options Tùy chọn bổ sung
+ * @returns {Promise<Array>} Danh sách file
  */
-async function getFilesFromChat() {
+async function getFilesFromChat(limit = 10, options = {}) {
   try {
-    if (!bot) {
-      console.log('Bot chưa được khởi tạo, đang khởi tạo lại...');
-      initBot();
-      
-      // Đợi bot khởi động với timeout
-      const timeout = 5000; // 5 giây
-      const startTime = Date.now();
-      
-      while (!isBotActive() && (Date.now() - startTime < timeout)) {
-        // Đợi 200ms mỗi lần kiểm tra
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      
-      if (!isBotActive()) {
-        console.error('Không thể khởi tạo bot.');
-        console.log(getStartInstructions());
-        return [];
-      }
-    }
-
-    // Lấy chat ID từ config
-    let validChatId = chatId || config.TELEGRAM_CHAT_ID;
-    
-    if (!validChatId) {
-      console.log('Chưa thiết lập TELEGRAM_CHAT_ID. Đang thử tìm chat ID tự động...');
-      
-      // Thử lấy chat ID từ updates gần đây
-      try {
-        // Đảm bảo bot đã sẵn sàng
-        if (!isBotActive()) {
-          console.log('Bot không hoạt động, không thể tìm chat ID');
-          console.log(getStartInstructions());
-          return [];
-        }
-        
-        try {
-          const updates = await bot.telegram.getUpdates({limit: 100});
-          console.log(`Đã nhận ${updates.length} updates gần đây`);
-          
-          if (updates.length > 0) {
-            // Lọc các chat IDs từ updates
-            const chatIds = new Set();
-            
-            for (const update of updates) {
-              if (update.message?.chat?.id) {
-                chatIds.add(update.message.chat.id.toString());
-              }
-            }
-            
-            console.log(`Đã tìm thấy ${chatIds.size} chat IDs từ updates:`, [...chatIds]);
-            
-            // Thử từng chat ID
-            for (const potentialChatId of chatIds) {
-              try {
-                // Thử gửi tin nhắn tới chat ID này
-                await bot.telegram.sendMessage(
-                  potentialChatId,
-                  `Đang thử kết nối với chat ID: ${potentialChatId}`
-                );
-                
-                console.log(`Tìm thấy chat ID hợp lệ: ${potentialChatId}`);
-                validChatId = potentialChatId;
-                
-                // Lưu chat ID cho lần sau
-                chatId = potentialChatId;
-                
-                // Thông báo cho người dùng cập nhật .env
-                await bot.telegram.sendMessage(
-                  potentialChatId,
-                  `Chat ID của bạn là: ${potentialChatId}\n\nVui lòng cập nhật file .env với TELEGRAM_CHAT_ID=${potentialChatId}`
-                );
-                
-                break;
-              } catch (err) {
-                console.log(`Chat ID ${potentialChatId} không hợp lệ: ${err.message}`);
-              }
-            }
+    // Kiểm tra bot có sẵn sàng không
+    if (!isBotActive()) {
+      if (simulationMode) {
+        console.log(`[Chế độ giả lập] Lấy danh sách file từ chat (limit: ${limit})`);
+        return [
+          { 
+            file_id: 'simulated_file_1', 
+            file_name: 'simulated_file_1.pdf',
+            mime_type: 'application/pdf',
+            file_size: 1024,
+            date: new Date().toISOString()
+          },
+          { 
+            file_id: 'simulated_file_2', 
+            file_name: 'simulated_file_2.jpg',
+            mime_type: 'image/jpeg',
+            file_size: 2048,
+            date: new Date().toISOString()
           }
-        } catch (updatesError) {
-          console.error('Lỗi khi lấy updates:', updatesError.message);
-        }
-      } catch (e) {
-        console.error('Lỗi trong quá trình tìm chat ID:', e.message);
+        ];
       }
-    }
-    
-    // Nếu vẫn không tìm thấy chat ID
-    if (!validChatId) {
-      console.log('Không tìm thấy chat ID hợp lệ. Vui lòng làm theo hướng dẫn sau:');
-      console.log(getStartInstructions());
+      
+      console.log('Bot chưa sẵn sàng, không thể lấy danh sách file');
       return [];
     }
     
-    console.log(`Đang tìm file trong chat ID: ${validChatId}`);
-    
-    // Biến để lưu danh sách file
-    let fileList = [];
-    
-    // Thử gửi tin nhắn test để kiểm tra chat ID có tồn tại không
-    try {
-      if (isBotActive()) {
-        const testMsg = `Đang kiểm tra kết nối và tìm file...\n${new Date().toLocaleString()}`;
-        try {
-          await bot.telegram.sendMessage(validChatId, testMsg);
-          console.log(`Đã gửi tin nhắn kiểm tra tới chat ID ${validChatId} thành công`);
-        } catch (sendError) {
-          console.error(`Không thể gửi tin nhắn tới chat ID ${validChatId}: ${sendError.message}`);
-          console.log('Vui lòng cập nhật lại chat ID hoặc nhắn tin với bot để lấy chat ID chính xác');
-          console.log(getStartInstructions());
-          return [];
-        }
-      } else {
-        console.log('Bot không hoạt động, không thể gửi tin nhắn kiểm tra');
-        return [];
-      }
-    } catch (e) {
-      console.error('Lỗi khi kiểm tra chat ID:', e.message);
+    // Kiểm tra chat ID
+    if (!chatId) {
+      console.log('Chưa có chat ID, không thể lấy danh sách file');
       return [];
     }
     
-    // Phương pháp 1: Sử dụng getUpdates để lấy tin nhắn gần đây
-    try {
-      console.log('Phương pháp 1: Đang thử sử dụng getUpdates...');
-      const updates = await bot.telegram.getUpdates({
-        limit: 100,
-        allowed_updates: ['message']
-      });
-      
-      console.log(`Nhận được ${updates.length} updates từ getUpdates`);
-      
-      // Lọc ra các updates có chứa tin nhắn từ chat ID cần tìm
-      const targetUpdates = updates.filter(update => 
-        update.message?.chat?.id.toString() === validChatId.toString()
-      );
-      
-      console.log(`Có ${targetUpdates.length} updates từ chat ID ${validChatId}`);
-      
-      // Lấy các file từ tin nhắn
-      for (const update of targetUpdates) {
-        if (update.message?.document) {
-          console.log(`Tìm thấy file: ${update.message.document.file_name}`);
-          fileList.push({
-            id: update.message.document.file_id,
-            name: update.message.document.file_name,
-            size: update.message.document.file_size
-          });
-        }
-      }
-    } catch (updatesError) {
-      console.error('Lỗi khi lấy updates:', updatesError.message);
+    // Chuẩn bị options
+    const fetchOptions = {
+      limit: limit > 100 ? 100 : limit, // Giới hạn tối đa 100 tin nhắn
+      ...options
+    };
+    
+    // Lấy tin nhắn từ chat với timeout
+    const messages = await Promise.race([
+      bot.telegram.getChatHistory(chatId, fetchOptions),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout khi lấy lịch sử chat')), 15000)
+      )
+    ]).catch(error => {
+      console.error('Lỗi khi lấy lịch sử chat:', error.message);
+      return [];
+    });
+    
+    if (!messages || !Array.isArray(messages)) {
+      console.log('Không lấy được tin nhắn từ chat');
+      return [];
     }
     
-    // Phương pháp 2: Truy vấn trực tiếp API Telegram
-    if (fileList.length === 0) {
-      try {
-        console.log('Phương pháp 2: Sử dụng API trực tiếp để lấy tin nhắn gần đây');
-        const telegramToken = config.TELEGRAM_BOT_TOKEN;
+    // Lọc ra các tin nhắn có file
+    const files = messages
+      .filter(msg => msg.document || msg.photo || msg.video || msg.audio || msg.voice)
+      .map(msg => {
+        let fileObj = msg.document || (msg.photo ? msg.photo[msg.photo.length - 1] : null) || msg.video || msg.audio || msg.voice;
         
-        const response = await axios.get(`https://api.telegram.org/bot${telegramToken}/getUpdates?limit=100&allowed_updates=["message"]`);
+        if (!fileObj) return null;
         
-        if (response.data && response.data.ok && response.data.result) {
-          const apiUpdates = response.data.result;
-          console.log(`Nhận được ${apiUpdates.length} updates từ API trực tiếp`);
-          
-          // Lọc tin nhắn từ chat ID cần tìm
-          const filteredUpdates = apiUpdates.filter(update => 
-            update.message?.chat?.id.toString() === validChatId.toString()
-          );
-          
-          console.log(`Có ${filteredUpdates.length} tin nhắn từ chat ID ${validChatId}`);
-          
-          // Lấy các file từ tin nhắn
-          for (const update of filteredUpdates) {
-            if (update.message?.document) {
-              const doc = update.message.document;
-              console.log(`Tìm thấy file: ${doc.file_name}`);
-              
-              // Kiểm tra trùng lặp
-              const exists = fileList.some(f => f.id === doc.file_id);
-              if (!exists) {
-                fileList.push({
-                  id: doc.file_id,
-                  name: doc.file_name,
-                  size: doc.file_size
-                });
-              }
-            }
-          }
-        }
-      } catch (apiError) {
-        console.error('Lỗi khi truy vấn API Telegram:', apiError.message);
-      }
-    }
+        return {
+          message_id: msg.message_id,
+          file_id: fileObj.file_id,
+          file_unique_id: fileObj.file_unique_id,
+          file_name: fileObj.file_name || `file_${fileObj.file_id.substring(0, 10)}`,
+          mime_type: fileObj.mime_type,
+          file_size: fileObj.file_size,
+          date: new Date(msg.date * 1000).toISOString(),
+          caption: msg.caption
+        };
+      })
+      .filter(file => file !== null);
     
-    // Nếu vẫn không tìm thấy file, thử gửi tin nhắn thông báo
-    if (fileList.length === 0) {
-      try {
-        if (isBotActive()) {
-          await bot.telegram.sendMessage(
-            validChatId,
-            'Không tìm thấy file nào trong cuộc trò chuyện này. Vui lòng gửi file đính kèm để tiến hành đồng bộ.'
-          );
-          console.log('Đã gửi thông báo yêu cầu gửi file');
-        }
-      } catch (sendError) {
-        console.error(`Không thể gửi tin nhắn đến chat ID ${validChatId}:`, sendError.message);
-        console.log('Vui lòng cập nhật Chat ID trong file .env hoặc nhắn tin với bot để lấy ID đúng');
-        console.log(getStartInstructions());
-      }
-    }
-    
-    console.log(`Tìm thấy tổng cộng ${fileList.length} file`);
-    return fileList;
+    return files;
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách file từ Telegram:', error.message);
-    // Trả về mảng rỗng thay vì throw lỗi tiếp để tránh crash ứng dụng
+    console.error('Lỗi khi lấy danh sách file từ chat:', error.message);
     return [];
   }
 }
