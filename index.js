@@ -84,7 +84,7 @@ let bot = null;
 let botActive = false;
 let needRestartBot = false;
 
-// HÃ m format bytes
+// Hàm format bytes
 function formatBytes(bytes, decimals = 2) {
     if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -94,12 +94,12 @@ function formatBytes(bytes, decimals = 2) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-// HÃ m format date
+// Hàm format date
 function formatDate(dateString) {
-    if (!dateString) return 'KhÃ´ng xÃ¡c Ä'á»‹nh';
+    if (!dateString) return 'Không xác định';
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'KhÃ´ng xÃ¡c Ä'á»‹nh';
+        if (isNaN(date.getTime())) return 'Không xác định';
         return date.toLocaleDateString('vi-VN', {
             year: 'numeric',
             month: '2-digit',
@@ -109,7 +109,7 @@ function formatDate(dateString) {
         });
     } catch (error) {
         console.error('Lá»—i Ä‘á»‹nh dáº¡ng ngÃ y:', error);
-        return 'KhÃ´ng xÃ¡c Ä‘á»‹nh';
+        return 'Không xác định';
     }
 }
 
@@ -2840,7 +2840,7 @@ app.post('/api/folders', express.json(), (req, res) => {
     }
     
     // Kiá»ƒm tra tÃªn thÆ° má»¥c há»£p lá»‡ (khÃ´ng chá»©a kÃ½ tá»± Ä‘áº·c biá»‡t)
-    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä‘Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»“á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ’Ã“á»ŽÃ•á»ŒÃ”á»á»’á»”á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(folderName)) {
+    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä‘Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»“á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ’Ã“á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(folderName)) {
       return res.status(400).json({
         success: false,
         error: 'TÃªn thÆ° má»¥c chá»©a kÃ½ tá»± khÃ´ng há»£p lá»‡'
@@ -2918,7 +2918,7 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     }
     
     // Kiá»ƒm tra tÃªn thÆ° má»¥c há»£p lá»‡
-    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä‘Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»“á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ’Ã“á»ŽÃ•á»ŒÃ”á»á»’á»”á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(newName)) {
+    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä'Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»"á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ'Ã"á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(newName)) {
       return res.status(400).json({
         success: false,
         error: 'TÃªn má»›i chá»©a kÃ½ tá»± khÃ´ng há»£p lá»‡'
@@ -2944,7 +2944,7 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     if (fs.existsSync(newFolderPath)) {
       return res.status(400).json({
         success: false,
-        error: 'ThÆ° má»¥c má»›i Ä‘Ã£ tá»“n táº¡i'
+        error: 'ThÆ° má»¥c má»›i Ä‘Ã£ tá»"n táº¡i'
       });
     }
     
@@ -2969,7 +2969,7 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'ÄÃ£ Ä‘á»•i tÃªn thÆ° má»¥c thÃ nh cÃ´ng',
+      message: 'ÄÃ£ Ä'á»•i tÃªn thÆ° má»¥c thÃ nh cÃ´ng',
       folder: {
         oldPath: folderPath,
         newPath: path.relative(baseFolder, newFolderPath),
@@ -2978,10 +2978,10 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lá»—i Ä‘á»•i tÃªn thÆ° má»¥c:', error);
+    console.error('Lá»—i Ä'á»•i tÃªn thÆ° má»¥c:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi Ä‘á»•i tÃªn thÆ° má»¥c'
+      error: error.message || 'Lá»—i server khi Ä'á»•i tÃªn thÆ° má»¥c'
     });
   }
 });
@@ -3006,7 +3006,7 @@ app.delete('/api/folders', express.json(), (req, res) => {
     if (!fs.existsSync(fullFolderPath) || !fs.statSync(fullFolderPath).isDirectory()) {
       return res.status(404).json({
         success: false,
-        error: 'ThÆ° má»¥c khÃ´ng tá»“n táº¡i'
+        error: 'ThÆ° má»¥c khÃ´ng tá»"n táº¡i'
       });
     }
     
@@ -3015,7 +3015,7 @@ app.delete('/api/folders', express.json(), (req, res) => {
     if (folderContents.length > 0 && !deleteFiles) {
       return res.status(400).json({
         success: false,
-        error: 'ThÆ° má»¥c khÃ´ng trá»‘ng. Sá»­ dá»¥ng deleteFiles=true Ä‘á»ƒ xÃ³a cáº£ ná»™i dung bÃªn trong.',
+        error: 'ThÆ° má»¥c khÃ´ng trá»"ng. Sá»­ dá»¥ng deleteFiles=true Ä'á»ƒ xÃ³a cáº£ ná»™i dung bÃªn trong.',
         filesCount: folderContents.length
       });
     }
@@ -3033,7 +3033,7 @@ app.delete('/api/folders', express.json(), (req, res) => {
             // XÃ³a file vÄ©nh viá»…n khá»i database
             filesData.splice(i, 1);
           } else {
-            // ÄÃ¡nh dáº¥u file Ä‘Ã£ bá»‹ xÃ³a local
+            // ÄÃ¡nh dáº¥u file Ä'Ã£ bá»‹ xÃ³a local
             file.localPath = null;
             file.fileStatus = file.telegramFileId ? 'telegram' : 'missing';
           }
@@ -3041,7 +3041,7 @@ app.delete('/api/folders', express.json(), (req, res) => {
         }
       }
       
-      // LÆ°u láº¡i database náº¿u cÃ³ thay Ä‘á»•i
+      // LÆ°u láº¡i database náº¿u cÃ³ thay Ä'á»•i
       if (deletedFiles > 0) {
         saveFilesDb(filesData);
       }
@@ -3056,13 +3056,13 @@ app.delete('/api/folders', express.json(), (req, res) => {
         deletedFiles: deletedFiles
       });
     } else {
-      // XÃ³a thÆ° má»¥c trá»‘ng
+      // XÃ³a thÆ° má»¥c trá»"ng
       fs.rmdirSync(fullFolderPath);
       
       // Tráº£ vá» káº¿t quáº£
       return res.json({
         success: true,
-        message: 'ÄÃ£ xÃ³a thÆ° má»¥c trá»‘ng thÃ nh cÃ´ng'
+        message: 'ÄÃ£ xÃ³a thÆ° má»¥c trá»"ng thÃ nh cÃ´ng'
       });
     }
   } catch (error) {
@@ -3130,7 +3130,7 @@ function createVirtualFolderStructure(files) {
       // Táº¡o cÃ¡c thÆ° má»¥c trong Ä‘Æ°á»ng dáº«n
       const pathParts = relativePath.split(path.sep);
       
-      // Bá» qua pháº§n tá»­ cuá»‘i (tÃªn file)
+      // Bá» qua pháº§n tá»­ cuá»'i (tÃªn file)
       pathParts.pop();
       
       if (pathParts.length === 0) {
@@ -3149,7 +3149,7 @@ function createVirtualFolderStructure(files) {
         let currentPath = '';
         let parentFolderId = 'root';
         
-        // Táº¡o cÃ¡c thÆ° má»¥c con náº¿u chÆ°a tá»“n táº¡i
+        // Táº¡o cÃ¡c thÆ° má»¥c con náº¿u chÆ°a tá»"n táº¡i
         for (let i = 0; i < pathParts.length; i++) {
           const folderName = pathParts[i];
           
@@ -3162,7 +3162,7 @@ function createVirtualFolderStructure(files) {
           // Táº¡o id cho thÆ° má»¥c
           const folderId = currentPath;
           
-          // Kiá»ƒm tra thÆ° má»¥c Ä‘Ã£ tá»“n táº¡i chÆ°a
+          // Kiá»ƒm tra thÆ° má»¥c Ä'Ã£ tá»"n táº¡i chÆ°a
           if (!foldersById[folderId]) {
             // Táº¡o thÆ° má»¥c má»›i
             const newFolder = {
@@ -3182,7 +3182,7 @@ function createVirtualFolderStructure(files) {
           parentFolderId = folderId;
         }
         
-        // ThÃªm file vÃ o thÆ° má»¥c cuá»‘i cÃ¹ng
+        // ThÃªm file vÃ o thÆ° má»¥c cuá»'i cÃ¹ng
         foldersById[parentFolderId].children.push({
           id: file.id,
           name: file.name,
@@ -3207,7 +3207,7 @@ app.get('/api/files/:id/preview', async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
       });
     }
     
