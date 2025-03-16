@@ -411,7 +411,7 @@ async function syncFiles() {
       
       if (needsSync && !fileExists) {
         console.log(`File "${file.name}" cáº§n Ä‘á»“ng bá»™ nhÆ°ng không tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n: ${file.localPath}`);
-        // ÄÃ¡nh dáº¥u file lÃ  Ä‘Ã£ xóa náº¿u không tÃ¬m tháº¥y
+        // ÄÃ¡nh dáº¥u file lÃ  Ä'Ã£ xóa náº¿u không tÃ¬m tháº¥y
         file.deleted = true;
         file.needsSync = false;
       }
@@ -419,7 +419,7 @@ async function syncFiles() {
       return needsSync && fileExists;
     });
     
-    console.log(`TÃ¬m tháº¥y ${filesToSync.length} file cáº§n Ä‘á»“ng bá»™ vÃ  tá»“n táº¡i trÃªn á»• Ä‘Ä©a`);
+    console.log(`TÃ¬m tháº¥y ${filesToSync.length} file cáº§n Ä‘á»“ng bá»™ vÃ  tá»“n táº¡i trÃªn á»• Ä'Ä©a`);
     
     if (filesToSync.length > 0) {
       console.log('Danh sÃ¡ch má»™t sá»‘ file cáº§n Ä‘á»“ng bá»™:');
@@ -2840,7 +2840,7 @@ app.post('/api/folders', express.json(), (req, res) => {
     }
     
     // Kiá»ƒm tra tên thư mục há»£p lá»‡ (không chá»©a kÃ½ tá»± Ä‘áº·c biá»‡t)
-    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä'Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»"á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ'Ã"á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(folderName)) {
+    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä‘Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»“á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ’Ã“á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(folderName)) {
       return res.status(400).json({
         success: false,
         error: 'TÃªn thư mục chá»©a kÃ½ tá»± không há»£p lá»‡'
@@ -2871,7 +2871,7 @@ app.post('/api/folders', express.json(), (req, res) => {
     if (fs.existsSync(folderPath)) {
       return res.status(400).json({
         success: false,
-        error: 'ThÆ° mục Ä‘Ã£ tá»"n táº¡i'
+        error: 'ThÆ° mục Ä‘Ã£ tá»“n táº¡i'
       });
     }
     
@@ -2918,7 +2918,7 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     }
     
     // Kiá»ƒm tra tên thư mục há»£p lá»‡
-    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä'Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»'á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ'Ã"á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(newName)) {
+    if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä'Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»"á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ'Ã"á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(newName)) {
       return res.status(400).json({
         success: false,
         error: 'TÃªn má»›i chá»©a kÃ½ tá»± không há»£p lá»‡'
@@ -2932,7 +2932,7 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     if (!fs.existsSync(fullFolderPath) || !fs.statSync(fullFolderPath).isDirectory()) {
       return res.status(404).json({
         success: false,
-        error: 'ThÆ° mục không tá»"n táº¡i'
+        error: 'ThÆ° mục không tá»“n táº¡i'
       });
     }
     
@@ -2940,11 +2940,11 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     const parentPath = path.dirname(fullFolderPath);
     const newFolderPath = path.join(parentPath, newName);
     
-    // Kiá»ƒm tra thư mục má»›i Ä'Ã£ tá»"n táº¡i chÆ°a
+    // Kiá»ƒm tra thư mục má»›i Ä‘Ã£ tá»“n táº¡i chÆ°a
     if (fs.existsSync(newFolderPath)) {
       return res.status(400).json({
         success: false,
-        error: 'Thư mục mới đã tồn tại'
+        error: 'ThÆ° mục má»›i Ä‘Ã£ tá»"n táº¡i'
       });
     }
     
@@ -3002,7 +3002,7 @@ app.delete('/api/folders', express.json(), (req, res) => {
     const baseFolder = path.join(STORAGE_PATH, 'uploads');
     const fullFolderPath = path.join(baseFolder, folderPath);
     
-    // Kiá»ƒm tra thư mục tá»"n táº¡i
+    // Kiá»ƒm tra thư mục tá»“n táº¡i
     if (!fs.existsSync(fullFolderPath) || !fs.statSync(fullFolderPath).isDirectory()) {
       return res.status(404).json({
         success: false,
@@ -3010,7 +3010,7 @@ app.delete('/api/folders', express.json(), (req, res) => {
       });
     }
     
-    // Kiá»ƒm tra thư mục cÃ³ trá»"ng không
+    // Kiá»ƒm tra thư mục cÃ³ trá»‘ng không
     const folderContents = fs.readdirSync(fullFolderPath);
     if (folderContents.length > 0 && !deleteFiles) {
       return res.status(400).json({
@@ -3207,7 +3207,7 @@ app.get('/api/files/:id/preview', async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không được để trống'
+        error: 'ID file không Ä'Æ°á»£c để trống'
       });
     }
     
@@ -3292,7 +3292,7 @@ app.get('/api/files/:id', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không được để trống'
+        error: 'ID file không Ä'Æ°á»£c để trống'
       });
     }
     
@@ -3346,7 +3346,7 @@ app.get('/api/files/:id/download', async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không được để trống'
+        error: 'ID file không Ä'Æ°á»£c để trống'
       });
     }
     
@@ -3377,7 +3377,7 @@ app.get('/api/files/:id/download', async (req, res) => {
         if (!botActive) {
           return res.status(400).json({
             success: false,
-            error: 'Bot Telegram không hoạt động'
+            error: 'Bot Telegram không hoáº¡t Ä'á»™ng'
           });
         }
         
@@ -3415,7 +3415,7 @@ app.post('/api/files/:id/share', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không được để trống'
+        error: 'ID file không Ä'Æ°á»£c để trống'
       });
     }
     
@@ -3486,7 +3486,7 @@ app.delete('/api/files/:id/share', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không được để trống'
+        error: 'ID file không Ä'Æ°á»£c để trống'
       });
     }
     
@@ -3554,21 +3554,21 @@ app.get('/share/:token', (req, res) => {
     const file = filesData.find(f => f.shareToken === shareToken);
     
     if (!file) {
-      return res.status(404).send('Link chia sẻ không tồn tại hoặc đã hết hạn');
+      return res.status(404).send('Link chia sáº» không tá»“n táº¡i hoáº·c Ä‘Ã£ háº¿t háº¡n');
     }
     
     // Kiá»ƒm tra thá»i háº¡n chia sáº»
     if (file.shareExpiry && new Date(file.shareExpiry) < new Date()) {
-      // XÃ³a thÃ´ng tin chia sáº» Ä'Ã£ háº¿t háº¡n
+      // XÃ³a thÃ´ng tin chia sáº» Ä‘Ã£ háº¿t háº¡n
       file.shareToken = null;
       file.shareExpiry = null;
       saveFilesDb(filesData);
       
-      return res.status(400).send('Link chia sáº» Ä'Ã£ háº¿t háº¡n');
+      return res.status(400).send('Link chia sáº» Ä‘Ã£ háº¿t háº¡n');
     }
     
-    // Redirect Ä'áº¿n trang xem trÆ°á»›c hoáº·c táº£i file
-      return res.status(400).send('Link chia sẻ đã hết hạn');
+    // Redirect Ä‘áº¿n trang xem trÆ°á»›c hoáº·c táº£i file
+    const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(file.fileType);
     
     if (isPreviewable) {
       return res.redirect(`/file/${file.id}`);
@@ -3581,17 +3581,17 @@ app.get('/share/:token', (req, res) => {
   }
 });
 
-// API láº¥y thá»'ng kÃª sá»­ dụng
+// API láº¥y thá»‘ng kÃª sá»­ dụng
 app.get('/api/stats', (req, res) => {
   try {
     // Äá»c database
     const filesData = readFilesDb();
     
-    // Thá»'ng kÃª tá»•ng sá»' file vÃ  dung lÆ°á»£ng
+    // Thá»‘ng kÃª tá»•ng sá»‘ file vÃ  dung lÆ°á»£ng
     const totalFiles = filesData.length;
     const totalSize = filesData.reduce((sum, file) => sum + (file.size || 0), 0);
     
-    // Thá»'ng kÃª theo loáº¡i file
+    // Thá»‘ng kÃª theo loáº¡i file
     const fileTypeStats = {};
     filesData.forEach(file => {
       const type = file.fileType || 'unknown';
@@ -3605,13 +3605,13 @@ app.get('/api/stats', (req, res) => {
       fileTypeStats[type].size += (file.size || 0);
     });
     
-    // Thá»'ng kÃª sá»' lÆ°á»£ng file trÃªn Telegram
+    // Thá»‘ng kÃª sá»‘ lÆ°á»£ng file trÃªn Telegram
     const telegramFiles = filesData.filter(file => file.telegramFileId).length;
     const telegramSize = filesData
       .filter(file => file.telegramFileId)
       .reduce((sum, file) => sum + (file.size || 0), 0);
     
-    // Thá»'ng kÃª sá»' lÆ°á»£ng file Ä'ang Ä'Æ°á»£c chia sáº»
+    // Thá»‘ng kÃª sá»‘ lÆ°á»£ng file Ä‘ang Ä‘Æ°á»£c chia sáº»
     const sharedFiles = filesData.filter(file => file.shareToken).length;
     
     // Format dung lÆ°á»£ng
@@ -3634,10 +3634,10 @@ app.get('/api/stats', (req, res) => {
       stats: formattedStats
     });
   } catch (error) {
-    console.error('Lỗi láº¥y thá»'ng kÃª:', error);
+    console.error('Lỗi láº¥y thá»‘ng kÃª:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lỗi server khi láº¥y thá»'ng kÃª'
+      error: error.message || 'Lỗi server khi láº¥y thá»‘ng kÃª'
     });
   }
 });
@@ -3663,13 +3663,13 @@ function formatDate(dateString) {
 
 // ... existing code ...
 
-// API endpoint Ä'á»ƒ kiá»ƒm tra vÃ  sá»­a dá»¯ liá»‡u file
+// API endpoint Ä‘á»ƒ kiá»ƒm tra vÃ  sá»­a dá»¯ liá»‡u file
 app.post('/api/check-files', async (req, res) => {
   try {
     console.log('===== KIá»‚M TRA VÃ€ Sá»¬A Dá»® LIá»†U FILES =====');
     const files = readFilesDb();
     
-    // Thá»'ng kÃª ban Ä'áº§u
+    // Thá»‘ng kÃª ban Ä‘áº§u
     const stats = {
       total: files.length,
       fixed: 0,
@@ -3687,51 +3687,51 @@ app.post('/api/check-files', async (req, res) => {
         stats.local++;
         file.fileStatus = 'local';
         
-        // Náº¿u file tá»"n táº¡i á»Ÿ local nhÆ°ng chÆ°a cÃ³ trÃªn Telegram, Ä'ánh dáº¥u cáº§n Ä'á»"ng bá»™
+        // Náº¿u file tá»“n táº¡i á»Ÿ local nhÆ°ng chÆ°a cÃ³ trÃªn Telegram, Ä‘Ã¡nh dáº¥u cáº§n Ä‘á»“ng bá»™
         if (!file.telegramFileId) {
           file.needsSync = true;
           stats.needsSync++;
           stats.fixed++;
-          console.log(`Ä'ánh dáº¥u file "${file.name}" cáº§n Ä'á»"ng bá»™ lÃªn Telegram`);
+          console.log(`ÄÃ¡nh dáº¥u file "${file.name}" cáº§n Ä‘á»“ng bá»™ lÃªn Telegram`);
         }
       } else {
         if (file.localPath) {
-          console.log(`File "${file.name}" không tá»"n táº¡i táº¡i Ä'Æ°á»ng dáº«n: ${file.localPath}`);
+          console.log(`File "${file.name}" không tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n: ${file.localPath}`);
         } else {
-          console.log(`File "${file.name}" không cÃ³ Ä'Æ°á»ng dáº«n local`);
+          console.log(`File "${file.name}" không cÃ³ Ä‘Æ°á»ng dáº«n local`);
         }
         
-        // Náº¿u file cÃ³ trÃªn Telegram, Ä'ánh dáº¥u lÃ  telegram-only
+        // Náº¿u file cÃ³ trÃªn Telegram, Ä‘Ã¡nh dáº¥u lÃ  telegram-only
         if (file.telegramFileId) {
           file.fileStatus = 'telegram';
           stats.telegram++;
         } else {
-          // Náº¿u file không cÃ³ á»Ÿ cả local vÃ  Telegram, Ä'ánh dáº¥u lÃ  missing
+          // Náº¿u file không cÃ³ á»Ÿ cả local vÃ  Telegram, Ä‘Ã¡nh dáº¥u lÃ  missing
           file.fileStatus = 'missing';
           stats.missing++;
         }
       }
       
-      // Ä'á»"ng bá»™ ngay láº­p tá»©c cÃ¡c file cáº§n thiáº¿t
+      // Äá»“ng bá»™ ngay láº­p tá»©c cÃ¡c file cáº§n thiáº¿t
       if (file.needsSync && hasLocalFile) {
-        console.log(`Thá»±c hiá»‡n Ä'á»"ng bá»™ file "${file.name}" ngay láº­p tá»©c`);
+        console.log(`Thá»±c hiá»‡n Ä‘á»“ng bá»™ file "${file.name}" ngay láº­p tá»©c`);
         try {
           await autoSyncFile(file);
           stats.fixed++;
-          console.log(`Ä'Ã£ Ä'á»"ng bá»™ thÃ nh công file "${file.name}"`);
+          console.log(`ÄÃ£ Ä‘á»“ng bá»™ thÃ nh công file "${file.name}"`);
         } catch (error) {
-          console.error(`Lỗi khi Ä'á»"ng bá»™ file "${file.name}":`, error);
+          console.error(`Lỗi khi Ä‘á»“ng bá»™ file "${file.name}":`, error);
         }
       }
     }
     
-    // LÆ°u láº¡i dá»¯ liá»‡u Ä'Ã£ cáº­p nháº­t
+    // LÆ°u láº¡i dá»¯ liá»‡u Ä‘Ã£ cáº­p nháº­t
     saveFilesDb(files);
-    console.log(`Ä'Ã£ kiá»ƒm tra vÃ  sá»­a ${stats.fixed} files`);
+    console.log(`ÄÃ£ kiá»ƒm tra vÃ  sá»­a ${stats.fixed} files`);
     
     res.json({
       success: true,
-      message: `Ä'Ã£ kiá»ƒm tra vÃ  sá»­a ${stats.fixed} files`,
+      message: `ÄÃ£ kiá»ƒm tra vÃ  sá»­a ${stats.fixed} files`,
       stats: stats,
       timestamp: new Date().toISOString()
     });
@@ -3745,16 +3745,16 @@ app.post('/api/check-files', async (req, res) => {
 });
 // ... existing code ...
 
-// API endpoint Ä'á»ƒ láº¥y nội dung thÃ¹ng rÃ¡c
+// API endpoint Ä‘á»ƒ láº¥y nội dung thÃ¹ng rÃ¡c
 app.get('/api/trash', (req, res) => {
   try {
-    // Ä'á»c database
+    // Äá»c database
     const filesData = readFilesDb();
     
-    // Lá»c cÃ¡c file Ä'Ã£ xóa
+    // Lá»c cÃ¡c file Ä‘Ã£ xóa
     const trashedFiles = filesData.filter(file => file.isDeleted);
     
-    // Ä'á»‹nh dáº¡ng dá»¯ liá»‡u trÆ°á»›c khi gá»­i Ä'i
+    // Äá»‹nh dáº¡ng dá»¯ liá»‡u trÆ°á»›c khi gá»­i Ä‘i
     const formattedFiles = trashedFiles.map(file => ({
       id: file.id,
       name: file.name,
@@ -3786,7 +3786,7 @@ app.get('/api/trash', (req, res) => {
   }
 });
 
-// API endpoint Ä'á»ƒ khÃ´i phá»¥c file tá»« thÃ¹ng rÃ¡c
+// API endpoint Ä‘á»ƒ khÃ´i phá»¥c file tá»« thÃ¹ng rÃ¡c
 app.post('/api/trash/:id/restore', (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3794,11 +3794,11 @@ app.post('/api/trash/:id/restore', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
+        error: 'ID file không Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
       });
     }
     
-    // Ä'á»c database
+    // Äá»c database
     const filesData = readFilesDb();
     
     // TÃ¬m file cáº§n khÃ´i phá»¥c
@@ -3807,7 +3807,7 @@ app.post('/api/trash/:id/restore', (req, res) => {
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'File không tá»"n táº¡i trong thÃ¹ng rÃ¡c'
+        error: 'File không tá»“n táº¡i trong thÃ¹ng rÃ¡c'
       });
     }
     
@@ -3821,7 +3821,7 @@ app.post('/api/trash/:id/restore', (req, res) => {
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'Ä'Ã£ khÃ´i phá»¥c file thÃ nh công',
+      message: 'ÄÃ£ khÃ´i phá»¥c file thÃ nh công',
       file: {
         id: filesData[fileIndex].id,
         name: filesData[fileIndex].name
@@ -3836,7 +3836,7 @@ app.post('/api/trash/:id/restore', (req, res) => {
   }
 });
 
-// API endpoint Ä'á»ƒ xóa vÄ©nh viá»…n file tá»« thÃ¹ng rÃ¡c
+// API endpoint Ä‘á»ƒ xóa vÄ©nh viá»…n file tá»« thÃ¹ng rÃ¡c
 app.delete('/api/trash/:id', (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3844,11 +3844,11 @@ app.delete('/api/trash/:id', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
+        error: 'ID file không Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
       });
     }
     
-    // Ä'á»c database
+    // Äá»c database
     const filesData = readFilesDb();
     
     // TÃ¬m file cáº§n xóa
@@ -3857,7 +3857,7 @@ app.delete('/api/trash/:id', (req, res) => {
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'File không tá»"n táº¡i trong thÃ¹ng rÃ¡c'
+        error: 'File không tá»“n táº¡i trong thÃ¹ng rÃ¡c'
       });
     }
     
@@ -3872,7 +3872,7 @@ app.delete('/api/trash/:id', (req, res) => {
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'Ä'Ã£ xóa vÄ©nh viá»…n file thÃ nh công',
+      message: 'ÄÃ£ xóa vÄ©nh viá»…n file thÃ nh công',
       deletedFile: {
         id: file.id,
         name: file.name
@@ -3887,19 +3887,19 @@ app.delete('/api/trash/:id', (req, res) => {
   }
 });
 
-// API endpoint Ä'á»ƒ lÃ m trá»'ng thÃ¹ng rÃ¡c
+// API endpoint Ä‘á»ƒ lÃ m trá»‘ng thÃ¹ng rÃ¡c
 app.delete('/api/trash', (req, res) => {
   try {
-    // Ä'á»c database
+    // Äá»c database
     let filesData = readFilesDb();
     
-    // Ä'áº¿m sá»' file trong thÃ¹ng rÃ¡c
+    // Äáº¿m sá»‘ file trong thÃ¹ng rÃ¡c
     const trashedCount = filesData.filter(file => file.isDeleted).length;
     
     if (trashedCount === 0) {
       return res.json({
         success: true,
-        message: 'ThÃ¹ng rÃ¡c Ä'Ã£ trá»'ng',
+        message: 'ThÃ¹ng rÃ¡c Ä‘Ã£ trá»‘ng',
         deletedCount: 0
       });
     }
@@ -3913,26 +3913,26 @@ app.delete('/api/trash', (req, res) => {
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'Ä'Ã£ lÃ m trá»'ng thÃ¹ng rÃ¡c',
+      message: 'ÄÃ£ lÃ m trá»‘ng thÃ¹ng rÃ¡c',
       deletedCount: trashedCount
     });
   } catch (error) {
-    console.error('Lỗi lÃ m trá»'ng thÃ¹ng rÃ¡c:', error);
+    console.error('Lỗi lÃ m trá»‘ng thÃ¹ng rÃ¡c:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lỗi server khi lÃ m trá»'ng thÃ¹ng rÃ¡c'
+      error: error.message || 'Lỗi server khi lÃ m trá»‘ng thÃ¹ng rÃ¡c'
     });
   }
 });
 
 // ... existing code ...
 
-// API endpoint Ä'á»ƒ cáº­p nháº­t cÃ  i Ä'áº·t
+// API endpoint Ä‘á»ƒ cáº­p nháº­t cÃ i Ä‘áº·t
 app.post('/api/settings', express.json(), async (req, res) => {
   try {
     const { apiKey, chatId, maxFileSize, enableSync } = req.body;
     
-    // Ä'á»c file .env
+    // Äá»c file .env
     const envPath = path.join(__dirname, '.env');
     let envContent = '';
     
@@ -3943,7 +3943,7 @@ app.post('/api/settings', express.json(), async (req, res) => {
     let newEnvContent = envContent;
     let restartAfterSave = false;
     
-    // Cáº­p nháº­t BOT_TOKEN náº¿u cÃ³ thay Ä'á»•i
+    // Cáº­p nháº­t BOT_TOKEN náº¿u cÃ³ thay Ä‘á»•i
     if (apiKey && apiKey !== BOT_TOKEN) {
       newEnvContent = newEnvContent.replace(/BOT_TOKEN=.*(\r?\n|$)/, `BOT_TOKEN=${apiKey}$1`);
       if (!newEnvContent.includes('BOT_TOKEN=')) {
@@ -3952,7 +3952,7 @@ app.post('/api/settings', express.json(), async (req, res) => {
       restartAfterSave = true;
     }
     
-    // Cáº­p nháº­t CHAT_ID náº¿u cÃ³ thay Ä'á»•i
+    // Cáº­p nháº­t CHAT_ID náº¿u cÃ³ thay Ä‘á»•i
     if (chatId && chatId !== CHAT_ID) {
       newEnvContent = newEnvContent.replace(/CHAT_ID=.*(\r?\n|$)/, `CHAT_ID=${chatId}$1`);
       if (!newEnvContent.includes('CHAT_ID=')) {
@@ -3961,7 +3961,7 @@ app.post('/api/settings', express.json(), async (req, res) => {
       restartAfterSave = true;
     }
     
-    // Cáº­p nháº­t MAX_FILE_SIZE náº¿u cÃ³ thay Ä'á»•i
+    // Cáº­p nháº­t MAX_FILE_SIZE náº¿u cÃ³ thay Ä‘á»•i
     if (maxFileSize && maxFileSize !== MAX_FILE_SIZE / (1024 * 1024)) {
       newEnvContent = newEnvContent.replace(/MAX_FILE_SIZE=.*(\r?\n|$)/, `MAX_FILE_SIZE=${maxFileSize}$1`);
       if (!newEnvContent.includes('MAX_FILE_SIZE=')) {
@@ -3969,7 +3969,7 @@ app.post('/api/settings', express.json(), async (req, res) => {
       }
     }
     
-    // Cáº­p nháº­t ENABLE_SYNC náº¿u cÃ³ thay Ä'á»•i
+    // Cáº­p nháº­t ENABLE_SYNC náº¿u cÃ³ thay Ä‘á»•i
     if (enableSync !== undefined) {
       const enableSyncValue = enableSync ? 'true' : 'false';
       newEnvContent = newEnvContent.replace(/ENABLE_SYNC=.*(\r?\n|$)/, `ENABLE_SYNC=${enableSyncValue}$1`);
@@ -3978,19 +3978,19 @@ app.post('/api/settings', express.json(), async (req, res) => {
       }
     }
     
-    // LÆ°u file .env náº¿u cÃ³ thay Ä'á»•i
+    // LÆ°u file .env náº¿u cÃ³ thay Ä‘á»•i
     if (newEnvContent !== envContent) {
       fs.writeFileSync(envPath, newEnvContent);
       
-      // Khá»Ÿi Ä'á»™ng láº¡i bot náº¿u cáº§n
+      // Khá»Ÿi Ä‘á»™ng láº¡i bot náº¿u cáº§n
       if (restartAfterSave) {
         setTimeout(async () => {
           try {
-            // Khá»Ÿi Ä'á»™ng láº¡i bot
+            // Khá»Ÿi Ä‘á»™ng láº¡i bot
             bot = await initBot();
             botActive = await checkBotActive();
           } catch (error) {
-            console.error('Lỗi khá»Ÿi Ä'á»™ng láº¡i bot:', error);
+            console.error('Lỗi khá»Ÿi Ä‘á»™ng láº¡i bot:', error);
           }
         }, 1000);
       }
@@ -3998,35 +3998,35 @@ app.post('/api/settings', express.json(), async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Ä'Ã£ lÆ°u cÃ  i Ä'áº·t thÃ  n công',
+      message: 'ÄÃ£ lÆ°u cÃ i Ä‘áº·t thÃ nh công',
       needsRestart: restartAfterSave
     });
   } catch (error) {
-    console.error('Lỗi cáº­p nháº­t cÃ  i Ä'áº·t:', error);
+    console.error('Lỗi cáº­p nháº­t cÃ i Ä‘áº·t:', error);
     res.status(500).json({
       success: false,
-      error: 'Lỗi server khi cáº­p nháº­t cÃ  i Ä'áº·t'
+      error: 'Lỗi server khi cáº­p nháº­t cÃ i Ä‘áº·t'
     });
   }
 });
 
-// Middleware xá»­ lÃ½ route không tá»"n táº¡i - pháº£i Ä'áº·t sau táº¥t cả cÃ¡c routes
+// Middleware xá»­ lÃ½ route không tá»“n táº¡i - pháº£i Ä‘áº·t sau táº¥t cả cÃ¡c routes
 app.use((req, res) => {
-  console.log(`Route không tá»"n táº¡i: ${req.method} ${req.path}`);
+  console.log(`Route không tá»“n táº¡i: ${req.method} ${req.path}`);
   res.status(404).json({
     success: false,
-    error: 'API endpoint không tá»"n táº¡i'
+    error: 'API endpoint không tá»“n táº¡i'
   });
 });
 
 // ... existing code ...
-// API endpoint Ä'á»ƒ xem chi tiáº¿t cÃ¡c file vÃ  tráº¡ng thÃ¡i Ä'á»"ng bá»™
+// API endpoint Ä‘á»ƒ xem chi tiáº¿t cÃ¡c file vÃ  tráº¡ng thÃ¡i Ä‘á»“ng bá»™
 app.get('/api/files-status', (req, res) => {
   try {
     console.log('===== KIá»‚M TRA TRáº NG THÃI CÃC FILE =====');
     const files = readFilesDb();
     
-    // Táº¡o danh sÃ¡ch pháº£n há»"i vá»›i cÃ¡c thÃ´ng tin quan trá»ng
+    // Táº¡o danh sÃ¡ch pháº£n há»“i vá»›i cÃ¡c thÃ´ng tin quan trá»ng
     const filesList = files.map(file => ({
       id: file.id,
       name: file.name,
