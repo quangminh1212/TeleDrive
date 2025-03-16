@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TeleDrive - Đăng nhập</title>
+    <script src="https://telegram.org/js/telegram-widget.js?22"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -26,9 +27,46 @@
         .logo {
             margin-bottom: 30px;
         }
-        .login-form {
+        .login-options {
             display: flex;
             flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .telegram-login {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        .or-divider {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin: 15px 0;
+        }
+        .or-divider::before, .or-divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+        .or-divider span {
+            padding: 0 10px;
+            color: #999;
+            font-size: 14px;
+        }
+        .login-form {
+            display: none; /* Ẩn form đăng nhập thông thường */
+            flex-direction: column;
+            width: 100%;
+        }
+        .show-form-button {
+            background: none;
+            border: none;
+            color: #0088cc;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 10px;
+            font-size: 14px;
         }
         .form-group {
             margin-bottom: 20px;
@@ -57,6 +95,7 @@
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s;
+            width: 100%;
         }
         button:hover {
             background-color: #0077b3;
@@ -72,27 +111,57 @@
     <div class="login-container">
         <div class="logo">
             <h1 style="color: #0088cc;">TeleDrive</h1>
-            <p>Đăng nhập để sử dụng TeleDrive</p>
+            <p>Lưu trữ và quản lý file với Telegram</p>
         </div>
         
-        <form class="login-form" id="loginForm" action="/api/auth/login" method="POST">
-            <div class="form-group">
-                <label for="username">Tên đăng nhập</label>
-                <input type="text" id="username" name="username" required>
+        <div class="login-options">
+            <div class="telegram-login">
+                <!-- Telegram Login Widget -->
+                <script async src="https://telegram.org/js/telegram-widget.js?22"
+                        data-telegram-login="TeleDriveStorageBot" 
+                        data-size="large" 
+                        data-auth-url="/api/auth/telegram" 
+                        data-request-access="write"></script>
             </div>
             
-            <div class="form-group">
-                <label for="password">Mật khẩu</label>
-                <input type="password" id="password" name="password" required>
+            <div class="or-divider">
+                <span>hoặc</span>
             </div>
             
-            <button type="submit">Đăng nhập</button>
+            <button class="show-form-button" id="showLoginForm">Đăng nhập bằng tài khoản</button>
             
-            <div class="error-message" id="errorMessage"></div>
-        </form>
+            <form class="login-form" id="loginForm" action="/api/auth/login" method="POST">
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit">Đăng nhập</button>
+                
+                <div class="error-message" id="errorMessage"></div>
+            </form>
+        </div>
     </div>
 
     <script>
+        // Hiện/ẩn form đăng nhập thông thường
+        document.getElementById('showLoginForm').addEventListener('click', function() {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm.style.display === 'flex') {
+                loginForm.style.display = 'none';
+                this.textContent = 'Đăng nhập bằng tài khoản';
+            } else {
+                loginForm.style.display = 'flex';
+                this.textContent = 'Ẩn form đăng nhập';
+            }
+        });
+        
+        // Xử lý form đăng nhập thông thường
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             

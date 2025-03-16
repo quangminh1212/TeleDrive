@@ -143,6 +143,92 @@ router.post('/auth/change-password', async (req, res) => {
   }
 });
 
+// Thêm route đăng nhập bằng Telegram
+router.get('/auth/telegram', async (req, res) => {
+  try {
+    // Lấy thông tin từ query params (được chuyển từ Telegram Login Widget)
+    const telegramData = {
+      id: req.query.id,
+      first_name: req.query.first_name,
+      last_name: req.query.last_name,
+      username: req.query.username,
+      photo_url: req.query.photo_url,
+      auth_date: req.query.auth_date,
+      hash: req.query.hash
+    };
+    
+    // Kiểm tra xem có đủ thông tin cần thiết không
+    if (!telegramData.id || !telegramData.auth_date || !telegramData.hash) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin xác thực từ Telegram'
+      });
+    }
+    
+    // Xác minh dữ liệu và hash từ Telegram
+    // (Sử dụng bot token để tạo secret key cho việc xác thực)
+    const botToken = config.TELEGRAM_BOT_TOKEN;
+    
+    // Tạo secret key từ token của bot theo đúng chuẩn Telegram
+    // secret_key = SHA256(bot_token)
+    const crypto = require('crypto');
+    const secretKey = crypto.createHash('sha256').update(botToken).digest();
+    
+    // Kiểm tra xem thời gian xác thực có quá cũ không (> 1 giờ)
+    const authTime = parseInt(telegramData.auth_date);
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (currentTime - authTime > 3600) {
+      return res.status(401).json({
+        success: false,
+        message: 'Xác thực đã hết hạn, vui lòng thử lại'
+      });
+    }
+    
+    // Tạo data string để kiểm tra hash
+    // Loại bỏ hash từ object và sắp xếp theo key
+    const { hash, ...checkData } = telegramData;
+    const dataCheckString = Object.keys(checkData)
+      .sort()
+      .map(key => `${key}=${checkData[key]}`)
+      .join('\n');
+    
+    // Tính hash HMAC để so sánh
+    const calculatedHash = crypto.createHmac('sha256', secretKey)
+      .update(dataCheckString)
+      .digest('hex');
+    
+    // Nếu hash không khớp, từ chối yêu cầu
+    if (hash !== calculatedHash) {
+      return res.status(401).json({
+        success: false,
+        message: 'Dữ liệu xác thực không hợp lệ'
+      });
+    }
+    
+    // Tạo session và lưu thông tin người dùng Telegram
+    req.session.authenticated = true;
+    req.session.telegramUser = {
+      id: telegramData.id,
+      username: telegramData.username || `user_${telegramData.id}`,
+      firstName: telegramData.first_name,
+      lastName: telegramData.last_name,
+      photoUrl: telegramData.photo_url
+    };
+    
+    // Lưu vào file hoặc database nếu cần
+    // (Có thể thêm logic lưu thông tin người dùng Telegram vào DB)
+    
+    // Chuyển hướng người dùng đến dashboard
+    res.redirect('/dashboard');
+  } catch (error) {
+    console.error('Lỗi khi xác thực Telegram:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xác thực Telegram'
+    });
+  }
+});
+
 // ===== ROUTES CHO FILE =====
 
 // Lấy danh sách file
