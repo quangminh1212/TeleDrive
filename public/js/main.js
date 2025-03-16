@@ -317,13 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 downloadTooltip = 'Tải từ Telegram';
                 break;
             case 'missing':
-                if (file.fakeTelegramId) {
-                    statusText = 'File không khả dụng (mô phỏng)';
-                    statusClass = 'text-warning';
-                    downloadIcon = 'bi-cloud-download';
-                    downloadBtnClass = 'btn-outline-warning';
-                    downloadTooltip = 'Tải mô phỏng';
-                } else if (file.telegramFileId) {
+                if (file.telegramFileId) {
                     statusText = 'File không có ở local, nhưng có thể tải từ Telegram';
                     statusClass = 'text-warning';
                     downloadIcon = 'bi-telegram';
@@ -341,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusClass = 'text-danger';
                 downloadIcon = 'bi-exclamation-circle';
                 downloadBtnClass = 'btn-outline-danger';
-                downloadTooltip = 'Tải mô phỏng';
+                downloadTooltip = 'Tải từ Telegram';
                 break;
         }
         

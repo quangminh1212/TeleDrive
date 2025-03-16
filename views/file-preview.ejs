@@ -364,12 +364,6 @@
                                         <dt>Telegram File ID</dt>
                                         <dd><code><%= file.telegramFileId || 'Không có' %></code></dd>
                                         
-                                        <dt>Fake Telegram ID</dt>
-                                        <dd><%= file.fakeTelegramId === true ? 'Có' : 'Không' %></dd>
-                                        
-                                        <dt>Fake Telegram URL</dt>
-                                        <dd><%= file.fakeTelegramUrl === true ? 'Có' : 'Không' %></dd>
-                                        
                                         <dt>Bot Telegram</dt>
                                         <dd>
                                             <% if (botStatus && botStatus.active) { %>
