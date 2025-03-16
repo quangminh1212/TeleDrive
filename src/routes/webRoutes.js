@@ -42,14 +42,28 @@ function checkAuth(req, res, next) {
 // Áp dụng middleware cho tất cả các routes
 router.use(checkAuth);
 
-// Trang chủ - redirect đến dashboard
+// Route trang chủ
 router.get('/', (req, res) => {
   try {
-    // Đọc database
-    const filesData = fileService.readFilesDb();
+    // Đọc danh sách file
+    const files = fileService.readFilesDb();
+    
+    // Lọc và sắp xếp files
+    const activeFiles = files
+      .filter(file => !file.isDeleted)
+      .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+    
+    // Tính thống kê lưu trữ
+    const totalSize = activeFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+    const maxSize = 10 * 1024 * 1024 * 1024; // 10GB giả định
+    const storageInfo = {
+      used: totalSize,
+      total: maxSize,
+      percent: (totalSize / maxSize) * 100
+    };
     
     // Định dạng dữ liệu trước khi gửi tới template
-    const formattedFiles = filesData.map(file => ({
+    const formattedFiles = activeFiles.map(file => ({
       id: file.id,
       name: file.name,
       displayName: file.displayName || file.name,
@@ -58,46 +72,27 @@ router.get('/', (req, res) => {
       formattedSize: formatBytes(file.size),
       uploadDate: file.uploadDate,
       formattedDate: formatDate(file.uploadDate),
-      fileType: getFileType(file.name),
-      downloadUrl: `/api/files/${file.id}/download`,
-      previewUrl: `/file/${file.id}`,
-      fixUrl: `/api/files/${file.id}/fix`
+      fileType: file.fileType || guessFileType(file.name),
+      fileStatus: file.fileStatus || 'local',
+      localPath: file.localPath,
+      telegramFileId: file.telegramFileId,
+      telegramUrl: file.telegramUrl,
+      icon: getFileIcon(file.fileType || guessFileType(file.name)),
+      isDeleted: file.isDeleted || false
     }));
     
-    // Tính toán thống kê
-    const storageInfo = {
-      used: filesData.reduce((sum, f) => sum + (f.size || 0), 0),
-      total: config.MAX_FILE_SIZE * 10,
-      percent: (filesData.reduce((sum, f) => sum + (f.size || 0), 0) / (config.MAX_FILE_SIZE * 10)) * 100
-    };
-    
-    // Kiểm tra file có vấn đề
-    const problemFiles = filesData.filter(f => 
-      !f.telegramFileId || 
-      (!f.localPath && !f.telegramUrl)
-    ).length;
-    
-    // Render trang chủ
-    res.render('index', {
-      title: 'TeleDrive',
+    // Render template
+    res.render('index', { 
+      title: 'TeleDrive - Lưu trữ file với Telegram',
       files: formattedFiles,
-      botActive: true,
       storageInfo,
-      problemFiles,
-      error: null,
-      formatBytes,
-      formatDate,
-      file: formattedFiles[0] || { fileSize: 0 } // Thêm trường file mặc định để tránh lỗi
+      formatBytes
     });
   } catch (error) {
-    console.error('Lỗi hiển thị trang chủ:', error);
-    res.status(500).render('error', {
-      title: 'TeleDrive - Lỗi',
-      message: 'Lỗi trong quá trình xử lý yêu cầu',
-      error: {
-        status: 500,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : ''
-      }
+    console.error('Lỗi khi xử lý request trang chủ:', error);
+    res.status(500).render('error', { 
+      message: 'Đã xảy ra lỗi khi tải trang', 
+      error: config.NODE_ENV === 'development' ? error : {}
     });
   }
 });
@@ -249,6 +244,35 @@ function getFileType(filename) {
   if (textExts.includes(ext)) return 'text';
   
   return 'other';
+}
+
+/**
+ * Lấy icon cho loại file
+ * @param {String} fileType Loại file
+ * @returns {String} Icon class
+ */
+function getFileIcon(fileType) {
+  if (!fileType) return 'fa-file';
+  
+  if (fileType.startsWith('image/') || fileType === 'image') {
+    return 'fa-file-image';
+  } else if (fileType.startsWith('video/') || fileType === 'video') {
+    return 'fa-file-video';
+  } else if (fileType.startsWith('audio/') || fileType === 'audio') {
+    return 'fa-file-audio';
+  } else if (fileType === 'application/pdf' || fileType === 'pdf') {
+    return 'fa-file-pdf';
+  } else if (fileType.includes('word') || fileType === 'document') {
+    return 'fa-file-word';
+  } else if (fileType.includes('excel') || fileType.includes('spreadsheet')) {
+    return 'fa-file-excel';
+  } else if (fileType.includes('zip') || fileType.includes('compressed')) {
+    return 'fa-file-archive';
+  } else if (fileType.includes('text/') || fileType === 'text') {
+    return 'fa-file-alt';
+  } else {
+    return 'fa-file';
+  }
 }
 
 module.exports = router; 
