@@ -11,7 +11,7 @@ const fs = require('fs');
 // Remove external dependencies
 // const cors = require('cors');
 // const helmet = require('helmet');
-// const session = require('express-session');
+const session = require('express-session');
 // const bodyParser = require('body-parser');
 
 // Nạp biến môi trường
@@ -44,15 +44,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Thiết lập session
-// app.use(session({
-//   secret: config.SESSION_SECRET,
-//   resave: false,
-//   saveUninitialized: false,
-//   cookie: {
-//     secure: config.NODE_ENV === 'production',
-//     maxAge: 24 * 60 * 60 * 1000 // 24 giờ
-//   }
-// }));
+app.use(session({
+  secret: config.SESSION_SECRET || 'teledrive-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: config.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 giờ
+  }
+}));
 
 // Thiết lập static files
 app.use(express.static(path.join(__dirname, 'public')));
