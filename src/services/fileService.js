@@ -142,13 +142,34 @@ async function autoSyncFile(file) {
   
   try {
     // Kiểm tra xem bot có hoạt động không
-    const botActive = telegramService.isBotActive();
+    let botActive = telegramService.isBotActive();
+    
+    // Nếu bot không hoạt động, thử khởi tạo lại
     if (!botActive) {
-      console.log('Bot không hoạt động, không thể đồng bộ');
-      return {
-        success: false,
-        error: 'Bot không hoạt động'
-      };
+      console.log('Bot không hoạt động, đang thử khởi tạo lại...');
+      try {
+        // Thử khởi tạo lại bot
+        await telegramService.initBot(true);
+        
+        // Kiểm tra lại sau khi khởi tạo
+        botActive = telegramService.isBotActive();
+        
+        if (!botActive) {
+          console.log('Không thể khởi động bot, bỏ qua đồng bộ');
+          return {
+            success: false,
+            error: 'Bot không hoạt động sau khi thử khởi tạo lại'
+          };
+        } else {
+          console.log('Đã khởi tạo lại bot thành công, tiếp tục đồng bộ');
+        }
+      } catch (botError) {
+        console.error('Lỗi khi khởi tạo lại bot:', botError.message);
+        return {
+          success: false,
+          error: 'Lỗi khi khởi tạo lại bot: ' + botError.message
+        };
+      }
     }
     
     // Kiểm tra file có tồn tại ở local không
@@ -172,8 +193,19 @@ async function autoSyncFile(file) {
       };
     }
     
-    // Gửi file lên Telegram
-    const result = await telegramService.sendFileToTelegram(file.localPath, file.name);
+    // Gửi file lên Telegram với timeout
+    console.log(`Đang gửi file ${file.name} lên Telegram...`);
+    
+    // Sử dụng Promise.race để tạo timeout cho việc gửi file
+    const sendWithTimeout = Promise.race([
+      telegramService.sendFileToTelegram(file.localPath, file.name),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout khi gửi file lên Telegram')), 60000) // 60 giây timeout
+      )
+    ]);
+    
+    // Thử gửi file lên Telegram
+    const result = await sendWithTimeout;
     
     if (result.success) {
       // Cập nhật thông tin file
@@ -185,6 +217,7 @@ async function autoSyncFile(file) {
         filesData[fileIndex].telegramUrl = result.fileUrl;
         filesData[fileIndex].needsSync = false;
         filesData[fileIndex].fileStatus = 'synced';
+        filesData[fileIndex].lastSyncTime = new Date().toISOString();
         
         // Lưu lại danh sách file đã cập nhật
         saveFilesDb(filesData);
