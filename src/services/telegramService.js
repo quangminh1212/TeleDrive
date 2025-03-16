@@ -71,7 +71,7 @@ async function stopBot() {
 }
 
 /**
- * Khởi tạo bot Telegram
+ * Khởi tạo bot Telegram với nhiều cách khác nhau
  * @param {Boolean} forceInit Buộc khởi tạo lại bot dù đã tồn tại
  * @returns {Promise<Object>} Promise trả về Bot instance
  */
@@ -87,6 +87,14 @@ async function initBot(forceInit = false) {
     
     isInitializing = true;
     console.log('===== KHỞI TẠO BOT TELEGRAM =====');
+    
+    // Kiểm tra config ban đầu
+    if (config.TELEGRAM_SIMULATION_MODE) {
+      console.log('Chế độ giả lập được cấu hình trong config, bật chế độ giả lập');
+      simulationMode = true;
+      isInitializing = false;
+      return null;
+    }
     
     // Nếu bot đã tồn tại và đang hoạt động và không buộc khởi tạo lại, trả về bot đó
     if (bot && isReady && !forceInit) {
@@ -147,8 +155,31 @@ async function initBot(forceInit = false) {
     // Chuẩn hóa chat ID
     chatId = targetChatId ? targetChatId.toString() : null;
     
-    // Xóa webhook (nếu có) trước khi khởi động polling
+    // PHƯƠNG PHÁP 1: Kiểm tra token trước bằng API getMe
     try {
+      console.log('PHƯƠNG PHÁP 1: Kiểm tra token bằng API getMe');
+      
+      const tokenCheckResponse = await axios.get(
+        `https://api.telegram.org/bot${telegramToken}/getMe`,
+        { timeout: 5000 }
+      );
+      
+      if (!tokenCheckResponse.data || !tokenCheckResponse.data.ok) {
+        console.error('Token không hợp lệ theo API getMe');
+        throw new Error('Token không hợp lệ');
+      }
+      
+      const botInfo = tokenCheckResponse.data.result;
+      console.log(`Token hợp lệ, bot: @${botInfo.username}`);
+    } catch (tokenError) {
+      console.error('Lỗi khi kiểm tra token:', tokenError.message);
+      console.log('Tiếp tục thử phương pháp khác...');
+    }
+    
+    // PHƯƠNG PHÁP 2: Xóa webhook (nếu có) trước khi khởi động polling
+    try {
+      console.log('PHƯƠNG PHÁP 2: Xóa webhook để sử dụng polling');
+      
       // Tạo một promise để đợi webhook được xóa
       const deleteWebhook = new Promise((resolve, reject) => {
         axios.post(`https://api.telegram.org/bot${telegramToken}/deleteWebhook?drop_pending_updates=true`, {}, {
@@ -177,120 +208,178 @@ async function initBot(forceInit = false) {
       console.warn('Lỗi khi xóa webhook:', webhookError.message);
     }
     
-    // Tạo instance bot mới với timeout ngắn
-    const botOptions = {
-      telegram: {
-        apiRoot: 'https://api.telegram.org',
-        webhookReply: false,
-        apiTimeout: 5000, // 5 giây timeout cho mỗi request API
-        testEnv: false
-      }
-    };
-    
+    // Thử nhiều cách khởi tạo bot khác nhau
+    // PHƯƠNG PHÁP 3: Khởi tạo bot với timeout ngắn
     try {
+      console.log('PHƯƠNG PHÁP 3: Khởi tạo bot với timeout ngắn');
+      
+      // Tạo instance bot mới với timeout ngắn
+      const botOptions = {
+        telegram: {
+          apiRoot: 'https://api.telegram.org',
+          webhookReply: false,
+          apiTimeout: 5000, // 5 giây timeout cho mỗi request API
+          testEnv: false
+        }
+      };
+      
       bot = new Telegraf(telegramToken, botOptions);
       
-      // Cấu hình các sự kiện bot cơ bản
+      // Thiết lập hàm xử lý lỗi tổng quát
       bot.catch((err, ctx) => {
-        console.error('Lỗi bot Telegram:', err);
+        console.error('Lỗi bot Telegram:', err.message);
       });
       
-      // Thiết lập hàm xử lý lỗi tổng quát
-      bot.use(async (ctx, next) => {
+      // Khởi động bot với polling có timeout 5 giây
+      console.log('Đang khởi động bot với polling giới hạn thời gian...');
+      
+      // Tạo Promise race để giới hạn thời gian timeout
+      await Promise.race([
+        bot.launch({
+          dropPendingUpdates: true,
+          polling: {
+            timeout: 3, // Timeout nhỏ để tránh treo
+            limit: 50
+          }
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout khi khởi động bot')), 7000)
+        )
+      ]);
+      
+      // Khởi động thành công, lấy thông tin bot
+      const botInfo = await bot.telegram.getMe();
+      bot.botInfo = botInfo;
+      console.log(`Bot khởi động thành công: @${botInfo.username}`);
+      
+      isReady = true;
+      isInitializing = false;
+      
+      return bot;
+    } catch (launchError) {
+      console.error(`PHƯƠNG PHÁP 3 thất bại: ${launchError.message}`);
+      
+      // Xử lý các trường hợp lỗi
+      if (launchError.message.includes('Conflict') || 
+          launchError.message.includes('Timeout') || 
+          launchError.message.includes('ETIMEOUT')) {
+        
+        console.log('Phát hiện lỗi kết nối, thử PHƯƠNG PHÁP 4...');
+        
+        // Dừng bot hiện tại
         try {
-          await next();
-        } catch (err) {
-          console.error('Lỗi trong middleware bot:', err);
+          if (bot) await bot.stop();
+        } catch (e) {}
+        
+        bot = null;
+        isReady = false;
+      }
+    }
+    
+    // PHƯƠNG PHÁP 4: Thử sử dụng Telegraf với cấu hình khác
+    try {
+      console.log('PHƯƠNG PHÁP 4: Khởi tạo bot với cấu hình khác');
+      
+      // Đợi một thời gian trước khi thử lại
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Tạo instance bot mới với cấu hình khác
+      bot = new Telegraf(telegramToken, {
+        telegram: {
+          apiRoot: 'https://api.telegram.org',
+          webhookReply: false,
+          apiTimeout: 10000
         }
       });
       
-      // Lệnh start đơn giản
+      // Cấu hình cơ bản
       bot.start(ctx => {
         ctx.reply(`Bot đã sẵn sàng. Chat ID của bạn là: ${ctx.chat.id}`);
-        // Lưu chatId nếu chưa có
         if (!chatId) {
           chatId = ctx.chat.id.toString();
           console.log(`Đã lưu chat ID: ${chatId}`);
         }
       });
-
-      // Khởi động bot với polling có timeout 5 giây
-      console.log('Đang khởi động bot với polling giới hạn thời gian...');
       
-      // Tạo Promise race để giới hạn thời gian timeout
+      // Khởi động polling với cấu hình đơn giản hơn
+      console.log('Đang khởi động bot với polling đơn giản...');
+      
+      await Promise.race([
+        bot.launch(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout khi khởi động bot')), 10000)
+        )
+      ]);
+      
+      // Lấy thông tin bot
+      const botInfo = await bot.telegram.getMe();
+      bot.botInfo = botInfo;
+      console.log(`Bot khởi động thành công (phương pháp 4): @${botInfo.username}`);
+      
+      isReady = true;
+      isInitializing = false;
+      
+      return bot;
+    } catch (launchError2) {
+      console.error(`PHƯƠNG PHÁP 4 thất bại: ${launchError2.message}`);
+      
+      // Dừng bot hiện tại
       try {
+        if (bot) await bot.stop();
+      } catch (e) {}
+      
+      bot = null;
+      isReady = false;
+    }
+    
+    // PHƯƠNG PHÁP 5: Sử dụng API trực tiếp
+    try {
+      console.log('PHƯƠNG PHÁP 5: Kiểm tra kết nối qua API trực tiếp');
+      
+      // Đợi một thời gian trước khi thử lại
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Gọi API trực tiếp để kiểm tra kết nối
+      const response = await axios.get(`https://api.telegram.org/bot${telegramToken}/getMe`, {
+        timeout: 5000
+      });
+      
+      if (response.data && response.data.ok) {
+        console.log(`API trực tiếp hoạt động, bot: @${response.data.result.username}`);
+        
+        // Thử khởi tạo bot một lần nữa với cấu hình cực kỳ đơn giản
+        bot = new Telegraf(telegramToken);
+        
+        // Khởi động với thời gian dài hơn
         await Promise.race([
-          bot.launch({
-            dropPendingUpdates: true,
-            polling: {
-              timeout: 3, // Timeout nhỏ để tránh treo
-              limit: 50
-            }
-          }),
+          bot.launch({ dropPendingUpdates: true }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout khi khởi động bot')), 7000)
+            setTimeout(() => reject(new Error('Timeout khi khởi động bot')), 15000)
           )
         ]);
-        
-        // Khởi động thành công, lấy thông tin bot
-        const botInfo = await bot.telegram.getMe();
-        bot.botInfo = botInfo;
-        console.log(`Bot khởi động thành công: @${botInfo.username}`);
         
         isReady = true;
         isInitializing = false;
         
         return bot;
-      } catch (launchError) {
-        console.error(`Không thể khởi động bot: ${launchError.message}`);
-        
-        // Xử lý các trường hợp lỗi
-        if (launchError.message.includes('Conflict') || 
-            launchError.message.includes('Timeout') || 
-            launchError.message.includes('ETIMEOUT')) {
-          
-          console.log('Phát hiện lỗi kết nối, đang thử khởi động lại...');
-          
-          // Dừng bot hiện tại
-          try {
-            if (bot) await bot.stop();
-          } catch (e) {}
-          
-          bot = null;
-          isReady = false;
-          
-          // Đợi một thời gian trước khi thử lại
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Nếu đã thử quá nhiều lần, chuyển sang chế độ giả lập
-          if (initRetryCount >= config.TELEGRAM_MAX_RETRIES) {
-            console.log(`Đã thử khởi động ${initRetryCount} lần không thành công. Bật chế độ giả lập`);
-            simulationMode = true;
-            isInitializing = false;
-            return null;
-          }
-          
-          // Thử lại với thời gian ngắn hơn
-          isInitializing = false;
-          return await initBot(true);
-        }
-        
-        // Lỗi khác, bật chế độ giả lập
-        console.log('Lỗi không xác định, bật chế độ giả lập');
-        simulationMode = true;
-        bot = null;
-        isReady = false;
-        isInitializing = false;
-        return null;
       }
-    } catch (error) {
-      console.error('Lỗi khi khởi tạo bot Telegram:', error.message);
-      simulationMode = true;
-      isReady = false;
+    } catch (apiError) {
+      console.error(`PHƯƠNG PHÁP 5 thất bại: ${apiError.message}`);
+      
+      // Dừng bot hiện tại
+      try {
+        if (bot) await bot.stop();
+      } catch (e) {}
+      
       bot = null;
-      isInitializing = false;
-      return null;
+      isReady = false;
     }
+    
+    // Nếu tất cả các phương pháp đều thất bại, chuyển sang chế độ giả lập
+    console.log('Tất cả các phương pháp kết nối đều thất bại, chuyển sang chế độ giả lập');
+    simulationMode = true;
+    isInitializing = false;
+    return null;
   } catch (error) {
     console.error('Lỗi nghiêm trọng khi khởi tạo Telegram Bot:', error.message);
     simulationMode = true;
