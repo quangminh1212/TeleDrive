@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tải lên - TeleDrive</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .navbar-brand {
+      font-weight: 600;
+    }
+    .sidebar {
+      position: fixed;
+      top: 56px;
+      bottom: 0;
+      left: 0;
+      width: 250px;
+      padding: 20px 0;
+      z-index: 100;
+      overflow-y: auto;
+      background-color: #fff;
+      border-right: 1px solid #dee2e6;
+    }
+    .sidebar .nav-link {
+      padding: 10px 20px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      border-radius: 0;
+    }
+    .sidebar .nav-link.active {
+      background-color: #e9ecef;
+      color: #0d6efd;
+    }
+    .sidebar .nav-link i {
+      margin-right: 10px;
+      width: 20px;
+    }
+    .main-content {
+      margin-left: 250px;
+      padding: 20px;
+    }
+    .upload-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 30px;
+    }
+    .upload-area {
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background-color: #f8f9fa;
+      margin-bottom: 20px;
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: #0d6efd;
+      background-color: #f1f8ff;
+    }
+    .upload-icon {
+      font-size: 48px;
+      color: #6c757d;
+      margin-bottom: 15px;
+    }
+    .upload-file-list {
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .upload-file-item {
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      background-color: white;
+    }
+    .upload-file-icon {
+      font-size: 24px;
+      margin-right: 10px;
+      color: #6c757d;
+    }
+    .upload-file-info {
+      flex-grow: 1;
+      overflow: hidden;
+    }
+    .upload-file-name {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .upload-file-size {
+      font-size: 12px;
+      color: #6c757d;
+    }
+    .upload-file-progress {
+      height: 6px;
+      margin-top: 5px;
+    }
+    .upload-file-status {
+      margin-left: 10px;
+      font-size: 14px;
+    }
+    .upload-file-actions {
+      margin-left: 10px;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        position: static;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">
+        <i class="bi bi-telegram"></i> TeleDrive
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <form class="d-flex ms-auto">
+          <input class="form-control me-2" type="search" placeholder="Tìm kiếm file..." aria-label="Search">
+          <button class="btn btn-light" type="submit">
+            <i class="bi bi-search"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link" href="/">
+          <i class="bi bi-house-door"></i> Trang chủ
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link active" href="/upload">
+          <i class="bi bi-cloud-arrow-up"></i> Tải lên
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/trash">
+          <i class="bi bi-trash"></i> Thùng rác
+        </a>
+      </li>
+      <li class="nav-item mt-3">
+        <div class="px-3">
+          <a href="/api/sync" class="btn btn-outline-primary btn-sm w-100">
+            <i class="bi bi-arrow-repeat"></i> Đồng bộ với Telegram
+          </a>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <h4 class="mb-4"><i class="bi bi-cloud-arrow-up"></i> Tải file lên</h4>
+    
+    <div class="upload-container">
+      <div id="uploadArea" class="upload-area">
+        <div class="upload-icon">
+          <i class="bi bi-cloud-arrow-up"></i>
+        </div>
+        <h5>Kéo và thả file vào đây</h5>
+        <p class="text-muted">hoặc</p>
+        <input type="file" id="fileInput" class="d-none" multiple>
+        <button type="button" id="browseButton" class="btn btn-primary">
+          <i class="bi bi-folder"></i> Chọn file
+        </button>
+      </div>
+      
+      <div class="upload-options">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="autoUpload" checked>
+          <label class="form-check-label" for="autoUpload">Tự động tải lên khi chọn file</label>
+        </div>
+      </div>
+      
+      <div class="upload-file-list d-none" id="fileList">
+        <!-- Upload files will be listed here dynamically -->
+      </div>
+      
+      <div class="d-flex justify-content-between mt-4">
+        <button type="button" id="uploadButton" class="btn btn-success" disabled>
+          <i class="bi bi-cloud-arrow-up"></i> Tải lên tất cả
+        </button>
+        <button type="button" id="clearButton" class="btn btn-outline-secondary" disabled>
+          <i class="bi bi-x-circle"></i> Xóa tất cả
+        </button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h5>Lưu ý khi tải file</h5>
+      </div>
+      <div class="card-body">
+        <ul>
+          <li>Kích thước tối đa cho mỗi file là 2GB (giới hạn của Telegram).</li>
+          <li>File sẽ được tải lên Telegram và lưu trữ tại đó.</li>
+          <li>Hãy đảm bảo rằng bạn có quyền đối với file bạn tải lên.</li>
+          <li>Quá trình tải lên có thể mất nhiều thời gian tùy thuộc vào kích thước file và tốc độ mạng.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const uploadArea = document.getElementById('uploadArea');
+      const fileInput = document.getElementById('fileInput');
+      const browseButton = document.getElementById('browseButton');
+      const uploadButton = document.getElementById('uploadButton');
+      const clearButton = document.getElementById('clearButton');
+      const fileList = document.getElementById('fileList');
+      const autoUpload = document.getElementById('autoUpload');
+      
+      let files = [];
+      
+      // Browse button click
+      browseButton.addEventListener('click', function() {
+        fileInput.click();
+      });
+      
+      // File input change
+      fileInput.addEventListener('change', function() {
+        if (fileInput.files.length > 0) {
+          addFiles(fileInput.files);
+          fileInput.value = ''; // Reset the input
+        }
+      });
+      
+      // Drag and drop events
+      uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+      });
+      
+      uploadArea.addEventListener('dragleave', function() {
+        uploadArea.classList.remove('dragover');
+      });
+      
+      uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        if (e.dataTransfer.files.length > 0) {
+          addFiles(e.dataTransfer.files);
+        }
+      });
+      
+      // Upload button click
+      uploadButton.addEventListener('click', function() {
+        uploadAllFiles();
+      });
+      
+      // Clear button click
+      clearButton.addEventListener('click', function() {
+        clearAllFiles();
+      });
+      
+      // Add files to list
+      function addFiles(fileList) {
+        for (let i = 0; i < fileList.length; i++) {
+          const file = fileList[i];
+          
+          // Check if file already exists in the list
+          if (files.some(f => f.name === file.name && f.size === file.size)) {
+            continue;
+          }
+          
+          // Add file to array
+          files.push({
+            file: file,
+            id: Date.now() + i,
+            status: 'pending',
+            progress: 0
+          });
+        }
+        
+        // Update UI
+        updateFileList();
+        
+        // Auto upload if enabled
+        if (autoUpload.checked && files.length > 0) {
+          uploadAllFiles();
+        }
+      }
+      
+      // Update file list UI
+      function updateFileList() {
+        if (files.length === 0) {
+          fileList.classList.add('d-none');
+          uploadButton.disabled = true;
+          clearButton.disabled = true;
+          return;
+        }
+        
+        fileList.classList.remove('d-none');
+        uploadButton.disabled = false;
+        clearButton.disabled = false;
+        
+        fileList.innerHTML = '';
+        
+        files.forEach(fileObj => {
+          const fileItem = document.createElement('div');
+          fileItem.className = 'upload-file-item';
+          fileItem.dataset.id = fileObj.id;
+          
+          // Determine file icon
+          let fileIcon = '<i class="bi bi-file-earmark"></i>';
+          if (fileObj.file.type.startsWith('image/')) {
+            fileIcon = '<i class="bi bi-file-image"></i>';
+          } else if (fileObj.file.type.startsWith('video/')) {
+            fileIcon = '<i class="bi bi-file-play"></i>';
+          } else if (fileObj.file.type.startsWith('audio/')) {
+            fileIcon = '<i class="bi bi-file-music"></i>';
+          } else if (fileObj.file.type === 'application/pdf') {
+            fileIcon = '<i class="bi bi-file-pdf"></i>';
+          } else if (fileObj.file.type.includes('zip') || fileObj.file.type.includes('rar') || fileObj.file.type.includes('tar')) {
+            fileIcon = '<i class="bi bi-file-zip"></i>';
+          }
+          
+          // Format file size
+          const fileSize = formatFileSize(fileObj.file.size);
+          
+          // Set status color
+          let statusColor = 'text-secondary';
+          let statusIcon = '';
+          
+          if (fileObj.status === 'uploading') {
+            statusColor = 'text-primary';
+            statusIcon = '<i class="bi bi-arrow-repeat"></i> ';
+          } else if (fileObj.status === 'success') {
+            statusColor = 'text-success';
+            statusIcon = '<i class="bi bi-check-circle"></i> ';
+          } else if (fileObj.status === 'error') {
+            statusColor = 'text-danger';
+            statusIcon = '<i class="bi bi-exclamation-circle"></i> ';
+          }
+          
+          // Create file item HTML
+          fileItem.innerHTML = `
+            <div class="upload-file-icon">${fileIcon}</div>
+            <div class="upload-file-info">
+              <div class="upload-file-name">${fileObj.file.name}</div>
+              <div class="upload-file-size">${fileSize}</div>
+              ${fileObj.status === 'uploading' ? `
+                <div class="progress upload-file-progress">
+                  <div class="progress-bar" role="progressbar" style="width: ${fileObj.progress}%" 
+                    aria-valuenow="${fileObj.progress}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              ` : ''}
+            </div>
+            <div class="upload-file-status ${statusColor}">
+              ${statusIcon}
+              ${fileObj.status === 'pending' ? 'Chờ tải lên' : 
+                fileObj.status === 'uploading' ? `${fileObj.progress}%` :
+                fileObj.status === 'success' ? 'Hoàn thành' : 'Lỗi'}
+            </div>
+            <div class="upload-file-actions">
+              ${fileObj.status === 'pending' ? `
+                <button class="btn btn-sm btn-outline-primary upload-single-btn" data-id="${fileObj.id}">
+                  <i class="bi bi-cloud-arrow-up"></i>
+                </button>
+              ` : ''}
+              <button class="btn btn-sm btn-outline-danger remove-file-btn" data-id="${fileObj.id}">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          `;
+          
+          fileList.appendChild(fileItem);
+        });
+        
+        // Add event listeners to buttons
+        document.querySelectorAll('.upload-single-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const fileId = this.getAttribute('data-id');
+            uploadFile(fileId);
+          });
+        });
+        
+        document.querySelectorAll('.remove-file-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const fileId = this.getAttribute('data-id');
+            removeFile(fileId);
+          });
+        });
+      }
+      
+      // Upload all files
+      function uploadAllFiles() {
+        const pendingFiles = files.filter(f => f.status === 'pending');
+        
+        if (pendingFiles.length === 0) return;
+        
+        pendingFiles.forEach(fileObj => {
+          uploadFile(fileObj.id);
+        });
+      }
+      
+      // Upload single file
+      function uploadFile(fileId) {
+        const fileObj = files.find(f => f.id.toString() === fileId.toString());
+        
+        if (!fileObj || fileObj.status !== 'pending') return;
+        
+        // Update status
+        fileObj.status = 'uploading';
+        updateFileList();
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('file', fileObj.file);
+        
+        // Create request
+        const xhr = new XMLHttpRequest();
+        
+        // Setup progress tracking
+        xhr.upload.addEventListener('progress', function(e) {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            fileObj.progress = percent;
+            updateFileProgress(fileObj.id, percent);
+          }
+        });
+        
+        // Handle response
+        xhr.addEventListener('load', function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              
+              if (response.success) {
+                fileObj.status = 'success';
+                fileObj.fileId = response.fileId;
+              } else {
+                fileObj.status = 'error';
+                fileObj.error = response.message || 'Upload failed';
+              }
+            } catch (e) {
+              fileObj.status = 'error';
+              fileObj.error = 'Invalid server response';
+            }
+          } else {
+            fileObj.status = 'error';
+            fileObj.error = `Server returned ${xhr.status}`;
+          }
+          
+          updateFileList();
+        });
+        
+        // Handle error
+        xhr.addEventListener('error', function() {
+          fileObj.status = 'error';
+          fileObj.error = 'Network error';
+          updateFileList();
+        });
+        
+        // Handle timeout
+        xhr.addEventListener('timeout', function() {
+          fileObj.status = 'error';
+          fileObj.error = 'Request timed out';
+          updateFileList();
+        });
+        
+        // Send request
+        xhr.open('POST', '/api/files/upload');
+        xhr.send(formData);
+      }
+      
+      // Update file progress
+      function updateFileProgress(fileId, progress) {
+        const fileItem = document.querySelector(`.upload-file-item[data-id="${fileId}"]`);
+        
+        if (fileItem) {
+          const progressBar = fileItem.querySelector('.progress-bar');
+          const statusElement = fileItem.querySelector('.upload-file-status');
+          
+          if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress);
+          }
+          
+          if (statusElement) {
+            statusElement.innerHTML = `<i class="bi bi-arrow-repeat"></i> ${progress}%`;
+          }
+        }
+      }
+      
+      // Remove file from list
+      function removeFile(fileId) {
+        const index = files.findIndex(f => f.id.toString() === fileId.toString());
+        
+        if (index !== -1) {
+          files.splice(index, 1);
+          updateFileList();
+        }
+      }
+      
+      // Clear all files
+      function clearAllFiles() {
+        files = [];
+        updateFileList();
+      }
+      
+      // Format file size
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+    });
+  </script>
+</body>
+</html> 
