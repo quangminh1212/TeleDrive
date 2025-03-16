@@ -1304,14 +1304,14 @@ async function syncFiles() {
     // (Phần này phụ thuộc vào cài đặt cụ thể của ứng dụng)
     
     console.log('===== KẾT THÚC ĐỒNG BỘ FILES =====');
-    console.log(`Đã đồng bộ: ${files.length} | Lỗi: 0 | Bỏ qua: 0`);
+    console.log(`Đã đồng bộ: ${files.length} file | Lỗi: 0 | Bỏ qua: 0`);
     
     return {
       success: true,
-      syncedCount: files.length,
+      syncedCount: files.length || 0,
       skippedCount: 0,
       errorCount: 0,
-      files
+      files: files || []
     };
   } catch (error) {
     console.error('Lỗi khi đồng bộ files:', error.message);
