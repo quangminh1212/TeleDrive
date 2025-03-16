@@ -2969,7 +2969,7 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'ÄÃ£ Ä'á»•i tÃªn thÆ° má»¥c thÃ nh cÃ´ng',
+      message: 'Đã đổi tên thư mục thành công',
       folder: {
         oldPath: folderPath,
         newPath: path.relative(baseFolder, newFolderPath),
@@ -2978,10 +2978,10 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lá»—i Ä'á»•i tÃªn thÆ° má»¥c:', error);
+    console.error('Lỗi đổi tên thư mục:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi Ä'á»•i tÃªn thÆ° má»¥c'
+      error: error.message || 'Lỗi server khi đổi tên thư mục'
     });
   }
 });
