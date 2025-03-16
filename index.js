@@ -366,7 +366,7 @@ async function syncFiles() {
     // Đọc danh sách file từ database
     const filesData = readFilesDb();
     
-    // Lọc các file chưa có trên Telegram hoặc cần đồng bộ
+    // Lọc các file cần đồng bộ - file chưa có trên Telegram hoặc cần đồng bộ lại
     const filesToSync = filesData.filter(file => 
       file.needsSync || 
       !file.telegramFileId
@@ -399,6 +399,7 @@ async function syncFiles() {
     }
     
     let syncedCount = 0;
+    let errorCount = 0;
     
     // Gửi từng file lên Telegram
     for (const file of filesToSync) {
@@ -406,12 +407,16 @@ async function syncFiles() {
         // Kiểm tra file có tồn tại không
         if (!file.localPath) {
           console.log(`File ${file.name} không có đường dẫn local, không thể đồng bộ.`);
+          file.syncError = 'Không có đường dẫn local';
+          errorCount++;
           continue;
         }
         
         // Kiểm tra file có tồn tại trên hệ thống không
         if (!fs.existsSync(file.localPath)) {
           console.log(`File ${file.name} không tồn tại tại đường dẫn ${file.localPath}, không thể đồng bộ.`);
+          file.syncError = 'File không tồn tại trên hệ thống';
+          errorCount++;
           continue;
         }
         
@@ -419,23 +424,28 @@ async function syncFiles() {
         if ((!file.localPath || !fs.existsSync(file.localPath)) && 
             file.telegramFileId) {
           console.log(`File ${file.name} đã có trên Telegram, bỏ qua.`);
+          file.needsSync = false;
           continue;
         }
         
         console.log(`Đang gửi file "${file.name}" (${formatBytes(file.size)}) lên Telegram...`);
         
-        // Xử lý tên file tiếng Việt
-        const fileName = Buffer.from(file.name).toString('utf8');
+        // Xử lý tên file tiếng Việt - đảm bảo encoding UTF-8
+        const fileName = encodeURIComponent(file.name).replace(/%/g, '');
+        
+        // Chuẩn bị caption cho file
+        const caption = `Tên file: ${file.name}\nKích thước: ${formatBytes(file.size)}\nNgày tải lên: ${formatDate(file.uploadDate || new Date())}`;
         
         // Lựa chọn phương thức gửi file phù hợp dựa vào loại file
         let message;
         const sendFilePromise = (async () => {
           try {
             if (file.fileType === 'image') {
-              return await bot.telegram.sendPhoto(chatId, { source: file.localPath }, { caption: fileName });
+              return await bot.telegram.sendPhoto(chatId, { source: file.localPath }, { caption: caption });
             } else if (file.fileType === 'video') {
-              return await bot.telegram.sendVideo(chatId, { source: file.localPath }, { caption: fileName });
+              return await bot.telegram.sendVideo(chatId, { source: file.localPath }, { caption: caption });
             } else if (file.fileType === 'audio') {
+              return await bot.telegram.sendAudio(chatId, { source: file.localPath }, { caption: caption });
               return await bot.telegram.sendAudio(chatId, { source: file.localPath }, { caption: fileName });
             } else {
               return await bot.telegram.sendDocument(chatId, { source: file.localPath }, { caption: fileName });
