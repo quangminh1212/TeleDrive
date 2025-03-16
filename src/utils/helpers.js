@@ -1,70 +1,51 @@
 /**
- * TeleDrive - Các hàm trợ giúp
+ * TeleDrive - Helpers
  * File này chứa các hàm tiện ích
  */
 
 const fs = require('fs');
 const path = require('path');
+const mime = require('mime-types');
+const config = require('../config/config');
 
 /**
- * Đảm bảo các thư mục cần thiết tồn tại
- * @param {Array} directories - Danh sách các thư mục cần kiểm tra
+ * Tạo các thư mục cần thiết nếu chưa tồn tại
  */
-function ensureDirectories(directories) {
-  directories.forEach(dir => {
+function ensureDirectories() {
+  const dirs = [
+    config.STORAGE_PATH,
+    config.UPLOADS_DIR,
+    config.TEMP_DIR,
+    config.DB_DIR
+  ];
+  
+  for (const dir of dirs) {
     if (!fs.existsSync(dir)) {
+      console.log(`Tạo thư mục: ${dir}`);
       fs.mkdirSync(dir, { recursive: true });
-      console.log(`Đã tạo thư mục: ${dir}`);
     }
-  });
+  }
 }
 
 /**
- * Đoán loại MIME dựa trên phần mở rộng của file
- * @param {String} extension Phần mở rộng file
+ * Lấy MIME type dựa trên tên file
+ * @param {String} filename Tên file cần kiểm tra
  * @returns {String} MIME type
  */
-function getMimeType(extension) {
-  const mimeTypes = {
-    '.html': 'text/html',
-    '.css': 'text/css',
-    '.js': 'text/javascript',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.png': 'image/png',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.webp': 'image/webp',
-    '.mp4': 'video/mp4',
-    '.webm': 'video/webm',
-    '.mp3': 'audio/mpeg',
-    '.wav': 'audio/wav',
-    '.ogg': 'audio/ogg',
-    '.pdf': 'application/pdf',
-    '.doc': 'application/msword',
-    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    '.xls': 'application/vnd.ms-excel',
-    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    '.ppt': 'application/vnd.ms-powerpoint',
-    '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    '.zip': 'application/zip',
-    '.rar': 'application/x-rar-compressed',
-    '.7z': 'application/x-7z-compressed',
-    '.txt': 'text/plain',
-    '.json': 'application/json',
-    '.xml': 'application/xml',
-    '.csv': 'text/csv'
-  };
-
-  return mimeTypes[extension.toLowerCase()] || 'application/octet-stream';
+function getMimeType(filename) {
+  const ext = path.extname(filename).toLowerCase();
+  const mimeType = mime.lookup(ext) || 'application/octet-stream';
+  return mimeType;
 }
 
 /**
  * Đoán loại file dựa trên MIME type
- * @param {String} mimeType MIME type của file
- * @returns {String} Loại file (image, video, audio, hoặc document)
+ * @param {String} filename Tên file cần kiểm tra
+ * @returns {String} Loại file (image, video, audio, document)
  */
-function guessFileType(mimeType) {
+function guessFileType(filename) {
+  const mimeType = getMimeType(filename);
+  
   if (mimeType.startsWith('image/')) {
     return 'image';
   } else if (mimeType.startsWith('video/')) {
@@ -77,44 +58,97 @@ function guessFileType(mimeType) {
 }
 
 /**
- * Xác định loại file dựa trên tên file
- * @param {String} filename Tên file
- * @returns {String} Loại file (image, video, audio, hoặc document)
+ * Format kích thước file sang dạng đọc được
+ * @param {Number} bytes Kích thước file tính bằng bytes
+ * @param {Number} decimals Số chữ số thập phân
+ * @returns {String} Kích thước đã format
  */
-function getFileType(filename) {
-  if (!filename) return 'document';
+function formatFileSize(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
   
-  const extension = path.extname(filename).toLowerCase();
-  const mimeType = getMimeType(extension);
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
   
-  return guessFileType(mimeType);
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 /**
- * Lấy tất cả các file trong thư mục, bao gồm cả thư mục con
- * @param {String} dirPath Đường dẫn thư mục
- * @param {Array} arrayOfFiles Mảng chứa các file (sử dụng đệ quy)
- * @returns {Array} Mảng chứa đường dẫn đến tất cả các file
+ * Format ngày tháng sang dạng đọc được
+ * @param {String|Date} date Ngày cần format
+ * @returns {String} Ngày đã format
  */
-function getAllFiles(dirPath, arrayOfFiles = []) {
-  const files = fs.readdirSync(dirPath);
-
-  files.forEach(file => {
-    const filePath = path.join(dirPath, file);
-    if (fs.statSync(filePath).isDirectory()) {
-      arrayOfFiles = getAllFiles(filePath, arrayOfFiles);
-    } else {
-      arrayOfFiles.push(filePath);
-    }
+function formatDate(date) {
+  const d = new Date(date);
+  return d.toLocaleString('vi-VN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
   });
+}
 
-  return arrayOfFiles;
+/**
+ * Kiểm tra tính hợp lệ của đường dẫn
+ * @param {String} filePath Đường dẫn cần kiểm tra
+ * @returns {Boolean} Kết quả kiểm tra
+ */
+function isPathSafe(filePath) {
+  // Đảm bảo path không có ký tự đặc biệt
+  const safePathRegex = /^[a-zA-Z0-9_.-]+$/;
+  const filename = path.basename(filePath);
+  
+  return safePathRegex.test(filename);
+}
+
+/**
+ * Tạo ID ngẫu nhiên
+ * @param {Number} length Độ dài ID
+ * @returns {String} ID đã tạo
+ */
+function generateId(length = 10) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  return result;
+}
+
+/**
+ * Ghi log ra console và file
+ * @param {String} message Nội dung log
+ * @param {String} level Level của log (info, error, warn)
+ */
+function log(message, level = 'info') {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+  
+  // Log ra console
+  if (level === 'error') {
+    console.error(logMessage);
+  } else if (level === 'warn') {
+    console.warn(logMessage);
+  } else {
+    console.log(logMessage);
+  }
+  
+  // TODO: Ghi log vào file nếu cần
 }
 
 module.exports = {
   ensureDirectories,
   getMimeType,
   guessFileType,
-  getFileType,
-  getAllFiles
+  formatFileSize,
+  formatDate,
+  isPathSafe,
+  generateId,
+  log
 }; 

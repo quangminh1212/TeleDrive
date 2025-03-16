@@ -1,8 +1,9 @@
 /**
  * TeleDrive - Config
- * File này chứa cấu hình ứng dụng
+ * File này chứa các cấu hình ứng dụng
  */
 
+require('dotenv').config();
 const path = require('path');
 const dotenv = require('dotenv');
 const fs = require('fs');
@@ -52,46 +53,47 @@ dotenv.config({ path: envFile });
  * Cấu hình ứng dụng
  */
 const config = {
-  // Cổng máy chủ
-  PORT: process.env.PORT || 5002,
+  // Môi trường
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  
+  // Server
+  PORT: process.env.PORT || 3000,
+  HOST: process.env.HOST || 'localhost',
+  BASE_URL: process.env.BASE_URL || 'http://localhost:3000',
+  
+  // Thông tin đăng nhập
+  ADMIN_USERNAME: process.env.ADMIN_USERNAME || 'admin',
+  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin',
+  API_KEY: process.env.API_KEY || 'changeme',
   
   // Telegram Bot
-  BOT_TOKEN: process.env.BOT_TOKEN || '',
-  CHAT_ID: process.env.CHAT_ID || '',
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+  TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
   
-  // Đường dẫn lưu trữ
-  STORAGE_PATH: process.env.STORAGE_PATH || process.cwd(),
+  // Đường dẫn storage
+  STORAGE_PATH: process.env.STORAGE_PATH ? 
+    path.resolve(process.env.STORAGE_PATH) : 
+    path.join(process.cwd(), 'storage'),
   
-  // Tự động đồng bộ files
-  AUTO_SYNC: process.env.AUTO_SYNC || 'true',
+  // Giới hạn kích thước file (mặc định 2GB)
+  MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || 2 * 1024 * 1024 * 1024),
   
-  // Debug mode
-  DEBUG: process.env.DEBUG === 'true',
+  // Cấu hình session
+  SESSION_SECRET: process.env.SESSION_SECRET || 'changeme',
   
-  // Thư mục dữ liệu
-  DB_DIR: path.join(process.env.STORAGE_PATH || process.cwd(), 'db'),
+  // Cài đặt đồng bộ
+  AUTO_SYNC: process.env.AUTO_SYNC === 'true',
+  SYNC_INTERVAL: parseInt(process.env.SYNC_INTERVAL || 60) * 60 * 1000, // Giờ -> ms
   
-  // Thư mục uploads
-  UPLOADS_DIR: path.join(process.env.STORAGE_PATH || process.cwd(), 'uploads'),
-  
-  // Số lần thử lại khi gửi file lên Telegram bị lỗi
-  TELEGRAM_RETRY_COUNT: 3,
-  
-  // Thời gian chờ giữa các lần thử lại (milliseconds)
-  TELEGRAM_RETRY_DELAY: 5000,
-  
-  // Kích thước chunk khi gửi file lớn (bytes, mặc định 5MB)
-  TELEGRAM_CHUNK_SIZE: 5 * 1024 * 1024,
-  
-  // Kích thước tối đa của file có thể gửi lên Telegram (bytes, mặc định 50MB)
-  MAX_FILE_SIZE: 50 * 1024 * 1024,
-  
-  // Thời gian hết hạn của session (milliseconds, mặc định 24h)
-  SESSION_EXPIRY: 24 * 60 * 60 * 1000,
-  
-  // Secret key cho session
-  SESSION_SECRET: process.env.SESSION_SECRET || 'teledrive-session-secret'
+  // Tự động dọn dẹp
+  CLEANUP_ENABLED: process.env.CLEANUP_ENABLED === 'true',
+  CLEANUP_INTERVAL: parseInt(process.env.CLEANUP_INTERVAL || 24) * 60 * 60 * 1000 // Giờ -> ms
 };
+
+// Tạo các đường dẫn phụ thuộc
+config.UPLOADS_DIR = path.join(config.STORAGE_PATH, 'uploads');
+config.TEMP_DIR = path.join(config.STORAGE_PATH, 'temp');
+config.DB_DIR = path.join(config.STORAGE_PATH, 'db');
 
 // Đảm bảo các thư mục cần thiết tồn tại
 function ensureDirectories() {
