@@ -19,21 +19,10 @@ if %ERRORLEVEL% NEQ 0 (
   exit /b
 )
 
-:: Kiểm tra tệp .env tồn tại và cập nhật BOT_TOKEN nếu cần
+:: Kiểm tra tệp .env tồn tại
 if not exist ".env" (
   echo Sao chep .env.example sang .env...
   copy .env.example .env
-  echo Mo .env de cap nhat BOT_TOKEN...
-  notepad .env
-) else (
-  :: Kiểm tra BOT_TOKEN chỉ khi nó chưa được cập nhật
-  findstr /C:"BOT_TOKEN=your_telegram_bot_token" .env >nul 2>nul
-  if %ERRORLEVEL% EQU 0 (
-    echo BOT_TOKEN chua duoc cap nhat. Mo .env de cap nhat...
-    notepad .env
-  ) else (
-    echo BOT_TOKEN da duoc cap nhat. Bo qua buoc nay.
-  )
 )
 
 :: Kiểm tra node_modules và cài đặt nếu chưa có
