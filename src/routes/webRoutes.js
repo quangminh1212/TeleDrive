@@ -5,7 +5,7 @@
 
 const express = require('express');
 const path = require('path');
-const config = require('../config/config');
+const config = require('../config');
 const fileService = require('../services/fileService');
 const authMiddleware = require('../middlewares/authMiddleware');
 const telegramService = require('../services/telegramService');
@@ -203,6 +203,18 @@ router.get('/logout', (req, res) => {
   });
   */
   res.redirect('/login');
+});
+
+// Route đồng bộ thủ công
+router.post('/sync', async (req, res) => {
+  try {
+    // Đồng bộ file từ Telegram
+    const results = await telegramService.syncFiles();
+    res.json({ success: true, results });
+  } catch (error) {
+    console.error('Lỗi khi đồng bộ:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Helper functions

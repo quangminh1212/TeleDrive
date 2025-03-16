@@ -59,7 +59,7 @@ function initBot() {
     }
     
     console.log(`Đang khởi tạo bot với token: ${telegramToken.slice(0, 5)}...${telegramToken.slice(-5)}`);
-    console.log(`Chat ID cấu hình: ${targetChatId}`);
+    console.log(`Chat ID cấu hình: ${targetChatId || 'chưa thiết lập'}`);
     
     // Chuẩn hóa chat ID
     chatId = targetChatId ? targetChatId.toString() : null;
@@ -128,17 +128,21 @@ function initBot() {
       allowedUpdates: ['message', 'callback_query']
     }).then(() => {
       console.log(`Bot Telegram đã được khởi tạo thành công`);
-      if (chatId) {
-        console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${chatId}`);
-      } else {
-        console.log('Chưa có chat ID, hãy nhắn tin với bot để lấy chat ID');
-      }
-      isReady = true;
       
       // Lấy thông tin bot
       bot.telegram.getMe().then(botInfo => {
         console.log(`Bot đã khởi tạo: ${botInfo.username} (${botInfo.first_name})`);
         bot.botInfo = botInfo;
+        
+        if (chatId) {
+          console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${chatId}`);
+        } else {
+          console.log('Chưa có chat ID, hãy nhắn tin với bot để lấy chat ID');
+          console.log(`Link truy cập bot: https://t.me/${botInfo.username}`);
+          console.log(getStartInstructions());
+        }
+        
+        isReady = true;
       });
     }).catch(err => {
       console.error(`Không thể khởi động bot: ${err.message}`);
@@ -730,6 +734,7 @@ async function getFilesFromChat() {
   
   if (!chatId) {
     console.error('Không có chat ID, không thể lấy danh sách file');
+    console.log(getStartInstructions());
     throw new Error('Thiếu cấu hình TELEGRAM_CHAT_ID trong .env');
   }
   
@@ -748,6 +753,7 @@ async function getFilesFromChat() {
         console.error(`Chat ID không tồn tại: ${chatId}`);
         console.log('Vui lòng kiểm tra lại cấu hình TELEGRAM_CHAT_ID trong .env');
         console.log('Hoặc khởi động bot và gửi tin nhắn để lấy chat ID chính xác');
+        console.log(getStartInstructions());
         throw new Error(`Chat ID không tồn tại: ${chatId}. Kiểm tra lại hoặc gửi tin nhắn cho bot để lấy ID đúng.`);
       }
       
@@ -908,6 +914,20 @@ async function syncFiles() {
   }
 }
 
+/**
+ * Hiển thị hướng dẫn cách lấy chat ID đúng
+ * @returns {String} Hướng dẫn cách nhận chat ID
+ */
+function getStartInstructions() {
+  let instructions = '===== HƯỚNG DẪN THIẾT LẬP CHAT ID =====\n';
+  instructions += '1. Tìm bot của bạn trên Telegram (@' + (bot?.botInfo?.username || 'lab1212_bot') + ')\n';
+  instructions += '2. Nhắn tin với bot: /start\n';
+  instructions += '3. Bot sẽ trả về chat ID của bạn\n';
+  instructions += '4. Sao chép chat ID và cập nhật trong file .env\n';
+  instructions += '========================================\n';
+  return instructions;
+}
+
 module.exports = {
   initBot,
   stopBot,
@@ -920,5 +940,6 @@ module.exports = {
   sendNotification,
   getFilesFromChat,
   updateChatId,
-  syncFiles
+  syncFiles,
+  getStartInstructions
 }; 
