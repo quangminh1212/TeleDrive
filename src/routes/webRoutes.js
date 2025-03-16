@@ -86,7 +86,8 @@ router.get('/', (req, res) => {
       title: 'TeleDrive - Lưu trữ file với Telegram',
       files: formattedFiles,
       storageInfo,
-      formatBytes
+      formatBytes,
+      error: null
     });
   } catch (error) {
     console.error('Lỗi khi xử lý request trang chủ:', error);
