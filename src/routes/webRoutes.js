@@ -8,6 +8,9 @@ const path = require('path');
 const config = require('../config/config');
 const fileService = require('../services/fileService');
 const authMiddleware = require('../middlewares/authMiddleware');
+const telegramService = require('../services/telegramService');
+const fs = require('fs');
+const helpers = require('../utils/helpers');
 
 const router = express.Router();
 
@@ -43,57 +46,57 @@ function checkAuth(req, res, next) {
 router.use(checkAuth);
 
 // Route trang chủ
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    // Đọc danh sách file
-    const files = fileService.readFilesDb();
+    // Lấy danh sách file từ thư mục downloads
+    const downloadDir = path.join(process.cwd(), 'downloads');
+    let files = [];
     
-    // Lọc và sắp xếp files
-    const activeFiles = files
-      .filter(file => !file.isDeleted)
-      .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+    if (fs.existsSync(downloadDir)) {
+      files = fs.readdirSync(downloadDir)
+        .filter(file => !file.startsWith('.'))
+        .map(file => {
+          const filePath = path.join(downloadDir, file);
+          const stats = fs.statSync(filePath);
+          
+          return {
+            name: file,
+            path: `/downloads/${file}`,
+            size: helpers.formatFileSize(stats.size),
+            date: stats.mtime,
+            isFile: stats.isFile()
+          };
+        })
+        .filter(file => file.isFile)
+        .sort((a, b) => b.date - a.date);
+    }
     
-    // Tính thống kê lưu trữ
-    const totalSize = activeFiles.reduce((sum, file) => sum + (file.size || 0), 0);
-    const maxSize = 10 * 1024 * 1024 * 1024; // 10GB giả định
-    const storageInfo = {
-      used: totalSize,
-      total: maxSize,
-      percent: (totalSize / maxSize) * 100
-    };
+    // Kiểm tra trạng thái bot
+    const isBotActive = telegramService.isBotActive();
     
-    // Định dạng dữ liệu trước khi gửi tới template
-    const formattedFiles = activeFiles.map(file => ({
-      id: file.id,
-      name: file.name,
-      displayName: file.displayName || file.name,
-      size: file.size,
-      fileSize: file.size, // Thêm fileSize để tránh lỗi file.fileSize
-      formattedSize: formatBytes(file.size),
-      uploadDate: file.uploadDate,
-      formattedDate: formatDate(file.uploadDate),
-      fileType: file.fileType || guessFileType(file.name),
-      fileStatus: file.fileStatus || 'local',
-      localPath: file.localPath,
-      telegramFileId: file.telegramFileId,
-      telegramUrl: file.telegramUrl,
-      icon: getFileIcon(file.fileType || guessFileType(file.name)),
-      isDeleted: file.isDeleted || false
-    }));
-    
-    // Render template
-    res.render('index', { 
-      title: 'TeleDrive - Lưu trữ file với Telegram',
-      files: formattedFiles,
-      storageInfo,
-      formatBytes,
-      error: null
+    // Render trang chủ với danh sách file
+    res.render('index', {
+      title: 'TeleDrive',
+      files,
+      isBotActive,
+      error: null,
+      config: {
+        sync: config.ENABLE_AUTO_SYNC,
+        interval: config.SYNC_INTERVAL
+      }
     });
   } catch (error) {
-    console.error('Lỗi khi xử lý request trang chủ:', error);
-    res.status(500).render('error', { 
-      message: 'Đã xảy ra lỗi khi tải trang', 
-      error: config.NODE_ENV === 'development' ? error : {}
+    console.error('Lỗi khi hiển thị trang chủ:', error);
+    
+    res.render('index', {
+      title: 'TeleDrive',
+      files: [],
+      isBotActive: false,
+      error: `Lỗi: ${error.message}`,
+      config: {
+        sync: config.ENABLE_AUTO_SYNC,
+        interval: config.SYNC_INTERVAL
+      }
     });
   }
 });
