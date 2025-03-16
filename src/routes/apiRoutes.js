@@ -42,9 +42,12 @@ const upload = multer({
 
 // Áp dụng middleware xác thực cho tất cả các routes ngoại trừ telegram login
 router.use((req, res, next) => {
+  // Cho phép truy cập trực tiếp vào route đăng nhập Telegram mà không cần xác thực
   if (req.path === '/auth/telegram') {
     return next();
   }
+  
+  // Nếu không phải là route đăng nhập Telegram, áp dụng middleware xác thực
   authMiddleware.authenticate(req, res, next);
 });
 
@@ -79,8 +82,20 @@ router.post('/auth/logout', async (req, res) => {
 // Route đăng nhập bằng Telegram
 router.get('/auth/telegram', async (req, res) => {
   try {
+    // Kiểm tra xem bot token đã được cấu hình chưa
+    const botToken = config.TELEGRAM_BOT_TOKEN;
+    console.log('=== Xử lý đăng nhập Telegram ===');
+    console.log('Bot token có sẵn:', !!botToken);
+    
+    if (!botToken) {
+      console.error('Chưa cấu hình TELEGRAM_BOT_TOKEN');
+      return res.redirect('/login?error=' + encodeURIComponent('Lỗi cấu hình Telegram Bot, vui lòng kiểm tra TELEGRAM_BOT_TOKEN'));
+    }
+    
     // Nếu có dữ liệu callback từ Telegram
     if (req.query.id || req.query.auth_date || req.query.hash) {
+      console.log('Nhận callback từ Telegram với ID:', req.query.id);
+      
       // Xử lý dữ liệu xác thực từ callback
       const telegramData = {
         id: req.query.id,
@@ -98,13 +113,6 @@ router.get('/auth/telegram', async (req, res) => {
           providedData: Object.keys(req.query) 
         });
         return res.redirect('/login?error=' + encodeURIComponent('Thiếu thông tin xác thực từ Telegram, vui lòng thử lại'));
-      }
-      
-      // Kiểm tra xem bot token đã được cấu hình chưa
-      const botToken = config.TELEGRAM_BOT_TOKEN;
-      if (!botToken) {
-        console.error('Chưa cấu hình TELEGRAM_BOT_TOKEN');
-        return res.redirect('/login?error=' + encodeURIComponent('Lỗi cấu hình Telegram Bot, vui lòng liên hệ quản trị viên'));
       }
       
       // Tạo secret key từ token của bot theo đúng chuẩn Telegram
@@ -162,9 +170,12 @@ router.get('/auth/telegram', async (req, res) => {
       // Chuyển hướng người dùng đến dashboard
       return res.redirect('/dashboard');
     } else {
+      console.log('Tạo URL đăng nhập Telegram');
+      
       // Không có dữ liệu callback - tạo URL đăng nhập Telegram
       // Lấy thông tin bot
       const botInfo = await telegramService.verifyBotToken();
+      console.log('Kết quả xác thực bot token:', botInfo);
       
       if (!botInfo.success) {
         console.error('Không thể lấy thông tin bot:', botInfo.error);
@@ -173,7 +184,7 @@ router.get('/auth/telegram', async (req, res) => {
       
       // Lấy thông tin từ config
       const baseUrl = config.BASE_URL || `${req.protocol}://${req.get('host')}`;
-      const botUsername = botInfo.botUsername;
+      const botUsername = botInfo.botInfo.username;
       
       if (!botUsername) {
         console.error('Không tìm thấy tên người dùng bot');
@@ -183,6 +194,8 @@ router.get('/auth/telegram', async (req, res) => {
       // Tạo URL đăng nhập Telegram
       const callbackUrl = `${baseUrl}/api/auth/telegram`;
       const telegramAuthUrl = `https://oauth.telegram.org/auth?bot_id=${botUsername}&origin=${encodeURIComponent(baseUrl)}&return_to=${encodeURIComponent(callbackUrl)}`;
+      
+      console.log('Đã tạo URL đăng nhập Telegram:', telegramAuthUrl);
       
       // Chuyển hướng đến trang xác thực Telegram
       return res.redirect(telegramAuthUrl);
