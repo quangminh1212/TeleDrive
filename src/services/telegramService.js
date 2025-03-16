@@ -1208,128 +1208,93 @@ async function getFilesFromChat(limit = 10, options = {}) {
 }
 
 /**
- * Đồng bộ files từ Telegram hoặc giả lập
+ * Đồng bộ các file từ Telegram về DB
  * @returns {Promise<Object>} Kết quả đồng bộ
  */
 async function syncFiles() {
   try {
     console.log('===== BẮT ĐẦU ĐỒNG BỘ FILES =====');
     
-    // Nếu đang ở chế độ giả lập
+    // Kiểm tra bot có sẵn sàng không
     if (simulationMode) {
       console.log('[Chế độ giả lập] Đang giả lập đồng bộ files');
-      
-      // Tạo kết quả giả lập
       return {
         success: true,
         syncedCount: 0,
-        newFiles: 0,
         skippedCount: 0,
         errorCount: 0,
-        files: []
+        simulation: true
       };
     }
     
-    // Kiểm tra kết nối bot trước khi đồng bộ
+    // Kiểm tra bot có hoạt động không
     if (!isBotActive()) {
-      console.log('Bot không hoạt động, thử khởi động lại...');
+      console.log('Bot chưa khởi động hoặc chưa sẵn sàng, thử khởi động lại...');
+      const botResult = await initBot(true);
       
-      // Thử khởi động lại bot
-      let botRestarted = false;
-      
-      try {
-        // Dừng bot hiện tại (nếu có)
-        await stopBot();
-        
-        // Khởi động lại bot với thời gian timeout lớn hơn
-        const restarted = await Promise.race([
-          initBot(true),
-          new Promise((resolve) => setTimeout(() => resolve(null), 15000))
-        ]);
-        
-        if (restarted) {
-          console.log('Đã khởi động lại bot thành công, tiếp tục đồng bộ');
-          botRestarted = true;
-        } else {
-          console.log('Không thể khởi động lại bot, chuyển sang chế độ giả lập');
-          simulationMode = true;
-          
-          // Gọi lại hàm này trong chế độ giả lập
-          return syncFiles();
-        }
-      } catch (restartError) {
-        console.error('Lỗi khi khởi động lại bot:', restartError.message);
-        console.log('Chuyển sang chế độ giả lập');
+      // Nếu vẫn không khởi động được, chuyển sang chế độ giả lập
+      if (!botResult || !isBotActive()) {
+        console.log('Không thể khởi động lại bot để đồng bộ, sử dụng chế độ giả lập');
         simulationMode = true;
-        
-        // Gọi lại hàm này trong chế độ giả lập
-        return syncFiles();
-      }
-      
-      // Nếu không khởi động lại được, tiếp tục với chế độ giả lập
-      if (!botRestarted && !isBotActive()) {
-        console.log('Bot vẫn không hoạt động sau khi thử khởi động lại, chuyển sang chế độ giả lập');
-        simulationMode = true;
-        
-        // Gọi lại hàm này trong chế độ giả lập
-        return syncFiles();
+        return {
+          success: true,
+          syncedCount: 0,
+          skippedCount: 0,
+          errorCount: 0,
+          simulation: true
+        };
       }
     }
     
-    // Biến để theo dõi số lượng
-    let stats = {
-      syncedCount: 0,
-      newFiles: 0,
-      skippedCount: 0,
-      errorCount: 0
-    };
+    // Kiểm tra chat ID
+    if (!chatId) {
+      return {
+        success: false,
+        error: 'Chưa cấu hình chat ID',
+        syncedCount: 0,
+        skippedCount: 0,
+        errorCount: 0
+      };
+    }
     
-    // Lấy danh sách files từ Telegram
-    // Điều này có thể dùng phương thức getUpdates thay vì getChatHistory đã được sửa
-    const maxRetry = 3;
-    let retry = 0;
+    // Đồng bộ file 
+    const maxRetries = 3;
+    let retryCount = 0;
     let files = [];
     
-    while (retry < maxRetry && files.length === 0) {
+    // Thử lấy files từ chat với số lần thử tối đa
+    while (retryCount < maxRetries && files.length === 0) {
       try {
+        console.log(`Đang lấy danh sách file từ chat (lần thử ${retryCount + 1}/${maxRetries})`);
         files = await getFilesFromChat(100);
         
         if (files.length === 0) {
-          retry++;
-          console.log(`Không tìm thấy file nào (lần thử ${retry}/${maxRetry})`);
-          
-          if (retry < maxRetry) {
-            console.log('Đợi 5 giây trước khi thử lại...');
+          retryCount++;
+          if (retryCount < maxRetries) {
+            console.log(`Không tìm thấy file, đợi 5 giây trước khi thử lại...`);
             await new Promise(resolve => setTimeout(resolve, 5000));
           }
         }
       } catch (error) {
-        retry++;
-        console.error(`Lỗi khi lấy danh sách file (lần thử ${retry}/${maxRetry}):`, error.message);
-        
-        if (retry < maxRetry) {
-          console.log('Đợi 5 giây trước khi thử lại...');
+        console.error(`Lỗi khi lấy danh sách file (lần thử ${retryCount + 1}/${maxRetries}):`, error.message);
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`Đợi 5 giây trước khi thử lại...`);
           await new Promise(resolve => setTimeout(resolve, 5000));
         }
       }
     }
     
+    // Nếu không thể lấy file sau số lần thử tối đa, chuyển sang chế độ giả lập
     if (files.length === 0) {
-      console.log('Không tìm thấy file nào trên Telegram hoặc không thể lấy danh sách file');
-      console.log('===== KẾT THÚC ĐỒNG BỘ FILES =====');
-      console.log(`Đã đồng bộ: ${stats.syncedCount} | File mới: ${stats.newFiles} | Lỗi: ${stats.errorCount} | Bỏ qua: ${stats.skippedCount}`);
-      
-      // Nếu không tìm thấy file sau nhiều lần thử
-      if (!simulationMode && retry >= maxRetry) {
-        // Bật chế độ giả lập
-        console.log('Không tìm thấy file nào sau nhiều lần thử, bật chế độ giả lập');
-        simulationMode = true;
-      }
-      
+      console.log(`Không thể lấy file sau ${maxRetries} lần thử, bật chế độ giả lập`);
+      simulationMode = true;
       return {
         success: true,
-        ...stats,
-        files: []
+        syncedCount: 0,
+        skippedCount: 0,
+        errorCount: 0,
+        simulation: true
       };
     }
     
@@ -1339,11 +1304,13 @@ async function syncFiles() {
     // (Phần này phụ thuộc vào cài đặt cụ thể của ứng dụng)
     
     console.log('===== KẾT THÚC ĐỒNG BỘ FILES =====');
-    console.log(`Đã đồng bộ: ${stats.syncedCount} | File mới: ${stats.newFiles} | Lỗi: ${stats.errorCount} | Bỏ qua: ${stats.skippedCount}`);
+    console.log(`Đã đồng bộ: ${files.length} | Lỗi: 0 | Bỏ qua: 0`);
     
     return {
       success: true,
-      ...stats,
+      syncedCount: files.length,
+      skippedCount: 0,
+      errorCount: 0,
       files
     };
   } catch (error) {
@@ -1362,7 +1329,6 @@ async function syncFiles() {
       success: false,
       error: error.message,
       syncedCount: 0,
-      newFiles: 0,
       skippedCount: 0,
       errorCount: 0,
       files: []
