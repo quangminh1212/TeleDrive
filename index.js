@@ -2647,12 +2647,12 @@ function getAllFiles(dirPath, arrayOfFiles = []) {
 }
 
 // API endpoint để tạo thư mục mới
-app.post('/api/folders', (req, res) => {
+app.post('/api/folders', express.json(), (req, res) => {
   try {
-    const { name, parentFolder } = req.body;
+    const { folderName, parentFolder } = req.body;
     
     // Validate input
-    if (!name || name.trim() === '') {
+    if (!folderName || folderName.trim() === '') {
       return res.status(400).json({
         success: false,
         error: 'Tên thư mục không được để trống'
@@ -2660,53 +2660,52 @@ app.post('/api/folders', (req, res) => {
     }
     
     // Kiểm tra tên thư mục hợp lệ (không chứa ký tự đặc biệt)
-    if (!/^[a-zA-Z0-9_\-\.ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s]+$/.test(name)) {
+    if (!/^[a-zA-Z0-9\s_àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệđìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÈÉẺẼẸÊẾỀỂỄỆĐÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ-]+$/.test(folderName)) {
       return res.status(400).json({
         success: false,
         error: 'Tên thư mục chứa ký tự không hợp lệ'
       });
     }
     
-    // Khởi tạo đường dẫn thư mục
-    const storagePath = STORAGE_PATH;
-    let newFolderPath;
+    const baseFolder = path.join(STORAGE_PATH, 'uploads');
+    let folderPath;
     
-    if (parentFolder && parentFolder !== 'root') {
+    // Xác định đường dẫn thư mục
+    if (!parentFolder || parentFolder === 'root') {
+      folderPath = path.join(baseFolder, folderName);
+    } else {
+      const parentPath = path.join(baseFolder, parentFolder);
+      
       // Kiểm tra thư mục cha tồn tại
-      const parentFolderPath = path.join(storagePath, 'uploads', parentFolder);
-      if (!fs.existsSync(parentFolderPath)) {
-        return res.status(400).json({
+      if (!fs.existsSync(parentPath) || !fs.statSync(parentPath).isDirectory()) {
+        return res.status(404).json({
           success: false,
           error: 'Thư mục cha không tồn tại'
         });
       }
       
-      newFolderPath = path.join(parentFolderPath, name);
-    } else {
-      newFolderPath = path.join(storagePath, 'uploads', name);
+      folderPath = path.join(parentPath, folderName);
     }
     
     // Kiểm tra thư mục đã tồn tại chưa
-    if (fs.existsSync(newFolderPath)) {
+    if (fs.existsSync(folderPath)) {
       return res.status(400).json({
         success: false,
         error: 'Thư mục đã tồn tại'
       });
     }
     
-    // Tạo thư mục mới
-    fs.mkdirSync(newFolderPath, { recursive: true });
-    
-    console.log(`Đã tạo thư mục mới: ${newFolderPath}`);
+    // Tạo thư mục
+    fs.mkdirSync(folderPath, { recursive: true });
     
     // Trả về kết quả
     return res.json({
       success: true,
-      message: 'Đã tạo thư mục mới thành công',
+      message: 'Đã tạo thư mục thành công',
       folder: {
-        id: path.relative(path.join(storagePath, 'uploads'), newFolderPath),
-        name: name,
-        path: newFolderPath
+        name: folderName,
+        path: path.relative(baseFolder, folderPath),
+        created: new Date().toISOString()
       }
     });
   } catch (error) {
@@ -2718,23 +2717,16 @@ app.post('/api/folders', (req, res) => {
   }
 });
 
-// API endpoint để đổi tên file hoặc thư mục
-app.put('/api/rename', (req, res) => {
+// API endpoint để đổi tên thư mục
+app.put('/api/folders/rename', express.json(), (req, res) => {
   try {
-    const { type, id, newName } = req.body;
+    const { folderPath, newName } = req.body;
     
     // Validate input
-    if (!type || (type !== 'file' && type !== 'folder')) {
+    if (!folderPath) {
       return res.status(400).json({
         success: false,
-        error: 'Loại không hợp lệ'
-      });
-    }
-    
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        error: 'ID không được để trống'
+        error: 'Đường dẫn thư mục không được để trống'
       });
     }
     
@@ -2745,287 +2737,154 @@ app.put('/api/rename', (req, res) => {
       });
     }
     
-    // Kiểm tra tên hợp lệ (không chứa ký tự đặc biệt)
-    if (!/^[a-zA-Z0-9_\-\.ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s]+$/.test(newName)) {
+    // Kiểm tra tên thư mục hợp lệ
+    if (!/^[a-zA-Z0-9\s_àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệđìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÈÉẺẼẸÊẾỀỂỄỆĐÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ-]+$/.test(newName)) {
       return res.status(400).json({
         success: false,
         error: 'Tên mới chứa ký tự không hợp lệ'
       });
     }
     
-    const storagePath = STORAGE_PATH;
-    
-    if (type === 'folder') {
-      // Đổi tên thư mục
-      const folderPath = path.join(storagePath, 'uploads', id);
-      
-      // Kiểm tra thư mục tồn tại
-      if (!fs.existsSync(folderPath)) {
-        return res.status(404).json({
-          success: false,
-          error: 'Thư mục không tồn tại'
-        });
-      }
-      
-      // Tạo đường dẫn mới
-      const parentDir = path.dirname(folderPath);
-      const newFolderPath = path.join(parentDir, newName);
-      
-      // Kiểm tra tên mới đã tồn tại chưa
-      if (fs.existsSync(newFolderPath)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Tên thư mục đã tồn tại'
-        });
-      }
-      
-      // Đổi tên thư mục
-      fs.renameSync(folderPath, newFolderPath);
-      
-      console.log(`Đã đổi tên thư mục: ${folderPath} -> ${newFolderPath}`);
-      
-      // Trả về kết quả
-      return res.json({
-        success: true,
-        message: 'Đã đổi tên thư mục thành công',
-        folder: {
-          id: path.relative(path.join(storagePath, 'uploads'), newFolderPath),
-          name: newName,
-          path: newFolderPath
-        }
-      });
-    } else {
-      // Đổi tên file
-      // Đọc database
-      const filesData = readFilesDb();
-      
-      // Tìm file cần đổi tên
-      const fileIndex = filesData.findIndex(file => file.id === id);
-      
-      if (fileIndex === -1) {
-        return res.status(404).json({
-          success: false,
-          error: 'File không tồn tại'
-        });
-      }
-      
-      const file = filesData[fileIndex];
-      
-      // Lấy extension cũ
-      const oldExtension = path.extname(file.name);
-      
-      // Nếu tên mới không có extension, thêm extension từ tên cũ
-      let finalNewName = newName;
-      if (!path.extname(newName) && oldExtension) {
-        finalNewName = newName + oldExtension;
-      }
-      
-      // Nếu file có đường dẫn local, đổi tên file hệ thống
-      if (file.localPath && fs.existsSync(file.localPath)) {
-        const oldDir = path.dirname(file.localPath);
-        const newFilePath = path.join(oldDir, finalNewName);
-        
-        // Kiểm tra file mới đã tồn tại chưa
-        if (fs.existsSync(newFilePath)) {
-          return res.status(400).json({
-            success: false,
-            error: 'Tên file đã tồn tại'
-          });
-        }
-        
-        // Đổi tên file
-        fs.renameSync(file.localPath, newFilePath);
-        
-        // Cập nhật đường dẫn mới
-        file.localPath = newFilePath;
-      }
-      
-      // Cập nhật thông tin file
-      file.name = finalNewName;
-      const newFileType = getFileType(finalNewName);
-      
-      if (newFileType !== file.fileType) {
-        file.fileType = newFileType;
-        file.mimeType = getMimeType(path.extname(finalNewName));
-      }
-      
-      // Lưu thay đổi
-      saveFilesDb(filesData);
-      
-      console.log(`Đã đổi tên file: ${id} -> ${finalNewName}`);
-      
-      // Trả về kết quả
-      return res.json({
-        success: true,
-        message: 'Đã đổi tên file thành công',
-        file: file
-      });
-    }
-  } catch (error) {
-    console.error('Lỗi đổi tên:', error);
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Lỗi server khi đổi tên'
-    });
-  }
-});
-
-// API endpoint để di chuyển file
-app.put('/api/move', (req, res) => {
-  try {
-    const { fileId, targetFolder } = req.body;
-    
-    // Validate input
-    if (!fileId) {
-      return res.status(400).json({
-        success: false,
-        error: 'ID file không được để trống'
-      });
-    }
-    
-    if (targetFolder === undefined) {
-      return res.status(400).json({
-        success: false,
-        error: 'Thư mục đích không được để trống'
-      });
-    }
-    
-    const storagePath = STORAGE_PATH;
-    let targetFolderPath;
-    
-    if (targetFolder === 'root') {
-      targetFolderPath = path.join(storagePath, 'uploads');
-    } else {
-      targetFolderPath = path.join(storagePath, 'uploads', targetFolder);
-    }
-    
-    // Kiểm tra thư mục đích tồn tại
-    if (!fs.existsSync(targetFolderPath)) {
-      return res.status(404).json({
-        success: false,
-        error: 'Thư mục đích không tồn tại'
-      });
-    }
-    
-    // Đọc database
-    const filesData = readFilesDb();
-    
-    // Tìm file cần di chuyển
-    const fileIndex = filesData.findIndex(file => file.id === fileId);
-    
-    if (fileIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        error: 'File không tồn tại'
-      });
-    }
-    
-    const file = filesData[fileIndex];
-    
-    // Nếu file không có đường dẫn local, không thể di chuyển
-    if (!file.localPath || !fs.existsSync(file.localPath)) {
-      return res.status(400).json({
-        success: false,
-        error: 'File không có dữ liệu local'
-      });
-    }
-    
-    // Tạo đường dẫn mới
-    const newFilePath = path.join(targetFolderPath, path.basename(file.localPath));
-    
-    // Kiểm tra file đã tồn tại ở thư mục đích chưa
-    if (fs.existsSync(newFilePath)) {
-      return res.status(400).json({
-        success: false,
-        error: 'File đã tồn tại ở thư mục đích'
-      });
-    }
-    
-    // Di chuyển file
-    fs.renameSync(file.localPath, newFilePath);
-    
-    // Cập nhật đường dẫn mới
-    file.localPath = newFilePath;
-    
-    // Lưu thay đổi
-    saveFilesDb(filesData);
-    
-    console.log(`Đã di chuyển file: ${fileId} -> ${newFilePath}`);
-    
-    // Trả về kết quả
-    return res.json({
-      success: true,
-      message: 'Đã di chuyển file thành công',
-      file: file
-    });
-  } catch (error) {
-    console.error('Lỗi di chuyển file:', error);
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Lỗi server khi di chuyển file'
-    });
-  }
-});
-
-// API endpoint để xóa thư mục
-app.delete('/api/folders/:id', (req, res) => {
-  try {
-    const folderId = req.params.id;
-    
-    // Validate input
-    if (!folderId) {
-      return res.status(400).json({
-        success: false,
-        error: 'ID thư mục không được để trống'
-      });
-    }
-    
-    // Khởi tạo đường dẫn thư mục
-    const storagePath = STORAGE_PATH;
-    const folderPath = path.join(storagePath, 'uploads', folderId);
+    const baseFolder = path.join(STORAGE_PATH, 'uploads');
+    const fullFolderPath = path.join(baseFolder, folderPath);
     
     // Kiểm tra thư mục tồn tại
-    if (!fs.existsSync(folderPath)) {
+    if (!fs.existsSync(fullFolderPath) || !fs.statSync(fullFolderPath).isDirectory()) {
       return res.status(404).json({
         success: false,
         error: 'Thư mục không tồn tại'
       });
     }
     
-    // Kiểm tra thư mục có chứa file không
-    const filesInFolder = fs.readdirSync(folderPath);
-    if (filesInFolder.length > 0) {
-      // Di chuyển tất cả files và folders vào thùng rác
-      const trashFolder = path.join(storagePath, 'trash');
-      
-      // Tạo thư mục trash nếu chưa tồn tại
-      if (!fs.existsSync(trashFolder)) {
-        fs.mkdirSync(trashFolder, { recursive: true });
-      }
-      
-      // Tạo thư mục đích trong thùng rác
-      const trashDestination = path.join(trashFolder, path.basename(folderPath) + '_' + Date.now());
-      fs.mkdirSync(trashDestination, { recursive: true });
-      
-      // Di chuyển từng file/thư mục con vào thùng rác
-      for (const item of filesInFolder) {
-        const sourcePath = path.join(folderPath, item);
-        const destPath = path.join(trashDestination, item);
-        fs.renameSync(sourcePath, destPath);
-      }
+    // Tạo đường dẫn mới
+    const parentPath = path.dirname(fullFolderPath);
+    const newFolderPath = path.join(parentPath, newName);
+    
+    // Kiểm tra thư mục mới đã tồn tại chưa
+    if (fs.existsSync(newFolderPath)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Thư mục mới đã tồn tại'
+      });
     }
     
-    // Xóa thư mục (đã trống)
-    fs.rmdirSync(folderPath);
+    // Đổi tên thư mục
+    fs.renameSync(fullFolderPath, newFolderPath);
     
-    console.log(`Đã xóa thư mục: ${folderPath}`);
+    // Cập nhật đường dẫn localPath trong database
+    const filesData = readFilesDb();
+    let updatedFiles = 0;
+    
+    filesData.forEach(file => {
+      if (file.localPath && file.localPath.startsWith(fullFolderPath)) {
+        file.localPath = file.localPath.replace(fullFolderPath, newFolderPath);
+        updatedFiles++;
+      }
+    });
+    
+    if (updatedFiles > 0) {
+      saveFilesDb(filesData);
+    }
     
     // Trả về kết quả
     return res.json({
       success: true,
-      message: 'Đã xóa thư mục thành công',
-      folderId: folderId
+      message: 'Đã đổi tên thư mục thành công',
+      folder: {
+        oldPath: folderPath,
+        newPath: path.relative(baseFolder, newFolderPath),
+        newName: newName,
+        updatedFiles: updatedFiles
+      }
     });
+  } catch (error) {
+    console.error('Lỗi đổi tên thư mục:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi đổi tên thư mục'
+    });
+  }
+});
+
+// API endpoint để xóa thư mục
+app.delete('/api/folders', express.json(), (req, res) => {
+  try {
+    const { folderPath, deleteFiles } = req.body;
+    
+    // Validate input
+    if (!folderPath) {
+      return res.status(400).json({
+        success: false,
+        error: 'Đường dẫn thư mục không được để trống'
+      });
+    }
+    
+    const baseFolder = path.join(STORAGE_PATH, 'uploads');
+    const fullFolderPath = path.join(baseFolder, folderPath);
+    
+    // Kiểm tra thư mục tồn tại
+    if (!fs.existsSync(fullFolderPath) || !fs.statSync(fullFolderPath).isDirectory()) {
+      return res.status(404).json({
+        success: false,
+        error: 'Thư mục không tồn tại'
+      });
+    }
+    
+    // Kiểm tra thư mục có trống không
+    const folderContents = fs.readdirSync(fullFolderPath);
+    if (folderContents.length > 0 && !deleteFiles) {
+      return res.status(400).json({
+        success: false,
+        error: 'Thư mục không trống. Sử dụng deleteFiles=true để xóa cả nội dung bên trong.',
+        filesCount: folderContents.length
+      });
+    }
+    
+    // Xóa thư mục và nội dung
+    if (deleteFiles) {
+      // Lấy danh sách file trong thư mục và cập nhật database
+      const filesData = readFilesDb();
+      let deletedFiles = 0;
+      
+      for (let i = filesData.length - 1; i >= 0; i--) {
+        const file = filesData[i];
+        if (file.localPath && file.localPath.startsWith(fullFolderPath)) {
+          if (deleteFiles === 'permanent') {
+            // Xóa file vĩnh viễn khỏi database
+            filesData.splice(i, 1);
+          } else {
+            // Đánh dấu file đã bị xóa local
+            file.localPath = null;
+            file.fileStatus = file.telegramFileId ? 'telegram' : 'missing';
+          }
+          deletedFiles++;
+        }
+      }
+      
+      // Lưu lại database nếu có thay đổi
+      if (deletedFiles > 0) {
+        saveFilesDb(filesData);
+      }
+      
+      // Xóa thư mục và nội dung
+      fs.rmSync(fullFolderPath, { recursive: true, force: true });
+      
+      // Trả về kết quả
+      return res.json({
+        success: true,
+        message: 'Đã xóa thư mục và nội dung thành công',
+        deletedFiles: deletedFiles
+      });
+    } else {
+      // Xóa thư mục trống
+      fs.rmdirSync(fullFolderPath);
+      
+      // Trả về kết quả
+      return res.json({
+        success: true,
+        message: 'Đã xóa thư mục trống thành công'
+      });
+    }
   } catch (error) {
     console.error('Lỗi xóa thư mục:', error);
     return res.status(500).json({
