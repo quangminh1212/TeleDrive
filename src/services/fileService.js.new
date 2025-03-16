@@ -1,0 +1,451 @@
+/**
+ * TeleDrive - File Service
+ * File này chứa các hàm quản lý file
+ */
+
+const fs = require('fs');
+const path = require('path');
+const config = require('../config/config');
+const telegramService = require('./telegramService');
+const { getMimeType, guessFileType } = require('../utils/helpers');
+
+// Đường dẫn đến file DB
+const DB_PATH = path.join(config.STORAGE_PATH, 'db', 'files_db.json');
+
+/**
+ * Đọc dữ liệu file từ DB
+ * @returns {Array} Danh sách file
+ */
+function readFilesDb() {
+  try {
+    if (!fs.existsSync(DB_PATH)) {
+      // Nếu file DB không tồn tại, tạo file mới với mảng rỗng
+      fs.writeFileSync(DB_PATH, JSON.stringify([]));
+      return [];
+    }
+
+    const fileContent = fs.readFileSync(DB_PATH, 'utf8');
+    const data = JSON.parse(fileContent);
+
+    if (!Array.isArray(data)) {
+      console.error('DB không hợp lệ, đang reset');
+      fs.writeFileSync(DB_PATH, JSON.stringify([]));
+      return [];
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Lỗi khi đọc DB:', error);
+    return [];
+  }
+}
+
+/**
+ * Lưu dữ liệu file vào DB
+ * @param {Array} files Danh sách file cần lưu
+ * @returns {Boolean} Kết quả lưu
+ */
+function saveFilesDb(files) {
+  try {
+    const dbDir = path.dirname(DB_PATH);
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+
+    fs.writeFileSync(DB_PATH, JSON.stringify(files, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi lưu DB:', error);
+    return false;
+  }
+}
+
+/**
+ * Tạo đường dẫn an toàn cho file
+ * @param {String} fileName Tên file
+ * @returns {String} Đường dẫn an toàn
+ */
+function getSecureFilePath(fileName) {
+  return fileName.replace(/[^a-zA-Z0-9_.-]/g, '_');
+}
+
+/**
+ * Đồng bộ tất cả các file với Telegram
+ * @returns {Object} Kết quả đồng bộ
+ */
+async function syncFiles() {
+  console.log('===== BẮT ĐẦU ĐỒNG BỘ FILES =====');
+  
+  // Đọc danh sách file
+  const filesData = readFilesDb();
+  
+  // Khởi tạo biến đếm
+  let syncedCount = 0;
+  let errorCount = 0;
+  let skippedCount = 0;
+  
+  // Kiểm tra xem bot có hoạt động không
+  const botActive = telegramService.isBotActive();
+  if (!botActive) {
+    console.log('Bot không hoạt động, không thể đồng bộ');
+    return {
+      success: false,
+      error: 'Bot không hoạt động',
+      syncedCount,
+      errorCount,
+      skippedCount
+    };
+  }
+  
+  // Lặp qua từng file
+  for (const file of filesData) {
+    try {
+      // Kiểm tra xem file có cần đồng bộ không
+      if (!file.needsSync && file.telegramFileId) {
+        skippedCount++;
+        continue;
+      }
+      
+      // Kiểm tra file có tồn tại ở local không
+      if (!file.localPath || !fs.existsSync(file.localPath)) {
+        console.log(`File ${file.name} không tồn tại ở local, bỏ qua`);
+        skippedCount++;
+        continue;
+      }
+      
+      console.log(`Đang đồng bộ file: ${file.name}`);
+      
+      // Gửi file lên Telegram
+      const fileSize = fs.statSync(file.localPath).size;
+      
+      // Nếu file quá lớn thì bỏ qua
+      if (fileSize > config.MAX_FILE_SIZE) {
+        console.log(`File ${file.name} quá lớn (${fileSize} bytes), bỏ qua`);
+        file.needsSync = false;
+        skippedCount++;
+        continue;
+      }
+      
+      // Gửi file lên Telegram
+      const result = await telegramService.sendFileToTelegram(file.localPath, file.name);
+      
+      if (result.success) {
+        // Cập nhật thông tin file
+        file.telegramFileId = result.fileId;
+        file.telegramUrl = result.fileUrl;
+        file.needsSync = false;
+        file.fileStatus = 'synced';
+        
+        syncedCount++;
+        console.log(`Đã đồng bộ thành công file: ${file.name}`);
+      } else {
+        errorCount++;
+        console.error(`Lỗi khi đồng bộ file ${file.name}:`, result.error);
+      }
+    } catch (error) {
+      errorCount++;
+      console.error(`Lỗi khi đồng bộ file ${file.name}:`, error);
+    }
+  }
+  
+  // Lưu lại danh sách file đã cập nhật
+  saveFilesDb(filesData);
+  
+  console.log(`===== KẾT THÚC ĐỒNG BỘ FILES =====`);
+  console.log(`Đã đồng bộ: ${syncedCount} | Lỗi: ${errorCount} | Bỏ qua: ${skippedCount}`);
+  
+  return {
+    success: true,
+    syncedCount,
+    errorCount,
+    skippedCount
+  };
+}
+
+/**
+ * Đồng bộ một file cụ thể với Telegram
+ * @param {Object} file Thông tin file cần đồng bộ
+ * @returns {Object} Kết quả đồng bộ
+ */
+async function autoSyncFile(file) {
+  console.log(`===== TỰ ĐỘNG ĐỒNG BỘ FILE ${file.name} =====`);
+  
+  try {
+    // Kiểm tra xem bot có hoạt động không
+    const botActive = telegramService.isBotActive();
+    if (!botActive) {
+      console.log('Bot không hoạt động, không thể đồng bộ');
+      return {
+        success: false,
+        error: 'Bot không hoạt động'
+      };
+    }
+    
+    // Kiểm tra file có tồn tại ở local không
+    if (!file.localPath || !fs.existsSync(file.localPath)) {
+      console.log(`File ${file.name} không tồn tại ở local, bỏ qua`);
+      return {
+        success: false,
+        error: 'File không tồn tại ở local'
+      };
+    }
+    
+    // Kiểm tra kích thước file
+    const fileSize = fs.statSync(file.localPath).size;
+    
+    // Nếu file quá lớn thì bỏ qua
+    if (fileSize > config.MAX_FILE_SIZE) {
+      console.log(`File ${file.name} quá lớn (${fileSize} bytes), bỏ qua`);
+      return {
+        success: false,
+        error: 'File quá lớn'
+      };
+    }
+    
+    // Gửi file lên Telegram
+    const result = await telegramService.sendFileToTelegram(file.localPath, file.name);
+    
+    if (result.success) {
+      // Cập nhật thông tin file
+      const filesData = readFilesDb();
+      const fileIndex = filesData.findIndex(f => f.id === file.id);
+      
+      if (fileIndex !== -1) {
+        filesData[fileIndex].telegramFileId = result.fileId;
+        filesData[fileIndex].telegramUrl = result.fileUrl;
+        filesData[fileIndex].needsSync = false;
+        filesData[fileIndex].fileStatus = 'synced';
+        
+        // Lưu lại danh sách file đã cập nhật
+        saveFilesDb(filesData);
+      }
+      
+      console.log(`Đã đồng bộ thành công file: ${file.name}`);
+      
+      return {
+        success: true,
+        fileId: result.fileId
+      };
+    } else {
+      console.error(`Lỗi khi đồng bộ file ${file.name}:`, result.error);
+      
+      return {
+        success: false,
+        error: result.error
+      };
+    }
+  } catch (error) {
+    console.error(`Lỗi khi đồng bộ file ${file.name}:`, error);
+    
+    return {
+      success: false,
+      error: error.message || 'Lỗi không xác định'
+    };
+  }
+}
+
+/**
+ * Kiểm tra và sửa dữ liệu file
+ * @returns {Object} Kết quả kiểm tra
+ */
+async function checkFiles() {
+  try {
+    console.log('===== KIỂM TRA VÀ SỬA DỮ LIỆU FILES =====');
+    const files = readFilesDb();
+    
+    // Thống kê ban đầu
+    const stats = {
+      total: files.length,
+      fixed: 0,
+      missing: 0,
+      local: 0,
+      telegram: 0,
+      needsSync: 0
+    };
+    
+    // Kiểm tra từng file
+    for (const file of files) {
+      const hasLocalFile = file.localPath && fs.existsSync(file.localPath);
+      
+      // Kiểm tra và cập nhật trạng thái file
+      if (hasLocalFile) {
+        file.fileStatus = 'local';
+        stats.local++;
+        
+        // Nếu file tồn tại ở local nhưng chưa có trên Telegram, đánh dấu cần đồng bộ
+        if (!file.telegramFileId) {
+          file.needsSync = true;
+          stats.needsSync++;
+          stats.fixed++;
+          console.log(`Đánh dấu file "${file.name}" cần đồng bộ lên Telegram`);
+        }
+      } else {
+        if (file.localPath) {
+          console.log(`File "${file.name}" không tồn tại tại đường dẫn: ${file.localPath}`);
+        } else {
+          console.log(`File "${file.name}" không có đường dẫn local`);
+        }
+        
+        // Nếu file có trên Telegram, đánh dấu là telegram-only
+        if (file.telegramFileId) {
+          file.fileStatus = 'telegram';
+          stats.telegram++;
+        } else {
+          // Nếu file không có ở cả local và Telegram, đánh dấu là missing
+          file.fileStatus = 'missing';
+          stats.missing++;
+        }
+      }
+      
+      // Đồng bộ ngay lập tức các file cần thiết
+      if (file.needsSync && hasLocalFile) {
+        console.log(`Thực hiện đồng bộ file "${file.name}" ngay lập tức`);
+        try {
+          await autoSyncFile(file);
+          stats.fixed++;
+          console.log(`Đã đồng bộ thành công file "${file.name}"`);
+        } catch (error) {
+          console.error(`Lỗi khi đồng bộ file "${file.name}":`, error);
+        }
+      }
+    }
+    
+    // Lưu lại dữ liệu đã cập nhật
+    saveFilesDb(files);
+    console.log(`Đã kiểm tra và sửa ${stats.fixed} files`);
+    
+    return {
+      success: true,
+      message: `Đã kiểm tra và sửa ${stats.fixed} files`,
+      stats: stats,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Lỗi khi kiểm tra và sửa dữ liệu files:', error);
+    return {
+      success: false,
+      error: error.message || 'Lỗi không xác định',
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+/**
+ * Dọn dẹp files không sử dụng
+ * @returns {Object} Kết quả dọn dẹp
+ */
+async function cleanupFiles() {
+  try {
+    console.log('===== BẮT ĐẦU DỌN DẸP FILES =====');
+    
+    // Đọc danh sách file từ DB
+    const filesData = readFilesDb();
+    
+    // Thống kê ban đầu
+    const stats = {
+      total: filesData.length,
+      cleaned: 0,
+      errors: 0
+    };
+    
+    // Tạo danh sách các file đã lưu trong DB
+    const dbFiles = new Set();
+    filesData.forEach(file => {
+      if (file.localPath) {
+        dbFiles.add(file.localPath);
+      }
+    });
+    
+    // Tìm các file trong thư mục uploads không có trong DB
+    const uploadsDir = path.join(config.STORAGE_PATH, 'uploads');
+    
+    function scanDirectory(dir) {
+      try {
+        const items = fs.readdirSync(dir);
+        
+        for (const item of items) {
+          const itemPath = path.join(dir, item);
+          const stats = fs.statSync(itemPath);
+          
+          if (stats.isDirectory()) {
+            // Đệ quy vào thư mục con
+            scanDirectory(itemPath);
+          } else if (stats.isFile()) {
+            // Kiểm tra xem file có trong DB không
+            if (!dbFiles.has(itemPath)) {
+              // Nếu không có trong DB, xóa file
+              try {
+                fs.unlinkSync(itemPath);
+                console.log(`Đã xóa file thừa: ${itemPath}`);
+                stats.cleaned++;
+              } catch (error) {
+                console.error(`Không thể xóa file ${itemPath}:`, error);
+                stats.errors++;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Lỗi khi quét thư mục ${dir}:`, error);
+      }
+    }
+    
+    // Bắt đầu quét từ thư mục uploads
+    if (fs.existsSync(uploadsDir)) {
+      scanDirectory(uploadsDir);
+    }
+    
+    // Dọn dẹp thư mục temp
+    const tempDir = path.join(config.STORAGE_PATH, 'temp');
+    if (fs.existsSync(tempDir)) {
+      try {
+        const tempFiles = fs.readdirSync(tempDir);
+        
+        for (const file of tempFiles) {
+          const filePath = path.join(tempDir, file);
+          const fileStats = fs.statSync(filePath);
+          
+          // Xóa các file tạm đã tồn tại hơn 1 ngày
+          const fileAge = Date.now() - fileStats.mtime.getTime();
+          if (fileAge > 24 * 60 * 60 * 1000) {
+            try {
+              fs.unlinkSync(filePath);
+              console.log(`Đã xóa file tạm cũ: ${filePath}`);
+              stats.cleaned++;
+            } catch (error) {
+              console.error(`Không thể xóa file tạm ${filePath}:`, error);
+              stats.errors++;
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Lỗi khi dọn dẹp thư mục tạm:`, error);
+      }
+    }
+    
+    console.log(`===== KẾT THÚC DỌN DẸP FILES =====`);
+    console.log(`Đã dọn dẹp: ${stats.cleaned} files | Lỗi: ${stats.errors}`);
+    
+    return {
+      success: true,
+      message: `Đã dọn dẹp ${stats.cleaned} files không sử dụng`,
+      stats
+    };
+  } catch (error) {
+    console.error('Lỗi khi dọn dẹp files:', error);
+    return {
+      success: false,
+      error: error.message || 'Lỗi không xác định'
+    };
+  }
+}
+
+module.exports = {
+  readFilesDb,
+  saveFilesDb,
+  getSecureFilePath,
+  syncFiles,
+  autoSyncFile,
+  checkFiles,
+  cleanupFiles
+}; 
