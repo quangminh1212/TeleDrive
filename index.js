@@ -2262,15 +2262,6 @@ app.use((err, req, res, next) => {
     
     // Khởi động server
     try {
-      // Thêm middleware xử lý route không tồn tại vào đây, đảm bảo đặt sau tất cả routes
-      app.use((req, res) => {
-        console.log(`Route không tồn tại: ${req.method} ${req.path}`);
-        res.status(404).json({
-          success: false,
-          error: 'API endpoint không tồn tại'
-        });
-      });
-      
       app.listen(PORT, () => {
         console.log(`TeleDrive đang chạy trên http://localhost:${PORT}`);
         console.log(`Bot Telegram ${botActive ? 'đã kết nối' : 'chưa kết nối'}`);
