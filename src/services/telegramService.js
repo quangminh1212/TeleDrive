@@ -9,6 +9,9 @@ const fs = require('fs-extra');
 const path = require('path');
 const config = require('../config/config');
 const { log, generateId } = require('../utils/helpers');
+const { message } = require('telegraf/filters');
+const fileService = require('./fileService');
+const dbService = require('./dbService');
 
 // Biến trạng thái
 let bot = null;
@@ -40,10 +43,7 @@ async function initBot() {
     bot = new Telegraf(config.TELEGRAM_BOT_TOKEN);
     
     // Thiết lập xử lý sự kiện nhận file
-    bot.on('document', handleIncomingFile);
-    bot.on('photo', handleIncomingFile);
-    bot.on('video', handleIncomingFile);
-    bot.on('audio', handleIncomingFile);
+    setupMessageHandlers();
     
     // Lệnh kiểm tra
     bot.command('ping', (ctx) => ctx.reply('Pong!'));
@@ -92,78 +92,153 @@ function isBotActive() {
 }
 
 /**
- * Xử lý file gửi đến từ Telegram
- * @param {Object} ctx Context Telegraf
+ * Set up message handlers for the bot
  */
-async function handleIncomingFile(ctx) {
-  try {
-    // Kiểm tra xem có phải từ chat ID đã cấu hình không
-    if (ctx.chat.id.toString() !== config.TELEGRAM_CHAT_ID.toString()) {
-      log(`Nhận file từ chat ID không được phép: ${ctx.chat.id}`, 'warning');
-      return;
+const setupMessageHandlers = () => {
+  // Handle document messages
+  bot.on(message('document'), async (ctx) => {
+    try {
+      const document = ctx.message.document;
+      const messageId = ctx.message.message_id;
+      const caption = ctx.message.caption || '';
+      
+      log(`Received document: ${document.file_name} (${document.file_size} bytes)`);
+      
+      // Check if file already exists in database
+      const existingFile = await fileService.getFileByMessageId(messageId);
+      
+      if (existingFile) {
+        log(`File already exists in database with ID: ${existingFile.id}`);
+        return;
+      }
+      
+      // Save file to database
+      const fileData = {
+        name: document.file_name,
+        size: document.file_size,
+        mimeType: document.mime_type,
+        telegramMessageId: messageId,
+        caption
+      };
+      
+      const savedFile = await fileService.saveFile(fileData);
+      log(`Saved file to database with ID: ${savedFile.id}`);
+    } catch (err) {
+      log(`Error handling document message: ${err.message}`, 'error');
     }
-    
-    // Xác định loại file
-    let fileInfo = null;
-    
-    if (ctx.message.document) {
-      fileInfo = {
-        file_id: ctx.message.document.file_id,
-        file_name: ctx.message.document.file_name,
-        mime_type: ctx.message.document.mime_type,
-        file_size: ctx.message.document.file_size,
-        type: 'document'
+  });
+  
+  // Handle photo messages
+  bot.on(message('photo'), async (ctx) => {
+    try {
+      const photos = ctx.message.photo;
+      const messageId = ctx.message.message_id;
+      const caption = ctx.message.caption || '';
+      
+      // Get the largest photo
+      const photo = photos[photos.length - 1];
+      
+      log(`Received photo: ${photo.file_id} (${photo.file_size} bytes)`);
+      
+      // Check if file already exists in database
+      const existingFile = await fileService.getFileByMessageId(messageId);
+      
+      if (existingFile) {
+        log(`File already exists in database with ID: ${existingFile.id}`);
+        return;
+      }
+      
+      // Generate a filename
+      const fileName = `photo_${Date.now()}.jpg`;
+      
+      // Save file to database
+      const fileData = {
+        name: fileName,
+        size: photo.file_size,
+        mimeType: 'image/jpeg',
+        telegramMessageId: messageId,
+        caption
       };
-    } else if (ctx.message.photo) {
-      // Lấy ảnh chất lượng cao nhất (cuối mảng)
-      const photo = ctx.message.photo[ctx.message.photo.length - 1];
-      fileInfo = {
-        file_id: photo.file_id,
-        file_name: `photo_${Date.now()}.jpg`,
-        mime_type: 'image/jpeg',
-        file_size: photo.file_size,
-        type: 'photo'
-      };
-    } else if (ctx.message.video) {
-      fileInfo = {
-        file_id: ctx.message.video.file_id,
-        file_name: `video_${Date.now()}.mp4`,
-        mime_type: ctx.message.video.mime_type,
-        file_size: ctx.message.video.file_size,
-        type: 'video'
-      };
-    } else if (ctx.message.audio) {
-      fileInfo = {
-        file_id: ctx.message.audio.file_id,
-        file_name: ctx.message.audio.title || `audio_${Date.now()}.mp3`,
-        mime_type: ctx.message.audio.mime_type,
-        file_size: ctx.message.audio.file_size,
-        type: 'audio'
-      };
+      
+      const savedFile = await fileService.saveFile(fileData);
+      log(`Saved photo to database with ID: ${savedFile.id}`);
+    } catch (err) {
+      log(`Error handling photo message: ${err.message}`, 'error');
     }
-    
-    if (!fileInfo) {
-      log('Tin nhắn không chứa file được hỗ trợ', 'warning');
-      return;
+  });
+  
+  // Handle video messages
+  bot.on(message('video'), async (ctx) => {
+    try {
+      const video = ctx.message.video;
+      const messageId = ctx.message.message_id;
+      const caption = ctx.message.caption || '';
+      
+      log(`Received video: ${video.file_name || 'unnamed'} (${video.file_size} bytes)`);
+      
+      // Check if file already exists in database
+      const existingFile = await fileService.getFileByMessageId(messageId);
+      
+      if (existingFile) {
+        log(`File already exists in database with ID: ${existingFile.id}`);
+        return;
+      }
+      
+      // Generate a filename if not provided
+      const fileName = video.file_name || `video_${Date.now()}.mp4`;
+      
+      // Save file to database
+      const fileData = {
+        name: fileName,
+        size: video.file_size,
+        mimeType: video.mime_type,
+        telegramMessageId: messageId,
+        caption
+      };
+      
+      const savedFile = await fileService.saveFile(fileData);
+      log(`Saved video to database with ID: ${savedFile.id}`);
+    } catch (err) {
+      log(`Error handling video message: ${err.message}`, 'error');
     }
-    
-    log(`Đã nhận file: ${fileInfo.file_name} (${fileInfo.file_size} bytes)`);
-    
-    // Thêm thông tin message
-    fileInfo.message_id = ctx.message.message_id;
-    fileInfo.chat_id = ctx.chat.id;
-    fileInfo.date = ctx.message.date * 1000; // Convert to milliseconds
-    fileInfo.caption = ctx.message.caption || '';
-    
-    // Thông báo đã nhận được file
-    const fileModule = require('./fileService');
-    await fileModule.addFileFromTelegram(fileInfo);
-    
-    await ctx.reply(`Đã nhận và lưu trữ file: ${fileInfo.file_name}`);
-  } catch (error) {
-    log(`Lỗi xử lý file gửi đến: ${error.message}`, 'error');
-  }
-}
+  });
+  
+  // Handle audio messages
+  bot.on(message('audio'), async (ctx) => {
+    try {
+      const audio = ctx.message.audio;
+      const messageId = ctx.message.message_id;
+      const caption = ctx.message.caption || '';
+      
+      log(`Received audio: ${audio.file_name || audio.title || 'unnamed'} (${audio.file_size} bytes)`);
+      
+      // Check if file already exists in database
+      const existingFile = await fileService.getFileByMessageId(messageId);
+      
+      if (existingFile) {
+        log(`File already exists in database with ID: ${existingFile.id}`);
+        return;
+      }
+      
+      // Generate a filename if not provided
+      const fileName = audio.file_name || audio.title || `audio_${Date.now()}.mp3`;
+      
+      // Save file to database
+      const fileData = {
+        name: fileName,
+        size: audio.file_size,
+        mimeType: audio.mime_type,
+        telegramMessageId: messageId,
+        caption
+      };
+      
+      const savedFile = await fileService.saveFile(fileData);
+      log(`Saved audio to database with ID: ${savedFile.id}`);
+    } catch (err) {
+      log(`Error handling audio message: ${err.message}`, 'error');
+    }
+  });
+};
 
 /**
  * Tải file từ Telegram
@@ -381,8 +456,7 @@ async function syncFilesFromTelegram() {
     // Lấy danh sách file từ Telegram
     const telegramFiles = await getFilesFromChat(500); // Lấy tối đa 500 file
     
-    const fileModule = require('./fileService');
-    const result = await fileModule.syncFilesFromTelegram(telegramFiles);
+    const result = await fileService.syncFilesFromTelegram(telegramFiles);
     
     log(`Đồng bộ hoàn tất: ${result.added} file mới, ${result.updated} cập nhật, ${result.unchanged} không thay đổi`);
     
