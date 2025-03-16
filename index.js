@@ -446,9 +446,8 @@ async function syncFiles() {
               return await bot.telegram.sendVideo(chatId, { source: file.localPath }, { caption: caption });
             } else if (file.fileType === 'audio') {
               return await bot.telegram.sendAudio(chatId, { source: file.localPath }, { caption: caption });
-              return await bot.telegram.sendAudio(chatId, { source: file.localPath }, { caption: fileName });
             } else {
-              return await bot.telegram.sendDocument(chatId, { source: file.localPath }, { caption: fileName });
+              return await bot.telegram.sendDocument(chatId, { source: file.localPath }, { caption: caption });
             }
           } catch (err) {
             console.error(`Lỗi gửi file lên Telegram: ${err.message}`);
@@ -456,9 +455,9 @@ async function syncFiles() {
           }
         })();
         
-        // Sử dụng Promise với timeout
+        // Sử dụng Promise với timeout tăng lên 5 phút cho file lớn
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout khi gửi file lên Telegram')), 120000); // 2 phút timeout
+          setTimeout(() => reject(new Error('Timeout khi gửi file lên Telegram')), 300000); // 5 phút timeout
         });
         
         message = await Promise.race([sendFilePromise, timeoutPromise]);
@@ -485,6 +484,8 @@ async function syncFiles() {
         file.telegramFileId = telegramFileId;
         file.needsSync = false;
         file.fileStatus = 'telegram';
+        file.syncError = null; // Xóa lỗi nếu có
+        file.lastSyncDate = new Date().toISOString(); // Thêm thời gian đồng bộ
         
         // Lấy đường dẫn tải xuống
         const fileInfo = await bot.telegram.getFile(telegramFileId);
@@ -504,10 +505,13 @@ async function syncFiles() {
         // Đánh dấu file cần đồng bộ lại sau
         file.needsSync = true;
         file.syncError = error.message;
+        file.lastSyncAttempt = new Date().toISOString();
+        errorCount++;
         saveFilesDb(filesData);
       }
     }
     
+    console.log(`Đồng bộ hoàn tất. Đã đồng bộ ${syncedCount}/${filesToSync.length} file. Lỗi: ${errorCount}`);
     console.log(`Đồng bộ hoàn tất. Đã đồng bộ ${syncedCount}/${filesToSync.length} file.`);
     
     // Thực hiện tự động khôi phục file từ Telegram nếu cần
