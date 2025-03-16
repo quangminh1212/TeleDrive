@@ -4010,3 +4010,50 @@ app.use((req, res) => {
     error: 'API endpoint không tồn tại'
   });
 });
+
+// ... existing code ...
+// API endpoint để xem chi tiết các file và trạng thái đồng bộ
+app.get('/api/files/status', (req, res) => {
+  try {
+    console.log('===== KIỂM TRA TRẠNG THÁI CÁC FILE =====');
+    const files = readFilesDb();
+    
+    // Tạo danh sách phản hồi với các thông tin quan trọng
+    const filesList = files.map(file => ({
+      id: file.id,
+      name: file.name,
+      size: file.size ? formatBytes(file.size) : 'Không rõ',
+      uploadDate: file.uploadDate ? formatDate(file.uploadDate) : 'Không rõ',
+      fileStatus: file.fileStatus || 'Không rõ',
+      needsSync: !!file.needsSync,
+      hasTelegramId: !!file.telegramFileId,
+      hasLocalPath: !!file.localPath,
+      localPathExists: file.localPath ? fs.existsSync(file.localPath) : false,
+      localPath: file.localPath || 'Không có'
+    }));
+    
+    // Thống kê
+    const stats = {
+      total: files.length,
+      local: files.filter(f => f.fileStatus === 'local').length,
+      telegram: files.filter(f => f.fileStatus === 'telegram').length,
+      missing: files.filter(f => f.fileStatus === 'missing').length,
+      needsSync: files.filter(f => f.needsSync).length,
+      synced: files.filter(f => f.telegramFileId).length
+    };
+    
+    res.json({
+      success: true,
+      files: filesList,
+      stats: stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy trạng thái files:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi lấy trạng thái files'
+    });
+  }
+});
+// ... existing code ...
