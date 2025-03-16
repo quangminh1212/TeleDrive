@@ -428,70 +428,63 @@ function isBotActive() {
 }
 
 /**
- * Kiểm tra xem bot token có hợp lệ không
+ * Kiểm tra token bot Telegram
+ * @param {String} token Token cần kiểm tra
  * @returns {Promise<Object>} Kết quả kiểm tra
  */
-async function verifyBotToken() {
+async function verifyBotToken(token) {
   try {
-    console.log('Xác thực token bot...');
-    
-    // Lấy token từ config
-    const token = config.TELEGRAM_BOT_TOKEN;
-    
     if (!token) {
-      console.error('Thiếu TELEGRAM_BOT_TOKEN trong cấu hình');
-      return {
-        success: false,
-        error: 'Thiếu TELEGRAM_BOT_TOKEN trong cấu hình'
+      console.error('Thiếu token bot');
+      return { valid: false, error: 'Thiếu token bot' };
+    }
+    
+    // Nếu đang trong chế độ giả lập và token giống với token hiện tại
+    if (simulationMode && token === config.TELEGRAM_BOT_TOKEN) {
+      console.log('[Chế độ giả lập] Xác minh token bot');
+      return { 
+        valid: true, 
+        simulated: true,
+        botInfo: {
+          id: 123456789,
+          is_bot: true,
+          first_name: "SimulatedBot",
+          username: "simulated_bot"
+        }
       };
     }
     
-    // Tạo URL request tới Telegram API
-    const apiUrl = `https://api.telegram.org/bot${token}/getMe`;
+    // Kiểm tra token với API Telegram
+    const response = await Promise.race([
+      axios.get(`https://api.telegram.org/bot${token}/getMe`, {
+        timeout: 5000 // 5 giây timeout
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout khi kiểm tra token')), 5000)
+      )
+    ]).catch(error => {
+      console.error('Lỗi khi kiểm tra token:', error.message);
+      return { data: { ok: false, description: error.message } };
+    });
     
-    // Gửi request bằng axios với timeout 10 giây
-    const response = await axios.get(apiUrl, { timeout: 10000 });
-    
-    if (response.data && response.data.ok && response.data.result) {
-      const botInfo = response.data.result;
-      console.log(`Xác thực token thành công. Bot: ${botInfo.username}`);
-      
-      return {
-        success: true,
-        botInfo: botInfo,
-        botUsername: botInfo.username
-      };
-    } else {
-      console.error('Dữ liệu phản hồi không đúng định dạng:', response.data);
-      return {
-        success: false,
-        error: 'Dữ liệu phản hồi không đúng định dạng'
-      };
+    if (!response || !response.data) {
+      return { valid: false, error: 'Không nhận được phản hồi từ Telegram API' };
     }
-  } catch (error) {
-    console.error('Lỗi khi xác thực bot token:', error.message);
     
-    // Kiểm tra lỗi cụ thể để đưa ra thông báo chi tiết
-    if (error.response) {
-      // Lỗi từ API Telegram
-      console.error('Lỗi API:', error.response.status, error.response.data);
-      return {
-        success: false,
-        error: `Lỗi API: ${error.response.status} - ${JSON.stringify(error.response.data)}`
-      };
-    } else if (error.request) {
-      // Không nhận được phản hồi (timeout, mất kết nối,...)
-      console.error('Không nhận được phản hồi từ Telegram API');
-      return {
-        success: false,
-        error: 'Không nhận được phản hồi từ Telegram API. Vui lòng kiểm tra kết nối mạng.'
+    if (!response.data.ok) {
+      return { 
+        valid: false, 
+        error: response.data.description || 'Token không hợp lệ' 
       };
     }
     
-    return {
-      success: false,
-      error: error.message || 'Lỗi không xác định khi xác thực token'
+    return { 
+      valid: true, 
+      botInfo: response.data.result 
     };
+  } catch (error) {
+    console.error('Lỗi khi kiểm tra token bot:', error.message);
+    return { valid: false, error: error.message };
   }
 }
 
