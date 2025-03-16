@@ -101,14 +101,14 @@ const config = {
   // Tự động dọn dẹp
   CLEANUP_ENABLED: process.env.CLEANUP_ENABLED !== 'false',
   CLEANUP_INTERVAL: parseInt(process.env.CLEANUP_INTERVAL) || 24 * 60 * 60 * 1000, // 24 hours
-  
-  // Tạo các đường dẫn phụ thuộc
-  UPLOADS_DIR: path.join(config.STORAGE_PATH, 'uploads'),
-  TEMP_DIR: path.join(config.STORAGE_PATH, 'temp'),
-  DB_DIR: path.join(config.STORAGE_PATH, 'db'),
-  TEMP_PATH: process.env.TEMP_PATH || path.join(process.cwd(), 'temp'),
-  DOWNLOAD_PATH: process.env.DOWNLOAD_PATH || path.join(process.cwd(), 'downloads')
 };
+
+// Tạo đường dẫn phụ thuộc PHẢI ở sau khai báo config
+config.UPLOADS_DIR = path.join(config.STORAGE_PATH, 'uploads');
+config.TEMP_DIR = path.join(config.STORAGE_PATH, 'temp');
+config.DB_DIR = path.join(config.STORAGE_PATH, 'db');
+config.TEMP_PATH = process.env.TEMP_PATH || path.join(process.cwd(), 'temp');
+config.DOWNLOAD_PATH = process.env.DOWNLOAD_PATH || path.join(process.cwd(), 'downloads');
 
 // Đảm bảo các thư mục cần thiết tồn tại
 function ensureDirectories() {
