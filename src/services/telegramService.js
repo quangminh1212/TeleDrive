@@ -21,40 +21,52 @@ let isInitializing = false;
 let simulationMode = false;
 
 /**
- * Dừng bot Telegram nếu đang hoạt động
+ * Dừng bot Telegram
+ * @returns {Promise<Boolean>} Kết quả dừng bot
  */
 async function stopBot() {
   try {
-    console.log('===== DỪNG BOT TELEGRAM =====');
-    console.log('Đang dừng bot...');
-    
-    if (bot) {
-      // Thử dừng bot nếu có
-      try {
-        await bot.stop();
-        console.log('Đã dừng bot thành công');
-      } catch (error) {
-        console.error('Lỗi khi dừng bot:', error.message);
-      }
-      
-      // Đảm bảo xóa tham chiếu đến bot dù có lỗi hay không
-      bot = null;
+    // Nếu đang trong chế độ giả lập
+    if (simulationMode) {
+      console.log('[Chế độ giả lập] Dừng bot');
+      simulationMode = false;
+      return true;
     }
     
-    isReady = false;
-    simulationMode = false;
-    console.log('Bot Telegram đã bị dừng và giải phóng');
+    // Nếu bot không tồn tại
+    if (!bot) {
+      console.log('Bot không tồn tại, không cần dừng');
+      return true;
+    }
     
-    // Đợi thêm thời gian để đảm bảo các kết nối được đóng hoàn toàn
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Dừng bot với timeout
+    try {
+      await Promise.race([
+        bot.stop(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout khi dừng bot')), 5000)
+        )
+      ]);
+      
+      console.log('Đã dừng bot thành công');
+    } catch (error) {
+      console.error('Lỗi khi dừng bot:', error.message);
+      // Tiếp tục xử lý dù có lỗi
+    }
+    
+    // Reset các biến trạng thái
+    bot = null;
+    isReady = false;
     
     return true;
   } catch (error) {
-    console.error('Lỗi không mong muốn khi dừng bot:', error.message);
+    console.error('Lỗi khi dừng bot Telegram:', error.message);
+    // Vẫn reset các biến trạng thái
     bot = null;
     isReady = false;
-    simulationMode = false;
     return false;
+  } finally {
+    isInitializing = false;
   }
 }
 
