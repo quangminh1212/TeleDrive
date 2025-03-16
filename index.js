@@ -3963,6 +3963,15 @@ app.post('/api/settings', express.json(), async (req, res) => {
       message: 'Đã lưu cài đặt thành công',
       needsRestart: restartAfterSave
     });
+  } catch (error) {
+    console.error('Lỗi cập nhật cài đặt:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi server khi cập nhật cài đặt'
+    });
+  }
+});
+
 // Middleware xử lý route không tồn tại - phải đặt sau tất cả các routes
 app.use((req, res) => {
   console.log(`Route không tồn tại: ${req.method} ${req.path}`);
