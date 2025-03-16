@@ -62,8 +62,8 @@ router.get('/dashboard', (req, res) => {
   
   // Chuẩn bị data để render
   const viewData = {
-    user: req.session.telegramUser || { username: 'Admin' },
-    useTelegram: !!req.session.telegramUser,
+    user: req.session.telegramUser || { username: 'User' },
+    useTelegram: true,
     pageTitle: 'Dashboard'
   };
   
