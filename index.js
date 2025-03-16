@@ -1,6 +1,6 @@
 ﻿/**
- * TeleDrive - á»¨ng dá»¥ng quáº£n lÃ½ file vá»›i Telegram Bot
- * File chÃ­nh káº¿t há»£p táº¥t cáº£ chá»©c nÄƒng: web server, bot Telegram, Ä‘á»“ng bá»™ file vÃ dá»n dáº¹p
+ * TeleDrive - á»¨ng dụng quáº£n lÃ½ file vá»›i Telegram Bot
+ * File chÃ­nh káº¿t há»£p táº¥t cả chá»©c nÄƒng: web server, bot Telegram, Ä‘á»“ng bá»™ file vÃ dá»n dáº¹p
  */
 
 const express = require('express');
@@ -33,11 +33,11 @@ const CHAT_ID = process.env.CHAT_ID;
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '2000', 10) * 1024 * 1024; // Convert MB to bytes
 const DATA_DIR = process.env.DATA_DIR || 'data';
 
-// ÄÆ°á»ng dáº«n file vÃ thÆ° má»¥c
+// ÄÆ°á»ng dáº«n file vÃ thư mục
 const dataDir = path.join(__dirname, DATA_DIR);
-const tempDir = TEMP_DIR;  // Sá»­ dá»¥ng Ä‘Æ°á»ng dáº«n Ä‘Ã£ Ä‘á»‹nh nghÄ©a
-const uploadsDir = UPLOADS_DIR; // Sá»­ dá»¥ng Ä‘Æ°á»ng dáº«n Ä‘Ã£ Ä‘á»‹nh nghÄ©a
-const logsDir = LOGS_DIR; // Sá»­ dá»¥ng Ä‘Æ°á»ng dáº«n Ä‘Ã£ Ä‘á»‹nh nghÄ©a
+const tempDir = TEMP_DIR;  // Sử dụng Ä‘Æ°á»ng dáº«n Ä‘Ã£ Ä‘á»‹nh nghÄ©a
+const uploadsDir = UPLOADS_DIR; // Sử dụng Ä‘Æ°á»ng dáº«n Ä‘Ã£ Ä‘á»‹nh nghÄ©a
+const logsDir = LOGS_DIR; // Sử dụng Ä‘Æ°á»ng dáº«n Ä‘Ã£ Ä‘á»‹nh nghÄ©a
 const filesDbPath = path.join(dataDir, 'files.json');
 
 // ÄÆ°á»ng dáº«n lÆ°u trá»¯ chÃ­nh
@@ -62,12 +62,12 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: function(req, file, cb) {
-    // Äáº£m báº£o tÃªn file an toÃ n, trÃ¡nh lá»—i Ä‘Æ°á»ng dáº«n
+    // Äáº£m báº£o tên file an toÃ n, trÃ¡nh lá»—i Ä‘Æ°á»ng dáº«n
     const originalName = file.originalname;
     const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
     const uniqueName = Date.now() + '-' + sanitizedName;
     
-    // LÆ°u tÃªn gá»‘c vÃ o request Ä‘á»ƒ sá»­ dá»¥ng sau nÃ y
+    // LÆ°u tên gá»‘c vÃ o request Ä‘á»ƒ sá»­ dụng sau nÃ y
     req.originalFileName = originalName;
     
     cb(null, uniqueName);
@@ -108,7 +108,7 @@ function formatDate(dateString) {
             minute: '2-digit'
         });
     } catch (error) {
-        console.error('Lá»—i Ä‘á»‹nh dáº¡ng ngÃ y:', error);
+        console.error('Lỗi Ä‘á»‹nh dáº¡ng ngÃ y:', error);
         return 'Không xác định';
     }
 }
@@ -126,19 +126,19 @@ const initBot = () => {
         process.env.BOT_TOKEN = envConfig.BOT_TOKEN;
         console.log('ÄÃ£ cáº­p nháº­t BOT_TOKEN tá»« file .env');
       } else {
-        console.warn('BOT_TOKEN khÃ´ng tÃ¬m tháº¥y trong file .env');
+        console.warn('BOT_TOKEN không tÃ¬m tháº¥y trong file .env');
       }
       if (envConfig.CHAT_ID) {
         process.env.CHAT_ID = envConfig.CHAT_ID;
         console.log('ÄÃ£ cáº­p nháº­t CHAT_ID tá»« file .env');
       } else {
-        console.warn('CHAT_ID khÃ´ng tÃ¬m tháº¥y trong file .env');
+        console.warn('CHAT_ID không tÃ¬m tháº¥y trong file .env');
       }
     } else {
-      console.error('File .env khÃ´ng tá»“n táº¡i');
+      console.error('File .env không tá»“n táº¡i');
     }
   } catch (e) {
-    console.error('KhÃ´ng thá»ƒ Ä‘á»c file .env:', e.message);
+    console.error('Không thá»ƒ Ä‘á»c file .env:', e.message);
   }
   
   // Cáº­p nháº­t biáº¿n toÃ n cá»¥c
@@ -167,44 +167,44 @@ const initBot = () => {
     newBot.launch()
       .then(async () => {
         const me = await newBot.telegram.getMe();
-        console.log(`Káº¿t ná»‘i thÃ nh cÃ´ng! Bot: @${me.username}`);
+        console.log(`Káº¿t ná»‘i thÃ nh công! Bot: @${me.username}`);
         
         console.log('Khá»Ÿi Ä‘á»™ng bot trong tiáº¿n trÃ¬nh riÃªng biá»‡t...');
         
-        // Khá»Ÿi Ä‘á»™ng bot trong tiáº¿n trÃ¬nh riÃªng biá»‡t Ä‘á»ƒ khÃ´ng block main thread
+        // Khá»Ÿi Ä‘á»™ng bot trong tiáº¿n trÃ¬nh riÃªng biá»‡t Ä‘á»ƒ không block main thread
         try {
           newBot.botInfo = me;
           console.log('Bot Ä‘Ã£ Ä‘Æ°á»£c khá»Ÿi Ä‘á»™ng trong tiáº¿n trÃ¬nh riÃªng biá»‡t.');
           return newBot;
         } catch (error) {
-          console.error('Lá»—i khi khá»Ÿi Ä‘á»™ng bot trong tiáº¿n trÃ¬nh riÃªng:', error);
+          console.error('Lỗi khi khá»Ÿi Ä‘á»™ng bot trong tiáº¿n trÃ¬nh riÃªng:', error);
           return newBot;
         }
       })
       .catch(error => {
-        console.error('Lá»—i khá»Ÿi Ä‘á»™ng bot:', error.message);
+        console.error('Lỗi khá»Ÿi Ä‘á»™ng bot:', error.message);
         if (error.code === 401) {
-          console.error('Token khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ bá»‹ thu há»“i. Vui lÃ²ng kiá»ƒm tra BOT_TOKEN trong file .env');
+          console.error('Token không há»£p lá»‡ hoáº·c Ä‘Ã£ bá»‹ thu há»“i. Vui lÃ²ng kiá»ƒm tra BOT_TOKEN trong file .env');
         } else if (error.code === 'ETIMEOUT') {
           console.error('Timeout khi káº¿t ná»‘i Ä‘áº¿n Telegram API. Vui lÃ²ng kiá»ƒm tra káº¿t ná»‘i máº¡ng');
         }
-        console.log('á»¨ng dá»¥ng váº«n tiáº¿p tá»¥c cháº¡y mÃ  khÃ´ng cÃ³ bot.');
+        console.log('á»¨ng dụng váº«n tiáº¿p tá»¥c cháº¡y mÃ  không cÃ³ bot.');
         return null;
       });
     
     return Promise.resolve(newBot);
   } catch (error) {
-    console.error('Lá»—i khi khá»Ÿi táº¡o bot:', error);
+    console.error('Lỗi khi khá»Ÿi táº¡o bot:', error);
     return Promise.resolve(null);
   }
 };
 
-// HÃ m kiá»ƒm tra xem bot cÃ³ hoáº¡t Ä‘á»™ng khÃ´ng
+// HÃ m kiá»ƒm tra xem bot cÃ³ hoáº¡t Ä‘á»™ng không
 const checkBotActive = async () => {
   console.log('Kiá»ƒm tra tráº¡ng thÃ¡i hoáº¡t Ä‘á»™ng cá»§a bot...');
   
   if (!bot || !BOT_TOKEN || BOT_TOKEN === 'your_telegram_bot_token') {
-    console.log('Bot khÃ´ng tá»“n táº¡i hoáº·c token chÆ°a Ä‘Æ°á»£c cáº¥u hÃ¬nh');
+    console.log('Bot không tá»“n táº¡i hoáº·c token chÆ°a Ä‘Æ°á»£c cáº¥u hÃ¬nh');
     return false;
   }
   
@@ -221,41 +221,41 @@ const checkBotActive = async () => {
     // Kiá»ƒm tra bot báº±ng cÃ¡ch láº¥y thÃ´ng tin
     const checkPromise = bot.telegram.getMe()
       .then((botInfo) => {
-        console.log(`Bot hoáº¡t Ä‘á»™ng bÃ¬nh thÆ°á»ng: @${botInfo.username}`);
+        console.log(`Bot hoáº¡t Ä‘á»™ng bÃ¬nh thưá»ng: @${botInfo.username}`);
         return true;
       })
       .catch((error) => {
-        console.error('Lá»—i khi kiá»ƒm tra bot:', error.message);
+        console.error('Lỗi khi kiá»ƒm tra bot:', error.message);
         return false;
       });
     
     // Race giá»¯a check vÃ  timeout
     const result = await Promise.race([checkPromise, timeoutPromise]);
-    console.log(`Káº¿t quáº£ kiá»ƒm tra bot: ${result ? 'Hoáº¡t Ä‘á»™ng' : 'KhÃ´ng hoáº¡t Ä‘á»™ng'}`);
+    console.log(`Káº¿t quáº£ kiá»ƒm tra bot: ${result ? 'Hoáº¡t Ä‘á»™ng' : 'Không hoáº¡t Ä‘á»™ng'}`);
     return result;
   } catch (error) {
-    console.error('Lá»—i khi kiá»ƒm tra bot:', error);
+    console.error('Lỗi khi kiá»ƒm tra bot:', error);
     return false;
   }
 };
 
 /**
- * Äáº£m báº£o cÃ¡c thÆ° má»¥c cáº§n thiáº¿t tá»“n táº¡i
- * @param {Array} directories - Danh sÃ¡ch cÃ¡c thÆ° má»¥c cáº§n kiá»ƒm tra
+ * Äáº£m báº£o cÃ¡c thư mục cáº§n thiáº¿t tá»“n táº¡i
+ * @param {Array} directories - Danh sÃ¡ch cÃ¡c thư mục cáº§n kiá»ƒm tra
  */
 function ensureDirectories(directories) {
   directories.forEach(dir => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
-      console.log(`ÄÃ£ táº¡o thÆ° má»¥c: ${dir}`);
+      console.log(`ÄÃ£ táº¡o thư mục: ${dir}`);
     }
   });
 }
 
-// Äáº£m báº£o cÃ¡c thÆ° má»¥c cáº§n thiáº¿t tá»“n táº¡i
+// Äáº£m báº£o cÃ¡c thư mục cáº§n thiáº¿t tá»“n táº¡i
 ensureDirectories([dataDir, tempDir, uploadsDir, logsDir]);
 
-// Kiá»ƒm tra xem file .env cÃ³ tá»“n táº¡i khÃ´ng
+// Kiá»ƒm tra xem file .env cÃ³ tá»“n táº¡i không
 checkEnvFile();
 
 /**
@@ -268,7 +268,7 @@ function readFilesDb() {
       const content = fs.readFileSync(filesDbPath, 'utf8');
       const data = JSON.parse(content);
       
-      // Kiá»ƒm tra vÃ  cáº­p nháº­t tráº¡ng thÃ¡i táº¥t cáº£ file trong má»™t láº§n láº·p
+      // Kiá»ƒm tra vÃ  cáº­p nháº­t tráº¡ng thÃ¡i táº¥t cả file trong má»™t láº§n láº·p
       data.forEach(file => {
         // XÃ¡c Ä‘á»‹nh loáº¡i file
         file.fileType = file.fileType || getFileType(file.name);
@@ -280,7 +280,7 @@ function readFilesDb() {
           file.fileStatus = 'telegram';
         } else {
           file.fileStatus = 'missing';
-          file.needsSync = true; // ÄÃ¡nh dáº¥u cáº§n Ä‘á»“ng bá»™ náº¿u file khÃ´ng cÃ³ á»Ÿ Ä‘Ã¢u cáº£
+          file.needsSync = true; // ÄÃ¡nh dáº¥u cáº§n Ä‘á»“ng bá»™ náº¿u file không cÃ³ á»Ÿ Ä‘Ã¢u cả
         }
       });
       
@@ -294,7 +294,7 @@ function readFilesDb() {
     fs.writeFileSync(filesDbPath, JSON.stringify([], null, 2), 'utf8');
     return [];
   } catch (error) {
-    console.error('Lá»—i Ä‘á»c database:', error);
+    console.error('Lỗi Ä‘á»c database:', error);
     return [];
   }
 }
@@ -309,7 +309,7 @@ function saveFilesDb(filesData) {
     fs.writeFileSync(filesDbPath, JSON.stringify(filesData, null, 2), 'utf8');
     return true;
   } catch (error) {
-    console.error('Lá»—i lÆ°u database:', error);
+    console.error('Lỗi lÆ°u database:', error);
     return false;
   }
 }
@@ -385,19 +385,19 @@ async function syncFiles() {
   
   try {
     if (!bot || !botActive) {
-      console.log('Bot khÃ´ng hoáº¡t Ä‘á»™ng hoáº·c chÆ°a káº¿t ná»‘i, khÃ´ng thá»ƒ Ä‘á»“ng bá»™ files');
-      console.log('BOT_TOKEN:', BOT_TOKEN ? `${BOT_TOKEN.substring(0, 8)}...` : 'khÃ´ng cÃ³');
-      console.log('CHAT_ID:', CHAT_ID || 'khÃ´ng cÃ³');
+      console.log('Bot không hoáº¡t Ä‘á»™ng hoáº·c chÆ°a káº¿t ná»‘i, không thá»ƒ Ä‘á»“ng bá»™ files');
+      console.log('BOT_TOKEN:', BOT_TOKEN ? `${BOT_TOKEN.substring(0, 8)}...` : 'không cÃ³');
+      console.log('CHAT_ID:', CHAT_ID || 'không cÃ³');
       console.log('Bot status:', botActive ? 'active' : 'inactive');
       return {
         success: false,
-        error: 'Bot khÃ´ng hoáº¡t Ä‘á»™ng hoáº·c chÆ°a káº¿t ná»‘i'
+        error: 'Bot không hoáº¡t Ä‘á»™ng hoáº·c chÆ°a káº¿t ná»‘i'
       };
     }
     
     let filesData = readFilesDb();
     if (!filesData || !Array.isArray(filesData)) {
-      console.log('Dá»¯ liá»‡u file khÃ´ng há»£p lá»‡, táº¡o má»›i');
+      console.log('Dá»¯ liá»‡u file không há»£p lá»‡, táº¡o má»›i');
       filesData = [];
     }
     
@@ -410,8 +410,8 @@ async function syncFiles() {
       const fileExists = hasLocalPath && fs.existsSync(file.localPath);
       
       if (needsSync && !fileExists) {
-        console.log(`File "${file.name}" cáº§n Ä‘á»“ng bá»™ nhÆ°ng khÃ´ng tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n: ${file.localPath}`);
-        // ÄÃ¡nh dáº¥u file lÃ  Ä‘Ã£ xÃ³a náº¿u khÃ´ng tÃ¬m tháº¥y
+        console.log(`File "${file.name}" cáº§n Ä‘á»“ng bá»™ nhÆ°ng không tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n: ${file.localPath}`);
+        // ÄÃ¡nh dáº¥u file lÃ  Ä‘Ã£ xóa náº¿u không tÃ¬m tháº¥y
         file.deleted = true;
         file.needsSync = false;
       }
@@ -430,7 +430,7 @@ async function syncFiles() {
         console.log(`   - Loáº¡i file: ${file.fileType}`);
       });
     } else {
-      console.log('KhÃ´ng cÃ³ file nÃ o cáº§n Ä‘á»“ng bá»™');
+      console.log('Không cÃ³ file nÃ o cáº§n Ä‘á»“ng bá»™');
       return {
         success: true,
         syncedCount: 0,
@@ -448,21 +448,21 @@ async function syncFiles() {
       try {
         console.log(`Äang Ä‘á»“ng bá»™ file "${file.name}"...`);
         
-        // Äáº£m báº£o encode tÃªn file tiáº¿ng Viá»‡t Ä‘Ãºng
+        // Äáº£m báº£o encode tên file tiáº¿ng Viá»‡t Ä‘Ãºng
         const filePath = Buffer.from(file.localPath, 'utf8').toString();
         console.log(`ÄÆ°á»ng dáº«n file: ${filePath}`);
         
-        // Kiá»ƒm tra xem file cÃ³ tá»“n táº¡i khÃ´ng
+        // Kiá»ƒm tra xem file cÃ³ tá»“n táº¡i không
         if (!fs.existsSync(filePath)) {
-          console.error(`File khÃ´ng tá»“n táº¡i: ${filePath}`);
-          file.syncError = `File khÃ´ng tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n: ${filePath}`;
+          console.error(`File không tá»“n táº¡i: ${filePath}`);
+          file.syncError = `File không tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n: ${filePath}`;
           file.needsSync = true;
           continue;
         }
         
-        // Kiá»ƒm tra kÃ­ch thÆ°á»›c file
+        // Kiá»ƒm tra kÃ­ch thưá»›c file
         const stats = fs.statSync(filePath);
-        console.log(`KÃ­ch thÆ°á»›c file: ${formatBytes(stats.size)}`);
+        console.log(`KÃ­ch thưá»›c file: ${formatBytes(stats.size)}`);
         
         if (stats.size > MAX_FILE_SIZE) {
           console.error(`File "${file.name}" quÃ¡ lá»›n (${formatBytes(stats.size)}) Ä‘á»ƒ gá»­i qua Telegram.`);
@@ -471,7 +471,7 @@ async function syncFiles() {
           continue;
         }
         
-        // Táº¡o caption tá»« tÃªn file
+        // Táº¡o caption tá»« tên file
         const caption = `File: ${file.name}`;
         console.log(`Chuáº©n bá»‹ gá»­i file lÃªn Telegram vá»›i caption: "${caption}"`);
         
@@ -481,13 +481,13 @@ async function syncFiles() {
         try {
           // Gá»­i file lÃªn Telegram dá»±a vÃ o loáº¡i file
           const sendFilePromise = (async () => {
-            // Táº¡o caption vá»›i tÃªn file Ä‘Ã£ Ä‘Æ°á»£c giáº£i mÃ£ UTF-8 Ä‘Ãºng
+            // Táº¡o caption vá»›i tên file Ä‘Ã£ Ä‘Æ°á»£c giáº£i mÃ£ UTF-8 Ä‘Ãºng
             let normalizedFileName = file.name;
             try {
-              // Thá»­ normalize tÃªn file Unicode
+              // Thá»­ normalize tên file Unicode
               normalizedFileName = decodeURIComponent(escape(file.name));
             } catch(e) {
-              console.log(`KhÃ´ng thá»ƒ chuáº©n hÃ³a tÃªn file: ${file.name}, sá»­ dá»¥ng tÃªn gá»‘c`);
+              console.log(`Không thá»ƒ chuáº©n hÃ³a tên file: ${file.name}, sá»­ dụng tên gá»‘c`);
             }
             
             const caption = `File: ${normalizedFileName}`;
@@ -496,11 +496,11 @@ async function syncFiles() {
               filename: normalizedFileName
             };
             
-            // Gá»­i táº¥t cáº£ file dÆ°á»›i dáº¡ng document Ä‘á»ƒ trÃ¡nh lá»—i PHOTO_INVALID_DIMENSIONS
+            // Gá»­i táº¥t cả file dÆ°á»›i dáº¡ng document Ä‘á»ƒ trÃ¡nh lá»—i PHOTO_INVALID_DIMENSIONS
             console.log(`Gá»­i file "${file.name}" nhÆ° document Ä‘á»ƒ trÃ¡nh lá»—i format`);
             return bot.telegram.sendDocument(CHAT_ID, fileOptions, { caption: caption });
             
-            /* KhÃ´ng cÃ²n sá»­ dá»¥ng code nÃ y Ä‘á»ƒ trÃ¡nh lá»—i
+            /* Không cÃ²n sá»­ dụng code nÃ y Ä‘á»ƒ trÃ¡nh lá»—i
             if (file.fileType === 'image') {
               console.log(`Gá»­i file "${file.name}" nhÆ° hÃ¬nh áº£nh`);
               try {
@@ -508,7 +508,7 @@ async function syncFiles() {
               } catch (error) {
                 // Náº¿u gáº·p lá»—i PHOTO_INVALID_DIMENSIONS, thá»­ gá»­i nhÆ° document
                 if (error.message && error.message.includes('PHOTO_INVALID_DIMENSIONS')) {
-                  console.log(`KhÃ´ng thá»ƒ gá»­i "${file.name}" nhÆ° hÃ¬nh áº£nh, thá»­ gá»­i nhÆ° document`);
+                  console.log(`Không thá»ƒ gá»­i "${file.name}" nhÆ° hÃ¬nh áº£nh, thá»­ gá»­i nhÆ° document`);
                   return bot.telegram.sendDocument(CHAT_ID, {
                     source: filePath,
                     filename: file.name
@@ -522,7 +522,7 @@ async function syncFiles() {
                 return bot.telegram.sendVideo(CHAT_ID, { source: filePath }, { caption: caption });
               } catch (error) {
                 // Náº¿u gáº·p lá»—i khi gá»­i video, thá»­ gá»­i nhÆ° document
-                console.log(`KhÃ´ng thá»ƒ gá»­i "${file.name}" nhÆ° video, thá»­ gá»­i nhÆ° document`);
+                console.log(`Không thá»ƒ gá»­i "${file.name}" nhÆ° video, thá»­ gá»­i nhÆ° document`);
                 return bot.telegram.sendDocument(CHAT_ID, {
                   source: filePath,
                   filename: file.name
@@ -534,7 +534,7 @@ async function syncFiles() {
                 return bot.telegram.sendAudio(CHAT_ID, { source: filePath }, { caption: caption });
               } catch (error) {
                 // Náº¿u gáº·p lá»—i khi gá»­i audio, thá»­ gá»­i nhÆ° document
-                console.log(`KhÃ´ng thá»ƒ gá»­i "${file.name}" nhÆ° audio, thá»­ gá»­i nhÆ° document`);
+                console.log(`Không thá»ƒ gá»­i "${file.name}" nhÆ° audio, thá»­ gá»­i nhÆ° document`);
                 return bot.telegram.sendDocument(CHAT_ID, {
                   source: filePath,
                   filename: file.name
@@ -570,7 +570,7 @@ async function syncFiles() {
           } else if (result.audio) {
             fileId = result.audio.file_id;
           } else {
-            console.warn(`KhÃ´ng tÃ¬m tháº¥y file_id cho file "${file.name}"`);
+            console.warn(`Không tÃ¬m tháº¥y file_id cho file "${file.name}"`);
           }
           
           // Cáº­p nháº­t thÃ´ng tin file
@@ -582,13 +582,13 @@ async function syncFiles() {
           file.syncError = null;
           
           syncedCount++;
-          console.log(`ÄÃ£ Ä‘á»“ng bá»™ file "${file.name}" thÃ nh cÃ´ng (file_id: ${fileId})`);
+          console.log(`ÄÃ£ Ä‘á»“ng bá»™ file "${file.name}" thÃ nh công (file_id: ${fileId})`);
         } catch (sendError) {
-          console.error(`Lá»—i khi gá»­i file "${file.name}" lÃªn Telegram:`, sendError);
-          throw sendError; // Äá»ƒ xá»­ lÃ½ á»Ÿ pháº§n catch bÃªn ngoÃ i
+          console.error(`Lỗi khi gá»­i file "${file.name}" lÃªn Telegram:`, sendError);
+          throw sendError; // Äá»ƒ xá»­ lÃ½ á»Ÿ pháº§n catch bên ngoÃ i
         }
       } catch (error) {
-        console.error(`Lá»—i Ä‘á»“ng bá»™ file "${file.name}":`, error);
+        console.error(`Lỗi Ä‘á»“ng bá»™ file "${file.name}":`, error);
         
         // Thá»­ láº¡i náº¿u cáº§n
         if (retryCount < maxRetries) {
@@ -597,9 +597,9 @@ async function syncFiles() {
           // Chá» 2 giÃ¢y trÆ°á»›c khi thá»­ láº¡i
           await new Promise(resolve => setTimeout(resolve, 2000));
           file.needsSync = true;
-          file.syncError = `Lá»—i Ä‘á»“ng bá»™: ${error.message}. ÄÃ£ thá»­ ${retryCount}/${maxRetries} láº§n.`;
+          file.syncError = `Lỗi Ä‘á»“ng bá»™: ${error.message}. ÄÃ£ thá»­ ${retryCount}/${maxRetries} láº§n.`;
         } else {
-          file.syncError = `Lá»—i Ä‘á»“ng bá»™ sau ${maxRetries} láº§n thá»­: ${error.message}`;
+          file.syncError = `Lỗi Ä‘á»“ng bá»™ sau ${maxRetries} láº§n thá»­: ${error.message}`;
           file.needsSync = true;
           console.error(`ÄÃ£ vÆ°á»£t quÃ¡ sá»‘ láº§n thá»­ láº¡i cho file "${file.name}". Bá» qua file nÃ y.`);
         }
@@ -611,7 +611,7 @@ async function syncFiles() {
     saveFilesDb(filesData);
     
     console.log(`===== Káº¾T THÃšC QUÃ TRÃŒNH Äá»’NG Bá»˜ =====`);
-    console.log(`ÄÃ£ Ä‘á»“ng bá»™ thÃ nh cÃ´ng ${syncedCount}/${filesToSync.length} files vá»›i Telegram`);
+    console.log(`ÄÃ£ Ä‘á»“ng bá»™ thÃ nh công ${syncedCount}/${filesToSync.length} files vá»›i Telegram`);
     return {
       success: true,
       syncedCount: syncedCount,
@@ -619,10 +619,10 @@ async function syncFiles() {
       filesNeedingSync: filesToSync.length
     };
   } catch (error) {
-    console.error('Lá»—i Ä‘á»“ng bá»™ files:', error);
+    console.error('Lỗi Ä‘á»“ng bá»™ files:', error);
     return {
       success: false,
-      error: error.message || 'Lá»—i server khi Ä‘á»“ng bá»™ files'
+      error: error.message || 'Lỗi server khi Ä‘á»“ng bá»™ files'
     };
   }
 }
@@ -633,7 +633,7 @@ async function syncFiles() {
 async function getFilesFromTelegram() {
   try {
     if (!bot || !botActive) {
-      console.error('Bot Telegram khÃ´ng hoáº¡t Ä‘á»™ng. KhÃ´ng thá»ƒ láº¥y file tá»« Telegram.');
+      console.error('Bot Telegram không hoáº¡t Ä‘á»™ng. Không thá»ƒ láº¥y file tá»« Telegram.');
       return;
     }
     
@@ -655,7 +655,7 @@ async function getFilesFromTelegram() {
       const messages = await bot.telegram.getChatHistory(chatId, { limit: 100 });
       
       if (!messages || messages.length === 0) {
-        console.log('KhÃ´ng tÃ¬m tháº¥y tin nháº¯n nÃ o trong chat.');
+        console.log('Không tÃ¬m tháº¥y tin nháº¯n nÃ o trong chat.');
         return;
       }
       
@@ -736,15 +736,15 @@ async function getFilesFromTelegram() {
         console.log(`ÄÃ£ tÃ¬m tháº¥y ${newFileCount} file má»›i tá»« Telegram. LÆ°u vÃ o database...`);
         saveFilesDb(filesData);
       } else {
-        console.log('KhÃ´ng tÃ¬m tháº¥y file má»›i tá»« Telegram.');
+        console.log('Không tÃ¬m tháº¥y file má»›i tá»« Telegram.');
       }
       
       return newFileCount;
     } catch (error) {
-      console.error('Lá»—i láº¥y tin nháº¯n tá»« Telegram:', error);
+      console.error('Lỗi láº¥y tin nháº¯n tá»« Telegram:', error);
     }
   } catch (error) {
-    console.error('Lá»—i láº¥y danh sÃ¡ch file tá»« Telegram:', error);
+    console.error('Lỗi láº¥y danh sÃ¡ch file tá»« Telegram:', error);
   }
 }
 
@@ -752,9 +752,9 @@ async function getFilesFromTelegram() {
  * Tá»± Ä‘á»™ng khÃ´i phá»¥c file tá»« Telegram khi file local bá»‹ máº¥t
  */
 async function recoverFilesFromTelegram(filesData) {
-  // Náº¿u bot khÃ´ng hoáº¡t Ä‘á»™ng, khÃ´ng thá»ƒ khÃ´i phá»¥c
+  // Náº¿u bot không hoáº¡t Ä‘á»™ng, không thá»ƒ khÃ´i phá»¥c
   if (!botActive || !bot) {
-    console.log('Bot Telegram khÃ´ng hoáº¡t Ä‘á»™ng. KhÃ´ng thá»ƒ khÃ´i phá»¥c file tá»« Telegram.');
+    console.log('Bot Telegram không hoáº¡t Ä‘á»™ng. Không thá»ƒ khÃ´i phá»¥c file tá»« Telegram.');
     return;
   }
   
@@ -762,7 +762,7 @@ async function recoverFilesFromTelegram(filesData) {
   const filesToRecover = filesData.filter(file => file.needsRecovery && file.telegramFileId);
   
   if (filesToRecover.length === 0) {
-    console.log('KhÃ´ng cÃ³ file nÃ o cáº§n khÃ´i phá»¥c tá»« Telegram.');
+    console.log('Không cÃ³ file nÃ o cáº§n khÃ´i phá»¥c tá»« Telegram.');
     return;
   }
   
@@ -780,7 +780,7 @@ async function recoverFilesFromTelegram(filesData) {
           const fileLink = await bot.telegram.getFileLink(file.telegramFileId);
           file.telegramUrl = fileLink.href;
         } catch (error) {
-          console.error(`KhÃ´ng thá»ƒ láº¥y link file tá»« Telegram: ${error.message}`);
+          console.error(`Không thá»ƒ láº¥y link file tá»« Telegram: ${error.message}`);
           continue;
         }
       }
@@ -792,11 +792,11 @@ async function recoverFilesFromTelegram(filesData) {
         responseType: 'stream'
       });
       
-      // Táº¡o tÃªn file má»›i
+      // Táº¡o tên file má»›i
       const fileName = `${Date.now()}-recovered-${file.name}`;
       const filePath = path.join(uploadsDir, fileName);
       
-      // LÆ°u file vÃ o thÆ° má»¥c uploads
+      // LÆ°u file vÃ o thư mục uploads
       const writer = fs.createWriteStream(filePath);
       response.data.pipe(writer);
       
@@ -812,9 +812,9 @@ async function recoverFilesFromTelegram(filesData) {
       file.recoveredAt = new Date().toISOString();
       
       recoveredCount++;
-      console.log(`ÄÃ£ khÃ´i phá»¥c file "${file.name}" thÃ nh cÃ´ng.`);
+      console.log(`ÄÃ£ khÃ´i phá»¥c file "${file.name}" thÃ nh công.`);
     } catch (error) {
-      console.error(`Lá»—i khÃ´i phá»¥c file "${file.name}":`, error);
+      console.error(`Lỗi khÃ´i phá»¥c file "${file.name}":`, error);
     }
   }
   
@@ -826,16 +826,16 @@ async function recoverFilesFromTelegram(filesData) {
 }
 
 /**
- * Chá»©c nÄƒng dá»n dáº¹p - Gá»­i file lÃªn Telegram vÃ  xÃ³a khá»i local
+ * Chá»©c nÄƒng dá»n dáº¹p - Gá»­i file lÃªn Telegram vÃ  xóa khá»i local
  */
 async function cleanUploads() {
   if (!bot || !botActive) {
-    console.error('Bot Telegram khÃ´ng khá»Ÿi Ä‘á»™ng. KhÃ´ng thá»ƒ dá»n dáº¹p uploads.');
-    throw new Error('Bot Telegram khÃ´ng hoáº¡t Ä‘á»™ng');
+    console.error('Bot Telegram không khá»Ÿi Ä‘á»™ng. Không thá»ƒ dá»n dáº¹p uploads.');
+    throw new Error('Bot Telegram không hoáº¡t Ä‘á»™ng');
   }
   
   try {
-    console.log('Báº¯t Ä‘áº§u dá»n dáº¹p thÆ° má»¥c uploads...');
+    console.log('Báº¯t Ä‘áº§u dá»n dáº¹p thư mục uploads...');
     
     // Äá»c database
     const filesData = readFilesDb();
@@ -848,7 +848,7 @@ async function cleanUploads() {
     );
     
     if (localOnlyFiles.length === 0) {
-      console.log('KhÃ´ng cÃ³ file cáº§n xá»­ lÃ½');
+      console.log('Không cÃ³ file cáº§n xá»­ lÃ½');
       return;
     }
     
@@ -868,15 +868,15 @@ async function cleanUploads() {
       chatId = botInfo.id;
       console.log(`Sáº½ gá»­i file Ä‘áº¿n chat ID: ${chatId}`);
     } catch (error) {
-      console.error('KhÃ´ng thá»ƒ láº¥y thÃ´ng tin bot:', error);
-      throw new Error('KhÃ´ng thá»ƒ láº¥y thÃ´ng tin bot Ä‘á»ƒ gá»­i file');
+      console.error('Không thá»ƒ láº¥y thÃ´ng tin bot:', error);
+      throw new Error('Không thá»ƒ láº¥y thÃ´ng tin bot Ä‘á»ƒ gá»­i file');
     }
     
     // Xá»­ lÃ½ tá»«ng file
     for (const file of localOnlyFiles) {
       try {
         if (!fs.existsSync(file.localPath)) {
-          console.warn(`File khÃ´ng tá»“n táº¡i: ${file.localPath}`);
+          console.warn(`File không tá»“n táº¡i: ${file.localPath}`);
           continue;
         }
         
@@ -900,9 +900,9 @@ async function cleanUploads() {
           setTimeout(() => reject(new Error('Timeout khi gá»­i file lÃªn Telegram')), 60000); // TÄƒng timeout lÃªn 60 giÃ¢y
         });
         
-        // Sá»­ dá»¥ng Promise.race Ä‘á»ƒ Ä‘áº·t timeout
+        // Sử dụng Promise.race Ä‘á»ƒ Ä‘áº·t timeout
         message = await Promise.race([sendFilePromise, sendTimeoutPromise]);
-        console.log(`ÄÃ£ gá»­i file "${file.name}" thÃ nh cÃ´ng lÃªn Telegram`);
+        console.log(`ÄÃ£ gá»­i file "${file.name}" thÃ nh công lÃªn Telegram`);
         
         // Láº¥y ID file tÃ¹y thuá»™c vÃ o loáº¡i file
         let telegramFileId = null;
@@ -917,7 +917,7 @@ async function cleanUploads() {
         }
         
         if (!telegramFileId) {
-          throw new Error('KhÃ´ng láº¥y Ä‘Æ°á»£c Telegram File ID sau khi upload');
+          throw new Error('Không láº¥y Ä‘Æ°á»£c Telegram File ID sau khi upload');
         }
         
         // Cáº­p nháº­t thÃ´ng tin file
@@ -929,13 +929,13 @@ async function cleanUploads() {
           file.telegramUrl = downloadUrl;
           console.log(`ÄÃ£ láº¥y Ä‘Æ°á»£c URL file: ${downloadUrl}`);
         } catch (linkError) {
-          console.error(`Lá»—i láº¥y link file: ${linkError.message}`);
-          // Váº«n tiáº¿p tá»¥c xá»­ lÃ½ ngay cáº£ khi khÃ´ng láº¥y Ä‘Æ°á»£c link
+          console.error(`Lỗi láº¥y link file: ${linkError.message}`);
+          // Váº«n tiáº¿p tá»¥c xá»­ lÃ½ ngay cả khi không láº¥y Ä‘Æ°á»£c link
         }
         
         // XÃ³a file local
         fs.unlinkSync(file.localPath);
-        console.log(`ÄÃ£ xÃ³a file local: ${file.localPath}`);
+        console.log(`ÄÃ£ xóa file local: ${file.localPath}`);
         
         // Cáº­p nháº­t thÃ´ng tin file
         file.localPath = null;
@@ -943,16 +943,16 @@ async function cleanUploads() {
         // LÆ°u láº¡i database sau má»—i file
         saveFilesDb(filesData);
         
-        console.log(`ÄÃ£ xá»­ lÃ½ file "${file.name}" thÃ nh cÃ´ng`);
+        console.log(`ÄÃ£ xá»­ lÃ½ file "${file.name}" thÃ nh công`);
       } catch (error) {
-        console.error(`Lá»—i xá»­ lÃ½ file "${file.name}":`, error);
+        console.error(`Lỗi xá»­ lÃ½ file "${file.name}":`, error);
       }
     }
     
     console.log('QuÃ¡ trÃ¬nh dá»n dáº¹p Ä‘Ã£ hoÃ n táº¥t');
     return localOnlyFiles.length;
   } catch (error) {
-    console.error('Lá»—i dá»n dáº¹p uploads:', error);
+    console.error('Lỗi dá»n dáº¹p uploads:', error);
     throw error;
   }
 }
@@ -962,7 +962,7 @@ async function cleanUploads() {
  */
 
 // ThÃªm cÃ¡c hÃ m utility cho template
-// HÃ m xÃ¡c Ä‘á»‹nh loáº¡i file dá»±a trÃªn tÃªn file
+// HÃ m xác Ä‘á»‹nh loáº¡i file dá»±a trÃªn tên file
 function getFileType(filename) {
     const ext = path.extname(filename).toLowerCase();
     
@@ -1043,10 +1043,10 @@ app.get('/', async (req, res) => {
       formatDate: formatDate
     });
   } catch (error) {
-    console.error('Lá»—i hiá»ƒn thá»‹ trang chá»§:', error);
+    console.error('Lỗi hiá»ƒn thá»‹ trang chá»§:', error);
     res.status(500).render('error', {
-      title: 'TeleDrive - Lá»—i',
-      message: 'Lá»—i trong quÃ¡ trÃ¬nh xá»­ lÃ½ yÃªu cáº§u',
+      title: 'TeleDrive - Lỗi',
+      message: 'Lỗi trong quÃ¡ trÃ¬nh xá»­ lÃ½ yÃªu cáº§u',
       error: {
         status: 500,
         stack: process.env.NODE_ENV === 'development' ? error.stack : ''
@@ -1077,8 +1077,8 @@ app.get('/api/files', (req, res) => {
     
     res.json(formattedFiles);
   } catch (error) {
-    console.error('Lá»—i láº¥y danh sÃ¡ch file:', error);
-    res.status(500).json({ error: 'Lá»—i server' });
+    console.error('Lỗi láº¥y danh sÃ¡ch file:', error);
+    res.status(500).json({ error: 'Lỗi server' });
   }
 });
 
@@ -1090,7 +1090,7 @@ app.get('/api/files/:id', (req, res) => {
     const file = filesData.find(f => f.id === fileId);
     
     if (!file) {
-      return res.status(404).json({ error: 'File khÃ´ng tá»“n táº¡i' });
+      return res.status(404).json({ error: 'File không tá»“n táº¡i' });
     }
     
     // Äá»‹nh dáº¡ng dá»¯ liá»‡u trÆ°á»›c khi gá»­i Ä‘i
@@ -1110,15 +1110,15 @@ app.get('/api/files/:id', (req, res) => {
     
     res.json(formattedFile);
   } catch (error) {
-    console.error('Lá»—i láº¥y thÃ´ng tin file:', error);
-    res.status(500).json({ error: 'Lá»—i server' });
+    console.error('Lỗi láº¥y thÃ´ng tin file:', error);
+    res.status(500).json({ error: 'Lỗi server' });
   }
 });
 
 // HÃ m láº¥y link download tá»« Telegram vá»›i timeout
 async function getTelegramFileLink(fileId) {
   if (!bot || !botActive) {
-    throw new Error('Bot Telegram khÃ´ng hoáº¡t Ä‘á»™ng');
+    throw new Error('Bot Telegram không hoáº¡t Ä‘á»™ng');
   }
   
   try {
@@ -1129,11 +1129,11 @@ async function getTelegramFileLink(fileId) {
       setTimeout(() => reject(new Error('Timeout khi láº¥y link file tá»« Telegram')), 30000);
     });
     
-    // Sá»­ dá»¥ng Promise.race cho cáº£ getFile vÃ  timeout
+    // Sử dụng Promise.race cho cả getFile vÃ  timeout
     const fileInfo = await Promise.race([bot.telegram.getFile(fileId), timeoutPromise]);
     
     if (!fileInfo || !fileInfo.file_path) {
-      throw new Error('KhÃ´ng láº¥y Ä‘Æ°á»£c thÃ´ng tin file tá»« Telegram');
+      throw new Error('Không láº¥y Ä‘Æ°á»£c thÃ´ng tin file tá»« Telegram');
     }
     
     // Táº¡o URL download
@@ -1142,7 +1142,7 @@ async function getTelegramFileLink(fileId) {
     
     return downloadUrl;
   } catch (error) {
-    console.error(`Lá»—i láº¥y link file tá»« Telegram: ${error.message}`);
+    console.error(`Lỗi láº¥y link file tá»« Telegram: ${error.message}`);
     throw error;
   }
 }
@@ -1156,9 +1156,9 @@ app.get('/api/files/:id/download', async (req, res) => {
     
     if (!file) {
       return res.status(404).render('error', { 
-        title: 'TeleDrive - KhÃ´ng tÃ¬m tháº¥y',
-        message: 'KhÃ´ng tÃ¬m tháº¥y file',
-        error: { status: 404, stack: 'File khÃ´ng tá»“n táº¡i hoáº·c Ä‘Ã£ bá»‹ xÃ³a' }
+        title: 'TeleDrive - Không tÃ¬m tháº¥y',
+        message: 'Không tÃ¬m tháº¥y file',
+        error: { status: 404, stack: 'File không tá»“n táº¡i hoáº·c Ä‘Ã£ bá»‹ xóa' }
       });
     }
     
@@ -1178,8 +1178,8 @@ app.get('/api/files/:id/download', async (req, res) => {
     // Kiá»ƒm tra bot hoáº¡t Ä‘á»™ng
     if (!botActive || !bot) {
       return res.status(503).render('error', {
-        title: 'TeleDrive - Bot khÃ´ng hoáº¡t Ä‘á»™ng',
-        message: 'Bot Telegram Ä‘ang khÃ´ng hoáº¡t Ä‘á»™ng',
+        title: 'TeleDrive - Bot không hoáº¡t Ä‘á»™ng',
+        message: 'Bot Telegram Ä‘ang không hoáº¡t Ä‘á»™ng',
         error: { status: 503, stack: 'Bot cáº§n Ä‘Æ°á»£c káº¿t ná»‘i Ä‘á»ƒ táº£i file tá»« Telegram. Vui lÃ²ng thá»­ láº¡i sau.' }
       });
     }
@@ -1202,7 +1202,7 @@ app.get('/api/files/:id/download', async (req, res) => {
 
         try {
           // Táº£i file tá»« Telegram vÃ  stream trá»±c tiáº¿p Ä‘áº¿n ngÆ°á»i dÃ¹ng
-          console.log(`Äang táº£i ná»™i dung file tá»« URL: ${downloadUrl}`);
+          console.log(`Äang táº£i nội dung file tá»« URL: ${downloadUrl}`);
           const response = await axios({
             method: 'get',
             url: downloadUrl,
@@ -1226,11 +1226,11 @@ app.get('/api/files/:id/download', async (req, res) => {
           response.data.pipe(res);
           return;
         } catch (axiosError) {
-          console.error(`Lá»—i táº£i ná»™i dung file tá»« Telegram: ${axiosError.message}`);
-          throw new Error(`KhÃ´ng thá»ƒ táº£i ná»™i dung file tá»« Telegram: ${axiosError.message}`);
+          console.error(`Lỗi táº£i nội dung file tá»« Telegram: ${axiosError.message}`);
+          throw new Error(`Không thá»ƒ táº£i nội dung file tá»« Telegram: ${axiosError.message}`);
         }
       } catch (error) {
-        console.error(`Lá»—i khi láº¥y file tá»« Telegram: ${error.message}`);
+        console.error(`Lỗi khi láº¥y file tá»« Telegram: ${error.message}`);
         
         // Thá»­ Ä‘á»“ng bá»™ láº¡i Ä‘á»ƒ cáº­p nháº­t telegramFileId
         try {
@@ -1244,19 +1244,19 @@ app.get('/api/files/:id/download', async (req, res) => {
             return res.redirect(`/api/files/${fileId}/download`);
           }
         } catch (syncError) {
-          console.error(`Lá»—i Ä‘á»“ng bá»™ Ä‘á»ƒ cáº­p nháº­t file: ${syncError.message}`);
+          console.error(`Lỗi Ä‘á»“ng bá»™ Ä‘á»ƒ cáº­p nháº­t file: ${syncError.message}`);
         }
         
         return res.status(500).render('error', {
-          title: 'TeleDrive - Lá»—i táº£i file',
-          message: 'Lá»—i khi táº£i file tá»« Telegram. HÃ£y truy cáº­p /api/files/' + fileId + '/fix Ä‘á»ƒ kháº¯c phá»¥c.',
+          title: 'TeleDrive - Lỗi táº£i file',
+          message: 'Lỗi khi táº£i file tá»« Telegram. HÃ£y truy cáº­p /api/files/' + fileId + '/fix Ä‘á»ƒ kháº¯c phá»¥c.',
           error: { status: 500, stack: error.message }
         });
       }
     }
     
     // PHáº¦N 3: KHÃ”NG TÃŒM THáº¤Y FILE
-    // Náº¿u khÃ´ng cÃ³ file á»Ÿ local vÃ  khÃ´ng cÃ³ telegramFileId, thá»­ Ä‘á»“ng bá»™
+    // Náº¿u không cÃ³ file á»Ÿ local vÃ  không cÃ³ telegramFileId, thá»­ Ä‘á»“ng bá»™
     try {
       // Thá»­ Ä‘á»“ng bá»™ file
       console.log(`Thá»­ Ä‘á»“ng bá»™ file ${fileId} vá»›i Telegram`);
@@ -1272,23 +1272,23 @@ app.get('/api/files/:id/download', async (req, res) => {
         return res.redirect(`/api/files/${fileId}/download`);
       }
     } catch (syncError) {
-      console.error(`Lá»—i Ä‘á»“ng bá»™ file: ${syncError.message}`);
+      console.error(`Lỗi Ä‘á»“ng bá»™ file: ${syncError.message}`);
     }
     
-    // Náº¿u váº«n khÃ´ng thá»ƒ táº£i, tráº£ vá» lá»—i cuá»‘i cÃ¹ng
+    // Náº¿u váº«n không thá»ƒ táº£i, tráº£ vá» lá»—i cuá»‘i cÃ¹ng
     return res.status(404).render('error', {
-      title: 'TeleDrive - File khÃ´ng kháº£ dá»¥ng',
-      message: 'File khÃ´ng kháº£ dá»¥ng Ä‘á»ƒ táº£i xuá»‘ng',
+      title: 'TeleDrive - File không kháº£ dụng',
+      message: 'File không kháº£ dụng Ä‘á»ƒ táº£i xuá»‘ng',
       error: { 
         status: 404, 
-        stack: 'File khÃ´ng tá»“n táº¡i á»Ÿ local vÃ  khÃ´ng cÃ³ trÃªn Telegram. Vui lÃ²ng truy cáº­p /api/files/' + fileId + '/fix Ä‘á»ƒ kháº¯c phá»¥c hoáº·c táº£i lÃªn láº¡i file.' 
+        stack: 'File không tá»“n táº¡i á»Ÿ local vÃ  không cÃ³ trÃªn Telegram. Vui lÃ²ng truy cáº­p /api/files/' + fileId + '/fix Ä‘á»ƒ kháº¯c phá»¥c hoáº·c táº£i lÃªn láº¡i file.' 
       }
     });
   } catch (error) {
-    console.error(`Lá»—i xá»­ lÃ½ táº£i file: ${error.message}`);
+    console.error(`Lỗi xá»­ lÃ½ táº£i file: ${error.message}`);
     res.status(500).render('error', {
-      title: 'TeleDrive - Lá»—i server',
-      message: 'Lá»—i server khi táº£i file',
+      title: 'TeleDrive - Lỗi server',
+      message: 'Lỗi server khi táº£i file',
       error: { status: 500, stack: error.message }
     });
   }
@@ -1331,7 +1331,7 @@ app.post('/api/create-file', express.json(), async (req, res) => {
       
       return res.json({
         success: true,
-        message: 'ÄÃ£ cáº­p nháº­t file thÃ nh cÃ´ng',
+        message: 'ÄÃ£ cáº­p nháº­t file thÃ nh công',
         file: filesData[existingFileIndex]
       });
     } else {
@@ -1355,20 +1355,20 @@ app.post('/api/create-file', express.json(), async (req, res) => {
       
       return res.json({
         success: true,
-        message: 'ÄÃ£ táº¡o file má»›i thÃ nh cÃ´ng',
+        message: 'ÄÃ£ táº¡o file má»›i thÃ nh công',
         file: newFile
       });
     }
   } catch (error) {
-    console.error('Lá»—i táº¡o/cáº­p nháº­t file:', error);
+    console.error('Lỗi táº¡o/cáº­p nháº­t file:', error);
     res.status(500).json({
       success: false,
-      message: 'Lá»—i khi táº¡o/cáº­p nháº­t file: ' + error.message
+      message: 'Lỗi khi táº¡o/cáº­p nháº­t file: ' + error.message
     });
   }
 });
 
-// API Ä‘á»ƒ thá»§ cÃ´ng cáº­p nháº­t Telegram File ID cho file
+// API Ä‘á»ƒ thá»§ công cáº­p nháº­t Telegram File ID cho file
 app.post('/api/update-file/:id', express.json(), async (req, res) => {
   try {
     const fileId = req.params.id;
@@ -1388,27 +1388,27 @@ app.post('/api/update-file/:id', express.json(), async (req, res) => {
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        message: 'KhÃ´ng tÃ¬m tháº¥y file vá»›i ID Ä‘Ã£ cung cáº¥p'
+        message: 'Không tÃ¬m tháº¥y file vá»›i ID Ä‘Ã£ cung cáº¥p'
       });
     }
     
-    // Kiá»ƒm tra xem telegramFileId cÃ³ há»£p lá»‡ khÃ´ng
+    // Kiá»ƒm tra xem telegramFileId cÃ³ há»£p lá»‡ không
     if (!botActive || !bot) {
       return res.status(400).json({
         success: false,
-        message: 'Bot Telegram khÃ´ng hoáº¡t Ä‘á»™ng, khÃ´ng thá»ƒ xÃ¡c minh File ID'
+        message: 'Bot Telegram không hoáº¡t Ä‘á»™ng, không thá»ƒ xác minh File ID'
       });
     }
     
     try {
-      // Thá»­ láº¥y thÃ´ng tin file tá»« Telegram Ä‘á»ƒ xÃ¡c minh ID
+      // Thá»­ láº¥y thÃ´ng tin file tá»« Telegram Ä‘á»ƒ xác minh ID
       console.log(`XÃ¡c minh Telegram File ID: ${telegramFileId}`);
       const fileInfo = await bot.telegram.getFile(telegramFileId);
       
       if (!fileInfo || !fileInfo.file_path) {
         return res.status(400).json({
           success: false,
-          message: 'Telegram File ID khÃ´ng há»£p lá»‡ hoáº·c khÃ´ng tá»“n táº¡i'
+          message: 'Telegram File ID không há»£p lá»‡ hoáº·c không tá»“n táº¡i'
         });
       }
       
@@ -1425,7 +1425,7 @@ app.post('/api/update-file/:id', express.json(), async (req, res) => {
       
       return res.json({
         success: true,
-        message: 'ÄÃ£ cáº­p nháº­t Telegram File ID thÃ nh cÃ´ng',
+        message: 'ÄÃ£ cáº­p nháº­t Telegram File ID thÃ nh công',
         fileInfo: {
           id: filesData[fileIndex].id,
           name: filesData[fileIndex].name,
@@ -1435,17 +1435,17 @@ app.post('/api/update-file/:id', express.json(), async (req, res) => {
         }
       });
     } catch (error) {
-      console.error(`Lá»—i xÃ¡c minh Telegram File ID: ${error.message}`);
+      console.error(`Lỗi xác minh Telegram File ID: ${error.message}`);
       return res.status(500).json({
         success: false,
-        message: `Lá»—i xÃ¡c minh Telegram File ID: ${error.message}`
+        message: `Lỗi xác minh Telegram File ID: ${error.message}`
       });
     }
   } catch (error) {
-    console.error(`Lá»—i cáº­p nháº­t file: ${error.message}`);
+    console.error(`Lỗi cáº­p nháº­t file: ${error.message}`);
     return res.status(500).json({
       success: false,
-      message: `Lá»—i server: ${error.message}`
+      message: `Lỗi server: ${error.message}`
     });
   }
 });
@@ -1454,21 +1454,21 @@ app.post('/api/update-file/:id', express.json(), async (req, res) => {
 async function autoSyncFile(file) {
   try {
     if (!bot || !botActive) {
-      console.log(`Bot Telegram khÃ´ng hoáº¡t Ä‘á»™ng. KhÃ´ng thá»ƒ tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${file.name}`);
+      console.log(`Bot Telegram không hoáº¡t Ä‘á»™ng. Không thá»ƒ tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${file.name}`);
       return false;
     }
     
     console.log(`Tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file: ${file.name}`);
     
-    // Kiá»ƒm tra file cÃ³ tá»“n táº¡i khÃ´ng
+    // Kiá»ƒm tra file cÃ³ tá»“n táº¡i không
     if (!file.localPath) {
-      console.log(`File ${file.name} khÃ´ng cÃ³ Ä‘Æ°á»ng dáº«n local, khÃ´ng thá»ƒ Ä‘á»“ng bá»™.`);
+      console.log(`File ${file.name} không cÃ³ Ä‘Æ°á»ng dáº«n local, không thá»ƒ Ä‘á»“ng bá»™.`);
       return false;
     }
     
-    // Kiá»ƒm tra file cÃ³ tá»“n táº¡i trÃªn há»‡ thá»‘ng khÃ´ng
+    // Kiá»ƒm tra file cÃ³ tá»“n táº¡i trÃªn há»‡ thá»‘ng không
     if (!fs.existsSync(file.localPath)) {
-      console.log(`File ${file.name} khÃ´ng tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n ${file.localPath}, khÃ´ng thá»ƒ Ä‘á»“ng bá»™.`);
+      console.log(`File ${file.name} không tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n ${file.localPath}, không thá»ƒ Ä‘á»“ng bá»™.`);
       return false;
     }
     
@@ -1476,10 +1476,10 @@ async function autoSyncFile(file) {
     let chatId;
     
     if (CHAT_ID && CHAT_ID !== 'your_chat_id_here') {
-      // Sá»­ dá»¥ng CHAT_ID tá»« file .env
+      // Sử dụng CHAT_ID tá»« file .env
       chatId = CHAT_ID;
     } else {
-      console.error('CHAT_ID chÆ°a Ä‘Æ°á»£c cáº¥u hÃ¬nh trong file .env. KhÃ´ng thá»ƒ Ä‘á»“ng bá»™ file.');
+      console.error('CHAT_ID chÆ°a Ä‘Æ°á»£c cáº¥u hÃ¬nh trong file .env. Không thá»ƒ Ä‘á»“ng bá»™ file.');
       return false;
     }
     
@@ -1497,7 +1497,7 @@ async function autoSyncFile(file) {
         message = await bot.telegram.sendDocument(chatId, { source: file.localPath });
       }
     } catch (err) {
-      console.error(`Lá»—i tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${file.name}:`, err);
+      console.error(`Lỗi tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${file.name}:`, err);
       return false;
     }
     
@@ -1515,7 +1515,7 @@ async function autoSyncFile(file) {
     }
     
     if (!telegramFileId) {
-      console.log(`KhÃ´ng láº¥y Ä‘Æ°á»£c Telegram File ID sau khi upload file ${file.name}`);
+      console.log(`Không láº¥y Ä‘Æ°á»£c Telegram File ID sau khi upload file ${file.name}`);
       return false;
     }
     
@@ -1538,14 +1538,14 @@ async function autoSyncFile(file) {
     if (fileIndex !== -1) {
       filesData[fileIndex] = file;
       saveFilesDb(filesData);
-      console.log(`ÄÃ£ tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${file.name} thÃ nh cÃ´ng`);
+      console.log(`ÄÃ£ tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${file.name} thÃ nh công`);
       return true;
     }
     
     return false;
   } catch (error) {
-    console.error(`Lá»—i tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${file.name}:`, error);
-    console.log(`KhÃ´ng thá»ƒ tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${file.name}, sáº½ Ä‘á»“ng bá»™ sau`);
+    console.error(`Lỗi tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${file.name}:`, error);
+    console.log(`Không thá»ƒ tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${file.name}, sáº½ Ä‘á»“ng bá»™ sau`);
     return false;
   }
 }
@@ -1554,15 +1554,15 @@ async function autoSyncFile(file) {
 app.post('/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'KhÃ´ng cÃ³ file nÃ o Ä‘Æ°á»£c táº£i lÃªn' });
+      return res.status(400).json({ error: 'Không cÃ³ file nÃ o Ä‘Æ°á»£c táº£i lÃªn' });
     }
     
     // ThÃªm file vÃ o database ngay láº­p tá»©c thay vÃ¬ Ä‘á»£i Ä‘á»“ng bá»™
     const fileName = req.file.filename;
     const originalName = req.originalFileName || req.file.originalname;
-    const filePath = req.file.path; // Sá»­ dá»¥ng Ä‘Æ°á»ng dáº«n tá»« multer thay vÃ¬ tá»± táº¡o
+    const filePath = req.file.path; // Sử dụng Ä‘Æ°á»ng dáº«n tá»« multer thay vÃ¬ tá»± táº¡o
     const fileStats = fs.statSync(filePath);
-    const fileExt = path.extname(originalName); // Láº¥y extension tá»« tÃªn gá»‘c
+    const fileExt = path.extname(originalName); // Láº¥y extension tá»« tên gá»‘c
     const mimeType = getMimeType(fileExt);
     const fileType = getFileType(originalName);
     
@@ -1586,7 +1586,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     filesData.push(newFile);
     saveFilesDb(filesData);
     
-    // Tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file lÃªn Telegram náº¿u cÃ³ thá»ƒ (khÃ´ng cháº·n response)
+    // Tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file lÃªn Telegram náº¿u cÃ³ thá»ƒ (không cháº·n response)
     if (botActive && bot) {
       // Cháº¡y Ä‘á»“ng bá»™ trong background
       autoSyncFile(newFile).then(success => {
@@ -1602,16 +1602,16 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             saveFilesDb(updatedFilesData);
           }
         } else {
-          console.log(`KhÃ´ng thá»ƒ tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${newFile.name}, sáº½ Ä‘á»“ng bá»™ sau`);
+          console.log(`Không thá»ƒ tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${newFile.name}, sáº½ Ä‘á»“ng bá»™ sau`);
         }
       }).catch(error => {
-        console.error(`Lá»—i trong quÃ¡ trÃ¬nh tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${newFile.name}:`, error);
+        console.error(`Lỗi trong quÃ¡ trÃ¬nh tá»± Ä‘á»™ng Ä‘á»“ng bá»™ file ${newFile.name}:`, error);
       });
     }
     
     res.json({ 
       success: true, 
-      message: 'File Ä‘Ã£ Ä‘Æ°á»£c táº£i lÃªn thÃ nh cÃ´ng',
+      message: 'File Ä‘Ã£ Ä‘Æ°á»£c táº£i lÃªn thÃ nh công',
       file: {
         id: newFile.id,
         name: newFile.name,
@@ -1622,8 +1622,8 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lá»—i upload file:', error);
-    res.status(500).json({ error: 'Lá»—i xá»­ lÃ½ file: ' + error.message });
+    console.error('Lỗi upload file:', error);
+    res.status(500).json({ error: 'Lỗi xá»­ lÃ½ file: ' + error.message });
   }
 });
 
@@ -1637,7 +1637,7 @@ app.get('/api/files/:id/fix', async (req, res) => {
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        message: 'File khÃ´ng tá»“n táº¡i'
+        message: 'File không tá»“n táº¡i'
       });
     }
     
@@ -1686,13 +1686,13 @@ app.get('/api/files/:id/fix', async (req, res) => {
             
             return res.json({
               success: true,
-              message: 'ÄÃ£ sá»­a thÃ´ng tin file vÃ  Ä‘á»“ng bá»™ lÃªn Telegram thÃ nh cÃ´ng',
+              message: 'ÄÃ£ sá»­a thÃ´ng tin file vÃ  Ä‘á»“ng bá»™ lÃªn Telegram thÃ nh công',
               downloadUrl: downloadUrl
             });
           }
         }
       } catch (error) {
-        console.error('Lá»—i Ä‘á»“ng bá»™ file lÃªn Telegram:', error);
+        console.error('Lỗi Ä‘á»“ng bá»™ file lÃªn Telegram:', error);
       }
     } else if (botActive && bot && filesData[fileIndex].telegramFileId) {
       try {
@@ -1704,12 +1704,12 @@ app.get('/api/files/:id/fix', async (req, res) => {
           
           return res.json({
             success: true,
-            message: 'ÄÃ£ sá»­a thÃ´ng tin file vÃ  láº¥y URL thÃ nh cÃ´ng',
+            message: 'ÄÃ£ sá»­a thÃ´ng tin file vÃ  láº¥y URL thÃ nh công',
             downloadUrl: downloadUrl
           });
         }
       } catch (error) {
-        console.error('Lá»—i láº¥y URL file tá»« Telegram:', error);
+        console.error('Lỗi láº¥y URL file tá»« Telegram:', error);
       }
     }
     
@@ -1719,10 +1719,10 @@ app.get('/api/files/:id/fix', async (req, res) => {
       file: filesData[fileIndex]
     });
   } catch (error) {
-    console.error('Lá»—i sá»­a thÃ´ng tin file:', error);
+    console.error('Lỗi sá»­a thÃ´ng tin file:', error);
     res.status(500).json({
       success: false,
-      message: 'Lá»—i server: ' + error.message
+      message: 'Lỗi server: ' + error.message
     });
   }
 });
@@ -1742,20 +1742,20 @@ app.get('/api/check-files', async (req, res) => {
     for (const file of filesData) {
       let needFix = false;
       
-      // Kiá»ƒm tra file cÃ³ tá»“n táº¡i khÃ´ng
+      // Kiá»ƒm tra file cÃ³ tá»“n táº¡i không
       const fileExists = file.localPath && fs.existsSync(file.localPath);
       
       // Kiá»ƒm tra telegramFileId
       const hasTelegramId = !!file.telegramFileId;
       
-      // ÄÃ¡nh dáº¥u file cáº§n Ä‘á»“ng bá»™ náº¿u khÃ´ng cÃ³ telegramFileId
+      // ÄÃ¡nh dáº¥u file cáº§n Ä‘á»“ng bá»™ náº¿u không cÃ³ telegramFileId
       if (!hasTelegramId && fileExists) {
         file.needsSync = true;
         needFix = true;
         problemCount++;
       }
       
-      // ÄÃ¡nh dáº¥u file Ä‘Ã£ bá»‹ xÃ³a náº¿u khÃ´ng tá»“n táº¡i local vÃ  khÃ´ng cÃ³ telegramFileId
+      // ÄÃ¡nh dáº¥u file Ä‘Ã£ bá»‹ xóa náº¿u không tá»“n táº¡i local vÃ  không cÃ³ telegramFileId
       if (!fileExists && !hasTelegramId) {
         file.deleted = true;
         needFix = true;
@@ -1767,7 +1767,7 @@ app.get('/api/check-files', async (req, res) => {
       }
     }
     
-    // Lá»c bá» cÃ¡c file Ä‘Ã£ bá»‹ xÃ³a
+    // Lá»c bá» cÃ¡c file Ä‘Ã£ bá»‹ xóa
     const newFilesData = filesData.filter(file => !file.deleted);
     
     // LÆ°u láº¡i database
@@ -1775,26 +1775,26 @@ app.get('/api/check-files', async (req, res) => {
     
     res.json({
       success: true,
-      message: `ÄÃ£ kiá»ƒm tra ${filesData.length} file, sá»­a ${fixedCount} file cÃ³ váº¥n Ä‘á», xÃ³a ${filesData.length - newFilesData.length} file khÃ´ng tá»“n táº¡i.`,
+      message: `ÄÃ£ kiá»ƒm tra ${filesData.length} file, sá»­a ${fixedCount} file cÃ³ váº¥n Ä‘á», xóa ${filesData.length - newFilesData.length} file không tá»“n táº¡i.`,
       totalFiles: filesData.length,
       fixedCount,
       problemCount,
       deletedCount: filesData.length - newFilesData.length
     });
   } catch (error) {
-    console.error('Lá»—i kiá»ƒm tra file:', error);
+    console.error('Lỗi kiá»ƒm tra file:', error);
     res.status(500).json({
       success: false,
-      error: 'Lá»—i server khi kiá»ƒm tra file: ' + error.message
+      error: 'Lỗi server khi kiá»ƒm tra file: ' + error.message
     });
   }
 });
 
-// API Ä‘á»ƒ khá»Ÿi táº¡o láº¡i database vÃ  sá»­a táº¥t cáº£ dá»¯ liá»‡u
+// API Ä‘á»ƒ khá»Ÿi táº¡o láº¡i database vÃ  sá»­a táº¥t cả dá»¯ liá»‡u
 app.get('/api/reset-database', async (req, res) => {
   try {
     console.log('Báº¯t Ä‘áº§u khá»Ÿi táº¡o láº¡i database');
-    // Äá»c táº¥t cáº£ file trong thÆ° má»¥c uploads
+    // Äá»c táº¥t cả file trong thư mục uploads
     const uploadedFiles = fs.readdirSync(uploadsDir);
     
     // Táº¡o danh sÃ¡ch file má»›i
@@ -1807,7 +1807,7 @@ app.get('/api/reset-database', async (req, res) => {
       
       if (!stats.isFile()) continue;
       
-      const originalName = fileName; // TÃªn gá»‘c lÃ  tÃªn file
+      const originalName = fileName; // TÃªn gá»‘c lÃ  tên file
       const fileExt = path.extname(originalName);
       const mimeType = getMimeType(fileExt);
       
@@ -1844,22 +1844,22 @@ app.get('/api/reset-database', async (req, res) => {
         const syncedCount = await syncFiles();
         syncResult = { success: true, syncedFiles: syncedCount };
       } catch (syncError) {
-        console.error('Lá»—i Ä‘á»“ng bá»™ sau khi khá»Ÿi táº¡o láº¡i database:', syncError);
+        console.error('Lỗi Ä‘á»“ng bá»™ sau khi khá»Ÿi táº¡o láº¡i database:', syncError);
         syncResult = { success: false, error: syncError.message };
       }
     }
     
     res.json({
       success: true,
-      message: 'ÄÃ£ khá»Ÿi táº¡o láº¡i database thÃ nh cÃ´ng',
+      message: 'ÄÃ£ khá»Ÿi táº¡o láº¡i database thÃ nh công',
       totalFiles: filesData.length,
       sync: syncResult
     });
   } catch (error) {
-    console.error('Lá»—i khá»Ÿi táº¡o láº¡i database:', error);
+    console.error('Lỗi khá»Ÿi táº¡o láº¡i database:', error);
     res.status(500).json({
       success: false,
-      message: 'Lá»—i khá»Ÿi táº¡o láº¡i database: ' + error.message
+      message: 'Lỗi khá»Ÿi táº¡o láº¡i database: ' + error.message
     });
   }
 });
@@ -1874,9 +1874,9 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Má»Ÿ rá»™ng dá»¯ liá»‡u file Ä‘á»ƒ há»— trá»£ thÆ° má»¥c
+// Má»Ÿ rá»™ng dá»¯ liá»‡u file Ä‘á»ƒ há»— trá»£ thư mục
 function createVirtualFolderStructure(files) {
-  // Táº¡o cáº¥u trÃºc thÆ° má»¥c áº£o
+  // Táº¡o cáº¥u trÃºc thư mục áº£o
   const rootFolder = {
     id: 'root',
     name: 'Root',
@@ -1886,16 +1886,16 @@ function createVirtualFolderStructure(files) {
     createdAt: new Date().toISOString()
   };
   
-  // LÆ°u táº¥t cáº£ thÆ° má»¥c báº±ng ID
+  // LÆ°u táº¥t cả thư mục báº±ng ID
   const foldersById = { 'root': rootFolder };
   
-  // TrÃ­ch xuáº¥t táº¥t cáº£ thÆ° má»¥c tá»« Ä‘Æ°á»ng dáº«n file
+  // TrÃ­ch xuáº¥t táº¥t cả thư mục tá»« Ä‘Æ°á»ng dáº«n file
   files.forEach(file => {
-    // Láº¥y tÃªn file vÃ  Ä‘Æ°á»ng dáº«n thÆ° má»¥c
+    // Láº¥y tên file vÃ  Ä‘Æ°á»ng dáº«n thư mục
     let filePath = file.name;
     let folders = [];
     
-    // Náº¿u file cÃ³ dáº¥u / hoáº·c \, phÃ¢n tÃ¡ch thÃ nh thÆ° má»¥c
+    // Náº¿u file cÃ³ dáº¥u / hoáº·c \, phÃ¢n tÃ¡ch thÃ nh thư mục
     if (filePath.includes('/') || filePath.includes('\\')) {
       // Chuáº©n hÃ³a Ä‘Æ°á»ng dáº«n
       const normalizedPath = filePath.replace(/\\/g, '/');
@@ -1904,16 +1904,16 @@ function createVirtualFolderStructure(files) {
       // File lÃ  pháº§n tá»­ cuá»‘i cÃ¹ng
       const fileName = parts.pop();
       
-      // CÃ¡c pháº§n cÃ²n láº¡i lÃ  thÆ° má»¥c
+      // CÃ¡c pháº§n cÃ²n láº¡i lÃ  thư mục
       folders = parts;
       
-      // Cáº­p nháº­t tÃªn file khÃ´ng bao gá»“m Ä‘Æ°á»ng dáº«n
+      // Cáº­p nháº­t tên file không bao gá»“m Ä‘Æ°á»ng dáº«n
       file.displayName = fileName;
     } else {
       file.displayName = filePath;
     }
     
-    // Táº¡o cÃ¡c thÆ° má»¥c náº¿u chÆ°a tá»“n táº¡i
+    // Táº¡o cÃ¡c thư mục náº¿u chÆ°a tá»“n táº¡i
     let currentParent = 'root';
     let currentPath = '';
     
@@ -1922,7 +1922,7 @@ function createVirtualFolderStructure(files) {
       const folderId = `folder_${currentPath.replace(/[^a-z0-9]/gi, '_')}`;
       
       if (!foldersById[folderId]) {
-        // Táº¡o thÆ° má»¥c má»›i
+        // Táº¡o thư mục má»›i
         const newFolder = {
           id: folderId,
           name: folderName,
@@ -1933,21 +1933,21 @@ function createVirtualFolderStructure(files) {
           createdAt: new Date().toISOString()
         };
         
-        // ThÃªm vÃ o danh sÃ¡ch thÆ° má»¥c
+        // ThÃªm vÃ o danh sÃ¡ch thư mục
         foldersById[folderId] = newFolder;
         
-        // ThÃªm vÃ o thÆ° má»¥c cha
+        // ThÃªm vÃ o thư mục cha
         foldersById[currentParent].children.push(folderId);
       }
       
       currentParent = folderId;
     });
     
-    // GÃ¡n file vÃ o thÆ° má»¥c cha
+    // GÃ¡n file vÃ o thư mục cha
     file.parent = currentParent;
     file.type = 'file';
     
-    // ThÃªm file vÃ o thÆ° má»¥c cha
+    // ThÃªm file vÃ o thư mục cha
     foldersById[currentParent].children.push(file.id);
   });
   
@@ -1958,7 +1958,7 @@ function createVirtualFolderStructure(files) {
   };
 }
 
-// XÃ¢y dá»±ng cÃ¢y thÆ° má»¥c tá»« thÆ° má»¥c gá»‘c
+// XÃ¢y dá»±ng cÃ¢y thư mục tá»« thư mục gá»‘c
 function buildFolderTree(folder, foldersById, files) {
   // Táº¡o báº£n sao Ä‘á»ƒ trÃ¡nh thay Ä‘á»•i dá»¯ liá»‡u gá»‘c
   const result = {
@@ -1968,7 +1968,7 @@ function buildFolderTree(folder, foldersById, files) {
   
   // Duyá»‡t qua tá»«ng children ID
   folder.children.forEach(childId => {
-    // Náº¿u ID báº¯t Ä‘áº§u báº±ng "folder_", Ä‘Ã³ lÃ  thÆ° má»¥c
+    // Náº¿u ID báº¯t Ä‘áº§u báº±ng "folder_", Ä‘Ã³ lÃ  thư mục
     if (typeof childId === 'string' && foldersById[childId]) {
       // Äá»‡ quy xÃ¢y dá»±ng cÃ¢y con
       const childFolder = buildFolderTree(foldersById[childId], foldersById, files);
@@ -1988,7 +1988,7 @@ function buildFolderTree(folder, foldersById, files) {
   return result;
 }
 
-// API endpoint Ä‘á»ƒ láº¥y cáº¥u trÃºc thÆ° má»¥c
+// API endpoint Ä‘á»ƒ láº¥y cáº¥u trÃºc thư mục
 app.get('/api/folders', (req, res) => {
   try {
     const filesData = readFilesDb();
@@ -1999,22 +1999,22 @@ app.get('/api/folders', (req, res) => {
       folders: folderStructure.folderTree
     });
   } catch (error) {
-    console.error('Lá»—i láº¥y cáº¥u trÃºc thÆ° má»¥c:', error);
+    console.error('Lỗi láº¥y cáº¥u trÃºc thư mục:', error);
     res.status(500).json({
       success: false,
-      message: 'Lá»—i láº¥y cáº¥u trÃºc thÆ° má»¥c: ' + error.message
+      message: 'Lỗi láº¥y cáº¥u trÃºc thư mục: ' + error.message
     });
   }
 });
 
-// API endpoint Ä‘á»ƒ láº¥y ná»™i dung cá»§a thÆ° má»¥c
+// API endpoint Ä‘á»ƒ láº¥y nội dung cá»§a thư mục
 app.get('/api/folders/:folderId', (req, res) => {
   try {
     const folderId = req.params.folderId;
     const filesData = readFilesDb();
     const folderStructure = createVirtualFolderStructure(filesData);
     
-    // Náº¿u folderId lÃ  'root', tráº£ vá» thÆ° má»¥c gá»‘c
+    // Náº¿u folderId lÃ  'root', tráº£ vá» thư mục gá»‘c
     if (folderId === 'root') {
       return res.json({
         success: true,
@@ -2022,16 +2022,16 @@ app.get('/api/folders/:folderId', (req, res) => {
       });
     }
     
-    // TÃ¬m thÆ° má»¥c theo ID
+    // TÃ¬m thư mục theo ID
     const folder = folderStructure.foldersById[folderId];
     if (!folder) {
       return res.status(404).json({
         success: false,
-        message: 'KhÃ´ng tÃ¬m tháº¥y thÆ° má»¥c'
+        message: 'Không tÃ¬m tháº¥y thư mục'
       });
     }
     
-    // XÃ¢y dá»±ng cÃ¢y thÆ° má»¥c tá»« thÆ° má»¥c nÃ y
+    // XÃ¢y dá»±ng cÃ¢y thư mục tá»« thư mục nÃ y
     const folderTree = buildFolderTree(folder, folderStructure.foldersById, filesData);
     
     res.json({
@@ -2039,10 +2039,10 @@ app.get('/api/folders/:folderId', (req, res) => {
       folder: folderTree
     });
   } catch (error) {
-    console.error('Lá»—i láº¥y ná»™i dung thÆ° má»¥c:', error);
+    console.error('Lỗi láº¥y nội dung thư mục:', error);
     res.status(500).json({
       success: false,
-      message: 'Lá»—i láº¥y ná»™i dung thÆ° má»¥c: ' + error.message
+      message: 'Lỗi láº¥y nội dung thư mục: ' + error.message
     });
   }
 });
@@ -2055,7 +2055,7 @@ app.get('/api/search', (req, res) => {
     if (!query || query.trim() === '') {
       return res.status(400).json({
         success: false,
-        error: 'Tá»« khÃ³a tÃ¬m kiáº¿m khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'Tá»« khÃ³a tÃ¬m kiáº¿m không Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
       });
     }
     
@@ -2074,7 +2074,7 @@ app.get('/api/search', (req, res) => {
         !file.isDeleted
       );
     } else {
-      // TÃ¬m táº¥t cáº£ loáº¡i file
+      // TÃ¬m táº¥t cả loáº¡i file
       results = filesData.filter(file => 
         (file.name.toLowerCase().includes(query.toLowerCase()) || 
          (file.tags && file.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())))) &&
@@ -2108,10 +2108,10 @@ app.get('/api/search', (req, res) => {
       type: type || 'all'
     });
   } catch (error) {
-    console.error('Lá»—i tÃ¬m kiáº¿m file:', error);
+    console.error('Lỗi tÃ¬m kiáº¿m file:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi tÃ¬m kiáº¿m file'
+      error: error.message || 'Lỗi server khi tÃ¬m kiáº¿m file'
     });
   }
 });
@@ -2128,7 +2128,7 @@ app.post('/api/files/:id/share', express.json(), (req, res) => {
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        message: 'File khÃ´ng tá»“n táº¡i'
+        message: 'File không tá»“n táº¡i'
       });
     }
     
@@ -2167,10 +2167,10 @@ app.post('/api/files/:id/share', express.json(), (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lá»—i cáº­p nháº­t chia sáº» file:', error);
+    console.error('Lỗi cáº­p nháº­t chia sáº» file:', error);
     res.status(500).json({
       success: false,
-      message: 'Lá»—i cáº­p nháº­t chia sáº»: ' + error.message
+      message: 'Lỗi cáº­p nháº­t chia sáº»: ' + error.message
     });
   }
 });
@@ -2186,9 +2186,9 @@ app.get('/share/:shareCode', async (req, res) => {
     
     if (!file) {
       return res.status(404).render('error', {
-        title: 'TeleDrive - Link khÃ´ng tá»“n táº¡i',
-        message: 'Link chia sáº» khÃ´ng tá»“n táº¡i hoáº·c Ä‘Ã£ háº¿t háº¡n',
-        error: { status: 404, stack: 'File khÃ´ng tá»“n táº¡i hoáº·c link chia sáº» Ä‘Ã£ bá»‹ xÃ³a' }
+        title: 'TeleDrive - Link không tá»“n táº¡i',
+        message: 'Link chia sáº» không tá»“n táº¡i hoáº·c Ä‘Ã£ háº¿t háº¡n',
+        error: { status: 404, stack: 'File không tá»“n táº¡i hoáº·c link chia sáº» Ä‘Ã£ bá»‹ xóa' }
       });
     }
     
@@ -2199,17 +2199,17 @@ app.get('/share/:shareCode', async (req, res) => {
         return res.status(410).render('error', {
           title: 'TeleDrive - Link háº¿t háº¡n',
           message: 'Link chia sáº» Ä‘Ã£ háº¿t háº¡n',
-          error: { status: 410, stack: 'Link chia sáº» nÃ y Ä‘Ã£ quÃ¡ háº¡n sá»­ dá»¥ng' }
+          error: { status: 410, stack: 'Link chia sáº» nÃ y Ä‘Ã£ quÃ¡ háº¡n sá»­ dụng' }
         });
       }
     }
     
-    // Kiá»ƒm tra xem file cÃ³ Ä‘Æ°á»£c chia sáº» cÃ´ng khai khÃ´ng
+    // Kiá»ƒm tra xem file cÃ³ Ä‘Æ°á»£c chia sáº» công khai không
     if (!file.isPublic) {
       return res.status(403).render('error', {
-        title: 'TeleDrive - KhÃ´ng cÃ³ quyá»n truy cáº­p',
-        message: 'File nÃ y khÃ´ng Ä‘Æ°á»£c chia sáº» cÃ´ng khai',
-        error: { status: 403, stack: 'Báº¡n khÃ´ng cÃ³ quyá»n truy cáº­p file nÃ y' }
+        title: 'TeleDrive - Không cÃ³ quyá»n truy cáº­p',
+        message: 'File nÃ y không Ä‘Æ°á»£c chia sáº» công khai',
+        error: { status: 403, stack: 'Báº¡n không cÃ³ quyá»n truy cáº­p file nÃ y' }
       });
     }
     
@@ -2233,10 +2233,10 @@ app.get('/share/:shareCode', async (req, res) => {
       shareCode: shareCode
     });
   } catch (error) {
-    console.error('Lá»—i xá»­ lÃ½ file chia sáº»:', error);
+    console.error('Lỗi xá»­ lÃ½ file chia sáº»:', error);
     res.status(500).render('error', {
-      title: 'TeleDrive - Lá»—i',
-      message: 'Lá»—i xá»­ lÃ½ yÃªu cáº§u',
+      title: 'TeleDrive - Lỗi',
+      message: 'Lỗi xá»­ lÃ½ yÃªu cáº§u',
       error: { status: 500, stack: error.message }
     });
   }
@@ -2244,22 +2244,22 @@ app.get('/share/:shareCode', async (req, res) => {
 
 /**
  * Kiá»ƒm tra file .env
- * Náº¿u file .env khÃ´ng tá»“n táº¡i, táº¡o tá»« file .env.example
+ * Náº¿u file .env không tá»“n táº¡i, táº¡o tá»« file .env.example
  */
 function checkEnvFile() {
   try {
     if (!fs.existsSync('.env')) {
-      console.log('File .env khÃ´ng tá»“n táº¡i, táº¡o tá»« file .env.example');
+      console.log('File .env không tá»“n táº¡i, táº¡o tá»« file .env.example');
       if (fs.existsSync('.env.example')) {
         fs.copyFileSync('.env.example', '.env');
         console.log('ÄÃ£ táº¡o file .env tá»« file .env.example');
       } else {
-        console.log('File .env.example khÃ´ng tá»“n táº¡i, táº¡o file .env trá»‘ng');
+        console.log('File .env.example không tá»“n táº¡i, táº¡o file .env trá»‘ng');
         fs.writeFileSync('.env', 'PORT=5002\nBOT_TOKEN=\nMAX_FILE_SIZE=1000\n');
       }
     }
   } catch (error) {
-    console.error('Lá»—i kiá»ƒm tra file .env:', error);
+    console.error('Lỗi kiá»ƒm tra file .env:', error);
   }
 }
 
@@ -2269,7 +2269,7 @@ function checkEnvFile() {
 async function handleCommandLineArgs() {
   const args = process.argv.slice(2);
   if (args.length === 0) {
-    // KhÃ´ng cÃ³ tham sá»‘, khá»Ÿi Ä‘á»™ng bÃ¬nh thÆ°á»ng
+    // Không cÃ³ tham sá»‘, khá»Ÿi Ä‘á»™ng bÃ¬nh thưá»ng
     return false;
   }
 
@@ -2287,14 +2287,14 @@ async function handleCommandLineArgs() {
               const syncedCount = await syncFiles();
               console.log(`ÄÃ£ Ä‘á»“ng bá»™ ${syncedCount} files vá»›i Telegram.`);
             } else {
-              console.log('Bot khÃ´ng hoáº¡t Ä‘á»™ng, khÃ´ng thá»ƒ Ä‘á»“ng bá»™ files.');
+              console.log('Bot không hoáº¡t Ä‘á»™ng, không thá»ƒ Ä‘á»“ng bá»™ files.');
             }
           } else {
-            console.log('KhÃ´ng thá»ƒ khá»Ÿi táº¡o bot, khÃ´ng thá»ƒ Ä‘á»“ng bá»™ files.');
+            console.log('Không thá»ƒ khá»Ÿi táº¡o bot, không thá»ƒ Ä‘á»“ng bá»™ files.');
           }
         });
       } catch (error) {
-        console.error('Lá»—i Ä‘á»“ng bá»™ files:', error);
+        console.error('Lỗi Ä‘á»“ng bá»™ files:', error);
       }
       return false;
       
@@ -2309,19 +2309,19 @@ async function handleCommandLineArgs() {
               const cleanedCount = await cleanUploads();
               console.log(`ÄÃ£ dá»n dáº¹p ${cleanedCount} files.`);
             } else {
-              console.log('Bot khÃ´ng hoáº¡t Ä‘á»™ng, khÃ´ng thá»ƒ dá»n dáº¹p uploads.');
+              console.log('Bot không hoáº¡t Ä‘á»™ng, không thá»ƒ dá»n dáº¹p uploads.');
             }
           } else {
-            console.log('KhÃ´ng thá»ƒ khá»Ÿi táº¡o bot, khÃ´ng thá»ƒ dá»n dáº¹p uploads.');
+            console.log('Không thá»ƒ khá»Ÿi táº¡o bot, không thá»ƒ dá»n dáº¹p uploads.');
           }
         });
       } catch (error) {
-        console.error('Lá»—i dá»n dáº¹p uploads:', error);
+        console.error('Lỗi dá»n dáº¹p uploads:', error);
       }
       return false;
       
     default:
-      console.log(`Lá»‡nh khÃ´ng há»£p lá»‡: ${command}`);
+      console.log(`Lá»‡nh không há»£p lá»‡: ${command}`);
       return false;
   }
 }
@@ -2329,10 +2329,10 @@ async function handleCommandLineArgs() {
 // Make sure to place this right above the last middleware error handlers
 // Move the error and 404 handlers to the very end of routes
 
-  console.error('Lá»—i server:', err);
+  console.error('Lỗi server:', err);
   res.status(500).json({
     success: false,
-    error: 'Lá»—i server: ' + (err.message || 'KhÃ´ng xÃ¡c Ä‘á»‹nh')
+    error: 'Lỗi server: ' + (err.message || 'Không xác Ä‘á»‹nh')
   });
 
 // Khá»Ÿi Ä‘á»™ng chÆ°Æ¡ng trÃ¬nh
@@ -2349,10 +2349,10 @@ async function handleCommandLineArgs() {
       botActive = await checkBotActive();
       
       if (bot && botActive) {
-        console.log(`Khá»Ÿi táº¡o bot thÃ nh cÃ´ng sau ${botInitAttempts} láº§n thá»­.`);
+        console.log(`Khá»Ÿi táº¡o bot thÃ nh công sau ${botInitAttempts} láº§n thá»­.`);
         break;
       } else {
-        console.log(`KhÃ´ng thá»ƒ khá»Ÿi táº¡o bot (láº§n thá»­ ${botInitAttempts}/${maxBotInitAttempts}).`);
+        console.log(`Không thá»ƒ khá»Ÿi táº¡o bot (láº§n thá»­ ${botInitAttempts}/${maxBotInitAttempts}).`);
         
         if (botInitAttempts < maxBotInitAttempts) {
           // Chá» trÆ°á»›c khi thá»­ láº¡i
@@ -2360,7 +2360,7 @@ async function handleCommandLineArgs() {
         }
       }
     } catch (error) {
-      console.error(`Lá»—i khá»Ÿi táº¡o bot (láº§n thá»­ ${botInitAttempts}/${maxBotInitAttempts}):`, error);
+      console.error(`Lỗi khá»Ÿi táº¡o bot (láº§n thá»­ ${botInitAttempts}/${maxBotInitAttempts}):`, error);
       
       if (botInitAttempts < maxBotInitAttempts) {
         // Chá» trÆ°á»›c khi thá»­ láº¡i
@@ -2383,19 +2383,19 @@ async function handleCommandLineArgs() {
   try {
     // Error handler middleware - Ä‘áº·t trÆ°á»›c 404 middleware
     app.use((err, req, res, next) => {
-      console.error('Lá»—i server:', err);
+      console.error('Lỗi server:', err);
       res.status(500).json({
         success: false,
-        error: 'Lá»—i server: ' + (err.message || 'KhÃ´ng xÃ¡c Ä‘á»‹nh')
+        error: 'Lỗi server: ' + (err.message || 'Không xác Ä‘á»‹nh')
       });
     });
     
-    // Middleware xá»­ lÃ½ route khÃ´ng tá»“n táº¡i - Ä‘áº·t sau error handler vÃ  trÆ°á»›c khi khá»Ÿi Ä‘á»™ng server
+    // Middleware xá»­ lÃ½ route không tá»“n táº¡i - Ä‘áº·t sau error handler vÃ  trÆ°á»›c khi khá»Ÿi Ä‘á»™ng server
     app.use((req, res) => {
-      console.log(`Route khÃ´ng tá»“n táº¡i: ${req.method} ${req.path}`);
+      console.log(`Route không tá»“n táº¡i: ${req.method} ${req.path}`);
       res.status(404).json({
         success: false,
-        error: 'API endpoint khÃ´ng tá»“n táº¡i'
+        error: 'API endpoint không tá»“n táº¡i'
       });
     });
     
@@ -2405,10 +2405,10 @@ async function handleCommandLineArgs() {
     });
   } catch (error) {
     if (error.code === 'EADDRINUSE') {
-      console.error(`Cá»•ng ${PORT} Ä‘Ã£ Ä‘Æ°á»£c sá»­ dá»¥ng. Vui lÃ²ng chá»n cá»•ng khÃ¡c hoáº·c dá»«ng á»©ng dá»¥ng Ä‘ang cháº¡y.`);
+      console.error(`Cá»•ng ${PORT} Ä‘Ã£ Ä‘Æ°á»£c sá»­ dụng. Vui lÃ²ng chá»n cá»•ng khÃ¡c hoáº·c dá»«ng á»©ng dụng Ä‘ang cháº¡y.`);
       process.exit(1);
     } else {
-      console.error('Lá»—i khá»Ÿi Ä‘á»™ng server:', error);
+      console.error('Lỗi khá»Ÿi Ä‘á»™ng server:', error);
       process.exit(1);
     }
   }
@@ -2442,10 +2442,10 @@ app.get('/api/settings', (req, res) => {
       settings
     });
   } catch (error) {
-    console.error('Lá»—i láº¥y cÃ i Ä‘áº·t:', error);
+    console.error('Lỗi láº¥y cÃ i Ä‘áº·t:', error);
     res.status(500).json({
       success: false,
-      error: 'Lá»—i server khi láº¥y cÃ i Ä‘áº·t'
+      error: 'Lỗi server khi láº¥y cÃ i Ä‘áº·t'
     });
   }
 });
@@ -2458,11 +2458,11 @@ app.post('/api/settings', (req, res) => {
     if (!botToken) {
       return res.status(400).json({
         success: false,
-        error: 'Bot Token khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'Bot Token không Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
       });
     }
     
-    // Äá»c ná»™i dung file .env
+    // Äá»c nội dung file .env
     const envPath = path.join(__dirname, '.env');
     let envContent = fs.readFileSync(envPath, 'utf8');
     
@@ -2494,21 +2494,21 @@ app.post('/api/settings', (req, res) => {
           bot = await initBot();
           botActive = await checkBotActive();
         } catch (error) {
-          console.error('Lá»—i khá»Ÿi Ä‘á»™ng láº¡i bot:', error);
+          console.error('Lỗi khá»Ÿi Ä‘á»™ng láº¡i bot:', error);
         }
       }, 1000);
     }
     
     res.json({
       success: true,
-      message: 'ÄÃ£ lÆ°u cÃ i Ä‘áº·t thÃ nh cÃ´ng',
+      message: 'ÄÃ£ lÆ°u cÃ i Ä‘áº·t thÃ nh công',
       needsRestart: restartAfterSave
     });
   } catch (error) {
-    console.error('Lá»—i cáº­p nháº­t cÃ i Ä‘áº·t:', error);
+    console.error('Lỗi cáº­p nháº­t cÃ i Ä‘áº·t:', error);
     res.status(500).json({
       success: false,
-      error: 'Lá»—i server khi cáº­p nháº­t cÃ i Ä‘áº·t'
+      error: 'Lỗi server khi cáº­p nháº­t cÃ i Ä‘áº·t'
     });
   }
 });
@@ -2519,15 +2519,15 @@ app.post('/api/sync', async (req, res) => {
   try {
     console.log('Kiá»ƒm tra tráº¡ng thÃ¡i bot trÆ°á»›c khi Ä‘á»“ng bá»™...');
     if (!bot || !botActive) {
-      console.log('Bot khÃ´ng hoáº¡t Ä‘á»™ng, thá»­ khá»Ÿi táº¡o láº¡i...');
+      console.log('Bot không hoáº¡t Ä‘á»™ng, thá»­ khá»Ÿi táº¡o láº¡i...');
       bot = await initBot();
       botActive = await checkBotActive();
       
       if (!bot || !botActive) {
-        console.log('KhÃ´ng thá»ƒ khá»Ÿi táº¡o bot, khÃ´ng thá»ƒ Ä‘á»“ng bá»™');
+        console.log('Không thá»ƒ khá»Ÿi táº¡o bot, không thá»ƒ Ä‘á»“ng bá»™');
         return res.status(500).json({
           success: false,
-          error: 'Bot Telegram khÃ´ng hoáº¡t Ä‘á»™ng, khÃ´ng thá»ƒ Ä‘á»“ng bá»™'
+          error: 'Bot Telegram không hoáº¡t Ä‘á»™ng, không thá»ƒ Ä‘á»“ng bá»™'
         });
       }
     }
@@ -2547,16 +2547,16 @@ app.post('/api/sync', async (req, res) => {
     return res.json({
       success: result.success,
       message: result.success 
-        ? `ÄÃ£ Ä‘á»“ng bá»™ thÃ nh cÃ´ng ${result.syncedCount} files` 
-        : `Lá»—i Ä‘á»“ng bá»™: ${result.error}`,
+        ? `ÄÃ£ Ä‘á»“ng bá»™ thÃ nh công ${result.syncedCount} files` 
+        : `Lỗi Ä‘á»“ng bá»™: ${result.error}`,
       stats: stats,
       details: result
     });
   } catch (error) {
-    console.error('Lá»—i endpoint /api/sync:', error);
+    console.error('Lỗi endpoint /api/sync:', error);
     return res.status(500).json({
       success: false,
-      error: 'Lá»—i server: ' + (error.message || 'KhÃ´ng xÃ¡c Ä‘á»‹nh')
+      error: 'Lỗi server: ' + (error.message || 'Không xác Ä‘á»‹nh')
     });
   }
 });
@@ -2567,7 +2567,7 @@ app.post('/api/clean', async (req, res) => {
     if (!bot || !botActive) {
       return res.status(400).json({
         success: false,
-        error: 'Bot Telegram khÃ´ng hoáº¡t Ä‘á»™ng'
+        error: 'Bot Telegram không hoáº¡t Ä‘á»™ng'
       });
     }
     
@@ -2580,10 +2580,10 @@ app.post('/api/clean', async (req, res) => {
       cleanedCount
     });
   } catch (error) {
-    console.error('Lá»—i táº£i file lÃªn Telegram:', error);
+    console.error('Lỗi táº£i file lÃªn Telegram:', error);
     res.status(500).json({
       success: false,
-      error: 'Lá»—i server khi táº£i file lÃªn Telegram: ' + error.message
+      error: 'Lỗi server khi táº£i file lÃªn Telegram: ' + error.message
     });
   }
 });
@@ -2627,20 +2627,20 @@ app.get('/api/check-files', async (req, res) => {
               fileFixed = true;
             }
           } catch (error) {
-            console.error(`Lá»—i láº¥y thÃ´ng tin file tá»« Telegram: ${file.name}`, error);
+            console.error(`Lỗi láº¥y thÃ´ng tin file tá»« Telegram: ${file.name}`, error);
           }
         }
       } else {
-        // File khÃ´ng tá»“n táº¡i á»Ÿ cáº£ local vÃ  telegram
+        // File không tá»“n táº¡i á»Ÿ cả local vÃ  telegram
         if (file.fileStatus !== 'missing') {
           file.fileStatus = 'missing';
           fileFixed = true;
         }
       }
       
-      // Sá»­a Ä‘á»‹nh dáº¡ng tÃªn file náº¿u cáº§n
+      // Sửa Ä‘á»‹nh dáº¡ng tên file náº¿u cáº§n
       if (file.name && file.name.includes('')) {
-        // Thá»­ khÃ´i phá»¥c tÃªn file tá»« originalName hoáº·c tá»« Ä‘Æ°á»ng dáº«n local
+        // Thá»­ khÃ´i phá»¥c tên file tá»« originalName hoáº·c tá»« Ä‘Æ°á»ng dáº«n local
         if (file.originalName && !file.originalName.includes('')) {
           file.name = file.originalName;
           fileFixed = true;
@@ -2685,10 +2685,10 @@ app.get('/api/check-files', async (req, res) => {
       updatedFiles
     });
   } catch (error) {
-    console.error('Lá»—i kiá»ƒm tra file:', error);
+    console.error('Lỗi kiá»ƒm tra file:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi kiá»ƒm tra file'
+      error: error.message || 'Lỗi server khi kiá»ƒm tra file'
     });
   }
 });
@@ -2699,7 +2699,7 @@ app.get('/api/load-telegram-files', async (req, res) => {
     if (!bot || !botActive) {
       return res.status(400).json({
         success: false,
-        error: 'Bot Telegram khÃ´ng hoáº¡t Ä‘á»™ng'
+        error: 'Bot Telegram không hoáº¡t Ä‘á»™ng'
       });
     }
     
@@ -2713,10 +2713,10 @@ app.get('/api/load-telegram-files', async (req, res) => {
       newFileCount
     });
   } catch (error) {
-    console.error('Lá»—i load file tá»« Telegram:', error);
+    console.error('Lỗi load file tá»« Telegram:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi load file tá»« Telegram'
+      error: error.message || 'Lỗi server khi load file tá»« Telegram'
     });
   }
 });
@@ -2730,15 +2730,15 @@ app.get('/api/reset-database', async (req, res) => {
     const newFilesData = [];
     const storagePath = STORAGE_PATH;
     
-    // Kiá»ƒm tra thÆ° má»¥c uploads
+    // Kiá»ƒm tra thư mục uploads
     const uploadsDir = path.join(storagePath, 'uploads');
     if (fs.existsSync(uploadsDir)) {
-      console.log('Äang quÃ©t thÆ° má»¥c uploads...');
+      console.log('Äang quÃ©t thư mục uploads...');
       
-      // QuÃ©t táº¥t cáº£ cÃ¡c file trong thÆ° má»¥c uploads
+      // QuÃ©t táº¥t cả cÃ¡c file trong thư mục uploads
       const files = getAllFiles(uploadsDir);
       
-      console.log(`TÃ¬m tháº¥y ${files.length} file trong thÆ° má»¥c uploads.`);
+      console.log(`TÃ¬m tháº¥y ${files.length} file trong thư mục uploads.`);
       
       // ThÃªm tá»«ng file vÃ o database má»›i
       for (const filePath of files) {
@@ -2767,7 +2767,7 @@ app.get('/api/reset-database', async (req, res) => {
             });
           }
         } catch (error) {
-          console.error(`Lá»—i xá»­ lÃ½ file ${filePath}:`, error);
+          console.error(`Lỗi xá»­ lÃ½ file ${filePath}:`, error);
         }
       }
     }
@@ -2786,7 +2786,7 @@ app.get('/api/reset-database', async (req, res) => {
         const syncCount = await syncFiles();
         syncResult = { success: true, syncedFiles: syncCount };
       } catch (error) {
-        console.error('Lá»—i Ä‘á»“ng bá»™ sau khi reset database:', error);
+        console.error('Lỗi Ä‘á»“ng bá»™ sau khi reset database:', error);
         syncResult = { success: false, error: error.message };
       }
     }
@@ -2794,21 +2794,21 @@ app.get('/api/reset-database', async (req, res) => {
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'ÄÃ£ khá»Ÿi táº¡o láº¡i database thÃ nh cÃ´ng',
+      message: 'ÄÃ£ khá»Ÿi táº¡o láº¡i database thÃ nh công',
       totalFiles: newFilesData.length,
       sync: syncResult
     });
   } catch (error) {
-    console.error('Lá»—i reset database:', error);
+    console.error('Lỗi reset database:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi reset database'
+      error: error.message || 'Lỗi server khi reset database'
     });
   }
 });
 
 /**
- * Láº¥y táº¥t cáº£ cÃ¡c file trong thÆ° má»¥c vÃ  cÃ¡c thÆ° má»¥c con
+ * Láº¥y táº¥t cả cÃ¡c file trong thư mục vÃ  cÃ¡c thư mục con
  */
 function getAllFiles(dirPath, arrayOfFiles = []) {
   const files = fs.readdirSync(dirPath);
@@ -2826,7 +2826,7 @@ function getAllFiles(dirPath, arrayOfFiles = []) {
   return arrayOfFiles;
 }
 
-// API endpoint Ä‘á»ƒ táº¡o thÆ° má»¥c má»›i
+// API endpoint Ä‘á»ƒ táº¡o thư mục má»›i
 app.post('/api/folders', express.json(), (req, res) => {
   try {
     const { folderName, parentFolder } = req.body;
@@ -2835,53 +2835,53 @@ app.post('/api/folders', express.json(), (req, res) => {
     if (!folderName || folderName.trim() === '') {
       return res.status(400).json({
         success: false,
-        error: 'TÃªn thÆ° má»¥c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'TÃªn thư mục không Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
       });
     }
     
-    // Kiá»ƒm tra tÃªn thÆ° má»¥c há»£p lá»‡ (khÃ´ng chá»©a kÃ½ tá»± Ä‘áº·c biá»‡t)
+    // Kiá»ƒm tra tên thư mục há»£p lá»‡ (không chá»©a kÃ½ tá»± Ä‘áº·c biá»‡t)
     if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä‘Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»“á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ’Ã“á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(folderName)) {
       return res.status(400).json({
         success: false,
-        error: 'TÃªn thÆ° má»¥c chá»©a kÃ½ tá»± khÃ´ng há»£p lá»‡'
+        error: 'TÃªn thư mục chá»©a kÃ½ tá»± không há»£p lá»‡'
       });
     }
     
     const baseFolder = path.join(STORAGE_PATH, 'uploads');
     let folderPath;
     
-    // XÃ¡c Ä‘á»‹nh Ä‘Æ°á»ng dáº«n thÆ° má»¥c
+    // XÃ¡c Ä‘á»‹nh Ä‘Æ°á»ng dáº«n thư mục
     if (!parentFolder || parentFolder === 'root') {
       folderPath = path.join(baseFolder, folderName);
     } else {
       const parentPath = path.join(baseFolder, parentFolder);
       
-      // Kiá»ƒm tra thÆ° má»¥c cha tá»“n táº¡i
+      // Kiá»ƒm tra thư mục cha tá»“n táº¡i
       if (!fs.existsSync(parentPath) || !fs.statSync(parentPath).isDirectory()) {
         return res.status(404).json({
           success: false,
-          error: 'ThÆ° má»¥c cha khÃ´ng tá»“n táº¡i'
+          error: 'ThÆ° mục cha không tá»“n táº¡i'
         });
       }
       
       folderPath = path.join(parentPath, folderName);
     }
     
-    // Kiá»ƒm tra thÆ° má»¥c Ä‘Ã£ tá»“n táº¡i chÆ°a
+    // Kiá»ƒm tra thư mục Ä‘Ã£ tá»“n táº¡i chÆ°a
     if (fs.existsSync(folderPath)) {
       return res.status(400).json({
         success: false,
-        error: 'ThÆ° má»¥c Ä‘Ã£ tá»“n táº¡i'
+        error: 'ThÆ° mục Ä‘Ã£ tá»“n táº¡i'
       });
     }
     
-    // Táº¡o thÆ° má»¥c
+    // Táº¡o thư mục
     fs.mkdirSync(folderPath, { recursive: true });
     
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'ÄÃ£ táº¡o thÆ° má»¥c thÃ nh cÃ´ng',
+      message: 'ÄÃ£ táº¡o thư mục thÃ nh công',
       folder: {
         name: folderName,
         path: path.relative(baseFolder, folderPath),
@@ -2889,15 +2889,15 @@ app.post('/api/folders', express.json(), (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lá»—i táº¡o thÆ° má»¥c:', error);
+    console.error('Lỗi táº¡o thư mục:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi táº¡o thÆ° má»¥c'
+      error: error.message || 'Lỗi server khi táº¡o thư mục'
     });
   }
 });
 
-// API endpoint Ä‘á»ƒ Ä‘á»•i tÃªn thÆ° má»¥c
+// API endpoint Ä‘á»ƒ Ä‘á»•i tên thư mục
 app.put('/api/folders/rename', express.json(), (req, res) => {
   try {
     const { folderPath, newName } = req.body;
@@ -2906,33 +2906,33 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     if (!folderPath) {
       return res.status(400).json({
         success: false,
-        error: 'ÄÆ°á»ng dáº«n thÆ° má»¥c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'ÄÆ°á»ng dáº«n thư mục không Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
       });
     }
     
     if (!newName || newName.trim() === '') {
       return res.status(400).json({
         success: false,
-        error: 'TÃªn má»›i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'TÃªn má»›i không Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
       });
     }
     
-    // Kiá»ƒm tra tÃªn thÆ° má»¥c há»£p lá»‡
+    // Kiá»ƒm tra tên thư mục há»£p lá»‡
     if (!/^[a-zA-Z0-9\s_Ã Ã¡áº£Ã£áº¡Äƒáº¯áº±áº³áºµáº·Ã¢áº¥áº§áº©áº«áº­Ã¨Ã©áº»áº½áº¹Ãªáº¿á»á»ƒá»…á»‡Ä'Ã¬Ã­á»‰Ä©á»‹Ã²Ã³á»Ãµá»Ã´á»‘á»"á»•á»—á»™Æ¡á»›á»á»Ÿá»¡á»£Ã¹Ãºá»§Å©á»¥Æ°á»©á»«á»­á»¯á»±á»³Ã½á»·á»¹á»µÃ€Ãáº¢Ãƒáº Ä‚áº®áº°áº²áº´áº¶Ã‚áº¤áº¦áº¨áºªáº¬ÃˆÃ‰áººáº¼áº¸ÃŠáº¾á»€á»‚á»„á»†ÄÃŒÃá»ˆÄ¨á»ŠÃ'Ã"á»ŽÃ•á»ŒÃ"á»á»'á»"á»–á»˜Æ á»šá»œá»žá» á»¢Ã™Ãšá»¦Å¨á»¤Æ¯á»¨á»ªá»¬á»®á»°á»²Ãá»¶á»¸á»´-]+$/.test(newName)) {
       return res.status(400).json({
         success: false,
-        error: 'TÃªn má»›i chá»©a kÃ½ tá»± khÃ´ng há»£p lá»‡'
+        error: 'TÃªn má»›i chá»©a kÃ½ tá»± không há»£p lá»‡'
       });
     }
     
     const baseFolder = path.join(STORAGE_PATH, 'uploads');
     const fullFolderPath = path.join(baseFolder, folderPath);
     
-    // Kiá»ƒm tra thÆ° má»¥c tá»“n táº¡i
+    // Kiá»ƒm tra thư mục tá»“n táº¡i
     if (!fs.existsSync(fullFolderPath) || !fs.statSync(fullFolderPath).isDirectory()) {
       return res.status(404).json({
         success: false,
-        error: 'ThÆ° má»¥c khÃ´ng tá»“n táº¡i'
+        error: 'ThÆ° mục không tá»“n táº¡i'
       });
     }
     
@@ -2940,15 +2940,15 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
     const parentPath = path.dirname(fullFolderPath);
     const newFolderPath = path.join(parentPath, newName);
     
-    // Kiá»ƒm tra thÆ° má»¥c má»›i Ä‘Ã£ tá»“n táº¡i chÆ°a
+    // Kiá»ƒm tra thư mục má»›i Ä‘Ã£ tá»“n táº¡i chÆ°a
     if (fs.existsSync(newFolderPath)) {
       return res.status(400).json({
         success: false,
-        error: 'ThÆ° má»¥c má»›i Ä‘Ã£ tá»"n táº¡i'
+        error: 'ThÆ° mục má»›i Ä‘Ã£ tá»"n táº¡i'
       });
     }
     
-    // Äá»•i tÃªn thÆ° má»¥c
+    // Äá»•i tên thư mục
     fs.renameSync(fullFolderPath, newFolderPath);
     
     // Cáº­p nháº­t Ä‘Æ°á»ng dáº«n localPath trong database
@@ -2986,7 +2986,7 @@ app.put('/api/folders/rename', express.json(), (req, res) => {
   }
 });
 
-// API endpoint Ä‘á»ƒ xÃ³a thÆ° má»¥c
+// API endpoint Ä‘á»ƒ xóa thư mục
 app.delete('/api/folders', express.json(), (req, res) => {
   try {
     const { folderPath, deleteFiles } = req.body;
@@ -2995,34 +2995,34 @@ app.delete('/api/folders', express.json(), (req, res) => {
     if (!folderPath) {
       return res.status(400).json({
         success: false,
-        error: 'ÄÆ°á»ng dáº«n thÆ° má»¥c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'ÄÆ°á»ng dáº«n thư mục không Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
       });
     }
     
     const baseFolder = path.join(STORAGE_PATH, 'uploads');
     const fullFolderPath = path.join(baseFolder, folderPath);
     
-    // Kiá»ƒm tra thÆ° má»¥c tá»“n táº¡i
+    // Kiá»ƒm tra thư mục tá»“n táº¡i
     if (!fs.existsSync(fullFolderPath) || !fs.statSync(fullFolderPath).isDirectory()) {
       return res.status(404).json({
         success: false,
-        error: 'ThÆ° má»¥c khÃ´ng tá»"n táº¡i'
+        error: 'ThÆ° mục không tá»"n táº¡i'
       });
     }
     
-    // Kiá»ƒm tra thÆ° má»¥c cÃ³ trá»‘ng khÃ´ng
+    // Kiá»ƒm tra thư mục cÃ³ trá»‘ng không
     const folderContents = fs.readdirSync(fullFolderPath);
     if (folderContents.length > 0 && !deleteFiles) {
       return res.status(400).json({
         success: false,
-        error: 'ThÆ° má»¥c khÃ´ng trá»"ng. Sá»­ dá»¥ng deleteFiles=true Ä'á»ƒ xÃ³a cáº£ ná»™i dung bÃªn trong.',
+        error: 'ThÆ° mục không trá»"ng. Sử dụng deleteFiles=true để xóa cả nội dung bên trong.',
         filesCount: folderContents.length
       });
     }
     
-    // XÃ³a thÆ° má»¥c vÃ  ná»™i dung
+    // XÃ³a thư mục vÃ  nội dung
     if (deleteFiles) {
-      // Láº¥y danh sÃ¡ch file trong thÆ° má»¥c vÃ  cáº­p nháº­t database
+      // Láº¥y danh sÃ¡ch file trong thư mục vÃ  cáº­p nháº­t database
       const filesData = readFilesDb();
       let deletedFiles = 0;
       
@@ -3033,7 +3033,7 @@ app.delete('/api/folders', express.json(), (req, res) => {
             // XÃ³a file vÄ©nh viá»…n khá»i database
             filesData.splice(i, 1);
           } else {
-            // ÄÃ¡nh dáº¥u file Ä'Ã£ bá»‹ xÃ³a local
+            // ÄÃ¡nh dáº¥u file Ä'Ã£ bá»‹ xóa local
             file.localPath = null;
             file.fileStatus = file.telegramFileId ? 'telegram' : 'missing';
           }
@@ -3041,43 +3041,43 @@ app.delete('/api/folders', express.json(), (req, res) => {
         }
       }
       
-      // LÆ°u láº¡i database náº¿u cÃ³ thay Ä'á»•i
+      // LÆ°u láº¡i database náº¿u cÃ³ thay đổi
       if (deletedFiles > 0) {
         saveFilesDb(filesData);
       }
       
-      // XÃ³a thÆ° má»¥c vÃ  ná»™i dung
+      // XÃ³a thư mục vÃ  nội dung
       fs.rmSync(fullFolderPath, { recursive: true, force: true });
       
       // Tráº£ vá» káº¿t quáº£
       return res.json({
         success: true,
-        message: 'ÄÃ£ xÃ³a thÆ° má»¥c vÃ  ná»™i dung thÃ nh cÃ´ng',
+        message: 'ÄÃ£ xóa thư mục vÃ  nội dung thÃ nh công',
         deletedFiles: deletedFiles
       });
     } else {
-      // XÃ³a thÆ° má»¥c trá»"ng
+      // XÃ³a thư mục trá»"ng
       fs.rmdirSync(fullFolderPath);
       
       // Tráº£ vá» káº¿t quáº£
       return res.json({
         success: true,
-        message: 'ÄÃ£ xÃ³a thÆ° má»¥c trá»"ng thÃ nh cÃ´ng'
+        message: 'ÄÃ£ xóa thư mục trá»"ng thÃ nh công'
       });
     }
   } catch (error) {
-    console.error('Lá»—i xÃ³a thÆ° má»¥c:', error);
+    console.error('Lỗi xóa thư mục:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi xÃ³a thÆ° má»¥c'
+      error: error.message || 'Lỗi server khi xóa thư mục'
     });
   }
 });
 
-// API endpoint Ä‘á»ƒ láº¥y danh sÃ¡ch thÆ° má»¥c
+// API endpoint Ä‘á»ƒ láº¥y danh sÃ¡ch thư mục
 app.get('/api/folders', (req, res) => {
   try {
-    // Táº¡o cáº¥u trÃºc thÆ° má»¥c áº£o tá»« database file
+    // Táº¡o cáº¥u trÃºc thư mục áº£o tá»« database file
     const filesData = readFilesDb();
     const folderStructure = createVirtualFolderStructure(filesData);
     
@@ -3087,19 +3087,19 @@ app.get('/api/folders', (req, res) => {
       folders: folderStructure
     });
   } catch (error) {
-    console.error('Lá»—i láº¥y danh sÃ¡ch thÆ° má»¥c:', error);
+    console.error('Lỗi láº¥y danh sÃ¡ch thư mục:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi láº¥y danh sÃ¡ch thÆ° má»¥c'
+      error: error.message || 'Lỗi server khi láº¥y danh sÃ¡ch thư mục'
     });
   }
 });
 
 /**
- * Táº¡o cáº¥u trÃºc thÆ° má»¥c áº£o tá»« danh sÃ¡ch file
+ * Táº¡o cáº¥u trÃºc thư mục áº£o tá»« danh sÃ¡ch file
  */
 function createVirtualFolderStructure(files) {
-  // Táº¡o cáº¥u trÃºc thÆ° má»¥c root
+  // Táº¡o cáº¥u trÃºc thư mục root
   const rootFolder = {
     id: 'root',
     name: 'Root',
@@ -3107,15 +3107,15 @@ function createVirtualFolderStructure(files) {
     children: []
   };
   
-  // Map Ä‘á»ƒ lÆ°u trá»¯ thÆ° má»¥c theo id
+  // Map Ä‘á»ƒ lÆ°u trá»¯ thư mục theo id
   const foldersById = {
     'root': rootFolder
   };
   
-  // Táº¡o danh sÃ¡ch thÆ° má»¥c tá»« Ä‘Æ°á»ng dáº«n file
+  // Táº¡o danh sÃ¡ch thư mục tá»« Ä‘Æ°á»ng dáº«n file
   files.forEach(file => {
     if (file.localPath) {
-      // Láº¥y Ä‘Æ°á»ng dáº«n tÆ°Æ¡ng Ä‘á»‘i tá»« thÆ° má»¥c uploads
+      // Láº¥y Ä‘Æ°á»ng dáº«n tÆ°Æ¡ng Ä‘á»‘i tá»« thư mục uploads
       const storagePath = STORAGE_PATH;
       const uploadsDir = path.join(storagePath, 'uploads');
       let relativePath = '';
@@ -3123,19 +3123,19 @@ function createVirtualFolderStructure(files) {
       if (file.localPath.startsWith(uploadsDir)) {
         relativePath = path.relative(uploadsDir, file.localPath);
       } else {
-        // Náº¿u khÃ´ng pháº£i trong thÆ° má»¥c uploads, bá» qua
+        // Náº¿u không pháº£i trong thư mục uploads, bá» qua
         return;
       }
       
-      // Táº¡o cÃ¡c thÆ° má»¥c trong Ä‘Æ°á»ng dáº«n
+      // Táº¡o cÃ¡c thư mục trong Ä‘Æ°á»ng dáº«n
       const pathParts = relativePath.split(path.sep);
       
-      // Bá» qua pháº§n tá»­ cuá»'i (tÃªn file)
+      // Bá» qua pháº§n tá»­ cuá»'i (tên file)
       pathParts.pop();
       
       if (pathParts.length === 0) {
-        // File náº±m trá»±c tiáº¿p trong thÆ° má»¥c uploads
-        // ThÃªm file vÃ o thÆ° má»¥c root
+        // File náº±m trá»±c tiáº¿p trong thư mục uploads
+        // ThÃªm file vÃ o thư mục root
         rootFolder.children.push({
           id: file.id,
           name: file.name,
@@ -3145,11 +3145,11 @@ function createVirtualFolderStructure(files) {
           telegramFileId: file.telegramFileId
         });
       } else {
-        // File náº±m trong thÆ° má»¥c con
+        // File náº±m trong thư mục con
         let currentPath = '';
         let parentFolderId = 'root';
         
-        // Táº¡o cÃ¡c thÆ° má»¥c con náº¿u chÆ°a tá»"n táº¡i
+        // Táº¡o cÃ¡c thư mục con náº¿u chÆ°a tá»"n táº¡i
         for (let i = 0; i < pathParts.length; i++) {
           const folderName = pathParts[i];
           
@@ -3159,12 +3159,12 @@ function createVirtualFolderStructure(files) {
             currentPath = folderName;
           }
           
-          // Táº¡o id cho thÆ° má»¥c
+          // Táº¡o id cho thư mục
           const folderId = currentPath;
           
-          // Kiá»ƒm tra thÆ° má»¥c Ä'Ã£ tá»"n táº¡i chÆ°a
+          // Kiá»ƒm tra thư mục Ä'Ã£ tá»"n táº¡i chÆ°a
           if (!foldersById[folderId]) {
-            // Táº¡o thÆ° má»¥c má»›i
+            // Táº¡o thư mục má»›i
             const newFolder = {
               id: folderId,
               name: folderName,
@@ -3172,17 +3172,17 @@ function createVirtualFolderStructure(files) {
               children: []
             };
             
-            // ThÃªm vÃ o danh sÃ¡ch thÆ° má»¥c
+            // ThÃªm vÃ o danh sÃ¡ch thư mục
             foldersById[folderId] = newFolder;
             
-            // ThÃªm vÃ o thÆ° má»¥c cha
+            // ThÃªm vÃ o thư mục cha
             foldersById[parentFolderId].children.push(newFolder);
           }
           
           parentFolderId = folderId;
         }
         
-        // ThÃªm file vÃ o thÆ° má»¥c cuá»'i cÃ¹ng
+        // ThÃªm file vÃ o thư mục cuá»'i cÃ¹ng
         foldersById[parentFolderId].children.push({
           id: file.id,
           name: file.name,
@@ -3207,7 +3207,7 @@ app.get('/api/files/:id/preview', async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
+        error: 'ID file không Ä'Æ°á»£c để trống'
       });
     }
     
@@ -3220,11 +3220,11 @@ app.get('/api/files/:id/preview', async (req, res) => {
     if (!file) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»"n táº¡i'
+        error: 'File không tá»"n táº¡i'
       });
     }
     
-    // Kiá»ƒm tra file cÃ³ thá»ƒ xem trÆ°á»›c khÃ´ng
+    // Kiá»ƒm tra file cÃ³ thá»ƒ xem trÆ°á»›c không
     const supportedPreviewTypes = ['image', 'video', 'audio', 'pdf', 'text'];
     const isPreviewable = supportedPreviewTypes.includes(file.fileType) || 
                          (file.mimeType && file.mimeType.startsWith('text/'));
@@ -3232,7 +3232,7 @@ app.get('/api/files/:id/preview', async (req, res) => {
     if (!isPreviewable) {
       return res.status(400).json({
         success: false,
-        error: 'File nÃ y khÃ´ng há»— trá»£ xem trÆ°á»›c',
+        error: 'File nÃ y không há»— trá»£ xem trÆ°á»›c',
         fileType: file.fileType,
         mimeType: file.mimeType
       });
@@ -3257,7 +3257,7 @@ app.get('/api/files/:id/preview', async (req, res) => {
         // Äá»c file text
         const content = fs.readFileSync(file.localPath, 'utf8');
         
-        // Tráº£ vá» ná»™i dung text
+        // Tráº£ vá» nội dung text
         return res.json({
           success: true,
           content,
@@ -3271,19 +3271,19 @@ app.get('/api/files/:id/preview', async (req, res) => {
     } else {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»"n táº¡i á»Ÿ cáº£ local vÃ  Telegram'
+        error: 'File không tá»"n táº¡i á»Ÿ cả local vÃ  Telegram'
       });
     }
   } catch (error) {
-    console.error('Lá»—i xem trÆ°á»›c file:', error);
+    console.error('Lỗi xem trÆ°á»›c file:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi xem trÆ°á»›c file'
+      error: error.message || 'Lỗi server khi xem trÆ°á»›c file'
     });
   }
 });
 
-// API endpoint Ä'á»ƒ láº¥y thÃ´ng tin chi tiáº¿t file
+// API endpoint để láº¥y thÃ´ng tin chi tiáº¿t file
 app.get('/api/files/:id', (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3292,7 +3292,7 @@ app.get('/api/files/:id', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
+        error: 'ID file không Ä'Æ°á»£c để trống'
       });
     }
     
@@ -3305,7 +3305,7 @@ app.get('/api/files/:id', (req, res) => {
     if (!file) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»"n táº¡i'
+        error: 'File không tá»"n táº¡i'
       });
     }
     
@@ -3329,15 +3329,15 @@ app.get('/api/files/:id', (req, res) => {
       file: fileInfo
     });
   } catch (error) {
-    console.error('Lá»—i láº¥y thÃ´ng tin file:', error);
+    console.error('Lỗi láº¥y thÃ´ng tin file:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi láº¥y thÃ´ng tin file'
+      error: error.message || 'Lỗi server khi láº¥y thÃ´ng tin file'
     });
   }
 });
 
-// API endpoint Ä'á»ƒ táº£i file
+// API endpoint để táº£i file
 app.get('/api/files/:id/download', async (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3346,7 +3346,7 @@ app.get('/api/files/:id/download', async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
+        error: 'ID file không Ä'Æ°á»£c để trống'
       });
     }
     
@@ -3359,7 +3359,7 @@ app.get('/api/files/:id/download', async (req, res) => {
     if (!file) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»"n táº¡i'
+        error: 'File không tá»"n táº¡i'
       });
     }
     
@@ -3377,35 +3377,35 @@ app.get('/api/files/:id/download', async (req, res) => {
         if (!botActive) {
           return res.status(400).json({
             success: false,
-            error: 'Bot Telegram khÃ´ng hoáº¡t Ä'á»™ng'
+            error: 'Bot Telegram không hoáº¡t Ä'á»™ng'
           });
         }
         
         // Chuyá»ƒn hÆ°á»›ng Ä'áº¿n URL Telegram
         return res.redirect(file.telegramUrl);
       } catch (error) {
-        console.error('Lá»—i táº£i file tá»« Telegram:', error);
+        console.error('Lỗi táº£i file tá»« Telegram:', error);
         return res.status(500).json({
           success: false,
-          error: 'Lá»—i táº£i file tá»« Telegram: ' + error.message
+          error: 'Lỗi táº£i file tá»« Telegram: ' + error.message
         });
       }
     } else {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»"n táº¡i á»Ÿ cáº£ local vÃ  Telegram'
+        error: 'File không tá»"n táº¡i á»Ÿ cả local vÃ  Telegram'
       });
     }
   } catch (error) {
-    console.error('Lá»—i táº£i file:', error);
+    console.error('Lỗi táº£i file:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi táº£i file'
+      error: error.message || 'Lỗi server khi táº£i file'
     });
   }
 });
 
-// API endpoint Ä'á»ƒ chia sáº» file
+// API endpoint để chia sáº» file
 app.post('/api/files/:id/share', (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3415,7 +3415,7 @@ app.post('/api/files/:id/share', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
+        error: 'ID file không Ä'Æ°á»£c để trống'
       });
     }
     
@@ -3428,7 +3428,7 @@ app.post('/api/files/:id/share', (req, res) => {
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»"n táº¡i'
+        error: 'File không tá»"n táº¡i'
       });
     }
     
@@ -3441,18 +3441,18 @@ app.post('/api/files/:id/share', (req, res) => {
     
     // Táº¡o hoáº·c cáº­p nháº­t thá»i gian háº¿t háº¡n
     if (expiryTime) {
-      // Chuyá»ƒn Ä'á»•i giá» thÃ nh milliseconds
+      // Chuyá»ƒn đổi giá» thÃ nh milliseconds
       const expiryHours = parseInt(expiryTime);
       if (!isNaN(expiryHours) && expiryHours > 0) {
         file.shareExpiry = new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
       } else {
-        file.shareExpiry = null; // KhÃ´ng cÃ³ thá»i háº¡n
+        file.shareExpiry = null; // Không cÃ³ thá»i háº¡n
       }
     } else {
-      file.shareExpiry = null; // KhÃ´ng cÃ³ thá»i háº¡n
+      file.shareExpiry = null; // Không cÃ³ thá»i háº¡n
     }
     
-    // LÆ°u thay Ä'á»•i
+    // LÆ°u thay đổi
     saveFilesDb(filesData);
     
     // URL chia sáº»
@@ -3463,21 +3463,21 @@ app.post('/api/files/:id/share', (req, res) => {
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'ÄÃ£ táº¡o chia sáº» thÃ nh cÃ´ng',
+      message: 'ÄÃ£ táº¡o chia sáº» thÃ nh công',
       shareToken: file.shareToken,
       shareUrl,
       shareExpiry: file.shareExpiry
     });
   } catch (error) {
-    console.error('Lá»—i chia sáº» file:', error);
+    console.error('Lỗi chia sáº» file:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi chia sáº» file'
+      error: error.message || 'Lỗi server khi chia sáº» file'
     });
   }
 });
 
-// API endpoint Ä'á»ƒ há»§y chia sáº» file
+// API endpoint để há»§y chia sáº» file
 app.delete('/api/files/:id/share', (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3486,7 +3486,7 @@ app.delete('/api/files/:id/share', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
+        error: 'ID file không Ä'Æ°á»£c để trống'
       });
     }
     
@@ -3499,14 +3499,14 @@ app.delete('/api/files/:id/share', (req, res) => {
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»"n táº¡i'
+        error: 'File không tá»"n táº¡i'
       });
     }
     
     const file = filesData[fileIndex];
     
     
-    // Kiá»ƒm tra file cÃ³ Ä‘ang Ä‘Æ°á»£c chia sáº» khÃ´ng
+    // Kiá»ƒm tra file cÃ³ Ä‘ang Ä‘Æ°á»£c chia sáº» không
     if (!file.shareToken) {
       return res.status(400).json({
         success: false,
@@ -3526,13 +3526,13 @@ app.delete('/api/files/:id/share', (req, res) => {
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'ÄÃ£ há»§y chia sáº» thÃ nh cÃ´ng'
+      message: 'ÄÃ£ há»§y chia sáº» thÃ nh công'
     });
   } catch (error) {
-    console.error('Lá»—i há»§y chia sáº» file:', error);
+    console.error('Lỗi há»§y chia sáº» file:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi há»§y chia sáº» file'
+      error: error.message || 'Lỗi server khi há»§y chia sáº» file'
     });
   }
 });
@@ -3544,7 +3544,7 @@ app.get('/share/:token', (req, res) => {
     
     // Validate input
     if (!shareToken) {
-      return res.status(400).send('Link chia sáº» khÃ´ng há»£p lá»‡');
+      return res.status(400).send('Link chia sáº» không há»£p lá»‡');
     }
     
     // Äá»c database
@@ -3554,7 +3554,7 @@ app.get('/share/:token', (req, res) => {
     const file = filesData.find(f => f.shareToken === shareToken);
     
     if (!file) {
-      return res.status(404).send('Link chia sáº» khÃ´ng tá»“n táº¡i hoáº·c Ä‘Ã£ háº¿t háº¡n');
+      return res.status(404).send('Link chia sáº» không tá»“n táº¡i hoáº·c Ä‘Ã£ háº¿t háº¡n');
     }
     
     // Kiá»ƒm tra thá»i háº¡n chia sáº»
@@ -3576,12 +3576,12 @@ app.get('/share/:token', (req, res) => {
       return res.redirect(`/api/files/${file.id}/download`);
     }
   } catch (error) {
-    console.error('Lá»—i xá»­ lÃ½ chia sáº» file:', error);
+    console.error('Lỗi xá»­ lÃ½ chia sáº» file:', error);
     return res.status(500).send('ÄÃ£ xáº£y ra lá»—i khi xá»­ lÃ½ link chia sáº»');
   }
 });
 
-// API láº¥y thá»‘ng kÃª sá»­ dá»¥ng
+// API láº¥y thá»‘ng kÃª sá»­ dụng
 app.get('/api/stats', (req, res) => {
   try {
     // Äá»c database
@@ -3634,10 +3634,10 @@ app.get('/api/stats', (req, res) => {
       stats: formattedStats
     });
   } catch (error) {
-    console.error('Lá»—i láº¥y thá»‘ng kÃª:', error);
+    console.error('Lỗi láº¥y thá»‘ng kÃª:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi láº¥y thá»‘ng kÃª'
+      error: error.message || 'Lỗi server khi láº¥y thá»‘ng kÃª'
     });
   }
 });
@@ -3696,9 +3696,9 @@ app.post('/api/check-files', async (req, res) => {
         }
       } else {
         if (file.localPath) {
-          console.log(`File "${file.name}" khÃ´ng tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n: ${file.localPath}`);
+          console.log(`File "${file.name}" không tá»“n táº¡i táº¡i Ä‘Æ°á»ng dáº«n: ${file.localPath}`);
         } else {
-          console.log(`File "${file.name}" khÃ´ng cÃ³ Ä‘Æ°á»ng dáº«n local`);
+          console.log(`File "${file.name}" không cÃ³ Ä‘Æ°á»ng dáº«n local`);
         }
         
         // Náº¿u file cÃ³ trÃªn Telegram, Ä‘Ã¡nh dáº¥u lÃ  telegram-only
@@ -3706,7 +3706,7 @@ app.post('/api/check-files', async (req, res) => {
           file.fileStatus = 'telegram';
           stats.telegram++;
         } else {
-          // Náº¿u file khÃ´ng cÃ³ á»Ÿ cáº£ local vÃ  Telegram, Ä‘Ã¡nh dáº¥u lÃ  missing
+          // Náº¿u file không cÃ³ á»Ÿ cả local vÃ  Telegram, Ä‘Ã¡nh dáº¥u lÃ  missing
           file.fileStatus = 'missing';
           stats.missing++;
         }
@@ -3718,9 +3718,9 @@ app.post('/api/check-files', async (req, res) => {
         try {
           await autoSyncFile(file);
           stats.fixed++;
-          console.log(`ÄÃ£ Ä‘á»“ng bá»™ thÃ nh cÃ´ng file "${file.name}"`);
+          console.log(`ÄÃ£ Ä‘á»“ng bá»™ thÃ nh công file "${file.name}"`);
         } catch (error) {
-          console.error(`Lá»—i khi Ä‘á»“ng bá»™ file "${file.name}":`, error);
+          console.error(`Lỗi khi Ä‘á»“ng bá»™ file "${file.name}":`, error);
         }
       }
     }
@@ -3736,22 +3736,22 @@ app.post('/api/check-files', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Lá»—i khi kiá»ƒm tra files:', error);
+    console.error('Lỗi khi kiá»ƒm tra files:', error);
     res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi kiá»ƒm tra files'
+      error: error.message || 'Lỗi server khi kiá»ƒm tra files'
     });
   }
 });
 // ... existing code ...
 
-// API endpoint Ä‘á»ƒ láº¥y ná»™i dung thÃ¹ng rÃ¡c
+// API endpoint Ä‘á»ƒ láº¥y nội dung thÃ¹ng rÃ¡c
 app.get('/api/trash', (req, res) => {
   try {
     // Äá»c database
     const filesData = readFilesDb();
     
-    // Lá»c cÃ¡c file Ä‘Ã£ xÃ³a
+    // Lá»c cÃ¡c file Ä‘Ã£ xóa
     const trashedFiles = filesData.filter(file => file.isDeleted);
     
     // Äá»‹nh dáº¡ng dá»¯ liá»‡u trÆ°á»›c khi gá»­i Ä‘i
@@ -3778,10 +3778,10 @@ app.get('/api/trash', (req, res) => {
       files: formattedFiles
     });
   } catch (error) {
-    console.error('Lá»—i láº¥y danh sÃ¡ch thÃ¹ng rÃ¡c:', error);
+    console.error('Lỗi láº¥y danh sÃ¡ch thÃ¹ng rÃ¡c:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi láº¥y danh sÃ¡ch thÃ¹ng rÃ¡c'
+      error: error.message || 'Lỗi server khi láº¥y danh sÃ¡ch thÃ¹ng rÃ¡c'
     });
   }
 });
@@ -3794,7 +3794,7 @@ app.post('/api/trash/:id/restore', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'ID file không Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
       });
     }
     
@@ -3807,7 +3807,7 @@ app.post('/api/trash/:id/restore', (req, res) => {
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»“n táº¡i trong thÃ¹ng rÃ¡c'
+        error: 'File không tá»“n táº¡i trong thÃ¹ng rÃ¡c'
       });
     }
     
@@ -3821,22 +3821,22 @@ app.post('/api/trash/:id/restore', (req, res) => {
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'ÄÃ£ khÃ´i phá»¥c file thÃ nh cÃ´ng',
+      message: 'ÄÃ£ khÃ´i phá»¥c file thÃ nh công',
       file: {
         id: filesData[fileIndex].id,
         name: filesData[fileIndex].name
       }
     });
   } catch (error) {
-    console.error('Lá»—i khÃ´i phá»¥c file:', error);
+    console.error('Lỗi khÃ´i phá»¥c file:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi khÃ´i phá»¥c file'
+      error: error.message || 'Lỗi server khi khÃ´i phá»¥c file'
     });
   }
 });
 
-// API endpoint Ä‘á»ƒ xÃ³a vÄ©nh viá»…n file tá»« thÃ¹ng rÃ¡c
+// API endpoint Ä‘á»ƒ xóa vÄ©nh viá»…n file tá»« thÃ¹ng rÃ¡c
 app.delete('/api/trash/:id', (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3844,20 +3844,20 @@ app.delete('/api/trash/:id', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'ID file không Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
       });
     }
     
     // Äá»c database
     const filesData = readFilesDb();
     
-    // TÃ¬m file cáº§n xÃ³a
+    // TÃ¬m file cáº§n xóa
     const fileIndex = filesData.findIndex(file => file.id === fileId && file.isDeleted);
     
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»“n táº¡i trong thÃ¹ng rÃ¡c'
+        error: 'File không tá»“n táº¡i trong thÃ¹ng rÃ¡c'
       });
     }
     
@@ -3872,17 +3872,17 @@ app.delete('/api/trash/:id', (req, res) => {
     // Tráº£ vá» káº¿t quáº£
     return res.json({
       success: true,
-      message: 'ÄÃ£ xÃ³a vÄ©nh viá»…n file thÃ nh cÃ´ng',
+      message: 'ÄÃ£ xóa vÄ©nh viá»…n file thÃ nh công',
       deletedFile: {
         id: file.id,
         name: file.name
       }
     });
   } catch (error) {
-    console.error('Lá»—i xÃ³a vÄ©nh viá»…n file:', error);
+    console.error('Lỗi xóa vÄ©nh viá»…n file:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi xÃ³a vÄ©nh viá»…n file'
+      error: error.message || 'Lỗi server khi xóa vÄ©nh viá»…n file'
     });
   }
 });
@@ -3904,7 +3904,7 @@ app.delete('/api/trash', (req, res) => {
       });
     }
     
-    // XÃ³a táº¥t cáº£ file trong thÃ¹ng rÃ¡c
+    // XÃ³a táº¥t cả file trong thÃ¹ng rÃ¡c
     filesData = filesData.filter(file => !file.isDeleted);
     
     // LÆ°u láº¡i database
@@ -3917,10 +3917,10 @@ app.delete('/api/trash', (req, res) => {
       deletedCount: trashedCount
     });
   } catch (error) {
-    console.error('Lá»—i lÃ m trá»‘ng thÃ¹ng rÃ¡c:', error);
+    console.error('Lỗi lÃ m trá»‘ng thÃ¹ng rÃ¡c:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi lÃ m trá»‘ng thÃ¹ng rÃ¡c'
+      error: error.message || 'Lỗi server khi lÃ m trá»‘ng thÃ¹ng rÃ¡c'
     });
   }
 });
@@ -3990,7 +3990,7 @@ app.post('/api/settings', express.json(), async (req, res) => {
             bot = await initBot();
             botActive = await checkBotActive();
           } catch (error) {
-            console.error('Lá»—i khá»Ÿi Ä‘á»™ng láº¡i bot:', error);
+            console.error('Lỗi khá»Ÿi Ä‘á»™ng láº¡i bot:', error);
           }
         }, 1000);
       }
@@ -3998,24 +3998,24 @@ app.post('/api/settings', express.json(), async (req, res) => {
     
     res.json({
       success: true,
-      message: 'ÄÃ£ lÆ°u cÃ i Ä‘áº·t thÃ nh cÃ´ng',
+      message: 'ÄÃ£ lÆ°u cÃ i Ä‘áº·t thÃ nh công',
       needsRestart: restartAfterSave
     });
   } catch (error) {
-    console.error('Lá»—i cáº­p nháº­t cÃ i Ä‘áº·t:', error);
+    console.error('Lỗi cáº­p nháº­t cÃ i Ä‘áº·t:', error);
     res.status(500).json({
       success: false,
-      error: 'Lá»—i server khi cáº­p nháº­t cÃ i Ä‘áº·t'
+      error: 'Lỗi server khi cáº­p nháº­t cÃ i Ä‘áº·t'
     });
   }
 });
 
-// Middleware xá»­ lÃ½ route khÃ´ng tá»“n táº¡i - pháº£i Ä‘áº·t sau táº¥t cáº£ cÃ¡c routes
+// Middleware xá»­ lÃ½ route không tá»“n táº¡i - pháº£i Ä‘áº·t sau táº¥t cả cÃ¡c routes
 app.use((req, res) => {
-  console.log(`Route khÃ´ng tá»“n táº¡i: ${req.method} ${req.path}`);
+  console.log(`Route không tá»“n táº¡i: ${req.method} ${req.path}`);
   res.status(404).json({
     success: false,
-    error: 'API endpoint khÃ´ng tá»“n táº¡i'
+    error: 'API endpoint không tá»“n táº¡i'
   });
 });
 
@@ -4030,14 +4030,14 @@ app.get('/api/files-status', (req, res) => {
     const filesList = files.map(file => ({
       id: file.id,
       name: file.name,
-      size: file.size ? formatBytes(file.size) : 'KhÃ´ng rÃµ',
-      uploadDate: file.uploadDate ? formatDate(file.uploadDate) : 'KhÃ´ng rÃµ',
-      fileStatus: file.fileStatus || 'KhÃ´ng rÃµ',
+      size: file.size ? formatBytes(file.size) : 'Không rÃµ',
+      uploadDate: file.uploadDate ? formatDate(file.uploadDate) : 'Không rÃµ',
+      fileStatus: file.fileStatus || 'Không rÃµ',
       needsSync: !!file.needsSync,
       hasTelegramId: !!file.telegramFileId,
       hasLocalPath: !!file.localPath,
       localPathExists: file.localPath ? fs.existsSync(file.localPath) : false,
-      localPath: file.localPath || 'KhÃ´ng cÃ³'
+      localPath: file.localPath || 'Không cÃ³'
     }));
     
     // Thá»‘ng kÃª
@@ -4057,10 +4057,10 @@ app.get('/api/files-status', (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Lá»—i khi láº¥y tráº¡ng thÃ¡i files:', error);
+    console.error('Lỗi khi láº¥y tráº¡ng thÃ¡i files:', error);
     res.status(500).json({
       success: false,
-      error: error.message || 'Lá»—i server khi láº¥y tráº¡ng thÃ¡i files'
+      error: error.message || 'Lỗi server khi láº¥y tráº¡ng thÃ¡i files'
     });
   }
 });
