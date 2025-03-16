@@ -26,11 +26,13 @@ if not exist ".env" (
   echo Mo .env de cap nhat BOT_TOKEN...
   notepad .env
 ) else (
-  :: Kiểm tra BOT_TOKEN và tự động mở để sửa nếu cần
+  :: Kiểm tra BOT_TOKEN chỉ khi nó chưa được cập nhật
   findstr /C:"BOT_TOKEN=your_telegram_bot_token" .env >nul 2>nul
   if %ERRORLEVEL% EQU 0 (
-    echo Mo .env de cap nhat BOT_TOKEN...
+    echo BOT_TOKEN chua duoc cap nhat. Mo .env de cap nhat...
     notepad .env
+  ) else (
+    echo BOT_TOKEN da duoc cap nhat. Bo qua buoc nay.
   )
 )
 
