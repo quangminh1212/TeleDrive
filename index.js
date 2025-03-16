@@ -896,11 +896,8 @@ async function getTelegramFileLink(fileId) {
   }
 }
 
-// API mô phỏng tải file từ telegram - KHÔNG DÙNG nữa, chuyển hướng đến tải xuống thật
-app.get('/api/files/:id/simulate-download', (req, res) => {
-  // Chuyển hướng đến API download trực tiếp
-  res.redirect(`/api/files/${req.params.id}/download`);
-});
+// Loại bỏ API mô phỏng - Chỉ sử dụng API thật từ Telegram
+// Cũ: app.get('/api/files/:id/simulate-download', (req, res) => { ... });
 
 // API endpoint để tải file theo ID - sửa đổi để luôn tải từ Telegram
 app.get('/api/files/:id/download', async (req, res) => {
