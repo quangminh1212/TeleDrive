@@ -355,51 +355,39 @@ function configureBot() {
 
 /**
  * Cập nhật chat ID
- * @param {String|Number} newChatId Chat ID mới
- * @returns {Object} Kết quả cập nhật
+ * @param {String} newChatId Chat ID mới
+ * @param {Boolean} saveToConfig Lưu vào config
+ * @returns {Promise<Object>} Kết quả cập nhật
  */
-async function updateChatId(newChatId) {
+async function updateChatId(newChatId, saveToConfig = true) {
   try {
     if (!newChatId) {
-      return {
-        success: false,
-        error: 'Chat ID không hợp lệ'
-      };
+      console.error('Thiếu chat ID mới');
+      return { success: false, error: 'Thiếu chat ID mới' };
     }
     
-    // Chuẩn hóa chat ID
-    const normalizedChatId = newChatId.toString();
+    // Cập nhật biến chatId
+    chatId = newChatId.toString();
+    console.log(`Đã cập nhật chat ID thành: ${chatId}`);
     
-    // Cập nhật biến local
-    chatId = normalizedChatId;
-    
-    // Cập nhật trong config
-    try {
-      await config.updateEnv({
-        TELEGRAM_CHAT_ID: normalizedChatId
-      });
-      
-      console.log(`Đã cập nhật TELEGRAM_CHAT_ID trong .env thành ${normalizedChatId}`);
-      
-      return {
-        success: true,
-        chatId: normalizedChatId
-      };
-    } catch (configError) {
-      console.error(`Lỗi khi cập nhật config: ${configError.message}`);
-      
-      return {
-        success: false,
-        error: `Không thể cập nhật file .env: ${configError.message}`
-      };
+    // Lưu vào config nếu cần
+    if (saveToConfig) {
+      try {
+        await config.updateEnv({
+          TELEGRAM_CHAT_ID: chatId
+        });
+        console.log('Đã lưu chat ID vào config');
+        return { success: true, chatId, savedToConfig: true };
+      } catch (configError) {
+        console.error('Lỗi khi lưu chat ID vào config:', configError.message);
+        return { success: true, chatId, savedToConfig: false, configError: configError.message };
+      }
     }
+    
+    return { success: true, chatId };
   } catch (error) {
-    console.error(`Lỗi khi cập nhật chat ID: ${error.message}`);
-    
-    return {
-      success: false,
-      error: error.message || 'Lỗi không xác định'
-    };
+    console.error('Lỗi khi cập nhật chat ID:', error.message);
+    return { success: false, error: error.message };
   }
 }
 
@@ -624,86 +612,114 @@ async function handleIncomingFile(ctx) {
 }
 
 /**
- * Lấy file từ Telegram sử dụng getFile API
- * @param {String} fileId ID file trên Telegram
+ * Tải file từ Telegram
+ * @param {String} fileId ID của file cần tải
  * @param {String} savePath Đường dẫn lưu file
+ * @param {Object} options Tùy chọn bổ sung
  * @returns {Promise<Object>} Kết quả tải file
  */
-async function downloadFileFromTelegram(fileId, savePath) {
+async function downloadFile(fileId, savePath, options = {}) {
   try {
-    console.log(`Đang tải file từ Telegram với ID: ${fileId}`);
-    
-    // Kiểm tra xem bot đã sẵn sàng chưa
+    // Kiểm tra bot có sẵn sàng không
     if (!isBotActive()) {
-      // Thử khởi tạo bot
-      await initBot();
-      
-      // Kiểm tra lại sau khi khởi tạo
-      if (!isBotActive()) {
-        console.error('Không thể khởi động bot để tải file');
-        return {
-          success: false,
-          error: 'Bot không hoạt động, không thể tải file'
+      if (simulationMode) {
+        console.log(`[Chế độ giả lập] Tải file: ${fileId} -> ${savePath}`);
+        
+        // Tạo file giả lập nếu cần
+        if (options.createDummyFile) {
+          try {
+            // Đảm bảo thư mục tồn tại
+            const dir = path.dirname(savePath);
+            if (!fs.existsSync(dir)) {
+              fs.mkdirSync(dir, { recursive: true });
+            }
+            
+            // Tạo file trống
+            fs.writeFileSync(savePath, 'Simulated file content');
+            console.log(`[Chế độ giả lập] Đã tạo file giả lập: ${savePath}`);
+          } catch (err) {
+            console.error(`[Chế độ giả lập] Lỗi khi tạo file giả lập:`, err.message);
+          }
+        }
+        
+        return { 
+          success: true, 
+          simulated: true,
+          path: savePath,
+          file_id: fileId
         };
       }
+      
+      console.log('Bot chưa sẵn sàng, không thể tải file');
+      return { success: false, error: 'Bot không hoạt động' };
     }
     
-    // Lấy thông tin file từ Telegram
-    const fileInfo = await bot.telegram.getFile(fileId);
-    
-    if (!fileInfo || !fileInfo.file_path) {
-      console.error('Không lấy được thông tin file từ Telegram');
-      return {
-        success: false,
-        error: 'Không lấy được thông tin file'
-      };
+    if (!fileId) {
+      console.error('Thiếu file ID, không thể tải file');
+      return { success: false, error: 'Thiếu file ID' };
     }
     
-    // Tạo URL tải file
-    const telegramToken = config.TELEGRAM_BOT_TOKEN;
-    const fileUrl = `https://api.telegram.org/file/bot${telegramToken}/${fileInfo.file_path}`;
+    // Lấy link file
+    const fileUrl = await getFileLink(fileId);
     
-    // Tải file bằng axios
-    const response = await axios({
-      method: 'GET',
-      url: fileUrl,
-      responseType: 'stream'
+    if (!fileUrl) {
+      console.error('Không lấy được link file');
+      return { success: false, error: 'Không lấy được link file' };
+    }
+    
+    // Đảm bảo thư mục tồn tại
+    const dir = path.dirname(savePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    
+    // Tải file với timeout
+    const response = await Promise.race([
+      axios({
+        method: 'GET',
+        url: fileUrl,
+        responseType: 'stream',
+        timeout: 30000 // 30 giây timeout
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout khi tải file')), 30000)
+      )
+    ]).catch(error => {
+      console.error('Lỗi khi tải file:', error.message);
+      return null;
     });
     
-    // Tạo thư mục chứa file nếu chưa tồn tại
-    const saveDir = path.dirname(savePath);
-    if (!fs.existsSync(saveDir)) {
-      fs.mkdirSync(saveDir, { recursive: true });
+    if (!response) {
+      return { success: false, error: 'Lỗi khi tải file' };
     }
     
     // Lưu file
     const writer = fs.createWriteStream(savePath);
-    response.data.pipe(writer);
     
     return new Promise((resolve, reject) => {
-      writer.on('finish', () => {
-        console.log(`Đã tải file thành công: ${savePath}`);
-        resolve({
-          success: true,
-          filePath: savePath,
-          fileInfo: fileInfo
-        });
+      response.data.pipe(writer);
+      
+      let error = null;
+      writer.on('error', err => {
+        error = err;
+        writer.close();
+        reject(err);
       });
       
-      writer.on('error', (err) => {
-        console.error(`Lỗi khi lưu file: ${err.message}`);
-        reject({
-          success: false,
-          error: `Lỗi khi lưu file: ${err.message}`
-        });
+      writer.on('close', () => {
+        if (!error) {
+          console.log(`Đã tải file thành công: ${savePath}`);
+          resolve({ 
+            success: true, 
+            path: savePath,
+            file_id: fileId
+          });
+        }
       });
     });
   } catch (error) {
-    console.error(`Lỗi khi tải file từ Telegram: ${error.message}`);
-    return {
-      success: false,
-      error: error.message || 'Lỗi không xác định khi tải file'
-    };
+    console.error('Lỗi khi tải file từ Telegram:', error.message);
+    return { success: false, error: error.message };
   }
 }
 
@@ -779,22 +795,52 @@ async function sendFile(filePath, caption = '', options = {}) {
 }
 
 /**
- * Lấy URL để tải file từ Telegram
- * @param {String} fileId ID của file trên Telegram
- * @returns {Promise<String>} URL để tải file
+ * Lấy link tải file từ Telegram
+ * @param {String} fileId ID của file cần lấy link
+ * @returns {Promise<String|null>} Link tải file hoặc null nếu thất bại
  */
 async function getFileLink(fileId) {
   try {
-    if (!isReady || !bot) {
-      console.error('Bot Telegram chưa sẵn sàng');
+    // Kiểm tra bot có sẵn sàng không
+    if (!isBotActive()) {
+      if (simulationMode) {
+        console.log(`[Chế độ giả lập] Lấy link file: ${fileId}`);
+        return `https://simulated-telegram-file-link.com/${fileId}`;
+      }
+      
+      console.log('Bot chưa sẵn sàng, không thể lấy link file');
       return null;
     }
     
-    const fileLink = await bot.telegram.getFileLink(fileId);
-    return fileLink.href;
+    if (!fileId) {
+      console.error('Thiếu file ID, không thể lấy link file');
+      return null;
+    }
+    
+    // Lấy thông tin file với timeout
+    const fileInfo = await Promise.race([
+      bot.telegram.getFile(fileId),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout khi lấy thông tin file')), 10000)
+      )
+    ]).catch(error => {
+      console.error('Lỗi khi lấy thông tin file:', error.message);
+      return null;
+    });
+    
+    if (!fileInfo || !fileInfo.file_path) {
+      console.error('Không lấy được thông tin file');
+      return null;
+    }
+    
+    // Tạo link tải file
+    const telegramToken = config.TELEGRAM_BOT_TOKEN;
+    const fileLink = `https://api.telegram.org/file/bot${telegramToken}/${fileInfo.file_path}`;
+    
+    return fileLink;
   } catch (error) {
-    console.error('Lỗi khi lấy link file từ Telegram:', error);
-    throw error;
+    console.error('Lỗi khi lấy link file từ Telegram:', error.message);
+    return null;
   }
 }
 
@@ -1168,7 +1214,7 @@ module.exports = {
   handleIncomingFile,
   sendFile,
   getFileLink,
-  downloadFileFromTelegram,
+  downloadFile,
   sendMessage,
   getFilesFromChat,
   updateChatId,
