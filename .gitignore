@@ -473,4 +473,14 @@ debug.log*
 
 # Các file được tạo ra khi chạy
 .pid
-.lock 
+.lock
+
+# Application specific
+/data
+/downloads
+/uploads
+/temp
+/storage
+/logs
+*.session
+*.session-journal 
