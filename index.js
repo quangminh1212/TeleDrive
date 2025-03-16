@@ -25,6 +25,7 @@ dotenv.config();
 // Biến môi trường
 const PORT = process.env.PORT || 5001;
 const BOT_TOKEN = process.env.BOT_TOKEN;
+const CHAT_ID = process.env.CHAT_ID;
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '2000', 10) * 1024 * 1024; // Convert MB to bytes
 const DATA_DIR = process.env.DATA_DIR || 'data';
 const TEMP_DIR = process.env.TEMP_DIR || 'temp';
@@ -379,14 +380,20 @@ async function syncFiles() {
     // ID chat để gửi file
     let chatId;
     
-    try {
-      // Lấy ID chat của bot
-      const botInfo = await bot.telegram.getMe();
-      chatId = botInfo.id;
-      console.log(`Sẽ gửi file đến chat ID: ${chatId}`);
-    } catch (error) {
-      console.error('Không thể lấy thông tin bot:', error);
-      throw new Error('Không thể lấy thông tin bot để gửi file');
+    if (CHAT_ID && CHAT_ID !== 'your_chat_id_here') {
+      // Sử dụng CHAT_ID từ file .env
+      chatId = CHAT_ID;
+      console.log(`Sẽ gửi file đến chat ID từ cấu hình: ${chatId}`);
+    } else {
+      try {
+        // Sử dụng ID chat của bot làm giải pháp dự phòng
+        const botInfo = await bot.telegram.getMe();
+        chatId = botInfo.id;
+        console.log(`CHAT_ID chưa được cấu hình. Sử dụng ID bot (${chatId}) làm thay thế. Điều này có thể gây lỗi nếu bạn tải lên file.`);
+      } catch (error) {
+        console.error('Không thể lấy thông tin bot:', error);
+        throw new Error('Không thể lấy thông tin bot để gửi file và CHAT_ID chưa được cấu hình trong .env');
+      }
     }
     
     let syncedCount = 0;
