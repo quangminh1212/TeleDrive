@@ -3220,7 +3220,7 @@ app.get('/api/files/:id/preview', async (req, res) => {
     if (!file) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»“n táº¡i'
+        error: 'File khÃ´ng tá»"n táº¡i'
       });
     }
     
@@ -3232,7 +3232,7 @@ app.get('/api/files/:id/preview', async (req, res) => {
     if (!isPreviewable) {
       return res.status(400).json({
         success: false,
-        error: 'File nÃ y khÃ´ng há»— trá»£ xem trÆ°á»›c',
+        error: 'File nÃ y khÃ´ng há»— trá»£ xem trÆ°á»›c',
         fileType: file.fileType,
         mimeType: file.mimeType
       });
@@ -3266,12 +3266,12 @@ app.get('/api/files/:id/preview', async (req, res) => {
         });
       }
     } else if (file.telegramFileId && file.telegramUrl) {
-      // Chuyá»ƒn hÆ°á»›ng Ä‘áº¿n URL Telegram
+      // Chuyá»ƒn hÆ°á»›ng Ä'áº¿n URL Telegram
       return res.redirect(file.telegramUrl);
     } else {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»“n táº¡i á»Ÿ cáº£ local vÃ  Telegram'
+        error: 'File khÃ´ng tá»"n táº¡i á»Ÿ cáº£ local vÃ  Telegram'
       });
     }
   } catch (error) {
@@ -3283,7 +3283,7 @@ app.get('/api/files/:id/preview', async (req, res) => {
   }
 });
 
-// API endpoint Ä‘á»ƒ láº¥y thÃ´ng tin chi tiáº¿t file
+// API endpoint Ä'á»ƒ láº¥y thÃ´ng tin chi tiáº¿t file
 app.get('/api/files/:id', (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3292,7 +3292,7 @@ app.get('/api/files/:id', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
       });
     }
     
@@ -3305,7 +3305,7 @@ app.get('/api/files/:id', (req, res) => {
     if (!file) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»“n táº¡i'
+        error: 'File khÃ´ng tá»"n táº¡i'
       });
     }
     
@@ -3337,7 +3337,7 @@ app.get('/api/files/:id', (req, res) => {
   }
 });
 
-// API endpoint Ä‘á»ƒ táº£i file
+// API endpoint Ä'á»ƒ táº£i file
 app.get('/api/files/:id/download', async (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3346,7 +3346,7 @@ app.get('/api/files/:id/download', async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
       });
     }
     
@@ -3359,7 +3359,7 @@ app.get('/api/files/:id/download', async (req, res) => {
     if (!file) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»“n táº¡i'
+        error: 'File khÃ´ng tá»"n táº¡i'
       });
     }
     
@@ -3377,11 +3377,11 @@ app.get('/api/files/:id/download', async (req, res) => {
         if (!botActive) {
           return res.status(400).json({
             success: false,
-            error: 'Bot Telegram khÃ´ng hoáº¡t Ä‘á»™ng'
+            error: 'Bot Telegram khÃ´ng hoáº¡t Ä'á»™ng'
           });
         }
         
-        // Chuyá»ƒn hÆ°á»›ng Ä‘áº¿n URL Telegram
+        // Chuyá»ƒn hÆ°á»›ng Ä'áº¿n URL Telegram
         return res.redirect(file.telegramUrl);
       } catch (error) {
         console.error('Lá»—i táº£i file tá»« Telegram:', error);
@@ -3393,7 +3393,7 @@ app.get('/api/files/:id/download', async (req, res) => {
     } else {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»“n táº¡i á»Ÿ cáº£ local vÃ  Telegram'
+        error: 'File khÃ´ng tá»"n táº¡i á»Ÿ cáº£ local vÃ  Telegram'
       });
     }
   } catch (error) {
@@ -3405,7 +3405,7 @@ app.get('/api/files/:id/download', async (req, res) => {
   }
 });
 
-// API endpoint Ä‘á»ƒ chia sáº» file
+// API endpoint Ä'á»ƒ chia sáº» file
 app.post('/api/files/:id/share', (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3415,7 +3415,7 @@ app.post('/api/files/:id/share', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
       });
     }
     
@@ -3428,7 +3428,7 @@ app.post('/api/files/:id/share', (req, res) => {
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»“n táº¡i'
+        error: 'File khÃ´ng tá»"n táº¡i'
       });
     }
     
@@ -3441,7 +3441,7 @@ app.post('/api/files/:id/share', (req, res) => {
     
     // Táº¡o hoáº·c cáº­p nháº­t thá»i gian háº¿t háº¡n
     if (expiryTime) {
-      // Chuyá»ƒn Ä‘á»•i giá» thÃ nh milliseconds
+      // Chuyá»ƒn Ä'á»•i giá» thÃ nh milliseconds
       const expiryHours = parseInt(expiryTime);
       if (!isNaN(expiryHours) && expiryHours > 0) {
         file.shareExpiry = new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
@@ -3452,7 +3452,7 @@ app.post('/api/files/:id/share', (req, res) => {
       file.shareExpiry = null; // KhÃ´ng cÃ³ thá»i háº¡n
     }
     
-    // LÆ°u thay Ä‘á»•i
+    // LÆ°u thay Ä'á»•i
     saveFilesDb(filesData);
     
     // URL chia sáº»
@@ -3477,7 +3477,7 @@ app.post('/api/files/:id/share', (req, res) => {
   }
 });
 
-// API endpoint Ä‘á»ƒ há»§y chia sáº» file
+// API endpoint Ä'á»ƒ há»§y chia sáº» file
 app.delete('/api/files/:id/share', (req, res) => {
   try {
     const fileId = req.params.id;
@@ -3486,7 +3486,7 @@ app.delete('/api/files/:id/share', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng'
+        error: 'ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng'
       });
     }
     
@@ -3499,11 +3499,12 @@ app.delete('/api/files/:id/share', (req, res) => {
     if (fileIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'File khÃ´ng tá»“n táº¡i'
+        error: 'File khÃ´ng tá»"n táº¡i'
       });
     }
     
     const file = filesData[fileIndex];
+    
     
     // Kiá»ƒm tra file cÃ³ Ä‘ang Ä‘Æ°á»£c chia sáº» khÃ´ng
     if (!file.shareToken) {
