@@ -70,151 +70,137 @@ function getSecureFilePath(fileName) {
 }
 
 /**
- * Đồng bộ tất cả các file với Telegram
- * @returns {Object} Kết quả đồng bộ
+ * Đồng bộ file giữa máy chủ local và Telegram
  */
 async function syncFiles() {
   console.log('===== BẮT ĐẦU ĐỒNG BỘ FILES =====');
   
-  // Đọc danh sách file
-  const filesData = readFilesDb();
-  
-  // Khởi tạo biến đếm
-  let syncedCount = 0;
-  let errorCount = 0;
-  let skippedCount = 0;
-  let newFiles = 0;
-  
-  // Kiểm tra xem bot có hoạt động không
-  const botActive = telegramService.isBotActive();
-  if (!botActive) {
-    console.log('Bot không hoạt động, không thể đồng bộ');
-    return {
-      success: false,
-      error: 'Bot không hoạt động',
-      syncedCount,
-      errorCount,
-      skippedCount,
-      newFiles
-    };
-  }
-  
-  try {
-    // PHẦN 1: ĐỒNG BỘ TỪ LOCAL LÊN TELEGRAM
-    console.log('===== ĐỒNG BỘ TỪ LOCAL LÊN TELEGRAM =====');
-    
-    // Lặp qua từng file trong DB để đồng bộ lên Telegram nếu cần
-    for (const file of filesData) {
-      try {
-        // Kiểm tra xem file có cần đồng bộ không
-        if (!file.needsSync && file.telegramFileId) {
-          skippedCount++;
-          continue;
-        }
-        
-        // Kiểm tra file có tồn tại ở local không
-        if (!file.localPath || !fs.existsSync(file.localPath)) {
-          console.log(`File ${file.name} không tồn tại ở local, bỏ qua`);
-          skippedCount++;
-          continue;
-        }
-        
-        console.log(`Đang đồng bộ file: ${file.name}`);
-        
-        // Gửi file lên Telegram
-        const fileSize = fs.statSync(file.localPath).size;
-        
-        // Nếu file quá lớn thì bỏ qua
-        if (fileSize > config.MAX_FILE_SIZE) {
-          console.log(`File ${file.name} quá lớn (${fileSize} bytes), bỏ qua`);
-          file.needsSync = false;
-          skippedCount++;
-          continue;
-        }
-        
-        // Gửi file lên Telegram
-        const result = await telegramService.sendFileToTelegram(file.localPath, file.name);
-        
-        if (result.success) {
-          // Cập nhật thông tin file
-          file.telegramFileId = result.fileId;
-          file.telegramUrl = result.fileUrl;
-          file.needsSync = false;
-          file.fileStatus = 'synced';
-          
-          syncedCount++;
-          console.log(`Đã đồng bộ thành công file lên Telegram: ${file.name}`);
-        } else {
-          errorCount++;
-          console.error(`Lỗi khi đồng bộ file ${file.name} lên Telegram:`, result.error);
-        }
-      } catch (error) {
-        errorCount++;
-        console.error(`Lỗi khi đồng bộ file ${file.name}:`, error);
-      }
-    }
-    
-    // PHẦN 2: ĐỒNG BỘ TỪ TELEGRAM XUỐNG LOCAL
-    console.log('===== ĐỒNG BỘ TỪ TELEGRAM XUỐNG LOCAL =====');
+  // Kiểm tra trạng thái bot
+  if (!telegramService.isBotActive()) {
+    console.log('Bot không hoạt động, thử khởi động lại...');
     
     try {
-      // Lấy danh sách file từ chat Telegram
-      const telegramFiles = await telegramService.getFilesFromChat();
+      // Thử khởi động lại bot
+      const bot = telegramService.initBot();
       
-      if (telegramFiles && telegramFiles.length > 0) {
-        console.log(`Tìm thấy ${telegramFiles.length} file trên Telegram`);
+      // Chờ một chút để bot khởi động
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Kiểm tra lại sau khi khởi động
+      if (!telegramService.isBotActive()) {
+        console.log('Không thể khởi động lại bot, bỏ qua đồng bộ');
+        return {
+          success: false,
+          error: 'Bot không hoạt động'
+        };
+      } else {
+        console.log('Đã khởi động lại bot thành công, tiếp tục đồng bộ');
+      }
+    } catch (error) {
+      console.error('Lỗi khi khởi động lại bot:', error);
+      return {
+        success: false,
+        error: `Lỗi khi khởi động lại bot: ${error.message}`
+      };
+    }
+  }
+  
+  let syncedCount = 0;
+  let skippedCount = 0;
+  let errorCount = 0;
+  let newFiles = 0;
+  
+  // Đọc dữ liệu từ DB
+  const filesData = readFilesDb();
+  
+  // PHẦN 1: ĐỒNG BỘ TỪ LOCAL LÊN TELEGRAM
+  console.log('===== ĐỒNG BỘ TỪ LOCAL LÊN TELEGRAM =====');
+  
+  // Lặp qua từng file trong DB để đồng bộ lên Telegram nếu cần
+  for (const file of filesData) {
+    try {
+      // Kiểm tra xem file có cần đồng bộ không
+      if (!file.needsSync && file.telegramFileId) {
+        skippedCount++;
+        continue;
+      }
+      
+      // Kiểm tra file có tồn tại ở local không
+      if (!file.localPath || !fs.existsSync(file.localPath)) {
+        console.log(`File ${file.name} không tồn tại ở local, bỏ qua`);
+        skippedCount++;
+        continue;
+      }
+      
+      console.log(`Đang đồng bộ file: ${file.name}`);
+      
+      // Gửi file lên Telegram
+      const fileSize = fs.statSync(file.localPath).size;
+      
+      // Nếu file quá lớn thì bỏ qua
+      if (fileSize > config.MAX_FILE_SIZE) {
+        console.log(`File ${file.name} quá lớn (${fileSize} bytes), bỏ qua`);
+        file.needsSync = false;
+        skippedCount++;
+        continue;
+      }
+      
+      // Gửi file lên Telegram
+      const result = await telegramService.sendFileToTelegram(file.localPath, file.name);
+      
+      if (result.success) {
+        // Cập nhật thông tin file
+        file.telegramFileId = result.fileId;
+        file.telegramUrl = result.fileUrl;
+        file.needsSync = false;
+        file.fileStatus = 'synced';
         
-        // Lặp qua từng file trên Telegram
-        for (const telegramFile of telegramFiles) {
-          try {
-            // Kiểm tra xem file đã tồn tại trong DB chưa
-            const existingFile = filesData.find(f => f.telegramFileId === telegramFile.fileId);
+        syncedCount++;
+        console.log(`Đã đồng bộ thành công file lên Telegram: ${file.name}`);
+      } else {
+        errorCount++;
+        console.error(`Lỗi khi đồng bộ file ${file.name} lên Telegram:`, result.error);
+      }
+    } catch (error) {
+      errorCount++;
+      console.error(`Lỗi khi đồng bộ file ${file.name}:`, error);
+    }
+  }
+  
+  // PHẦN 2: ĐỒNG BỘ TỪ TELEGRAM XUỐNG LOCAL
+  console.log('===== ĐỒNG BỘ TỪ TELEGRAM XUỐNG LOCAL =====');
+  
+  try {
+    // Lấy danh sách file từ chat Telegram
+    const telegramFiles = await telegramService.getFilesFromChat();
+    
+    if (telegramFiles && telegramFiles.length > 0) {
+      console.log(`Tìm thấy ${telegramFiles.length} file trên Telegram`);
+      
+      // Lặp qua từng file trên Telegram
+      for (const telegramFile of telegramFiles) {
+        try {
+          // Kiểm tra xem file đã tồn tại trong DB chưa
+          const existingFile = filesData.find(f => f.telegramFileId === telegramFile.fileId);
+          
+          if (!existingFile) {
+            // Tạo đường dẫn lưu file
+            const downloadDir = path.join(config.STORAGE_PATH, 'downloads');
+            if (!fs.existsSync(downloadDir)) {
+              fs.mkdirSync(downloadDir, { recursive: true });
+            }
             
-            if (!existingFile) {
-              // Tạo đường dẫn lưu file
-              const downloadDir = path.join(config.STORAGE_PATH, 'downloads');
-              if (!fs.existsSync(downloadDir)) {
-                fs.mkdirSync(downloadDir, { recursive: true });
-              }
+            // Tải file về nếu cấu hình cho phép
+            if (config.AUTO_DOWNLOAD_BOT_FILES === 'true') {
+              const filePath = path.join(downloadDir, telegramFile.fileName);
               
-              // Tải file về nếu cấu hình cho phép
-              if (config.AUTO_DOWNLOAD_BOT_FILES === 'true') {
-                const filePath = path.join(downloadDir, telegramFile.fileName);
-                
-                // Tải file về
-                const downloadResult = await telegramService.downloadFileFromTelegram(
-                  telegramFile.fileId, filePath
-                );
-                
-                if (downloadResult.success) {
-                  // Tạo record file mới
-                  const newFile = {
-                    id: require('crypto').randomUUID(),
-                    name: telegramFile.fileName,
-                    displayName: telegramFile.fileName,
-                    size: telegramFile.fileSize,
-                    fileSize: telegramFile.fileSize,
-                    uploadDate: new Date().toISOString(),
-                    fileType: telegramFile.fileType || 'application/octet-stream',
-                    telegramFileId: telegramFile.fileId,
-                    telegramUrl: telegramFile.fileUrl,
-                    localPath: filePath,
-                    fileStatus: 'active',
-                    needsSync: false,
-                    isDeleted: false
-                  };
-                  
-                  // Thêm file vào DB
-                  filesData.push(newFile);
-                  newFiles++;
-                  
-                  console.log(`Đã tải và thêm file mới từ Telegram: ${telegramFile.fileName}`);
-                } else {
-                  console.error(`Lỗi khi tải file ${telegramFile.fileName} từ Telegram:`, downloadResult.error);
-                  errorCount++;
-                }
-              } else {
-                // Chỉ thêm thông tin vào DB mà không tải file về
+              // Tải file về
+              const downloadResult = await telegramService.downloadFileFromTelegram(
+                telegramFile.fileId, filePath
+              );
+              
+              if (downloadResult.success) {
+                // Tạo record file mới
                 const newFile = {
                   id: require('crypto').randomUUID(),
                   name: telegramFile.fileName,
@@ -225,7 +211,8 @@ async function syncFiles() {
                   fileType: telegramFile.fileType || 'application/octet-stream',
                   telegramFileId: telegramFile.fileId,
                   telegramUrl: telegramFile.fileUrl,
-                  fileStatus: 'telegram_only',
+                  localPath: filePath,
+                  fileStatus: 'active',
                   needsSync: false,
                   isDeleted: false
                 };
@@ -234,78 +221,93 @@ async function syncFiles() {
                 filesData.push(newFile);
                 newFiles++;
                 
-                console.log(`Đã thêm thông tin file từ Telegram (không tải về): ${telegramFile.fileName}`);
+                console.log(`Đã tải và thêm file mới từ Telegram: ${telegramFile.fileName}`);
+              } else {
+                console.error(`Lỗi khi tải file ${telegramFile.fileName} từ Telegram:`, downloadResult.error);
+                errorCount++;
               }
             } else {
-              // File đã tồn tại, kiểm tra xem có cần cập nhật không
-              if (!existingFile.localPath || !fs.existsSync(existingFile.localPath)) {
-                if (config.AUTO_DOWNLOAD_BOT_FILES === 'true') {
-                  // Tạo đường dẫn lưu file
-                  const downloadDir = path.join(config.STORAGE_PATH, 'downloads');
-                  if (!fs.existsSync(downloadDir)) {
-                    fs.mkdirSync(downloadDir, { recursive: true });
-                  }
-                  
-                  const filePath = path.join(downloadDir, existingFile.name);
-                  
-                  // Tải file về
-                  const downloadResult = await telegramService.downloadFileFromTelegram(
-                    telegramFile.fileId, filePath
-                  );
-                  
-                  if (downloadResult.success) {
-                    // Cập nhật thông tin file
-                    existingFile.localPath = filePath;
-                    existingFile.fileStatus = 'active';
-                    syncedCount++;
-                    
-                    console.log(`Đã tải file từ Telegram về local: ${existingFile.name}`);
-                  } else {
-                    console.error(`Lỗi khi tải file ${existingFile.name} từ Telegram:`, downloadResult.error);
-                    errorCount++;
-                  }
-                }
-              } else {
-                skippedCount++;
-              }
+              // Chỉ thêm thông tin vào DB mà không tải file về
+              const newFile = {
+                id: require('crypto').randomUUID(),
+                name: telegramFile.fileName,
+                displayName: telegramFile.fileName,
+                size: telegramFile.fileSize,
+                fileSize: telegramFile.fileSize,
+                uploadDate: new Date().toISOString(),
+                fileType: telegramFile.fileType || 'application/octet-stream',
+                telegramFileId: telegramFile.fileId,
+                telegramUrl: telegramFile.fileUrl,
+                fileStatus: 'telegram_only',
+                needsSync: false,
+                isDeleted: false
+              };
+              
+              // Thêm file vào DB
+              filesData.push(newFile);
+              newFiles++;
+              
+              console.log(`Đã thêm thông tin file từ Telegram (không tải về): ${telegramFile.fileName}`);
             }
-          } catch (error) {
-            errorCount++;
-            console.error(`Lỗi khi xử lý file ${telegramFile.fileName} từ Telegram:`, error);
+          } else {
+            // File đã tồn tại, kiểm tra xem có cần cập nhật không
+            if (!existingFile.localPath || !fs.existsSync(existingFile.localPath)) {
+              if (config.AUTO_DOWNLOAD_BOT_FILES === 'true') {
+                // Tạo đường dẫn lưu file
+                const downloadDir = path.join(config.STORAGE_PATH, 'downloads');
+                if (!fs.existsSync(downloadDir)) {
+                  fs.mkdirSync(downloadDir, { recursive: true });
+                }
+                
+                const filePath = path.join(downloadDir, existingFile.name);
+                
+                // Tải file về
+                const downloadResult = await telegramService.downloadFileFromTelegram(
+                  telegramFile.fileId, filePath
+                );
+                
+                if (downloadResult.success) {
+                  // Cập nhật thông tin file
+                  existingFile.localPath = filePath;
+                  existingFile.fileStatus = 'active';
+                  syncedCount++;
+                  
+                  console.log(`Đã tải file từ Telegram về local: ${existingFile.name}`);
+                } else {
+                  console.error(`Lỗi khi tải file ${existingFile.name} từ Telegram:`, downloadResult.error);
+                  errorCount++;
+                }
+              }
+            } else {
+              skippedCount++;
+            }
           }
+        } catch (error) {
+          errorCount++;
+          console.error(`Lỗi khi xử lý file ${telegramFile.fileName} từ Telegram:`, error);
         }
-      } else {
-        console.log('Không tìm thấy file nào trên Telegram hoặc không thể lấy danh sách file');
       }
-    } catch (error) {
-      console.error('Lỗi khi đồng bộ từ Telegram xuống local:', error);
-      errorCount++;
+    } else {
+      console.log('Không tìm thấy file nào trên Telegram hoặc không thể lấy danh sách file');
     }
-    
-    // Lưu lại danh sách file đã cập nhật
-    saveFilesDb(filesData);
-    
-    console.log(`===== KẾT THÚC ĐỒNG BỘ FILES =====`);
-    console.log(`Đã đồng bộ: ${syncedCount} | File mới: ${newFiles} | Lỗi: ${errorCount} | Bỏ qua: ${skippedCount}`);
-    
-    return {
-      success: true,
-      syncedCount,
-      errorCount,
-      skippedCount,
-      newFiles
-    };
   } catch (error) {
-    console.error('Lỗi khi đồng bộ files:', error);
-    return {
-      success: false,
-      error: error.message,
-      syncedCount,
-      errorCount,
-      skippedCount,
-      newFiles
-    };
+    console.error('Lỗi khi đồng bộ từ Telegram xuống local:', error);
+    errorCount++;
   }
+  
+  // Lưu lại danh sách file đã cập nhật
+  saveFilesDb(filesData);
+  
+  console.log(`===== KẾT THÚC ĐỒNG BỘ FILES =====`);
+  console.log(`Đã đồng bộ: ${syncedCount} | File mới: ${newFiles} | Lỗi: ${errorCount} | Bỏ qua: ${skippedCount}`);
+  
+  return {
+    success: true,
+    syncedCount,
+    errorCount,
+    skippedCount,
+    newFiles
+  };
 }
 
 /**

@@ -22,6 +22,15 @@ function initBot() {
   try {
     console.log('===== KHỞI TẠO BOT TELEGRAM =====');
     
+    // Nếu bot đã tồn tại và đang hoạt động, trả về bot đó
+    if (bot && isReady) {
+      console.log('Bot đã được khởi tạo trước đó, sử dụng lại');
+      return bot;
+    }
+    
+    // Reset trạng thái
+    isReady = false;
+    
     const telegramToken = config.TELEGRAM_BOT_TOKEN;
     let targetChatId = config.TELEGRAM_CHAT_ID;
     
@@ -43,6 +52,7 @@ function initBot() {
     // Kiểm tra thông tin bot
     bot.telegram.getMe().then(botInfo => {
       console.log(`Bot đã khởi tạo: ${botInfo.username} (${botInfo.first_name})`);
+      bot.botInfo = botInfo; // Lưu thông tin bot
     }).catch(err => {
       console.error('Không thể lấy thông tin bot:', err.message);
     });
@@ -103,6 +113,20 @@ function initBot() {
       console.log(`Bot Telegram đã được khởi tạo thành công`);
       console.log(`Bot đang lắng nghe các tin nhắn từ chat ID: ${targetChatId}`);
       isReady = true;
+      
+      // Gửi ping định kỳ để giữ bot hoạt động
+      if (global.botKeepAliveInterval) {
+        clearInterval(global.botKeepAliveInterval);
+      }
+      
+      global.botKeepAliveInterval = setInterval(() => {
+        if (bot && isReady) {
+          bot.telegram.getMe()
+            .then(() => console.log('Bot keep-alive: OK'))
+            .catch(err => console.error('Bot keep-alive failed:', err.message));
+        }
+      }, 60000); // Ping mỗi phút
+      
     }).catch(err => {
       console.error(`Không thể khởi động bot: ${err.message}`);
       isReady = false;
@@ -171,10 +195,19 @@ async function updateChatId(newChatId) {
  */
 function stopBot() {
   try {
+    // Xóa interval keep-alive
+    if (global.botKeepAliveInterval) {
+      clearInterval(global.botKeepAliveInterval);
+      global.botKeepAliveInterval = null;
+    }
+    
+    // Dừng bot nếu đang hoạt động
     if (bot) {
       bot.stop();
       console.log('Bot Telegram đã dừng');
     }
+    
+    // Reset trạng thái
     isReady = false;
   } catch (error) {
     console.error('Lỗi khi dừng bot:', error);
@@ -186,7 +219,30 @@ function stopBot() {
  * @returns {Boolean} Trạng thái
  */
 function isBotActive() {
-  return isReady && bot !== null;
+  try {
+    if (!bot) {
+      console.log('Bot chưa được khởi tạo');
+      return false;
+    }
+    
+    // Kiểm tra xem bot có đang hoạt động hay không (polling)
+    if (!bot.botInfo) {
+      console.log('Bot không có thông tin, có thể chưa sẵn sàng');
+      return false;
+    }
+    
+    // Kiểm tra thêm biến isReady để đảm bảo bot đã hoàn thành quá trình khởi tạo
+    if (!isReady) {
+      console.log('Bot chưa hoàn thành quá trình khởi tạo');
+      return false;
+    }
+    
+    console.log('Bot đang hoạt động bình thường');
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi kiểm tra trạng thái bot:', error);
+    return false;
+  }
 }
 
 /**
