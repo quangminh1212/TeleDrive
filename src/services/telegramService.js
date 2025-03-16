@@ -377,10 +377,6 @@ function stopBot() {
  * @returns {Boolean} true nếu bot đang hoạt động
  */
 function isBotActive() {
-  if (!bot || !isReady) {
-    return false;
-  }
-  
   try {
     // Kiểm tra nhanh bằng biến trạng thái
     return isReady && bot !== null;
@@ -776,7 +772,21 @@ async function sendNotification(message) {
 async function getFilesFromChat() {
   try {
     if (!bot) {
-      throw new Error('Bot chưa được khởi tạo. Vui lòng khởi tạo bot trước.');
+      console.log('Bot chưa được khởi tạo, đang khởi tạo lại...');
+      initBot();
+      
+      // Đợi bot khởi động với timeout
+      const timeout = 5000; // 5 giây
+      const startTime = Date.now();
+      
+      while (!isBotActive() && (Date.now() - startTime < timeout)) {
+        // Đợi 200ms mỗi lần kiểm tra
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      if (!isBotActive()) {
+        throw new Error('Không thể khởi tạo bot. Vui lòng kiểm tra lại cấu hình.');
+      }
     }
 
     // Lấy chat ID từ config
@@ -845,6 +855,27 @@ async function getFilesFromChat() {
     
     // Biến để lưu danh sách file
     let fileList = [];
+    
+    // Thử gửi tin nhắn test để kiểm tra chat ID có tồn tại không
+    try {
+      const testMsg = `Đang kiểm tra kết nối và tìm file...\n${new Date().toLocaleString()}`;
+      await bot.telegram.sendMessage(validChatId, testMsg);
+      console.log(`Đã gửi tin nhắn kiểm tra tới chat ID ${validChatId} thành công`);
+    } catch (sendError) {
+      // Chat ID không hợp lệ, thử truy vấn API trực tiếp để lấy danh sách chats
+      console.log(`Không thể gửi tin nhắn tới chat ID ${validChatId}: ${sendError.message}`);
+      
+      // Dừng và khởi động lại bot để tránh xung đột
+      stopBot();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      initBot();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Trả về danh sách rỗng, người dùng cần thiết lập lại chatID
+      console.log('Vui lòng cập nhật Chat ID trong file .env');
+      console.log(getStartInstructions());
+      return [];
+    }
     
     // Phương pháp 1: Sử dụng getUpdates để lấy tin nhắn gần đây
     try {
@@ -930,7 +961,9 @@ async function getFilesFromChat() {
         console.log('Đã gửi thông báo yêu cầu gửi file');
       } catch (sendError) {
         console.error(`Không thể gửi tin nhắn đến chat ID ${validChatId}:`, sendError.message);
-        throw new Error(`Chat ID không tồn tại: ${validChatId}. Vui lòng kiểm tra lại.`);
+        // Không ném lỗi nữa mà trả về danh sách rỗng
+        console.log('Vui lòng cập nhật Chat ID trong file .env hoặc nhắn tin với bot để lấy ID đúng');
+        console.log(getStartInstructions());
       }
     }
     
@@ -938,7 +971,8 @@ async function getFilesFromChat() {
     return fileList;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách file từ Telegram:', error.message);
-    throw error;
+    // Trả về mảng rỗng thay vì throw lỗi tiếp để tránh crash ứng dụng
+    return [];
   }
 }
 
@@ -1049,6 +1083,7 @@ async function syncFiles() {
     
     if (files.length === 0) {
       console.log('Không tìm thấy file nào trên Telegram hoặc không thể lấy danh sách file');
+      console.log('===== KẾT THÚC ĐỒNG BỘ FILES =====');
       return results;
     }
     
@@ -1063,15 +1098,29 @@ async function syncFiles() {
     
     // Đồng bộ từng file
     for (const file of files) {
-      const fileName = file.name;
-      const filePath = path.join(downloadDir, fileName);
-      
       try {
+        const fileName = file.name;
+        const filePath = path.join(downloadDir, fileName);
+        
         // Kiểm tra xem file đã tồn tại chưa
         if (fs.existsSync(filePath)) {
           console.log(`File ${fileName} đã tồn tại, bỏ qua`);
           results.skipped++;
           continue;
+        }
+        
+        // Kiểm tra lại bot trước khi tải file
+        if (!bot || !isBotActive()) {
+          console.log(`Bot không còn hoạt động, khởi động lại...`);
+          initBot();
+          // Đợi 2 giây cho bot khởi động
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          if (!isBotActive()) {
+            console.error(`Không thể khởi động lại bot để tải file ${fileName}`);
+            results.errors++;
+            continue;
+          }
         }
         
         // Lấy URL file
@@ -1096,9 +1145,8 @@ async function syncFiles() {
         
         console.log(`Đã tải xong file ${fileName}`);
         results.new++;
-        
-      } catch (error) {
-        console.error(`Lỗi khi tải file ${fileName}:`, error.message);
+      } catch (fileError) {
+        console.error(`Lỗi khi tải file ${file.name}:`, fileError.message);
         results.errors++;
       }
     }
@@ -1110,6 +1158,8 @@ async function syncFiles() {
   } catch (error) {
     console.error('Lỗi khi đồng bộ file:', error.message);
     results.errors++;
+    console.log(`===== KẾT THÚC ĐỒNG BỘ FILES =====`);
+    console.log(`Đã đồng bộ: ${results.total} | File mới: ${results.new} | Lỗi: ${results.errors} | Bỏ qua: ${results.skipped}`);
     return results;
   }
 }
