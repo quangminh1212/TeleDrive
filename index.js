@@ -3207,7 +3207,7 @@ app.get('/api/files/:id/preview', async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không Ä'Æ°á»£c để trống'
+        error: 'ID file không được để trống'
       });
     }
     
@@ -3292,7 +3292,7 @@ app.get('/api/files/:id', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không Ä'Æ°á»£c để trống'
+        error: 'ID file không được để trống'
       });
     }
     
@@ -3346,7 +3346,7 @@ app.get('/api/files/:id/download', async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không Ä'Æ°á»£c để trống'
+        error: 'ID file không được để trống'
       });
     }
     
@@ -3377,7 +3377,7 @@ app.get('/api/files/:id/download', async (req, res) => {
         if (!botActive) {
           return res.status(400).json({
             success: false,
-            error: 'Bot Telegram không hoáº¡t Ä'á»™ng'
+            error: 'Bot Telegram không hoạt động'
           });
         }
         
@@ -3415,7 +3415,7 @@ app.post('/api/files/:id/share', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không Ä'Æ°á»£c để trống'
+        error: 'ID file không được để trống'
       });
     }
     
@@ -3486,7 +3486,7 @@ app.delete('/api/files/:id/share', (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        error: 'ID file không Ä'Æ°á»£c để trống'
+        error: 'ID file không được để trống'
       });
     }
     

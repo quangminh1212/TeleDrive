@@ -37,7 +37,18 @@ fixedContent = fixedContent.replace(/Lá»—i/g, 'Lỗi')
   .replace(/xÃ¡c/g, 'xác')
   .replace(/Ä'á»‹nh/g, 'định')
   .replace(/ÄÃ£/g, 'Đã')
-  .replace(/server/g, 'server');
+  .replace(/server/g, 'server')
+  .replace(/Ä'Æ°á»£c/g, 'được')
+  .replace(/trá»'ng/g, 'trống')
+  .replace(/ID file khÃ´ng Ä'Æ°á»£c Ä'á»ƒ trá»'ng/g, 'ID file không được để trống')
+  .replace(/File khÃ´ng tá»"n táº¡i/g, 'File không tồn tại')
+  .replace(/File nÃ y khÃ´ng há»— trá»£ xem trÆ°á»›c/g, 'File này không hỗ trợ xem trước')
+  .replace(/File khÃ´ng tá»"n táº¡i á»Ÿ cáº£ local vÃ  Telegram/g, 'File không tồn tại ở cả local và Telegram')
+  .replace(/Bot Telegram khÃ´ng hoáº¡t Ä'á»™ng/g, 'Bot Telegram không hoạt động')
+  .replace(/ThÆ° má»¥c khÃ´ng tá»"n táº¡i/g, 'Thư mục không tồn tại')
+  .replace(/ThÆ° má»¥c má»›i Ä'Ã£ tá»"n táº¡i/g, 'Thư mục mới đã tồn tại')
+  .replace(/ThÆ° má»¥c khÃ´ng trá»'ng/g, 'Thư mục không trống')
+  .replace(/ÄÃ£ xÃ³a thÆ° má»¥c trá»'ng thÃ nh cÃ´ng/g, 'Đã xóa thư mục trống thành công');
 
 // Write the fixed content to the temporary file
 fs.writeFileSync(tempFile, fixedContent, 'utf8');
@@ -45,4 +56,10 @@ console.log('Created fixed file at', tempFile);
 
 // Replace the original file with the fixed one
 fs.renameSync(tempFile, 'index.js');
-console.log('Replaced original file with fixed version'); 
+console.log('Replaced original file with fixed version');
+
+// Let's also fix the specific line that's causing the error
+const lines = fs.readFileSync('index.js', 'utf8').split('\n');
+lines[3209] = "        error: 'ID file không được để trống'";
+fs.writeFileSync('index.js', lines.join('\n'), 'utf8');
+console.log('Fixed specific line 3210'); 
