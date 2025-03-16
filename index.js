@@ -2408,27 +2408,74 @@ app.post('/api/sync', async (req, res) => {
       });
     }
     
+    // Kiểm tra CHAT_ID
+    const chatId = process.env.CHAT_ID;
+    if (!chatId) {
+      return res.status(400).json({
+        success: false,
+        error: 'CHAT_ID chưa được cài đặt'
+      });
+    }
+    
+    // Kiểm tra xem có đang đồng bộ không
+    let isSyncing = false;
+    
     // Đồng bộ files
+    console.log('Bắt đầu đồng bộ files qua API...');
+    isSyncing = true;
+    
+    // Đọc database trước khi đồng bộ
+    const beforeSync = readFilesDb();
+    const beforeStats = {
+      total: beforeSync.length,
+      synced: beforeSync.filter(f => f.telegramFileId && !f.needsSync).length,
+      needsSync: beforeSync.filter(f => f.needsSync).length,
+      errors: beforeSync.filter(f => f.syncError).length
+    };
+    
+    const syncStartTime = new Date();
     const syncCount = await syncFiles();
+    const syncEndTime = new Date();
+    const syncDuration = (syncEndTime - syncStartTime) / 1000; // Thời gian đồng bộ (giây)
     
     // Đọc lại database để có thông tin mới nhất
     const filesData = readFilesDb();
     
-    // Thống kê
-    const stats = {
+    // Thống kê sau khi đồng bộ
+    const afterStats = {
       total: filesData.length,
       synced: filesData.filter(f => f.telegramFileId && !f.needsSync).length,
       needsSync: filesData.filter(f => f.needsSync).length,
       errors: filesData.filter(f => f.syncError).length
     };
     
-    // Trả về kết quả
+    // Tính toán thay đổi
+    const changes = {
+      newSynced: afterStats.synced - beforeStats.synced,
+      remainingToSync: afterStats.needsSync,
+      newErrors: afterStats.errors - beforeStats.errors,
+      totalProcessed: syncCount
+    };
+    
+    // Báo cáo lỗi cụ thể nếu có
+    const syncErrors = filesData
+      .filter(f => f.syncError)
+      .map(f => ({ fileName: f.name, error: f.syncError }))
+      .slice(0, 10); // Chỉ lấy 10 lỗi đầu tiên để tránh quá dài
+    
+    isSyncing = false;
+    
+    // Trả về kết quả chi tiết
     return res.json({
       success: true,
-      message: `Đã đồng bộ thành công ${syncCount} files với Telegram`,
+      message: `Đã đồng bộ ${syncCount} files trong ${syncDuration.toFixed(1)}s`,
       syncedCount: syncCount,
-      stats: stats,
-      lastSync: new Date().toISOString()
+      duration: syncDuration.toFixed(1),
+      syncTime: syncEndTime.toISOString(),
+      beforeSync: beforeStats,
+      afterSync: afterStats,
+      changes: changes,
+      errors: syncErrors
     });
   } catch (error) {
     console.error('Lỗi API đồng bộ:', error);
