@@ -9,10 +9,10 @@ const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
 const bodyParser = require('body-parser');
+const cors = require('cors');
+const session = require('express-session');
 // Remove external dependencies
-// const cors = require('cors');
 // const helmet = require('helmet');
-// const session = require('express-session');
 // const bodyParser = require('body-parser');
 
 // Nạp biến môi trường
@@ -37,7 +37,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Thiết lập middleware cơ bản
-// app.use(cors());
+app.use(cors());
 // app.use(helmet({
 //   contentSecurityPolicy: false
 // }));
@@ -45,15 +45,15 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // Thiết lập session - Vô hiệu hóa
-// app.use(session({
-//   secret: config.SESSION_SECRET || 'teledrive-secret-key',
-//   resave: false,
-//   saveUninitialized: false,
-//   cookie: {
-//     secure: config.NODE_ENV === 'production',
-//     maxAge: 24 * 60 * 60 * 1000 // 24 giờ
-//   }
-// }));
+app.use(session({
+  secret: config.SESSION_SECRET || 'teledrive-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: config.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 giờ
+  }
+}));
 
 // Thiết lập static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -79,6 +79,20 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
   }
+  
+  next();
+});
+
+// Thêm middleware cho dữ liệu chung trong tất cả view
+app.use((req, res, next) => {
+  // Dữ liệu chung cho tất cả view
+  res.locals.user = req.session.telegramUser || null;
+  res.locals.isLoggedIn = req.session.isLoggedIn || false;
+  res.locals.config = {
+    isSimulationMode: telegramService.isSimulationMode ? telegramService.isSimulationMode() : false,
+    botToken: config.TELEGRAM_BOT_TOKEN?.slice(0, 5) ? config.TELEGRAM_BOT_TOKEN.slice(0, 5) + '...' + config.TELEGRAM_BOT_TOKEN.slice(-5) : '',
+    chatId: config.TELEGRAM_CHAT_ID
+  };
   
   next();
 });

@@ -17,6 +17,8 @@ let isReady = false;
 let initRetryCount = 0;
 // Flag để kiểm soát quá trình khởi tạo bot
 let isInitializing = false;
+// Mode giả lập - khi không thể kết nối tới Telegram
+let simulationMode = false;
 
 /**
  * Dừng bot Telegram nếu đang hoạt động
@@ -40,16 +42,18 @@ async function stopBot() {
     }
     
     isReady = false;
+    simulationMode = false;
     console.log('Bot Telegram đã bị dừng và giải phóng');
     
     // Đợi thêm thời gian để đảm bảo các kết nối được đóng hoàn toàn
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     return true;
   } catch (error) {
     console.error('Lỗi không mong muốn khi dừng bot:', error.message);
     bot = null;
     isReady = false;
+    simulationMode = false;
     return false;
   }
 }
