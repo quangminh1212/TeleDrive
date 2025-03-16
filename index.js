@@ -1,13 +1,12 @@
-﻿/**
- * TeleDrive - Ứng dụng quản lý file với Telegram Bot
- * File chính kết hợp tất cả chức năng: web server, bot Telegram, đồng bộ file và dọn dẹp
+/**
+ * TeleDrive - Main Application
+ * Ứng dụng lưu trữ file dùng Telegram làm nơi lưu trữ
  */
 
-// Import các module cần thiết
+// Imports
 const express = require('express');
 const dotenv = require('dotenv');
 const path = require('path');
-const multer = require('multer');
 const fs = require('fs');
 const morgan = require('morgan');
 const cors = require('cors');
@@ -15,283 +14,212 @@ const helmet = require('helmet');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 
-// Import các module tự tạo
+// Nạp biến môi trường
+dotenv.config();
+
+// Imports từ modules 
 const config = require('./src/config/config');
-const fileController = require('./src/controllers/fileController');
-const folderController = require('./src/controllers/folderController');
-const authController = require('./src/controllers/authController');
 const telegramService = require('./src/services/telegramService');
 const fileService = require('./src/services/fileService');
 const apiRoutes = require('./src/routes/apiRoutes');
 const webRoutes = require('./src/routes/webRoutes');
-const { formatBytes, formatDate } = require('./src/utils/formatters');
-const { ensureDirectories, getMimeType, guessFileType } = require('./src/utils/helpers');
+const { ensureDirectories, log } = require('./src/utils/helpers');
 
-// Load biến môi trường
-dotenv.config();
+// Đảm bảo các thư mục cần thiết tồn tại
+ensureDirectories();
 
-// Đường dẫn lưu trữ và biến toàn cục
-const { 
-  PORT = 5002, 
-  BOT_TOKEN, 
-  CHAT_ID, 
-  AUTO_SYNC = 'true',
-  SESSION_SECRET = 'teledrive-session-secret',
-  MAX_FILE_SIZE = 50 * 1024 * 1024,
-  STORAGE_PATH = process.cwd()
-} = process.env;
-
-// Đường dẫn file và thư mục
-const DB_PATH = path.join(STORAGE_PATH, 'db', 'files_db.json');
-const UPLOADS_DIR = path.join(STORAGE_PATH, 'uploads');
-const TEMP_DIR = path.join(STORAGE_PATH, 'temp');
-const DATA_DIR = 'data';
-
-// Đảm bảo các thư mục tồn tại
-ensureDirectories([UPLOADS_DIR, TEMP_DIR, path.join(STORAGE_PATH, DATA_DIR), path.join(STORAGE_PATH, 'db')]);
-
-// Tạo application Express
+// Khởi tạo app
 const app = express();
 
-// Cấu hình multer để upload file
-const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    const uploadDir = req.query.folder 
-      ? path.join(UPLOADS_DIR, req.query.folder) 
-      : UPLOADS_DIR;
-    
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    cb(null, uploadDir);
-  },
-  filename: function(req, file, cb) {
-    // Đảm bảo tên file an toàn, tránh lỗi đường dẫn
-    const originalName = file.originalname;
-    const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const uniqueName = Date.now() + '-' + sanitizedName;
-    
-    // Lưu tên gốc vào request để sử dụng sau này
-    req.originalFileName = originalName;
-    
-    cb(null, uniqueName);
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: parseInt(MAX_FILE_SIZE) } 
-});
-
-// Thiết lập view engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+// Thiết lập middleware cơ bản
 app.use(morgan('dev'));
+app.use(cors());
 app.use(helmet({
   contentSecurityPolicy: false
 }));
-app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Thiết lập session
 app.use(session({
-  secret: SESSION_SECRET,
+  secret: config.SESSION_SECRET,
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 giờ
+  saveUninitialized: false,
+  cookie: {
+    secure: config.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 giờ
+  }
 }));
 
-// Biến global cho bot
-let bot = null;
-let botActive = false;
-let needRestartBot = false;
+// Thiết lập static files
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Middleware tự động check xác thực nếu cần
+// Middleware xác thực API key
 app.use((req, res, next) => {
-  // Skip authentication for public routes
-  if (req.path === '/login' || req.path.startsWith('/api/auth') || req.path.startsWith('/public')) {
-    return next();
-  }
-  
-  // Skip authentication for API routes if they have valid API key
+  // Nếu là API request và có API key
   if (req.path.startsWith('/api/') && req.headers['x-api-key']) {
-    // TODO: Implement API key validation
-    return next();
+    if (req.headers['x-api-key'] === config.API_KEY) {
+      return next();
+    }
+    return res.status(401).json({ success: false, error: 'Invalid API key' });
   }
   
-  // Redirect to login if not authenticated
-  if (!req.session || !req.session.authenticated) {
-    if (req.path.startsWith('/api/')) {
-      return res.status(401).json({ success: false, error: 'Unauthorized' });
-    } else {
-      return res.redirect('/login');
-    }
+  // Nếu là API request mà không có API key và chưa đăng nhập
+  if (req.path.startsWith('/api/') && (!req.session || !req.session.authenticated)) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
   }
   
   next();
 });
 
-// Router API và Web
+// Đăng ký routes
 app.use('/api', apiRoutes);
 app.use('/', webRoutes);
 
-// Route upload file API
-app.post('/api/upload', upload.single('file'), async (req, res) => {
-  try {
-    const file = req.file;
-    if (!file) {
-      return res.status(400).json({
-        success: false,
-        error: 'Không có file nào được tải lên'
-      });
-    }
-    
-    const originalName = req.originalFileName || file.originalname;
-    const relativePath = req.query.folder || '';
-    const fullRelativePath = path.join(relativePath, file.filename);
-    
-    // Extract file info
-    const fileInfo = {
-      id: 'file_' + Date.now() + '_' + Math.round(Math.random() * 1000000),
-      name: originalName,
-      originalName: originalName,
-      filename: file.filename,
-      localPath: file.path,
-      relativePath: relativePath,
-      size: file.size,
-      mimeType: file.mimetype || getMimeType(path.extname(originalName)),
-      fileType: guessFileType(file.mimetype || getMimeType(path.extname(originalName))),
-      uploadDate: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-      needsSync: AUTO_SYNC === 'true',
-      fileStatus: 'local',
-      shareToken: null,
-      shareExpiry: null,
-      telegramFileId: null,
-      telegramUrl: null,
-      isDeleted: false
-    };
-    
-    // Lưu thông tin file vào database
-    const filesData = fileService.readFilesDb();
-    filesData.push(fileInfo);
-    fileService.saveFilesDb(filesData);
-    
-    // Thử đồng bộ file lên Telegram nếu auto sync được bật
-    if (AUTO_SYNC === 'true') {
-      // Auto sync sẽ được xử lý bởi service
-      fileInfo.syncScheduled = true;
-    }
-    
-    return res.json({
-      success: true,
-      file: fileInfo
-    });
-  } catch (error) {
-    console.error('Lỗi khi tải file lên:', error);
-    return res.status(500).json({
+// Xử lý 404
+app.use((req, res) => {
+  if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.status(404).json({
       success: false,
-      error: 'Lỗi server: ' + (error.message || 'Không xác định')
+      message: 'Route not found'
     });
   }
+  
+  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
-// Khởi động chương trình
-(async function startApplication() {
-  // Thử khởi tạo bot Telegram với tối đa 3 lần
-  let botInitAttempts = 0;
-  const maxBotInitAttempts = 3;
+// Xử lý lỗi
+app.use((err, req, res, next) => {
+  log(`Error: ${err.message}`, 'error');
+  console.error(err);
   
-  while (botInitAttempts < maxBotInitAttempts) {
-    try {
-      botInitAttempts++;
-      console.log(`Thử khởi tạo bot lần ${botInitAttempts}...`);
-      
-      if (!BOT_TOKEN || !CHAT_ID) {
-        console.log('Chưa cấu hình BOT_TOKEN hoặc CHAT_ID. Bot không được khởi tạo.');
-        break;
-      }
-      
-      const result = await telegramService.startBot();
-      bot = result.bot;
-      botActive = result.botActive;
-      
-      if (botActive) {
-        console.log('Bot Telegram đã được khởi tạo thành công! 🎉');
-        break;
-      } else {
-        console.log('Không thể khởi tạo bot.');
-        
-        if (botInitAttempts < maxBotInitAttempts) {
-          console.log(`Thử lại sau ${botInitAttempts * 2} giây...`);
-          await new Promise(resolve => setTimeout(resolve, botInitAttempts * 2000));
-        }
-      }
-    } catch (error) {
-      console.error('Lỗi khi khởi tạo bot:', error);
-      
-      if (botInitAttempts < maxBotInitAttempts) {
-        console.log(`Thử lại sau ${botInitAttempts * 2} giây...`);
-        await new Promise(resolve => setTimeout(resolve, botInitAttempts * 2000));
-      }
-    }
+  if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.status(500).json({
+      success: false,
+      message: config.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
+    });
   }
   
-  // Khởi động server
-  const server = app.listen(PORT, () => {
-    console.log(`Server đang chạy trên cổng ${PORT}`);
-    console.log(`Truy cập: http://localhost:${PORT}`);
-  });
-  
-  // Xử lý tín hiệu để tắt server an toàn
-  process.on('SIGTERM', shutDown);
-  process.on('SIGINT', shutDown);
-  
-  function shutDown() {
-    console.log('Đang tắt server...');
-    server.close(() => {
-      console.log('Server đã đóng kết nối.');
+  res.status(500).sendFile(path.join(__dirname, 'public', '500.html'));
+});
+
+// Hàm khởi động ứng dụng
+async function startApp() {
+  try {
+    // Khởi tạo Telegram bot (nếu cấu hình sẵn)
+    if (config.TELEGRAM_BOT_TOKEN && config.TELEGRAM_CHAT_ID) {
+      telegramService.initBot();
+    } else {
+      log('Thiếu cấu hình Telegram Bot. Một số chức năng có thể không hoạt động đúng.', 'warn');
+    }
+    
+    // Lắng nghe trên cổng đã cấu hình
+    app.listen(config.PORT, () => {
+      log(`Server đang chạy tại http://${config.HOST}:${config.PORT}`);
+      log(`Môi trường: ${config.NODE_ENV}`);
+    });
+    
+    // Xử lý tắt server
+    process.on('SIGINT', async () => {
+      log('Đang dừng server...');
+      
+      // Dừng Telegram bot
+      telegramService.stopBot();
+      
+      // Thoát
       process.exit(0);
     });
     
-    // Nếu server không đóng trong 5s thì buộc tắt
+    // Lập lịch đồng bộ file
+    if (config.AUTO_SYNC) {
+      log(`Đã bật đồng bộ tự động. Sẽ đồng bộ mỗi ${config.SYNC_INTERVAL / (60 * 60 * 1000)} giờ.`);
+      
+      // Đồng bộ lần đầu sau khi khởi động
+      setTimeout(() => {
+        fileService.syncFiles()
+          .then(result => {
+            if (result.success) {
+              log(`Đồng bộ tự động hoàn tất: ${result.syncedCount} file đồng bộ, ${result.skippedCount} file bỏ qua, ${result.errorCount} lỗi`);
+            } else {
+              log(`Đồng bộ tự động thất bại: ${result.error}`, 'error');
+            }
+          })
+          .catch(error => {
+            log(`Lỗi khi đồng bộ tự động: ${error.message}`, 'error');
+          });
+      }, 10000); // Đợi 10 giây sau khi khởi động
+      
+      // Lập lịch đồng bộ định kỳ
+      setInterval(() => {
+        fileService.syncFiles()
+          .then(result => {
+            if (result.success) {
+              log(`Đồng bộ tự động hoàn tất: ${result.syncedCount} file đồng bộ, ${result.skippedCount} file bỏ qua, ${result.errorCount} lỗi`);
+            } else {
+              log(`Đồng bộ tự động thất bại: ${result.error}`, 'error');
+            }
+          })
+          .catch(error => {
+            log(`Lỗi khi đồng bộ tự động: ${error.message}`, 'error');
+          });
+      }, config.SYNC_INTERVAL);
+    }
+    
+    // Lập lịch dọn dẹp tự động
+    if (config.CLEANUP_ENABLED) {
+      log(`Đã bật dọn dẹp tự động. Sẽ dọn dẹp mỗi ${config.CLEANUP_INTERVAL / (60 * 60 * 1000)} giờ.`);
+      
+      // Dọn dẹp lần đầu sau 15 phút
+      setTimeout(() => {
+        fileService.cleanupFiles()
+          .then(result => {
+            if (result.success) {
+              log(`Dọn dẹp tự động hoàn tất: Đã xóa ${result.stats.cleaned} files thừa`);
+            } else {
+              log(`Dọn dẹp tự động thất bại: ${result.error}`, 'error');
+            }
+          })
+          .catch(error => {
+            log(`Lỗi khi dọn dẹp tự động: ${error.message}`, 'error');
+          });
+      }, 15 * 60 * 1000); // Đợi 15 phút
+      
+      // Lập lịch dọn dẹp định kỳ
+      setInterval(() => {
+        fileService.cleanupFiles()
+          .then(result => {
+            if (result.success) {
+              log(`Dọn dẹp tự động hoàn tất: Đã xóa ${result.stats.cleaned} files thừa`);
+            } else {
+              log(`Dọn dẹp tự động thất bại: ${result.error}`, 'error');
+            }
+          })
+          .catch(error => {
+            log(`Lỗi khi dọn dẹp tự động: ${error.message}`, 'error');
+          });
+      }, config.CLEANUP_INTERVAL);
+    }
+    
+    // Kiểm tra trạng thái file
     setTimeout(() => {
-      console.error('Không thể đóng kết nối server, buộc tắt!');
-      process.exit(1);
-    }, 5000);
+      fileService.checkFiles()
+        .then(result => {
+          if (result.success) {
+            log(`Kiểm tra file hoàn tất: ${result.stats.fixed} file đã được sửa`);
+          } else {
+            log(`Kiểm tra file thất bại: ${result.error}`, 'error');
+          }
+        })
+        .catch(error => {
+          log(`Lỗi khi kiểm tra file: ${error.message}`, 'error');
+        });
+    }, 5 * 60 * 1000); // Đợi 5 phút
+  } catch (error) {
+    log(`Lỗi khi khởi động server: ${error.message}`, 'error');
+    console.error(error);
+    process.exit(1);
   }
-  
-  // Bắt đầu đồng bộ file và dọn dẹp
-  if (AUTO_SYNC === 'true') {
-    setTimeout(async () => {
-      try {
-        await fileService.syncFiles();
-      } catch (error) {
-        console.error('Lỗi khi đồng bộ files lần đầu:', error);
-      }
-    }, 5000);
-  }
-})();
+}
 
-// Middleware xử lý lỗi
-app.use((err, req, res, next) => {
-  console.error('Lỗi server:', err);
-  res.status(500).json({
-    success: false,
-    error: 'Lỗi server: ' + (err.message || 'Không xác định')
-  });
-});
-
-// Middleware xử lý route không tồn tại - phải đặt sau tất cả các routes
-app.use((req, res) => {
-  console.log(`Route không tồn tại: ${req.method} ${req.path}`);
-  res.status(404).json({
-    success: false,
-    error: 'API endpoint không tồn tại'
-  });
-});
+// Khởi động ứng dụng
+startApp(); 
