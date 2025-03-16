@@ -376,7 +376,15 @@ async function syncFiles() {
   try {
     if (!bot || !botActive) {
       console.error('Bot Telegram không hoạt động. Không thể đồng bộ files.');
-      throw new Error('Bot Telegram không hoạt động');
+      
+      // Thử khởi động lại bot
+      console.log('Đang thử khởi động lại bot...');
+      bot = await initBot();
+      botActive = await checkBotActive();
+      
+      if (!bot || !botActive) {
+        throw new Error('Bot Telegram không thể khởi động');
+      }
     }
     
     console.log('Bắt đầu đồng bộ file...');
@@ -407,8 +415,13 @@ async function syncFiles() {
     // ID chat để gửi file
     let chatId;
     
-    if (CHAT_ID && CHAT_ID !== 'your_chat_id_here') {
-      // Sử dụng CHAT_ID từ file .env
+    // Đọc lại từ biến môi trường để đảm bảo có dữ liệu mới nhất
+    if (process.env.CHAT_ID && process.env.CHAT_ID !== 'your_chat_id_here') {
+      // Sử dụng CHAT_ID từ biến môi trường
+      chatId = process.env.CHAT_ID;
+      console.log(`Sẽ gửi file đến chat ID từ cấu hình: ${chatId}`);
+    } else if (CHAT_ID && CHAT_ID !== 'your_chat_id_here') {
+      // Sử dụng biến CHAT_ID đã được khởi tạo từ đầu
       chatId = CHAT_ID;
       console.log(`Sẽ gửi file đến chat ID từ cấu hình: ${chatId}`);
     } else {
@@ -454,31 +467,42 @@ async function syncFiles() {
         // Chuẩn bị caption cho file
         const caption = `Tên file: ${file.name}\nKích thước: ${formatBytes(file.size)}\nNgày tải lên: ${formatDate(file.uploadDate || new Date())}`;
         
-        // Lựa chọn phương thức gửi file phù hợp dựa vào loại file
-        let message;
-        const sendFilePromise = (async () => {
-          try {
-            if (file.fileType === 'image') {
-              return await bot.telegram.sendPhoto(chatId, { source: file.localPath }, { caption: caption });
-            } else if (file.fileType === 'video') {
-              return await bot.telegram.sendVideo(chatId, { source: file.localPath }, { caption: caption });
-            } else if (file.fileType === 'audio') {
-              return await bot.telegram.sendAudio(chatId, { source: file.localPath }, { caption: caption });
-            } else {
-              return await bot.telegram.sendDocument(chatId, { source: file.localPath }, { caption: caption });
+        // Hàm để gửi file với số lần thử lại
+        const sendFileWithRetry = async (maxRetries = 3) => {
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+              let message;
+              
+              if (file.fileType === 'image') {
+                message = await bot.telegram.sendPhoto(chatId, { source: file.localPath }, { caption: caption });
+              } else if (file.fileType === 'video') {
+                message = await bot.telegram.sendVideo(chatId, { source: file.localPath }, { caption: caption });
+              } else if (file.fileType === 'audio') {
+                message = await bot.telegram.sendAudio(chatId, { source: file.localPath }, { caption: caption });
+              } else {
+                message = await bot.telegram.sendDocument(chatId, { source: file.localPath }, { caption: caption });
+              }
+              
+              return message;
+            } catch (err) {
+              console.error(`Lỗi gửi file lên Telegram (lần thử ${attempt}/${maxRetries}):`, err.message);
+              
+              if (attempt === maxRetries) {
+                throw err;
+              }
+              
+              // Chờ trước khi thử lại
+              await new Promise(resolve => setTimeout(resolve, 2000));
             }
-          } catch (err) {
-            console.error(`Lỗi gửi file lên Telegram: ${err.message}`);
-            throw err;
           }
-        })();
+        };
         
         // Sử dụng Promise với timeout tăng lên 5 phút cho file lớn
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Timeout khi gửi file lên Telegram')), 300000); // 5 phút timeout
         });
         
-        message = await Promise.race([sendFilePromise, timeoutPromise]);
+        const message = await Promise.race([sendFileWithRetry(), timeoutPromise]);
         console.log(`Đã gửi file "${file.name}" thành công lên Telegram`);
         
         // Lấy Telegram File ID từ message
@@ -508,7 +532,8 @@ async function syncFiles() {
         // Lấy đường dẫn tải xuống
         const fileInfo = await bot.telegram.getFile(telegramFileId);
         if (fileInfo && fileInfo.file_path) {
-          const downloadUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
+          const botToken = process.env.BOT_TOKEN || BOT_TOKEN;
+          const downloadUrl = `https://api.telegram.org/file/bot${botToken}/${fileInfo.file_path}`;
           file.telegramUrl = downloadUrl;
           
           console.log(`Đã cập nhật URL file: ${downloadUrl}`);
@@ -2245,9 +2270,46 @@ async function handleCommandLineArgs() {
 // Khởi tạo server khi mô-đun được nạp trực tiếp
 if (require.main === module) {
   (async () => {
-    // Khởi tạo bot Telegram
-    bot = await initBot();
-    botActive = await checkBotActive();
+    // Kiểm tra file .env
+    checkEnvFile();
+    
+    // Đảm bảo load lại cấu hình từ .env
+    dotenv.config();
+    
+    // Đảm bảo các thư mục cần thiết tồn tại
+    ensureDirectories([dataDir, tempDir, uploadsDir, logsDir]);
+    
+    // Thử khởi tạo bot Telegram với tối đa 3 lần
+    let botInitAttempts = 0;
+    const maxBotInitAttempts = 3;
+    
+    while (botInitAttempts < maxBotInitAttempts) {
+      botInitAttempts++;
+      
+      try {
+        bot = await initBot();
+        botActive = await checkBotActive();
+        
+        if (bot && botActive) {
+          console.log(`Khởi tạo bot thành công sau ${botInitAttempts} lần thử.`);
+          break;
+        } else {
+          console.log(`Không thể khởi tạo bot (lần thử ${botInitAttempts}/${maxBotInitAttempts}).`);
+          
+          if (botInitAttempts < maxBotInitAttempts) {
+            // Chờ trước khi thử lại
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        }
+      } catch (error) {
+        console.error(`Lỗi khởi tạo bot (lần thử ${botInitAttempts}/${maxBotInitAttempts}):`, error);
+        
+        if (botInitAttempts < maxBotInitAttempts) {
+          // Chờ trước khi thử lại
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
     
     // Xử lý tham số dòng lệnh nếu có
     const shouldExit = await handleCommandLineArgs();
@@ -2256,10 +2318,20 @@ if (require.main === module) {
     }
     
     // Khởi động server
-    app.listen(PORT, () => {
-      console.log(`TeleDrive đang chạy trên http://localhost:${PORT}`);
-      console.log(`Bot Telegram ${botActive ? 'đã kết nối' : 'chưa kết nối'}`);
-    });
+    try {
+      app.listen(PORT, () => {
+        console.log(`TeleDrive đang chạy trên http://localhost:${PORT}`);
+        console.log(`Bot Telegram ${botActive ? 'đã kết nối' : 'chưa kết nối'}`);
+      });
+    } catch (error) {
+      if (error.code === 'EADDRINUSE') {
+        console.error(`Cổng ${PORT} đã được sử dụng. Vui lòng chọn cổng khác hoặc dừng ứng dụng đang chạy.`);
+        process.exit(1);
+      } else {
+        console.error('Lỗi khởi động server:', error);
+        process.exit(1);
+      }
+    }
   })();
 }
 
