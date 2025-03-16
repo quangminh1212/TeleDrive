@@ -13,11 +13,21 @@ function authenticate(req, res, next) {
   const publicPaths = [
     '/login',
     '/api/auth/telegram',
-    '/api/auth/telegram-callback'
+    '/api/auth/telegram-callback',
+    '/api/login'
+  ];
+  
+  // Kiểm tra wildcard path
+  const wildcardPaths = [
+    '/images/', 
+    '/css/', 
+    '/js/', 
+    '/assets/',
+    '/public/'
   ];
   
   // Kiểm tra nếu đường dẫn là public
-  if (publicPaths.includes(req.path) || req.path.startsWith('/images/') || req.path.startsWith('/css/') || req.path.startsWith('/js/')) {
+  if (publicPaths.includes(req.path) || wildcardPaths.some(prefix => req.path.startsWith(prefix))) {
     return next();
   }
   
