@@ -387,15 +387,8 @@ async function syncFiles() {
       chatId = CHAT_ID;
       console.log(`Sẽ gửi file đến chat ID từ cấu hình: ${chatId}`);
     } else {
-      try {
-        // Sử dụng ID chat của bot làm giải pháp dự phòng
-        const botInfo = await bot.telegram.getMe();
-        chatId = botInfo.id;
-        console.log(`CHAT_ID chưa được cấu hình. Sử dụng ID bot (${chatId}) làm thay thế. Điều này có thể gây lỗi nếu bạn tải lên file.`);
-      } catch (error) {
-        console.error('Không thể lấy thông tin bot:', error);
-        throw new Error('Không thể lấy thông tin bot để gửi file và CHAT_ID chưa được cấu hình trong .env');
-      }
+      console.error('CHAT_ID chưa được cấu hình trong file .env. Không thể đồng bộ file.');
+      throw new Error('CHAT_ID chưa được cấu hình trong file .env');
     }
     
     let syncedCount = 0;
@@ -1209,52 +1202,57 @@ app.post('/api/update-file/:id', express.json(), async (req, res) => {
 // Tự động đồng bộ file ngay sau khi upload
 async function autoSyncFile(file) {
   try {
+    if (!bot || !botActive) {
+      console.log(`Bot Telegram không hoạt động. Không thể tự động đồng bộ file ${file.name}`);
+      return false;
+    }
+    
     console.log(`Tự động đồng bộ file: ${file.name}`);
     
-    // Kiểm tra xem file đã có telegramFileId thật chưa
-    if (file.telegramFileId) {
-      console.log(`File ${file.name} đã có Telegram FileID, bỏ qua`);
-      return true;
-    }
-    
-    // Kiểm tra xem file có tồn tại trên local không
-    if (!file.localPath || !fs.existsSync(file.localPath)) {
-      console.log(`File ${file.name} không tồn tại trên local, không thể đồng bộ`);
+    // Kiểm tra file có tồn tại không
+    if (!file.localPath) {
+      console.log(`File ${file.name} không có đường dẫn local, không thể đồng bộ.`);
       return false;
     }
     
-    // Nếu bot không hoạt động, đánh dấu file cần đồng bộ sau
-    if (!botActive || !bot) {
-      console.log('Bot không hoạt động, đánh dấu file để đồng bộ sau');
-      file.needsSync = true;
+    // Kiểm tra file có tồn tại trên hệ thống không
+    if (!fs.existsSync(file.localPath)) {
+      console.log(`File ${file.name} không tồn tại tại đường dẫn ${file.localPath}, không thể đồng bộ.`);
       return false;
     }
     
-    // Lấy chat ID
-    const botInfo = await bot.telegram.getMe();
-    const chatId = botInfo.id;
+    // ID chat để gửi file
+    let chatId;
     
-    console.log(`Đang gửi file "${file.name}" (${formatBytes(file.size)}) lên Telegram...`);
-    
-    // Lựa chọn phương thức gửi file phù hợp dựa vào loại file
-    let message;
-    if (file.fileType === 'image') {
-      message = await bot.telegram.sendPhoto(chatId, { source: file.localPath });
-    } else if (file.fileType === 'video') {
-      message = await bot.telegram.sendVideo(chatId, { source: file.localPath });
-    } else if (file.fileType === 'audio') {
-      message = await bot.telegram.sendAudio(chatId, { source: file.localPath });
+    if (CHAT_ID && CHAT_ID !== 'your_chat_id_here') {
+      // Sử dụng CHAT_ID từ file .env
+      chatId = CHAT_ID;
     } else {
-      message = await bot.telegram.sendDocument(chatId, { source: file.localPath });
+      console.error('CHAT_ID chưa được cấu hình trong file .env. Không thể đồng bộ file.');
+      return false;
     }
     
-    if (!message) {
-      throw new Error('Không nhận được phản hồi từ Telegram khi gửi file');
+    // Gửi file lên Telegram
+    let message;
+    
+    try {
+      if (file.fileType === 'image') {
+        message = await bot.telegram.sendPhoto(chatId, { source: file.localPath });
+      } else if (file.fileType === 'video') {
+        message = await bot.telegram.sendVideo(chatId, { source: file.localPath });
+      } else if (file.fileType === 'audio') {
+        message = await bot.telegram.sendAudio(chatId, { source: file.localPath });
+      } else {
+        message = await bot.telegram.sendDocument(chatId, { source: file.localPath });
+      }
+    } catch (err) {
+      console.error(`Lỗi tự động đồng bộ file ${file.name}:`, err);
+      return false;
     }
     
     // Lấy Telegram File ID từ message
     let telegramFileId = null;
-        
+    
     if (file.fileType === 'image' && message.photo && message.photo.length > 0) {
       telegramFileId = message.photo[message.photo.length - 1].file_id;
     } else if (file.fileType === 'video' && message.video) {
@@ -1266,7 +1264,8 @@ async function autoSyncFile(file) {
     }
     
     if (!telegramFileId) {
-      throw new Error('Không lấy được Telegram File ID sau khi upload');
+      console.log(`Không lấy được Telegram File ID sau khi upload file ${file.name}`);
+      return false;
     }
     
     // Cập nhật thông tin file
@@ -1278,15 +1277,24 @@ async function autoSyncFile(file) {
     if (fileInfo && fileInfo.file_path) {
       const downloadUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
       file.telegramUrl = downloadUrl;
-      
-      console.log(`Đã cập nhật URL file: ${downloadUrl}`);
     }
     
-    return true;
+    // Đọc danh sách file từ database
+    const filesData = readFilesDb();
+    
+    // Tìm và cập nhật file trong database
+    const fileIndex = filesData.findIndex(f => f.id === file.id);
+    if (fileIndex !== -1) {
+      filesData[fileIndex] = file;
+      saveFilesDb(filesData);
+      console.log(`Đã tự động đồng bộ file ${file.name} thành công`);
+      return true;
+    }
+    
+    return false;
   } catch (error) {
     console.error(`Lỗi tự động đồng bộ file ${file.name}:`, error);
-    // Đánh dấu file cần đồng bộ sau
-    file.needsSync = true;
+    console.log(`Không thể tự động đồng bộ file ${file.name}, sẽ đồng bộ sau`);
     return false;
   }
 }
