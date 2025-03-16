@@ -179,6 +179,12 @@
                                 <p>Tải lên Telegram</p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="#" data-toggle="modal" data-target="#settingsModal" class="nav-link">
+                                <i class="nav-icon fas fa-cog"></i>
+                                <p>Cài đặt</p>
+                            </a>
+                        </li>
                     </ul>
                 </nav>
                 <!-- /.sidebar-menu -->
@@ -1050,5 +1056,8 @@
             });
         });
     </script>
+    
+    <!-- Include modal cài đặt -->
+    <%- include('partials/settings-modal') %>
 </body>
 </html> 
