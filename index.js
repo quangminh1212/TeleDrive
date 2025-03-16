@@ -2249,68 +2249,70 @@ app.use((err, req, res, next) => {
     let botInitAttempts = 0;
     const maxBotInitAttempts = 3;
     
-    while (botInitAttempts < maxBotInitAttempts) {
-      botInitAttempts++;
-      
-      try {
-        bot = await initBot();
-        botActive = await checkBotActive();
+    (async function() {
+      while (botInitAttempts < maxBotInitAttempts) {
+        botInitAttempts++;
         
-        if (bot && botActive) {
-          console.log(`Khởi tạo bot thành công sau ${botInitAttempts} lần thử.`);
-          break;
-        } else {
-          console.log(`Không thể khởi tạo bot (lần thử ${botInitAttempts}/${maxBotInitAttempts}).`);
+        try {
+          bot = await initBot();
+          botActive = await checkBotActive();
+          
+          if (bot && botActive) {
+            console.log(`Khởi tạo bot thành công sau ${botInitAttempts} lần thử.`);
+            break;
+          } else {
+            console.log(`Không thể khởi tạo bot (lần thử ${botInitAttempts}/${maxBotInitAttempts}).`);
+            
+            if (botInitAttempts < maxBotInitAttempts) {
+              // Chờ trước khi thử lại
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          }
+        } catch (error) {
+          console.error(`Lỗi khởi tạo bot (lần thử ${botInitAttempts}/${maxBotInitAttempts}):`, error);
           
           if (botInitAttempts < maxBotInitAttempts) {
             // Chờ trước khi thử lại
             await new Promise(resolve => setTimeout(resolve, 2000));
           }
         }
-      } catch (error) {
-        console.error(`Lỗi khởi tạo bot (lần thử ${botInitAttempts}/${maxBotInitAttempts}):`, error);
+      }
+      
+      // Print bot and chat id info for debugging
+      console.log('Current BOT_TOKEN:', process.env.BOT_TOKEN ? `${process.env.BOT_TOKEN.substring(0, 8)}...` : 'not set');
+      console.log('Current CHAT_ID:', process.env.CHAT_ID || 'not set');
+      
+      // Xử lý tham số dòng lệnh nếu có
+      const shouldExit = await handleCommandLineArgs();
+      if (shouldExit) {
+        process.exit(0);
+      }
+      
+      // Khởi động server
+      try {
+        // Middleware xử lý route không tồn tại - đặt trước khi khởi động server
+        app.use((req, res) => {
+          console.log(`Route không tồn tại: ${req.method} ${req.path}`);
+          res.status(404).json({
+            success: false,
+            error: 'API endpoint không tồn tại'
+          });
+        });
         
-        if (botInitAttempts < maxBotInitAttempts) {
-          // Chờ trước khi thử lại
-          await new Promise(resolve => setTimeout(resolve, 2000));
+        app.listen(PORT, () => {
+          console.log(`TeleDrive đang chạy trên http://localhost:${PORT}`);
+          console.log(`Bot Telegram ${botActive ? 'đã kết nối' : 'chưa kết nối'}`);
+        });
+      } catch (error) {
+        if (error.code === 'EADDRINUSE') {
+          console.error(`Cổng ${PORT} đã được sử dụng. Vui lòng chọn cổng khác hoặc dừng ứng dụng đang chạy.`);
+          process.exit(1);
+        } else {
+          console.error('Lỗi khởi động server:', error);
+          process.exit(1);
         }
       }
-    }
-    
-    // Print bot and chat id info for debugging
-    console.log('Current BOT_TOKEN:', process.env.BOT_TOKEN ? `${process.env.BOT_TOKEN.substring(0, 8)}...` : 'not set');
-    console.log('Current CHAT_ID:', process.env.CHAT_ID || 'not set');
-    
-    // Xử lý tham số dòng lệnh nếu có
-    const shouldExit = await handleCommandLineArgs();
-    if (shouldExit) {
-      process.exit(0);
-    }
-    
-    // Khởi động server
-    try {
-      // Middleware xử lý route không tồn tại - đặt trước khi khởi động server
-      app.use((req, res) => {
-        console.log(`Route không tồn tại: ${req.method} ${req.path}`);
-        res.status(404).json({
-          success: false,
-          error: 'API endpoint không tồn tại'
-        });
-      });
-      
-      app.listen(PORT, () => {
-        console.log(`TeleDrive đang chạy trên http://localhost:${PORT}`);
-        console.log(`Bot Telegram ${botActive ? 'đã kết nối' : 'chưa kết nối'}`);
-      });
-    } catch (error) {
-      if (error.code === 'EADDRINUSE') {
-        console.error(`Cổng ${PORT} đã được sử dụng. Vui lòng chọn cổng khác hoặc dừng ứng dụng đang chạy.`);
-        process.exit(1);
-      } else {
-        console.error('Lỗi khởi động server:', error);
-        process.exit(1);
-      }
-    }
+    })();
   })();
 }
 
