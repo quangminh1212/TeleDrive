@@ -83,8 +83,25 @@ function initBot() {
       await ctx.reply(`Bot đã sẵn sàng. Chat ID của bạn là: ${userChatId}`);
       console.log(`Bot đã được khởi động bởi user với chat ID: ${userChatId}`);
       
+      // Nếu chưa có chat ID, tự động cập nhật
+      if (!chatId) {
+        console.log(`Người dùng ${userChatId} đang truy cập bot, tự động thiết lập chat ID`);
+        chatId = userChatId.toString();
+        
+        try {
+          // Cập nhật vào .env
+          await config.updateEnv({
+            TELEGRAM_CHAT_ID: chatId
+          });
+          await ctx.reply(`✅ Đã tự động cập nhật chat ID thành ${chatId}. Ứng dụng đã sẵn sàng để đồng bộ file.`);
+          console.log(`Đã tự động cập nhật TELEGRAM_CHAT_ID thành ${chatId}`);
+        } catch (configError) {
+          console.error('Lỗi khi cập nhật file .env:', configError.message);
+          await ctx.reply(`✅ Đã lưu chat ID ${chatId} (chỉ trong bộ nhớ, không lưu vào .env)`);
+        }
+      }
       // Kiểm tra nếu chat ID khác với cấu hình
-      if (chatId && userChatId.toString() !== chatId.toString()) {
+      else if (userChatId.toString() !== chatId.toString()) {
         console.log(`Chat ID người dùng ${userChatId} khác với cấu hình ${chatId}`);
         await ctx.reply(`⚠️ Chat ID của bạn (${userChatId}) khác với chat ID đã cấu hình (${chatId}).\nBạn có muốn cập nhật ID? Sử dụng lệnh /updatechatid`);
       }
@@ -119,6 +136,28 @@ function initBot() {
     bot.on('message', ctx => {
       if (ctx.message.document) {
         handleIncomingFile(ctx);
+      } else if (ctx.message.text) {
+        // Nếu gửi tin nhắn văn bản và không có chat ID
+        if (!chatId) {
+          const userChatId = ctx.chat.id;
+          console.log(`Nhận tin nhắn từ ${userChatId}, tự động thiết lập chat ID`);
+          chatId = userChatId.toString();
+          
+          try {
+            // Cập nhật vào .env
+            config.updateEnv({
+              TELEGRAM_CHAT_ID: chatId
+            }).then(() => {
+              ctx.reply(`✅ Đã tự động thiết lập chat ID: ${chatId}`);
+              console.log(`Đã tự động cập nhật TELEGRAM_CHAT_ID thành ${chatId}`);
+            }).catch(err => {
+              console.error('Lỗi khi cập nhật file .env:', err.message);
+              ctx.reply(`✅ Đã lưu chat ID ${chatId} (chỉ trong bộ nhớ, không lưu vào .env)`);
+            });
+          } catch (error) {
+            console.error('Lỗi khi cập nhật chat ID:', error.message);
+          }
+        }
       }
     });
     
@@ -1017,16 +1056,62 @@ async function syncFiles() {
       
       // Kiểm tra lại sau khi khởi động
       if (!isBotActive()) {
-        throw new Error('Không thể khởi tạo bot Telegram');
+        console.error('Không thể khởi động bot Telegram');
+        return results;
       }
     }
     
-    // Lấy danh sách file từ chat
-    const files = await getFilesFromChat();
+    // Retry lấy danh sách file nếu cần
+    let files = [];
+    let retries = 0;
+    const maxRetries = 3;
+    
+    while (retries < maxRetries) {
+      try {
+        // Lấy danh sách file từ chat
+        files = await getFilesFromChat();
+        
+        if (files.length > 0) {
+          // Nếu tìm thấy file, không cần retry nữa
+          break;
+        } else {
+          console.log(`Không tìm thấy file nào (lần thử ${retries + 1}/${maxRetries})`);
+          
+          // Nếu chưa có chat ID, không cần thử lại
+          if (!chatId) {
+            console.log('Chưa có chat ID, không thể đồng bộ file. Vui lòng thiết lập chat ID trước.');
+            console.log(getStartInstructions());
+            break;
+          }
+          
+          retries++;
+          
+          if (retries < maxRetries) {
+            // Đợi trước khi thử lại
+            console.log(`Đợi 5 giây trước khi thử lại...`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+        }
+      } catch (fetchError) {
+        console.error(`Lỗi khi lấy danh sách file (lần thử ${retries + 1}/${maxRetries}):`, fetchError.message);
+        
+        retries++;
+        
+        if (retries < maxRetries) {
+          // Thử khởi động lại bot trước khi retry
+          console.log('Khởi động lại bot trước khi thử lại...');
+          stopBot();
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          initBot();
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+    
     results.total = files.length;
     
     if (files.length === 0) {
-      console.log('Không có file nào để đồng bộ');
+      console.log('Không có file nào để đồng bộ sau khi đã thử nhiều lần');
       return results;
     }
     
