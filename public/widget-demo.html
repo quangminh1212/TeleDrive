@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Widget Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #0088cc;
+        }
+        .widget-container {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .debug-info {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-left: 4px solid #0088cc;
+        }
+        pre {
+            background-color: #f1f1f1;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #0088cc;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Telegram Login Widget Demo</h1>
+    
+    <p>Trang này dùng để kiểm tra widget đăng nhập Telegram. Widget sẽ được hiển thị bên dưới.</p>
+    
+    <div class="widget-container">
+        <h3>Widget tiêu chuẩn:</h3>
+        
+        <!-- Telegram Login Button -->
+        <script async src="https://telegram.org/js/telegram-widget.js?22"
+                data-telegram-login="TeleDriveStorageBot" 
+                data-size="large"
+                data-auth-url="/api/auth/telegram-callback"
+                data-request-access="write"></script>
+    </div>
+    
+    <div class="debug-info">
+        <h3>Thông tin cấu hình:</h3>
+        <pre id="config-info"></pre>
+        <a href="/api/auth/telegram" class="button" id="manualButton">Đăng nhập thủ công</a>
+    </div>
+    
+    <script>
+        // Thông tin debug
+        document.getElementById('config-info').textContent = 
+            'Window Origin: ' + window.location.origin + '\n' + 
+            'Window Host: ' + window.location.host + '\n' +
+            'Window Protocol: ' + window.location.protocol;
+        
+        // Nút đăng nhập thủ công
+        document.getElementById('manualButton').addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.getAttribute('href');
+            
+            // Mở popup
+            const width = 550;
+            const height = 550;
+            const left = (window.innerWidth - width) / 2;
+            const top = (window.innerHeight - height) / 2;
+            
+            window.open(
+                url,
+                'Đăng nhập Telegram',
+                `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+            );
+        });
+        
+        // Hàm callback khi người dùng đăng nhập thành công
+        function onTelegramAuth(user) {
+            alert('Đăng nhập thành công: ' + JSON.stringify(user));
+        }
+    </script>
+</body>
+</html> 

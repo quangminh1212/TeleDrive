@@ -172,6 +172,12 @@ router.get('/auth/telegram', async (req, res) => {
     } else {
       console.log('Tạo URL đăng nhập Telegram');
       
+      // Lấy thông tin tổng quan cấu hình
+      console.log('Cấu hình BASE_URL:', config.BASE_URL);
+      console.log('PORT:', config.PORT);
+      console.log('Host hiện tại:', req.get('host'));
+      console.log('Origin hiện tại:', req.protocol + '://' + req.get('host'));
+      
       // Không có dữ liệu callback - tạo URL đăng nhập Telegram
       // Lấy thông tin bot
       const botInfo = await telegramService.verifyBotToken();
@@ -182,8 +188,8 @@ router.get('/auth/telegram', async (req, res) => {
         return res.redirect('/login?error=' + encodeURIComponent('Không thể kết nối đến Telegram Bot API. Vui lòng thử lại sau.'));
       }
       
-      // Lấy thông tin từ config
-      const baseUrl = config.BASE_URL || `${req.protocol}://${req.get('host')}`;
+      // Lấy thông tin từ config và request
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
       const botUsername = botInfo.botInfo.username;
       
       if (!botUsername) {
@@ -191,9 +197,13 @@ router.get('/auth/telegram', async (req, res) => {
         return res.redirect('/login?error=' + encodeURIComponent('Lỗi cấu hình Telegram Bot, vui lòng liên hệ quản trị viên'));
       }
       
-      // Tạo URL đăng nhập Telegram
+      // Lấy bot id (số) từ token
+      const botId = botToken.split(':')[0];
+      console.log('Bot ID từ token:', botId);
+      
+      // Tạo URL đăng nhập Telegram với bot_id là số ID từ token
       const callbackUrl = `${baseUrl}/api/auth/telegram`;
-      const telegramAuthUrl = `https://oauth.telegram.org/auth?bot_id=${botUsername}&origin=${encodeURIComponent(baseUrl)}&return_to=${encodeURIComponent(callbackUrl)}`;
+      const telegramAuthUrl = `https://oauth.telegram.org/auth?bot_id=${botId}&origin=${encodeURIComponent(baseUrl)}&return_to=${encodeURIComponent(callbackUrl)}`;
       
       console.log('Đã tạo URL đăng nhập Telegram:', telegramAuthUrl);
       

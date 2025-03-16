@@ -104,30 +104,6 @@
         #telegram-login-container {
             display: block;
             margin: 0 auto;
-            min-height: 40px;
-        }
-        .custom-login-button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #0088cc;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            height: 50px;
-            padding: 0 20px;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .custom-login-button:hover {
-            background-color: #0077b3;
-        }
-        .custom-login-button i {
-            margin-right: 10px;
-            font-size: 20px;
         }
     </style>
 </head>
@@ -144,8 +120,7 @@
             </div>
             
             <div class="telegram-login">
-                <!-- Nút đăng nhập tùy chỉnh thay vì widget -->
-                <button id="customLoginButton" class="custom-login-button">
+                <button id="loginButton" class="telegram-button">
                     <i class="fab fa-telegram-plane"></i>
                     Đăng nhập bằng Telegram
                 </button>
@@ -167,6 +142,11 @@
     </div>
 
     <script>
+        // Hàm chờ
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
         // Kiểm tra nếu có lỗi trong URL (ví dụ: từ quá trình xác thực)
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -182,16 +162,66 @@
         };
         
         // Đăng nhập với Telegram khi nhấn nút
-        document.getElementById('customLoginButton').addEventListener('click', function() {
+        document.getElementById('loginButton').addEventListener('click', async function() {
             // Hiển thị loading
             document.getElementById('loadingIndicator').style.display = 'block';
             
-            // Lấy thông tin về URL hiện tại
-            const origin = window.location.origin;
-            const authUrl = `${origin}/api/auth/telegram`;
-            
-            // Redirect trực tiếp đến URL telegram login
-            window.location.href = authUrl;
+            try {
+                // Lấy thông tin window hiện tại để tính toán vị trí của popup
+                const width = 550;
+                const height = 550;
+                const left = (window.innerWidth - width) / 2;
+                const top = (window.innerHeight - height) / 2;
+                
+                // Mở popup trỏ trực tiếp đến endpoint
+                const popup = window.open(
+                    '/api/auth/telegram',
+                    'Đăng nhập Telegram',
+                    `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+                );
+                
+                // Theo dõi trạng thái popup
+                const checkPopup = setInterval(async function() {
+                    try {
+                        // Kiểm tra xem popup đã đóng chưa
+                        if (!popup || popup.closed) {
+                            clearInterval(checkPopup);
+                            
+                            // Ẩn loading
+                            document.getElementById('loadingIndicator').style.display = 'none';
+                            
+                            // Chờ 1 giây
+                            await sleep(1000);
+                            
+                            // Kiểm tra xem đã đăng nhập thành công chưa
+                            try {
+                                const response = await fetch('/dashboard', {
+                                    headers: {
+                                        'Accept': 'application/json'
+                                    }
+                                });
+                                
+                                if (response.ok) {
+                                    // Đã đăng nhập thành công, chuyển đến dashboard
+                                    window.location.href = '/dashboard';
+                                }
+                            } catch (error) {
+                                console.error('Lỗi khi kiểm tra trạng thái đăng nhập:', error);
+                            }
+                        }
+                    } catch (e) {
+                        // Bỏ qua lỗi cross-origin
+                        console.log("Không thể truy cập popup (có thể do cross-origin)");
+                    }
+                }, 500);
+            } catch (error) {
+                console.error('Lỗi khi mở cửa sổ đăng nhập:', error);
+                document.getElementById('loadingIndicator').style.display = 'none';
+                
+                const errorElement = document.getElementById('errorMessage');
+                errorElement.textContent = 'Không thể mở cửa sổ đăng nhập. Vui lòng kiểm tra popup blocker.';
+                errorElement.style.display = 'block';
+            }
         });
     </script>
 </body>
