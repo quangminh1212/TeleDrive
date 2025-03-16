@@ -403,41 +403,40 @@ async function syncFiles() {
     
     console.log(`Tổng số files trong database: ${filesData.length}`);
     
-    // Lọc các file cần đồng bộ
-    let filesToSync = filesData.filter(file => 
-      (file.needsSync || !file.telegramFileId) && 
-      file.localPath && 
-      fs.existsSync(file.localPath)
-    );
+    // Lọc các file cần đồng bộ (chưa có fileId hoặc cần đồng bộ lại)
+    const filesToSync = filesData.filter(file => {
+      const needsSync = file.needsSync || !file.telegramFileId;
+      const hasLocalPath = !!file.localPath;
+      const fileExists = hasLocalPath && fs.existsSync(file.localPath);
+      
+      if (needsSync && !fileExists) {
+        console.log(`File "${file.name}" cần đồng bộ nhưng không tồn tại tại đường dẫn: ${file.localPath}`);
+        // Đánh dấu file là đã xóa nếu không tìm thấy
+        file.deleted = true;
+        file.needsSync = false;
+      }
+      
+      return needsSync && fileExists;
+    });
     
-    console.log(`Tìm thấy ${filesToSync.length} file cần đồng bộ`);
-
-    // Hiển thị danh sách file cần đồng bộ (tối đa 5 file)
+    console.log(`Tìm thấy ${filesToSync.length} file cần đồng bộ và tồn tại trên ổ đĩa`);
+    
     if (filesToSync.length > 0) {
       console.log('Danh sách một số file cần đồng bộ:');
       filesToSync.slice(0, 5).forEach((file, index) => {
         console.log(`${index + 1}. ${file.name} (${file.size} bytes)`);
+        console.log(`   - Đường dẫn: ${file.localPath}`);
+        console.log(`   - Trạng thái: ${file.needsSync ? 'Cần đồng bộ' : 'Chưa có fileId'}`);
+        console.log(`   - Loại file: ${file.fileType}`);
       });
-      if (filesToSync.length > 5) {
-        console.log(`... và ${filesToSync.length - 5} file khác`);
-      }
-    }
-    
-    if (filesToSync.length === 0) {
-      // Nếu không có file cần đồng bộ, kiểm tra xem database có rỗng không
-      if (filesData.length === 0) {
-        console.log('Database rỗng. Thử lấy files từ Telegram...');
-        // Thử lấy files từ Telegram nếu database rỗng
-        try {
-          console.log('Database rỗng, thử lấy files từ Telegram...');
-          // Thực hiện logic lấy files từ Telegram ở đây nếu cần
-        } catch (error) {
-          console.error('Lỗi khi lấy files từ Telegram:', error);
-        }
-      }
-      
+    } else {
       console.log('Không có file nào cần đồng bộ');
-      return 0;
+      return {
+        success: true,
+        syncedCount: 0,
+        totalFiles: filesData.length,
+        filesNeedingSync: 0
+      };
     }
     
     let syncedCount = 0;
@@ -480,25 +479,55 @@ async function syncFiles() {
         console.log(`Đang gửi file "${file.name}" lên Telegram (chatId: ${CHAT_ID})...`);
         
         try {
-          const sendPromise = (() => {
-            // Xác định loại file để gửi đúng cách
+          // Gửi file lên Telegram dựa vào loại file
+          const sendFilePromise = (async () => {
+            const caption = `File: ${file.name}`;
+            
             if (file.fileType === 'image') {
               console.log(`Gửi file "${file.name}" như hình ảnh`);
-              return bot.telegram.sendPhoto(CHAT_ID, { source: filePath }, { caption: caption });
+              try {
+                return bot.telegram.sendPhoto(CHAT_ID, { source: filePath }, { caption: caption });
+              } catch (error) {
+                // Nếu gặp lỗi PHOTO_INVALID_DIMENSIONS, thử gửi như document
+                if (error.message && error.message.includes('PHOTO_INVALID_DIMENSIONS')) {
+                  console.log(`Không thể gửi "${file.name}" như hình ảnh, thử gửi như document`);
+                  return bot.telegram.sendDocument(CHAT_ID, {
+                    source: filePath,
+                    filename: file.name
+                  }, { caption: caption });
+                }
+                throw error;
+              }
             } else if (file.fileType === 'video') {
               console.log(`Gửi file "${file.name}" như video`);
-              return bot.telegram.sendVideo(CHAT_ID, { source: filePath }, { caption: caption });
+              try {
+                return bot.telegram.sendVideo(CHAT_ID, { source: filePath }, { caption: caption });
+              } catch (error) {
+                // Nếu gặp lỗi khi gửi video, thử gửi như document
+                console.log(`Không thể gửi "${file.name}" như video, thử gửi như document`);
+                return bot.telegram.sendDocument(CHAT_ID, {
+                  source: filePath,
+                  filename: file.name
+                }, { caption: caption });
+              }
             } else if (file.fileType === 'audio') {
               console.log(`Gửi file "${file.name}" như audio`);
-              return bot.telegram.sendAudio(CHAT_ID, { source: filePath }, { caption: caption });
+              try {
+                return bot.telegram.sendAudio(CHAT_ID, { source: filePath }, { caption: caption });
+              } catch (error) {
+                // Nếu gặp lỗi khi gửi audio, thử gửi như document
+                console.log(`Không thể gửi "${file.name}" như audio, thử gửi như document`);
+                return bot.telegram.sendDocument(CHAT_ID, {
+                  source: filePath,
+                  filename: file.name
+                }, { caption: caption });
+              }
             } else {
               console.log(`Gửi file "${file.name}" như document`);
               return bot.telegram.sendDocument(CHAT_ID, {
                 source: filePath,
                 filename: file.name
-              }, {
-                caption: caption
-              });
+              }, { caption: caption });
             }
           })();
           
@@ -507,7 +536,7 @@ async function syncFiles() {
           });
           
           console.log(`Đang chờ kết quả gửi file "${file.name}"...`);
-          const result = await Promise.race([sendPromise, timeoutPromise]);
+          const result = await Promise.race([sendFilePromise, timeoutPromise]);
           
           console.log(`Đã nhận phản hồi từ Telegram cho file "${file.name}"`);
           
