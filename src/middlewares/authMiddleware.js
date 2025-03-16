@@ -6,31 +6,36 @@
 const config = require('../config/config');
 
 /**
- * Middleware xác thực người dùng
- * Kiểm tra xem người dùng đã đăng nhập chưa
+ * Middleware xác thực: Kiểm tra xem người dùng đã đăng nhập hay chưa
  */
 function authenticate(req, res, next) {
-  // Bỏ qua xác thực cho route đăng nhập Telegram
-  if (req.path === '/auth/telegram') {
+  // Các đường dẫn không cần xác thực
+  const publicPaths = [
+    '/login',
+    '/api/auth/telegram',
+    '/api/auth/telegram-callback'
+  ];
+  
+  // Kiểm tra nếu đường dẫn là public
+  if (publicPaths.includes(req.path) || req.path.startsWith('/images/') || req.path.startsWith('/css/') || req.path.startsWith('/js/')) {
     return next();
   }
   
-  // Nếu người dùng đã đăng nhập qua session, cho phép truy cập
-  if (req.session && req.session.authenticated) {
+  // Kiểm tra session
+  if (req.session && req.session.isLoggedIn) {
     return next();
   }
   
-  // Nếu có API key hợp lệ, cho phép truy cập
-  const apiKey = req.headers['x-api-key'] || req.query.api_key;
-  if (apiKey && apiKey === config.API_KEY) {
-    return next();
+  // Nếu là API request, trả về lỗi 401
+  if (req.path.startsWith('/api/')) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Unauthorized' 
+    });
   }
   
-  // Nếu người dùng chưa đăng nhập thì gửi lỗi 401
-  return res.status(401).json({
-    success: false,
-    message: 'Unauthorized: Bạn cần đăng nhập trước'
-  });
+  // Chuyển hướng đến trang login
+  res.redirect('/login');
 }
 
 /**
