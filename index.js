@@ -1948,47 +1948,68 @@ app.get('/api/folders/:folderId', (req, res) => {
 // API để tìm kiếm file
 app.get('/api/search', (req, res) => {
   try {
-    const query = req.query.q?.toLowerCase();
-    if (!query) {
+    const { query, type } = req.query;
+    
+    if (!query || query.trim() === '') {
       return res.status(400).json({
         success: false,
-        message: 'Thiếu từ khóa tìm kiếm'
+        error: 'Từ khóa tìm kiếm không được để trống'
       });
     }
     
+    // Đọc database
     const filesData = readFilesDb();
     
-    // Tìm kiếm file theo tên
-    const results = filesData.filter(file => 
-      file.name.toLowerCase().includes(query) || 
-      (file.displayName && file.displayName.toLowerCase().includes(query))
-    );
+    // Tìm kiếm file
+    let results;
     
-    // Định dạng kết quả
+    if (type && type !== 'all') {
+      // Tìm theo loại file
+      results = filesData.filter(file => 
+        (file.name.toLowerCase().includes(query.toLowerCase()) || 
+         (file.tags && file.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())))) &&
+        file.fileType === type && 
+        !file.isDeleted
+      );
+    } else {
+      // Tìm tất cả loại file
+      results = filesData.filter(file => 
+        (file.name.toLowerCase().includes(query.toLowerCase()) || 
+         (file.tags && file.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())))) &&
+        !file.isDeleted
+      );
+    }
+    
+    // Định dạng dữ liệu trước khi gửi đi
     const formattedResults = results.map(file => ({
       id: file.id,
-      name: file.displayName || file.name,
-      fullPath: file.name,
+      name: file.name,
       size: file.size,
       formattedSize: formatBytes(file.size),
       uploadDate: file.uploadDate,
       formattedDate: formatDate(file.uploadDate),
-      fileType: file.fileType || getFileType(file.name),
-      previewUrl: `/file/${file.id}`,
-      downloadUrl: `/api/files/${file.id}/download`
+      mimeType: file.mimeType,
+      fileType: file.fileType,
+      localPath: file.localPath ? true : false,
+      telegramFileId: file.telegramFileId ? true : false,
+      downloadUrl: `/api/files/${file.id}/download`,
+      previewUrl: `/api/files/${file.id}/preview`,
+      tags: file.tags || []
     }));
     
-    res.json({
+    // Trả về kết quả
+    return res.json({
       success: true,
-      query: query,
+      count: formattedResults.length,
       results: formattedResults,
-      count: formattedResults.length
+      query: query,
+      type: type || 'all'
     });
   } catch (error) {
     console.error('Lỗi tìm kiếm file:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: 'Lỗi tìm kiếm: ' + error.message
+      error: error.message || 'Lỗi server khi tìm kiếm file'
     });
   }
 });
