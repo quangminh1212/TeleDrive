@@ -2641,3 +2641,960 @@ app.post('/api/folders', (req, res) => {
       });
     }
     
+    // Khởi tạo đường dẫn thư mục
+    const storagePath = STORAGE_PATH;
+    let newFolderPath;
+    
+    if (parentFolder && parentFolder !== 'root') {
+      // Kiểm tra thư mục cha tồn tại
+      const parentFolderPath = path.join(storagePath, 'uploads', parentFolder);
+      if (!fs.existsSync(parentFolderPath)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Thư mục cha không tồn tại'
+        });
+      }
+      
+      newFolderPath = path.join(parentFolderPath, name);
+    } else {
+      newFolderPath = path.join(storagePath, 'uploads', name);
+    }
+    
+    // Kiểm tra thư mục đã tồn tại chưa
+    if (fs.existsSync(newFolderPath)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Thư mục đã tồn tại'
+      });
+    }
+    
+    // Tạo thư mục mới
+    fs.mkdirSync(newFolderPath, { recursive: true });
+    
+    console.log(`Đã tạo thư mục mới: ${newFolderPath}`);
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: 'Đã tạo thư mục mới thành công',
+      folder: {
+        id: path.relative(path.join(storagePath, 'uploads'), newFolderPath),
+        name: name,
+        path: newFolderPath
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi tạo thư mục:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi tạo thư mục'
+    });
+  }
+});
+
+// API endpoint để đổi tên file hoặc thư mục
+app.put('/api/rename', (req, res) => {
+  try {
+    const { type, id, newName } = req.body;
+    
+    // Validate input
+    if (!type || (type !== 'file' && type !== 'folder')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Loại không hợp lệ'
+      });
+    }
+    
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID không được để trống'
+      });
+    }
+    
+    if (!newName || newName.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Tên mới không được để trống'
+      });
+    }
+    
+    // Kiểm tra tên hợp lệ (không chứa ký tự đặc biệt)
+    if (!/^[a-zA-Z0-9_\-\.ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s]+$/.test(newName)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Tên mới chứa ký tự không hợp lệ'
+      });
+    }
+    
+    const storagePath = STORAGE_PATH;
+    
+    if (type === 'folder') {
+      // Đổi tên thư mục
+      const folderPath = path.join(storagePath, 'uploads', id);
+      
+      // Kiểm tra thư mục tồn tại
+      if (!fs.existsSync(folderPath)) {
+        return res.status(404).json({
+          success: false,
+          error: 'Thư mục không tồn tại'
+        });
+      }
+      
+      // Tạo đường dẫn mới
+      const parentDir = path.dirname(folderPath);
+      const newFolderPath = path.join(parentDir, newName);
+      
+      // Kiểm tra tên mới đã tồn tại chưa
+      if (fs.existsSync(newFolderPath)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Tên thư mục đã tồn tại'
+        });
+      }
+      
+      // Đổi tên thư mục
+      fs.renameSync(folderPath, newFolderPath);
+      
+      console.log(`Đã đổi tên thư mục: ${folderPath} -> ${newFolderPath}`);
+      
+      // Trả về kết quả
+      return res.json({
+        success: true,
+        message: 'Đã đổi tên thư mục thành công',
+        folder: {
+          id: path.relative(path.join(storagePath, 'uploads'), newFolderPath),
+          name: newName,
+          path: newFolderPath
+        }
+      });
+    } else {
+      // Đổi tên file
+      // Đọc database
+      const filesData = readFilesDb();
+      
+      // Tìm file cần đổi tên
+      const fileIndex = filesData.findIndex(file => file.id === id);
+      
+      if (fileIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          error: 'File không tồn tại'
+        });
+      }
+      
+      const file = filesData[fileIndex];
+      
+      // Lấy extension cũ
+      const oldExtension = path.extname(file.name);
+      
+      // Nếu tên mới không có extension, thêm extension từ tên cũ
+      let finalNewName = newName;
+      if (!path.extname(newName) && oldExtension) {
+        finalNewName = newName + oldExtension;
+      }
+      
+      // Nếu file có đường dẫn local, đổi tên file hệ thống
+      if (file.localPath && fs.existsSync(file.localPath)) {
+        const oldDir = path.dirname(file.localPath);
+        const newFilePath = path.join(oldDir, finalNewName);
+        
+        // Kiểm tra file mới đã tồn tại chưa
+        if (fs.existsSync(newFilePath)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Tên file đã tồn tại'
+          });
+        }
+        
+        // Đổi tên file
+        fs.renameSync(file.localPath, newFilePath);
+        
+        // Cập nhật đường dẫn mới
+        file.localPath = newFilePath;
+      }
+      
+      // Cập nhật thông tin file
+      file.name = finalNewName;
+      const newFileType = getFileType(finalNewName);
+      
+      if (newFileType !== file.fileType) {
+        file.fileType = newFileType;
+        file.mimeType = getMimeType(path.extname(finalNewName));
+      }
+      
+      // Lưu thay đổi
+      saveFilesDb(filesData);
+      
+      console.log(`Đã đổi tên file: ${id} -> ${finalNewName}`);
+      
+      // Trả về kết quả
+      return res.json({
+        success: true,
+        message: 'Đã đổi tên file thành công',
+        file: file
+      });
+    }
+  } catch (error) {
+    console.error('Lỗi đổi tên:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi đổi tên'
+    });
+  }
+});
+
+// API endpoint để di chuyển file
+app.put('/api/move', (req, res) => {
+  try {
+    const { fileId, targetFolder } = req.body;
+    
+    // Validate input
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
+    }
+    
+    if (targetFolder === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Thư mục đích không được để trống'
+      });
+    }
+    
+    const storagePath = STORAGE_PATH;
+    let targetFolderPath;
+    
+    if (targetFolder === 'root') {
+      targetFolderPath = path.join(storagePath, 'uploads');
+    } else {
+      targetFolderPath = path.join(storagePath, 'uploads', targetFolder);
+    }
+    
+    // Kiểm tra thư mục đích tồn tại
+    if (!fs.existsSync(targetFolderPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Thư mục đích không tồn tại'
+      });
+    }
+    
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Tìm file cần di chuyển
+    const fileIndex = filesData.findIndex(file => file.id === fileId);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại'
+      });
+    }
+    
+    const file = filesData[fileIndex];
+    
+    // Nếu file không có đường dẫn local, không thể di chuyển
+    if (!file.localPath || !fs.existsSync(file.localPath)) {
+      return res.status(400).json({
+        success: false,
+        error: 'File không có dữ liệu local'
+      });
+    }
+    
+    // Tạo đường dẫn mới
+    const newFilePath = path.join(targetFolderPath, path.basename(file.localPath));
+    
+    // Kiểm tra file đã tồn tại ở thư mục đích chưa
+    if (fs.existsSync(newFilePath)) {
+      return res.status(400).json({
+        success: false,
+        error: 'File đã tồn tại ở thư mục đích'
+      });
+    }
+    
+    // Di chuyển file
+    fs.renameSync(file.localPath, newFilePath);
+    
+    // Cập nhật đường dẫn mới
+    file.localPath = newFilePath;
+    
+    // Lưu thay đổi
+    saveFilesDb(filesData);
+    
+    console.log(`Đã di chuyển file: ${fileId} -> ${newFilePath}`);
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: 'Đã di chuyển file thành công',
+      file: file
+    });
+  } catch (error) {
+    console.error('Lỗi di chuyển file:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi di chuyển file'
+    });
+  }
+});
+
+// API endpoint để xóa thư mục
+app.delete('/api/folders/:id', (req, res) => {
+  try {
+    const folderId = req.params.id;
+    
+    // Validate input
+    if (!folderId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID thư mục không được để trống'
+      });
+    }
+    
+    // Khởi tạo đường dẫn thư mục
+    const storagePath = STORAGE_PATH;
+    const folderPath = path.join(storagePath, 'uploads', folderId);
+    
+    // Kiểm tra thư mục tồn tại
+    if (!fs.existsSync(folderPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Thư mục không tồn tại'
+      });
+    }
+    
+    // Kiểm tra thư mục có chứa file không
+    const filesInFolder = fs.readdirSync(folderPath);
+    if (filesInFolder.length > 0) {
+      // Di chuyển tất cả files và folders vào thùng rác
+      const trashFolder = path.join(storagePath, 'trash');
+      
+      // Tạo thư mục trash nếu chưa tồn tại
+      if (!fs.existsSync(trashFolder)) {
+        fs.mkdirSync(trashFolder, { recursive: true });
+      }
+      
+      // Tạo thư mục đích trong thùng rác
+      const trashDestination = path.join(trashFolder, path.basename(folderPath) + '_' + Date.now());
+      fs.mkdirSync(trashDestination, { recursive: true });
+      
+      // Di chuyển từng file/thư mục con vào thùng rác
+      for (const item of filesInFolder) {
+        const sourcePath = path.join(folderPath, item);
+        const destPath = path.join(trashDestination, item);
+        fs.renameSync(sourcePath, destPath);
+      }
+    }
+    
+    // Xóa thư mục (đã trống)
+    fs.rmdirSync(folderPath);
+    
+    console.log(`Đã xóa thư mục: ${folderPath}`);
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: 'Đã xóa thư mục thành công',
+      folderId: folderId
+    });
+  } catch (error) {
+    console.error('Lỗi xóa thư mục:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi xóa thư mục'
+    });
+  }
+});
+
+// API endpoint để lấy danh sách thư mục
+app.get('/api/folders', (req, res) => {
+  try {
+    // Tạo cấu trúc thư mục ảo từ database file
+    const filesData = readFilesDb();
+    const folderStructure = createVirtualFolderStructure(filesData);
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      folders: folderStructure
+    });
+  } catch (error) {
+    console.error('Lỗi lấy danh sách thư mục:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi lấy danh sách thư mục'
+    });
+  }
+});
+
+/**
+ * Tạo cấu trúc thư mục ảo từ danh sách file
+ */
+function createVirtualFolderStructure(files) {
+  // Tạo cấu trúc thư mục root
+  const rootFolder = {
+    id: 'root',
+    name: 'Root',
+    type: 'folder',
+    children: []
+  };
+  
+  // Map để lưu trữ thư mục theo id
+  const foldersById = {
+    'root': rootFolder
+  };
+  
+  // Tạo danh sách thư mục từ đường dẫn file
+  files.forEach(file => {
+    if (file.localPath) {
+      // Lấy đường dẫn tương đối từ thư mục uploads
+      const storagePath = STORAGE_PATH;
+      const uploadsDir = path.join(storagePath, 'uploads');
+      let relativePath = '';
+      
+      if (file.localPath.startsWith(uploadsDir)) {
+        relativePath = path.relative(uploadsDir, file.localPath);
+      } else {
+        // Nếu không phải trong thư mục uploads, bỏ qua
+        return;
+      }
+      
+      // Tạo các thư mục trong đường dẫn
+      const pathParts = relativePath.split(path.sep);
+      
+      // Bỏ qua phần tử cuối (tên file)
+      pathParts.pop();
+      
+      if (pathParts.length === 0) {
+        // File nằm trực tiếp trong thư mục uploads
+        // Thêm file vào thư mục root
+        rootFolder.children.push({
+          id: file.id,
+          name: file.name,
+          type: 'file',
+          fileType: file.fileType,
+          size: file.size,
+          telegramFileId: file.telegramFileId
+        });
+      } else {
+        // File nằm trong thư mục con
+        let currentPath = '';
+        let parentFolderId = 'root';
+        
+        // Tạo các thư mục con nếu chưa tồn tại
+        for (let i = 0; i < pathParts.length; i++) {
+          const folderName = pathParts[i];
+          
+          if (currentPath) {
+            currentPath = path.join(currentPath, folderName);
+          } else {
+            currentPath = folderName;
+          }
+          
+          // Tạo id cho thư mục
+          const folderId = currentPath;
+          
+          // Kiểm tra thư mục đã tồn tại chưa
+          if (!foldersById[folderId]) {
+            // Tạo thư mục mới
+            const newFolder = {
+              id: folderId,
+              name: folderName,
+              type: 'folder',
+              children: []
+            };
+            
+            // Thêm vào danh sách thư mục
+            foldersById[folderId] = newFolder;
+            
+            // Thêm vào thư mục cha
+            foldersById[parentFolderId].children.push(newFolder);
+          }
+          
+          parentFolderId = folderId;
+        }
+        
+        // Thêm file vào thư mục cuối cùng
+        foldersById[parentFolderId].children.push({
+          id: file.id,
+          name: file.name,
+          type: 'file',
+          fileType: file.fileType,
+          size: file.size,
+          telegramFileId: file.telegramFileId
+        });
+      }
+    }
+  });
+  
+  return rootFolder;
+}
+
+// Middleware xử lý lỗi
+// ... existing code ...
+
+// API endpoint để xem trước file
+app.get('/api/files/:id/preview', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    
+    // Validate input
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
+    }
+    
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Tìm file cần xem trước
+    const file = filesData.find(f => f.id === fileId);
+    
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại'
+      });
+    }
+    
+    // Kiểm tra file có thể xem trước không
+    const supportedPreviewTypes = ['image', 'video', 'audio', 'pdf', 'text'];
+    const isPreviewable = supportedPreviewTypes.includes(file.fileType) || 
+                         (file.mimeType && file.mimeType.startsWith('text/'));
+    
+    if (!isPreviewable) {
+      return res.status(400).json({
+        success: false,
+        error: 'File này không hỗ trợ xem trước',
+        fileType: file.fileType,
+        mimeType: file.mimeType
+      });
+    }
+    
+    // Ưu tiên file local nếu có
+    if (file.localPath && fs.existsSync(file.localPath)) {
+      // Xử lý xem trước dựa vào loại file
+      if (file.fileType === 'image') {
+        res.setHeader('Content-Type', file.mimeType || 'image/jpeg');
+        return fs.createReadStream(file.localPath).pipe(res);
+      } else if (file.fileType === 'video') {
+        res.setHeader('Content-Type', file.mimeType || 'video/mp4');
+        return fs.createReadStream(file.localPath).pipe(res);
+      } else if (file.fileType === 'audio') {
+        res.setHeader('Content-Type', file.mimeType || 'audio/mpeg');
+        return fs.createReadStream(file.localPath).pipe(res);
+      } else if (file.fileType === 'pdf') {
+        res.setHeader('Content-Type', 'application/pdf');
+        return fs.createReadStream(file.localPath).pipe(res);
+      } else if (file.mimeType && file.mimeType.startsWith('text/')) {
+        // Đọc file text
+        const content = fs.readFileSync(file.localPath, 'utf8');
+        
+        // Trả về nội dung text
+        return res.json({
+          success: true,
+          content,
+          fileType: file.fileType,
+          mimeType: file.mimeType
+        });
+      }
+    } else if (file.telegramFileId && file.telegramUrl) {
+      // Chuyển hướng đến URL Telegram
+      return res.redirect(file.telegramUrl);
+    } else {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại ở cả local và Telegram'
+      });
+    }
+  } catch (error) {
+    console.error('Lỗi xem trước file:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi xem trước file'
+    });
+  }
+});
+
+// API endpoint để lấy thông tin chi tiết file
+app.get('/api/files/:id', (req, res) => {
+  try {
+    const fileId = req.params.id;
+    
+    // Validate input
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
+    }
+    
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Tìm file
+    const file = filesData.find(f => f.id === fileId);
+    
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại'
+      });
+    }
+    
+    // Thêm URL cho file
+    const fileInfo = {
+      ...file,
+      formattedSize: formatBytes(file.size),
+      formattedDate: formatDate(file.uploadDate),
+      downloadUrl: `/api/files/${file.id}/download`,
+      previewUrl: `/api/files/${file.id}/preview`,
+      shareUrl: file.shareToken ? `/share/${file.shareToken}` : null,
+      exists: {
+        local: file.localPath && fs.existsSync(file.localPath),
+        telegram: !!file.telegramFileId
+      }
+    };
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      file: fileInfo
+    });
+  } catch (error) {
+    console.error('Lỗi lấy thông tin file:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi lấy thông tin file'
+    });
+  }
+});
+
+// API endpoint để tải file
+app.get('/api/files/:id/download', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    
+    // Validate input
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
+    }
+    
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Tìm file
+    const file = filesData.find(f => f.id === fileId);
+    
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại'
+      });
+    }
+    
+    // Ưu tiên file local nếu có
+    if (file.localPath && fs.existsSync(file.localPath)) {
+      // Set header cho việc tải file
+      res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`);
+      
+      // Stream file
+      return fs.createReadStream(file.localPath).pipe(res);
+    } else if (file.telegramFileId && file.telegramUrl) {
+      // Tải file từ Telegram
+      try {
+        if (!botActive) {
+          return res.status(400).json({
+            success: false,
+            error: 'Bot Telegram không hoạt động'
+          });
+        }
+        
+        // Chuyển hướng đến URL Telegram
+        return res.redirect(file.telegramUrl);
+      } catch (error) {
+        console.error('Lỗi tải file từ Telegram:', error);
+        return res.status(500).json({
+          success: false,
+          error: 'Lỗi tải file từ Telegram: ' + error.message
+        });
+      }
+    } else {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại ở cả local và Telegram'
+      });
+    }
+  } catch (error) {
+    console.error('Lỗi tải file:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi tải file'
+    });
+  }
+});
+
+// API endpoint để chia sẻ file
+app.post('/api/files/:id/share', (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { expiryTime } = req.body;
+    
+    // Validate input
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
+    }
+    
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Tìm file
+    const fileIndex = filesData.findIndex(f => f.id === fileId);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại'
+      });
+    }
+    
+    const file = filesData[fileIndex];
+    
+    // Tạo token chia sẻ nếu chưa có
+    if (!file.shareToken) {
+      file.shareToken = uuidv4();
+    }
+    
+    // Tạo hoặc cập nhật thời gian hết hạn
+    if (expiryTime) {
+      // Chuyển đổi giờ thành milliseconds
+      const expiryHours = parseInt(expiryTime);
+      if (!isNaN(expiryHours) && expiryHours > 0) {
+        file.shareExpiry = new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
+      } else {
+        file.shareExpiry = null; // Không có thời hạn
+      }
+    } else {
+      file.shareExpiry = null; // Không có thời hạn
+    }
+    
+    // Lưu thay đổi
+    saveFilesDb(filesData);
+    
+    // URL chia sẻ
+    const shareUrl = `/share/${file.shareToken}`;
+    
+    console.log(`Đã tạo/cập nhật chia sẻ cho file ${file.name}, URL: ${shareUrl}`);
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: 'Đã tạo chia sẻ thành công',
+      shareToken: file.shareToken,
+      shareUrl,
+      shareExpiry: file.shareExpiry
+    });
+  } catch (error) {
+    console.error('Lỗi chia sẻ file:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi chia sẻ file'
+    });
+  }
+});
+
+// API endpoint để hủy chia sẻ file
+app.delete('/api/files/:id/share', (req, res) => {
+  try {
+    const fileId = req.params.id;
+    
+    // Validate input
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID file không được để trống'
+      });
+    }
+    
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Tìm file
+    const fileIndex = filesData.findIndex(f => f.id === fileId);
+    
+    if (fileIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'File không tồn tại'
+      });
+    }
+    
+    const file = filesData[fileIndex];
+    
+    // Kiểm tra file có đang được chia sẻ không
+    if (!file.shareToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'File chưa được chia sẻ'
+      });
+    }
+    
+    // Xóa thông tin chia sẻ
+    file.shareToken = null;
+    file.shareExpiry = null;
+    
+    // Lưu thay đổi
+    saveFilesDb(filesData);
+    
+    console.log(`Đã hủy chia sẻ cho file ${file.name}`);
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: 'Đã hủy chia sẻ thành công'
+    });
+  } catch (error) {
+    console.error('Lỗi hủy chia sẻ file:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi hủy chia sẻ file'
+    });
+  }
+});
+
+// Route xử lý chia sẻ file
+app.get('/share/:token', (req, res) => {
+  try {
+    const shareToken = req.params.token;
+    
+    // Validate input
+    if (!shareToken) {
+      return res.status(400).send('Link chia sẻ không hợp lệ');
+    }
+    
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Tìm file với token chia sẻ
+    const file = filesData.find(f => f.shareToken === shareToken);
+    
+    if (!file) {
+      return res.status(404).send('Link chia sẻ không tồn tại hoặc đã hết hạn');
+    }
+    
+    // Kiểm tra thời hạn chia sẻ
+    if (file.shareExpiry && new Date(file.shareExpiry) < new Date()) {
+      // Xóa thông tin chia sẻ đã hết hạn
+      file.shareToken = null;
+      file.shareExpiry = null;
+      saveFilesDb(filesData);
+      
+      return res.status(400).send('Link chia sẻ đã hết hạn');
+    }
+    
+    // Redirect đến trang xem trước hoặc tải file
+    const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(file.fileType);
+    
+    if (isPreviewable) {
+      return res.redirect(`/file/${file.id}`);
+    } else {
+      return res.redirect(`/api/files/${file.id}/download`);
+    }
+  } catch (error) {
+    console.error('Lỗi xử lý chia sẻ file:', error);
+    return res.status(500).send('Đã xảy ra lỗi khi xử lý link chia sẻ');
+  }
+});
+
+// API lấy thống kê sử dụng
+app.get('/api/stats', (req, res) => {
+  try {
+    // Đọc database
+    const filesData = readFilesDb();
+    
+    // Thống kê tổng số file và dung lượng
+    const totalFiles = filesData.length;
+    const totalSize = filesData.reduce((sum, file) => sum + (file.size || 0), 0);
+    
+    // Thống kê theo loại file
+    const fileTypeStats = {};
+    filesData.forEach(file => {
+      const type = file.fileType || 'unknown';
+      if (!fileTypeStats[type]) {
+        fileTypeStats[type] = {
+          count: 0,
+          size: 0
+        };
+      }
+      fileTypeStats[type].count++;
+      fileTypeStats[type].size += (file.size || 0);
+    });
+    
+    // Thống kê số lượng file trên Telegram
+    const telegramFiles = filesData.filter(file => file.telegramFileId).length;
+    const telegramSize = filesData
+      .filter(file => file.telegramFileId)
+      .reduce((sum, file) => sum + (file.size || 0), 0);
+    
+    // Thống kê số lượng file đang được chia sẻ
+    const sharedFiles = filesData.filter(file => file.shareToken).length;
+    
+    // Format dung lượng
+    const formattedStats = {
+      totalFiles,
+      totalSize: formatBytes(totalSize),
+      telegramFiles,
+      telegramSize: formatBytes(telegramSize),
+      sharedFiles,
+      fileTypeStats: Object.entries(fileTypeStats).map(([type, stats]) => ({
+        type,
+        count: stats.count,
+        size: formatBytes(stats.size)
+      }))
+    };
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      stats: formattedStats
+    });
+  } catch (error) {
+    console.error('Lỗi lấy thống kê:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi lấy thống kê'
+    });
+  }
+});
+
+/**
+ * Format date
+ * @param {String} dateString 
+ */
+function formatDate(dateString) {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    return dateString || '';
+  }
+}
+// ... existing code ...
