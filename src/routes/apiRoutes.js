@@ -12,7 +12,7 @@ const config = require('../config/config');
 const fileService = require('../services/fileService');
 const telegramService = require('../services/telegramService');
 const authMiddleware = require('../middlewares/authMiddleware');
-const { getMimeType, guessFileType } = require('../utils/helpers');
+const { getMimeType, guessFileType, log } = require('../utils/helpers');
 
 const router = express.Router();
 
@@ -331,27 +331,27 @@ router.get('/auth/telegram-callback', async (req, res) => {
 // Lấy danh sách file
 router.get('/files', async (req, res) => {
   try {
-    // Lấy danh sách file từ DB
-    const files = fileService.readFilesDb();
+    const { showDeleted, sortBy, sortOrder, fileType, searchTerm } = req.query;
     
-    // Lọc các file không nằm trong thùng rác
-    const activeFiles = files.filter(file => !file.isDeleted);
+    const options = {
+      showDeleted: showDeleted === 'true',
+      sortBy: sortBy || 'uploadDate',
+      sortOrder: sortOrder || 'desc',
+      fileType,
+      searchTerm
+    };
     
-    // Nếu có tham số folder, lọc theo folder
-    let filteredFiles = activeFiles;
-    if (req.query.folder) {
-      filteredFiles = activeFiles.filter(file => file.folder === req.query.folder);
-    }
+    const files = fileService.getFiles(options);
     
-    res.json({
+    return res.json({
       success: true,
-      files: filteredFiles
+      files
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách file:', error);
-    res.status(500).json({
+    log(`Lỗi khi lấy danh sách file: ${error.message}`, 'error');
+    return res.status(500).json({
       success: false,
-      message: 'Lỗi server: ' + (error.message || 'Lỗi không xác định')
+      error: error.message || 'Lỗi khi lấy danh sách file'
     });
   }
 });
@@ -359,75 +359,27 @@ router.get('/files', async (req, res) => {
 // Upload file mới
 router.post('/files/upload', upload.single('file'), async (req, res) => {
   try {
-    // Kiểm tra file đã upload chưa
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'Không tìm thấy file để upload'
+        error: 'Không có file nào được tải lên'
       });
     }
     
-    const file = req.file;
-    const folder = req.body.folder || '';
+    const filePath = req.file.path;
+    const caption = req.body.caption || '';
     
-    console.log(`Đã nhận file upload: ${file.originalname} (${file.size} bytes)`);
+    const result = await fileService.uploadFile(filePath, caption);
     
-    // Tạo thông tin file
-    const fileId = crypto.randomUUID();
-    const fileInfo = {
-      id: fileId,
-      name: file.originalname,
-      localPath: file.path,
-      mimeType: file.mimetype || getMimeType(file.originalname),
-      size: file.size,
-      folder: folder,
-      fileType: guessFileType(file.originalname),
-      uploadDate: new Date().toISOString(),
-      telegramFileId: null,
-      telegramUrl: null,
-      isDeleted: false,
-      needsSync: true,
-      fileStatus: 'local'
-    };
-    
-    // Lưu thông tin file vào DB
-    const files = fileService.readFilesDb();
-    files.push(fileInfo);
-    fileService.saveFilesDb(files);
-    
-    // Đồng bộ file với Telegram (nếu có bot hoạt động)
-    const botActive = telegramService.isBotActive();
-    if (botActive) {
-      res.json({
-        success: true,
-        message: 'Đã upload file thành công và đang đồng bộ với Telegram',
-        file: fileInfo
-      });
-      
-      // Thực hiện đồng bộ với Telegram sau khi đã trả về kết quả
-      fileService.autoSyncFile(fileInfo)
-        .then(syncResult => {
-          if (syncResult.success) {
-            console.log(`Đã đồng bộ thành công file ${fileInfo.name} với Telegram`);
-          } else {
-            console.error(`Lỗi khi đồng bộ file ${fileInfo.name} với Telegram:`, syncResult.error);
-          }
-        })
-        .catch(error => {
-          console.error(`Lỗi khi đồng bộ file ${fileInfo.name} với Telegram:`, error);
-        });
-    } else {
-      res.json({
-        success: true,
-        message: 'Đã upload file thành công',
-        file: fileInfo
-      });
-    }
+    return res.json({
+      success: true,
+      file: result
+    });
   } catch (error) {
-    console.error('Lỗi khi upload file:', error);
-    res.status(500).json({
+    log(`Lỗi khi tải file lên: ${error.message}`, 'error');
+    return res.status(500).json({
       success: false,
-      message: 'Lỗi server: ' + (error.message || 'Lỗi không xác định')
+      error: error.message || 'Lỗi khi tải file lên'
     });
   }
 });
@@ -751,59 +703,26 @@ router.get('/folders', async (req, res) => {
 // Tạo thư mục mới
 router.post('/folders', async (req, res) => {
   try {
-    const { folderName } = req.body;
+    const { name, parentFolder } = req.body;
     
-    if (!folderName || folderName.trim() === '') {
+    if (!name) {
       return res.status(400).json({
         success: false,
-        message: 'Tên thư mục không hợp lệ'
+        error: 'Tên thư mục không được để trống'
       });
     }
     
-    // Lấy danh sách file từ DB
-    const files = fileService.readFilesDb();
+    const result = fileService.createFolder(name, parentFolder);
     
-    // Kiểm tra xem thư mục đã tồn tại chưa
-    const folders = [...new Set(files
-      .filter(file => !file.isDeleted && file.folder)
-      .map(file => file.folder)
-    )];
-    
-    if (folders.includes(folderName)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Thư mục đã tồn tại'
-      });
-    }
-    
-    // Tạo một file trống trong thư mục này để đánh dấu
-    const fileId = crypto.randomUUID();
-    const placeholderFile = {
-      id: fileId,
-      name: '.folder_placeholder',
-      localPath: null,
-      mimeType: 'text/plain',
-      size: 0,
-      folder: folderName,
-      fileType: 'placeholder',
-      uploadDate: new Date().toISOString(),
-      isPlaceholder: true,
-      isDeleted: false
-    };
-    
-    files.push(placeholderFile);
-    fileService.saveFilesDb(files);
-    
-    res.json({
+    return res.json({
       success: true,
-      message: 'Đã tạo thư mục mới',
-      folderName: folderName
+      folder: result
     });
   } catch (error) {
-    console.error('Lỗi khi tạo thư mục:', error);
-    res.status(500).json({
+    log(`Lỗi khi tạo thư mục: ${error.message}`, 'error');
+    return res.status(500).json({
       success: false,
-      message: 'Lỗi server: ' + (error.message || 'Lỗi không xác định')
+      error: error.message || 'Lỗi khi tạo thư mục'
     });
   }
 });
@@ -904,21 +823,17 @@ router.delete('/folders/:folderName', async (req, res) => {
 // Lấy danh sách file trong thùng rác
 router.get('/trash', async (req, res) => {
   try {
-    // Lấy danh sách file từ DB
-    const files = fileService.readFilesDb();
+    const trashFiles = fileService.getTrashFiles();
     
-    // Lọc các file đã bị xóa
-    const deletedFiles = files.filter(file => file.isDeleted);
-    
-    res.json({
+    return res.json({
       success: true,
-      files: deletedFiles
+      files: trashFiles
     });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách file trong thùng rác:', error);
-    res.status(500).json({
+    log(`Lỗi khi lấy danh sách file trong thùng rác: ${error.message}`, 'error');
+    return res.status(500).json({
       success: false,
-      message: 'Lỗi server: ' + (error.message || 'Lỗi không xác định')
+      error: error.message || 'Lỗi khi lấy danh sách file trong thùng rác'
     });
   }
 });
@@ -1093,35 +1008,17 @@ router.post('/settings', async (req, res) => {
 // Route đồng bộ tất cả các file với Telegram
 router.post('/sync', async (req, res) => {
   try {
-    // Thực hiện đồng bộ
-    const syncResult = await fileService.syncFiles();
+    const result = await telegramService.syncFilesFromTelegram();
     
-    if (syncResult.success) {
-      res.json({
-        success: true,
-        message: `Đã đồng bộ ${syncResult.syncedCount} file, bỏ qua ${syncResult.skippedCount} file, lỗi ${syncResult.errorCount} file`,
-        stats: {
-          synced: syncResult.syncedCount,
-          skipped: syncResult.skippedCount,
-          errors: syncResult.errorCount
-        }
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: syncResult.error || 'Lỗi khi đồng bộ các file',
-        stats: {
-          synced: syncResult.syncedCount,
-          skipped: syncResult.skippedCount, 
-          errors: syncResult.errorCount
-        }
-      });
-    }
+    return res.json({
+      success: true,
+      result
+    });
   } catch (error) {
-    console.error('Lỗi khi đồng bộ các file:', error);
-    res.status(500).json({
+    log(`Lỗi khi đồng bộ file: ${error.message}`, 'error');
+    return res.status(500).json({
       success: false,
-      message: 'Lỗi server: ' + (error.message || 'Lỗi không xác định')
+      error: error.message || 'Lỗi khi đồng bộ file'
     });
   }
 });
