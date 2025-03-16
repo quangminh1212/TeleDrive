@@ -7,10 +7,18 @@ const fs = require('fs-extra');
 const path = require('path');
 const config = require('../config/config');
 const telegramService = require('./telegramService');
-const { log, generateId, formatSize, formatDate, getMimeType, guessFileType } = require('../utils/helpers');
+const { log, generateId, formatSize, formatDate, getMimeType, guessFileType, ensureDirectoryExists } = require('../utils/helpers');
+const mime = require('mime-types');
+const { v4: uuidv4 } = require('uuid');
+const dbService = require('./dbService');
 
 // Đường dẫn đến file DB
 const DB_PATH = path.join(config.STORAGE_PATH, 'db', 'files_db.json');
+
+// Ensure temp directories exist
+const tempDir = path.join(__dirname, '../../temp');
+const downloadsDir = path.join(tempDir, 'downloads');
+ensureDirectoryExists(downloadsDir);
 
 /**
  * Đọc dữ liệu file từ DB
@@ -66,48 +74,7 @@ function saveFilesDb(files) {
  * @returns {Array} Danh sách file
  */
 function getFiles(options = {}) {
-  const files = readFilesDb();
-  
-  // Mặc định chỉ lấy các file chưa bị xóa
-  const { showDeleted = false, sortBy = 'uploadDate', sortOrder = 'desc', fileType, searchTerm } = options;
-  
-  let filteredFiles = showDeleted ? files : files.filter(file => !file.isDeleted);
-  
-  // Lọc theo loại file
-  if (fileType && fileType !== 'all') {
-    filteredFiles = filteredFiles.filter(file => file.type === fileType);
-  }
-  
-  // Tìm kiếm theo từ khóa
-  if (searchTerm) {
-    const search = searchTerm.toLowerCase();
-    filteredFiles = filteredFiles.filter(file => 
-      file.name.toLowerCase().includes(search) || 
-      (file.caption && file.caption.toLowerCase().includes(search))
-    );
-  }
-  
-  // Sắp xếp
-  filteredFiles.sort((a, b) => {
-    let valA = a[sortBy];
-    let valB = b[sortBy];
-    
-    if (sortBy === 'size') {
-      valA = parseInt(valA) || 0;
-      valB = parseInt(valB) || 0;
-    } else if (sortBy === 'name') {
-      valA = valA.toLowerCase();
-      valB = valB.toLowerCase();
-    }
-    
-    if (sortOrder === 'asc') {
-      return valA > valB ? 1 : -1;
-    } else {
-      return valA < valB ? 1 : -1;
-    }
-  });
-  
-  return filteredFiles;
+  return dbService.getFiles(options);
 }
 
 /**
@@ -341,14 +308,7 @@ async function uploadFile(filePath, caption = '') {
  * @returns {Object} Thông tin file
  */
 function getFileById(fileId) {
-  const files = readFilesDb();
-  const file = files.find(f => f.id === fileId);
-  
-  if (!file) {
-    return null;
-  }
-  
-  return file;
+  return dbService.getFileById(fileId);
 }
 
 /**
@@ -357,27 +317,7 @@ function getFileById(fileId) {
  * @returns {Object} Kết quả xóa file
  */
 function trashFile(fileId) {
-  const files = readFilesDb();
-  const fileIndex = files.findIndex(f => f.id === fileId);
-  
-  if (fileIndex === -1) {
-    return {
-      success: false,
-      error: `Không tìm thấy file với ID ${fileId}`
-    };
-  }
-  
-  // Chuyển file vào thùng rác
-  files[fileIndex].inTrash = true;
-  files[fileIndex].trashDate = new Date().toISOString();
-  
-  // Lưu lại DB
-  const saved = saveFilesDb(files);
-  
-  return {
-    success: saved,
-    file: files[fileIndex]
-  };
+  return dbService.moveToTrash(fileId);
 }
 
 /**
@@ -386,27 +326,7 @@ function trashFile(fileId) {
  * @returns {Object} Kết quả xóa file
  */
 function deleteFilePermanently(fileId) {
-  const files = readFilesDb();
-  const fileIndex = files.findIndex(f => f.id === fileId);
-  
-  if (fileIndex === -1) {
-    return {
-      success: false,
-      error: `Không tìm thấy file với ID ${fileId}`
-    };
-  }
-  
-  // Đánh dấu file đã xóa
-  files[fileIndex].isDeleted = true;
-  files[fileIndex].inTrash = false;
-  
-  // Lưu lại DB
-  const saved = saveFilesDb(files);
-  
-  return {
-    success: saved,
-    file: files[fileIndex]
-  };
+  return dbService.deleteFilePermanently(fileId);
 }
 
 /**
@@ -415,27 +335,7 @@ function deleteFilePermanently(fileId) {
  * @returns {Object} Kết quả khôi phục file
  */
 function restoreFile(fileId) {
-  const files = readFilesDb();
-  const fileIndex = files.findIndex(f => f.id === fileId);
-  
-  if (fileIndex === -1) {
-    return {
-      success: false,
-      error: `Không tìm thấy file với ID ${fileId}`
-    };
-  }
-  
-  // Khôi phục file từ thùng rác
-  files[fileIndex].inTrash = false;
-  files[fileIndex].trashDate = null;
-  
-  // Lưu lại DB
-  const saved = saveFilesDb(files);
-  
-  return {
-    success: saved,
-    file: files[fileIndex]
-  };
+  return dbService.restoreFromTrash(fileId);
 }
 
 /**
@@ -443,8 +343,7 @@ function restoreFile(fileId) {
  * @returns {Array} Danh sách file trong thùng rác
  */
 function getTrashFiles() {
-  const files = readFilesDb();
-  return files.filter(file => file.inTrash && !file.isDeleted);
+  return dbService.getTrashFiles();
 }
 
 /**
@@ -452,25 +351,7 @@ function getTrashFiles() {
  * @returns {Object} Kết quả xóa thùng rác
  */
 function emptyTrash() {
-  const files = readFilesDb();
-  let deletedCount = 0;
-  
-  // Đánh dấu tất cả file trong thùng rác là đã xóa
-  for (let i = 0; i < files.length; i++) {
-    if (files[i].inTrash && !files[i].isDeleted) {
-      files[i].isDeleted = true;
-      files[i].inTrash = false;
-      deletedCount++;
-    }
-  }
-  
-  // Lưu lại DB
-  const saved = saveFilesDb(files);
-  
-  return {
-    success: saved,
-    deletedCount
-  };
+  return dbService.emptyTrash();
 }
 
 /**
@@ -480,33 +361,7 @@ function emptyTrash() {
  * @returns {Object} Kết quả cập nhật
  */
 function updateFile(fileId, updateData) {
-  const files = readFilesDb();
-  const fileIndex = files.findIndex(f => f.id === fileId);
-  
-  if (fileIndex === -1) {
-    return {
-      success: false,
-      error: `Không tìm thấy file với ID ${fileId}`
-    };
-  }
-  
-  // Các trường được phép cập nhật
-  const allowedFields = ['name', 'caption'];
-  
-  // Cập nhật các trường cho phép
-  for (const field of allowedFields) {
-    if (updateData[field] !== undefined) {
-      files[fileIndex][field] = updateData[field];
-    }
-  }
-  
-  // Lưu lại DB
-  const saved = saveFilesDb(files);
-  
-  return {
-    success: saved,
-    file: files[fileIndex]
-  };
+  return dbService.updateFile(fileId, updateData);
 }
 
 /**
@@ -578,19 +433,141 @@ function moveFileToFolder(fileId, folderId) {
   };
 }
 
+/**
+ * Determine file type based on mime type
+ * @param {string} mimeType - MIME type of the file
+ * @returns {string} File type category
+ */
+const getFileType = (mimeType) => {
+  if (!mimeType) return 'other';
+  
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'audio';
+  
+  if (mimeType === 'application/pdf') return 'document';
+  if (mimeType.includes('word') || 
+      mimeType.includes('document') || 
+      mimeType.includes('text/')) return 'document';
+  
+  if (mimeType.includes('zip') || 
+      mimeType.includes('rar') || 
+      mimeType.includes('tar') || 
+      mimeType.includes('compressed')) return 'archive';
+  
+  return 'other';
+};
+
+/**
+ * Get file by Telegram message ID
+ * @param {number} messageId - Telegram message ID
+ * @returns {Object|null} File object or null if not found
+ */
+const getFileByMessageId = async (messageId) => {
+  return dbService.getFileByMessageId(messageId);
+};
+
+/**
+ * Save a new file to the database
+ * @param {Object} fileData - File data
+ * @returns {Object} Saved file object
+ */
+const saveFile = async (fileData) => {
+  // Determine file type from mime type
+  const fileType = getFileType(fileData.mimeType);
+  
+  // Save to database
+  return dbService.saveFile({
+    ...fileData,
+    type: fileType
+  });
+};
+
+/**
+ * Clean up old files in trash
+ * @param {number} days - Days to keep files in trash
+ * @returns {Object} Result with count of deleted files
+ */
+const cleanupTrash = async (days = 30) => {
+  return dbService.cleanupTrash(days);
+};
+
+/**
+ * Search files by query
+ * @param {Object} options - Search options
+ * @returns {Object} Search results and pagination
+ */
+const searchFiles = async (options = {}) => {
+  return dbService.searchFiles(options);
+};
+
+/**
+ * Get storage statistics
+ * @returns {Object} Storage stats
+ */
+const getStorageStats = async () => {
+  return dbService.getStorageStats();
+};
+
+/**
+ * Get temporary file path for downloads
+ * @param {Object} file - File object
+ * @returns {string} Path to temporary file
+ */
+const getTempFilePath = (file) => {
+  const fileExt = path.extname(file.name) || '';
+  const fileName = `${file.id}${fileExt}`;
+  return path.join(downloadsDir, fileName);
+};
+
+/**
+ * Clean up temporary downloads directory
+ * @param {number} maxAge - Maximum age in minutes
+ * @returns {number} Number of files deleted
+ */
+const cleanupTempDownloads = async (maxAge = 60) => {
+  try {
+    const files = await fs.readdir(downloadsDir);
+    let count = 0;
+    
+    const now = new Date();
+    
+    for (const file of files) {
+      const filePath = path.join(downloadsDir, file);
+      const stats = await fs.stat(filePath);
+      
+      const fileAge = (now - stats.mtime) / (1000 * 60); // Age in minutes
+      
+      if (fileAge > maxAge) {
+        await fs.unlink(filePath);
+        count++;
+        log(`Deleted old temp file: ${file} (${fileAge.toFixed(2)} minutes old)`);
+      }
+    }
+    
+    return count;
+  } catch (err) {
+    log(`Error cleaning up temp downloads: ${err.message}`, 'error');
+    return 0;
+  }
+};
+
 module.exports = {
   getFiles,
   getFileById,
-  addFileFromTelegram,
-  syncFilesFromTelegram,
-  downloadFile,
-  uploadFile,
-  trashFile,
-  deleteFilePermanently,
-  restoreFile,
-  getTrashFiles,
-  emptyTrash,
+  getFileByMessageId,
+  saveFile,
   updateFile,
+  moveToTrash,
+  restoreFromTrash,
+  deleteFilePermanently,
+  emptyTrash,
+  cleanupTrash,
+  searchFiles,
+  getStorageStats,
+  getTempFilePath,
+  cleanupTempDownloads,
+  getFileType,
   createFolder,
   moveFileToFolder
 }; 
