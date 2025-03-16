@@ -3,162 +3,193 @@
  * File này chứa các hàm tiện ích
  */
 
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
-const mime = require('mime-types');
 const config = require('../config/config');
 
 /**
  * Đảm bảo các thư mục cần thiết tồn tại
  */
 function ensureDirectories() {
-  try {
-    // Danh sách các thư mục cần thiết
-    const directories = [
-      'data',
-      'data/db',
-      'temp',
-      'uploads',
-      'downloads'
-    ];
-    
-    // Tạo từng thư mục
-    directories.forEach(dir => {
-      const dirPath = path.join(process.cwd(), dir);
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-        console.log(`Đã tạo thư mục: ${dirPath}`);
-      }
-    });
-    
-    console.log('Đã đảm bảo tất cả thư mục cần thiết tồn tại');
-  } catch (error) {
-    console.error('Lỗi khi tạo thư mục:', error.message);
+  const dirs = [
+    config.STORAGE_PATH,
+    config.TEMP_DIR,
+    config.DATA_DIR,
+    config.DOWNLOAD_DIR,
+    config.UPLOAD_DIR,
+    path.join(config.STORAGE_PATH, 'db')
+  ];
+  
+  for (const dir of dirs) {
+    fs.ensureDirSync(dir);
   }
-}
-
-/**
- * Lấy MIME type dựa trên tên file
- * @param {String} filename Tên file cần kiểm tra
- * @returns {String} MIME type
- */
-function getMimeType(filename) {
-  const ext = path.extname(filename).toLowerCase();
-  const mimeType = mime.lookup(ext) || 'application/octet-stream';
-  return mimeType;
-}
-
-/**
- * Đoán loại file dựa trên MIME type
- * @param {String} filename Tên file cần kiểm tra
- * @returns {String} Loại file (image, video, audio, document)
- */
-function guessFileType(filename) {
-  const mimeType = getMimeType(filename);
-  
-  if (mimeType.startsWith('image/')) {
-    return 'image';
-  } else if (mimeType.startsWith('video/')) {
-    return 'video';
-  } else if (mimeType.startsWith('audio/')) {
-    return 'audio';
-  } else {
-    return 'document';
-  }
-}
-
-/**
- * Format kích thước file sang dạng đọc được
- * @param {Number} bytes Kích thước file tính bằng bytes
- * @param {Number} decimals Số chữ số thập phân
- * @returns {String} Kích thước đã format
- */
-function formatFileSize(bytes, decimals = 2) {
-  if (bytes === 0) return '0 Bytes';
-  
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
-
-/**
- * Format ngày tháng sang dạng đọc được
- * @param {String|Date} date Ngày cần format
- * @returns {String} Ngày đã format
- */
-function formatDate(date) {
-  const d = new Date(date);
-  return d.toLocaleString('vi-VN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
-}
-
-/**
- * Kiểm tra tính hợp lệ của đường dẫn
- * @param {String} filePath Đường dẫn cần kiểm tra
- * @returns {Boolean} Kết quả kiểm tra
- */
-function isPathSafe(filePath) {
-  // Đảm bảo path không có ký tự đặc biệt
-  const safePathRegex = /^[a-zA-Z0-9_.-]+$/;
-  const filename = path.basename(filePath);
-  
-  return safePathRegex.test(filename);
 }
 
 /**
  * Tạo ID ngẫu nhiên
- * @param {Number} length Độ dài ID
- * @returns {String} ID đã tạo
+ * @param {Number} length Độ dài của ID
+ * @returns {String} ID ngẫu nhiên
  */
 function generateId(length = 10) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
-  
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  
   return result;
 }
 
 /**
- * Ghi log ra console và file
- * @param {String} message Nội dung log
- * @param {String} level Level của log (info, error, warn)
+ * Tính kích thước định dạng người đọc được
+ * @param {Number} bytes Kích thước tính bằng bytes
+ * @returns {String} Kích thước định dạng người đọc được
  */
-function log(message, level = 'info') {
-  const timestamp = new Date().toISOString();
-  const logMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+function formatSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
   
-  // Log ra console
-  if (level === 'error') {
-    console.error(logMessage);
-  } else if (level === 'warn') {
-    console.warn(logMessage);
-  } else {
-    console.log(logMessage);
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * Định dạng thời gian
+ * @param {Date|String|Number} date Thời gian cần định dạng
+ * @returns {String} Thời gian đã định dạng
+ */
+function formatDate(date) {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+/**
+ * Lấy MIME type từ tên file
+ * @param {String} fileName Tên file
+ * @returns {String} MIME type
+ */
+function getMimeType(fileName) {
+  const ext = path.extname(fileName).toLowerCase();
+  
+  const mimeTypes = {
+    '.html': 'text/html',
+    '.htm': 'text/html',
+    '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.pdf': 'application/pdf',
+    '.doc': 'application/msword',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.xls': 'application/vnd.ms-excel',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.ppt': 'application/vnd.ms-powerpoint',
+    '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    '.zip': 'application/zip',
+    '.rar': 'application/x-rar-compressed',
+    '.mp3': 'audio/mpeg',
+    '.mp4': 'video/mp4',
+    '.txt': 'text/plain',
+    '.csv': 'text/csv'
+  };
+  
+  return mimeTypes[ext] || 'application/octet-stream';
+}
+
+/**
+ * Đoán loại file dựa trên đuôi file
+ * @param {String} fileName Tên file
+ * @returns {String} Loại file (image, video, audio, document, archive, other)
+ */
+function guessFileType(fileName) {
+  const ext = path.extname(fileName).toLowerCase();
+  
+  const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.bmp'];
+  const videoExts = ['.mp4', '.webm', '.avi', '.mov', '.mkv', '.flv', '.wmv'];
+  const audioExts = ['.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac'];
+  const documentExts = [
+    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', 
+    '.txt', '.rtf', '.csv', '.odt', '.ods', '.odp'
+  ];
+  const archiveExts = ['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2'];
+  
+  if (imageExts.includes(ext)) return 'image';
+  if (videoExts.includes(ext)) return 'video';
+  if (audioExts.includes(ext)) return 'audio';
+  if (documentExts.includes(ext)) return 'document';
+  if (archiveExts.includes(ext)) return 'archive';
+  
+  return 'other';
+}
+
+/**
+ * Ghi log ra console
+ * @param {String} message Nội dung log
+ * @param {String} type Loại log (info, error, warning)
+ */
+function log(message, type = 'info') {
+  const date = new Date();
+  const formattedDate = formatDate(date);
+  
+  switch (type) {
+    case 'error':
+      console.error(`[${formattedDate}] ERROR: ${message}`);
+      break;
+    case 'warning':
+      console.warn(`[${formattedDate}] WARNING: ${message}`);
+      break;
+    case 'info':
+    default:
+      console.log(`[${formattedDate}] INFO: ${message}`);
+      break;
   }
-  
-  // TODO: Ghi log vào file nếu cần
+}
+
+/**
+ * Dọn dẹp thư mục tạm
+ */
+function cleanupTempDir() {
+  try {
+    if (fs.existsSync(config.TEMP_DIR)) {
+      const files = fs.readdirSync(config.TEMP_DIR);
+      const now = Date.now();
+      
+      // Xóa các file cũ hơn 1 ngày
+      for (const file of files) {
+        const filePath = path.join(config.TEMP_DIR, file);
+        const stats = fs.statSync(filePath);
+        const fileAge = now - stats.mtimeMs;
+        
+        // Nếu file cũ hơn 24h (86400000ms)
+        if (fileAge > 86400000) {
+          fs.unlinkSync(filePath);
+          log(`Đã xóa file tạm cũ: ${file}`);
+        }
+      }
+    }
+  } catch (error) {
+    log(`Lỗi khi dọn dẹp thư mục tạm: ${error.message}`, 'error');
+  }
 }
 
 module.exports = {
   ensureDirectories,
+  generateId,
+  formatSize,
+  formatDate,
   getMimeType,
   guessFileType,
-  formatFileSize,
-  formatDate,
-  isPathSafe,
-  generateId,
-  log
+  log,
+  cleanupTempDir
 }; 
