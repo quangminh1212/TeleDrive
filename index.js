@@ -1471,50 +1471,62 @@ app.get('/api/files/:id/fix', async (req, res) => {
 // API kiểm tra và sửa dữ liệu files
 app.get('/api/check-files', async (req, res) => {
   try {
+    console.log('Bắt đầu kiểm tra và sửa dữ liệu file...');
+    
+    // Đọc danh sách file từ database
     const filesData = readFilesDb();
-    const updatedCount = {
-      total: filesData.length,
-      fixed: 0
-    };
     
-    console.log(`Tổng số file: ${filesData.length}`);
+    // Kiểm tra từng file
+    let fixedCount = 0;
+    let problemCount = 0;
     
-    // Kiểm tra và sửa lỗi trong dữ liệu
-    for (let i = 0; i < filesData.length; i++) {
-      let needUpdate = false;
+    for (const file of filesData) {
+      let needFix = false;
       
-      // Đảm bảo các thuộc tính cần thiết tồn tại
-      if (typeof filesData[i].telegramFileId === 'undefined' || !filesData[i].telegramFileId) {
-        needUpdate = true;
+      // Kiểm tra file có tồn tại không
+      const fileExists = file.localPath && fs.existsSync(file.localPath);
+      
+      // Kiểm tra telegramFileId
+      const hasTelegramId = !!file.telegramFileId;
+      
+      // Đánh dấu file cần đồng bộ nếu không có telegramFileId
+      if (!hasTelegramId && fileExists) {
+        file.needsSync = true;
+        needFix = true;
+        problemCount++;
       }
       
-      // Đảm bảo fileType được set
-      if (!filesData[i].fileType) {
-        filesData[i].fileType = getFileType(filesData[i].name);
-        needUpdate = true;
+      // Đánh dấu file đã bị xóa nếu không tồn tại local và không có telegramFileId
+      if (!fileExists && !hasTelegramId) {
+        file.deleted = true;
+        needFix = true;
+        problemCount++;
       }
       
-      if (needUpdate) {
-        updatedCount.fixed++;
+      if (needFix) {
+        fixedCount++;
       }
     }
     
-    // Lưu lại dữ liệu nếu có thay đổi
-    if (updatedCount.fixed > 0) {
-      saveFilesDb(filesData);
-      console.log(`Đã sửa ${updatedCount.fixed} file`);
-    }
+    // Lọc bỏ các file đã bị xóa
+    const newFilesData = filesData.filter(file => !file.deleted);
+    
+    // Lưu lại database
+    saveFilesDb(newFilesData);
     
     res.json({
       success: true,
-      message: `Đã kiểm tra ${updatedCount.total} file, sửa ${updatedCount.fixed} file`,
-      updatedCount
+      message: `Đã kiểm tra ${filesData.length} file, sửa ${fixedCount} file có vấn đề, xóa ${filesData.length - newFilesData.length} file không tồn tại.`,
+      totalFiles: filesData.length,
+      fixedCount,
+      problemCount,
+      deletedCount: filesData.length - newFilesData.length
     });
   } catch (error) {
-    console.error('Lỗi kiểm tra dữ liệu files:', error);
+    console.error('Lỗi kiểm tra file:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi kiểm tra dữ liệu files: ' + error.message
+      error: 'Lỗi server khi kiểm tra file: ' + error.message
     });
   }
 });
