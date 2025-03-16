@@ -288,4 +288,11 @@ Thumbs.db
 *.temp
 
 # Tệp cấu hình nodemon
-nodemon.json 
+nodemon.json
+
+# Thêm các file và thư mục tạm thời
+*.tmp
+*~
+*.bak
+*.fixed
+*.new 
