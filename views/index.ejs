@@ -42,16 +42,29 @@
       
       <!-- Hiển thị trạng thái bot -->
       <div class="mt-3">
-        <span class="bot-status <%= isBotActive ? 'active' : 'inactive' %>">
-          <i class="fas <%= isBotActive ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
-          Bot Telegram: <%= isBotActive ? 'Đang hoạt động' : 'Không hoạt động' %>
+        <span class="bot-status <%= typeof isBotActive !== 'undefined' && isBotActive ? 'active' : 'inactive' %>">
+          <i class="fas <%= typeof isBotActive !== 'undefined' && isBotActive ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
+          Bot Telegram: <%= typeof isBotActive !== 'undefined' && isBotActive ? 'Đang hoạt động' : 'Không hoạt động' %>
         </span>
         
-        <% if (config && config.sync) { %>
-          <span class="bot-status active ms-2">
-            <i class="fas fa-sync"></i>
+        <% if (typeof config !== 'undefined' && config && config.sync) { %>
+          <span class="sync-status ms-3">
+            <i class="fas fa-sync-alt"></i>
             Đồng bộ tự động: <%= config.interval %> phút
           </span>
+        <% } %>
+        
+        <% if (typeof hasBotConfig !== 'undefined' && !hasBotConfig) { %>
+          <div class="alert alert-warning mt-2">
+            <i class="fas fa-exclamation-triangle"></i>
+            Bạn chưa cấu hình bot Telegram. Vui lòng thiết lập TELEGRAM_BOT_TOKEN và TELEGRAM_CHAT_ID trong .env
+          </div>
+        <% } %>
+        
+        <% if (typeof chatId !== 'undefined' && chatId) { %>
+          <div class="mt-2">
+            <small class="text-muted">Chat ID: <%= chatId %></small>
+          </div>
         <% } %>
       </div>
       

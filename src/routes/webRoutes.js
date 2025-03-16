@@ -74,12 +74,19 @@ router.get('/', async (req, res) => {
     // Kiểm tra trạng thái bot
     const isBotActive = telegramService.isBotActive();
     
+    // Đảm bảo chat ID đã được thiết lập
+    const chatId = process.env.TELEGRAM_CHAT_ID || config.TELEGRAM_CHAT_ID || '';
+    const botToken = process.env.TELEGRAM_BOT_TOKEN || config.TELEGRAM_BOT_TOKEN || '';
+    const hasBotConfig = !!botToken && !!chatId;
+    
     // Render trang chủ với danh sách file
     res.render('index', {
       title: 'TeleDrive',
       files,
-      isBotActive,
+      isBotActive: isBotActive,
       error: null,
+      hasBotConfig,
+      chatId,
       config: {
         sync: config.ENABLE_AUTO_SYNC,
         interval: config.SYNC_INTERVAL
@@ -93,6 +100,8 @@ router.get('/', async (req, res) => {
       files: [],
       isBotActive: false,
       error: `Lỗi: ${error.message}`,
+      hasBotConfig: false,
+      chatId: '',
       config: {
         sync: config.ENABLE_AUTO_SYNC,
         interval: config.SYNC_INTERVAL
