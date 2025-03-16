@@ -2337,19 +2337,20 @@ app.post('/api/sync', async (req, res) => {
       });
     }
     
-    console.log('Đang đồng bộ file từ API...');
-    const syncedCount = await syncFiles();
+    // Đồng bộ files
+    const syncCount = await syncFiles();
     
-    res.json({
+    // Trả về kết quả
+    return res.json({
       success: true,
-      message: `Đã đồng bộ ${syncedCount} file với Telegram`,
-      syncedCount
+      message: `Đã đồng bộ thành công ${syncCount} files với Telegram`,
+      newFiles: syncCount
     });
   } catch (error) {
-    console.error('Lỗi đồng bộ file:', error);
-    res.status(500).json({
+    console.error('Lỗi API đồng bộ:', error);
+    return res.status(500).json({
       success: false,
-      error: 'Lỗi server khi đồng bộ file: ' + error.message
+      error: error.message || 'Lỗi server khi đồng bộ files'
     });
   }
 });
@@ -2380,3 +2381,241 @@ app.post('/api/clean', async (req, res) => {
     });
   }
 });
+
+// API endpoint để kiểm tra và sửa dữ liệu file
+app.get('/api/check-files', async (req, res) => {
+  try {
+    console.log('Bắt đầu kiểm tra và sửa dữ liệu file...');
+    
+    // Đọc dữ liệu file hiện tại
+    const filesData = readFilesDb();
+    let fixedCount = 0;
+    let updatedFiles = [];
+    
+    // Kiểm tra từng file
+    for (let i = 0; i < filesData.length; i++) {
+      const file = filesData[i];
+      let fileFixed = false;
+      
+      // Kiểm tra và cập nhật trạng thái file
+      if (file.localPath && fs.existsSync(file.localPath)) {
+        // File tồn tại ở local
+        if (file.fileStatus !== 'local' && file.fileStatus !== 'telegram') {
+          file.fileStatus = 'local';
+          fileFixed = true;
+        }
+      } else if (file.telegramFileId) {
+        // File chỉ tồn tại trên Telegram
+        if (file.fileStatus !== 'telegram') {
+          file.fileStatus = 'telegram';
+          fileFixed = true;
+        }
+        
+        // Kiểm tra và cập nhật URL Telegram nếu cần
+        if (!file.telegramUrl && botActive) {
+          try {
+            // Lấy đường dẫn tải xuống từ Telegram
+            const fileInfo = await bot.telegram.getFile(file.telegramFileId);
+            if (fileInfo && fileInfo.file_path) {
+              file.telegramUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
+              fileFixed = true;
+            }
+          } catch (error) {
+            console.error(`Lỗi lấy thông tin file từ Telegram: ${file.name}`, error);
+          }
+        }
+      } else {
+        // File không tồn tại ở cả local và telegram
+        if (file.fileStatus !== 'missing') {
+          file.fileStatus = 'missing';
+          fileFixed = true;
+        }
+      }
+      
+      // Sửa định dạng tên file nếu cần
+      if (file.name && file.name.includes('')) {
+        // Thử khôi phục tên file từ originalName hoặc từ đường dẫn local
+        if (file.originalName && !file.originalName.includes('')) {
+          file.name = file.originalName;
+          fileFixed = true;
+        } else if (file.localPath) {
+          const fileName = path.basename(file.localPath);
+          if (!fileName.includes('')) {
+            file.name = fileName;
+            fileFixed = true;
+          }
+        }
+      }
+      
+      // Kiểm tra và cập nhật loại file dựa vào đuôi file
+      if (file.name) {
+        const extension = path.extname(file.name).toLowerCase();
+        const correctedFileType = getFileType(file.name);
+        
+        if (correctedFileType !== file.fileType) {
+          file.fileType = correctedFileType;
+          file.mimeType = getMimeType(extension);
+          fileFixed = true;
+        }
+      }
+      
+      if (fileFixed) {
+        fixedCount++;
+        updatedFiles.push(file.id);
+      }
+    }
+    
+    // Lưu lại nếu có thay đổi
+    if (fixedCount > 0) {
+      saveFilesDb(filesData);
+      console.log(`Đã sửa ${fixedCount} files trong database.`);
+    }
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: `Đã kiểm tra và sửa ${fixedCount} files trong database.`,
+      fixedCount,
+      updatedFiles
+    });
+  } catch (error) {
+    console.error('Lỗi kiểm tra file:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi kiểm tra file'
+    });
+  }
+});
+
+// API endpoint để tải file từ Telegram
+app.get('/api/load-telegram-files', async (req, res) => {
+  try {
+    if (!bot || !botActive) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bot Telegram không hoạt động'
+      });
+    }
+    
+    // Lấy danh sách file từ Telegram
+    const newFileCount = await getFilesFromTelegram();
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: `Đã tìm thấy ${newFileCount} file mới từ Telegram.`,
+      newFileCount
+    });
+  } catch (error) {
+    console.error('Lỗi load file từ Telegram:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi load file từ Telegram'
+    });
+  }
+});
+
+// API endpoint để khôi phục lại database
+app.get('/api/reset-database', async (req, res) => {
+  try {
+    console.log('Bắt đầu khởi tạo lại database...');
+    
+    // Tạo database mới
+    const newFilesData = [];
+    const storagePath = STORAGE_PATH;
+    
+    // Kiểm tra thư mục uploads
+    const uploadsDir = path.join(storagePath, 'uploads');
+    if (fs.existsSync(uploadsDir)) {
+      console.log('Đang quét thư mục uploads...');
+      
+      // Quét tất cả các file trong thư mục uploads
+      const files = getAllFiles(uploadsDir);
+      
+      console.log(`Tìm thấy ${files.length} file trong thư mục uploads.`);
+      
+      // Thêm từng file vào database mới
+      for (const filePath of files) {
+        try {
+          const stats = fs.statSync(filePath);
+          if (stats.isFile()) {
+            const fileName = path.basename(filePath);
+            const fileExtension = path.extname(fileName).toLowerCase();
+            const fileType = getFileType(fileName);
+            const mimeType = getMimeType(fileExtension);
+            
+            newFilesData.push({
+              id: uuidv4(),
+              name: fileName,
+              originalName: fileName,
+              size: stats.size,
+              mimeType: mimeType,
+              fileType: fileType,
+              localPath: filePath,
+              uploadDate: stats.birthtime.toISOString(),
+              telegramFileId: null,
+              telegramUrl: null,
+              fileStatus: 'local',
+              needsSync: true,
+              user: null
+            });
+          }
+        } catch (error) {
+          console.error(`Lỗi xử lý file ${filePath}:`, error);
+        }
+      }
+    }
+    
+    // Lưu database mới
+    saveFilesDb(newFilesData);
+    
+    console.log(`Đã tạo mới database với ${newFilesData.length} file.`);
+    
+    // Đồng bộ với Telegram nếu có bot
+    let syncResult = { success: false, syncedFiles: 0 };
+    
+    if (bot && botActive) {
+      try {
+        console.log('Đang đồng bộ với Telegram...');
+        const syncCount = await syncFiles();
+        syncResult = { success: true, syncedFiles: syncCount };
+      } catch (error) {
+        console.error('Lỗi đồng bộ sau khi reset database:', error);
+        syncResult = { success: false, error: error.message };
+      }
+    }
+    
+    // Trả về kết quả
+    return res.json({
+      success: true,
+      message: 'Đã khởi tạo lại database thành công',
+      totalFiles: newFilesData.length,
+      sync: syncResult
+    });
+  } catch (error) {
+    console.error('Lỗi reset database:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Lỗi server khi reset database'
+    });
+  }
+});
+
+/**
+ * Lấy tất cả các file trong thư mục và các thư mục con
+ */
+function getAllFiles(dirPath, arrayOfFiles = []) {
+  const files = fs.readdirSync(dirPath);
+  
+  files.forEach((file) => {
+    const filePath = path.join(dirPath, file);
+    
+    if (fs.statSync(filePath).isDirectory()) {
+      arrayOfFiles = getAllFiles(filePath, arrayOfFiles);
+    } else {
+      arrayOfFiles.push(filePath);
+    }
+  });
+  
+  return arrayOfFiles;
+}
