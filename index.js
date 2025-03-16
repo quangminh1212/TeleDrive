@@ -1952,3 +1952,93 @@ function checkEnvFile() {
     console.error('Lỗi kiểm tra file .env:', error);
   }
 }
+
+/**
+ * Xử lý các tham số dòng lệnh 
+ */
+async function handleCommandLineArgs() {
+  const args = process.argv.slice(2);
+  if (args.length === 0) {
+    // Không có tham số, khởi động bình thường
+    return false;
+  }
+
+  const command = args[0].toLowerCase();
+  
+  switch (command) {
+    case 'sync':
+      console.log('Đang đồng bộ files với Telegram...');
+      try {
+        await initBot().then(async (botInstance) => {
+          if (botInstance) {
+            bot = botInstance;
+            botActive = await checkBotActive();
+            if (botActive) {
+              const syncedCount = await syncFiles();
+              console.log(`Đã đồng bộ ${syncedCount} files với Telegram.`);
+            } else {
+              console.log('Bot không hoạt động, không thể đồng bộ files.');
+            }
+          } else {
+            console.log('Không thể khởi tạo bot, không thể đồng bộ files.');
+          }
+        });
+      } catch (error) {
+        console.error('Lỗi đồng bộ files:', error);
+      }
+      return false;
+      
+    case 'clean':
+      console.log('Đang dọn dẹp uploads...');
+      try {
+        await initBot().then(async (botInstance) => {
+          if (botInstance) {
+            bot = botInstance;
+            botActive = await checkBotActive();
+            if (botActive) {
+              const cleanedCount = await cleanUploads();
+              console.log(`Đã dọn dẹp ${cleanedCount} files.`);
+            } else {
+              console.log('Bot không hoạt động, không thể dọn dẹp uploads.');
+            }
+          } else {
+            console.log('Không thể khởi tạo bot, không thể dọn dẹp uploads.');
+          }
+        });
+      } catch (error) {
+        console.error('Lỗi dọn dẹp uploads:', error);
+      }
+      return false;
+      
+    default:
+      console.log(`Lệnh không hợp lệ: ${command}`);
+      return false;
+  }
+}
+
+// Khởi tạo server khi mô-đun được nạp trực tiếp
+if (require.main === module) {
+  (async () => {
+    // Khởi tạo bot Telegram
+    bot = await initBot();
+    botActive = await checkBotActive();
+    
+    // Xử lý tham số dòng lệnh nếu có
+    const shouldExit = await handleCommandLineArgs();
+    if (shouldExit) {
+      process.exit(0);
+    }
+    
+    // Khởi động server
+    app.listen(PORT, () => {
+      console.log(`TeleDrive đang chạy trên http://localhost:${PORT}`);
+      console.log(`Bot Telegram ${botActive ? 'đã kết nối' : 'chưa kết nối'}`);
+    });
+  })();
+}
+
+// Export các hàm cần thiết
+module.exports = {
+  syncFiles,
+  cleanUploads
+};
