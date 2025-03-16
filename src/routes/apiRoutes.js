@@ -8,12 +8,16 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const fileController = require('../controllers/fileController');
 const folderController = require('../controllers/folderController');
 const authController = require('../controllers/authController');
 const { ensureDirectories, getMimeType, guessFileType } = require('../utils/helpers');
 const config = require('../config/config');
+const fileService = require('../services/fileService');
+const telegramService = require('../services/telegramService');
+const authMiddleware = require('../middlewares/authMiddleware');
 
 // Middleware kiểm tra xác thực
 function checkAuth(req, res, next) {
