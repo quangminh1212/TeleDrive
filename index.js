@@ -2459,109 +2459,48 @@ app.post('/api/settings', (req, res) => {
 
 // API endpoint để đồng bộ file
 app.post('/api/sync', async (req, res) => {
-  console.log('===== API ĐỒNG BỘ FILES =====');
+  console.log('===== API SYNC REQUEST =====');
   try {
+    console.log('Kiểm tra trạng thái bot trước khi đồng bộ...');
     if (!bot || !botActive) {
-      console.error('API Sync: Bot Telegram không hoạt động');
-      return res.status(400).json({
-        success: false,
-        error: 'Bot Telegram không hoạt động'
-      });
+      console.log('Bot không hoạt động, thử khởi tạo lại...');
+      bot = await initBot();
+      botActive = await checkBotActive();
+      
+      if (!bot || !botActive) {
+        console.log('Không thể khởi tạo bot, không thể đồng bộ');
+        return res.status(500).json({
+          success: false,
+          error: 'Bot Telegram không hoạt động, không thể đồng bộ'
+        });
+      }
     }
     
-    // Kiểm tra CHAT_ID
-    const chatId = process.env.CHAT_ID;
-    if (!chatId) {
-      console.error('API Sync: CHAT_ID chưa được cài đặt');
-      return res.status(400).json({
-        success: false,
-        error: 'CHAT_ID chưa được cài đặt'
-      });
-    }
+    console.log('Bắt đầu đồng bộ files...');
+    const result = await syncFiles();
+    console.log('Kết quả đồng bộ:', result);
     
-    // Kiểm tra xem có đang đồng bộ không
-    let isSyncing = false;
-    
-    // Đồng bộ files
-    console.log('API Sync: Bắt đầu đồng bộ files...');
-    isSyncing = true;
-    
-    // Đọc database trước khi đồng bộ
-    const beforeSync = readFilesDb();
-    const beforeStats = {
-      total: beforeSync.length,
-      synced: beforeSync.filter(f => f.telegramFileId && !f.needsSync).length,
-      needsSync: beforeSync.filter(f => f.needsSync).length,
-      errors: beforeSync.filter(f => f.syncError).length
-    };
-    
-    console.log(`API Sync: Thống kê trước khi đồng bộ: ${JSON.stringify(beforeStats)}`);
-    
-    const syncStartTime = new Date();
-    console.log(`API Sync: Bắt đầu đồng bộ lúc ${syncStartTime.toISOString()}`);
-    
-    const syncCount = await syncFiles();
-    
-    const syncEndTime = new Date();
-    const syncDuration = (syncEndTime - syncStartTime) / 1000; // Thời gian đồng bộ (giây)
-    console.log(`API Sync: Hoàn thành đồng bộ lúc ${syncEndTime.toISOString()} (thời gian: ${syncDuration.toFixed(1)}s)`);
-    
-    // Đọc lại database để có thông tin mới nhất
+    // Đếm tổng số file và số file cần đồng bộ
     const filesData = readFilesDb();
-    
-    // Thống kê sau khi đồng bộ
-    const afterStats = {
-      total: filesData.length,
-      synced: filesData.filter(f => f.telegramFileId && !f.needsSync).length,
-      needsSync: filesData.filter(f => f.needsSync).length,
-      errors: filesData.filter(f => f.syncError).length
+    const stats = {
+      totalFiles: filesData.length,
+      syncedFiles: filesData.filter(f => f.telegramFileId).length,
+      needsSync: filesData.filter(f => f.needsSync || !f.telegramFileId).length
     };
     
-    console.log(`API Sync: Thống kê sau khi đồng bộ: ${JSON.stringify(afterStats)}`);
-    
-    // Tính toán thay đổi
-    const changes = {
-      newSynced: afterStats.synced - beforeStats.synced,
-      remainingToSync: afterStats.needsSync,
-      newErrors: afterStats.errors - beforeStats.errors,
-      totalProcessed: syncCount
-    };
-    
-    console.log(`API Sync: Thay đổi sau khi đồng bộ: ${JSON.stringify(changes)}`);
-    
-    // Báo cáo lỗi cụ thể nếu có
-    const syncErrors = filesData
-      .filter(f => f.syncError)
-      .map(f => ({ fileName: f.name, error: f.syncError }))
-      .slice(0, 10); // Chỉ lấy 10 lỗi đầu tiên để tránh quá dài
-    
-    if (syncErrors.length > 0) {
-      console.log(`API Sync: Các lỗi đồng bộ (${syncErrors.length} tổng số):`);
-      syncErrors.forEach((err, i) => {
-        console.log(`  ${i+1}. ${err.fileName}: ${err.error}`);
-      });
-    }
-    
-    isSyncing = false;
-    
-    // Trả về kết quả chi tiết
-    console.log('API Sync: Trả về kết quả đồng bộ');
     return res.json({
-      success: true,
-      message: `Đã đồng bộ ${syncCount} files trong ${syncDuration.toFixed(1)}s`,
-      syncedCount: syncCount,
-      duration: syncDuration.toFixed(1),
-      syncTime: syncEndTime.toISOString(),
-      beforeSync: beforeStats,
-      afterSync: afterStats,
-      changes: changes,
-      errors: syncErrors
+      success: result.success,
+      message: result.success 
+        ? `Đã đồng bộ thành công ${result.syncedCount} files` 
+        : `Lỗi đồng bộ: ${result.error}`,
+      stats: stats,
+      details: result
     });
   } catch (error) {
-    console.error('Lỗi API đồng bộ:', error);
+    console.error('Lỗi endpoint /api/sync:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Lỗi server khi đồng bộ files'
+      error: 'Lỗi server: ' + (error.message || 'Không xác định')
     });
   }
 });
