@@ -2262,6 +2262,15 @@ app.use((err, req, res, next) => {
     
     // Khởi động server
     try {
+      // Middleware xử lý route không tồn tại - đặt trước khi khởi động server
+      app.use((req, res) => {
+        console.log(`Route không tồn tại: ${req.method} ${req.path}`);
+        res.status(404).json({
+          success: false,
+          error: 'API endpoint không tồn tại'
+        });
+      });
+      
       app.listen(PORT, () => {
         console.log(`TeleDrive đang chạy trên http://localhost:${PORT}`);
         console.log(`Bot Telegram ${botActive ? 'đã kết nối' : 'chưa kết nối'}`);
@@ -3927,15 +3936,6 @@ app.post('/api/settings', express.json(), async (req, res) => {
       message: 'Đã lưu cài đặt thành công',
       needsRestart: restartAfterSave
     });
-  } catch (error) {
-    console.error('Lỗi cập nhật cài đặt:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Lỗi server khi cập nhật cài đặt'
-    });
-  }
-});
-
 // Middleware xử lý route không tồn tại - phải đặt sau tất cả các routes
 app.use((req, res) => {
   console.log(`Route không tồn tại: ${req.method} ${req.path}`);
