@@ -218,17 +218,14 @@
                     </div>
                     <% } %>
 
-                    <!-- Thêm tính năng tìm kiếm vào phần đầu trang -->
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm tên file...">
-                                <div class="input-group-append">
-                                    <button class="btn btn-primary" type="button" id="searchButton">
-                                        <i class="fas fa-search"></i> Tìm kiếm
-                                    </button>
-                                </div>
-                            </div>
+                    <!-- Thanh tìm kiếm -->
+                    <div class="search-container mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text bg-primary text-white">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" id="search-input" class="form-control" placeholder="Tìm kiếm file..." aria-label="Tìm kiếm">
+                            <button class="btn btn-primary" type="button" id="search-button">Tìm kiếm</button>
                         </div>
                     </div>
 
@@ -287,76 +284,39 @@
                     </div>
 
                     <!-- Khu vực tải lên -->
-                    <div class="card card-primary card-outline">
-                        <div class="card-header">
-                            <h3 class="card-title">Tải lên file</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-                                <input type="file" id="fileInput" style="display: none" onchange="uploadFile(this)">
-                                <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                                <h4>Kéo thả file vào đây</h4>
-                                <p class="text-muted mb-0">hoặc click để chọn file</p>
+                    <div class="upload-area card mt-4 mb-4">
+                        <div class="card-body text-center">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Kéo thả file vào đây hoặc nhấp để tải lên</h5>
+                            <p class="card-text text-muted">Hỗ trợ tất cả các loại file. Kích thước tối đa: 2GB</p>
+                            <div class="mt-3">
+                                <label for="file-upload" class="btn btn-primary">
+                                    <i class="fas fa-file-upload"></i> Chọn file
+                                </label>
+                                <input id="file-upload" type="file" style="display: none;" multiple>
                             </div>
+                        </div>
+                        <div class="upload-progress d-none">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-2 d-block text-center">Đang tải lên... <span class="upload-percent">0</span>%</small>
                         </div>
                     </div>
 
-                    <!-- Danh sách file -->
-                    <div class="card card-primary card-outline">
-                        <div class="card-header">
-                            <h3 class="card-title">File của tôi</h3>
+                    <!-- Khu vực hiển thị file -->
+                    <div class="file-container">
+                        <div class="empty-folder-message text-center p-5 d-none">
+                            <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">Thư mục trống</h4>
+                            <p class="text-muted">Thư mục này chưa có file nào. Hãy tải lên file mới.</p>
+                            <button class="btn btn-primary mt-3" id="empty-folder-upload-btn">
+                                <i class="fas fa-upload"></i> Tải lên file
+                            </button>
                         </div>
-                        <div class="card-body">
-                            <div class="row" id="fileList">
-                                <% if (files && files.length > 0) { %>
-                                    <% files.forEach(function(file) { %>
-                                        <div class="col-md-6 col-lg-4">
-                                            <div class="file-card p-3">
-                                                <div class="d-flex align-items-center mb-2">
-                                                    <% if (file.fileType === 'image') { %>
-                                                        <i class="fas fa-image file-icon me-2"></i>
-                                                    <% } else if (file.fileType === 'video') { %>
-                                                        <i class="fas fa-video file-icon me-2"></i>
-                                                    <% } else if (file.fileType === 'audio') { %>
-                                                        <i class="fas fa-music file-icon me-2"></i>
-                                                    <% } else { %>
-                                                        <i class="fas fa-file file-icon me-2"></i>
-                                                    <% } %>
-                                                    <div class="flex-grow-1">
-                                                        <h6 class="file-name"><%= file.name %></h6>
-                                                        <div class="file-info">
-                                                            <%= formatBytes(file.size) %> • <%= formatDate(file.uploadDate) %>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <span class="status-badge <%= file.fileStatus === 'local' ? 'status-local' : (file.fileStatus === 'telegram' ? 'status-telegram' : 'status-missing') %>">
-                                                        <i class="fas <%= file.fileStatus === 'local' ? 'fa-hdd' : (file.fileStatus === 'telegram' ? 'fa-paper-plane' : 'fa-exclamation-circle') %>"></i>
-                                                        <%= file.fileStatus === 'local' ? 'Local' : (file.fileStatus === 'telegram' ? 'Telegram' : 'Không khả dụng') %>
-                                                    </span>
-                                                    <div class="btn-group">
-                                                        <a href="/file/<%= file.id %>" class="btn btn-sm btn-outline-primary" title="Xem trước">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        <a href="/api/files/<%= file.id %>/download" class="btn btn-sm btn-primary" title="Tải xuống">
-                                                            <i class="fas fa-download"></i>
-                                                        </a>
-                                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteFile('<%= file.id %>')" title="Xóa">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <% }); %>
-                                <% } else { %>
-                                    <div class="col-12 text-center py-5">
-                                        <i class="fas fa-inbox fa-5x text-muted"></i>
-                                        <h3 class="mt-3">Chưa có file nào</h3>
-                                        <p class="text-muted">Hãy tải lên file đầu tiên của bạn</p>
-                                    </div>
-                                <% } %>
-                            </div>
+                        
+                        <div class="file-list">
+                            <!-- Danh sách file sẽ được hiển thị ở đây -->
                         </div>
                     </div>
 
@@ -1040,15 +1000,15 @@
             });
             
             // Sự kiện cho tìm kiếm
-            document.getElementById('searchButton').addEventListener('click', () => {
-                const query = document.getElementById('searchInput').value.trim();
+            document.getElementById('search-button').addEventListener('click', () => {
+                const query = document.getElementById('search-input').value.trim();
                 if (query) {
                     searchFiles(query);
                 }
             });
             
             // Tìm kiếm khi nhấn Enter
-            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            document.getElementById('search-input').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     const query = e.target.value.trim();
                     if (query) {
