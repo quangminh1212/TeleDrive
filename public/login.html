@@ -101,9 +101,33 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        #telegram-login-TeleDriveStorageBot {
+        #telegram-login-container {
             display: block;
             margin: 0 auto;
+            min-height: 40px;
+        }
+        .custom-login-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #0088cc;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            height: 50px;
+            padding: 0 20px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .custom-login-button:hover {
+            background-color: #0077b3;
+        }
+        .custom-login-button i {
+            margin-right: 10px;
+            font-size: 20px;
         }
     </style>
 </head>
@@ -120,8 +144,8 @@
             </div>
             
             <div class="telegram-login">
-                <!-- Nút đăng nhập Telegram tùy chỉnh -->
-                <button id="customTelegramLogin" class="telegram-button">
+                <!-- Nút đăng nhập tùy chỉnh thay vì widget -->
+                <button id="customLoginButton" class="custom-login-button">
                     <i class="fab fa-telegram-plane"></i>
                     Đăng nhập bằng Telegram
                 </button>
@@ -157,55 +181,17 @@
             }
         };
         
-        // Xử lý khi người dùng nhấn nút đăng nhập Telegram tùy chỉnh
-        document.getElementById('customTelegramLogin').addEventListener('click', function() {
-            // Hiển thị loading indicator
+        // Đăng nhập với Telegram khi nhấn nút
+        document.getElementById('customLoginButton').addEventListener('click', function() {
+            // Hiển thị loading
             document.getElementById('loadingIndicator').style.display = 'block';
             
-            // Mở cửa sổ popup để đăng nhập Telegram
-            const width = 550;
-            const height = 520;
-            const left = (window.innerWidth - width) / 2;
-            const top = (window.innerHeight - height) / 2;
-            
-            const botName = 'TeleDriveStorageBot';
+            // Lấy thông tin về URL hiện tại
             const origin = window.location.origin;
-            const callbackUrl = `${origin}/api/auth/telegram`;
+            const authUrl = `${origin}/api/auth/telegram`;
             
-            const telegramUrl = `https://oauth.telegram.org/auth?bot_id=${botName}&origin=${encodeURIComponent(origin)}&return_to=${encodeURIComponent(callbackUrl)}`;
-            
-            const popup = window.open(
-                telegramUrl,
-                'Đăng nhập Telegram',
-                `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
-            );
-            
-            // Kiểm tra đóng popup và xử lý
-            const popupInterval = setInterval(function() {
-                if (popup.closed) {
-                    clearInterval(popupInterval);
-                    document.getElementById('loadingIndicator').style.display = 'none';
-                    
-                    // Thử kiểm tra đã đăng nhập thành công chưa sau 2 giây
-                    setTimeout(function() {
-                        fetch('/dashboard', {
-                            method: 'GET',
-                            headers: {
-                                'Accept': 'application/json'
-                            }
-                        })
-                        .then(response => {
-                            if (response.ok) {
-                                // Đã đăng nhập thành công, chuyển hướng đến dashboard
-                                window.location.href = '/dashboard';
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Lỗi khi kiểm tra trạng thái đăng nhập:', err);
-                        });
-                    }, 2000);
-                }
-            }, 500);
+            // Redirect trực tiếp đến URL telegram login
+            window.location.href = authUrl;
         });
     </script>
 </body>

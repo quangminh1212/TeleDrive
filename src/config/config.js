@@ -22,10 +22,12 @@ function checkEnvFile() {
 
 # Cổng máy chủ
 PORT=5002
+HOST=localhost
+BASE_URL=http://localhost:5002
 
 # Telegram Bot config
-BOT_TOKEN=
-CHAT_ID=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
 
 # Đường dẫn lưu trữ
 STORAGE_PATH=${process.cwd()}
@@ -62,13 +64,15 @@ const config = {
   BASE_URL: process.env.BASE_URL || 'http://localhost:3000',
   
   // Thông tin đăng nhập
-  ADMIN_USERNAME: process.env.ADMIN_USERNAME || 'admin',
-  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin',
   API_KEY: process.env.API_KEY || 'changeme',
   
   // Telegram Bot
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
+
+  // Telegram API
+  TELEGRAM_API_ID: process.env.API_ID,
+  TELEGRAM_API_HASH: process.env.API_HASH,
   
   // Đường dẫn storage
   STORAGE_PATH: process.env.STORAGE_PATH ? 
@@ -95,11 +99,24 @@ config.UPLOADS_DIR = path.join(config.STORAGE_PATH, 'uploads');
 config.TEMP_DIR = path.join(config.STORAGE_PATH, 'temp');
 config.DB_DIR = path.join(config.STORAGE_PATH, 'db');
 
+// Lấy tên bot từ token
+if (config.TELEGRAM_BOT_TOKEN) {
+  try {
+    const botTokenParts = config.TELEGRAM_BOT_TOKEN.split(':');
+    if (botTokenParts.length >= 1) {
+      config.TELEGRAM_BOT_ID = botTokenParts[0];
+    }
+  } catch (e) {
+    console.error('Không thể phân tích bot token:', e);
+  }
+}
+
 // Đảm bảo các thư mục cần thiết tồn tại
 function ensureDirectories() {
   const dirs = [
     config.DB_DIR,
-    config.UPLOADS_DIR
+    config.UPLOADS_DIR,
+    config.TEMP_DIR
   ];
   
   for (const dir of dirs) {
