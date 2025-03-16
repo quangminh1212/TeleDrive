@@ -2164,3 +2164,57 @@ app.use((req, res) => {
     error: 'API endpoint không tồn tại'
   });
 });
+
+// API endpoint để đồng bộ file
+app.post('/api/sync', async (req, res) => {
+  try {
+    if (!bot || !botActive) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bot Telegram không hoạt động'
+      });
+    }
+    
+    console.log('Đang đồng bộ file từ API...');
+    const syncedCount = await syncFiles();
+    
+    res.json({
+      success: true,
+      message: `Đã đồng bộ ${syncedCount} file với Telegram`,
+      syncedCount
+    });
+  } catch (error) {
+    console.error('Lỗi đồng bộ file:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi server khi đồng bộ file: ' + error.message
+    });
+  }
+});
+
+// API endpoint để tải file lên Telegram
+app.post('/api/clean', async (req, res) => {
+  try {
+    if (!bot || !botActive) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bot Telegram không hoạt động'
+      });
+    }
+    
+    console.log('Đang tải file lên Telegram từ API...');
+    const cleanedCount = await cleanUploads();
+    
+    res.json({
+      success: true,
+      message: `Đã tải ${cleanedCount} file lên Telegram`,
+      cleanedCount
+    });
+  } catch (error) {
+    console.error('Lỗi tải file lên Telegram:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi server khi tải file lên Telegram: ' + error.message
+    });
+  }
+});
