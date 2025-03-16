@@ -19,17 +19,19 @@ const helmet = require('helmet');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
-// Đọc cấu hình từ file .env
+// Load environment variables from .env file
 dotenv.config();
 
-// Biến môi trường
-const PORT = process.env.PORT || 5001;
-const BOT_TOKEN = process.env.BOT_TOKEN;
+// Định nghĩa đường dẫn lưu trữ và biến toàn cục
+const DB_PATH = path.join(__dirname, 'files_db.json');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const LOGS_DIR = path.join(__dirname, 'logs');
+const TEMP_DIR = path.join(__dirname, 'temp');
+const PORT = process.env.PORT || 3000;
+let BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '2000', 10) * 1024 * 1024; // Convert MB to bytes
 const DATA_DIR = process.env.DATA_DIR || 'data';
-const TEMP_DIR = process.env.TEMP_DIR || 'temp';
-const UPLOADS_DIR = 'uploads';
 
 // Đường dẫn file và thư mục
 const dataDir = path.join(__dirname, DATA_DIR);
