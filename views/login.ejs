@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập - TeleDrive</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .login-container {
+      max-width: 400px;
+      width: 100%;
+      padding: 20px;
+    }
+    .login-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .login-logo {
+      font-size: 48px;
+      color: #0d6efd;
+      margin-bottom: 15px;
+    }
+    .login-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .login-subtitle {
+      color: #6c757d;
+      font-size: 14px;
+    }
+    .form-floating {
+      margin-bottom: 20px;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      font-weight: 500;
+    }
+    .login-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #6c757d;
+    }
+    .alert {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">
+          <i class="bi bi-telegram"></i>
+        </div>
+        <h4 class="login-title">TeleDrive</h4>
+        <p class="login-subtitle">Đăng nhập để quản lý file của bạn</p>
+      </div>
+      
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <%= error %>
+        </div>
+      <% } %>
+      
+      <form action="/login" method="post">
+        <div class="form-floating">
+          <input type="text" class="form-control" id="username" name="username" placeholder="Tên đăng nhập" required>
+          <label for="username">Tên đăng nhập</label>
+        </div>
+        
+        <div class="form-floating">
+          <input type="password" class="form-control" id="password" name="password" placeholder="Mật khẩu" required>
+          <label for="password">Mật khẩu</label>
+        </div>
+        
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe">
+          <label class="form-check-label" for="rememberMe">
+            Ghi nhớ đăng nhập
+          </label>
+        </div>
+        
+        <button type="submit" class="btn btn-primary login-btn">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
+        </button>
+      </form>
+      
+      <div class="login-footer">
+        <p>Sử dụng thông tin đăng nhập được cung cấp bởi quản trị viên</p>
+        <p class="mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          Nếu đây là lần đầu tiên bạn sử dụng, hãy xem tài liệu hướng dẫn
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
