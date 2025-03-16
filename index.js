@@ -2383,7 +2383,16 @@ app.use((err, req, res, next) => {
   
   // Khởi động server
   try {
-    // Middleware xử lý route không tồn tại - đặt trước khi khởi động server
+    // Error handler middleware - đặt trước 404 middleware
+    app.use((err, req, res, next) => {
+      console.error('Lỗi server:', err);
+      res.status(500).json({
+        success: false,
+        error: 'Lỗi server: ' + (err.message || 'Không xác định')
+      });
+    });
+    
+    // Middleware xử lý route không tồn tại - đặt sau error handler và trước khi khởi động server
     app.use((req, res) => {
       console.log(`Route không tồn tại: ${req.method} ${req.path}`);
       res.status(404).json({
