@@ -80,138 +80,42 @@ router.post('/auth/logout', async (req, res) => {
 });
 
 // Route đăng nhập bằng Telegram
-router.get('/auth/telegram', async (req, res) => {
+router.get('/auth/telegram', (req, res) => {
   try {
-    // Kiểm tra xem bot token đã được cấu hình chưa
-    const botToken = config.TELEGRAM_BOT_TOKEN;
-    console.log('=== Xử lý đăng nhập Telegram ===');
-    console.log('Bot token có sẵn:', !!botToken);
-    
-    if (!botToken) {
-      console.error('Chưa cấu hình TELEGRAM_BOT_TOKEN');
-      return res.redirect('/login?error=' + encodeURIComponent('Lỗi cấu hình Telegram Bot, vui lòng kiểm tra TELEGRAM_BOT_TOKEN'));
+    // Lấy dữ liệu từ Telegram widget
+    const telegramData = {
+      id: req.query.id,
+      first_name: req.query.first_name,
+      last_name: req.query.last_name,
+      username: req.query.username,
+      photo_url: req.query.photo_url,
+      auth_date: req.query.auth_date,
+      hash: req.query.hash
+    };
+
+    // Kiểm tra xem dữ liệu có đầy đủ không
+    if (!telegramData.id || !telegramData.username || !telegramData.hash) {
+      return res.redirect('/login?error=Dữ liệu xác thực Telegram không hợp lệ');
     }
+
+    // Lưu thông tin xác thực vào session
+    req.session.isLoggedIn = true;
+    req.session.user = {
+      id: telegramData.id,
+      username: telegramData.username,
+      displayName: `${telegramData.first_name || ''} ${telegramData.last_name || ''}`.trim(),
+      photoUrl: telegramData.photo_url,
+      isAdmin: true, // Coi như tất cả người dùng Telegram đều là admin
+      provider: 'telegram'
+    };
+
+    log(`Người dùng đăng nhập thành công qua Telegram: ${telegramData.username}`, 'info');
     
-    // Nếu có dữ liệu callback từ Telegram
-    if (req.query.id || req.query.auth_date || req.query.hash) {
-      console.log('Nhận callback từ Telegram với ID:', req.query.id);
-      
-      // Xử lý dữ liệu xác thực từ callback
-      const telegramData = {
-        id: req.query.id,
-        first_name: req.query.first_name,
-        last_name: req.query.last_name,
-        username: req.query.username,
-        photo_url: req.query.photo_url,
-        auth_date: req.query.auth_date,
-        hash: req.query.hash
-      };
-      
-      // Kiểm tra xem có đủ thông tin cần thiết không
-      if (!telegramData.id || !telegramData.auth_date || !telegramData.hash) {
-        console.error('Thiếu thông tin xác thực từ Telegram:', { 
-          providedData: Object.keys(req.query) 
-        });
-        return res.redirect('/login?error=' + encodeURIComponent('Thiếu thông tin xác thực từ Telegram, vui lòng thử lại'));
-      }
-      
-      // Tạo secret key từ token của bot theo đúng chuẩn Telegram
-      // secret_key = SHA256(bot_token)
-      const secretKey = crypto.createHash('sha256').update(botToken).digest();
-      
-      // Kiểm tra xem thời gian xác thực có quá cũ không (> 1 giờ)
-      const authTime = parseInt(telegramData.auth_date);
-      const currentTime = Math.floor(Date.now() / 1000);
-      if (currentTime - authTime > 3600) {
-        console.error('Xác thực Telegram hết hạn:', { 
-          authTime, 
-          currentTime, 
-          diff: currentTime - authTime 
-        });
-        return res.redirect('/login?error=' + encodeURIComponent('Xác thực đã hết hạn, vui lòng thử lại'));
-      }
-      
-      // Tạo data string để kiểm tra hash
-      // Loại bỏ hash từ object và sắp xếp theo key
-      const { hash, ...checkData } = telegramData;
-      const dataCheckString = Object.keys(checkData)
-        .sort()
-        .map(key => `${key}=${checkData[key]}`)
-        .join('\n');
-      
-      // Tính hash HMAC để so sánh
-      const calculatedHash = crypto.createHmac('sha256', secretKey)
-        .update(dataCheckString)
-        .digest('hex');
-      
-      // Nếu hash không khớp, từ chối yêu cầu
-      if (hash !== calculatedHash) {
-        console.error('Hash Telegram không khớp', { 
-          expected: calculatedHash, 
-          received: hash 
-        });
-        return res.redirect('/login?error=' + encodeURIComponent('Dữ liệu xác thực không hợp lệ, vui lòng thử lại'));
-      }
-      
-      // Tạo session và lưu thông tin người dùng Telegram
-      req.session.authenticated = true;
-      req.session.isLoggedIn = true;
-      req.session.telegramUser = {
-        id: telegramData.id,
-        username: telegramData.username || `user_${telegramData.id}`,
-        firstName: telegramData.first_name,
-        lastName: telegramData.last_name,
-        photoUrl: telegramData.photo_url
-      };
-      
-      console.log(`Người dùng Telegram đăng nhập thành công: ${telegramData.username || telegramData.id}`);
-      
-      // Chuyển hướng người dùng đến dashboard
-      return res.redirect('/dashboard');
-    } else {
-      console.log('Tạo URL đăng nhập Telegram');
-      
-      // Lấy thông tin tổng quan cấu hình
-      console.log('Cấu hình BASE_URL:', config.BASE_URL);
-      console.log('PORT:', config.PORT);
-      console.log('Host hiện tại:', req.get('host'));
-      console.log('Origin hiện tại:', req.protocol + '://' + req.get('host'));
-      
-      // Không có dữ liệu callback - tạo URL đăng nhập Telegram
-      // Lấy thông tin bot
-      const botInfo = await telegramService.verifyBotToken();
-      console.log('Kết quả xác thực bot token:', botInfo);
-      
-      if (!botInfo.success) {
-        console.error('Không thể lấy thông tin bot:', botInfo.error);
-        return res.redirect('/login?error=' + encodeURIComponent('Không thể kết nối đến Telegram Bot API. Vui lòng thử lại sau.'));
-      }
-      
-      // Lấy thông tin từ config và request
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const botUsername = botInfo.botInfo.username;
-      
-      if (!botUsername) {
-        console.error('Không tìm thấy tên người dùng bot');
-        return res.redirect('/login?error=' + encodeURIComponent('Lỗi cấu hình Telegram Bot, vui lòng liên hệ quản trị viên'));
-      }
-      
-      // Lấy bot id (số) từ token
-      const botId = botToken.split(':')[0];
-      console.log('Bot ID từ token:', botId);
-      
-      // Tạo URL đăng nhập Telegram với bot_id là số ID từ token
-      const callbackUrl = `${baseUrl}/api/auth/telegram`;
-      const telegramAuthUrl = `https://oauth.telegram.org/auth?bot_id=${botId}&origin=${encodeURIComponent(baseUrl)}&return_to=${encodeURIComponent(callbackUrl)}`;
-      
-      console.log('Đã tạo URL đăng nhập Telegram:', telegramAuthUrl);
-      
-      // Chuyển hướng đến trang xác thực Telegram
-      return res.redirect(telegramAuthUrl);
-    }
+    // Chuyển hướng đến trang chủ
+    return res.redirect('/');
   } catch (error) {
-    console.error('Lỗi khi xác thực Telegram:', error);
-    res.redirect('/login?error=' + encodeURIComponent('Lỗi server khi xác thực Telegram: ' + error.message));
+    log(`Lỗi khi xác thực qua Telegram: ${error.message}`, 'error');
+    return res.redirect('/login?error=Lỗi xác thực: ' + error.message);
   }
 });
 

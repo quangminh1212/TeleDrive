@@ -15,36 +15,8 @@ const { log } = require('../utils/helpers');
 
 const router = express.Router();
 
-// Middleware kiểm tra đăng nhập
-function checkAuth(req, res, next) {
-  // Vô hiệu hóa kiểm tra đăng nhập do chưa cài express-session
-  return next();
-  
-  /*
-  // Cho phép truy cập vào trang đăng nhập
-  if (req.path === '/login') {
-    return next();
-  }
-
-  // Cho phép truy cập vào các tài nguyên tĩnh
-  if (req.path.startsWith('/assets/') || 
-      req.path.startsWith('/css/') || 
-      req.path.startsWith('/js/') || 
-      req.path.startsWith('/img/')) {
-    return next();
-  }
-
-  // Kiểm tra xem đã đăng nhập chưa
-  if (!req.session || !req.session.authenticated) {
-    return res.redirect('/login');
-  }
-
-  next();
-  */
-}
-
-// Áp dụng middleware cho tất cả các routes
-router.use(checkAuth);
+// Sử dụng middleware để bảo vệ các route
+router.use(authMiddleware.webAuth);
 
 /**
  * Trang chủ
