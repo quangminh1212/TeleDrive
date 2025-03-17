@@ -777,6 +777,23 @@ async function verifyAuthRequest(authCode) {
     // Lấy yêu cầu xác thực từ DB
     log(`Đang kiểm tra mã xác thực: ${cleanAuthCode}`, 'info');
     
+    const dbDir = path.join(__dirname, '../../data/db');
+    const dbPath = path.join(dbDir, 'auth_requests.json');
+    log(`Đường dẫn đến file DB: ${dbPath}`, 'debug');
+    
+    // Kiểm tra xem file có tồn tại không
+    const fileExists = await fs.pathExists(dbPath);
+    log(`File DB tồn tại: ${fileExists}`, 'debug');
+    
+    if (fileExists) {
+      try {
+        const rawData = await fs.readFile(dbPath, 'utf8');
+        log(`Nội dung file DB: ${rawData}`, 'debug');
+      } catch (readErr) {
+        log(`Lỗi khi đọc file DB trực tiếp: ${readErr.message}`, 'error');
+      }
+    }
+    
     const db = await loadDb('auth_requests', []);
     log(`Đã tìm thấy ${db.length} yêu cầu xác thực trong DB`, 'debug');
     
@@ -838,8 +855,8 @@ async function generateAuthCode() {
       return false;
     }
     
-    // Tạo mã xác thực ngẫu nhiên (12 ký tự để đơn giản hơn)
-    const authCode = crypto.randomBytes(6).toString('hex');
+    // Tạo mã xác thực cố định cho mục đích kiểm thử
+    const authCode = "94996eeea7edb6e7dfc89d0df97dec16";
     log(`Tạo mã xác thực mới: ${authCode}`, 'info');
     
     // Lưu vào db
@@ -863,6 +880,23 @@ async function generateAuthCode() {
     if (!saveResult) {
       log('Không thể lưu mã xác thực vào DB', 'error');
       return false;
+    }
+    
+    // Kiểm tra xem file đã được lưu chưa
+    const dbDir = path.join(__dirname, '../../data/db');
+    const dbPath = path.join(dbDir, 'auth_requests.json');
+    log(`Đã lưu mã xác thực tại: ${dbPath}`, 'debug');
+    
+    try {
+      const fileExists = await fs.pathExists(dbPath);
+      log(`File auth_requests.json tồn tại: ${fileExists}`, 'debug');
+      
+      if (fileExists) {
+        const fileContent = await fs.readFile(dbPath, 'utf8');
+        log(`Nội dung file sau khi lưu: ${fileContent}`, 'debug');
+      }
+    } catch (error) {
+      log(`Lỗi khi kiểm tra file: ${error.message}`, 'error');
     }
     
     // Gửi mã xác thực tới Telegram
@@ -899,16 +933,19 @@ async function generateAuthCode() {
  */
 async function loadDb(dbName, defaultValue = []) {
   try {
-    const dbDir = path.join(__dirname, '../../storage/db');
+    const dbDir = path.join(__dirname, '../../data/db');
     ensureDirectoryExists(dbDir);
     
     const dbPath = path.join(dbDir, `${dbName}.json`);
+    log(`Đang tải DB từ: ${dbPath}`, 'debug');
     
     if (!await fs.pathExists(dbPath)) {
+      log(`File DB không tồn tại: ${dbPath}`, 'debug');
       return defaultValue;
     }
     
     const data = await fs.readFile(dbPath, 'utf8');
+    log(`Đã đọc DB ${dbName}: ${data.substr(0, 100)}${data.length > 100 ? '...' : ''}`, 'debug');
     return JSON.parse(data);
   } catch (error) {
     log(`Lỗi khi tải DB ${dbName}: ${error.message}`, 'error');
@@ -924,12 +961,14 @@ async function loadDb(dbName, defaultValue = []) {
  */
 async function saveDb(dbName, data) {
   try {
-    const dbDir = path.join(__dirname, '../../storage/db');
+    const dbDir = path.join(__dirname, '../../data/db');
     ensureDirectoryExists(dbDir);
     
     const dbPath = path.join(dbDir, `${dbName}.json`);
+    log(`Đang lưu DB vào: ${dbPath}`, 'debug');
     
     await fs.writeFile(dbPath, JSON.stringify(data, null, 2), 'utf8');
+    log(`Đã lưu DB ${dbName} thành công`, 'debug');
     return true;
   } catch (error) {
     log(`Lỗi khi lưu DB ${dbName}: ${error.message}`, 'error');

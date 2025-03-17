@@ -31,6 +31,7 @@ function webAuth(req, res, next) {
     '/api/auth/telegram', 
     '/api/auth/verify', 
     '/api/auth/check', 
+    '/api/auth/check-status',
     '/api/auth/telegram/callback',
     '/api/auth/telegram/start',
     '/api/auth/telegram/verify',
