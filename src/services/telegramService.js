@@ -44,8 +44,17 @@ async function initBot() {
       return false;
     }
     
-    // Khởi tạo bot
-    bot = new Telegraf(config.TELEGRAM_BOT_TOKEN);
+    // Khởi tạo bot với tùy chọn để tránh xung đột
+    bot = new Telegraf(config.TELEGRAM_BOT_TOKEN, {
+      telegram: {
+        // Tắt webhook để sử dụng long polling
+        webhookReply: false
+      },
+      // Tùy chọn để tránh xung đột giữa các instance
+      polling: {
+        timeout: 30
+      }
+    });
     
     // Thiết lập xử lý sự kiện nhận file
     setupMessageHandlers();
@@ -54,7 +63,14 @@ async function initBot() {
     bot.command('ping', (ctx) => ctx.reply('Pong!'));
     
     // Khởi động bot
-    await bot.launch();
+    await bot.launch({
+      // Sử dụng long polling để tránh xung đột
+      polling: {
+        timeout: 30
+      },
+      dropPendingUpdates: true
+    });
+    
     isReady = true;
     
     log('Khởi tạo bot Telegram thành công');

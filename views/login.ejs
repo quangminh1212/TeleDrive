@@ -131,8 +131,24 @@
       const loginBtn = document.getElementById('telegramLoginBtn');
       const statusMessage = document.getElementById('statusMessage');
       const instructions = document.getElementById('instructions');
+      const authCodeDisplay = document.getElementById('authCodeDisplay');
+      const authCommand = document.getElementById('authCommand');
+      const copyAuthBtn = document.getElementById('copyAuthBtn');
       let authCode = '';
       let checkInterval = null;
+      
+      // Xử lý sao chép mã xác thực
+      copyAuthBtn.addEventListener('click', function() {
+        const commandText = authCommand.textContent;
+        navigator.clipboard.writeText(commandText).then(() => {
+          copyAuthBtn.innerHTML = '<i class="bi bi-check"></i>';
+          setTimeout(() => {
+            copyAuthBtn.innerHTML = '<i class="bi bi-clipboard"></i>';
+          }, 2000);
+        }).catch(err => {
+          console.error('Lỗi khi sao chép vào clipboard:', err);
+        });
+      });
       
       // Xử lý đăng nhập Telegram
       loginBtn.addEventListener('click', async function() {
@@ -152,6 +168,10 @@
           // Hiển thị hướng dẫn
           instructions.style.display = 'block';
           
+          // Hiển thị mã xác thực để sao chép
+          authCodeDisplay.style.display = 'block';
+          authCommand.textContent = `/start auth_${authCode}`;
+          
           // Mở tab mới để xác thực
           const botUsername = '<%= botUsername %>';
           const authUrl = `tg://resolve?domain=${botUsername}&start=auth_${authCode}`;
@@ -164,7 +184,7 @@
             
             if (!fallbackWindow || fallbackWindow.closed || typeof fallbackWindow.closed === 'undefined') {
               // Hiển thị hướng dẫn sao chép lệnh nếu không mở được
-              showStatus(`Không thể mở Telegram tự động. Hãy sao chép lệnh sau và gửi cho @${botUsername}: /start auth_${authCode}`, 'warning');
+              showStatus(`Không thể mở Telegram tự động. Hãy sao chép lệnh và gửi cho @${botUsername}`, 'warning');
             }
           }, 1500);
           
