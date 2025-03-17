@@ -417,68 +417,123 @@ async function getFileLink(fileId) {
 async function getFilesFromChat(limit = 100) {
   try {
     if (!isReady || !bot) {
-      throw new Error('Bot chưa sẵn sàng. Vui lòng khởi tạo bot trước');
+      log('Bot chưa sẵn sàng, đang khởi động lại...', 'warning');
+      const success = await initBot();
+      if (!success) {
+        throw new Error('Bot chưa sẵn sàng. Vui lòng khởi tạo bot trước');
+      }
     }
     
     const chatId = config.TELEGRAM_CHAT_ID;
-    const messages = [];
+    let messages = [];
     let lastMessageId = 0;
+    
+    log(`Đang lấy tối đa ${limit} tin nhắn từ Telegram chat ${chatId}`);
     
     // Lấy tin nhắn theo chunk
     while (messages.length < limit) {
       const chunkSize = Math.min(100, limit - messages.length);
-      const messagesChunk = await bot.telegram.getChatHistory(chatId, {
-        limit: chunkSize,
-        offset_id: lastMessageId || 0
-      });
       
-      if (messagesChunk.length === 0) break;
-      
-      // Lọc những tin nhắn có file
-      const fileMessages = messagesChunk.filter(msg => 
-        msg.document || msg.photo || msg.video || msg.audio
-      );
-      
-      messages.push(...fileMessages);
-      lastMessageId = messagesChunk[messagesChunk.length - 1].message_id;
+      try {
+        const messagesChunk = await bot.telegram.getMessages(chatId, {
+          limit: chunkSize,
+          offset_id: lastMessageId
+        });
+        
+        if (!messagesChunk || messagesChunk.length === 0) {
+          log('Không có thêm tin nhắn nào', 'info');
+          break;
+        }
+        
+        log(`Đã tải ${messagesChunk.length} tin nhắn`, 'debug');
+        
+        // Lọc những tin nhắn có file (document, photo, video, audio, voice)
+        const fileMessages = messagesChunk.filter(msg => 
+          msg.document || msg.photo || msg.video || msg.audio || msg.voice
+        );
+        
+        messages.push(...fileMessages);
+        lastMessageId = messagesChunk[messagesChunk.length - 1].message_id;
+      } catch (error) {
+        log(`Lỗi khi lấy tin nhắn: ${error.message}. Thử phương pháp khác.`, 'warning');
+        
+        // Thử phương pháp khác: lấy tin nhắn gần đây
+        try {
+          const history = await bot.telegram.getChatHistory(chatId, {
+            limit: chunkSize
+          });
+          
+          if (!history || history.length === 0) {
+            log('Không thể lấy lịch sử chat', 'warning');
+            break;
+          }
+          
+          log(`Đã tải ${history.length} tin nhắn sử dụng getChatHistory`, 'debug');
+          
+          // Lọc tin nhắn có file
+          const fileMessages = history.filter(msg => 
+            msg.document || msg.photo || msg.video || msg.audio || msg.voice
+          );
+          
+          messages.push(...fileMessages);
+          break; // Chỉ lấy một lần với phương pháp này
+        } catch (fallbackError) {
+          log(`Không thể lấy lịch sử chat: ${fallbackError.message}`, 'error');
+          break;
+        }
+      }
     }
     
+    // Sắp xếp tin nhắn theo thời gian giảm dần (mới nhất lên đầu)
+    messages.sort((a, b) => b.date - a.date);
+    
+    log(`Đã tìm thấy ${messages.length} tin nhắn có file`, 'info');
+    
     // Chuyển đổi thành thông tin file
-    return messages.map(msg => {
+    const files = messages.map(msg => {
       let fileInfo = null;
       
       if (msg.document) {
         fileInfo = {
           file_id: msg.document.file_id,
-          file_name: msg.document.file_name,
-          mime_type: msg.document.mime_type,
-          file_size: msg.document.file_size,
+          file_name: msg.document.file_name || `document_${msg.date}.bin`,
+          mime_type: msg.document.mime_type || 'application/octet-stream',
+          file_size: msg.document.file_size || 0,
           type: 'document'
         };
       } else if (msg.photo) {
+        // Lấy ảnh chất lượng cao nhất (phần tử cuối cùng)
         const photo = msg.photo[msg.photo.length - 1];
         fileInfo = {
           file_id: photo.file_id,
           file_name: `photo_${msg.date}.jpg`,
           mime_type: 'image/jpeg',
-          file_size: photo.file_size,
+          file_size: photo.file_size || 0,
           type: 'photo'
         };
       } else if (msg.video) {
         fileInfo = {
           file_id: msg.video.file_id,
-          file_name: `video_${msg.date}.mp4`,
-          mime_type: msg.video.mime_type,
-          file_size: msg.video.file_size,
+          file_name: msg.video.file_name || `video_${msg.date}.mp4`,
+          mime_type: msg.video.mime_type || 'video/mp4',
+          file_size: msg.video.file_size || 0,
           type: 'video'
         };
       } else if (msg.audio) {
         fileInfo = {
           file_id: msg.audio.file_id,
-          file_name: msg.audio.title || `audio_${msg.date}.mp3`,
-          mime_type: msg.audio.mime_type,
-          file_size: msg.audio.file_size,
+          file_name: msg.audio.title || msg.audio.file_name || `audio_${msg.date}.mp3`,
+          mime_type: msg.audio.mime_type || 'audio/mpeg',
+          file_size: msg.audio.file_size || 0,
           type: 'audio'
+        };
+      } else if (msg.voice) {
+        fileInfo = {
+          file_id: msg.voice.file_id,
+          file_name: `voice_${msg.date}.ogg`,
+          mime_type: msg.voice.mime_type || 'audio/ogg',
+          file_size: msg.voice.file_size || 0,
+          type: 'voice'
         };
       }
       
@@ -491,6 +546,9 @@ async function getFilesFromChat(limit = 100) {
       
       return fileInfo;
     }).filter(Boolean);
+    
+    log(`Đã chuyển đổi thành ${files.length} thông tin file`, 'info');
+    return files;
   } catch (error) {
     log(`Lỗi lấy danh sách file từ chat: ${error.message}`, 'error');
     throw error;
