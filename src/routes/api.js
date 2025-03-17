@@ -174,4 +174,48 @@ router.post('/auth/telegram/verify', async (req, res) => {
       message: 'Đã xảy ra lỗi khi xác thực'
     });
   }
+});
+
+// Route callback từ Telegram Login Widget
+router.get('/auth/telegram/callback', async (req, res) => {
+  try {
+    log('Nhận callback từ Telegram Login Widget', 'info');
+    const data = req.query;
+    
+    // Kiểm tra xem có dữ liệu không
+    if (!data || !data.id) {
+      log('Không có dữ liệu người dùng từ Telegram', 'warning');
+      return res.redirect('/login?error=Không nhận được dữ liệu từ Telegram');
+    }
+    
+    log(`Nhận dữ liệu đăng nhập từ Telegram cho người dùng: ${data.username || data.id}`, 'info');
+    
+    // Tạo thông tin người dùng từ dữ liệu Telegram
+    const user = {
+      id: data.id,
+      username: data.username || String(data.id),
+      displayName: data.first_name + (data.last_name ? ' ' + data.last_name : ''),
+      photoUrl: data.photo_url || 'https://telegram.org/img/t_logo.png',
+      isAdmin: true,
+      provider: 'telegram'
+    };
+    
+    // Tạo session mới
+    req.session.user = user;
+    req.session.isLoggedIn = true;
+    
+    // Lưu session ngay lập tức
+    req.session.save(err => {
+      if (err) {
+        log(`Lỗi khi lưu session: ${err.message}`, 'error');
+        return res.redirect('/login?error=Lỗi khi xử lý đăng nhập');
+      }
+      
+      log(`Người dùng ${user.username} đã đăng nhập thành công qua Widget`, 'info');
+      return res.redirect('/');
+    });
+  } catch (error) {
+    log(`Lỗi khi xử lý callback Telegram: ${error.message}`, 'error');
+    return res.redirect('/login?error=Lỗi hệ thống, vui lòng thử lại sau');
+  }
 }); 
