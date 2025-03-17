@@ -170,13 +170,20 @@ router.post('/auth/verify', async (req, res) => {
     req.session.isLoggedIn = true;
     req.session.user = user;
     
-    log(`Người dùng đã đăng nhập thành công qua xác thực Telegram: ${user.username}`, 'info');
-    
-    // Trả về kết quả
-    return res.json({
-      success: true,
-      user: user,
-      message: 'Đăng nhập thành công'
+    // Đảm bảo session được lưu
+    req.session.save(err => {
+      if (err) {
+        log(`Lỗi khi lưu session: ${err.message}`, 'error');
+      }
+      
+      log(`Người dùng đã đăng nhập thành công qua xác thực Telegram: ${user.username}`, 'info');
+      
+      // Trả về kết quả
+      return res.json({
+        success: true,
+        user: user,
+        message: 'Đăng nhập thành công'
+      });
     });
   } catch (error) {
     log(`Lỗi khi xác thực: ${error.message}`, 'error');

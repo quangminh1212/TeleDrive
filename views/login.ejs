@@ -98,8 +98,13 @@
       <div class="login-footer">
         <p class="mb-0">
           <i class="bi bi-info-circle me-1"></i>
-          Đăng nhập bằng tài khoản Telegram của bạn để sử dụng TeleDrive
+          Đăng nhập bằng Telegram để bắt đầu quản lý file
         </p>
+        <% if (typeof botUsername !== 'undefined' && botUsername) { %>
+          <p class="mt-2 mb-0 text-muted">
+            <small>Bot Telegram: @<%= botUsername %></small>
+          </p>
+        <% } %>
       </div>
     </div>
   </div>
