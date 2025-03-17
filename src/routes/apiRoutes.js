@@ -42,8 +42,8 @@ const upload = multer({
 
 // Áp dụng middleware xác thực cho tất cả các routes ngoại trừ telegram login
 router.use((req, res, next) => {
-  // Cho phép truy cập trực tiếp vào route đăng nhập Telegram mà không cần xác thực
-  if (req.path === '/auth/telegram') {
+  // Cho phép truy cập trực tiếp vào route đăng nhập Telegram và các route xác thực khác
+  if (req.path.startsWith('/auth/') || req.path === '/auth') {
     return next();
   }
   
