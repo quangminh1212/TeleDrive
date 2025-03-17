@@ -124,67 +124,8 @@
       const loginBtn = document.getElementById('telegramLoginBtn');
       const statusMessage = document.getElementById('statusMessage');
       const instructions = document.getElementById('instructions');
-      
-      // Kiểm tra xem người dùng có phải vừa quay lại từ Telegram không
-      function checkAuthCodeFromStorage() {
-        const storedAuthCode = localStorage.getItem('teledriveAuthCode');
-        const storedAuthTime = localStorage.getItem('teledriveAuthTime');
-        
-        // Kiểm tra xem có mã xác thực trong localStorage không
-        if (storedAuthCode && storedAuthTime) {
-          const now = Date.now();
-          const authTime = parseInt(storedAuthTime);
-          
-          // Nếu thời gian lưu chưa quá 10 phút (600000ms), kiểm tra xác thực
-          if (now - authTime < 600000) {
-            showStatus('Đang kiểm tra xác thực...', 'info');
-            
-            // Gửi yêu cầu xác thực
-            verifyAuth(storedAuthCode);
-          } else {
-            // Nếu đã quá 10 phút, xóa mã xác thực cũ
-            localStorage.removeItem('teledriveAuthCode');
-            localStorage.removeItem('teledriveAuthTime');
-          }
-        }
-      }
-      
-      // Hàm gửi yêu cầu xác thực đến server
-      async function verifyAuth(authCode) {
-        try {
-          const response = await fetch('/api/auth/verify', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ authCode: authCode })
-          });
-          
-          const data = await response.json();
-          
-          if (data.success) {
-            // Xác thực thành công
-            showStatus('Xác thực thành công! Đang chuyển hướng...', 'success');
-            
-            // Xóa mã xác thực khỏi localStorage
-            localStorage.removeItem('teledriveAuthCode');
-            localStorage.removeItem('teledriveAuthTime');
-            
-            // Chuyển hướng đến trang chính
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 1000);
-          } else {
-            // Xóa mã xác thực khỏi localStorage
-            localStorage.removeItem('teledriveAuthCode');
-            localStorage.removeItem('teledriveAuthTime');
-          }
-        } catch (error) {
-          console.error('Lỗi khi kiểm tra trạng thái:', error);
-          localStorage.removeItem('teledriveAuthCode');
-          localStorage.removeItem('teledriveAuthTime');
-        }
-      }
+      let authCode = '';
+      let checkInterval = null;
       
       // Xử lý đăng nhập Telegram
       loginBtn.addEventListener('click', async function() {
@@ -198,21 +139,61 @@
             return;
           }
           
-          // Lưu mã xác thực vào localStorage để kiểm tra sau khi quay lại
-          localStorage.setItem('teledriveAuthCode', authData.authCode);
-          localStorage.setItem('teledriveAuthTime', Date.now().toString());
+          // Lưu mã xác thực để kiểm tra sau
+          authCode = authData.authCode;
           
-          // Mở link đến bot Telegram trực tiếp trong cùng tab
+          // Hiển thị hướng dẫn
+          instructions.style.display = 'block';
+          
+          // Mở tab mới để xác thực
           const botUsername = '<%= botUsername %>';
-          const authUrl = `https://t.me/${botUsername}?start=auth_${authData.authCode}`;
+          const authUrl = `https://t.me/${botUsername}?start=auth_${authCode}`;
+          window.open(authUrl, '_blank');
           
-          // Chuyển hướng trực tiếp đến Telegram bot
-          window.location.href = authUrl;
+          // Hiển thị trạng thái và bắt đầu kiểm tra
+          showStatus('Đang đợi xác thực từ Telegram...', 'info');
+          
+          // Bắt đầu kiểm tra trạng thái xác thực
+          if (checkInterval) {
+            clearInterval(checkInterval);
+          }
+          
+          checkInterval = setInterval(checkAuthStatus, 3000);
         } catch (error) {
           console.error('Lỗi khi bắt đầu xác thực:', error);
           showStatus('Đã xảy ra lỗi. Vui lòng thử lại.', 'danger');
         }
       });
+      
+      // Kiểm tra trạng thái xác thực
+      async function checkAuthStatus() {
+        try {
+          if (!authCode) return;
+          
+          const response = await fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ authCode: authCode })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            // Xác thực thành công
+            clearInterval(checkInterval);
+            showStatus('Xác thực thành công! Đang chuyển hướng...', 'success');
+            
+            // Chuyển hướng đến trang chính
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Lỗi khi kiểm tra trạng thái:', error);
+        }
+      }
       
       // Hiển thị thông báo trạng thái
       function showStatus(message, type) {
@@ -238,9 +219,6 @@
             break;
         }
       }
-      
-      // Kiểm tra xác thực khi trang được tải
-      checkAuthCodeFromStorage();
     });
   </script>
 </body>
