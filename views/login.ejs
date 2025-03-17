@@ -112,6 +112,13 @@
             <li>Nhấn nút <strong>START</strong> hoặc gõ <code>/start</code> để xác thực</li>
             <li>Quay lại tab này và đợi hệ thống xác thực</li>
           </ol>
+          <div class="mt-2 p-2 bg-light rounded" id="authCodeDisplay" style="display: none;">
+            <p class="small mb-1">Nếu không mở được Telegram, hãy sao chép lệnh này và gửi cho bot:</p>
+            <div class="d-flex">
+              <code class="flex-grow-1" id="authCommand" style="word-break: break-all;"></code>
+              <button class="btn btn-sm btn-outline-secondary ms-2" id="copyAuthBtn" title="Sao chép"><i class="bi bi-clipboard"></i></button>
+            </div>
+          </div>
         </div>
         <div id="statusMessage" class="mt-3 text-center" style="display: none;"></div>
       </div>
@@ -147,8 +154,19 @@
           
           // Mở tab mới để xác thực
           const botUsername = '<%= botUsername %>';
-          const authUrl = `https://t.me/${botUsername}?start=auth_${authCode}`;
+          const authUrl = `tg://resolve?domain=${botUsername}&start=auth_${authCode}`;
           window.open(authUrl, '_blank');
+          
+          // Nếu không mở được với protocol tg://, thử với https://t.me/
+          setTimeout(() => {
+            const fallbackUrl = `https://t.me/${botUsername}?start=auth_${authCode}`;
+            const fallbackWindow = window.open(fallbackUrl, '_blank');
+            
+            if (!fallbackWindow || fallbackWindow.closed || typeof fallbackWindow.closed === 'undefined') {
+              // Hiển thị hướng dẫn sao chép lệnh nếu không mở được
+              showStatus(`Không thể mở Telegram tự động. Hãy sao chép lệnh sau và gửi cho @${botUsername}: /start auth_${authCode}`, 'warning');
+            }
+          }, 1500);
           
           // Hiển thị trạng thái và bắt đầu kiểm tra
           showStatus('Đang đợi xác thực từ Telegram...', 'info');
