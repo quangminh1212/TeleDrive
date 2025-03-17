@@ -39,12 +39,12 @@ try {
   
   // Thiết lập session
   app.use(session({
-    secret: config.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
+    secret: config.SESSION_SECRET || 'teledrive-secret-key',
+    resave: true,
+    saveUninitialized: true,
     cookie: { 
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000 // 1 ngày
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày
     }
   }));
   

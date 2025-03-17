@@ -32,7 +32,9 @@ function webAuth(req, res, next) {
     '/api/auth/verify', 
     '/api/auth/check', 
     '/api/auth/telegram/callback',
-    '/api/auth/get-auth-code'
+    '/api/auth/get-auth-code',
+    '/api/auth/telegram/start',
+    '/api/auth/telegram/verify'
   ];
   
   // Kiểm tra nếu path hiện tại có bắt đầu bằng bất kỳ route công khai nào
@@ -44,8 +46,10 @@ function webAuth(req, res, next) {
     return next();
   }
   
-  // Kiểm tra session
-  if (req.session && req.session.isLoggedIn) {
+  // Kiểm tra session (chấp nhận cả isLoggedIn và isAuthenticated)
+  const isAuthenticated = req.session && (req.session.isLoggedIn || req.session.isAuthenticated);
+  
+  if (isAuthenticated) {
     log(`Truy cập được xác thực: ${req.path}`, 'debug');
     return next();
   }

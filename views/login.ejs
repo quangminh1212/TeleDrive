@@ -208,7 +208,7 @@
         try {
           if (!authCode) return;
           
-          const response = await fetch('/api/auth/verify', {
+          const response = await fetch('/api/auth/telegram/verify', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -223,13 +223,19 @@
             clearInterval(checkInterval);
             showStatus('Xác thực thành công! Đang chuyển hướng...', 'success');
             
+            console.log('Xác thực thành công, chuẩn bị chuyển hướng...');
+            
             // Chuyển hướng đến trang chính
             setTimeout(() => {
               window.location.href = '/';
-            }, 1000);
+            }, 1500);
+          } else {
+            console.error('Lỗi xác thực:', data.message);
+            showStatus(data.message || 'Có lỗi xảy ra khi xác thực', 'warning');
           }
         } catch (error) {
           console.error('Lỗi khi kiểm tra trạng thái:', error);
+          showStatus('Không thể kết nối với máy chủ. Vui lòng thử lại.', 'danger');
         }
       }
       
