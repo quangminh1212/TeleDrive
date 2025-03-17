@@ -749,9 +749,15 @@ async function verifyAuthRequest(authCode) {
     const db = await loadDb('auth_requests', []);
     log(`Đã tìm thấy ${db.length} yêu cầu xác thực trong DB`, 'debug');
     
-    // Hiển thị tất cả các mã trong DB để debug
+    if (db.length === 0) {
+      log('Không có yêu cầu xác thực nào trong DB', 'warning');
+      return false;
+    }
+    
+    // Debug: hiển thị mã xác thực đang kiểm tra và mã trong DB để so sánh
     if (db.length > 0) {
-      log(`Các mã xác thực hiện có: ${db.map(r => r.code).join(', ')}`, 'debug');
+      const codes = db.map(r => r.code).join(', ');
+      log(`Các mã xác thực trong DB: ${codes}`, 'debug');
     }
     
     const request = db.find(r => r.code === cleanAuthCode);
@@ -760,8 +766,6 @@ async function verifyAuthRequest(authCode) {
       log(`Không tìm thấy yêu cầu xác thực: ${cleanAuthCode}`, 'warning');
       return false;
     }
-    
-    log(`Đã tìm thấy yêu cầu xác thực: ${cleanAuthCode}`, 'info');
     
     // Kiểm tra hết hạn, thời gian hợp lệ là 10 phút
     const now = Date.now();
@@ -785,6 +789,7 @@ async function verifyAuthRequest(authCode) {
     return request;
   } catch (error) {
     log(`Lỗi khi xác thực yêu cầu: ${error.message}`, 'error');
+    log(error.stack, 'error');
     return false;
   }
 }
