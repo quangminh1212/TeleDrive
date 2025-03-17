@@ -198,22 +198,7 @@ router.get('/upload', (req, res) => {
 
 // Trang đăng nhập
 router.get('/login', (req, res) => {
-  // Kiểm tra nếu user đã đăng nhập thì chuyển hướng đến dashboard
-  if (req.session && (req.session.authenticated || req.session.isLoggedIn)) {
-    return res.redirect('/dashboard');
-  }
-  
-  // Nếu chưa đăng nhập, hiển thị trang login với thông báo lỗi nếu có
-  const errorMessage = req.query.error || '';
-  
-  res.render('login', {
-    title: 'Đăng nhập - TeleDrive',
-    errorMessage,
-    config: {
-      botToken: '',
-      telegramBotUsername: ''
-    }
-  });
+  return res.redirect('/');
 });
 
 // Trang dashboard
