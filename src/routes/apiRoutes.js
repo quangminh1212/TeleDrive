@@ -82,38 +82,23 @@ router.post('/auth/logout', async (req, res) => {
 // Route đăng nhập bằng Telegram
 router.get('/auth/telegram', (req, res) => {
   try {
-    // Lấy dữ liệu từ Telegram widget
-    const telegramData = {
-      id: req.query.id,
-      first_name: req.query.first_name,
-      last_name: req.query.last_name,
-      username: req.query.username,
-      photo_url: req.query.photo_url,
-      auth_date: req.query.auth_date,
-      hash: req.query.hash
-    };
-
-    log('Dữ liệu xác thực từ Telegram:', JSON.stringify(telegramData));
-
-    // Cho phép đăng nhập ngay mà không cần xác thực hash
+    // Tự động đăng nhập không cần xác thực
     req.session.isLoggedIn = true;
     req.session.user = {
-      id: telegramData.id || 'unknown',
-      username: telegramData.username || 'telegram_user',
-      displayName: `${telegramData.first_name || ''} ${telegramData.last_name || ''}`.trim() || 'Người dùng Telegram',
-      photoUrl: telegramData.photo_url,
+      id: '123456789',
+      username: 'telegram_user',
+      displayName: 'Người dùng Telegram',
+      photoUrl: 'https://telegram.org/img/t_logo.png',
       isAdmin: true,
       provider: 'telegram'
     };
 
-    log(`Người dùng đăng nhập thành công qua Telegram: ${req.session.user.username}`, 'info');
+    log(`Người dùng đăng nhập tự động qua Telegram`, 'info');
     
-    // Chuyển hướng đến trang chủ hoặc trang đã lưu trước đó
-    const returnTo = req.session.returnTo || '/';
-    delete req.session.returnTo;
-    return res.redirect(returnTo);
+    // Chuyển hướng đến trang chủ
+    return res.redirect('/');
   } catch (error) {
-    log(`Lỗi khi xác thực qua Telegram: ${error.message}`, 'error');
+    log(`Lỗi khi xác thực: ${error.message}`, 'error');
     return res.redirect('/login?error=Lỗi xác thực: ' + error.message);
   }
 });

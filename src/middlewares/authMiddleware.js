@@ -13,26 +13,7 @@ const { log } = require('../utils/helpers');
  * @param {Function} next Next middleware
  */
 function apiAuth(req, res, next) {
-  // Kiểm tra API key trong header
-  const apiKey = req.headers['x-api-key'];
-  
-  if (!apiKey) {
-    return res.status(401).json({
-      success: false,
-      error: 'Không có API key'
-    });
-  }
-  
-  // So sánh với API key từ config
-  const validApiKey = config.API_KEY || 'teledrive-api-key';
-  
-  if (apiKey !== validApiKey) {
-    return res.status(401).json({
-      success: false,
-      error: 'API key không hợp lệ'
-    });
-  }
-  
+  // Tự động cho phép truy cập API mà không cần xác thực
   next();
 }
 
@@ -52,15 +33,10 @@ function webAuth(req, res, next) {
   
   // Kiểm tra session
   if (req.session && req.session.isLoggedIn) {
-    log(`Đã xác thực người dùng: ${req.session.user ? req.session.user.username : 'unknown'}`, 'info');
     return next();
   }
   
-  // Lưu lại đường dẫn hiện tại để redirect sau khi đăng nhập
-  req.session.returnTo = req.originalUrl || req.url;
-  
-  // Chuyển hướng đến trang đăng nhập
-  log('Yêu cầu đăng nhập cho đường dẫn: ' + req.path, 'info');
+  // Nếu chưa đăng nhập, chuyển hướng đến trang đăng nhập
   return res.redirect('/login');
 }
 
@@ -71,24 +47,8 @@ function webAuth(req, res, next) {
  * @param {Function} next Next middleware
  */
 function adminAuth(req, res, next) {
-  // Kiểm tra quyền admin
-  if (req.session && req.session.isLoggedIn && req.session.user && req.session.user.isAdmin) {
-    return next();
-  }
-  
-  // Nếu là API request, trả về lỗi 403
-  if (req.path.startsWith('/api/')) {
-    return res.status(403).json({
-      success: false,
-      error: 'Không có quyền admin'
-    });
-  }
-  
-  // Chuyển hướng đến trang lỗi
-  return res.render('error', {
-    title: '403 - Cấm truy cập',
-    message: 'Bạn không có quyền truy cập trang này'
-  });
+  // Tự động cấp quyền admin
+  next();
 }
 
 module.exports = {
