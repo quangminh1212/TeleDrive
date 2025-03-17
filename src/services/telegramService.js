@@ -522,6 +522,8 @@ async function verifyAuthRequest(authCode) {
       return null;
     }
     
+    log(`Đang kiểm tra mã xác thực: ${authCode}`, 'info');
+    
     // Lấy thông tin yêu cầu xác thực từ database
     const authRequest = dbService.getAuthRequest(authCode);
     
@@ -540,8 +542,11 @@ async function verifyAuthRequest(authCode) {
       return null;
     }
     
+    // Xóa yêu cầu xác thực sau khi đã xác minh thành công
+    dbService.removeAuthRequest(authCode);
+    
     // Trả về thông tin người dùng Telegram
-    return {
+    const user = {
       id: authRequest.telegramId,
       username: authRequest.username || String(authRequest.telegramId),
       displayName: authRequest.firstName + (authRequest.lastName ? ' ' + authRequest.lastName : ''),
@@ -549,6 +554,10 @@ async function verifyAuthRequest(authCode) {
       isAdmin: true, // Mọi người dùng Telegram đều có quyền admin
       provider: 'telegram'
     };
+    
+    log(`Xác thực thành công cho ${user.displayName} (${user.username})`, 'info');
+    
+    return user;
   } catch (error) {
     log(`Lỗi khi xác minh yêu cầu xác thực: ${error.message}`, 'error');
     return null;

@@ -106,6 +106,7 @@
       let countdown = 600; // 10 phút
       let isAuthenticated = false;
       let checkCount = 0;
+      let maxRetries = 100; // Số lần thử tối đa
       
       // Cập nhật countdown timer
       const updateTimer = () => {
@@ -135,14 +136,12 @@
             clearInterval(timerInterval);
             isAuthenticated = true;
             
+            console.log("Đăng nhập thành công, đang chuyển hướng...");
             statusMessage.textContent = 'Xác thực thành công! Đang chuyển hướng...';
             statusMessage.style.color = '#28a745';
             
-            // Chuyển hướng sau 2 giây
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 2000);
-            
+            // Chuyển hướng ngay lập tức
+            window.location.href = '/';
             return true;
           }
           return false;
@@ -162,6 +161,14 @@
           checkCount++;
           console.log(`Đang kiểm tra xác thực lần ${checkCount}...`);
           
+          if (checkCount > maxRetries) {
+            clearInterval(checkInterval);
+            statusMessage.textContent = 'Không thể xác thực tài khoản. Vui lòng thử lại.';
+            statusMessage.style.color = '#dc3545';
+            btnBack.style.display = 'block';
+            return;
+          }
+          
           // Gửi yêu cầu kiểm tra đến API
           const response = await fetch('/api/auth/verify', {
             method: 'POST',
@@ -178,15 +185,20 @@
             clearInterval(timerInterval);
             isAuthenticated = true;
             
+            console.log("API verify trả về thành công, đang chuyển hướng...");
             statusMessage.textContent = 'Xác thực thành công! Đang chuyển hướng...';
             statusMessage.style.color = '#28a745';
             
-            // Chuyển hướng sau 2 giây
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 2000);
-          } else if (checkCount > 10) {
-            // Sau 10 lần kiểm tra (30 giây), thử lại bằng cách dùng endpoint check
+            // Chuyển hướng ngay lập tức đến trang chính
+            window.location.href = '/';
+          } else if (response.status === 401) {
+            // Mã xác thực không hợp lệ
+            statusMessage.textContent = data.message || 'Không thể xác thực tài khoản.';
+            statusMessage.style.color = '#dc3545';
+            btnBack.style.display = 'block';
+            clearInterval(checkInterval);
+          } else if (checkCount % 10 === 0) {
+            // Mỗi 10 lần kiểm tra (30 giây), thử dùng endpoint check
             await checkLoginStatus();
           }
         } catch (error) {
@@ -194,6 +206,14 @@
           // Sau 5 lần lỗi, thử lại bằng cách dùng endpoint check
           if (checkCount % 5 === 0) {
             await checkLoginStatus();
+          }
+          
+          // Nếu có quá nhiều lỗi, hiển thị lỗi
+          if (checkCount > 50) {
+            statusMessage.textContent = 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.';
+            statusMessage.style.color = '#dc3545';
+            btnBack.style.display = 'block';
+            clearInterval(checkInterval);
           }
         }
       };
@@ -208,10 +228,10 @@
       updateTimer();
       verifyAuthStatus();
       
-      // Hiển thị nút quay lại sau 30 giây
+      // Hiển thị nút quay lại sau 10 giây
       setTimeout(() => {
         btnBack.style.display = 'block';
-      }, 30000);
+      }, 10000);
     });
   </script>
 </body>

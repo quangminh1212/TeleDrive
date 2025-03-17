@@ -40,6 +40,9 @@ try {
   app.use(session({
     secret: config.SESSION_SECRET,
     resave: false,
+    saveUninitialized: false,
+    cookie: { 
+      secure: process.env.NODE_ENV === 'production',
     saveUninitialized: true,
     cookie: { secure: false }
   }));
