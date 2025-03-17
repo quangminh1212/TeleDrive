@@ -28,21 +28,31 @@ router.post('/auth/verify', async (req, res) => {
   try {
     const { authCode } = req.body;
     
+    log(`API nhận yêu cầu xác thực với mã: ${authCode}`, 'debug');
+    
     if (!authCode) {
+      log('Yêu cầu xác thực bị từ chối: Không có mã xác thực', 'warning');
       return res.status(400).json({
         success: false,
         message: 'Không có mã xác thực được cung cấp'
       });
     }
     
-    const authData = await telegramService.verifyAuthRequest(authCode);
+    // Loại bỏ tiền tố "auth_" nếu có
+    const cleanAuthCode = authCode.replace('auth_', '');
+    log(`Xử lý mã xác thực (đã làm sạch): ${cleanAuthCode}`, 'debug');
+    
+    const authData = await telegramService.verifyAuthRequest(cleanAuthCode);
     
     if (!authData) {
+      log(`Xác thực thất bại với mã: ${cleanAuthCode}`, 'warning');
       return res.status(400).json({
         success: false,
         message: 'Mã xác thực không hợp lệ hoặc đã hết hạn'
       });
     }
+    
+    log(`Xác thực thành công với mã: ${cleanAuthCode}`, 'info');
     
     // Tạo thông tin người dùng giả lập
     const user = {
@@ -57,23 +67,31 @@ router.post('/auth/verify', async (req, res) => {
     // Tạo session mới
     req.session.user = user;
     req.session.isLoggedIn = true;
+    req.session.isAuthenticated = true; // Thêm cả flag này để đảm bảo tương thích
     
     // Lưu session ngay lập tức
     req.session.save(err => {
       if (err) {
         log(`Lỗi khi lưu session: ${err.message}`, 'error');
+      } else {
+        log('Đã lưu session thành công', 'debug');
       }
       
-      return res.json({
-        success: true,
-        user: user
-      });
+      // Thêm thời gian delay nhỏ để đảm bảo session được lưu
+      setTimeout(() => {
+        return res.json({
+          success: true,
+          user: user
+        });
+      }, 300);
     });
   } catch (error) {
     log(`Lỗi khi xác thực Telegram: ${error.message}`, 'error');
+    log(error.stack, 'error');
     return res.status(500).json({
       success: false,
-      message: 'Đã xảy ra lỗi khi xác thực'
+      message: 'Đã xảy ra lỗi khi xác thực',
+      error: error.message
     });
   }
 });

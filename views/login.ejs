@@ -208,15 +208,28 @@
         try {
           if (!authCode) return;
           
-          const response = await fetch('/api/auth/telegram/verify', {
+          // Loại bỏ tiền tố "auth_" nếu có
+          const cleanAuthCode = authCode.replace('auth_', '');
+          console.log('Đang kiểm tra mã xác thực:', cleanAuthCode);
+          
+          const response = await fetch('/api/auth/verify', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ authCode: authCode })
+            body: JSON.stringify({ authCode: cleanAuthCode })
           });
           
+          if (!response.ok) {
+            console.error('Lỗi HTTP:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('Nội dung lỗi:', errorText);
+            showStatus(`Lỗi kết nối: ${response.status} ${response.statusText}`, 'danger');
+            return;
+          }
+          
           const data = await response.json();
+          console.log('Kết quả xác thực:', data);
           
           if (data.success) {
             // Xác thực thành công
@@ -228,7 +241,7 @@
             // Chuyển hướng đến trang chính
             setTimeout(() => {
               window.location.href = '/';
-            }, 1500);
+            }, 2000);
           } else {
             console.error('Lỗi xác thực:', data.message);
             showStatus(data.message || 'Có lỗi xảy ra khi xác thực', 'warning');

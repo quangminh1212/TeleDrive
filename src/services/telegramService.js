@@ -740,36 +740,48 @@ async function verifyAuthRequest(authCode) {
       return false;
     }
     
+    // Loại bỏ tiền tố "auth_" nếu có
+    const cleanAuthCode = authCode.replace('auth_', '');
+    
     // Lấy yêu cầu xác thực từ DB
-    log(`Đang kiểm tra mã xác thực: ${authCode}`, 'info');
+    log(`Đang kiểm tra mã xác thực: ${cleanAuthCode}`, 'info');
     
     const db = await loadDb('auth_requests', []);
-    const request = db.find(r => r.code === authCode);
+    log(`Đã tìm thấy ${db.length} yêu cầu xác thực trong DB`, 'debug');
+    
+    // Hiển thị tất cả các mã trong DB để debug
+    if (db.length > 0) {
+      log(`Các mã xác thực hiện có: ${db.map(r => r.code).join(', ')}`, 'debug');
+    }
+    
+    const request = db.find(r => r.code === cleanAuthCode);
     
     if (!request) {
-      log(`Không tìm thấy yêu cầu xác thực: ${authCode}`, 'warning');
+      log(`Không tìm thấy yêu cầu xác thực: ${cleanAuthCode}`, 'warning');
       return false;
     }
+    
+    log(`Đã tìm thấy yêu cầu xác thực: ${cleanAuthCode}`, 'info');
     
     // Kiểm tra hết hạn, thời gian hợp lệ là 10 phút
     const now = Date.now();
     const validUntil = request.timestamp + (10 * 60 * 1000);
     
     if (now > validUntil) {
-      log(`Yêu cầu xác thực đã hết hạn: ${authCode}`, 'warning');
+      log(`Yêu cầu xác thực đã hết hạn: ${cleanAuthCode}`, 'warning');
       
       // Xóa yêu cầu hết hạn
-      const newDb = db.filter(r => r.code !== authCode);
+      const newDb = db.filter(r => r.code !== cleanAuthCode);
       await saveDb('auth_requests', newDb);
       
       return false;
     }
     
     // Xóa yêu cầu đã sử dụng
-    const newDb = db.filter(r => r.code !== authCode);
+    const newDb = db.filter(r => r.code !== cleanAuthCode);
     await saveDb('auth_requests', newDb);
     
-    log(`Xác thực thành công với mã: ${authCode}`, 'info');
+    log(`Xác thực thành công với mã: ${cleanAuthCode}`, 'info');
     return request;
   } catch (error) {
     log(`Lỗi khi xác thực yêu cầu: ${error.message}`, 'error');
