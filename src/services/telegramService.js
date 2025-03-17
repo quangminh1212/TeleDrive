@@ -21,43 +21,68 @@ ensureDirectoryExists(uploadsDir);
 // Biến trạng thái
 let bot = null;
 let isReady = false;
+let botStarting = false; // Biến cờ để theo dõi khi bot đang khởi động
+let lastInitTime = 0; // Thời gian lần cuối khởi tạo bot thành công
 
 // Thêm biến để theo dõi trạng thái khởi tạo gần đây
 let lastInitFailed = false;
 let lastInitAttempt = 0;
 const INIT_COOLDOWN = 60000; // 1 phút giữa các lần thử initBot
+const TELEGRAM_CONFLICT_WAIT = 10000; // 10 giây đợi khi xung đột
 
 /**
  * Khởi tạo bot Telegram
+ * @param {Boolean} force Buộc khởi tạo lại bot
  * @returns {Promise<Boolean>} Kết quả khởi tạo
  */
-async function initBot() {
+async function initBot(force = false) {
+  // Nếu đang có tiến trình khởi động bot, đợi
+  if (botStarting) {
+    log('Bot đang trong quá trình khởi động, đợi...', 'info');
+    // Đợi tối đa 5 giây
+    for (let i = 0; i < 10; i++) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!botStarting) {
+        return isReady; // Trả về trạng thái hiện tại
+      }
+    }
+    log('Đợi bot khởi động quá lâu', 'warning');
+    return false;
+  }
+  
   try {
-    // Kiểm tra xem bot đã sẵn sàng chưa
-    if (bot && isReady) {
+    botStarting = true;
+    
+    // Kiểm tra xem bot đã sẵn sàng chưa và không buộc khởi tạo lại
+    if (!force && bot && isReady) {
       log('Bot đã được khởi tạo trước đó và đang hoạt động', 'info');
       lastInitFailed = false;
+      botStarting = false;
       return true;
     }
     
     // Kiểm tra thời gian cooldown nếu lần khởi tạo gần đây thất bại
     const now = Date.now();
-    if (lastInitFailed && (now - lastInitAttempt < INIT_COOLDOWN)) {
+    if (lastInitFailed && (now - lastInitAttempt < INIT_COOLDOWN) && !force) {
       log(`Cooldown đang hoạt động, vui lòng đợi ${Math.ceil((INIT_COOLDOWN - (now - lastInitAttempt)) / 1000)} giây nữa`, 'warning');
+      botStarting = false;
       return false;
     }
     
-    // Nếu đang có bot instance nhưng không ready, dừng nó trước
-    if (bot && !isReady) {
-      log('Bot tồn tại nhưng không sẵn sàng, dừng và khởi tạo lại', 'warning');
+    // Nếu đang có bot instance, dừng nó trước
+    if (bot) {
+      log('Dừng bot hiện tại trước khi khởi tạo lại', 'info');
       try {
-        await bot.stop();
-        bot = null;
+        await stopBot(true); // Dừng bot hiện tại
+        // Đợi một khoảng thời gian để Telegram giải phóng tài nguyên
+        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error) {
-        log(`Lỗi khi dừng bot không hoạt động: ${error.message}`, 'warning');
-        // Không throw lỗi ở đây
+        log(`Lỗi khi dừng bot hiện tại: ${error.message}`, 'warning');
       }
     }
+    
+    // Đảm bảo các biến trạng thái đã reset
+    resetBotStatus();
     
     // Cập nhật thời gian thử khởi tạo
     lastInitAttempt = now;
@@ -66,62 +91,62 @@ async function initBot() {
     if (!config.TELEGRAM_BOT_TOKEN) {
       log('Không tìm thấy TELEGRAM_BOT_TOKEN trong cấu hình', 'error');
       lastInitFailed = true;
+      botStarting = false;
       return false;
     }
     
     if (!config.TELEGRAM_CHAT_ID) {
       log('Không tìm thấy TELEGRAM_CHAT_ID trong cấu hình', 'error');
       lastInitFailed = true;
+      botStarting = false;
       return false;
     }
     
     // Khởi tạo bot với tùy chọn để tránh xung đột
-    bot = new Telegraf(config.TELEGRAM_BOT_TOKEN, {
-      telegram: {
-        // Tắt webhook để sử dụng long polling
-        webhookReply: false
-      },
-      // Tùy chọn để tránh xung đột giữa các instance
-      polling: {
-        timeout: 30,
-        limit: 100
-      }
-    });
-    
-    // Thiết lập xử lý sự kiện nhận file
-    setupMessageHandlers();
-    
-    // Lệnh kiểm tra
-    bot.command('ping', (ctx) => ctx.reply('Pong!'));
-    
-    // Khởi động bot với cơ chế retry
-    const maxRetries = 3;
-    let retries = 0;
-    let success = false;
-    
-    while (!success && retries < maxRetries) {
-      try {
-        await bot.launch({
-          // Sử dụng long polling để tránh xung đột
-          polling: {
-            timeout: 30,
-            limit: 100
-          },
-          dropPendingUpdates: true,
-          allowedUpdates: ['message', 'callback_query']
-        });
-        success = true;
-      } catch (error) {
-        retries++;
-        if (error.message && error.message.includes('409: Conflict')) {
-          log(`Phát hiện xung đột bot (lần thử ${retries}/${maxRetries}), đợi trước khi thử lại...`, 'warning');
-          // Đợi trước khi thử lại
-          await new Promise(resolve => setTimeout(resolve, 5000 * retries));
+    try {
+      bot = new Telegraf(config.TELEGRAM_BOT_TOKEN, {
+        telegram: {
+          // Tắt webhook để sử dụng long polling
+          webhookReply: false
+        }
+      });
+      
+      // Thiết lập xử lý sự kiện nhận file
+      setupMessageHandlers();
+      
+      // Lệnh kiểm tra
+      bot.command('ping', (ctx) => ctx.reply('Pong!'));
+      
+      // Khởi động bot với cơ chế retry
+      const maxRetries = 3;
+      let retries = 0;
+      let success = false;
+      
+      while (!success && retries < maxRetries) {
+        try {
+          await bot.launch({
+            dropPendingUpdates: true,
+            allowedUpdates: ['message', 'callback_query']
+          });
+          success = true;
+        } catch (error) {
+          retries++;
+          const isConflict = error.message && (
+            error.message.includes('409: Conflict') || 
+            error.message.includes('terminated by other getUpdates')
+          );
           
-          // Thử dừng bot cũ nếu có
-          try {
-            bot.stop();
-            bot = null;
+          if (isConflict) {
+            log(`Phát hiện xung đột bot (lần thử ${retries}/${maxRetries}), đợi trước khi thử lại...`, 'warning');
+            // Dọn dẹp bot hiện tại
+            try {
+              bot.stop();
+            } catch (e) { /* Bỏ qua lỗi stop */ }
+            
+            // Đợi thời gian dài hơn sau mỗi lần thử
+            const waitTime = TELEGRAM_CONFLICT_WAIT * retries;
+            log(`Đợi ${waitTime/1000} giây trước khi thử lại...`, 'info');
+            await new Promise(resolve => setTimeout(resolve, waitTime));
             
             // Tạo lại bot instance
             bot = new Telegraf(config.TELEGRAM_BOT_TOKEN, {
@@ -133,60 +158,68 @@ async function initBot() {
             // Thiết lập handlers lại
             setupMessageHandlers();
             bot.command('ping', (ctx) => ctx.reply('Pong!'));
-          } catch (stopError) {
-            log(`Lỗi khi dừng bot trước khi thử lại: ${stopError.message}`, 'warning');
+          } else {
+            log(`Lỗi không phải xung đột khi khởi tạo bot: ${error.message}`, 'error');
+            throw error; // Nếu không phải lỗi xung đột, throw lỗi
           }
-        } else {
-          log(`Lỗi không phải xung đột khi khởi tạo bot: ${error.message}`, 'error');
-          throw error; // Nếu không phải lỗi xung đột, throw lỗi
         }
       }
-    }
-    
-    if (!success) {
-      throw new Error(`Không thể khởi tạo bot sau ${maxRetries} lần thử`);
-    }
-    
-    isReady = true;
-    
-    log('Khởi tạo bot Telegram thành công');
-    return true;
-  } catch (error) {
-    log(`Lỗi khởi tạo bot Telegram: ${error.message}`, 'error');
-    // Reset bot state nếu có lỗi
-    if (bot) {
-      try {
-        await bot.stop();
-      } catch (stopError) {
-        log(`Lỗi khi dừng bot sau khi gặp lỗi: ${stopError.message}`, 'warning');
+      
+      if (!success) {
+        throw new Error(`Không thể khởi tạo bot sau ${maxRetries} lần thử`);
       }
+      
+      isReady = true;
+      lastInitTime = Date.now();
+      lastInitFailed = false;
+      
+      log('Khởi tạo bot Telegram thành công', 'info');
+      return true;
+    } catch (error) {
+      log(`Lỗi khởi tạo bot Telegram: ${error.message}`, 'error');
+      // Reset bot state nếu có lỗi
+      resetBotStatus();
+      lastInitFailed = true;
+      return false;
+    } finally {
+      botStarting = false;
     }
-    resetBotStatus();
-    lastInitFailed = true;
+  } catch (outerError) {
+    log(`Lỗi ngoại lệ khi khởi tạo bot: ${outerError.message}`, 'error');
+    botStarting = false;
     return false;
   }
 }
 
 /**
  * Dừng bot Telegram
+ * @param {Boolean} force Buộc dừng ngay cả khi có lỗi
  * @returns {Promise<Boolean>} Kết quả dừng bot
  */
-async function stopBot() {
+async function stopBot(force = false) {
   try {
     if (!bot) {
       log('Bot chưa được khởi tạo, không cần dừng', 'warning');
       return true;
     }
     
+    // Gọi hàm dừng bot
     await bot.stop();
+    
+    // Reset trạng thái
     resetBotStatus();
     
-    log('Dừng bot Telegram thành công');
+    log('Dừng bot Telegram thành công', 'info');
     return true;
   } catch (error) {
     log(`Lỗi khi dừng bot Telegram: ${error.message}`, 'error');
-    // Vẫn reset trạng thái kể cả khi có lỗi
-    resetBotStatus();
+    
+    // Nếu force = true, vẫn reset trạng thái kể cả khi có lỗi
+    if (force) {
+      resetBotStatus();
+      return true;
+    }
+    
     return false;
   }
 }
@@ -692,7 +725,6 @@ async function syncFilesFromTelegram() {
 function resetBotStatus() {
   bot = null;
   isReady = false;
-  lastInitFailed = false;
 }
 
 /**
