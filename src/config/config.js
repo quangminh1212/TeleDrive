@@ -13,6 +13,7 @@ const config = {
   // Telegram configuration
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
+  TELEGRAM_BOT_USERNAME: process.env.TELEGRAM_BOT_USERNAME,
   
   // Authentication
   ADMIN_USERNAME: process.env.ADMIN_USERNAME || 'admin',

@@ -176,7 +176,7 @@ router.get('/login', (req, res) => {
   }
 
   // Chuẩn bị thông tin cho Telegram login widget
-  const telegramBotUsername = process.env.TELEGRAM_BOT_USERNAME || 'your_bot_username';
+  const telegramBotUsername = config.TELEGRAM_BOT_USERNAME || 'your_bot_username';
   
   res.render('login', { 
     title: 'Đăng nhập - TeleDrive',
