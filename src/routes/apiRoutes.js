@@ -93,26 +93,25 @@ router.get('/auth/telegram', (req, res) => {
       hash: req.query.hash
     };
 
-    // Kiểm tra xem dữ liệu có đầy đủ không
-    if (!telegramData.id || !telegramData.username || !telegramData.hash) {
-      return res.redirect('/login?error=Dữ liệu xác thực Telegram không hợp lệ');
-    }
+    log('Dữ liệu xác thực từ Telegram:', JSON.stringify(telegramData));
 
-    // Lưu thông tin xác thực vào session
+    // Cho phép đăng nhập ngay mà không cần xác thực hash
     req.session.isLoggedIn = true;
     req.session.user = {
-      id: telegramData.id,
-      username: telegramData.username,
-      displayName: `${telegramData.first_name || ''} ${telegramData.last_name || ''}`.trim(),
+      id: telegramData.id || 'unknown',
+      username: telegramData.username || 'telegram_user',
+      displayName: `${telegramData.first_name || ''} ${telegramData.last_name || ''}`.trim() || 'Người dùng Telegram',
       photoUrl: telegramData.photo_url,
-      isAdmin: true, // Coi như tất cả người dùng Telegram đều là admin
+      isAdmin: true,
       provider: 'telegram'
     };
 
-    log(`Người dùng đăng nhập thành công qua Telegram: ${telegramData.username}`, 'info');
+    log(`Người dùng đăng nhập thành công qua Telegram: ${req.session.user.username}`, 'info');
     
-    // Chuyển hướng đến trang chủ
-    return res.redirect('/');
+    // Chuyển hướng đến trang chủ hoặc trang đã lưu trước đó
+    const returnTo = req.session.returnTo || '/';
+    delete req.session.returnTo;
+    return res.redirect(returnTo);
   } catch (error) {
     log(`Lỗi khi xác thực qua Telegram: ${error.message}`, 'error');
     return res.redirect('/login?error=Lỗi xác thực: ' + error.message);

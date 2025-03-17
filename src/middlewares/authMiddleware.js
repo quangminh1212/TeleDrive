@@ -52,16 +52,12 @@ function webAuth(req, res, next) {
   
   // Kiểm tra session
   if (req.session && req.session.isLoggedIn) {
+    log(`Đã xác thực người dùng: ${req.session.user ? req.session.user.username : 'unknown'}`, 'info');
     return next();
   }
   
-  // Nếu là API request, trả về lỗi 401
-  if (req.path.startsWith('/api/')) {
-    return res.status(401).json({
-      success: false,
-      error: 'Chưa đăng nhập'
-    });
-  }
+  // Lưu lại đường dẫn hiện tại để redirect sau khi đăng nhập
+  req.session.returnTo = req.originalUrl || req.url;
   
   // Chuyển hướng đến trang đăng nhập
   log('Yêu cầu đăng nhập cho đường dẫn: ' + req.path, 'info');

@@ -44,9 +44,6 @@
       color: #6c757d;
       font-size: 14px;
     }
-    .form-floating {
-      margin-bottom: 20px;
-    }
     .login-btn {
       width: 100%;
       padding: 12px;
@@ -60,28 +57,6 @@
     }
     .alert {
       margin-bottom: 20px;
-    }
-    .or-divider {
-      text-align: center;
-      margin: 20px 0;
-      position: relative;
-    }
-    .or-divider:before {
-      content: '';
-      height: 1px;
-      background-color: #dee2e6;
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      z-index: 0;
-    }
-    .or-divider span {
-      background-color: white;
-      padding: 0 10px;
-      position: relative;
-      z-index: 1;
-      color: #6c757d;
     }
     .telegram-login {
       text-align: center;
@@ -97,7 +72,7 @@
           <i class="bi bi-telegram"></i>
         </div>
         <h4 class="login-title">TeleDrive</h4>
-        <p class="login-subtitle">Đăng nhập để quản lý file của bạn</p>
+        <p class="login-subtitle">Đăng nhập bằng Telegram để quản lý file của bạn</p>
       </div>
       
       <% if (typeof error !== 'undefined' && error) { %>
@@ -117,38 +92,10 @@
                 data-request-access="write"></script>
       </div>
       
-      <div class="or-divider">
-        <span>HOẶC</span>
-      </div>
-      
-      <form action="/api/auth/login" method="post">
-        <div class="form-floating">
-          <input type="text" class="form-control" id="username" name="username" placeholder="Tên đăng nhập" required>
-          <label for="username">Tên đăng nhập</label>
-        </div>
-        
-        <div class="form-floating">
-          <input type="password" class="form-control" id="password" name="password" placeholder="Mật khẩu" required>
-          <label for="password">Mật khẩu</label>
-        </div>
-        
-        <div class="form-check mb-3">
-          <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe">
-          <label class="form-check-label" for="rememberMe">
-            Ghi nhớ đăng nhập
-          </label>
-        </div>
-        
-        <button type="submit" class="btn btn-primary login-btn">
-          <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
-        </button>
-      </form>
-      
       <div class="login-footer">
-        <p>Sử dụng thông tin đăng nhập được cung cấp bởi quản trị viên</p>
         <p class="mb-0">
           <i class="bi bi-info-circle me-1"></i>
-          Nếu đây là lần đầu tiên bạn sử dụng, hãy xem tài liệu hướng dẫn
+          Đăng nhập bằng tài khoản Telegram của bạn để sử dụng TeleDrive
         </p>
       </div>
     </div>
