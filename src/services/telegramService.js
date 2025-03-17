@@ -258,7 +258,7 @@ const setupMessageHandlers = () => {
   });
   
   // Xử lý lệnh /auth <mã xác thực>
-  bot.command('auth', (ctx) => {
+  bot.command('auth', async (ctx) => {
     try {
       const text = ctx.message.text.trim();
       const parts = text.split(' ');
@@ -267,51 +267,44 @@ const setupMessageHandlers = () => {
         return ctx.reply('⚠️ Vui lòng cung cấp mã xác thực. Ví dụ: /auth abc123');
       }
       
+      // Lấy phần mã xác thực và loại bỏ khoảng trắng
       const authCode = parts[1].trim();
-      handleAuth(ctx, authCode);
+      log(`Nhận lệnh /auth với mã: ${authCode}`, 'info');
+      
+      // Xử lý xác thực
+      await handleAuth(ctx, authCode);
     } catch (error) {
       log(`Lỗi khi xử lý lệnh /auth: ${error.message}`, 'error');
       ctx.reply('❌ Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại sau.');
     }
   });
   
-  // Hàm xử lý xác thực chung
-  async function handleAuth(ctx, authCode) {
-    const userId = ctx.from.id;
-    const username = ctx.from.username || '';
-    const firstName = ctx.from.first_name || '';
-    const lastName = ctx.from.last_name || '';
-    
-    log(`Nhận yêu cầu xác thực với mã ${authCode} từ người dùng: ${userId} (${username})`, 'info');
-    
+  // Xử lý tin nhắn văn bản để bắt lệnh auth không dùng /auth
+  bot.on('text', async (ctx) => {
     try {
-      // Kiểm tra xem mã xác thực có tồn tại không
-      const db = await loadDb('auth_requests', []);
-      const request = db.find(r => r.code === authCode);
+      const text = ctx.message.text.trim();
       
-      if (!request) {
-        log(`Mã xác thực không hợp lệ: ${authCode}`, 'warning');
-        return ctx.reply('⚠️ Mã xác thực không hợp lệ hoặc đã hết hạn. Vui lòng thử lại hoặc tạo mã mới từ trang web.');
+      // Kiểm tra xem tin nhắn có phải là mã xác thực không (có thể là copy-paste mã)
+      if (text.length >= 12 && text.length <= 32 && /^[a-f0-9]+$/i.test(text)) {
+        log(`Phát hiện tin nhắn văn bản có thể là mã xác thực: ${text}`, 'info');
+        await handleAuth(ctx, text);
+        return;
       }
       
-      // Lưu thông tin người dùng liên kết với mã này
-      request.telegramId = userId;
-      request.username = username;
-      request.firstName = firstName;
-      request.lastName = lastName;
-      request.verified = true;
-      request.verifiedAt = Date.now();
+      // Kiểm tra các định dạng mã xác thực phổ biến
+      const authCodePattern = /auth[_\s]([a-f0-9]{12,32})/i;
+      const match = text.match(authCodePattern);
       
-      // Lưu lại vào DB
-      await saveDb('auth_requests', db);
-      
-      ctx.reply('✅ Xác thực thành công! Bạn có thể quay lại trang web và đăng nhập.');
-      log(`Người dùng ${userId} (${username}) đã xác thực thành công với mã ${authCode}`, 'info');
+      if (match && match[1]) {
+        const authCode = match[1];
+        log(`Phát hiện mã xác thực từ tin nhắn: ${authCode}`, 'info');
+        await handleAuth(ctx, authCode);
+        return;
+      }
     } catch (error) {
-      log(`Lỗi khi xử lý xác thực: ${error.message}`, 'error');
-      ctx.reply('❌ Đã xảy ra lỗi khi xác thực. Vui lòng thử lại sau.');
+      log(`Lỗi khi xử lý tin nhắn văn bản: ${error.message}`, 'error');
     }
-  }
+  });
   
   // Handle document messages
   bot.on(message('document'), async (ctx) => {
@@ -941,6 +934,55 @@ async function saveDb(dbName, data) {
   } catch (error) {
     log(`Lỗi khi lưu DB ${dbName}: ${error.message}`, 'error');
     return false;
+  }
+}
+
+// Hàm xử lý xác thực chung
+async function handleAuth(ctx, authCode) {
+  const userId = ctx.from.id;
+  const username = ctx.from.username || '';
+  const firstName = ctx.from.first_name || '';
+  const lastName = ctx.from.last_name || '';
+  
+  log(`Nhận yêu cầu xác thực với mã ${authCode} từ người dùng: ${userId} (${username})`, 'info');
+  
+  try {
+    // Kiểm tra xem mã xác thực có tồn tại không
+    const db = await loadDb('auth_requests', []);
+    log(`[DEBUG] Đang so sánh với ${db.length} mã xác thực trong DB`, 'debug');
+    
+    // Sử dụng cả 2 cách: so sánh chính xác và so sánh không phân biệt hoa thường
+    const exactMatch = db.find(r => r.code === authCode);
+    const caseInsensitiveMatch = !exactMatch ? db.find(r => r.code.toLowerCase() === authCode.toLowerCase()) : null;
+    const request = exactMatch || caseInsensitiveMatch;
+    
+    if (!request) {
+      log(`Mã xác thực không hợp lệ: ${authCode}`, 'warning');
+      // Hiển thị các mã trong DB để debug
+      if (db.length > 0) {
+        const dbCodes = db.map(r => r.code).join(', ');
+        log(`Mã trong DB: ${dbCodes}`, 'debug');
+      }
+      
+      return ctx.reply('⚠️ Mã xác thực không hợp lệ hoặc đã hết hạn. Vui lòng thử lại với mã mới từ trang web.');
+    }
+    
+    // Lưu thông tin người dùng liên kết với mã này
+    request.telegramId = userId;
+    request.username = username;
+    request.firstName = firstName;
+    request.lastName = lastName;
+    request.verified = true;
+    request.verifiedAt = Date.now();
+    
+    // Lưu lại vào DB
+    await saveDb('auth_requests', db);
+    
+    ctx.reply('✅ Xác thực thành công! Bạn có thể quay lại trang web và đăng nhập. Trang web sẽ tự chuyển hướng.');
+    log(`Người dùng ${userId} (${username}) đã xác thực thành công với mã ${authCode}`, 'info');
+  } catch (error) {
+    log(`Lỗi khi xử lý xác thực: ${error.message}`, 'error');
+    ctx.reply('❌ Đã xảy ra lỗi khi xác thực. Vui lòng thử lại sau.');
   }
 }
 
