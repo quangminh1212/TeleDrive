@@ -218,4 +218,85 @@ router.get('/auth/telegram/callback', async (req, res) => {
     log(`Lỗi khi xử lý callback Telegram: ${error.message}`, 'error');
     return res.redirect('/login?error=Lỗi hệ thống, vui lòng thử lại sau');
   }
+});
+
+// API kiểm tra trạng thái xác thực
+router.post('/auth/check-status', async (req, res) => {
+  try {
+    const { authCode } = req.body;
+    
+    if (!authCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không có mã xác thực được cung cấp'
+      });
+    }
+    
+    // Kiểm tra trong database
+    const db = await telegramService.loadDb('auth_requests', []);
+    const cleanAuthCode = authCode.replace('auth_', '');
+    
+    // Sử dụng cả 2 cách: so sánh chính xác và so sánh không phân biệt hoa thường
+    const request = db.find(r => r.code === cleanAuthCode || r.code.toLowerCase() === cleanAuthCode.toLowerCase());
+    
+    if (!request) {
+      return res.json({
+        success: false,
+        status: 'not_found',
+        message: 'Mã xác thực không tồn tại'
+      });
+    }
+    
+    // Kiểm tra trạng thái xác thực
+    if (request.verified) {
+      // Đã xác thực thành công
+      
+      // Tạo thông tin người dùng
+      const user = {
+        id: request.telegramId || config.TELEGRAM_CHAT_ID,
+        username: request.username || 'telegram_user',
+        displayName: request.firstName + (request.lastName ? ' ' + request.lastName : '') || 'Telegram User',
+        photoUrl: request.photoUrl || 'https://telegram.org/img/t_logo.png',
+        isAdmin: true,
+        provider: 'telegram'
+      };
+      
+      // Tạo session mới
+      req.session.user = user;
+      req.session.isLoggedIn = true;
+      req.session.isAuthenticated = true;
+      
+      // Lưu session
+      req.session.save(err => {
+        if (err) {
+          log(`Lỗi khi lưu session: ${err.message}`, 'error');
+        }
+        
+        // Xóa yêu cầu đã sử dụng
+        const newDb = db.filter(r => r.code !== cleanAuthCode);
+        telegramService.saveDb('auth_requests', newDb);
+        
+        return res.json({
+          success: true,
+          status: 'verified',
+          message: 'Xác thực thành công',
+          user: user
+        });
+      });
+    } else {
+      // Chưa xác thực
+      return res.json({
+        success: false,
+        status: 'pending',
+        message: 'Đang đợi xác thực từ Telegram'
+      });
+    }
+  } catch (error) {
+    log(`Lỗi khi kiểm tra trạng thái xác thực: ${error.message}`, 'error');
+    return res.status(500).json({
+      success: false,
+      status: 'error',
+      message: 'Đã xảy ra lỗi khi kiểm tra trạng thái xác thực'
+    });
+  }
 }); 

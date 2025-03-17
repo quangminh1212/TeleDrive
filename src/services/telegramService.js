@@ -997,5 +997,7 @@ module.exports = {
   syncFilesFromTelegram,
   verifyAuthRequest,
   resetBotStatus,
-  generateAuthCode
+  generateAuthCode,
+  loadDb,
+  saveDb
 }; 

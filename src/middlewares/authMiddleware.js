@@ -34,7 +34,8 @@ function webAuth(req, res, next) {
     '/api/auth/telegram/callback',
     '/api/auth/telegram/start',
     '/api/auth/telegram/verify',
-    '/api/auth/get-auth-code'
+    '/api/auth/get-auth-code',
+    '/api/auth/check-status'
   ];
   
   // Kiểm tra nếu path hiện tại có bắt đầu bằng bất kỳ route công khai nào
