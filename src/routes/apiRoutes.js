@@ -142,6 +142,61 @@ router.get('/auth/telegram/callback', (req, res) => {
   });
 });
 
+// API endpoint để kiểm tra trạng thái xác thực qua mã code
+router.post('/auth/check-status', async (req, res) => {
+  try {
+    const { authCode } = req.body;
+    
+    if (!authCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu mã xác thực',
+        status: 'error'
+      });
+    }
+    
+    // Xác minh trạng thái yêu cầu xác thực
+    const status = await telegramService.verifyAuthRequest(authCode);
+    
+    if (status) {
+      // Thiết lập session
+      req.session.isLoggedIn = true;
+      req.session.user = status;
+      
+      return res.json({
+        success: true,
+        status: 'authenticated',
+        user: status
+      });
+    }
+    
+    // Kiểm tra xem mã có tồn tại không
+    const authRequests = await telegramService.loadDb('auth_requests', []);
+    const request = authRequests.find(r => r.code === authCode);
+    
+    if (request) {
+      return res.json({
+        success: false,
+        status: 'pending',
+        message: 'Đang đợi xác thực từ Telegram'
+      });
+    }
+    
+    return res.json({
+      success: false,
+      status: 'not_found',
+      message: 'Mã xác thực không hợp lệ hoặc đã hết hạn'
+    });
+  } catch (error) {
+    log(`Lỗi khi kiểm tra trạng thái xác thực: ${error.message}`, 'error');
+    return res.status(500).json({
+      success: false,
+      status: 'error',
+      message: 'Lỗi server: ' + error.message
+    });
+  }
+});
+
 // Endpoint API để kiểm tra trạng thái xác thực
 router.get('/auth/check', (req, res) => {
   // Kiểm tra xem người dùng đã đăng nhập chưa
