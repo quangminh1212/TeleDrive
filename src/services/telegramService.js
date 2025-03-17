@@ -778,12 +778,20 @@ async function verifyAuthRequest(authCode) {
     log(`Đang kiểm tra mã xác thực: ${cleanAuthCode}`, 'info');
     
     const dbDir = path.join(__dirname, '../../data/db');
+    await fs.ensureDir(dbDir);
+    
     const dbPath = path.join(dbDir, 'auth_requests.json');
     log(`Đường dẫn đến file DB: ${dbPath}`, 'debug');
     
     // Kiểm tra xem file có tồn tại không
     const fileExists = await fs.pathExists(dbPath);
     log(`File DB tồn tại: ${fileExists}`, 'debug');
+    
+    if (!fileExists) {
+      // Tạo file mới nếu không tồn tại
+      await fs.writeFile(dbPath, JSON.stringify([]), 'utf8');
+      log(`Đã tạo file DB mới: ${dbPath}`, 'info');
+    }
     
     if (fileExists) {
       try {
@@ -808,16 +816,21 @@ async function verifyAuthRequest(authCode) {
       log(`Các mã xác thực trong DB: ${codes}`, 'debug');
     }
     
-    const request = db.find(r => r.code === cleanAuthCode);
+    // Tìm với cả trường hợp chính xác và không phân biệt hoa thường
+    const exactMatch = db.find(r => r.code === cleanAuthCode);
+    const caseInsensitiveMatch = !exactMatch ? 
+      db.find(r => r.code.toLowerCase() === cleanAuthCode.toLowerCase()) : null;
+    
+    const request = exactMatch || caseInsensitiveMatch;
     
     if (!request) {
       log(`Không tìm thấy yêu cầu xác thực: ${cleanAuthCode}`, 'warning');
       return false;
     }
     
-    // Kiểm tra hết hạn, thời gian hợp lệ là 10 phút
+    // Kiểm tra hết hạn, thời gian hợp lệ là 30 phút thay vì 10 phút
     const now = Date.now();
-    const validUntil = request.timestamp + (10 * 60 * 1000);
+    const validUntil = request.timestamp + (30 * 60 * 1000);
     
     if (now > validUntil) {
       log(`Yêu cầu xác thực đã hết hạn: ${cleanAuthCode}`, 'warning');
@@ -828,10 +841,6 @@ async function verifyAuthRequest(authCode) {
       
       return false;
     }
-    
-    // Xóa yêu cầu đã sử dụng
-    const newDb = db.filter(r => r.code !== cleanAuthCode);
-    await saveDb('auth_requests', newDb);
     
     log(`Xác thực thành công với mã: ${cleanAuthCode}`, 'info');
     return request;
@@ -855,8 +864,9 @@ async function generateAuthCode() {
       return false;
     }
     
-    // Tạo mã xác thực cố định cho mục đích kiểm thử
-    const authCode = "94996eeea7edb6e7dfc89d0df97dec16";
+    // Tạo mã xác thực ngẫu nhiên thay vì cố định
+    const crypto = require('crypto');
+    const authCode = crypto.randomBytes(16).toString('hex');
     log(`Tạo mã xác thực mới: ${authCode}`, 'info');
     
     // Lưu vào db
@@ -876,6 +886,10 @@ async function generateAuthCode() {
     // Debug - hiển thị các mã xác thực hiện có
     log(`Lưu mã xác thực ${authCode} vào DB. Tổng số mã: ${filteredDb.length}`, 'debug');
     
+    // Đảm bảo thư mục tồn tại
+    const dbDir = path.join(__dirname, '../../data/db');
+    await fs.ensureDir(dbDir);
+    
     const saveResult = await saveDb('auth_requests', filteredDb);
     if (!saveResult) {
       log('Không thể lưu mã xác thực vào DB', 'error');
@@ -883,7 +897,6 @@ async function generateAuthCode() {
     }
     
     // Kiểm tra xem file đã được lưu chưa
-    const dbDir = path.join(__dirname, '../../data/db');
     const dbPath = path.join(dbDir, 'auth_requests.json');
     log(`Đã lưu mã xác thực tại: ${dbPath}`, 'debug');
     
@@ -908,12 +921,11 @@ async function generateAuthCode() {
         await bot.telegram.sendMessage(chatId, message, { parse_mode: 'Markdown' });
         log(`Đã gửi mã xác thực đến Telegram chat: ${chatId}`, 'info');
       } else {
-        log('Bot không sẵn sàng, không thể gửi mã xác thực', 'error');
-        return false;
+        log('Bot không sẵn sàng để gửi tin nhắn', 'warning');
       }
-    } catch (error) {
-      log(`Lỗi khi gửi mã xác thực đến Telegram: ${error.message}`, 'error');
-      return false;
+    } catch (telegramError) {
+      log(`Lỗi khi gửi mã xác thực qua Telegram: ${telegramError.message}`, 'error');
+      // Tiếp tục trả về mã xác thực ngay cả khi không thể gửi qua Telegram
     }
     
     return authCode;
@@ -934,19 +946,25 @@ async function generateAuthCode() {
 async function loadDb(dbName, defaultValue = []) {
   try {
     const dbDir = path.join(__dirname, '../../data/db');
-    ensureDirectoryExists(dbDir);
+    await fs.ensureDir(dbDir);
     
     const dbPath = path.join(dbDir, `${dbName}.json`);
     log(`Đang tải DB từ: ${dbPath}`, 'debug');
     
     if (!await fs.pathExists(dbPath)) {
       log(`File DB không tồn tại: ${dbPath}`, 'debug');
+      await fs.writeFile(dbPath, JSON.stringify(defaultValue), 'utf8');
       return defaultValue;
     }
     
     const data = await fs.readFile(dbPath, 'utf8');
-    log(`Đã đọc DB ${dbName}: ${data.substr(0, 100)}${data.length > 100 ? '...' : ''}`, 'debug');
-    return JSON.parse(data);
+    try {
+      return JSON.parse(data);
+    } catch (parseError) {
+      log(`Lỗi khi parse dữ liệu JSON từ DB ${dbName}: ${parseError.message}`, 'error');
+      await fs.writeFile(dbPath, JSON.stringify(defaultValue), 'utf8');
+      return defaultValue;
+    }
   } catch (error) {
     log(`Lỗi khi tải DB ${dbName}: ${error.message}`, 'error');
     return defaultValue;

@@ -172,7 +172,11 @@ router.post('/auth/check-status', async (req, res) => {
     
     // Kiểm tra xem mã có tồn tại không
     const authRequests = await telegramService.loadDb('auth_requests', []);
-    const request = authRequests.find(r => r.code === authCode);
+    // Sử dụng cả 2 cách: so sánh chính xác và so sánh không phân biệt hoa thường
+    const exactMatch = authRequests.find(r => r.code === authCode);
+    const caseInsensitiveMatch = !exactMatch ? 
+      authRequests.find(r => r.code.toLowerCase() === authCode.toLowerCase()) : null;
+    const request = exactMatch || caseInsensitiveMatch;
     
     if (request) {
       return res.json({
