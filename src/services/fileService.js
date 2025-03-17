@@ -126,9 +126,9 @@ async function addFileFromTelegram(fileInfo) {
 }
 
 /**
- * Đồng bộ danh sách file từ Telegram
+ * Đồng bộ file từ Telegram vào hệ thống
  * @param {Array} telegramFiles Danh sách file từ Telegram
- * @returns {Object} Kết quả đồng bộ
+ * @returns {Promise<Object>} Kết quả đồng bộ
  */
 async function syncFilesFromTelegram(telegramFiles) {
   try {
@@ -140,71 +140,98 @@ async function syncFilesFromTelegram(telegramFiles) {
       errors: 0
     };
     
+    log(`Bắt đầu đồng bộ ${telegramFiles.length} file từ Telegram`, 'info');
+    
     // Duyệt qua từng file từ Telegram
     for (const telegramFile of telegramFiles) {
       try {
-        // Tìm file trong DB
-        const existingFile = files.find(file => file.telegramFileId === telegramFile.file_id);
+        if (!telegramFile || !telegramFile.file_id) {
+          log('Bỏ qua file không hợp lệ từ Telegram', 'warning');
+          continue;
+        }
         
-        if (!existingFile) {
+        // Tìm file trong DB bằng message_id và file_id
+        const existingFileByMsg = files.find(file => 
+          file.messageId === telegramFile.message_id || 
+          file.telegramFileId === telegramFile.file_id
+        );
+        
+        if (!existingFileByMsg) {
           // Thêm file mới
+          const fileType = guessFileType(telegramFile.file_name || telegramFile.type || '');
           const newFile = {
             id: generateId(),
-            name: telegramFile.file_name,
-            size: telegramFile.file_size,
-            type: guessFileType(telegramFile.file_name),
-            mimeType: telegramFile.mime_type || getMimeType(telegramFile.file_name),
+            name: telegramFile.file_name || `${telegramFile.type || 'file'}_${Date.now()}`,
+            size: telegramFile.file_size || 0,
+            type: fileType,
+            mimeType: telegramFile.mime_type || getMimeType(telegramFile.file_name || ''),
             telegramFileId: telegramFile.file_id,
             messageId: telegramFile.message_id,
             chatId: telegramFile.chat_id,
-            uploadDate: new Date(telegramFile.date).toISOString(),
+            uploadDate: new Date(telegramFile.date || Date.now()).toISOString(),
             caption: telegramFile.caption || '',
             localPath: null,
             downloadDate: null,
             isDeleted: false,
             inTrash: false,
-            trashDate: null
+            trashDate: null,
+            syncDate: new Date().toISOString()
           };
           
           files.push(newFile);
           result.added++;
-          log(`Đồng bộ: Thêm file mới ${newFile.name}`);
+          log(`Đồng bộ: Thêm file mới "${newFile.name}" (${formatSize(newFile.size)})`, 'info');
         } else {
           // Cập nhật thông tin file nếu cần
           let hasChanges = false;
           
-          // Chỉ cập nhật một số trường
-          if (existingFile.size !== telegramFile.file_size) {
-            existingFile.size = telegramFile.file_size;
+          // Cập nhật các thuộc tính quan trọng
+          if (existingFileByMsg.size !== telegramFile.file_size && telegramFile.file_size) {
+            existingFileByMsg.size = telegramFile.file_size;
             hasChanges = true;
           }
           
-          if (existingFile.caption !== telegramFile.caption && telegramFile.caption) {
-            existingFile.caption = telegramFile.caption;
+          if (existingFileByMsg.caption !== telegramFile.caption && telegramFile.caption) {
+            existingFileByMsg.caption = telegramFile.caption;
+            hasChanges = true;
+          }
+          
+          // Đảm bảo cập nhật telegramFileId nếu chỉ có messageId khớp
+          if (existingFileByMsg.telegramFileId !== telegramFile.file_id) {
+            existingFileByMsg.telegramFileId = telegramFile.file_id;
             hasChanges = true;
           }
           
           // Khôi phục file đã xóa nếu tìm thấy lại
-          if (existingFile.isDeleted) {
-            existingFile.isDeleted = false;
+          if (existingFileByMsg.isDeleted) {
+            existingFileByMsg.isDeleted = false;
             hasChanges = true;
           }
           
+          // Cập nhật thời gian đồng bộ
+          existingFileByMsg.syncDate = new Date().toISOString();
+          hasChanges = true;
+          
           if (hasChanges) {
             result.updated++;
-            log(`Đồng bộ: Cập nhật file ${existingFile.name}`);
+            log(`Đồng bộ: Cập nhật file "${existingFileByMsg.name}"`);
           } else {
             result.unchanged++;
           }
         }
       } catch (error) {
-        log(`Lỗi khi đồng bộ file ${telegramFile.file_name}: ${error.message}`, 'error');
+        log(`Lỗi khi đồng bộ file ${telegramFile.file_name || 'không tên'}: ${error.message}`, 'error');
         result.errors++;
       }
     }
     
     // Lưu DB sau khi đồng bộ
     saveFilesDb(files);
+    
+    log(`Kết quả đồng bộ: ${result.added} file mới, ${result.updated} cập nhật, ${result.unchanged} không thay đổi, ${result.errors} lỗi`, 'info');
+    
+    // Cập nhật thời gian đồng bộ cuối cùng
+    dbService.updateLastSync();
     
     return result;
   } catch (error) {

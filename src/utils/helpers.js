@@ -298,6 +298,64 @@ const sleep = (ms) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
+/**
+ * Thiết lập đồng bộ tự động từ Telegram
+ * @param {Object} telegramService Service xử lý Telegram
+ * @param {Object} dbService Service xử lý DB
+ */
+function setupAutoSync(telegramService, dbService) {
+  const { AUTO_SYNC, SYNC_INTERVAL } = require('../config/config');
+  
+  if (!AUTO_SYNC) {
+    log('Đồng bộ tự động đã bị tắt trong cấu hình', 'info');
+    return;
+  }
+  
+  // Tính thời gian interval theo phút
+  const intervalMs = SYNC_INTERVAL * 60 * 1000;
+  
+  log(`Thiết lập đồng bộ tự động mỗi ${SYNC_INTERVAL} phút`, 'info');
+  
+  // Đồng bộ lần đầu sau 2 phút khi khởi động server
+  setTimeout(async () => {
+    try {
+      log('Đang thực hiện đồng bộ tự động lần đầu...', 'info');
+      await telegramService.syncFilesFromTelegram();
+    } catch (error) {
+      log(`Lỗi khi đồng bộ tự động: ${error.message}`, 'error');
+    }
+  }, 2 * 60 * 1000);
+  
+  // Thiết lập đồng bộ định kỳ
+  setInterval(async () => {
+    try {
+      const lastSync = dbService.getLastSync();
+      const now = Date.now();
+      
+      // Kiểm tra lần đồng bộ cuối
+      if (lastSync) {
+        const timeSinceLastSync = now - new Date(lastSync).getTime();
+        const minutesSinceLastSync = Math.floor(timeSinceLastSync / (60 * 1000));
+        
+        log(`Lần đồng bộ cuối: ${minutesSinceLastSync} phút trước`, 'debug');
+        
+        // Nếu mới đồng bộ gần đây (trong 5 phút) thì bỏ qua
+        if (minutesSinceLastSync < 5) {
+          log('Bỏ qua đồng bộ do mới thực hiện gần đây', 'debug');
+          return;
+        }
+      }
+      
+      log('Đang thực hiện đồng bộ tự động định kỳ...', 'info');
+      await telegramService.syncFilesFromTelegram();
+    } catch (error) {
+      log(`Lỗi khi đồng bộ tự động: ${error.message}`, 'error');
+    }
+  }, intervalMs);
+  
+  return true;
+}
+
 module.exports = {
   ensureDirectories,
   generateId,
@@ -311,5 +369,6 @@ module.exports = {
   formatFileSize,
   cleanupTempFiles,
   createSecureFilename,
-  sleep
+  sleep,
+  setupAutoSync
 }; 

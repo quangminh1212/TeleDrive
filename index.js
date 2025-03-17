@@ -16,7 +16,8 @@ const config = require('./src/config/config');
 const telegramService = require('./src/services/telegramService');
 const apiRoutes = require('./src/routes/apiRoutes');
 const webRoutes = require('./src/routes/webRoutes');
-const { ensureDirectories, log, cleanupTempDir } = require('./src/utils/helpers');
+const { ensureDirectories, log, cleanupTempDir, setupAutoSync } = require('./src/utils/helpers');
+const dbService = require('./src/services/dbService');
 
 console.log('Đã đọc cấu hình từ ' + path.resolve('.env'));
 
@@ -89,11 +90,14 @@ try {
   });
   
   // Khởi động bot Telegram
-  log('Đang khởi động bot Telegram...');
+  log('Đang khởi động bot Telegram...', 'info');
   telegramService.initBot()
     .then(success => {
       if (success) {
-        log('Bot Telegram đã khởi động thành công');
+        log('Bot Telegram đã khởi động thành công', 'info');
+        
+        // Thiết lập đồng bộ tự động từ Telegram
+        setupAutoSync(telegramService, dbService);
       } else {
         log('Không thể khởi động bot Telegram', 'error');
       }
