@@ -217,6 +217,36 @@ router.post('/auth/verify', async (req, res) => {
   }
 });
 
+// Endpoint reset bot khi có lỗi
+router.post('/admin/reset-bot', async (req, res) => {
+  try {
+    // Kiểm tra quyền admin
+    if (!req.session || !req.session.user || !req.session.user.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền thực hiện hành động này'
+      });
+    }
+    
+    // Dừng bot hiện tại và reset trạng thái
+    await telegramService.stopBot();
+    telegramService.resetBotStatus();
+    
+    log('Bot Telegram đã được reset theo yêu cầu của admin', 'info');
+    
+    return res.json({
+      success: true,
+      message: 'Đã reset bot Telegram thành công'
+    });
+  } catch (error) {
+    log(`Lỗi khi reset bot: ${error.message}`, 'error');
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server: ' + error.message
+    });
+  }
+});
+
 // ===== ROUTES CHO FILE =====
 
 // Lấy danh sách file
@@ -564,40 +594,34 @@ router.post('/files/:fileId/share', async (req, res) => {
   }
 });
 
-// Đồng bộ từ Telegram
-router.get('/sync', async (req, res) => {
+// Đồng bộ file từ Telegram
+router.post('/files/sync', async (req, res) => {
   try {
-    if (!telegramService.isBotActive()) {
-      await telegramService.initBot();
-      
-      if (!telegramService.isBotActive()) {
-        return res.status(503).json({
-          success: false,
-          message: 'Bot Telegram không hoạt động. Không thể đồng bộ.'
-        });
-      }
+    log('Đã nhận yêu cầu đồng bộ file từ Telegram', 'info');
+    
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    if (!req.session.isLoggedIn) {
+      return res.status(401).json({
+        success: false,
+        message: 'Bạn cần đăng nhập để thực hiện hành động này'
+      });
     }
     
-    log('Bắt đầu đồng bộ theo yêu cầu của người dùng', 'info');
-    
-    // Thực hiện đồng bộ
+    // Gọi hàm đồng bộ từ telegramService
     const result = await telegramService.syncFilesFromTelegram();
     
     return res.json({
       success: true,
-      message: 'Đồng bộ thành công',
-      result: {
-        added: result.added,
-        updated: result.updated,
-        unchanged: result.unchanged,
-        errors: result.errors
-      }
+      message: 'Đồng bộ file từ Telegram thành công',
+      added: result.added,
+      updated: result.updated,
+      unchanged: result.unchanged
     });
   } catch (error) {
-    log(`Lỗi khi đồng bộ: ${error.message}`, 'error');
+    log(`Lỗi khi đồng bộ file từ Telegram: ${error.message}`, 'error');
     return res.status(500).json({
       success: false,
-      message: 'Lỗi khi đồng bộ: ' + error.message
+      message: error.message || 'Lỗi khi đồng bộ file từ Telegram'
     });
   }
 });
