@@ -48,7 +48,7 @@ router.use((req, res, next) => {
   }
   
   // Nếu không phải là route đăng nhập Telegram, áp dụng middleware xác thực
-  authMiddleware.authenticate(req, res, next);
+  authMiddleware.apiAuth(req, res, next);
 });
 
 // ===== ROUTES CHO XÁC THỰC =====
