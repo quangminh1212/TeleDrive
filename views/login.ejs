@@ -105,6 +105,14 @@
             <small>Bot Telegram: @<%= botUsername %></small>
           </p>
         <% } %>
+        <div id="instructions" class="mt-3 text-center" style="display: none;">
+          <p class="mb-1"><strong>Hướng dẫn:</strong></p>
+          <ol class="text-start small">
+            <li>Tab mới sẽ mở ra, kết nối với bot của chúng tôi</li>
+            <li>Nhấn nút <strong>START</strong> hoặc gõ <code>/start</code> để xác thực</li>
+            <li>Quay lại tab này và đợi hệ thống xác thực</li>
+          </ol>
+        </div>
         <div id="statusMessage" class="mt-3 text-center" style="display: none;"></div>
       </div>
     </div>
@@ -115,6 +123,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       const loginBtn = document.getElementById('telegramLoginBtn');
       const statusMessage = document.getElementById('statusMessage');
+      const instructions = document.getElementById('instructions');
       let authCode = '';
       let checkInterval = null;
       
@@ -133,9 +142,12 @@
           // Lưu mã xác thực để kiểm tra sau
           authCode = authData.authCode;
           
+          // Hiển thị hướng dẫn
+          instructions.style.display = 'block';
+          
           // Mở tab mới để xác thực
           const botUsername = '<%= botUsername %>';
-          const authUrl = `https://telegram.me/${botUsername}?start=auth_${authCode}`;
+          const authUrl = `https://t.me/${botUsername}?start=auth_${authCode}`;
           window.open(authUrl, '_blank');
           
           // Hiển thị trạng thái và bắt đầu kiểm tra
