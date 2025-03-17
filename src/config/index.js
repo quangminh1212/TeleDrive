@@ -16,6 +16,7 @@ const config = {
   // Cấu hình bot Telegram
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID || '',
+  TELEGRAM_BOT_USERNAME: process.env.TELEGRAM_BOT_USERNAME || '',
   
   // Cấu hình đồng bộ
   ENABLE_AUTO_SYNC: process.env.ENABLE_AUTO_SYNC === 'true' || process.env.AUTO_SYNC === 'true',
