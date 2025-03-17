@@ -12,6 +12,7 @@ const { log, generateId, ensureDirectoryExists } = require('../utils/helpers');
 const { message } = require('telegraf/filters');
 const fileService = require('./fileService');
 const dbService = require('./dbService');
+const crypto = require('crypto');
 
 // Ensure temp directories exist
 const tempDir = path.join(__dirname, '../../temp');
@@ -728,56 +729,108 @@ function resetBotStatus() {
 }
 
 /**
- * Xác minh yêu cầu xác thực Telegram
- * @param {String} authCode Mã xác thực
- * @returns {Promise<Object|null>} Thông tin người dùng hoặc null nếu không tìm thấy
+ * Kiểm tra yêu cầu xác thực
+ * @param {String} authCode Code xác thực
+ * @returns {Promise<Object|Boolean>} Thông tin yêu cầu xác thực hoặc false nếu không tìm thấy
  */
 async function verifyAuthRequest(authCode) {
   try {
     if (!authCode) {
       log('Không có mã xác thực được cung cấp', 'warning');
-      return null;
+      return false;
     }
     
+    // Lấy yêu cầu xác thực từ DB
     log(`Đang kiểm tra mã xác thực: ${authCode}`, 'info');
     
-    // Lấy thông tin yêu cầu xác thực từ database
-    const authRequest = dbService.getAuthRequest(authCode);
+    const db = await loadDb('auth_requests', []);
+    const request = db.find(r => r.code === authCode);
     
-    if (!authRequest) {
+    if (!request) {
       log(`Không tìm thấy yêu cầu xác thực: ${authCode}`, 'warning');
-      return null;
+      return false;
     }
     
-    log(`Đã tìm thấy yêu cầu xác thực: ${authCode} cho user ${authRequest.username || authRequest.telegramId}`, 'info');
-    
-    // Kiểm tra thời gian xác thực (hết hạn sau 10 phút)
+    // Kiểm tra hết hạn, thời gian hợp lệ là 10 phút
     const now = Date.now();
-    if (now - authRequest.timestamp > 10 * 60 * 1000) {
+    const validUntil = request.timestamp + (10 * 60 * 1000);
+    
+    if (now > validUntil) {
       log(`Yêu cầu xác thực đã hết hạn: ${authCode}`, 'warning');
-      dbService.removeAuthRequest(authCode);
-      return null;
+      
+      // Xóa yêu cầu hết hạn
+      const newDb = db.filter(r => r.code !== authCode);
+      await saveDb('auth_requests', newDb);
+      
+      return false;
     }
     
-    // Xóa yêu cầu xác thực sau khi đã xác minh thành công
-    dbService.removeAuthRequest(authCode);
+    // Xóa yêu cầu đã sử dụng
+    const newDb = db.filter(r => r.code !== authCode);
+    await saveDb('auth_requests', newDb);
     
-    // Trả về thông tin người dùng Telegram
-    const user = {
-      id: authRequest.telegramId,
-      username: authRequest.username || String(authRequest.telegramId),
-      displayName: authRequest.firstName + (authRequest.lastName ? ' ' + authRequest.lastName : ''),
-      photoUrl: authRequest.photoUrl || 'https://telegram.org/img/t_logo.png',
-      isAdmin: true, // Mọi người dùng Telegram đều có quyền admin
-      provider: 'telegram'
-    };
-    
-    log(`Xác thực thành công cho ${user.displayName} (${user.username})`, 'info');
-    
-    return user;
+    log(`Xác thực thành công với mã: ${authCode}`, 'info');
+    return request;
   } catch (error) {
-    log(`Lỗi khi xác minh yêu cầu xác thực: ${error.message}`, 'error');
-    return null;
+    log(`Lỗi khi xác thực yêu cầu: ${error.message}`, 'error');
+    return false;
+  }
+}
+
+/**
+ * Tạo mã xác thực mới
+ * @returns {Promise<String|Boolean>} Mã xác thực hoặc false nếu có lỗi
+ */
+async function generateAuthCode() {
+  try {
+    // Khởi tạo bot nếu cần
+    const botInitialized = await initBot(false);
+    if (!botInitialized) {
+      log('Không thể tạo mã xác thực: Bot chưa khởi tạo', 'error');
+      return false;
+    }
+    
+    // Tạo mã xác thực ngẫu nhiên
+    const authCode = crypto.randomBytes(16).toString('hex');
+    log(`Tạo mã xác thực mới: ${authCode}`, 'info');
+    
+    // Lưu vào db
+    const db = await loadDb('auth_requests', []);
+    
+    // Xóa các yêu cầu cũ hơn 1 giờ
+    const now = Date.now();
+    const oneHourAgo = now - (60 * 60 * 1000);
+    const filteredDb = db.filter(r => r.timestamp > oneHourAgo);
+    
+    // Thêm yêu cầu mới
+    filteredDb.push({
+      code: authCode,
+      timestamp: now
+    });
+    
+    await saveDb('auth_requests', filteredDb);
+    
+    // Gửi mã xác thực tới Telegram
+    try {
+      const chatId = config.TELEGRAM_CHAT_ID;
+      const message = `🔐 Mã xác thực của bạn là: *${authCode}*\n\nMã này sẽ hết hạn sau 10 phút. Nếu bạn không yêu cầu xác thực này, vui lòng bỏ qua tin nhắn.`;
+      
+      if (bot && isReady) {
+        await bot.telegram.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+        log(`Đã gửi mã xác thực đến Telegram chat: ${chatId}`, 'info');
+      } else {
+        log('Bot không sẵn sàng, không thể gửi mã xác thực', 'error');
+        return false;
+      }
+    } catch (error) {
+      log(`Lỗi khi gửi mã xác thực đến Telegram: ${error.message}`, 'error');
+      return false;
+    }
+    
+    return authCode;
+  } catch (error) {
+    log(`Lỗi khi tạo mã xác thực: ${error.message}`, 'error');
+    return false;
   }
 }
 
@@ -791,5 +844,6 @@ module.exports = {
   getFilesFromChat,
   syncFilesFromTelegram,
   verifyAuthRequest,
-  resetBotStatus
+  resetBotStatus,
+  generateAuthCode
 }; 
