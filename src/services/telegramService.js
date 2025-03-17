@@ -807,8 +807,8 @@ async function generateAuthCode() {
       return false;
     }
     
-    // Tạo mã xác thực ngẫu nhiên
-    const authCode = crypto.randomBytes(16).toString('hex');
+    // Tạo mã xác thực ngẫu nhiên (12 ký tự để đơn giản hơn)
+    const authCode = crypto.randomBytes(6).toString('hex');
     log(`Tạo mã xác thực mới: ${authCode}`, 'info');
     
     // Lưu vào db
@@ -825,7 +825,14 @@ async function generateAuthCode() {
       timestamp: now
     });
     
-    await saveDb('auth_requests', filteredDb);
+    // Debug - hiển thị các mã xác thực hiện có
+    log(`Lưu mã xác thực ${authCode} vào DB. Tổng số mã: ${filteredDb.length}`, 'debug');
+    
+    const saveResult = await saveDb('auth_requests', filteredDb);
+    if (!saveResult) {
+      log('Không thể lưu mã xác thực vào DB', 'error');
+      return false;
+    }
     
     // Gửi mã xác thực tới Telegram
     try {
@@ -847,6 +854,7 @@ async function generateAuthCode() {
     return authCode;
   } catch (error) {
     log(`Lỗi khi tạo mã xác thực: ${error.message}`, 'error');
+    log(error.stack, 'error');
     return false;
   }
 }
