@@ -80,7 +80,8 @@ try {
   
   // Khởi động server
   const PORT = config.PORT || 3000;
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server đang chạy tại http://localhost:${PORT}`);
     log(`Server đang chạy tại http://localhost:${PORT}`);
   });
   
