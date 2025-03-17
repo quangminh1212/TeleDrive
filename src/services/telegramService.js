@@ -513,10 +513,15 @@ async function syncFilesFromTelegram() {
 /**
  * Xác minh yêu cầu xác thực Telegram
  * @param {String} authCode Mã xác thực
- * @returns {Object|null} Thông tin người dùng hoặc null nếu không tìm thấy
+ * @returns {Promise<Object|null>} Thông tin người dùng hoặc null nếu không tìm thấy
  */
 async function verifyAuthRequest(authCode) {
   try {
+    if (!authCode) {
+      log('Không có mã xác thực được cung cấp', 'warning');
+      return null;
+    }
+    
     // Lấy thông tin yêu cầu xác thực từ database
     const authRequest = dbService.getAuthRequest(authCode);
     
@@ -524,6 +529,8 @@ async function verifyAuthRequest(authCode) {
       log(`Không tìm thấy yêu cầu xác thực: ${authCode}`, 'warning');
       return null;
     }
+    
+    log(`Đã tìm thấy yêu cầu xác thực: ${authCode} cho user ${authRequest.username || authRequest.telegramId}`, 'info');
     
     // Kiểm tra thời gian xác thực (hết hạn sau 10 phút)
     const now = Date.now();
@@ -536,10 +543,10 @@ async function verifyAuthRequest(authCode) {
     // Trả về thông tin người dùng Telegram
     return {
       id: authRequest.telegramId,
-      username: authRequest.username,
-      displayName: `${authRequest.firstName} ${authRequest.lastName}`.trim(),
+      username: authRequest.username || String(authRequest.telegramId),
+      displayName: authRequest.firstName + (authRequest.lastName ? ' ' + authRequest.lastName : ''),
       photoUrl: authRequest.photoUrl || 'https://telegram.org/img/t_logo.png',
-      isAdmin: true,
+      isAdmin: true, // Mọi người dùng Telegram đều có quyền admin
       provider: 'telegram'
     };
   } catch (error) {

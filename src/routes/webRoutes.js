@@ -168,20 +168,21 @@ router.get('/upload', (req, res) => {
   });
 });
 
-// Trang đăng nhập
+/**
+ * Trang đăng nhập
+ */
 router.get('/login', (req, res) => {
-  // Kiểm tra nếu đã đăng nhập rồi thì chuyển hướng về trang chính
+  // Nếu đã đăng nhập, chuyển hướng về trang chủ
   if (req.session && req.session.isLoggedIn) {
     return res.redirect('/');
   }
-
-  // Chuẩn bị thông tin cho Telegram login widget
-  const telegramBotUsername = config.TELEGRAM_BOT_USERNAME || 'your_bot_username';
   
-  res.render('login', { 
+  // Hiển thị trang đăng nhập
+  res.render('login', {
     title: 'Đăng nhập - TeleDrive',
-    error: req.query.error || '',
-    telegramBotUsername: telegramBotUsername
+    error: req.query.error || null,
+    botUsername: config.TELEGRAM_BOT_USERNAME,
+    active: 'login'
   });
 });
 

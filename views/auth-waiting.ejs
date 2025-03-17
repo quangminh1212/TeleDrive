@@ -105,6 +105,7 @@
       
       let countdown = 600; // 10 phút
       let isAuthenticated = false;
+      let checkCount = 0;
       
       // Cập nhật countdown timer
       const updateTimer = () => {
@@ -123,9 +124,44 @@
         countdown--;
       };
       
-      // Kiểm tra trạng thái xác thực
-      const checkAuthStatus = async () => {
+      // Kiểm tra đăng nhập với endpoint check
+      const checkLoginStatus = async () => {
         try {
+          const response = await fetch('/api/auth/check');
+          const data = await response.json();
+          
+          if (data.success) {
+            clearInterval(checkInterval);
+            clearInterval(timerInterval);
+            isAuthenticated = true;
+            
+            statusMessage.textContent = 'Xác thực thành công! Đang chuyển hướng...';
+            statusMessage.style.color = '#28a745';
+            
+            // Chuyển hướng sau 2 giây
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 2000);
+            
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error('Lỗi khi kiểm tra trạng thái đăng nhập:', error);
+          return false;
+        }
+      };
+      
+      // Kiểm tra trạng thái xác thực
+      const verifyAuthStatus = async () => {
+        try {
+          // Kiểm tra trước nếu đã đăng nhập
+          const alreadyLoggedIn = await checkLoginStatus();
+          if (alreadyLoggedIn) return;
+          
+          checkCount++;
+          console.log(`Đang kiểm tra xác thực lần ${checkCount}...`);
+          
           // Gửi yêu cầu kiểm tra đến API
           const response = await fetch('/api/auth/verify', {
             method: 'POST',
@@ -149,9 +185,16 @@
             setTimeout(() => {
               window.location.href = '/';
             }, 2000);
+          } else if (checkCount > 10) {
+            // Sau 10 lần kiểm tra (30 giây), thử lại bằng cách dùng endpoint check
+            await checkLoginStatus();
           }
         } catch (error) {
           console.error('Lỗi khi kiểm tra trạng thái xác thực:', error);
+          // Sau 5 lần lỗi, thử lại bằng cách dùng endpoint check
+          if (checkCount % 5 === 0) {
+            await checkLoginStatus();
+          }
         }
       };
       
@@ -159,11 +202,16 @@
       const timerInterval = setInterval(updateTimer, 1000);
       
       // Kiểm tra trạng thái xác thực mỗi 3 giây
-      const checkInterval = setInterval(checkAuthStatus, 3000);
+      const checkInterval = setInterval(verifyAuthStatus, 3000);
       
       // Kiểm tra ngay khi trang được tải
       updateTimer();
-      checkAuthStatus();
+      verifyAuthStatus();
+      
+      // Hiển thị nút quay lại sau 30 giây
+      setTimeout(() => {
+        btnBack.style.display = 'block';
+      }, 30000);
     });
   </script>
 </body>

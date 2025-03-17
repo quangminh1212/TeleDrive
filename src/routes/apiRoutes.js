@@ -121,6 +121,7 @@ router.get('/auth/telegram/callback', (req, res) => {
 
 // Endpoint API để kiểm tra trạng thái xác thực
 router.get('/auth/check', (req, res) => {
+  // Kiểm tra xem người dùng đã đăng nhập chưa
   if (req.session && req.session.isLoggedIn) {
     return res.json({
       success: true,
@@ -143,6 +144,15 @@ router.post('/auth/verify', async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Thiếu mã xác thực'
+      });
+    }
+    
+    // Kiểm tra trạng thái đăng nhập hiện tại
+    if (req.session && req.session.isLoggedIn) {
+      return res.json({
+        success: true,
+        user: req.session.user,
+        message: 'Đã đăng nhập'
       });
     }
     
