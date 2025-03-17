@@ -56,7 +56,7 @@ router.post('/auth/telegram/verify', async (req, res) => {
     
     // Tạo session mới
     req.session.user = user;
-    req.session.isAuthenticated = true;
+    req.session.isLoggedIn = true;
     
     return res.json({
       success: true,
