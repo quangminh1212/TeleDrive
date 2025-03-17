@@ -198,7 +198,19 @@ router.get('/upload', (req, res) => {
 
 // Trang đăng nhập
 router.get('/login', (req, res) => {
-  return res.redirect('/');
+  // Kiểm tra nếu đã đăng nhập rồi thì chuyển hướng về trang chính
+  if (req.session && req.session.isLoggedIn) {
+    return res.redirect('/');
+  }
+
+  // Chuẩn bị thông tin cho Telegram login widget
+  const telegramBotUsername = process.env.TELEGRAM_BOT_USERNAME || 'your_bot_username';
+  
+  res.render('login', { 
+    title: 'Đăng nhập - TeleDrive',
+    error: req.query.error || '',
+    telegramBotUsername: telegramBotUsername
+  });
 });
 
 // Trang dashboard
