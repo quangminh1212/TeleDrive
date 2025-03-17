@@ -239,7 +239,7 @@ function isBotActive() {
 const setupMessageHandlers = () => {
   if (!bot) return;
   
-  // Xử lý lệnh /start với mã xác thực
+  // Xử lý lệnh /start
   bot.start((ctx) => {
     try {
       const startPayload = ctx.startPayload; // Lấy dữ liệu sau lệnh /start
@@ -247,33 +247,71 @@ const setupMessageHandlers = () => {
       // Kiểm tra xem có phải yêu cầu xác thực không
       if (startPayload && startPayload.startsWith('auth_')) {
         const authCode = startPayload.replace('auth_', '');
-        const userId = ctx.from.id;
-        const username = ctx.from.username || '';
-        const firstName = ctx.from.first_name || '';
-        const lastName = ctx.from.last_name || '';
-        
-        log(`Nhận yêu cầu xác thực từ người dùng Telegram: ${userId} (${username})`, 'info');
-        
-        // Lưu thông tin người dùng vào database để xác minh sau
-        dbService.saveAuthRequest({
-          authCode: authCode,
-          telegramId: userId,
-          username: username,
-          firstName: firstName,
-          lastName: lastName,
-          photoUrl: '',
-          timestamp: Date.now()
-        });
-        
-        ctx.reply('Bạn đã xác thực thành công! Bạn có thể quay lại trang web.');
+        handleAuth(ctx, authCode);
       } else {
-        ctx.reply('Xin chào! Tôi là bot lưu trữ file của TeleDrive. Sử dụng giao diện web để tương tác với tôi.');
+        ctx.reply('👋 Xin chào! Tôi là bot lưu trữ file của TeleDrive.\n\n✅ Sử dụng lệnh /auth <mã xác thực> để kết nối với ứng dụng web TeleDrive.\n📁 Hoặc gửi file cho tôi để lưu trữ.');
       }
     } catch (error) {
       log(`Lỗi khi xử lý lệnh /start: ${error.message}`, 'error');
-      ctx.reply('Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại sau.');
+      ctx.reply('❌ Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại sau.');
     }
   });
+  
+  // Xử lý lệnh /auth <mã xác thực>
+  bot.command('auth', (ctx) => {
+    try {
+      const text = ctx.message.text.trim();
+      const parts = text.split(' ');
+      
+      if (parts.length < 2) {
+        return ctx.reply('⚠️ Vui lòng cung cấp mã xác thực. Ví dụ: /auth abc123');
+      }
+      
+      const authCode = parts[1].trim();
+      handleAuth(ctx, authCode);
+    } catch (error) {
+      log(`Lỗi khi xử lý lệnh /auth: ${error.message}`, 'error');
+      ctx.reply('❌ Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại sau.');
+    }
+  });
+  
+  // Hàm xử lý xác thực chung
+  async function handleAuth(ctx, authCode) {
+    const userId = ctx.from.id;
+    const username = ctx.from.username || '';
+    const firstName = ctx.from.first_name || '';
+    const lastName = ctx.from.last_name || '';
+    
+    log(`Nhận yêu cầu xác thực với mã ${authCode} từ người dùng: ${userId} (${username})`, 'info');
+    
+    try {
+      // Kiểm tra xem mã xác thực có tồn tại không
+      const db = await loadDb('auth_requests', []);
+      const request = db.find(r => r.code === authCode);
+      
+      if (!request) {
+        log(`Mã xác thực không hợp lệ: ${authCode}`, 'warning');
+        return ctx.reply('⚠️ Mã xác thực không hợp lệ hoặc đã hết hạn. Vui lòng thử lại hoặc tạo mã mới từ trang web.');
+      }
+      
+      // Lưu thông tin người dùng liên kết với mã này
+      request.telegramId = userId;
+      request.username = username;
+      request.firstName = firstName;
+      request.lastName = lastName;
+      request.verified = true;
+      request.verifiedAt = Date.now();
+      
+      // Lưu lại vào DB
+      await saveDb('auth_requests', db);
+      
+      ctx.reply('✅ Xác thực thành công! Bạn có thể quay lại trang web và đăng nhập.');
+      log(`Người dùng ${userId} (${username}) đã xác thực thành công với mã ${authCode}`, 'info');
+    } catch (error) {
+      log(`Lỗi khi xử lý xác thực: ${error.message}`, 'error');
+      ctx.reply('❌ Đã xảy ra lỗi khi xác thực. Vui lòng thử lại sau.');
+    }
+  }
   
   // Handle document messages
   bot.on(message('document'), async (ctx) => {
