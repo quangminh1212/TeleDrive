@@ -564,6 +564,44 @@ router.post('/files/:fileId/share', async (req, res) => {
   }
 });
 
+// Đồng bộ từ Telegram
+router.get('/sync', async (req, res) => {
+  try {
+    if (!telegramService.isBotActive()) {
+      await telegramService.initBot();
+      
+      if (!telegramService.isBotActive()) {
+        return res.status(503).json({
+          success: false,
+          message: 'Bot Telegram không hoạt động. Không thể đồng bộ.'
+        });
+      }
+    }
+    
+    log('Bắt đầu đồng bộ theo yêu cầu của người dùng', 'info');
+    
+    // Thực hiện đồng bộ
+    const result = await telegramService.syncFilesFromTelegram();
+    
+    return res.json({
+      success: true,
+      message: 'Đồng bộ thành công',
+      result: {
+        added: result.added,
+        updated: result.updated,
+        unchanged: result.unchanged,
+        errors: result.errors
+      }
+    });
+  } catch (error) {
+    log(`Lỗi khi đồng bộ: ${error.message}`, 'error');
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi đồng bộ: ' + error.message
+    });
+  }
+});
+
 // ===== ROUTES CHO THƯ MỤC =====
 
 // Lấy danh sách thư mục
