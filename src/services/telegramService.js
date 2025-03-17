@@ -834,6 +834,53 @@ async function generateAuthCode() {
   }
 }
 
+// Các hàm tiện ích thao tác với database
+/**
+ * Tải dữ liệu từ file DB
+ * @param {String} dbName Tên file DB
+ * @param {Array|Object} defaultValue Giá trị mặc định nếu không tìm thấy file
+ * @returns {Promise<Array|Object>} Dữ liệu đã tải
+ */
+async function loadDb(dbName, defaultValue = []) {
+  try {
+    const dbDir = path.join(__dirname, '../../storage/db');
+    ensureDirectoryExists(dbDir);
+    
+    const dbPath = path.join(dbDir, `${dbName}.json`);
+    
+    if (!await fs.pathExists(dbPath)) {
+      return defaultValue;
+    }
+    
+    const data = await fs.readFile(dbPath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    log(`Lỗi khi tải DB ${dbName}: ${error.message}`, 'error');
+    return defaultValue;
+  }
+}
+
+/**
+ * Lưu dữ liệu vào file DB
+ * @param {String} dbName Tên file DB
+ * @param {Array|Object} data Dữ liệu cần lưu
+ * @returns {Promise<Boolean>} Kết quả lưu
+ */
+async function saveDb(dbName, data) {
+  try {
+    const dbDir = path.join(__dirname, '../../storage/db');
+    ensureDirectoryExists(dbDir);
+    
+    const dbPath = path.join(dbDir, `${dbName}.json`);
+    
+    await fs.writeFile(dbPath, JSON.stringify(data, null, 2), 'utf8');
+    return true;
+  } catch (error) {
+    log(`Lỗi khi lưu DB ${dbName}: ${error.message}`, 'error');
+    return false;
+  }
+}
+
 module.exports = {
   initBot,
   stopBot,
