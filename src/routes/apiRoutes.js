@@ -79,6 +79,29 @@ router.post('/auth/logout', async (req, res) => {
   }
 });
 
+// Endpoint tạo mã xác thực mà không chuyển hướng
+router.get('/auth/get-auth-code', (req, res) => {
+  try {
+    // Tạo mã xác thực ngẫu nhiên để xác minh
+    const authCode = crypto.randomBytes(16).toString('hex');
+    req.session.telegramAuthCode = authCode;
+    
+    log(`Tạo mã xác thực mới: ${authCode}`, 'info');
+    
+    // Trả về mã xác thực
+    return res.json({
+      success: true,
+      authCode: authCode
+    });
+  } catch (error) {
+    log(`Lỗi khi tạo mã xác thực: ${error.message}`, 'error');
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi tạo mã xác thực: ' + error.message
+    });
+  }
+});
+
 // Route đăng nhập bằng Telegram
 router.get('/auth/telegram', (req, res) => {
   try {
