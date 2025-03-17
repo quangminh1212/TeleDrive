@@ -29,6 +29,9 @@ db.defaults({
   }
 }).write();
 
+// Đường dẫn file auth
+const authRequestsPath = path.join(config.STORAGE_PATH, 'db', 'auth_requests.json');
+
 /**
  * Get all files with pagination and filtering
  * @param {Object} options - Query options
@@ -342,6 +345,83 @@ const getLastSync = () => {
   return db.get('settings.lastSync').value();
 };
 
+/**
+ * Lưu yêu cầu xác thực
+ * @param {Object} authRequest Thông tin yêu cầu xác thực
+ */
+function saveAuthRequest(authRequest) {
+  try {
+    // Đảm bảo file tồn tại
+    if (!fs.existsSync(authRequestsPath)) {
+      fs.writeFileSync(authRequestsPath, JSON.stringify([]));
+    }
+    
+    // Đọc file hiện tại
+    const authRequests = JSON.parse(fs.readFileSync(authRequestsPath, 'utf8'));
+    
+    // Thêm yêu cầu mới
+    authRequests.push(authRequest);
+    
+    // Lưu lại
+    fs.writeFileSync(authRequestsPath, JSON.stringify(authRequests, null, 2));
+    
+    log(`Đã lưu yêu cầu xác thực: ${authRequest.authCode}`, 'info');
+  } catch (error) {
+    log(`Lỗi khi lưu yêu cầu xác thực: ${error.message}`, 'error');
+  }
+}
+
+/**
+ * Lấy thông tin yêu cầu xác thực
+ * @param {String} authCode Mã xác thực
+ * @returns {Object|null} Thông tin yêu cầu xác thực hoặc null nếu không tìm thấy
+ */
+function getAuthRequest(authCode) {
+  try {
+    // Kiểm tra file tồn tại
+    if (!fs.existsSync(authRequestsPath)) {
+      return null;
+    }
+    
+    // Đọc file
+    const authRequests = JSON.parse(fs.readFileSync(authRequestsPath, 'utf8'));
+    
+    // Tìm yêu cầu có mã xác thực tương ứng
+    const authRequest = authRequests.find(req => req.authCode === authCode);
+    
+    return authRequest || null;
+  } catch (error) {
+    log(`Lỗi khi lấy thông tin yêu cầu xác thực: ${error.message}`, 'error');
+    return null;
+  }
+}
+
+/**
+ * Xóa yêu cầu xác thực
+ * @param {String} authCode Mã xác thực
+ */
+function removeAuthRequest(authCode) {
+  try {
+    // Kiểm tra file tồn tại
+    if (!fs.existsSync(authRequestsPath)) {
+      return;
+    }
+    
+    // Đọc file
+    const authRequests = JSON.parse(fs.readFileSync(authRequestsPath, 'utf8'));
+    
+    // Lọc ra các yêu cầu không có mã xác thực tương ứng
+    const newAuthRequests = authRequests.filter(req => req.authCode !== authCode);
+    
+    // Lưu lại
+    fs.writeFileSync(authRequestsPath, JSON.stringify(newAuthRequests, null, 2));
+    
+    log(`Đã xóa yêu cầu xác thực: ${authCode}`, 'info');
+  } catch (error) {
+    log(`Lỗi khi xóa yêu cầu xác thực: ${error.message}`, 'error');
+  }
+}
+
 module.exports = {
   getFiles,
   getFileById,
@@ -356,5 +436,8 @@ module.exports = {
   searchFiles,
   getStorageStats,
   updateLastSync,
-  getLastSync
+  getLastSync,
+  saveAuthRequest,
+  getAuthRequest,
+  removeAuthRequest
 }; 

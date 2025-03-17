@@ -100,6 +100,44 @@ function isBotActive() {
  * Set up message handlers for the bot
  */
 const setupMessageHandlers = () => {
+  if (!bot) return;
+  
+  // Xử lý lệnh /start với mã xác thực
+  bot.start((ctx) => {
+    try {
+      const startPayload = ctx.startPayload; // Lấy dữ liệu sau lệnh /start
+      
+      // Kiểm tra xem có phải yêu cầu xác thực không
+      if (startPayload && startPayload.startsWith('auth_')) {
+        const authCode = startPayload.replace('auth_', '');
+        const userId = ctx.from.id;
+        const username = ctx.from.username || '';
+        const firstName = ctx.from.first_name || '';
+        const lastName = ctx.from.last_name || '';
+        
+        log(`Nhận yêu cầu xác thực từ người dùng Telegram: ${userId} (${username})`, 'info');
+        
+        // Lưu thông tin người dùng vào database để xác minh sau
+        dbService.saveAuthRequest({
+          authCode: authCode,
+          telegramId: userId,
+          username: username,
+          firstName: firstName,
+          lastName: lastName,
+          photoUrl: '',
+          timestamp: Date.now()
+        });
+        
+        ctx.reply('Bạn đã xác thực thành công! Bạn có thể quay lại trang web.');
+      } else {
+        ctx.reply('Xin chào! Tôi là bot lưu trữ file của TeleDrive. Sử dụng giao diện web để tương tác với tôi.');
+      }
+    } catch (error) {
+      log(`Lỗi khi xử lý lệnh /start: ${error.message}`, 'error');
+      ctx.reply('Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại sau.');
+    }
+  });
+  
   // Handle document messages
   bot.on(message('document'), async (ctx) => {
     try {
@@ -472,6 +510,44 @@ async function syncFilesFromTelegram() {
   }
 }
 
+/**
+ * Xác minh yêu cầu xác thực Telegram
+ * @param {String} authCode Mã xác thực
+ * @returns {Object|null} Thông tin người dùng hoặc null nếu không tìm thấy
+ */
+async function verifyAuthRequest(authCode) {
+  try {
+    // Lấy thông tin yêu cầu xác thực từ database
+    const authRequest = dbService.getAuthRequest(authCode);
+    
+    if (!authRequest) {
+      log(`Không tìm thấy yêu cầu xác thực: ${authCode}`, 'warning');
+      return null;
+    }
+    
+    // Kiểm tra thời gian xác thực (hết hạn sau 10 phút)
+    const now = Date.now();
+    if (now - authRequest.timestamp > 10 * 60 * 1000) {
+      log(`Yêu cầu xác thực đã hết hạn: ${authCode}`, 'warning');
+      dbService.removeAuthRequest(authCode);
+      return null;
+    }
+    
+    // Trả về thông tin người dùng Telegram
+    return {
+      id: authRequest.telegramId,
+      username: authRequest.username,
+      displayName: `${authRequest.firstName} ${authRequest.lastName}`.trim(),
+      photoUrl: authRequest.photoUrl || 'https://telegram.org/img/t_logo.png',
+      isAdmin: true,
+      provider: 'telegram'
+    };
+  } catch (error) {
+    log(`Lỗi khi xác minh yêu cầu xác thực: ${error.message}`, 'error');
+    return null;
+  }
+}
+
 module.exports = {
   initBot,
   stopBot,
@@ -480,5 +556,6 @@ module.exports = {
   sendFile,
   getFileLink,
   getFilesFromChat,
-  syncFilesFromTelegram
+  syncFilesFromTelegram,
+  verifyAuthRequest
 }; 

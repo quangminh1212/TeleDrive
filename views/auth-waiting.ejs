@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .auth-container {
+      max-width: 500px;
+      width: 100%;
+      padding: 20px;
+    }
+    .auth-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .auth-logo {
+      font-size: 48px;
+      color: #0088cc;
+      margin-bottom: 15px;
+    }
+    .auth-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .auth-subtitle {
+      color: #6c757d;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    .waiting-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .spinner {
+      width: 70px;
+      height: 70px;
+      border: 4px solid rgba(0, 136, 204, 0.2);
+      border-radius: 50%;
+      border-top-color: #0088cc;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .status-message {
+      font-size: 16px;
+      color: #6c757d;
+      margin-bottom: 10px;
+    }
+    .btn-back {
+      display: none;
+      width: 100%;
+      padding: 12px;
+      font-weight: 500;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">
+          <i class="bi bi-telegram"></i>
+        </div>
+        <h4 class="auth-title">TeleDrive</h4>
+        <p class="auth-subtitle">Đang chờ xác thực từ Telegram</p>
+      </div>
+      
+      <div class="waiting-container">
+        <div class="spinner"></div>
+        <p class="status-message" id="statusMessage">Đang chờ bạn xác thực qua Telegram Bot...</p>
+        <p class="mb-0" id="timeLeft">Hết hạn sau: <span id="countdownTimer">10:00</span></p>
+      </div>
+      
+      <a href="/login" class="btn btn-secondary btn-back" id="btnBack">Quay lại đăng nhập</a>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const authCode = '<%= authCode %>';
+      const statusMessage = document.getElementById('statusMessage');
+      const btnBack = document.getElementById('btnBack');
+      const countdownTimer = document.getElementById('countdownTimer');
+      
+      let countdown = 600; // 10 phút
+      let isAuthenticated = false;
+      
+      // Cập nhật countdown timer
+      const updateTimer = () => {
+        const minutes = Math.floor(countdown / 60);
+        const seconds = countdown % 60;
+        countdownTimer.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        
+        if (countdown <= 0) {
+          clearInterval(timerInterval);
+          statusMessage.textContent = 'Yêu cầu xác thực đã hết hạn.';
+          statusMessage.style.color = '#dc3545';
+          btnBack.style.display = 'block';
+          clearInterval(checkInterval);
+        }
+        
+        countdown--;
+      };
+      
+      // Kiểm tra trạng thái xác thực
+      const checkAuthStatus = async () => {
+        try {
+          // Gửi yêu cầu kiểm tra đến API
+          const response = await fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ authCode: authCode })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            clearInterval(checkInterval);
+            clearInterval(timerInterval);
+            isAuthenticated = true;
+            
+            statusMessage.textContent = 'Xác thực thành công! Đang chuyển hướng...';
+            statusMessage.style.color = '#28a745';
+            
+            // Chuyển hướng sau 2 giây
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 2000);
+          }
+        } catch (error) {
+          console.error('Lỗi khi kiểm tra trạng thái xác thực:', error);
+        }
+      };
+      
+      // Cập nhật timer mỗi giây
+      const timerInterval = setInterval(updateTimer, 1000);
+      
+      // Kiểm tra trạng thái xác thực mỗi 3 giây
+      const checkInterval = setInterval(checkAuthStatus, 3000);
+      
+      // Kiểm tra ngay khi trang được tải
+      updateTimer();
+      checkAuthStatus();
+    });
+  </script>
+</body>
+</html> 
