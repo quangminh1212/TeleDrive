@@ -43,8 +43,8 @@ try {
     saveUninitialized: false,
     cookie: { 
       secure: process.env.NODE_ENV === 'production',
-    saveUninitialized: true,
-    cookie: { secure: false }
+      maxAge: 24 * 60 * 60 * 1000 // 1 ngày
+    }
   }));
   
   // Thiết lập static files
