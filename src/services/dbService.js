@@ -30,7 +30,8 @@ db.defaults({
 }).write();
 
 // Đường dẫn file auth
-const authRequestsPath = path.join(config.STORAGE_PATH, 'db', 'auth_requests.json');
+const authDbDir = path.join(config.STORAGE_PATH, 'db');
+const authRequestsPath = path.join(authDbDir, 'auth_requests.json');
 
 /**
  * Get all files with pagination and filtering
@@ -351,6 +352,11 @@ const getLastSync = () => {
  */
 function saveAuthRequest(authRequest) {
   try {
+    // Đảm bảo thư mục tồn tại
+    if (!fs.existsSync(authDbDir)) {
+      fs.mkdirSync(authDbDir, { recursive: true });
+    }
+    
     // Đảm bảo file tồn tại
     if (!fs.existsSync(authRequestsPath)) {
       fs.writeFileSync(authRequestsPath, JSON.stringify([]));
@@ -359,15 +365,25 @@ function saveAuthRequest(authRequest) {
     // Đọc file hiện tại
     const authRequests = JSON.parse(fs.readFileSync(authRequestsPath, 'utf8'));
     
-    // Thêm yêu cầu mới
-    authRequests.push(authRequest);
+    // Kiểm tra xem đã tồn tại yêu cầu với mã này chưa
+    const existingIndex = authRequests.findIndex(req => req.authCode === authRequest.authCode);
+    
+    if (existingIndex !== -1) {
+      // Nếu đã tồn tại, cập nhật
+      authRequests[existingIndex] = authRequest;
+    } else {
+      // Nếu chưa tồn tại, thêm mới
+      authRequests.push(authRequest);
+    }
     
     // Lưu lại
     fs.writeFileSync(authRequestsPath, JSON.stringify(authRequests, null, 2));
     
     log(`Đã lưu yêu cầu xác thực: ${authRequest.authCode}`, 'info');
+    return true;
   } catch (error) {
     log(`Lỗi khi lưu yêu cầu xác thực: ${error.message}`, 'error');
+    return false;
   }
 }
 
