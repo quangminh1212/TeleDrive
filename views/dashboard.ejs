@@ -76,6 +76,7 @@
       padding: 15px;
       text-align: center;
       transition: all 0.2s;
+      position: relative;
     }
     
     .file-card:hover {
@@ -109,6 +110,7 @@
       border-radius: 5px;
       text-decoration: none;
       transition: background-color 0.2s;
+      cursor: pointer;
     }
     
     .upload-btn:hover {
@@ -146,6 +148,193 @@
       color: #ddd;
       margin-bottom: 20px;
     }
+    
+    /* Upload Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 5px;
+      width: 50%;
+      max-width: 500px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .close {
+      color: #aaa;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .close:hover {
+      color: black;
+    }
+    
+    .upload-area {
+      border: 2px dashed #ddd;
+      border-radius: 5px;
+      padding: 30px;
+      text-align: center;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+    
+    .upload-area:hover {
+      border-color: #0078d7;
+    }
+    
+    .file-input {
+      display: none;
+    }
+    
+    .upload-progress {
+      margin-top: 10px;
+      display: none;
+    }
+    
+    .progress-bar {
+      height: 5px;
+      background-color: #f3f3f3;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    
+    .progress {
+      height: 100%;
+      background-color: #0078d7;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    
+    /* File Actions */
+    .file-actions {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: none;
+    }
+    
+    .file-card:hover .file-actions {
+      display: flex;
+    }
+    
+    .file-action {
+      margin-left: 5px;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: #f3f3f3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .file-action:hover {
+      background: #e0e0e0;
+    }
+    
+    /* Loading spinner */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #0078d7;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Settings */
+    .settings-section {
+      background: white;
+      border-radius: 5px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .settings-title {
+      font-size: 18px;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+    }
+    
+    .checkbox-group input {
+      margin-right: 10px;
+    }
+    
+    .btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .btn-primary {
+      background: #0078d7;
+      color: white;
+    }
+    
+    .btn-danger {
+      background: #d9534f;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -169,41 +358,127 @@
           <h3>Xin chào, <%= user.firstName %></h3>
         </div>
         <ul class="sidebar-menu">
-          <li><a href="/dashboard" class="active"><span class="icon">📁</span> Tất cả file</a></li>
-          <li><a href="/dashboard/photos"><span class="icon">🖼️</span> Hình ảnh</a></li>
-          <li><a href="/dashboard/videos"><span class="icon">🎬</span> Video</a></li>
-          <li><a href="/dashboard/documents"><span class="icon">📄</span> Tài liệu</a></li>
-          <li><a href="/dashboard/audio"><span class="icon">🎵</span> Âm thanh</a></li>
-          <li><a href="/dashboard/trash"><span class="icon">🗑️</span> Thùng rác</a></li>
-          <li><a href="/dashboard/settings"><span class="icon">⚙️</span> Cài đặt</a></li>
+          <li><a href="/dashboard" class="<%= !locals.activeType ? 'active' : '' %>"><span class="icon">📁</span> Tất cả file</a></li>
+          <li><a href="/dashboard/photos" class="<%= locals.activeType === 'photos' ? 'active' : '' %>"><span class="icon">🖼️</span> Hình ảnh</a></li>
+          <li><a href="/dashboard/videos" class="<%= locals.activeType === 'videos' ? 'active' : '' %>"><span class="icon">🎬</span> Video</a></li>
+          <li><a href="/dashboard/documents" class="<%= locals.activeType === 'documents' ? 'active' : '' %>"><span class="icon">📄</span> Tài liệu</a></li>
+          <li><a href="/dashboard/audio" class="<%= locals.activeType === 'audio' ? 'active' : '' %>"><span class="icon">🎵</span> Âm thanh</a></li>
+          <li><a href="/dashboard/trash" class="<%= locals.activeType === 'trash' ? 'active' : '' %>"><span class="icon">🗑️</span> Thùng rác</a></li>
+          <li><a href="/dashboard/settings" class="<%= locals.activeType === 'settings' ? 'active' : '' %>"><span class="icon">⚙️</span> Cài đặt</a></li>
         </ul>
         
         <div class="storage-info">
           <h4>Dung lượng lưu trữ</h4>
           <div class="storage-bar">
-            <div class="storage-used" style="width: <%= user.storagePercentage || 0 %>%"></div>
+            <div class="storage-used" style="width: <%= typeof user.getStoragePercentage === 'function' ? user.getStoragePercentage() : (user.storagePercentage || 0) %>%"></div>
           </div>
-          <p>Đã sử dụng: <%= user.storagePercentage || 0 %>%</p>
+          <p>Đã sử dụng: <%= typeof user.getStoragePercentage === 'function' ? user.getStoragePercentage() : (user.storagePercentage || 0) %>%</p>
         </div>
       </div>
       
       <div class="main-content">
-        <div class="dashboard-header">
-          <h2>Tất cả file</h2>
-          <a href="#" class="upload-btn">+ Tải lên</a>
-        </div>
-        
-        <div class="empty-state">
-          <div class="icon">📁</div>
-          <h3>Chưa có file nào</h3>
-          <p>Hãy tải lên file đầu tiên của bạn để bắt đầu sử dụng TeleDrive</p>
-          <a href="#" class="upload-btn">Tải lên ngay</a>
-        </div>
-        
-        <!-- File grid sẽ hiển thị ở đây khi có file -->
-        <div class="file-grid" style="display: none;">
-          <!-- File items sẽ được thêm vào đây -->
-        </div>
+        <% if (locals.activeType === 'settings') { %>
+          <!-- Settings page -->
+          <div class="dashboard-header">
+            <h2>Cài đặt</h2>
+          </div>
+          
+          <div class="settings-section">
+            <h3 class="settings-title">Tài khoản</h3>
+            <div class="form-group">
+              <label>Tên của bạn</label>
+              <input type="text" class="form-control" value="<%= user.firstName %> <%= user.lastName || '' %>" disabled>
+            </div>
+            <div class="form-group">
+              <label>Loại tài khoản</label>
+              <input type="text" class="form-control" value="<%= user.isPremium ? 'Premium' : 'Miễn phí' %>" disabled>
+            </div>
+            <% if (!user.isPremium) { %>
+              <p>Nâng cấp lên tài khoản Premium để có thêm dung lượng lưu trữ.</p>
+              <button class="btn btn-primary" id="upgrade-btn">Nâng cấp lên Premium</button>
+            <% } %>
+          </div>
+          
+          <div class="settings-section">
+            <h3 class="settings-title">Tùy chọn</h3>
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="auto-delete-downloads" <%= user.settings && user.settings.autoDeleteDownloads ? 'checked' : '' %>>
+              <label for="auto-delete-downloads">Tự động xóa file sau khi tải xuống</label>
+            </div>
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="notifications" <%= user.settings && user.settings.notificationsEnabled ? 'checked' : '' %>>
+              <label for="notifications">Bật thông báo</label>
+            </div>
+            <button class="btn btn-primary" id="save-settings">Lưu cài đặt</button>
+          </div>
+          
+          <div class="settings-section">
+            <h3 class="settings-title">Nguy hiểm</h3>
+            <p>Hành động này sẽ xóa vĩnh viễn tất cả các file của bạn.</p>
+            <button class="btn btn-danger" id="delete-all-files">Xóa tất cả file</button>
+          </div>
+        <% } else { %>
+          <!-- File listing page -->
+          <div class="dashboard-header">
+            <% if (locals.activeType === 'photos') { %>
+              <h2>Hình ảnh</h2>
+            <% } else if (locals.activeType === 'videos') { %>
+              <h2>Video</h2>
+            <% } else if (locals.activeType === 'documents') { %>
+              <h2>Tài liệu</h2>
+            <% } else if (locals.activeType === 'audio') { %>
+              <h2>Âm thanh</h2>
+            <% } else if (locals.activeType === 'trash') { %>
+              <h2>Thùng rác</h2>
+            <% } else { %>
+              <h2>Tất cả file</h2>
+            <% } %>
+            
+            <% if (locals.activeType !== 'trash' && locals.activeType !== 'settings') { %>
+              <a href="#" class="upload-btn" id="upload-btn">+ Tải lên</a>
+            <% } else if (locals.activeType === 'trash') { %>
+              <button class="btn btn-danger" id="empty-trash">Dọn thùng rác</button>
+            <% } %>
+          </div>
+          
+          <!-- Loading state -->
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Đang tải...</p>
+          </div>
+          
+          <!-- Empty state - initially hidden, will show if no files -->
+          <div class="empty-state" id="empty-state" style="display: none;">
+            <div class="icon">
+              <% if (locals.activeType === 'photos') { %>
+                🖼️
+              <% } else if (locals.activeType === 'videos') { %>
+                🎬
+              <% } else if (locals.activeType === 'documents') { %>
+                📄
+              <% } else if (locals.activeType === 'audio') { %>
+                🎵
+              <% } else if (locals.activeType === 'trash') { %>
+                🗑️
+              <% } else { %>
+                📁
+              <% } %>
+            </div>
+            <% if (locals.activeType === 'trash') { %>
+              <h3>Thùng rác trống</h3>
+              <p>Không có file nào trong thùng rác</p>
+            <% } else { %>
+              <h3>Chưa có file nào</h3>
+              <p>Hãy tải lên file đầu tiên của bạn để bắt đầu sử dụng TeleDrive</p>
+              <a href="#" class="upload-btn" id="empty-upload-btn">Tải lên ngay</a>
+            <% } %>
+          </div>
+          
+          <!-- File grid - initially hidden, will be populated with files -->
+          <div class="file-grid" id="file-grid">
+            <!-- Files will be rendered here via JavaScript -->
+          </div>
+        <% } %>
       </div>
     </main>
 
@@ -212,17 +487,436 @@
     </footer>
   </div>
 
+  <!-- Upload Modal -->
+  <div id="upload-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Tải lên file</h3>
+        <span class="close">&times;</span>
+      </div>
+      <div class="upload-area" id="drop-area">
+        <p>Kéo và thả file vào đây hoặc nhấn để chọn file</p>
+        <input type="file" id="file-input" class="file-input">
+      </div>
+      <div id="upload-progress" class="upload-progress">
+        <p id="upload-status">Đang tải lên...</p>
+        <div class="progress-bar">
+          <div class="progress" id="progress-bar"></div>
+        </div>
+      </div>
+      <button id="upload-submit" class="btn btn-primary" style="width: 100%;">Tải lên</button>
+    </div>
+  </div>
+
   <script src="/js/main.js"></script>
   <script>
-    // Script để xử lý tải lên và quản lý file sẽ được thêm vào đây
     document.addEventListener('DOMContentLoaded', function() {
-      // Tính năng upload sẽ được triển khai sau
-      document.querySelectorAll('.upload-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
+      const fileGrid = document.getElementById('file-grid');
+      const emptyState = document.getElementById('empty-state');
+      const loadingElement = document.getElementById('loading');
+      const uploadBtn = document.getElementById('upload-btn');
+      const emptyUploadBtn = document.getElementById('empty-upload-btn');
+      const uploadModal = document.getElementById('upload-modal');
+      const closeBtn = document.querySelector('.close');
+      const dropArea = document.getElementById('drop-area');
+      const fileInput = document.getElementById('file-input');
+      const uploadSubmit = document.getElementById('upload-submit');
+      const progressBar = document.getElementById('progress-bar');
+      const uploadProgress = document.getElementById('upload-progress');
+      const uploadStatus = document.getElementById('upload-status');
+      
+      let currentFiles = [];
+      
+      // Get current page type from URL or default to 'all'
+      const currentPath = window.location.pathname;
+      let fileType = 'all';
+      
+      if (currentPath.includes('/photos')) fileType = 'photos';
+      else if (currentPath.includes('/videos')) fileType = 'videos';
+      else if (currentPath.includes('/documents')) fileType = 'documents';
+      else if (currentPath.includes('/audio')) fileType = 'audio';
+      else if (currentPath.includes('/trash')) fileType = 'trash';
+      else if (currentPath.includes('/settings')) fileType = 'settings';
+      
+      // Don't load files on settings page
+      if (fileType !== 'settings') {
+        // Show loading state
+        loadingElement.style.display = 'block';
+        
+        // Fetch files from API based on the current page
+        fetchFiles(fileType);
+      }
+      
+      // Open the upload modal
+      function openUploadModal() {
+        uploadModal.style.display = 'block';
+        
+        // Reset upload form
+        fileInput.value = '';
+        uploadProgress.style.display = 'none';
+        progressBar.style.width = '0%';
+        uploadStatus.textContent = 'Đang tải lên...';
+      }
+      
+      // Close the upload modal
+      function closeUploadModal() {
+        uploadModal.style.display = 'none';
+      }
+      
+      // Upload button click event
+      if (uploadBtn) {
+        uploadBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          alert('Tính năng tải lên đang được phát triển. Vui lòng thử lại sau!');
+          openUploadModal();
         });
+      }
+      
+      // Empty state upload button click event
+      if (emptyUploadBtn) {
+        emptyUploadBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          openUploadModal();
+        });
+      }
+      
+      // Close button click event
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeUploadModal);
+      }
+      
+      // Click outside modal to close
+      window.addEventListener('click', function(e) {
+        if (e.target === uploadModal) {
+          closeUploadModal();
+        }
       });
+      
+      // Drop area click event
+      if (dropArea) {
+        dropArea.addEventListener('click', function() {
+          fileInput.click();
+        });
+      }
+      
+      // Handle file selection
+      if (fileInput) {
+        fileInput.addEventListener('change', function() {
+          if (fileInput.files.length > 0) {
+            const fileName = fileInput.files[0].name;
+            dropArea.innerHTML = `<p>File: ${fileName}</p>`;
+          }
+        });
+      }
+      
+      // Submit upload form
+      if (uploadSubmit) {
+        uploadSubmit.addEventListener('click', function() {
+          if (fileInput.files.length === 0) {
+            alert('Vui lòng chọn file để tải lên');
+            return;
+          }
+          
+          const file = fileInput.files[0];
+          
+          // Show progress
+          uploadProgress.style.display = 'block';
+          uploadSubmit.disabled = true;
+          
+          // Create form data
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          // Simulating upload progress (in real app, use XMLHttpRequest)
+          let progress = 0;
+          const interval = setInterval(function() {
+            progress += 10;
+            progressBar.style.width = `${progress}%`;
+            
+            if (progress >= 100) {
+              clearInterval(interval);
+              uploadStatus.textContent = 'Tải lên thành công!';
+              
+              // In real app, this would be the actual file upload request
+              uploadFile(formData);
+            }
+          }, 300);
+        });
+      }
+      
+      // Fetch files from API
+      function fetchFiles(type) {
+        let url = '/api/files';
+        
+        const params = new URLSearchParams();
+        params.append('limit', '50');
+        
+        if (type === 'photos') {
+          params.append('type', 'image');
+        } else if (type === 'videos') {
+          params.append('type', 'video');
+        } else if (type === 'documents') {
+          params.append('type', 'document');
+        } else if (type === 'audio') {
+          params.append('type', 'audio');
+        } else if (type === 'trash') {
+          params.append('trash', 'true');
+        }
+        
+        url = `${url}?${params.toString()}`;
+        
+        // In a real application, we would make a fetch request here
+        // For now, simulate with a timeout
+        setTimeout(() => {
+          // Hide loading
+          loadingElement.style.display = 'none';
+          
+          // For demonstration, show empty state
+          emptyState.style.display = 'block';
+          
+          // In a real application, we would fetch real files:
+          /*
+          fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              loadingElement.style.display = 'none';
+              
+              if (data.files && data.files.length > 0) {
+                currentFiles = data.files;
+                renderFiles(data.files);
+              } else {
+                emptyState.style.display = 'block';
+              }
+            })
+            .catch(error => {
+              console.error('Error fetching files:', error);
+              loadingElement.style.display = 'none';
+              emptyState.style.display = 'block';
+            });
+          */
+        }, 1000);
+      }
+      
+      // Render files in the grid
+      function renderFiles(files) {
+        if (files.length === 0) {
+          emptyState.style.display = 'block';
+          fileGrid.style.display = 'none';
+          return;
+        }
+        
+        emptyState.style.display = 'none';
+        fileGrid.style.display = 'grid';
+        fileGrid.innerHTML = '';
+        
+        files.forEach(file => {
+          const fileCard = createFileCard(file);
+          fileGrid.appendChild(fileCard);
+        });
+      }
+      
+      // Create a file card element
+      function createFileCard(file) {
+        const fileCard = document.createElement('div');
+        fileCard.className = 'file-card';
+        
+        // Determine icon based on file type
+        let fileIcon = '📄';
+        if (file.mimeType) {
+          if (file.mimeType.startsWith('image/')) fileIcon = '🖼️';
+          else if (file.mimeType.startsWith('video/')) fileIcon = '🎬';
+          else if (file.mimeType.startsWith('audio/')) fileIcon = '🎵';
+          else if (file.mimeType.includes('pdf')) fileIcon = '📑';
+          else if (file.mimeType.includes('word')) fileIcon = '📝';
+          else if (file.mimeType.includes('excel') || file.mimeType.includes('spreadsheet')) fileIcon = '📊';
+          else if (file.mimeType.includes('presentation') || file.mimeType.includes('powerpoint')) fileIcon = '📽️';
+        }
+        
+        // Format file size
+        const formattedSize = formatFileSize(file.size);
+        
+        fileCard.innerHTML = `
+          <div class="file-icon">${fileIcon}</div>
+          <div class="file-name">${file.name}</div>
+          <div class="file-size">${formattedSize}</div>
+          <div class="file-actions">
+            <div class="file-action download-btn" title="Tải xuống">⬇️</div>
+            <div class="file-action share-btn" title="Chia sẻ">🔗</div>
+            <div class="file-action delete-btn" title="Xóa">🗑️</div>
+          </div>
+        `;
+        
+        // Add event listeners for file actions
+        const downloadBtn = fileCard.querySelector('.download-btn');
+        const shareBtn = fileCard.querySelector('.share-btn');
+        const deleteBtn = fileCard.querySelector('.delete-btn');
+        
+        downloadBtn.addEventListener('click', () => downloadFile(file._id));
+        shareBtn.addEventListener('click', () => shareFile(file._id));
+        deleteBtn.addEventListener('click', () => deleteFile(file._id));
+        
+        return fileCard;
+      }
+      
+      // Format file size (e.g. 1.5 MB)
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+      
+      // Upload a file
+      function uploadFile(formData) {
+        // In a real application, send a POST request to the server
+        /*
+        fetch('/api/files/upload', {
+          method: 'POST',
+          body: formData,
+        })
+          .then(response => response.json())
+          .then(data => {
+            // Handle successful upload
+            closeUploadModal();
+            // Refresh files
+            fetchFiles(fileType);
+          })
+          .catch(error => {
+            console.error('Error uploading file:', error);
+            alert('Có lỗi xảy ra khi tải lên file. Vui lòng thử lại.');
+          });
+        */
+        
+        // For now, simulate a successful upload
+        setTimeout(() => {
+          closeUploadModal();
+          alert('Tải lên thành công! (Giả lập)');
+        }, 1000);
+      }
+      
+      // Download a file
+      function downloadFile(fileId) {
+        // In a real application, redirect to download endpoint
+        // window.location.href = `/api/files/${fileId}/download`;
+        
+        // For now, show alert
+        alert(`Đang tải xuống file (ID: ${fileId})... (Giả lập)`);
+      }
+      
+      // Share a file
+      function shareFile(fileId) {
+        // In a real application, make a request to create a share link
+        /*
+        fetch(`/api/files/${fileId}/share`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ expiresInHours: 24 }),
+        })
+          .then(response => response.json())
+          .then(data => {
+            // Show share link to user
+            prompt('Copy and share this link:', data.shareLink);
+          })
+          .catch(error => {
+            console.error('Error sharing file:', error);
+            alert('Có lỗi xảy ra khi chia sẻ file. Vui lòng thử lại.');
+          });
+        */
+        
+        // For now, show a fake share link
+        prompt('Copy and share this link (giả lập):', `https://teledrive.example.com/share/${fileId}`);
+      }
+      
+      // Delete a file
+      function deleteFile(fileId) {
+        if (!confirm('Bạn có chắc chắn muốn xóa file này?')) {
+          return;
+        }
+        
+        // In a real application, send a DELETE request to the server
+        /*
+        fetch(`/api/files/${fileId}`, {
+          method: 'DELETE',
+        })
+          .then(response => response.json())
+          .then(data => {
+            // Remove file from the UI
+            currentFiles = currentFiles.filter(file => file._id !== fileId);
+            renderFiles(currentFiles);
+          })
+          .catch(error => {
+            console.error('Error deleting file:', error);
+            alert('Có lỗi xảy ra khi xóa file. Vui lòng thử lại.');
+          });
+        */
+        
+        // For now, show alert
+        alert(`Xóa file thành công (ID: ${fileId})! (Giả lập)`);
+      }
+      
+      // Event listeners for settings page if it exists
+      const saveSettingsBtn = document.getElementById('save-settings');
+      const upgradeBtn = document.getElementById('upgrade-btn');
+      const deleteAllFilesBtn = document.getElementById('delete-all-files');
+      const emptyTrashBtn = document.getElementById('empty-trash');
+      
+      if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', function() {
+          const autoDeleteDownloads = document.getElementById('auto-delete-downloads').checked;
+          const notifications = document.getElementById('notifications').checked;
+          
+          // In a real application, send settings to the server
+          /*
+          fetch('/api/auth/settings', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              autoDeleteDownloads,
+              notificationsEnabled: notifications,
+            }),
+          })
+            .then(response => response.json())
+            .then(data => {
+              alert('Cài đặt đã được lưu thành công!');
+            })
+            .catch(error => {
+              console.error('Error saving settings:', error);
+              alert('Có lỗi xảy ra khi lưu cài đặt. Vui lòng thử lại.');
+            });
+          */
+          
+          // For now, show alert
+          alert('Cài đặt đã được lưu thành công! (Giả lập)');
+        });
+      }
+      
+      if (upgradeBtn) {
+        upgradeBtn.addEventListener('click', function() {
+          alert('Tính năng nâng cấp tài khoản đang được phát triển. Vui lòng thử lại sau! (Giả lập)');
+        });
+      }
+      
+      if (deleteAllFilesBtn) {
+        deleteAllFilesBtn.addEventListener('click', function() {
+          if (confirm('CẢNH BÁO: Hành động này sẽ xóa vĩnh viễn TẤT CẢ file của bạn. Tiếp tục?')) {
+            alert('Đã gửi yêu cầu xóa tất cả file. Vui lòng đợi trong giây lát... (Giả lập)');
+          }
+        });
+      }
+      
+      if (emptyTrashBtn) {
+        emptyTrashBtn.addEventListener('click', function() {
+          if (confirm('Bạn có chắc chắn muốn dọn sạch thùng rác? Tất cả file sẽ bị xóa vĩnh viễn.')) {
+            alert('Đã xóa tất cả file trong thùng rác. (Giả lập)');
+          }
+        });
+      }
     });
   </script>
 </body>
