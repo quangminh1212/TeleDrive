@@ -115,6 +115,33 @@
       margin: 10px 0;
       display: none;
     }
+    
+    .refresh-token {
+      margin-top: 15px;
+      text-align: center;
+    }
+    
+    .refresh-token button {
+      background-color: transparent;
+      border: 1px solid #0088cc;
+      color: #0088cc;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .refresh-token button:hover {
+      background-color: #e3f2fd;
+    }
+    
+    .token-expiry {
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: 5px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -161,6 +188,12 @@
             <div class="copy-btn-container">
               <div id="copy-feedback" class="copy-feedback">Đã sao chép thành công!</div>
               <button id="copy-code" class="btn btn-secondary">Sao chép lệnh</button>
+            </div>
+            <div class="token-expiry">
+              <span id="token-expiry-time">Lệnh hết hạn sau 30 phút</span>
+            </div>
+            <div class="refresh-token">
+              <button id="refresh-token-btn">Làm mới mã xác thực</button>
             </div>
           </div>
           
