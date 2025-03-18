@@ -784,13 +784,23 @@ async function verifyAuthRequest(authCode) {
     log(`Đường dẫn đến file DB: ${dbPath}`, 'debug');
     
     // Kiểm tra xem file có tồn tại không
-    const fileExists = await fs.pathExists(dbPath);
-    log(`File DB tồn tại: ${fileExists}`, 'debug');
+    let fileExists = false;
+    try {
+      fileExists = await fs.pathExists(dbPath);
+      log(`File DB tồn tại: ${fileExists}`, 'debug');
+    } catch (error) {
+      log(`Lỗi khi kiểm tra tồn tại file: ${error.message}`, 'error');
+      return false;
+    }
     
     if (!fileExists) {
       // Tạo file mới nếu không tồn tại
-      await fs.writeFile(dbPath, JSON.stringify([]), 'utf8');
-      log(`Đã tạo file DB mới: ${dbPath}`, 'info');
+      try {
+        await fs.writeFile(dbPath, JSON.stringify([]), 'utf8');
+        log(`Đã tạo file DB mới: ${dbPath}`, 'info');
+      } catch (error) {
+        log(`Lỗi khi tạo file DB mới: ${error.message}`, 'error');
+      }
       return false;
     }
     
@@ -843,7 +853,11 @@ async function verifyAuthRequest(authCode) {
       
       // Xóa yêu cầu hết hạn
       const newDb = db.filter(r => r.code !== cleanAuthCode);
-      await fs.writeFile(dbPath, JSON.stringify(newDb, null, 2), 'utf8');
+      try {
+        await fs.writeFile(dbPath, JSON.stringify(newDb, null, 2), 'utf8');
+      } catch (error) {
+        log(`Lỗi khi cập nhật DB sau khi xóa mã hết hạn: ${error.message}`, 'error');
+      }
       
       return false;
     }
@@ -854,7 +868,7 @@ async function verifyAuthRequest(authCode) {
       
       // Tạo thông tin người dùng từ yêu cầu xác thực
       const user = {
-        id: request.telegramId || 'unknown',
+        id: request.telegramId || config.TELEGRAM_CHAT_ID || 'unknown',
         username: request.username || 'telegram_user',
         displayName: [request.firstName, request.lastName].filter(Boolean).join(' ') || 'Telegram User',
         photoUrl: 'https://telegram.org/img/t_logo.png',
@@ -923,20 +937,21 @@ async function generateAuthCode() {
     const filteredDb = db.filter(r => r.timestamp > oneHourAgo);
     
     // Thêm yêu cầu mới
-    filteredDb.push({
+    const authRequest = {
       code: authCode,
       timestamp: now
-    });
+    };
+    filteredDb.push(authRequest);
     
     // Debug - hiển thị các mã xác thực hiện có
     log(`Lưu mã xác thực ${authCode} vào DB. Tổng số mã: ${filteredDb.length}`, 'info');
     
     // Lưu vào file
     const dbPath = path.join(dbDir, 'auth_requests.json');
-    await fs.writeFile(dbPath, JSON.stringify(filteredDb, null, 2), 'utf8');
-    
-    // Kiểm tra xem file đã được lưu chưa
     try {
+      await fs.writeFile(dbPath, JSON.stringify(filteredDb, null, 2), 'utf8');
+      
+      // Kiểm tra xem file đã được lưu chưa
       const fileExists = await fs.pathExists(dbPath);
       log(`File auth_requests.json tồn tại: ${fileExists}`, 'debug');
       
@@ -945,7 +960,8 @@ async function generateAuthCode() {
         log(`Nội dung file sau khi lưu: ${fileContent}`, 'debug');
       }
     } catch (error) {
-      log(`Lỗi khi kiểm tra file: ${error.message}`, 'error');
+      log(`Lỗi khi ghi file auth_requests.json: ${error.message}`, 'error');
+      return false;
     }
     
     // Gửi mã xác thực tới Telegram
@@ -1041,7 +1057,25 @@ async function handleAuth(ctx, authCode) {
   
   try {
     // Kiểm tra xem mã xác thực có tồn tại không
-    const db = await loadDb('auth_requests', []);
+    const dbDir = path.join(__dirname, '../../data/db');
+    await fs.ensureDir(dbDir);
+    
+    const dbPath = path.join(dbDir, 'auth_requests.json');
+    
+    let db = [];
+    try {
+      if (await fs.pathExists(dbPath)) {
+        const rawData = await fs.readFile(dbPath, 'utf8');
+        db = JSON.parse(rawData);
+        if (!Array.isArray(db)) {
+          db = [];
+        }
+      }
+    } catch (error) {
+      log(`Lỗi khi đọc DB: ${error.message}`, 'error');
+      return ctx.reply('❌ Lỗi khi đọc dữ liệu xác thực. Vui lòng thử lại sau.');
+    }
+    
     log(`[DEBUG] Đang so sánh với ${db.length} mã xác thực trong DB`, 'debug');
     
     // Sử dụng cả 2 cách: so sánh chính xác và so sánh không phân biệt hoa thường
@@ -1060,6 +1094,15 @@ async function handleAuth(ctx, authCode) {
       return ctx.reply('⚠️ Mã xác thực không hợp lệ hoặc đã hết hạn. Vui lòng thử lại với mã mới từ trang web.');
     }
     
+    // Kiểm tra hết hạn
+    const now = Date.now();
+    const validUntil = request.timestamp + (30 * 60 * 1000);
+    
+    if (now > validUntil) {
+      log(`Yêu cầu xác thực đã hết hạn: ${authCode}`, 'warning');
+      return ctx.reply('⚠️ Mã xác thực đã hết hạn. Vui lòng tạo mã mới từ trang web.');
+    }
+    
     // Lưu thông tin người dùng liên kết với mã này
     request.telegramId = userId;
     request.username = username;
@@ -1069,7 +1112,13 @@ async function handleAuth(ctx, authCode) {
     request.verifiedAt = Date.now();
     
     // Lưu lại vào DB
-    await saveDb('auth_requests', db);
+    try {
+      await fs.writeFile(dbPath, JSON.stringify(db, null, 2), 'utf8');
+      log(`Đã lưu thông tin xác thực cho mã ${authCode}`, 'info');
+    } catch (error) {
+      log(`Lỗi khi lưu DB: ${error.message}`, 'error');
+      return ctx.reply('❌ Lỗi khi lưu thông tin xác thực. Vui lòng thử lại sau.');
+    }
     
     ctx.reply('✅ Xác thực thành công! Bạn có thể quay lại trang web và đăng nhập. Trang web sẽ tự chuyển hướng.');
     log(`Người dùng ${userId} (${username}) đã xác thực thành công với mã ${authCode}`, 'info');

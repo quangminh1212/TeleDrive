@@ -6,7 +6,7 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const crypto = require('crypto');
 const config = require('../config/config');
 const fileService = require('../services/fileService');
@@ -80,13 +80,17 @@ router.post('/auth/logout', async (req, res) => {
 });
 
 // Endpoint tạo mã xác thực mà không chuyển hướng
-router.get('/auth/get-auth-code', (req, res) => {
+router.get('/auth/get-auth-code', async (req, res) => {
   try {
-    // Tạo mã xác thực ngẫu nhiên để xác minh
-    const authCode = crypto.randomBytes(16).toString('hex');
-    req.session.telegramAuthCode = authCode;
+    // Sử dụng hàm của telegramService để tạo mã xác thực
+    const authCode = await telegramService.generateAuthCode();
     
-    log(`Tạo mã xác thực mới: ${authCode}`, 'info');
+    if (!authCode) {
+      return res.status(500).json({
+        success: false,
+        message: 'Không thể tạo mã xác thực'
+      });
+    }
     
     // Trả về mã xác thực
     return res.json({
