@@ -252,4 +252,29 @@ router.get('/dashboard', (req, res) => {
   });
 });
 
+/**
+ * @route GET /dashboard/:type
+ * @desc Render dashboard with filtered file types
+ */
+router.get('/dashboard/:type', (req, res) => {
+  if (!req.session || !req.session.user) {
+    // Lưu URL hiện tại để quay lại sau khi đăng nhập
+    req.session.returnTo = req.originalUrl;
+    return res.redirect('/login');
+  }
+  
+  const validTypes = ['photos', 'videos', 'documents', 'audio', 'trash', 'settings'];
+  const type = req.params.type;
+  
+  if (!validTypes.includes(type)) {
+    return res.redirect('/dashboard');
+  }
+  
+  // Render dashboard với thông tin người dùng và loại file
+  res.render('dashboard', {
+    user: req.session.user,
+    activeType: type
+  });
+});
+
 module.exports = router; 

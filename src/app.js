@@ -65,7 +65,9 @@ app.get('/dashboard', (req, res) => {
     return res.redirect('/login');
   }
   
-  res.send('Dashboard - Coming Soon'); // Will be replaced with actual dashboard
+  res.render('dashboard', {
+    user: req.session.user,
+  });
 });
 
 // Error handler
