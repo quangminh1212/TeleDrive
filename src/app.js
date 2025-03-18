@@ -27,17 +27,19 @@ app.use(express.static(config.paths.public));
 
 // Session setup
 app.use(session({
-  secret: config.sessionSecret,
+  secret: config.session.secret,
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: config.db.uri,
-    collectionName: 'sessions',
-  }),
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    secure: config.nodeEnv === 'production',
-  }
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  },
+  store: new MongoStore({
+    mongoUrl: config.db.uri,
+    collection: 'sessions',
+    ttl: 24 * 60 * 60 // 1 day
+  })
 }));
 
 // Custom middleware

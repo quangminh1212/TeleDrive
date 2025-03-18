@@ -4,6 +4,22 @@ const { isAuthenticated } = require('./middleware');
 const router = express.Router();
 
 /**
+ * @route GET /
+ * @desc Render index page
+ */
+router.get('/', (req, res) => {
+  // Nếu người dùng đã đăng nhập, chuyển hướng đến dashboard
+  if (req.session && req.session.user) {
+    return res.redirect('/dashboard');
+  }
+  
+  // Nếu chưa đăng nhập, hiển thị trang chủ
+  res.render('index', {
+    user: req.session.user || null
+  });
+});
+
+/**
  * @route GET /auth/login
  * @desc Render login page
  */
@@ -216,6 +232,23 @@ router.post('/api/auth/force-login', (req, res) => {
       message: 'Đã đăng nhập thành công',
       redirectUrl: loginRequest.callbackUrl || '/dashboard'
     });
+  });
+});
+
+/**
+ * @route GET /dashboard
+ * @desc Render dashboard page (protected)
+ */
+router.get('/dashboard', (req, res) => {
+  if (!req.session || !req.session.user) {
+    // Lưu URL hiện tại để quay lại sau khi đăng nhập
+    req.session.returnTo = req.originalUrl;
+    return res.redirect('/login');
+  }
+  
+  // Render dashboard với thông tin người dùng
+  res.render('dashboard', {
+    user: req.session.user
   });
 });
 

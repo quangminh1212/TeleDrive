@@ -540,7 +540,7 @@
           });
       }
 
-      // Cập nhật hàm startLoginCheck để thực hiện kiểm tra debug và phục hồi sau một số lần thử
+      // Cập nhật hàm startLoginCheck để kiểm tra thường xuyên hơn
       function startLoginCheck(token) {
         loginStatus.classList.remove('hidden');
         debugLog(`Bắt đầu kiểm tra đăng nhập với token: ${token.substring(0, 10)}...`);
@@ -551,15 +551,21 @@
         }
         
         let attempts = 0;
-        const maxAttempts = 60; // 3 minutes max (60 * 3s)
-        const checkInterval = debugMode ? 1000 : 3000; // Giảm interval khi debug
+        const maxAttempts = 200; // Tăng số lần thử tối đa
+        const checkInterval = debugMode ? 1000 : 2000; // Giảm interval xuống 2 giây
         
-        // Check login status every 3 seconds (or 1 second in debug mode)
+        // Check login status more frequently
         loginCheckInterval = setInterval(() => {
           attempts++;
           
-          // Kiểm tra debug sau 5 lần thử và sau đó cứ 10 lần thử một
-          if (attempts === 5 || (attempts > 5 && attempts % 10 === 0)) {
+          // Kiểm tra debug sau 5 lần thử và sau đó cứ 5 lần thử một
+          if (attempts === 5 || (attempts > 5 && attempts % 5 === 0)) {
+            checkTokenDebug(token);
+          }
+          
+          // Thêm tự động force login sau 20 giây nếu chưa đăng nhập
+          if (attempts === 10) {
+            debugLog('Thử tự động force login sau 10 lần thử...');
             checkTokenDebug(token);
           }
           
@@ -587,9 +593,19 @@
                 loginStatus.innerHTML = '<p>Đăng nhập thành công! Đang chuyển hướng...</p>';
                 showSuccess('Đăng nhập thành công! Đang chuyển hướng...');
                 debugLog('Đăng nhập thành công, đang chuyển hướng...');
+                
+                // Chuyển hướng sau 1 giây
                 setTimeout(() => {
                   window.location.href = data.redirectUrl || '/dashboard';
                 }, 1000);
+                
+                // Nếu sau 2 giây vẫn chưa chuyển hướng, thử lại
+                setTimeout(() => {
+                  if (document.location.pathname.includes('login')) {
+                    debugLog('Vẫn ở trang login sau khi chuyển hướng. Thử lại...');
+                    window.location.href = data.redirectUrl || '/dashboard';
+                  }
+                }, 3000);
               } else if (data.waitingForTelegram) {
                 // Token valid but waiting for Telegram action
                 loginStatus.innerHTML = `
