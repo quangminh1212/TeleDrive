@@ -155,30 +155,64 @@ router.post('/auth/check-status', async (req, res) => {
       });
     }
     
-    // Xác minh trạng thái yêu cầu xác thực
-    const status = await telegramService.verifyAuthRequest(authCode);
+    log(`Kiểm tra trạng thái xác thực với mã: ${authCode}`, 'info');
     
-    if (status) {
+    // Loại bỏ tiền tố nếu có
+    const cleanAuthCode = authCode.replace('auth_', '');
+    
+    // Xác minh trạng thái yêu cầu xác thực
+    const authResult = await telegramService.verifyAuthRequest(cleanAuthCode);
+    
+    if (authResult && typeof authResult === 'object' && authResult.id) {
       // Thiết lập session
       req.session.isLoggedIn = true;
-      req.session.user = status;
+      req.session.user = authResult;
+      
+      log(`Người dùng đã đăng nhập thành công với mã: ${cleanAuthCode}`, 'info');
       
       return res.json({
         success: true,
         status: 'authenticated',
-        user: status
+        user: authResult
       });
     }
     
-    // Kiểm tra xem mã có tồn tại không
-    const authRequests = await telegramService.loadDb('auth_requests', []);
+    // Kiểm tra xem mã có tồn tại không bằng cách đọc trực tiếp từ file
+    const dbDir = path.join(__dirname, '../../data/db');
+    const dbPath = path.join(dbDir, 'auth_requests.json');
+    
+    let authRequests = [];
+    try {
+      if (await fs.pathExists(dbPath)) {
+        const data = await fs.readFile(dbPath, 'utf8');
+        authRequests = JSON.parse(data);
+        if (!Array.isArray(authRequests)) {
+          authRequests = [];
+        }
+      }
+    } catch (error) {
+      log(`Lỗi khi đọc file auth_requests.json: ${error.message}`, 'error');
+    }
+    
     // Sử dụng cả 2 cách: so sánh chính xác và so sánh không phân biệt hoa thường
-    const exactMatch = authRequests.find(r => r.code === authCode);
+    const exactMatch = authRequests.find(r => r.code === cleanAuthCode);
     const caseInsensitiveMatch = !exactMatch ? 
-      authRequests.find(r => r.code.toLowerCase() === authCode.toLowerCase()) : null;
+      authRequests.find(r => r.code.toLowerCase() === cleanAuthCode.toLowerCase()) : null;
     const request = exactMatch || caseInsensitiveMatch;
     
     if (request) {
+      // Kiểm tra hết hạn
+      const now = Date.now();
+      const validUntil = request.timestamp + (30 * 60 * 1000);
+      
+      if (now > validUntil) {
+        return res.json({
+          success: false,
+          status: 'expired',
+          message: 'Mã xác thực đã hết hạn'
+        });
+      }
+      
       return res.json({
         success: false,
         status: 'pending',

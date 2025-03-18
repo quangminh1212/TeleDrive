@@ -791,18 +791,24 @@ async function verifyAuthRequest(authCode) {
       // Tạo file mới nếu không tồn tại
       await fs.writeFile(dbPath, JSON.stringify([]), 'utf8');
       log(`Đã tạo file DB mới: ${dbPath}`, 'info');
+      return false;
     }
     
-    if (fileExists) {
-      try {
-        const rawData = await fs.readFile(dbPath, 'utf8');
-        log(`Nội dung file DB: ${rawData}`, 'debug');
-      } catch (readErr) {
-        log(`Lỗi khi đọc file DB trực tiếp: ${readErr.message}`, 'error');
+    // Đọc trực tiếp từ file
+    let db = [];
+    try {
+      const rawData = await fs.readFile(dbPath, 'utf8');
+      log(`Nội dung file DB: ${rawData}`, 'debug');
+      db = JSON.parse(rawData);
+      if (!Array.isArray(db)) {
+        log('DB không phải là mảng, đặt lại thành mảng rỗng', 'warning');
+        db = [];
       }
+    } catch (readErr) {
+      log(`Lỗi khi đọc file DB trực tiếp: ${readErr.message}`, 'error');
+      return false;
     }
     
-    const db = await loadDb('auth_requests', []);
     log(`Đã tìm thấy ${db.length} yêu cầu xác thực trong DB`, 'debug');
     
     if (db.length === 0) {
@@ -837,9 +843,26 @@ async function verifyAuthRequest(authCode) {
       
       // Xóa yêu cầu hết hạn
       const newDb = db.filter(r => r.code !== cleanAuthCode);
-      await saveDb('auth_requests', newDb);
+      await fs.writeFile(dbPath, JSON.stringify(newDb, null, 2), 'utf8');
       
       return false;
+    }
+    
+    // Kiểm tra xem mã đã được xác thực chưa
+    if (request.verified) {
+      log(`Mã xác thực đã được sử dụng: ${cleanAuthCode}`, 'info');
+      
+      // Tạo thông tin người dùng từ yêu cầu xác thực
+      const user = {
+        id: request.telegramId || 'unknown',
+        username: request.username || 'telegram_user',
+        displayName: [request.firstName, request.lastName].filter(Boolean).join(' ') || 'Telegram User',
+        photoUrl: 'https://telegram.org/img/t_logo.png',
+        isAdmin: true,
+        provider: 'telegram'
+      };
+      
+      return user;
     }
     
     log(`Xác thực thành công với mã: ${cleanAuthCode}`, 'info');
