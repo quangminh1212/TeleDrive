@@ -5,6 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đăng nhập | TeleDrive</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .error-message {
+      color: #dc3545;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .success-message {
+      color: #28a745;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 20px;
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -24,6 +45,9 @@
         <div class="login-box">
           <h2>Đăng nhập bằng Telegram</h2>
           <p>Quét mã QR bên dưới hoặc nhấp vào nút đăng nhập để tiếp tục.</p>
+          
+          <div id="error-message" class="error-message"></div>
+          <div id="success-message" class="success-message"></div>
           
           <div class="login-methods">
             <div id="qr-code-container">
@@ -64,12 +88,35 @@
       const qrCodeContainer = document.getElementById('qr-code');
       const telegramLoginButton = document.getElementById('telegram-login-button');
       const loginStatus = document.getElementById('login-status');
+      const errorMessage = document.getElementById('error-message');
+      const successMessage = document.getElementById('success-message');
+      
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        setTimeout(() => {
+          errorMessage.style.display = 'none';
+        }, 5000);
+      }
+      
+      function showSuccess(message) {
+        successMessage.textContent = message;
+        successMessage.style.display = 'block';
+        setTimeout(() => {
+          successMessage.style.display = 'none';
+        }, 5000);
+      }
       
       // Fetch login link
       fetch('/api/auth/login-link')
         .then(response => response.json())
         .then(data => {
           console.log('Login data:', data); // Log để debug
+          
+          if (!data.deepLink || !data.token) {
+            showError('Không thể tạo liên kết đăng nhập, vui lòng thử lại sau.');
+            return;
+          }
           
           // Generate QR code
           QRCode.toCanvas(qrCodeContainer, data.deepLink, {
@@ -79,10 +126,14 @@
               dark: '#0088cc',
               light: '#ffffff'
             }
+          }).catch(err => {
+            console.error('Error generating QR code:', err);
+            qrCodeContainer.innerHTML = 'Lỗi tạo mã QR.';
           });
           
           // Set login button
           telegramLoginButton.addEventListener('click', function() {
+            showSuccess('Đang mở Telegram...');
             window.open(data.deepLink, '_blank');
             startLoginCheck(data.token);
           });
@@ -92,14 +143,28 @@
         })
         .catch(error => {
           console.error('Error fetching login link:', error);
+          showError('Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.');
           qrCodeContainer.innerHTML = 'Lỗi tạo mã QR. Vui lòng thử lại sau.';
         });
       
       function startLoginCheck(token) {
         loginStatus.classList.remove('hidden');
         
+        let attempts = 0;
+        const maxAttempts = 60; // 3 minutes max (60 * 3s)
+        
         // Check login status every 3 seconds
         const interval = setInterval(() => {
+          attempts++;
+          
+          // Stop checking after max attempts
+          if (attempts >= maxAttempts) {
+            clearInterval(interval);
+            loginStatus.innerHTML = '<p>Hết thời gian đăng nhập. Vui lòng làm mới trang để thử lại.</p>';
+            showError('Hết thời gian đăng nhập. Vui lòng làm mới trang để thử lại.');
+            return;
+          }
+          
           fetch(`/api/auth/check-login?token=${token}`)
             .then(response => response.json())
             .then(data => {
@@ -108,7 +173,10 @@
               if (data.loggedIn) {
                 clearInterval(interval);
                 loginStatus.innerHTML = '<p>Đăng nhập thành công! Đang chuyển hướng...</p>';
-                window.location.href = data.redirectUrl || '/dashboard';
+                showSuccess('Đăng nhập thành công! Đang chuyển hướng...');
+                setTimeout(() => {
+                  window.location.href = data.redirectUrl || '/dashboard';
+                }, 1000);
               }
             })
             .catch(error => {
