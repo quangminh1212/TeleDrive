@@ -246,6 +246,12 @@
       const fullCommand = document.getElementById('full-command');
       const copyCodeButton = document.getElementById('copy-code');
       const copyFeedback = document.getElementById('copy-feedback');
+      const refreshTokenBtn = document.getElementById('refresh-token-btn');
+      const tokenExpiryTime = document.getElementById('token-expiry-time');
+      
+      let loginCheckInterval;
+      let tokenExpiryInterval;
+      let tokenExpiry;
       
       function showError(message) {
         errorMessage.textContent = message;
@@ -285,78 +291,165 @@
       copyCodeButton.addEventListener('click', copyToClipboard);
       fullCommand.addEventListener('click', copyToClipboard);
       
-      // Fetch login link
-      fetch('/api/auth/login-link')
-        .then(response => response.json())
-        .then(data => {
-          console.log('Login data:', data); // Log để debug
+      // Refresh token functionality
+      refreshTokenBtn.addEventListener('click', function() {
+        // Clear existing intervals
+        if (loginCheckInterval) {
+          clearInterval(loginCheckInterval);
+        }
+        if (tokenExpiryInterval) {
+          clearInterval(tokenExpiryInterval);
+        }
+        
+        refreshTokenBtn.textContent = 'Đang làm mới...';
+        refreshTokenBtn.disabled = true;
+        
+        // Fetch new login link
+        fetchLoginLink();
+      });
+      
+      // Update token expiry time display
+      function updateExpiryTimeDisplay() {
+        if (!tokenExpiry) return;
+        
+        const now = Date.now();
+        const timeLeft = tokenExpiry - now;
+        
+        if (timeLeft <= 0) {
+          tokenExpiryTime.textContent = 'Mã xác thực đã hết hạn! Vui lòng làm mới.';
+          tokenExpiryTime.style.color = '#dc3545';
           
-          if (!data.deepLink || !data.token) {
-            showError('Không thể tạo liên kết đăng nhập, vui lòng thử lại sau.');
-            return;
+          if (tokenExpiryInterval) {
+            clearInterval(tokenExpiryInterval);
           }
-
-          // Hiển thị đầy đủ lệnh với token
-          const command = `/start login_${data.token}`;
-          fullCommand.textContent = command;
-          authCodeContainer.style.display = 'block';
           
-          // Generate QR code
-          QRCode.toCanvas(qrCodeContainer, data.deepLink, {
-            width: 200,
-            margin: 2,
-            color: {
-              dark: '#0088cc',
-              light: '#ffffff'
+          return;
+        }
+        
+        // Format remaining time
+        const minutes = Math.floor(timeLeft / (60 * 1000));
+        const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
+        
+        let timeString = 'Lệnh hết hạn sau ';
+        if (minutes > 0) {
+          timeString += `${minutes} phút `;
+        }
+        timeString += `${seconds} giây`;
+        
+        tokenExpiryTime.textContent = timeString;
+        
+        // Change color when close to expiry
+        if (timeLeft < 60 * 1000) { // less than 1 minute
+          tokenExpiryTime.style.color = '#dc3545';
+        } else if (timeLeft < 5 * 60 * 1000) { // less than 5 minutes
+          tokenExpiryTime.style.color = '#fd7e14';
+        } else {
+          tokenExpiryTime.style.color = '#6c757d';
+        }
+      }
+      
+      // Fetch login link and handle initialization
+      function fetchLoginLink() {
+        fetch('/api/auth/login-link')
+          .then(response => response.json())
+          .then(data => {
+            console.log('Login data:', data); // Log để debug
+            
+            // Reset refresh button
+            refreshTokenBtn.textContent = 'Làm mới mã xác thực';
+            refreshTokenBtn.disabled = false;
+            
+            if (!data.deepLink || !data.token) {
+              showError('Không thể tạo liên kết đăng nhập, vui lòng thử lại sau.');
+              return;
             }
-          }).then(() => {
-            qrContainerError.style.display = 'none';
-          }).catch(err => {
-            console.error('Error generating QR code:', err);
+
+            // Set token expiry
+            tokenExpiry = data.expiresAt;
+            
+            // Start updating expiry time display
+            updateExpiryTimeDisplay();
+            if (tokenExpiryInterval) {
+              clearInterval(tokenExpiryInterval);
+            }
+            tokenExpiryInterval = setInterval(updateExpiryTimeDisplay, 1000);
+
+            // Hiển thị đầy đủ lệnh với token
+            const command = `/start login_${data.token}`;
+            fullCommand.textContent = command;
+            authCodeContainer.style.display = 'block';
+            
+            // Generate QR code
+            QRCode.toCanvas(qrCodeContainer, data.deepLink, {
+              width: 200,
+              margin: 2,
+              color: {
+                dark: '#0088cc',
+                light: '#ffffff'
+              }
+            }).then(() => {
+              qrContainerError.style.display = 'none';
+              qrCodeContainer.style.display = 'block';
+            }).catch(err => {
+              console.error('Error generating QR code:', err);
+              qrContainerError.style.display = 'block';
+              qrCodeContainer.style.display = 'none';
+            });
+            
+            // Set login button
+            if (!telegramLoginButton.hasEventListener) {
+              telegramLoginButton.addEventListener('click', function() {
+                const currentCommand = fullCommand.textContent;
+                showSuccess('Đang mở Telegram... Nhấn nút START hoặc dán lệnh đã sao chép');
+                
+                // Mở cửa sổ Telegram nhỏ hơn và ở giữa màn hình
+                const width = 600;
+                const height = 600;
+                const left = (window.screen.width - width) / 2;
+                const top = (window.screen.height - height) / 2;
+                const options = `width=${width},height=${height},left=${left},top=${top}`;
+                
+                window.open(data.deepLink, '_blank', options);
+                startLoginCheck(data.token);
+              });
+              telegramLoginButton.hasEventListener = true;
+            }
+            
+            // Start checking for login
+            startLoginCheck(data.token);
+          })
+          .catch(error => {
+            console.error('Error fetching login link:', error);
+            showError('Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.');
             qrContainerError.style.display = 'block';
             qrCodeContainer.style.display = 'none';
-          });
-          
-          // Set login button
-          telegramLoginButton.addEventListener('click', function() {
-            showSuccess('Đang mở Telegram... Nhấn nút START hoặc dán lệnh đã sao chép');
             
-            // Mở cửa sổ Telegram nhỏ hơn và ở giữa màn hình
-            const width = 600;
-            const height = 600;
-            const left = (window.screen.width - width) / 2;
-            const top = (window.screen.height - height) / 2;
-            const options = `width=${width},height=${height},left=${left},top=${top}`;
-            
-            window.open(data.deepLink, '_blank', options);
-            startLoginCheck(data.token);
+            // Reset refresh button
+            refreshTokenBtn.textContent = 'Làm mới mã xác thực';
+            refreshTokenBtn.disabled = false;
           });
-          
-          // Start checking for login
-          startLoginCheck(data.token);
-        })
-        .catch(error => {
-          console.error('Error fetching login link:', error);
-          showError('Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.');
-          qrContainerError.style.display = 'block';
-          qrCodeContainer.style.display = 'none';
-        });
+      }
       
       function startLoginCheck(token) {
         loginStatus.classList.remove('hidden');
+        
+        // Clear existing interval
+        if (loginCheckInterval) {
+          clearInterval(loginCheckInterval);
+        }
         
         let attempts = 0;
         const maxAttempts = 60; // 3 minutes max (60 * 3s)
         
         // Check login status every 3 seconds
-        const interval = setInterval(() => {
+        loginCheckInterval = setInterval(() => {
           attempts++;
           
           // Stop checking after max attempts
           if (attempts >= maxAttempts) {
-            clearInterval(interval);
+            clearInterval(loginCheckInterval);
             loginStatus.innerHTML = '<p>Hết thời gian đăng nhập. Vui lòng làm mới trang để thử lại.</p>';
-            showError('Hết thời gian đăng nhập. Vui lòng làm mới trang để thử lại.');
+            showError('Hết thời gian đăng nhập. Vui lòng làm mới mã xác thực và thử lại.');
             return;
           }
           
@@ -366,7 +459,7 @@
               console.log('Check login response:', data); // Log để debug
               
               if (data.loggedIn) {
-                clearInterval(interval);
+                clearInterval(loginCheckInterval);
                 loginStatus.innerHTML = '<p>Đăng nhập thành công! Đang chuyển hướng...</p>';
                 showSuccess('Đăng nhập thành công! Đang chuyển hướng...');
                 setTimeout(() => {
@@ -379,6 +472,9 @@
             });
         }, 3000);
       }
+      
+      // Initialize
+      fetchLoginLink();
     });
   </script>
 </body>
