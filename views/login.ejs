@@ -473,6 +473,74 @@
           });
       }
       
+      // Thêm function yêu cầu đăng nhập bắt buộc khi có lỗi
+      function forceLogin(token) {
+        debugLog('Đang thực hiện đăng nhập bắt buộc với token: ' + token.substring(0, 10) + '...');
+        
+        fetch('/api/auth/force-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token: token })
+        })
+        .then(response => response.json())
+        .then(data => {
+          debugLog('Kết quả đăng nhập bắt buộc: ' + JSON.stringify(data));
+          
+          if (data.success) {
+            showSuccess('Đăng nhập thành công! Đang chuyển hướng...');
+            setTimeout(() => {
+              window.location.href = data.redirectUrl || '/dashboard';
+            }, 1000);
+          } else {
+            showError('Không thể đăng nhập bắt buộc: ' + data.message);
+          }
+        })
+        .catch(error => {
+          debugLog('Lỗi đăng nhập bắt buộc: ' + error.message);
+          showError('Lỗi kết nối khi đăng nhập bắt buộc');
+        });
+      }
+
+      // Thêm function kiểm tra debug thông tin token
+      function checkTokenDebug(token) {
+        debugLog('Đang kiểm tra debug token: ' + token.substring(0, 10) + '...');
+        
+        fetch(`/api/auth/debug?token=${token}`)
+          .then(response => response.json())
+          .then(data => {
+            debugLog('Kết quả debug token: ' + JSON.stringify(data));
+            
+            // Nếu token có user nhưng chưa đăng nhập web
+            if (data.status === 'success' && data.tokenInfo.hasUser) {
+              debugLog('PHÁT HIỆN: Token đã xác thực qua Telegram nhưng chưa đăng nhập web');
+              showSuccess('Đã phát hiện xác thực Telegram thành công. Đang khôi phục đăng nhập...');
+              
+              // Thêm nút khôi phục đăng nhập
+              const recoverButton = document.createElement('button');
+              recoverButton.textContent = 'Khôi phục đăng nhập';
+              recoverButton.className = 'btn btn-success';
+              recoverButton.style.marginTop = '10px';
+              recoverButton.addEventListener('click', () => forceLogin(token));
+              
+              loginStatus.innerHTML = `
+                <p>Phát hiện xác thực Telegram thành công nhưng chưa đăng nhập web.</p>
+              `;
+              loginStatus.appendChild(recoverButton);
+              
+              // Tự động khôi phục sau 2 giây
+              setTimeout(() => {
+                forceLogin(token);
+              }, 2000);
+            }
+          })
+          .catch(error => {
+            debugLog('Lỗi kiểm tra debug: ' + error.message);
+          });
+      }
+
+      // Cập nhật hàm startLoginCheck để thực hiện kiểm tra debug và phục hồi sau một số lần thử
       function startLoginCheck(token) {
         loginStatus.classList.remove('hidden');
         debugLog(`Bắt đầu kiểm tra đăng nhập với token: ${token.substring(0, 10)}...`);
@@ -490,12 +558,20 @@
         loginCheckInterval = setInterval(() => {
           attempts++;
           
+          // Kiểm tra debug sau 5 lần thử và sau đó cứ 10 lần thử một
+          if (attempts === 5 || (attempts > 5 && attempts % 10 === 0)) {
+            checkTokenDebug(token);
+          }
+          
           // Stop checking after max attempts
           if (attempts >= maxAttempts) {
             clearInterval(loginCheckInterval);
             loginStatus.innerHTML = '<p>Hết thời gian đăng nhập. Vui lòng làm mới trang để thử lại.</p>';
             showError('Hết thời gian đăng nhập. Vui lòng làm mới mã xác thực và thử lại.');
             debugLog('Hết thời gian kiểm tra đăng nhập sau ' + attempts + ' lần thử');
+            
+            // Thử kiểm tra debug một lần cuối
+            checkTokenDebug(token);
             return;
           }
           
@@ -558,6 +634,41 @@
             debugLog('Không có token hiện tại để test');
           }
         });
+        
+        // Thêm nút debug token và force login
+        const debugSection = document.getElementById('debug-section');
+        
+        // Button debug token
+        const debugTokenBtn = document.createElement('button');
+        debugTokenBtn.textContent = 'Debug Token';
+        debugTokenBtn.className = 'btn btn-info';
+        debugTokenBtn.style.marginLeft = '10px';
+        debugTokenBtn.addEventListener('click', function() {
+          if (currentToken) {
+            debugLog(`Đang gọi API debug token...`);
+            checkTokenDebug(currentToken);
+          } else {
+            debugLog('Không có token hiện tại để debug');
+          }
+        });
+        
+        // Button force login
+        const forceLoginBtn = document.createElement('button');
+        forceLoginBtn.textContent = 'Force Login';
+        forceLoginBtn.className = 'btn btn-warning';
+        forceLoginBtn.style.marginLeft = '10px';
+        forceLoginBtn.addEventListener('click', function() {
+          if (currentToken) {
+            debugLog(`Đang gọi API force login...`);
+            forceLogin(currentToken);
+          } else {
+            debugLog('Không có token hiện tại để force login');
+          }
+        });
+        
+        // Thêm các nút vào section
+        document.getElementById('debug-section').querySelector('div').appendChild(debugTokenBtn);
+        document.getElementById('debug-section').querySelector('div').appendChild(forceLoginBtn);
         
         debugLog('Debug mode được kích hoạt');
       }
