@@ -69,6 +69,7 @@ Desktop.ini
 chrome_profiles/
 **/chrome_profiles/
 **/user-data-dir/
+user-data-dir/
 
 # Temporary files
 *-temp.html
@@ -78,6 +79,7 @@ temp-*.js
 check-*.html
 run.js
 minimal-upload.js
+temp-page.html
 
 # Runtime data
 pids
@@ -211,6 +213,14 @@ dist
 # Replit configs
 .replit
 replit.nix
+
+# Telegram session and bot cache
+*.session
+*.session-journal
+
+# Downloaded files from Telegram
+/downloads/*
+!/downloads/.gitkeep
 
 # Bỏ qua các file tạm thời của hệ thống
 .DS_Store
