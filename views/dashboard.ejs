@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeleDrive - Quản lý File</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .dashboard {
+      display: flex;
+      min-height: calc(100vh - 140px);
+    }
+    
+    .sidebar {
+      width: 250px;
+      background-color: #f5f5f5;
+      border-right: 1px solid #ddd;
+      padding: 20px;
+    }
+    
+    .sidebar-menu {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .sidebar-menu li {
+      margin-bottom: 15px;
+    }
+    
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: #333;
+      padding: 10px;
+      border-radius: 5px;
+      transition: background-color 0.2s;
+    }
+    
+    .sidebar-menu a:hover {
+      background-color: #e9e9e9;
+    }
+    
+    .sidebar-menu a.active {
+      background-color: #e3f2fd;
+      color: #0078d7;
+      font-weight: bold;
+    }
+    
+    .sidebar-menu .icon {
+      margin-right: 10px;
+      font-size: 18px;
+    }
+    
+    .main-content {
+      flex: 1;
+      padding: 20px;
+    }
+    
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    
+    .file-card {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    
+    .file-card:hover {
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transform: translateY(-5px);
+    }
+    
+    .file-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    
+    .file-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .file-size {
+      color: #666;
+      font-size: 12px;
+    }
+    
+    .upload-btn {
+      display: inline-block;
+      background-color: #0078d7;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+    
+    .upload-btn:hover {
+      background-color: #0063b1;
+    }
+    
+    .storage-info {
+      background-color: #f9f9f9;
+      border-radius: 5px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    
+    .storage-bar {
+      height: 10px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    
+    .storage-used {
+      height: 100%;
+      background-color: #0078d7;
+      width: 0%;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 50px 20px;
+    }
+    
+    .empty-state .icon {
+      font-size: 64px;
+      color: #ddd;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <h1>TeleDrive</h1>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="/">Trang chủ</a></li>
+          <li><a href="/dashboard" class="active">Quản lý File</a></li>
+          <li><a href="/logout">Đăng xuất</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="dashboard">
+      <div class="sidebar">
+        <div class="user-info">
+          <h3>Xin chào, <%= user.firstName %></h3>
+        </div>
+        <ul class="sidebar-menu">
+          <li><a href="/dashboard" class="active"><span class="icon">📁</span> Tất cả file</a></li>
+          <li><a href="/dashboard/photos"><span class="icon">🖼️</span> Hình ảnh</a></li>
+          <li><a href="/dashboard/videos"><span class="icon">🎬</span> Video</a></li>
+          <li><a href="/dashboard/documents"><span class="icon">📄</span> Tài liệu</a></li>
+          <li><a href="/dashboard/audio"><span class="icon">🎵</span> Âm thanh</a></li>
+          <li><a href="/dashboard/trash"><span class="icon">🗑️</span> Thùng rác</a></li>
+          <li><a href="/dashboard/settings"><span class="icon">⚙️</span> Cài đặt</a></li>
+        </ul>
+        
+        <div class="storage-info">
+          <h4>Dung lượng lưu trữ</h4>
+          <div class="storage-bar">
+            <div class="storage-used" style="width: <%= user.storagePercentage || 0 %>%"></div>
+          </div>
+          <p>Đã sử dụng: <%= user.storagePercentage || 0 %>%</p>
+        </div>
+      </div>
+      
+      <div class="main-content">
+        <div class="dashboard-header">
+          <h2>Tất cả file</h2>
+          <a href="#" class="upload-btn">+ Tải lên</a>
+        </div>
+        
+        <div class="empty-state">
+          <div class="icon">📁</div>
+          <h3>Chưa có file nào</h3>
+          <p>Hãy tải lên file đầu tiên của bạn để bắt đầu sử dụng TeleDrive</p>
+          <a href="#" class="upload-btn">Tải lên ngay</a>
+        </div>
+        
+        <!-- File grid sẽ hiển thị ở đây khi có file -->
+        <div class="file-grid" style="display: none;">
+          <!-- File items sẽ được thêm vào đây -->
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 TeleDrive. Tất cả các quyền được bảo lưu.</p>
+    </footer>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // Script để xử lý tải lên và quản lý file sẽ được thêm vào đây
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tính năng upload sẽ được triển khai sau
+      document.querySelectorAll('.upload-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          alert('Tính năng tải lên đang được phát triển. Vui lòng thử lại sau!');
+        });
+      });
+    });
+  </script>
+</body>
+</html> 
