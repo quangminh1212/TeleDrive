@@ -43,13 +43,28 @@ router.get('/api/auth/check-login', (req, res) => {
   const { token } = req.query;
   
   if (!token) {
-    return res.json({ loggedIn: false });
+    return res.json({ 
+      loggedIn: false,
+      error: 'Không tìm thấy mã xác thực'
+    });
   }
   
   const loginRequest = verifyLoginToken(token);
   
-  if (!loginRequest || !loginRequest.user) {
-    return res.json({ loggedIn: false });
+  if (!loginRequest) {
+    return res.json({ 
+      loggedIn: false,
+      error: 'Mã xác thực không hợp lệ hoặc đã hết hạn. Vui lòng làm mới mã xác thực và thử lại.'
+    });
+  }
+  
+  // Token valid but no user yet (waiting for Telegram action)
+  if (!loginRequest.user) {
+    return res.json({ 
+      loggedIn: false,
+      waitingForTelegram: true,
+      message: 'Vui lòng hoàn thành xác thực trên Telegram'
+    });
   }
   
   // Set user in session

@@ -63,15 +63,19 @@ const verifyLoginToken = (token) => {
     return null;
   }
   
-  // Check if token is already used
-  if (request.used) {
+  // Check if token is already used but has user data
+  if (request.used && request.user) {
+    // Return the request with user data if it was successfully used
+    return request;
+  }
+  
+  // Check if token is marked used but has no user (failed attempt)
+  if (request.used && !request.user) {
     return null;
   }
   
-  // Mark token as used
-  request.used = true;
-  loginRequests.set(token, request);
-  
+  // Mark token as used only if we get this far
+  // We'll update it with user info in processLogin
   return request;
 };
 

@@ -465,6 +465,15 @@
                 setTimeout(() => {
                   window.location.href = data.redirectUrl || '/dashboard';
                 }, 1000);
+              } else if (data.waitingForTelegram) {
+                // Token valid but waiting for Telegram action
+                loginStatus.innerHTML = `
+                  <div class="spinner"></div>
+                  <p>Đang chờ xác thực từ Telegram... Vui lòng mở Telegram và nhập lệnh</p>
+                `;
+              } else if (data.error) {
+                // Show specific error from API
+                showError(data.error);
               }
             })
             .catch(error => {
