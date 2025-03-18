@@ -25,6 +25,44 @@
       margin-bottom: 20px;
       display: none;
     }
+
+    .auth-code {
+      font-family: monospace;
+      font-size: 20px;
+      background-color: #f8f9fa;
+      padding: 8px 15px;
+      border-radius: 4px;
+      border: 1px dashed #6c757d;
+      display: inline-block;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    .login-instructions {
+      background-color: #f8f9fa;
+      border-left: 4px solid #0088cc;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+
+    .login-instructions ol {
+      margin: 10px 0 0 20px;
+      padding: 0;
+    }
+
+    .login-instructions li {
+      margin-bottom: 8px;
+    }
+
+    .auth-code-container {
+      margin: 15px 0;
+      display: none;
+    }
+
+    .login-methods {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -44,10 +82,26 @@
       <div class="login-container">
         <div class="login-box">
           <h2>Đăng nhập bằng Telegram</h2>
-          <p>Quét mã QR bên dưới hoặc nhấp vào nút đăng nhập để tiếp tục.</p>
+          <p>Quét mã QR hoặc nhấp vào nút đăng nhập để kết nối với tài khoản Telegram của bạn.</p>
           
           <div id="error-message" class="error-message"></div>
           <div id="success-message" class="success-message"></div>
+          
+          <div class="login-instructions">
+            <strong>Hướng dẫn đăng nhập:</strong>
+            <ol>
+              <li>Quét mã QR hoặc nhấn vào nút "Đăng nhập với Telegram"</li>
+              <li>Khi Telegram mở ra, nhấn vào nút <strong>START</strong> hoặc gõ lệnh <strong>/start</strong></li>
+              <li>Nếu bot không phản hồi, hãy sao chép mã xác thực bên dưới và gõ: <br><code>/start login_[mã xác thực]</code></li>
+              <li>Đợi hệ thống xác thực và chuyển hướng tự động</li>
+            </ol>
+          </div>
+
+          <div id="auth-code-container" class="auth-code-container">
+            <p><strong>Mã xác thực của bạn:</strong></p>
+            <div id="auth-code" class="auth-code">Đang tạo mã...</div>
+            <button id="copy-code" class="btn btn-secondary">Sao chép mã</button>
+          </div>
           
           <div class="login-methods">
             <div id="qr-code-container">
@@ -90,13 +144,16 @@
       const loginStatus = document.getElementById('login-status');
       const errorMessage = document.getElementById('error-message');
       const successMessage = document.getElementById('success-message');
+      const authCodeContainer = document.getElementById('auth-code-container');
+      const authCode = document.getElementById('auth-code');
+      const copyCodeButton = document.getElementById('copy-code');
       
       function showError(message) {
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
         setTimeout(() => {
           errorMessage.style.display = 'none';
-        }, 5000);
+        }, 8000);
       }
       
       function showSuccess(message) {
@@ -104,8 +161,25 @@
         successMessage.style.display = 'block';
         setTimeout(() => {
           successMessage.style.display = 'none';
-        }, 5000);
+        }, 8000);
       }
+
+      // Copy auth code to clipboard
+      copyCodeButton.addEventListener('click', function() {
+        const codeText = authCode.textContent;
+        navigator.clipboard.writeText(codeText)
+          .then(() => {
+            showSuccess('Mã xác thực đã được sao chép!');
+            copyCodeButton.textContent = 'Đã sao chép';
+            setTimeout(() => {
+              copyCodeButton.textContent = 'Sao chép mã';
+            }, 3000);
+          })
+          .catch(err => {
+            console.error('Lỗi khi sao chép: ', err);
+            showError('Không thể sao chép mã. Vui lòng tự chép.');
+          });
+      });
       
       // Fetch login link
       fetch('/api/auth/login-link')
@@ -117,6 +191,11 @@
             showError('Không thể tạo liên kết đăng nhập, vui lòng thử lại sau.');
             return;
           }
+
+          // Hiển thị mã xác thực
+          const loginToken = data.token.slice(0, 16) + '...';
+          authCode.textContent = data.token;
+          authCodeContainer.style.display = 'block';
           
           // Generate QR code
           QRCode.toCanvas(qrCodeContainer, data.deepLink, {
@@ -133,8 +212,16 @@
           
           // Set login button
           telegramLoginButton.addEventListener('click', function() {
-            showSuccess('Đang mở Telegram...');
-            window.open(data.deepLink, '_blank');
+            showSuccess('Đang mở Telegram... Nhấn nút START hoặc gõ lệnh /start khi Telegram mở');
+            
+            // Mở cửa sổ Telegram nhỏ hơn và ở giữa màn hình
+            const width = 600;
+            const height = 600;
+            const left = (window.screen.width - width) / 2;
+            const top = (window.screen.height - height) / 2;
+            const options = `width=${width},height=${height},left=${left},top=${top}`;
+            
+            window.open(data.deepLink, '_blank', options);
             startLoginCheck(data.token);
           });
           

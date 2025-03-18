@@ -8,16 +8,16 @@ dist/
 build/
 logs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+npm-debug.log
+yarn-debug.log
+yarn-error.log
 
 # Environment variables
 .env
 .env.local
-.env.development
-.env.test
-.env.production
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Application data
 data/
@@ -59,4 +59,7 @@ coverage/
 .tmp/
 
 # Session files
-sessions/ 
+sessions/
+
+# Placeholder images
+public/img/hero-image.png 
