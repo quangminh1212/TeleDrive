@@ -228,6 +228,19 @@
       </div>
     </main>
 
+    <!-- Debug log section -->
+    <div id="debug-section" style="display: none; margin: 20px; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
+      <h3>Debug Log</h3>
+      <div id="debug-log" style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; background: #212529; color: #f8f9fa; padding: 10px; border-radius: 4px;"></div>
+      <div style="margin-top: 10px;">
+        <button id="clear-log-btn" class="btn btn-secondary">Clear Log</button>
+        <button id="test-login-btn" class="btn btn-primary">Test Login Check</button>
+        <div style="margin-top: 10px;">
+          <strong>Current Token:</strong> <span id="current-token-display"></span>
+        </div>
+      </div>
+    </div>
+
     <footer>
       <p>&copy; 2025 TeleDrive. Tất cả các quyền được bảo lưu.</p>
     </footer>
@@ -249,10 +262,32 @@
       const refreshTokenBtn = document.getElementById('refresh-token-btn');
       const tokenExpiryTime = document.getElementById('token-expiry-time');
       
+      // Debug mode - kiểm tra URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      const debugMode = urlParams.get('debug') === 'true';
+      
       let loginCheckInterval;
       let tokenExpiryInterval;
       let tokenExpiry;
-      
+      let currentToken = '';
+
+      // Hàm debug log
+      function debugLog(message) {
+        if (debugMode) {
+          console.log(`[DEBUG] ${message}`);
+          // Hiển thị log trên UI khi ở debug mode
+          const debugLog = document.getElementById('debug-log');
+          if (debugLog) {
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            debugLog.prepend(logEntry);
+            if (debugLog.children.length > 10) {
+              debugLog.removeChild(debugLog.lastChild);
+            }
+          }
+        }
+      }
+
       function showError(message) {
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
@@ -350,10 +385,12 @@
       
       // Fetch login link and handle initialization
       function fetchLoginLink() {
+        debugLog('Đang yêu cầu link đăng nhập mới...');
+        
         fetch('/api/auth/login-link')
           .then(response => response.json())
           .then(data => {
-            console.log('Login data:', data); // Log để debug
+            debugLog(`Nhận được token: ${data.token.substring(0, 10)}...`);
             
             // Reset refresh button
             refreshTokenBtn.textContent = 'Làm mới mã xác thực';
@@ -366,6 +403,12 @@
 
             // Set token expiry
             tokenExpiry = data.expiresAt;
+            currentToken = data.token;
+            
+            // Hiển thị token trong debug mode
+            if (debugMode) {
+              document.getElementById('current-token-display').textContent = currentToken;
+            }
             
             // Start updating expiry time display
             updateExpiryTimeDisplay();
@@ -432,6 +475,7 @@
       
       function startLoginCheck(token) {
         loginStatus.classList.remove('hidden');
+        debugLog(`Bắt đầu kiểm tra đăng nhập với token: ${token.substring(0, 10)}...`);
         
         // Clear existing interval
         if (loginCheckInterval) {
@@ -440,8 +484,9 @@
         
         let attempts = 0;
         const maxAttempts = 60; // 3 minutes max (60 * 3s)
+        const checkInterval = debugMode ? 1000 : 3000; // Giảm interval khi debug
         
-        // Check login status every 3 seconds
+        // Check login status every 3 seconds (or 1 second in debug mode)
         loginCheckInterval = setInterval(() => {
           attempts++;
           
@@ -450,18 +495,22 @@
             clearInterval(loginCheckInterval);
             loginStatus.innerHTML = '<p>Hết thời gian đăng nhập. Vui lòng làm mới trang để thử lại.</p>';
             showError('Hết thời gian đăng nhập. Vui lòng làm mới mã xác thực và thử lại.');
+            debugLog('Hết thời gian kiểm tra đăng nhập sau ' + attempts + ' lần thử');
             return;
           }
+          
+          debugLog(`Kiểm tra đăng nhập lần thứ ${attempts}...`);
           
           fetch(`/api/auth/check-login?token=${token}`)
             .then(response => response.json())
             .then(data => {
-              console.log('Check login response:', data); // Log để debug
+              debugLog(`Kết quả kiểm tra: ${JSON.stringify(data)}`);
               
               if (data.loggedIn) {
                 clearInterval(loginCheckInterval);
                 loginStatus.innerHTML = '<p>Đăng nhập thành công! Đang chuyển hướng...</p>';
                 showSuccess('Đăng nhập thành công! Đang chuyển hướng...');
+                debugLog('Đăng nhập thành công, đang chuyển hướng...');
                 setTimeout(() => {
                   window.location.href = data.redirectUrl || '/dashboard';
                 }, 1000);
@@ -471,15 +520,46 @@
                   <div class="spinner"></div>
                   <p>Đang chờ xác thực từ Telegram... Vui lòng mở Telegram và nhập lệnh</p>
                 `;
+                debugLog('Đang chờ xác thực từ Telegram...');
               } else if (data.error) {
                 // Show specific error from API
                 showError(data.error);
+                debugLog(`Lỗi: ${data.error}`);
               }
             })
             .catch(error => {
               console.error('Error checking login status:', error);
+              debugLog(`Lỗi khi kiểm tra: ${error.message}`);
             });
-        }, 3000);
+        }, checkInterval);
+      }
+      
+      // Khởi tạo debug UI nếu ở debug mode
+      if (debugMode) {
+        document.getElementById('debug-section').style.display = 'block';
+        
+        // Thêm event listeners cho các nút debug
+        document.getElementById('clear-log-btn').addEventListener('click', function() {
+          document.getElementById('debug-log').innerHTML = '';
+        });
+        
+        document.getElementById('test-login-btn').addEventListener('click', function() {
+          if (currentToken) {
+            debugLog(`Test kiểm tra đăng nhập với token: ${currentToken.substring(0, 10)}...`);
+            fetch(`/api/auth/check-login?token=${currentToken}`)
+              .then(response => response.json())
+              .then(data => {
+                debugLog(`Kết quả test: ${JSON.stringify(data)}`);
+              })
+              .catch(error => {
+                debugLog(`Lỗi test: ${error.message}`);
+              });
+          } else {
+            debugLog('Không có token hiện tại để test');
+          }
+        });
+        
+        debugLog('Debug mode được kích hoạt');
       }
       
       // Initialize

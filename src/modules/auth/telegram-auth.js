@@ -87,9 +87,12 @@ const verifyLoginToken = (token) => {
  */
 const processLogin = async (token, telegramUser) => {
   try {
+    // Chi tiết token để debug
+    logger.info(`Processing login with token: ${token.substring(0, 10)}... from user: ${telegramUser.id}`);
+    
     // Check if token exists
     if (!loginRequests.has(token)) {
-      logger.warn(`Invalid login token: ${token}`);
+      logger.warn(`Invalid login token: ${token.substring(0, 10)}... - Token không tồn tại trong loginRequests`);
       return null;
     }
     
@@ -98,18 +101,19 @@ const processLogin = async (token, telegramUser) => {
     
     // Check if token is expired
     if (request.expiresAt < Date.now()) {
-      logger.warn(`Expired login token: ${token}`);
+      logger.warn(`Expired login token: ${token.substring(0, 10)}... - Token đã hết hạn`);
       loginRequests.delete(token);
       return null;
     }
     
-    // Check if token is already used
-    if (request.used) {
-      logger.warn(`Already used login token: ${token}`);
-      return null;
+    // Check if token is already used successfully
+    if (request.used && request.user) {
+      logger.warn(`Already used login token: ${token.substring(0, 10)}... with successful login`);
+      return request; // Vẫn trả về request nếu đã đăng nhập thành công trước đó
     }
     
     // Find or create user
+    logger.info(`Finding or creating user for telegramId: ${telegramUser.id}`);
     const user = await User.findOrCreateUser(telegramUser);
     
     // Update login request
@@ -117,7 +121,7 @@ const processLogin = async (token, telegramUser) => {
     request.used = true;
     loginRequests.set(token, request);
     
-    logger.info(`User logged in: ${user.firstName} (${user.telegramId})`);
+    logger.info(`User logged in successfully: ${user.firstName} (${user.telegramId})`);
     
     return request;
   } catch (error) {
@@ -147,11 +151,14 @@ const setupAuthBot = () => {
   // Handle start command with login token
   bot.start(async (ctx) => {
     const text = ctx.message.text || '';
+    logger.info(`Received start command: ${text}`);
     
     // Check if it's a login request
     if (text.startsWith('/start login_')) {
-      const token = text.substring('/start login_'.length);
+      const token = text.substring('/start login_'.length).trim();
       const user = ctx.from;
+      
+      logger.info(`Login attempt with token: ${token.substring(0, 10)}... from Telegram user: ${user.id}`);
       
       // Process login
       const loginRequest = await processLogin(token, user);
@@ -160,6 +167,7 @@ const setupAuthBot = () => {
         ctx.reply(`Xin chào ${user.first_name}! Bạn đã đăng nhập thành công vào TeleDrive. Bây giờ bạn có thể quay lại trang web.`);
       } else {
         ctx.reply('Đường dẫn đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.');
+        logger.warn(`Login failed for token: ${token.substring(0, 10)}... - loginRequest null`);
       }
     } else {
       // Regular start command
