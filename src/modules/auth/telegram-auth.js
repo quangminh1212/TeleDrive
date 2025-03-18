@@ -7,6 +7,43 @@ const User = require('../db/models/User');
 // Initialize Telegram bot
 const bot = new Telegraf(config.telegram.botToken);
 
+/**
+ * Kiểm tra tính hợp lệ của Telegram bot token
+ * @returns {Promise<boolean>} - True nếu token hợp lệ, nếu không sẽ throw error
+ */
+const validateTelegramToken = async () => {
+  try {
+    logger.info('Đang kiểm tra tính hợp lệ của Telegram bot token...');
+    
+    // Kiểm tra token trống
+    if (!config.telegram.botToken || config.telegram.botToken === 'YOUR_BOT_TOKEN') {
+      throw new Error('Telegram bot token chưa được cấu hình hoặc không hợp lệ. Vui lòng cập nhật file .env');
+    }
+    
+    if (!config.telegram.botUsername || config.telegram.botUsername === 'YOUR_BOT_USERNAME') {
+      throw new Error('Telegram bot username chưa được cấu hình. Vui lòng cập nhật file .env');
+    }
+    
+    // Thử lấy thông tin bot để kiểm tra token
+    const botInfo = await bot.telegram.getMe();
+    
+    if (!botInfo || !botInfo.id) {
+      throw new Error('Không thể lấy thông tin bot với token đã cung cấp. Token không hợp lệ hoặc bot không hoạt động.');
+    }
+    
+    // Kiểm tra username có khớp với cấu hình hay không
+    if (botInfo.username !== config.telegram.botUsername) {
+      logger.warn(`Bot username trong cấu hình (${config.telegram.botUsername}) khác với username thực tế của bot (${botInfo.username}). Vui lòng cập nhật file .env`);
+    }
+    
+    logger.info(`Telegram bot token hợp lệ! Bot: @${botInfo.username} (ID: ${botInfo.id})`);
+    return true;
+  } catch (error) {
+    logger.error(`Lỗi khi xác thực Telegram bot token: ${error.message}`);
+    throw error;
+  }
+};
+
 // Create a map to store login requests
 const loginRequests = new Map();
 
@@ -147,7 +184,10 @@ const cleanupLoginRequests = () => {
 /**
  * Set up Telegram bot commands for authentication
  */
-const setupAuthBot = () => {
+const setupAuthBot = async () => {
+  // Validate token trước khi thiết lập bot (sẽ throw error nếu token không hợp lệ)
+  await validateTelegramToken();
+  
   // Handle start command with login token
   bot.start(async (ctx) => {
     const text = ctx.message.text || '';
@@ -237,5 +277,6 @@ module.exports = {
   verifyLoginToken,
   processLogin,
   setupAuthBot,
+  validateTelegramToken,
   bot,
 }; 

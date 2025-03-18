@@ -67,8 +67,15 @@ const init = async () => {
     // Connect to MongoDB
     await connectDB();
     
-    // Start Telegram bot
-    setupAuthBot();
+    // Kiểm tra và khởi động Telegram bot
+    try {
+      await setupAuthBot();
+      logger.info('Telegram bot đã được khởi động thành công');
+    } catch (botError) {
+      logger.error('Không thể khởi động Telegram bot: ' + botError.message);
+      logger.error('Đang dừng ứng dụng do lỗi bot Telegram. Vui lòng kiểm tra lại cấu hình token.');
+      process.exit(1);
+    }
     
     // Start server
     server.listen(port);

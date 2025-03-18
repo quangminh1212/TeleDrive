@@ -49,7 +49,6 @@ const config = {
 const validateConfig = () => {
   const required = [
     'telegram.botToken',
-    'telegram.chatId',
     'telegram.botUsername',
     'sessionSecret',
   ];
@@ -59,7 +58,8 @@ const validateConfig = () => {
     let value = config;
     for (const k of keys) {
       value = value[k];
-      if (value === undefined || value === null || value === '') {
+      if (value === undefined || value === null || value === '' 
+          || value === 'YOUR_BOT_TOKEN' || value === 'YOUR_BOT_USERNAME') {
         return true;
       }
     }
@@ -67,8 +67,29 @@ const validateConfig = () => {
   });
   
   if (missing.length > 0) {
-    console.error(`Missing required configuration: ${missing.join(', ')}`);
-    console.error('Please check your .env file or environment variables');
+    console.error(`Lỗi: Thiếu các thông tin cấu hình bắt buộc: ${missing.join(', ')}`);
+    console.error('Vui lòng kiểm tra file .env hoặc biến môi trường. Dừng chương trình...');
+    
+    if (missing.includes('telegram.botToken')) {
+      console.error(`
+====================================================
+LỖI CẤU HÌNH: TELEGRAM BOT TOKEN KHÔNG HỢP LỆ
+====================================================
+Token Telegram Bot không được cấu hình hoặc không hợp lệ.
+
+Để lấy token:
+1. Liên hệ với @BotFather trên Telegram
+2. Tạo bot mới bằng lệnh /newbot
+3. Sao chép token được cung cấp và đặt vào biến TELEGRAM_BOT_TOKEN trong file .env
+4. Đặt TELEGRAM_BOT_USERNAME là username của bot (không bao gồm ký tự @)
+
+Ví dụ:
+TELEGRAM_BOT_TOKEN=1234567890:ABCDefGhIJklMnoPQRsTUVwxYZ
+TELEGRAM_BOT_USERNAME=your_bot_name_bot
+====================================================
+`);
+    }
+    
     process.exit(1);
   }
 };
