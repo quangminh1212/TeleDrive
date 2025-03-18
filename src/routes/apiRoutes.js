@@ -159,53 +159,42 @@ router.post('/auth/check-status', async (req, res) => {
       });
     }
     
-    log(`Kiểm tra trạng thái xác thực với mã: ${authCode}`, 'info');
-    
-    // Loại bỏ tiền tố nếu có
-    const cleanAuthCode = authCode.replace('auth_', '');
+    log(`Kiểm tra trạng thái xác thực cho mã: ${authCode}`, 'info');
     
     // Xác minh trạng thái yêu cầu xác thực
-    const authResult = await telegramService.verifyAuthRequest(cleanAuthCode);
+    const userInfo = await telegramService.verifyAuthRequest(authCode);
     
-    if (authResult && typeof authResult === 'object' && authResult.id) {
+    if (userInfo) {
       // Thiết lập session
       req.session.isLoggedIn = true;
-      req.session.user = authResult;
+      req.session.user = userInfo;
       
-      log(`Người dùng đã đăng nhập thành công với mã: ${cleanAuthCode}`, 'info');
+      // Đảm bảo lưu session
+      await new Promise((resolve, reject) => {
+        req.session.save(err => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
       
       return res.json({
         success: true,
         status: 'authenticated',
-        user: authResult
+        user: userInfo
       });
     }
     
-    // Kiểm tra xem mã có tồn tại không bằng cách đọc trực tiếp từ file
-    const dbDir = path.join(__dirname, '../../data/db');
-    const dbPath = path.join(dbDir, 'auth_requests.json');
-    
-    let authRequests = [];
-    try {
-      if (await fs.pathExists(dbPath)) {
-        const data = await fs.readFile(dbPath, 'utf8');
-        authRequests = JSON.parse(data);
-        if (!Array.isArray(authRequests)) {
-          authRequests = [];
-        }
-      }
-    } catch (error) {
-      log(`Lỗi khi đọc file auth_requests.json: ${error.message}`, 'error');
-    }
+    // Kiểm tra xem mã có tồn tại không để phân biệt giữa "pending" và "not_found"
+    const authRequests = await telegramService.loadDb('auth_requests', []);
     
     // Sử dụng cả 2 cách: so sánh chính xác và so sánh không phân biệt hoa thường
-    const exactMatch = authRequests.find(r => r.code === cleanAuthCode);
+    const exactMatch = authRequests.find(r => r.code === authCode);
     const caseInsensitiveMatch = !exactMatch ? 
-      authRequests.find(r => r.code.toLowerCase() === cleanAuthCode.toLowerCase()) : null;
+      authRequests.find(r => r.code.toLowerCase() === authCode.toLowerCase()) : null;
     const request = exactMatch || caseInsensitiveMatch;
     
     if (request) {
-      // Kiểm tra hết hạn
+      // Kiểm tra có bị hết hạn không (30 phút)
       const now = Date.now();
       const validUntil = request.timestamp + (30 * 60 * 1000);
       

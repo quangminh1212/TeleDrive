@@ -777,65 +777,21 @@ async function verifyAuthRequest(authCode) {
     // Lấy yêu cầu xác thực từ DB
     log(`Đang kiểm tra mã xác thực: ${cleanAuthCode}`, 'info');
     
-    const dbDir = path.join(__dirname, '../../data/db');
-    await fs.ensureDir(dbDir);
+    const authRequests = await loadDb('auth_requests', []);
     
-    const dbPath = path.join(dbDir, 'auth_requests.json');
-    log(`Đường dẫn đến file DB: ${dbPath}`, 'debug');
-    
-    // Kiểm tra xem file có tồn tại không
-    let fileExists = false;
-    try {
-      fileExists = await fs.pathExists(dbPath);
-      log(`File DB tồn tại: ${fileExists}`, 'debug');
-    } catch (error) {
-      log(`Lỗi khi kiểm tra tồn tại file: ${error.message}`, 'error');
-      return false;
-    }
-    
-    if (!fileExists) {
-      // Tạo file mới nếu không tồn tại
-      try {
-        await fs.writeFile(dbPath, JSON.stringify([]), 'utf8');
-        log(`Đã tạo file DB mới: ${dbPath}`, 'info');
-      } catch (error) {
-        log(`Lỗi khi tạo file DB mới: ${error.message}`, 'error');
-      }
-      return false;
-    }
-    
-    // Đọc trực tiếp từ file
-    let db = [];
-    try {
-      const rawData = await fs.readFile(dbPath, 'utf8');
-      log(`Nội dung file DB: ${rawData}`, 'debug');
-      db = JSON.parse(rawData);
-      if (!Array.isArray(db)) {
-        log('DB không phải là mảng, đặt lại thành mảng rỗng', 'warning');
-        db = [];
-      }
-    } catch (readErr) {
-      log(`Lỗi khi đọc file DB trực tiếp: ${readErr.message}`, 'error');
-      return false;
-    }
-    
-    log(`Đã tìm thấy ${db.length} yêu cầu xác thực trong DB`, 'debug');
-    
-    if (db.length === 0) {
+    if (!Array.isArray(authRequests) || authRequests.length === 0) {
       log('Không có yêu cầu xác thực nào trong DB', 'warning');
       return false;
     }
     
-    // Debug: hiển thị mã xác thực đang kiểm tra và mã trong DB để so sánh
-    if (db.length > 0) {
-      const codes = db.map(r => r.code).join(', ');
-      log(`Các mã xác thực trong DB: ${codes}`, 'debug');
-    }
+    // Debug: hiển thị các mã trong DB
+    const codes = authRequests.map(r => r.code).join(', ');
+    log(`Các mã xác thực trong DB: ${codes}`, 'debug');
     
     // Tìm với cả trường hợp chính xác và không phân biệt hoa thường
-    const exactMatch = db.find(r => r.code === cleanAuthCode);
+    const exactMatch = authRequests.find(r => r.code === cleanAuthCode);
     const caseInsensitiveMatch = !exactMatch ? 
-      db.find(r => r.code.toLowerCase() === cleanAuthCode.toLowerCase()) : null;
+      authRequests.find(r => r.code.toLowerCase() === cleanAuthCode.toLowerCase()) : null;
     
     const request = exactMatch || caseInsensitiveMatch;
     
@@ -844,7 +800,7 @@ async function verifyAuthRequest(authCode) {
       return false;
     }
     
-    // Kiểm tra hết hạn, thời gian hợp lệ là 30 phút thay vì 10 phút
+    // Kiểm tra hết hạn
     const now = Date.now();
     const validUntil = request.timestamp + (30 * 60 * 1000);
     
@@ -852,35 +808,34 @@ async function verifyAuthRequest(authCode) {
       log(`Yêu cầu xác thực đã hết hạn: ${cleanAuthCode}`, 'warning');
       
       // Xóa yêu cầu hết hạn
-      const newDb = db.filter(r => r.code !== cleanAuthCode);
-      try {
-        await fs.writeFile(dbPath, JSON.stringify(newDb, null, 2), 'utf8');
-      } catch (error) {
-        log(`Lỗi khi cập nhật DB sau khi xóa mã hết hạn: ${error.message}`, 'error');
-      }
+      const newRequests = authRequests.filter(r => 
+        r.code !== cleanAuthCode && 
+        r.code.toLowerCase() !== cleanAuthCode.toLowerCase()
+      );
+      await saveDb('auth_requests', newRequests);
       
       return false;
     }
     
-    // Kiểm tra xem mã đã được xác thực chưa
-    if (request.verified) {
-      log(`Mã xác thực đã được sử dụng: ${cleanAuthCode}`, 'info');
-      
-      // Tạo thông tin người dùng từ yêu cầu xác thực
-      const user = {
-        id: request.telegramId || config.TELEGRAM_CHAT_ID || 'unknown',
-        username: request.username || 'telegram_user',
-        displayName: [request.firstName, request.lastName].filter(Boolean).join(' ') || 'Telegram User',
-        photoUrl: 'https://telegram.org/img/t_logo.png',
-        isAdmin: true,
-        provider: 'telegram'
-      };
-      
-      return user;
+    // Nếu chưa được xác thực, trả về false
+    if (!request.verified) {
+      log(`Yêu cầu xác thực chưa được xác minh: ${cleanAuthCode}`, 'info');
+      return false;
     }
     
-    log(`Xác thực thành công với mã: ${cleanAuthCode}`, 'info');
-    return request;
+    log(`Mã xác thực hợp lệ và đã được xác minh: ${cleanAuthCode}`, 'info');
+    
+    // Tạo thông tin người dùng từ yêu cầu xác thực
+    const user = {
+      id: request.telegramId || config.TELEGRAM_CHAT_ID || 'unknown',
+      username: request.username || 'telegram_user',
+      displayName: [request.firstName, request.lastName].filter(Boolean).join(' ') || 'Telegram User',
+      photoUrl: 'https://telegram.org/img/t_logo.png',
+      isAdmin: true,
+      provider: 'telegram'
+    };
+    
+    return user;
   } catch (error) {
     log(`Lỗi khi xác thực yêu cầu: ${error.message}`, 'error');
     log(error.stack, 'error');
