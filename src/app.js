@@ -27,7 +27,7 @@ app.use(express.static(config.paths.public));
 
 // Session setup
 app.use(session({
-  secret: config.session.secret,
+  secret: config.sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {
