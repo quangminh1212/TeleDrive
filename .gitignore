@@ -52,4 +52,11 @@ coverage/
 *.dylib
 *.zip
 *.tar.gz
-*.tgz 
+*.tgz
+
+# Temporary files
+*.tmp
+.tmp/
+
+# Session files
+sessions/ 
