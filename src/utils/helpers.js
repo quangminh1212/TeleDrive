@@ -12,23 +12,32 @@ const mime = require('mime-types');
  * Đảm bảo các thư mục cần thiết tồn tại
  */
 function ensureDirectories() {
+  const rootDir = path.resolve(__dirname, '../../');
   const dirs = [
-    path.resolve(config.STORAGE_PATH),
-    path.resolve(process.cwd(), 'temp'),
-    path.resolve(process.cwd(), 'data'),
-    path.resolve(process.cwd(), 'downloads'),
-    path.resolve(process.cwd(), 'uploads'),
-    path.resolve(config.STORAGE_PATH, 'db')
+    'data',
+    'temp',
+    'logs',
+    'uploads',
+    'downloads',
+    'storage',
+    'data/db',
+    'temp/uploads',
+    'temp/downloads',
+    'storage/uploads',
+    'storage/temp'
   ];
   
-  for (const dir of dirs) {
+  dirs.forEach(dir => {
+    const dirPath = path.join(rootDir, dir);
     try {
-      fs.ensureDirSync(dir);
-      log(`Đảm bảo thư mục tồn tại: ${dir}`);
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+        log(`Đảm bảo thư mục tồn tại: ${dirPath}`, 'info');
+      }
     } catch (error) {
-      log(`Lỗi khi tạo thư mục ${dir}: ${error.message}`, 'error');
+      log(`Không thể tạo thư mục ${dirPath}: ${error.message}`, 'error');
     }
-  }
+  });
 }
 
 /**

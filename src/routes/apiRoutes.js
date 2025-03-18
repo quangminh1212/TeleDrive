@@ -257,7 +257,8 @@ router.post('/auth/verify', async (req, res) => {
     }
     
     // Kiểm tra trạng thái đăng nhập hiện tại
-    if (req.session && req.session.isLoggedIn) {
+    if (req.session && req.session.isLoggedIn && req.session.user) {
+      log('Người dùng đã đăng nhập, trả về thông tin hiện tại', 'info');
       return res.json({
         success: true,
         user: req.session.user,
@@ -269,6 +270,20 @@ router.post('/auth/verify', async (req, res) => {
     const user = await telegramService.verifyAuthRequest(authCode);
     
     if (!user) {
+      // Kiểm tra xem mã có tồn tại nhưng chưa được xác thực
+      const authRequests = await telegramService.loadDb('auth_requests', []);
+      const authRequest = authRequests.find(r => 
+        r.code === authCode || r.code.toLowerCase() === authCode.toLowerCase()
+      );
+      
+      if (authRequest && !authRequest.verified) {
+        return res.status(202).json({
+          success: false,
+          status: 'pending',
+          message: 'Đang đợi xác thực từ Telegram'
+        });
+      }
+      
       return res.status(401).json({
         success: false,
         message: 'Mã xác thực không hợp lệ hoặc đã hết hạn'
