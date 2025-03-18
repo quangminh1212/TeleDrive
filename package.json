@@ -7,7 +7,11 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "sync": "node index.js --sync",
-    "cleanup": "node index.js --cleanup"
+    "cleanup": "node index.js --cleanup",
+    "test": "jest",
+    "test:unit": "jest src/tests/unit",
+    "test:integration": "jest src/tests/integration",
+    "lint": "eslint src/"
   },
   "keywords": [
     "telegram",
@@ -36,6 +40,29 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.js",
+      "**/?(*.)+(spec|test).js"
+    ],
+    "collectCoverage": true,
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov"
+    ],
+    "collectCoverageFrom": [
+      "src/modules/**/*.js"
+    ],
+    "modulePathIgnorePatterns": [
+      "node_modules/",
+      "coverage/"
+    ]
   }
 }
