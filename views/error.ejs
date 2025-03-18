@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - TeleDrive</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .error-container {
+      max-width: 600px;
+      padding: 2rem;
+      text-align: center;
+    }
+    
+    .error-code {
+      font-size: 6rem;
+      font-weight: bold;
+      color: #0088cc;
+      margin-bottom: 1rem;
+    }
+    
+    .error-title {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: #343a40;
+    }
+    
+    .error-message {
+      color: #6c757d;
+      margin-bottom: 2rem;
+    }
+    
+    .home-btn {
+      background-color: #0088cc;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 50px;
+    }
+    
+    .stack-trace {
+      margin-top: 2rem;
+      text-align: left;
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 0.25rem;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-container">
+    <div class="error-code"><%= error.status || 500 %></div>
+    <div class="error-title"><%= title %></div>
+    <div class="error-message"><%= message %></div>
+    <a href="/" class="btn btn-primary home-btn">Trở về trang chủ</a>
+    
+    <% if (error.stack && error.stack !== '') { %>
+      <div class="stack-trace">
+        <pre><%= error.stack %></pre>
+      </div>
+    <% } %>
+  </div>
+</body>
+</html> 

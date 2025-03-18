@@ -7,6 +7,7 @@ const { config, validateConfig } = require('./modules/common/config');
 const logger = require('./modules/common/logger');
 const { loadUser, logRequest, handleShareToken } = require('./modules/auth/middleware');
 const fileRoutes = require('./modules/files/routes');
+const authRoutes = require('./modules/auth/routes');
 
 // Validate required configuration
 validateConfig();
@@ -46,6 +47,24 @@ app.use(handleShareToken);
 
 // Routes
 app.use('/api/files', fileRoutes);
+app.use('/', authRoutes);
+
+// Home page
+app.get('/', (req, res) => {
+  res.render('index', {
+    user: req.user || null,
+  });
+});
+
+// Dashboard page (protected)
+app.get('/dashboard', (req, res) => {
+  if (!req.session || !req.session.user) {
+    req.session.returnTo = '/dashboard';
+    return res.redirect('/login');
+  }
+  
+  res.send('Dashboard - Coming Soon'); // Will be replaced with actual dashboard
+});
 
 // Error handler
 app.use((err, req, res, next) => {
