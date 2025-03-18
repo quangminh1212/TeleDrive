@@ -894,118 +894,74 @@ async function verifyAuthRequest(authCode) {
  */
 async function generateAuthCode() {
   try {
-    // Khởi tạo bot nếu cần
-    const botInitialized = await initBot(false);
-    if (!botInitialized) {
-      log('Không thể tạo mã xác thực: Bot chưa khởi tạo', 'error');
-      return false;
-    }
+    // Tạo mã xác thực ngẫu nhiên
+    const authCode = crypto.randomBytes(16).toString('hex');
     
-    // Tạo mã xác thực ngẫu nhiên thay vì cố định
-    const crypto = require('crypto');
-    const authCode = crypto.randomBytes(4).toString('hex'); // Rút gọn thành 8 ký tự cho dễ nhớ
-    log(`Tạo mã xác thực mới: ${authCode}`, 'info');
+    // Lưu mã xác thực vào DB
+    const authRequests = await loadDb('auth_requests', []);
     
-    // Đảm bảo thư mục DB tồn tại
-    const dbDir = path.join(__dirname, '../../data/db');
-    await fs.ensureDir(dbDir);
-    
-    // Lưu vào db
-    let db = [];
-    try {
-      const dbPath = path.join(dbDir, 'auth_requests.json');
-      if (await fs.pathExists(dbPath)) {
-        const data = await fs.readFile(dbPath, 'utf8');
-        try {
-          db = JSON.parse(data);
-          if (!Array.isArray(db)) {
-            db = [];
-          }
-        } catch (e) {
-          log(`Lỗi khi parse DB: ${e.message}`, 'error');
-          db = [];
-        }
-      }
-    } catch (e) {
-      log(`Lỗi khi đọc DB: ${e.message}`, 'error');
-      db = [];
-    }
-    
-    // Xóa các yêu cầu cũ hơn 1 giờ
-    const now = Date.now();
-    const oneHourAgo = now - (60 * 60 * 1000);
-    const filteredDb = db.filter(r => r.timestamp > oneHourAgo);
-    
-    // Thêm yêu cầu mới
-    const authRequest = {
+    // Thêm mã xác thực mới
+    authRequests.push({
       code: authCode,
-      timestamp: now
-    };
-    filteredDb.push(authRequest);
+      timestamp: Date.now(),
+      verified: false
+    });
     
-    // Debug - hiển thị các mã xác thực hiện có
-    log(`Lưu mã xác thực ${authCode} vào DB. Tổng số mã: ${filteredDb.length}`, 'info');
+    // Lưu lại vào DB
+    const saveResult = await saveDb('auth_requests', authRequests);
     
-    // Lưu vào file
-    const dbPath = path.join(dbDir, 'auth_requests.json');
-    try {
-      await fs.writeFile(dbPath, JSON.stringify(filteredDb, null, 2), 'utf8');
-      
-      // Kiểm tra xem file đã được lưu chưa
-      const fileExists = await fs.pathExists(dbPath);
-      log(`File auth_requests.json tồn tại: ${fileExists}`, 'debug');
-      
-      if (fileExists) {
-        const fileContent = await fs.readFile(dbPath, 'utf8');
-        log(`Nội dung file sau khi lưu: ${fileContent}`, 'debug');
-      }
-    } catch (error) {
-      log(`Lỗi khi ghi file auth_requests.json: ${error.message}`, 'error');
+    if (!saveResult) {
+      log('Không thể lưu mã xác thực', 'error');
       return false;
     }
     
-    // Gửi mã xác thực tới Telegram
-    try {
-      const chatId = config.TELEGRAM_CHAT_ID;
-      const message = `🔐 Mã xác thực của bạn là: *${authCode}*\n\nMã này sẽ hết hạn sau 30 phút. Nếu bạn không yêu cầu xác thực này, vui lòng bỏ qua tin nhắn.`;
-      
-      if (bot && isReady) {
-        await bot.telegram.sendMessage(chatId, message, { parse_mode: 'Markdown' });
-        log(`Đã gửi mã xác thực đến Telegram chat: ${chatId}`, 'info');
-      } else {
-        log('Bot không sẵn sàng để gửi tin nhắn', 'warning');
-      }
-    } catch (telegramError) {
-      log(`Lỗi khi gửi mã xác thực qua Telegram: ${telegramError.message}`, 'error');
-      // Tiếp tục trả về mã xác thực ngay cả khi không thể gửi qua Telegram
-    }
-    
+    log(`Đã tạo mã xác thực mới: ${authCode}`, 'info');
     return authCode;
   } catch (error) {
     log(`Lỗi khi tạo mã xác thực: ${error.message}`, 'error');
-    log(error.stack, 'error');
     return false;
   }
 }
 
 // Các hàm tiện ích thao tác với database
 /**
- * Tải dữ liệu từ file DB
- * @param {String} dbName Tên file DB
- * @param {Array|Object} defaultValue Giá trị mặc định nếu không tìm thấy file
- * @returns {Promise<Array|Object>} Dữ liệu đã tải
+ * Lưu dữ liệu vào DB JSON
+ * @param {String} dbName Tên DB
+ * @param {Object} data Dữ liệu cần lưu
+ * @returns {Promise<Boolean>} Kết quả lưu
  */
-async function loadDb(dbName, defaultValue = []) {
+async function saveDb(dbName, data) {
   try {
     const dbDir = path.join(__dirname, '../../data/db');
     await fs.ensureDir(dbDir);
     
     const dbPath = path.join(dbDir, `${dbName}.json`);
-    log(`Đang tải DB từ: ${dbPath}`, 'debug');
+    
+    await fs.writeFile(dbPath, JSON.stringify(data, null, 2), 'utf8');
+    log(`Đã lưu dữ liệu vào ${dbName}`, 'debug');
+    return true;
+  } catch (error) {
+    log(`Lỗi khi lưu ${dbName}: ${error.message}`, 'error');
+    return false;
+  }
+}
+
+/**
+ * Đọc dữ liệu từ DB JSON
+ * @param {String} dbName Tên DB
+ * @param {Object} defaultValue Giá trị mặc định nếu không tìm thấy
+ * @returns {Promise<Object>} Dữ liệu từ DB
+ */
+async function loadDb(dbName, defaultValue = {}) {
+  try {
+    log(`Đang tải DB từ ${dbName}`, 'debug');
+    const dbDir = path.join(__dirname, '../../data/db');
+    await fs.ensureDir(dbDir);
+    
+    const dbPath = path.join(dbDir, `${dbName}.json`);
     
     if (!await fs.pathExists(dbPath)) {
-      log(`File DB không tồn tại: ${dbPath}`, 'debug');
-      await fs.writeFile(dbPath, JSON.stringify(defaultValue), 'utf8');
+      log(`DB ${dbName} không tồn tại, trả về giá trị mặc định`, 'debug');
       return defaultValue;
     }
     
@@ -1013,36 +969,12 @@ async function loadDb(dbName, defaultValue = []) {
     try {
       return JSON.parse(data);
     } catch (parseError) {
-      log(`Lỗi khi parse dữ liệu JSON từ DB ${dbName}: ${parseError.message}`, 'error');
-      await fs.writeFile(dbPath, JSON.stringify(defaultValue), 'utf8');
+      log(`Lỗi khi parse DB ${dbName}: ${parseError.message}`, 'error');
       return defaultValue;
     }
   } catch (error) {
-    log(`Lỗi khi tải DB ${dbName}: ${error.message}`, 'error');
+    log(`Lỗi khi tải ${dbName}: ${error.message}`, 'error');
     return defaultValue;
-  }
-}
-
-/**
- * Lưu dữ liệu vào file DB
- * @param {String} dbName Tên file DB
- * @param {Array|Object} data Dữ liệu cần lưu
- * @returns {Promise<Boolean>} Kết quả lưu
- */
-async function saveDb(dbName, data) {
-  try {
-    const dbDir = path.join(__dirname, '../../data/db');
-    ensureDirectoryExists(dbDir);
-    
-    const dbPath = path.join(dbDir, `${dbName}.json`);
-    log(`Đang lưu DB vào: ${dbPath}`, 'debug');
-    
-    await fs.writeFile(dbPath, JSON.stringify(data, null, 2), 'utf8');
-    log(`Đã lưu DB ${dbName} thành công`, 'debug');
-    return true;
-  } catch (error) {
-    log(`Lỗi khi lưu DB ${dbName}: ${error.message}`, 'error');
-    return false;
   }
 }
 
@@ -1057,37 +989,27 @@ async function handleAuth(ctx, authCode) {
   
   try {
     // Kiểm tra xem mã xác thực có tồn tại không
-    const dbDir = path.join(__dirname, '../../data/db');
-    await fs.ensureDir(dbDir);
+    const authRequests = await loadDb('auth_requests', []);
     
-    const dbPath = path.join(dbDir, 'auth_requests.json');
-    
-    let db = [];
-    try {
-      if (await fs.pathExists(dbPath)) {
-        const rawData = await fs.readFile(dbPath, 'utf8');
-        db = JSON.parse(rawData);
-        if (!Array.isArray(db)) {
-          db = [];
-        }
-      }
-    } catch (error) {
-      log(`Lỗi khi đọc DB: ${error.message}`, 'error');
-      return ctx.reply('❌ Lỗi khi đọc dữ liệu xác thực. Vui lòng thử lại sau.');
-    }
-    
-    log(`[DEBUG] Đang so sánh với ${db.length} mã xác thực trong DB`, 'debug');
+    log(`[DEBUG] Đang so sánh với ${authRequests.length} mã xác thực trong DB`, 'debug');
     
     // Sử dụng cả 2 cách: so sánh chính xác và so sánh không phân biệt hoa thường
-    const exactMatch = db.find(r => r.code === authCode);
-    const caseInsensitiveMatch = !exactMatch ? db.find(r => r.code.toLowerCase() === authCode.toLowerCase()) : null;
+    const exactMatch = authRequests.find(r => r.code === authCode);
+    const caseInsensitiveMatch = !exactMatch ? 
+      authRequests.find(r => r.code.toLowerCase() === authCode.toLowerCase()) : null;
+    
+    const matchIndex = exactMatch ? 
+      authRequests.findIndex(r => r.code === authCode) : 
+      caseInsensitiveMatch ? 
+        authRequests.findIndex(r => r.code.toLowerCase() === authCode.toLowerCase()) : -1;
+    
     const request = exactMatch || caseInsensitiveMatch;
     
-    if (!request) {
+    if (!request || matchIndex === -1) {
       log(`Mã xác thực không hợp lệ: ${authCode}`, 'warning');
       // Hiển thị các mã trong DB để debug
-      if (db.length > 0) {
-        const dbCodes = db.map(r => r.code).join(', ');
+      if (authRequests.length > 0) {
+        const dbCodes = authRequests.map(r => r.code).join(', ');
         log(`Mã trong DB: ${dbCodes}`, 'debug');
       }
       
@@ -1100,26 +1022,34 @@ async function handleAuth(ctx, authCode) {
     
     if (now > validUntil) {
       log(`Yêu cầu xác thực đã hết hạn: ${authCode}`, 'warning');
+      
+      // Xóa yêu cầu hết hạn
+      authRequests.splice(matchIndex, 1);
+      await saveDb('auth_requests', authRequests);
+      
       return ctx.reply('⚠️ Mã xác thực đã hết hạn. Vui lòng tạo mã mới từ trang web.');
     }
     
     // Lưu thông tin người dùng liên kết với mã này
-    request.telegramId = userId;
-    request.username = username;
-    request.firstName = firstName;
-    request.lastName = lastName;
-    request.verified = true;
-    request.verifiedAt = Date.now();
+    authRequests[matchIndex] = {
+      ...request,
+      telegramId: userId,
+      username: username,
+      firstName: firstName,
+      lastName: lastName,
+      verified: true,
+      verifiedAt: Date.now()
+    };
     
     // Lưu lại vào DB
-    try {
-      await fs.writeFile(dbPath, JSON.stringify(db, null, 2), 'utf8');
-      log(`Đã lưu thông tin xác thực cho mã ${authCode}`, 'info');
-    } catch (error) {
-      log(`Lỗi khi lưu DB: ${error.message}`, 'error');
+    const saveResult = await saveDb('auth_requests', authRequests);
+    
+    if (!saveResult) {
+      log(`Lỗi khi lưu DB cho mã xác thực ${authCode}`, 'error');
       return ctx.reply('❌ Lỗi khi lưu thông tin xác thực. Vui lòng thử lại sau.');
     }
     
+    log(`Đã lưu thông tin xác thực cho mã ${authCode}`, 'info');
     ctx.reply('✅ Xác thực thành công! Bạn có thể quay lại trang web và đăng nhập. Trang web sẽ tự chuyển hướng.');
     log(`Người dùng ${userId} (${username}) đã xác thực thành công với mã ${authCode}`, 'info');
   } catch (error) {
