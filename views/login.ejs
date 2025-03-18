@@ -37,7 +37,9 @@
             
             <div class="login-button-container">
               <button id="telegram-login-button" class="btn btn-primary">
-                <img src="/img/telegram-logo.png" alt="Telegram logo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#ffffff">
+                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.43 6.69c-.104.487-.401.674-.813.419l-2.265-1.66-1.099 1.06c-.124.12-.226.22-.452.22l.163-2.279 4.151-3.738c.18-.163-.039-.253-.28-.09L8.36 11.883l-2.32-.726c-.506-.156-.514-.506.106-.748l9.073-3.5c.42-.156.785.096.646.6l-.052.027.001.012z"/>
+                </svg>
                 Đăng nhập với Telegram
               </button>
             </div>
@@ -67,8 +69,10 @@
       fetch('/api/auth/login-link')
         .then(response => response.json())
         .then(data => {
+          console.log('Login data:', data); // Log để debug
+          
           // Generate QR code
-          QRCode.toCanvas(qrCodeContainer, data.loginUrl, {
+          QRCode.toCanvas(qrCodeContainer, data.deepLink, {
             width: 200,
             margin: 2,
             color: {
@@ -79,7 +83,7 @@
           
           // Set login button
           telegramLoginButton.addEventListener('click', function() {
-            window.open(data.loginUrl, '_blank');
+            window.open(data.deepLink, '_blank');
             startLoginCheck(data.token);
           });
           
@@ -99,6 +103,8 @@
           fetch(`/api/auth/check-login?token=${token}`)
             .then(response => response.json())
             .then(data => {
+              console.log('Check login response:', data); // Log để debug
+              
               if (data.loggedIn) {
                 clearInterval(interval);
                 loginStatus.innerHTML = '<p>Đăng nhập thành công! Đang chuyển hướng...</p>';

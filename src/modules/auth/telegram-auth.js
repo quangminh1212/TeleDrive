@@ -38,6 +38,7 @@ const generateLoginLink = (callbackUrl = '/') => {
   return {
     token,
     deepLink: `https://t.me/${config.telegram.botUsername}?start=login_${token}`,
+    loginUrl: `https://t.me/${config.telegram.botUsername}?start=login_${token}`,
     expiresAt,
   };
 };
