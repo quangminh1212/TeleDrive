@@ -3,6 +3,7 @@ const path = require('path');
 const { Telegraf } = require('telegraf');
 const { config } = require('../common/config');
 const logger = require('../common/logger');
+const tdlibClient = require('./tdlib-client');
 
 // Initialize Telegram bot
 const bot = new Telegraf(config.telegram.botToken);
@@ -12,6 +13,8 @@ class TelegramStorage {
   constructor() {
     this.bot = bot;
     this.chatId = config.telegram.chatId;
+    this.useTDLib = !!(config.telegram.apiId && config.telegram.apiHash);
+    this.tdlibClientPromise = null;
     
     // Ensure temp directory exists
     if (!fs.existsSync(config.paths.temp)) {
@@ -21,6 +24,14 @@ class TelegramStorage {
     // Ensure downloads directory exists
     if (!fs.existsSync(config.paths.downloads)) {
       fs.mkdirSync(config.paths.downloads, { recursive: true });
+    }
+
+    if (this.useTDLib) {
+      logger.info('TDLib được kích hoạt với API ID và API Hash, sẽ sử dụng cho upload/download file');
+      // Khởi tạo client TDLib
+      this.tdlibClientPromise = tdlibClient.getClient();
+    } else {
+      logger.info('Sử dụng Bot API tiêu chuẩn cho upload/download file');
     }
   }
   
@@ -47,6 +58,20 @@ class TelegramStorage {
       // Check file size
       if (stats.size > config.file.maxSize) {
         throw new Error(`File size exceeds the maximum allowed size of ${config.file.maxSize} bytes`);
+      }
+
+      // Nếu có TDLib client và file > 10MB, sử dụng TDLib
+      if (this.useTDLib && stats.size > 10 * 1024 * 1024) {
+        try {
+          const client = await this.tdlibClientPromise;
+          if (client) {
+            logger.info(`Sử dụng TDLib để tải lên file lớn: ${fileName}`);
+            return await client.uploadFile(filePath, caption);
+          }
+        } catch (tdlibError) {
+          logger.error(`Lỗi tải lên qua TDLib, chuyển về Bot API: ${tdlibError.message}`);
+          // Continue with Bot API if TDLib fails
+        }
       }
       
       // Thêm retry logic
@@ -153,6 +178,20 @@ class TelegramStorage {
   async downloadFile(fileId, outputPath = null) {
     try {
       logger.info(`Downloading file with ID: ${fileId}`);
+
+      // Nếu có TDLib client, thử sử dụng TDLib trước
+      if (this.useTDLib) {
+        try {
+          const client = await this.tdlibClientPromise;
+          if (client) {
+            logger.info(`Sử dụng TDLib để tải xuống file: ${fileId}`);
+            return await client.downloadFile(fileId, outputPath);
+          }
+        } catch (tdlibError) {
+          logger.error(`Lỗi tải xuống qua TDLib, chuyển về Bot API: ${tdlibError.message}`);
+          // Continue with Bot API if TDLib fails
+        }
+      }
       
       // Get file link from Telegram
       const fileLink = await this.bot.telegram.getFileLink(fileId);
@@ -194,6 +233,20 @@ class TelegramStorage {
   async deleteFile(messageId) {
     try {
       logger.info(`Deleting message with ID: ${messageId}`);
+
+      // Nếu có TDLib client, thử sử dụng TDLib trước
+      if (this.useTDLib) {
+        try {
+          const client = await this.tdlibClientPromise;
+          if (client) {
+            logger.info(`Sử dụng TDLib để xóa tin nhắn: ${messageId}`);
+            return await client.deleteMessage(messageId);
+          }
+        } catch (tdlibError) {
+          logger.error(`Lỗi xóa tin nhắn qua TDLib, chuyển về Bot API: ${tdlibError.message}`);
+          // Continue with Bot API if TDLib fails
+        }
+      }
       
       await this.bot.telegram.deleteMessage(this.chatId, messageId);
       
@@ -214,6 +267,20 @@ class TelegramStorage {
   async getFileInfo(fileId) {
     try {
       logger.info(`Getting file info for ID: ${fileId}`);
+
+      // Nếu có TDLib client, thử sử dụng TDLib trước
+      if (this.useTDLib) {
+        try {
+          const client = await this.tdlibClientPromise;
+          if (client) {
+            logger.info(`Sử dụng TDLib để lấy thông tin file: ${fileId}`);
+            return await client.getFileInfo(fileId);
+          }
+        } catch (tdlibError) {
+          logger.error(`Lỗi lấy thông tin file qua TDLib, chuyển về Bot API: ${tdlibError.message}`);
+          // Continue with Bot API if TDLib fails
+        }
+      }
       
       const fileInfo = await this.bot.telegram.getFile(fileId);
       
