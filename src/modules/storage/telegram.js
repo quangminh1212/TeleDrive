@@ -39,7 +39,7 @@ class TelegramStorage {
         throw new Error(`File not found: ${filePath}`);
       }
       
-      logger.info(`Uploading file: ${fileName}`);
+      logger.info(`Uploading file: ${fileName} (Size: ${fs.statSync(filePath).size} bytes)`);
       
       // Get file stats
       const stats = fs.statSync(filePath);
@@ -49,34 +49,67 @@ class TelegramStorage {
         throw new Error(`File size exceeds the maximum allowed size of ${config.file.maxSize} bytes`);
       }
       
-      // Determine the upload method based on file type
+      // Thêm retry logic
+      let retries = 3;
       let message;
+      let lastError;
       
-      if (this.isImageFile(filePath)) {
-        message = await this.bot.telegram.sendPhoto(this.chatId, {
-          source: fs.createReadStream(filePath),
-        }, {
-          caption,
-        });
-      } else if (this.isVideoFile(filePath)) {
-        message = await this.bot.telegram.sendVideo(this.chatId, {
-          source: fs.createReadStream(filePath),
-        }, {
-          caption,
-        });
-      } else if (this.isAudioFile(filePath)) {
-        message = await this.bot.telegram.sendAudio(this.chatId, {
-          source: fs.createReadStream(filePath),
-        }, {
-          caption,
-        });
-      } else {
-        message = await this.bot.telegram.sendDocument(this.chatId, {
-          source: fs.createReadStream(filePath),
-          filename: fileName,
-        }, {
-          caption,
-        });
+      while (retries > 0) {
+        try {
+          // Determine the upload method based on file type
+          if (this.isImageFile(filePath)) {
+            logger.info(`Uploading as image: ${fileName}`);
+            message = await this.bot.telegram.sendPhoto(this.chatId, {
+              source: fs.createReadStream(filePath),
+            }, {
+              caption,
+              disable_notification: true
+            });
+          } else if (this.isVideoFile(filePath)) {
+            logger.info(`Uploading as video: ${fileName}`);
+            message = await this.bot.telegram.sendVideo(this.chatId, {
+              source: fs.createReadStream(filePath),
+            }, {
+              caption,
+              disable_notification: true
+            });
+          } else if (this.isAudioFile(filePath)) {
+            logger.info(`Uploading as audio: ${fileName}`);
+            message = await this.bot.telegram.sendAudio(this.chatId, {
+              source: fs.createReadStream(filePath),
+            }, {
+              caption,
+              disable_notification: true
+            });
+          } else {
+            logger.info(`Uploading as document: ${fileName}`);
+            message = await this.bot.telegram.sendDocument(this.chatId, {
+              source: fs.createReadStream(filePath),
+              filename: fileName,
+            }, {
+              caption,
+              disable_notification: true
+            });
+          }
+          
+          // Nếu thành công, thoát khỏi vòng lặp
+          break;
+        } catch (uploadError) {
+          lastError = uploadError;
+          logger.warn(`Upload attempt failed (${retries} retries left): ${uploadError.message}`);
+          retries--;
+          
+          // Nếu còn lượt retry, chờ 2 giây trước khi thử lại
+          if (retries > 0) {
+            logger.info(`Retrying upload in 2 seconds...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        }
+      }
+      
+      // Nếu tất cả các lần thử đều thất bại
+      if (!message) {
+        throw lastError || new Error('Failed to upload file after multiple attempts');
       }
       
       logger.info(`File uploaded successfully: ${fileName}`);
@@ -106,6 +139,7 @@ class TelegramStorage {
       };
     } catch (error) {
       logger.error(`Error uploading file: ${error.message}`);
+      logger.error(`Upload error details: ${JSON.stringify(error, Object.getOwnPropertyNames(error))}`);
       throw error;
     }
   }

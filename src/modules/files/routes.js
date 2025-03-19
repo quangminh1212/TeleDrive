@@ -6,6 +6,7 @@ const { config } = require('../common/config');
 const fileService = require('./file-service');
 const { isAuthenticated } = require('../auth/middleware');
 const router = express.Router();
+const logger = require('../common/logger');
 
 // Set up multer storage
 const storage = multer.diskStorage({
@@ -69,11 +70,55 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res) 
       return res.status(400).json({ error: 'Không có file nào được tải lên' });
     }
     
+    logger.info(`Nhận yêu cầu upload file: ${req.file.originalname} (${req.file.size} bytes)`);
+    
+    // Kiểm tra kích thước file
+    if (req.file.size > config.file.maxSize) {
+      logger.warn(`File size too large: ${req.file.size} bytes (max: ${config.file.maxSize} bytes)`);
+      return res.status(413).json({ 
+        error: `Kích thước file vượt quá giới hạn cho phép (${Math.round(config.file.maxSize/1024/1024)} MB)` 
+      });
+    }
+    
+    // Kiểm tra file tồn tại
+    if (!fs.existsSync(req.file.path)) {
+      logger.error(`File không tồn tại tại đường dẫn: ${req.file.path}`);
+      return res.status(500).json({ error: 'Lỗi xử lý file tạm thời' });
+    }
+    
     const file = await fileService.uploadFile(req.file, req.user);
     
+    logger.info(`Upload thành công: ${req.file.originalname} (ID: ${file._id})`);
     res.status(201).json(file);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    logger.error(`Lỗi upload file: ${error.message}`);
+    logger.error(`Stack trace: ${error.stack}`);
+    
+    // Xóa file tạm nếu có lỗi và file vẫn tồn tại
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+        logger.info(`Đã xóa file tạm: ${req.file.path}`);
+      } catch (unlinkError) {
+        logger.warn(`Không thể xóa file tạm: ${req.file.path} - ${unlinkError.message}`);
+      }
+    }
+    
+    // Phân loại lỗi để trả về mã lỗi phù hợp
+    if (error.message.includes('size exceeds') || error.message.includes('kích thước')) {
+      return res.status(413).json({ error: error.message });
+    } 
+    else if (error.message.includes('not found') || error.message.includes('không tìm thấy')) {
+      return res.status(404).json({ error: error.message });
+    }
+    else if (error.message.includes('không đủ dung lượng')) {
+      return res.status(507).json({ error: error.message });
+    }
+    
+    res.status(500).json({ 
+      error: 'Đã xảy ra lỗi khi tải lên file. Vui lòng thử lại sau.',
+      details: error.message
+    });
   }
 });
 

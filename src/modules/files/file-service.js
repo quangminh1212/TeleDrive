@@ -24,53 +24,96 @@ class FileService {
    */
   async uploadFile(fileData, user) {
     try {
-      logger.info(`Uploading file: ${fileData.originalname} for user: ${user.firstName} (${user.telegramId})`);
+      logger.info(`Chuẩn bị tải lên file: ${fileData.originalname} cho người dùng: ${user.firstName} (${user.telegramId})`);
+      
+      // Kiểm tra file
+      if (!fileData || !fileData.path || !fileData.size) {
+        throw new Error('Dữ liệu file không hợp lệ hoặc bị thiếu');
+      }
+      
+      // Kiểm tra nếu file có tồn tại
+      if (!fs.existsSync(fileData.path)) {
+        throw new Error(`File không tồn tại: ${fileData.path}`);
+      }
+      
+      // Kiểm tra lại kích thước file từ hệ thống
+      try {
+        const stats = await statAsync(fileData.path);
+        if (stats.size !== fileData.size) {
+          logger.warn(`Kích thước file không khớp: ${fileData.size} (reported) vs ${stats.size} (actual)`);
+          fileData.size = stats.size; // Cập nhật kích thước chính xác
+        }
+      } catch (statError) {
+        logger.error(`Lỗi khi kiểm tra kích thước file: ${statError.message}`);
+        throw new Error(`Không thể đọc file: ${statError.message}`);
+      }
       
       // Check if user has enough storage
       if (!user.hasEnoughStorage(fileData.size)) {
         throw new Error('Không đủ dung lượng lưu trữ. Vui lòng xóa bớt file hoặc nâng cấp tài khoản.');
       }
       
-      // Upload file to Telegram
-      const telegramFile = await telegramStorage.uploadFile(
-        fileData.path,
-        `Uploaded by: ${user.firstName} (${user.telegramId})`
-      );
-      
-      // Create file record in database
-      const file = await File.create({
+      // Tạo bản ghi tạm thời trong cơ sở dữ liệu
+      const tempFile = await File.create({
         name: fileData.originalname,
-        telegramFileId: telegramFile.fileId,
-        telegramMessageId: telegramFile.messageId,
         mimeType: fileData.mimetype,
         size: fileData.size,
         createdBy: user._id,
+        isUploading: true
       });
       
-      // Update user storage usage
-      await user.addStorageUsed(fileData.size);
+      logger.info(`Đã tạo bản ghi tạm thời cho file: ${tempFile._id}`);
       
-      // Delete temporary file
       try {
-        await unlinkAsync(fileData.path);
-      } catch (error) {
-        logger.warn(`Failed to delete temporary file: ${fileData.path}`);
-      }
-      
-      logger.info(`File uploaded successfully: ${file._id}`);
-      
-      return file;
-    } catch (error) {
-      // Delete temporary file if it exists
-      if (fileData.path && fs.existsSync(fileData.path)) {
+        // Upload file to Telegram
+        const telegramFile = await telegramStorage.uploadFile(
+          fileData.path,
+          `Uploaded by: ${user.firstName} (${user.telegramId})`
+        );
+        
+        // Cập nhật bản ghi với thông tin từ Telegram
+        const file = await File.findByIdAndUpdate(
+          tempFile._id,
+          {
+            telegramFileId: telegramFile.fileId,
+            telegramMessageId: telegramFile.messageId,
+            isUploading: false
+          },
+          { new: true }
+        );
+        
+        // Update user storage usage
+        await user.addStorageUsed(fileData.size);
+        
+        // Delete temporary file
         try {
           await unlinkAsync(fileData.path);
+          logger.info(`Đã xóa file tạm: ${fileData.path}`);
+        } catch (error) {
+          logger.warn(`Failed to delete temporary file: ${fileData.path}`);
+        }
+        
+        logger.info(`File uploaded successfully: ${file._id}`);
+        
+        return file;
+      } catch (uploadError) {
+        // Nếu upload thất bại, xóa bản ghi tạm
+        await File.findByIdAndRemove(tempFile._id);
+        throw uploadError; // Re-throw để xử lý ở mức cao hơn
+      }
+    } catch (error) {
+      // Delete temporary file if it exists
+      if (fileData && fileData.path && fs.existsSync(fileData.path)) {
+        try {
+          await unlinkAsync(fileData.path);
+          logger.info(`Đã xóa file tạm sau khi xảy ra lỗi: ${fileData.path}`);
         } catch (unlinkError) {
           logger.warn(`Failed to delete temporary file after error: ${fileData.path}`);
         }
       }
       
       logger.error(`Error uploading file: ${error.message}`);
+      logger.error(`Stack trace: ${error.stack}`);
       throw error;
     }
   }

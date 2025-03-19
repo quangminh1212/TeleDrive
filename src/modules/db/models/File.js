@@ -35,6 +35,18 @@ const FileSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  isUploading: {
+    type: Boolean,
+    default: false,
+  },
+  uploadErrors: {
+    type: String,
+    default: null,
+  },
+  uploadAttempts: {
+    type: Number,
+    default: 0,
+  },
   createdBy: {
     type: String,
     required: true,
