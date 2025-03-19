@@ -21,7 +21,7 @@ try {
     
     // Cấu hình tdl để sử dụng tdjson prebuilt
     require('tdl').configure({ tdjson: tdjsonPath });
-    TDLib = true; // Không cần thực sự tải TDLib, chỉ cần đánh dấu là có sẵn
+    TDLib = { isTDLibPrebuilt: true }; // Sử dụng đối tượng để theo dõi loại TDLib
     logger.info('Đã cấu hình thành công tdl để sử dụng prebuilt-tdlib');
   } catch (prebuiltError) {
     logger.warn(`Không thể sử dụng prebuilt-tdlib: ${prebuiltError.message}, đang thử phương pháp khác...`);
@@ -129,7 +129,7 @@ class TelegramTDLibClient {
       }
 
       // Chỉ thêm TDLib instance nếu cần thiết
-      if (TDLib !== true) {
+      if (TDLib && !TDLib.isTDLibPrebuilt) {
         clientOptions.tdlibInstance = TDLib;
       }
 
