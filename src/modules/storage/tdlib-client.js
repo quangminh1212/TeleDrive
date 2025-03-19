@@ -89,10 +89,14 @@ class TelegramTDLibClient {
     }
 
     try {
-      // Tạo client TDLib
+      if (!config.telegram.apiId || !config.telegram.apiHash) {
+        throw new Error('API ID và API Hash là bắt buộc cho TDLib');
+      }
+
+      // Tạo client với thông số đã thiết lập sẵn
       const clientOptions = {
-        apiId: parseInt(config.telegram.apiId, 10) || 0,
-        apiHash: config.telegram.apiHash || '',
+        apiId: parseInt(config.telegram.apiId, 10),
+        apiHash: config.telegram.apiHash,
         tdlibParameters: {
           database_directory: tdlibDir,
           files_directory: path.join(tdlibDir, 'files'),
@@ -102,29 +106,19 @@ class TelegramTDLibClient {
           application_version: '1.0.0',
           device_model: 'TeleDrive Server',
           system_version: 'Node.js',
+          use_test_dc: false,
+          enable_storage_optimizer: true
         },
-        databaseEncryptionKey: config.sessionSecret
+        databaseEncryptionKey: config.sessionSecret,
+        skipOldUpdates: true
       };
-
-      // Kiểm tra api_id phải là một số hợp lệ
-      if (!clientOptions.apiId || isNaN(clientOptions.apiId) || clientOptions.apiId <= 0) {
-        logger.error('API ID không hợp lệ hoặc không được cung cấp');
-        this.hasCredentials = false;
-        return;
-      }
-
-      // Kiểm tra api_hash phải được cung cấp
-      if (!clientOptions.apiHash || clientOptions.apiHash.length < 5) {
-        logger.error('API Hash không hợp lệ hoặc không được cung cấp');
-        this.hasCredentials = false;
-        return;
-      }
 
       // Chỉ thêm TDLib instance nếu cần thiết
       if (TDLib !== true) {
         clientOptions.tdlibInstance = TDLib;
       }
 
+      // Tạo client
       this.client = createClient(clientOptions);
 
       // Ghi lại ID chat từ token bot
