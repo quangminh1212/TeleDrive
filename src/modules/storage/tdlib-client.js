@@ -106,6 +106,20 @@ class TelegramTDLibClient {
         databaseEncryptionKey: config.sessionSecret
       };
 
+      // Kiểm tra api_id phải là một số hợp lệ
+      if (!clientOptions.apiId || isNaN(clientOptions.apiId) || clientOptions.apiId <= 0) {
+        logger.error('API ID không hợp lệ hoặc không được cung cấp');
+        this.hasCredentials = false;
+        return;
+      }
+
+      // Kiểm tra api_hash phải được cung cấp
+      if (!clientOptions.apiHash || clientOptions.apiHash.length < 5) {
+        logger.error('API Hash không hợp lệ hoặc không được cung cấp');
+        this.hasCredentials = false;
+        return;
+      }
+
       // Chỉ thêm TDLib instance nếu cần thiết
       if (TDLib !== true) {
         clientOptions.tdlibInstance = TDLib;
@@ -132,7 +146,7 @@ class TelegramTDLibClient {
    */
   async init() {
     if (this.isInitializing || !this.client) {
-      return;
+      return null;
     }
 
     this.isInitializing = true;
@@ -150,24 +164,29 @@ class TelegramTDLibClient {
       this.isConnected = true;
       logger.info('Đã kết nối đến TDLib');
 
-      // Thiết lập tham số TDLib
-      await this.client.invoke({
-        _: 'setTdlibParameters',
-        parameters: {
-          _: 'tdlibParameters',
-          use_test_dc: false,
-          database_directory: path.join(config.paths.data, 'tdlib'),
-          files_directory: path.join(config.paths.data, 'tdlib', 'files'),
-          use_message_database: true,
-          use_secret_chats: false,
-          api_id: parseInt(config.telegram.apiId, 10),
-          api_hash: config.telegram.apiHash,
-          system_language_code: 'vi',
-          device_model: 'TeleDrive Server',
-          application_version: '1.0.0',
-          enable_storage_optimizer: true
-        }
-      });
+      // Thiết lập tham số TDLib - sử dụng cấu hình đã thiết lập trong constructor
+      try {
+        await this.client.invoke({
+          _: 'setTdlibParameters',
+          parameters: {
+            _: 'tdlibParameters',
+            use_test_dc: false,
+            database_directory: path.join(config.paths.data, 'tdlib'),
+            files_directory: path.join(config.paths.data, 'tdlib', 'files'),
+            use_message_database: true,
+            use_secret_chats: false,
+            api_id: parseInt(config.telegram.apiId, 10),
+            api_hash: config.telegram.apiHash,
+            system_language_code: 'vi',
+            device_model: 'TeleDrive Server',
+            application_version: '1.0.0',
+            enable_storage_optimizer: true
+          }
+        });
+      } catch (paramError) {
+        logger.error(`Lỗi thiết lập tham số TDLib: ${paramError.message}`);
+        // Không dừng quá trình, vẫn cố gắng đăng nhập
+      }
 
       // Lắng nghe update từ TDLib
       this.client.on('update', update => {
@@ -189,56 +208,55 @@ class TelegramTDLibClient {
 
           // Nếu chưa có chatId, tạo chat riêng tư để lưu trữ file
           if (!this.chatId) {
-            const me = await this.client.invoke({
-              _: 'getMe'
-            });
+            try {
+              const me = await this.client.invoke({
+                _: 'getMe'
+              });
 
-            // Tạo chat riêng tư với chính mình để lưu trữ file
-            const chat = await this.client.invoke({
-              _: 'createPrivateChat',
-              user_id: me.id
-            });
+              // Tạo chat riêng tư với chính mình để lưu trữ file
+              const chat = await this.client.invoke({
+                _: 'createPrivateChat',
+                user_id: me.id
+              });
 
-            this.chatId = chat.id;
-            logger.info(`Đã tạo chat riêng tư với ID: ${this.chatId}`);
+              this.chatId = chat.id;
+              logger.info(`Đã tạo chat riêng tư với ID: ${this.chatId}`);
+            } catch (chatError) {
+              logger.error(`Không thể tạo chat: ${chatError.message}`);
+              // Sử dụng chatId được cung cấp trong config nếu có
+              if (config.telegram.chatId) {
+                this.chatId = config.telegram.chatId;
+                logger.info(`Sử dụng chat ID từ cấu hình: ${this.chatId}`);
+              }
+            }
           }
         } catch (botError) {
           logger.error(`Lỗi đăng nhập bằng bot token: ${botError.message}`);
           
-          // Nếu không thể sử dụng bot token, tạo một saved messages chat
-          try {
-            const me = await this.client.invoke({
-              _: 'getMe'
-            });
-            
-            const savedMessagesChat = await this.client.invoke({
-              _: 'createPrivateChat',
-              user_id: me.id
-            });
-            
-            this.chatId = savedMessagesChat.id;
-            logger.info(`Đã tạo Saved Messages chat với ID: ${this.chatId}`);
+          // Nếu không thể sử dụng bot token nhưng chatId đã được cung cấp
+          if (config.telegram.chatId) {
+            this.chatId = config.telegram.chatId;
+            logger.info(`Sử dụng chat ID từ cấu hình: ${this.chatId}`);
             this.isLoggedIn = true;
-          } catch (savedMsgError) {
-            logger.error(`Không thể tạo Saved Messages chat: ${savedMsgError.message}`);
-            throw savedMsgError;
+          } else {
+            throw new Error(`Không thể đăng nhập và không có chat ID: ${botError.message}`);
           }
         }
+      } else if (config.telegram.chatId) {
+        // Nếu không có bot token nhưng có chatId
+        this.chatId = config.telegram.chatId;
+        logger.info(`Sử dụng chat ID từ cấu hình: ${this.chatId}`);
+        this.isLoggedIn = true; 
       } else {
-        logger.warn('Không có bot token, sẽ sử dụng Saved Messages của tài khoản');
-        
-        // Thử lấy trạng thái đăng nhập hiện tại
-        const authState = await this.client.invoke({
-          _: 'getAuthorizationState'
-        });
-        
-        // Xử lý trạng thái đăng nhập
-        await this.handleAuthorizationState(authState);
+        throw new Error('Không có bot token và chat ID. Vui lòng cấu hình trong file .env');
       }
+
+      return this;
     } catch (error) {
       logger.error(`Lỗi khởi tạo TDLib: ${error.message}`);
       this.isConnected = false;
       this.isLoggedIn = false;
+      this.isInitializing = false;
       throw error;
     } finally {
       this.isInitializing = false;

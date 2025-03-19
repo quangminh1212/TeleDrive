@@ -30,28 +30,47 @@ const server = http.createServer(app);
 // Khởi tạo TDLib client nếu có API ID và API Hash
 async function initTDLib() {
   try {
+    // Kiểm tra cấu hình TDLib
+    if (!config.telegram.apiId || !config.telegram.apiHash) {
+      logger.warn('TELEGRAM_API_ID hoặc TELEGRAM_API_HASH không được cung cấp. Không thể sử dụng TDLib.');
+      return null;
+    }
+    
+    // Kiểm tra cấu hình Bot API
+    if (!config.telegram.botToken || !config.telegram.chatId) {
+      logger.warn('TELEGRAM_BOT_TOKEN hoặc TELEGRAM_CHAT_ID không được cung cấp. Không thể sử dụng Bot API.');
+    }
+    
+    // Khởi tạo TDLib client
     const tdlibClient = await getTDLibClient();
     
     if (tdlibClient) {
       if (tdlibClient.isConnected) {
         logger.info('TDLib client đã được khởi tạo và kết nối thành công.');
+        return tdlibClient;
       } else {
         try {
-          await tdlibClient.init();
-          if (tdlibClient.isConnected) {
+          // Khởi tạo kết nối TDLib
+          const initializedClient = await tdlibClient.init();
+          if (initializedClient && initializedClient.isConnected) {
             logger.info('TDLib client đã được khởi tạo và kết nối thành công.');
+            return initializedClient;
           } else {
             logger.warn('TDLib client đã được khởi tạo nhưng chưa thể kết nối. Kiểm tra kết nối mạng và cấu hình.');
+            return null;
           }
         } catch (initError) {
           logger.error(`Không thể khởi tạo TDLib client: ${initError.message}`);
+          return null;
         }
       }
     } else {
       logger.warn('TDLib client không khả dụng. Vui lòng cài đặt thư viện TDLib và cấu hình API ID/Hash để sử dụng.');
+      return null;
     }
   } catch (error) {
     logger.error(`Lỗi khởi tạo TDLib client: ${error.message}`);
+    return null;
   }
 }
 
@@ -59,7 +78,7 @@ async function initTDLib() {
 async function start() {
   try {
     // Khởi tạo TDLib client trước tiên (độc lập với MongoDB)
-    await initTDLib();
+    const tdlibClient = await initTDLib();
     
     // Kết nối MongoDB
     try {

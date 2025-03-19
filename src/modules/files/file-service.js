@@ -14,22 +14,22 @@ const unlinkAsync = promisify(fs.unlink);
 const statAsync = promisify(fs.stat);
 
 /**
- * Trả về storage provider phù hợp (TDLib hoặc Bot API) dựa trên tình trạng kết nối
+ * Trả về storage provider phù hợp (ưu tiên TDLib, mặc định dùng Bot API nếu không có TDLib)
  * @param {number} fileSize - Kích thước file
  * @returns {Promise<Object>} - Đối tượng storage provider
  */
 async function getStorageProvider(fileSize) {
-  // Ưu tiên dùng TDLib cho tất cả các file
   try {
+    // Ưu tiên sử dụng TDLib nếu có thể
     const tdlibClient = await getTDLibClient();
     
     // Kiểm tra nếu TDLib khả dụng và đã kết nối
-    if (tdlibClient && tdlibClient.isConnected) {
+    if (tdlibClient && tdlibClient.hasCredentials && tdlibClient.isConnected) {
       logger.info(`Sử dụng TDLib cho file có kích thước ${Math.round(fileSize/1024/1024)}MB`);
       return tdlibClient;
     } else {
       // Nếu chưa kết nối, thử kết nối
-      if (tdlibClient && !tdlibClient.isConnected) {
+      if (tdlibClient && tdlibClient.hasCredentials && !tdlibClient.isConnected) {
         try {
           await tdlibClient.init();
           if (tdlibClient.isConnected) {
@@ -37,21 +37,17 @@ async function getStorageProvider(fileSize) {
             return tdlibClient;
           }
         } catch (initError) {
-          logger.warn(`Không thể khởi tạo TDLib: ${initError.message}, kiểm tra xem có thể sử dụng Telegram Bot API`);
+          logger.warn(`Không thể khởi tạo TDLib: ${initError.message}, sẽ sử dụng Telegram Bot API`);
         }
       }
     }
   } catch (err) {
-    logger.warn(`Lỗi khi lấy TDLib client: ${err.message}`);
+    logger.warn(`Lỗi khi lấy TDLib client: ${err.message}, sẽ sử dụng Telegram Bot API`);
   }
   
-  // Nếu không có TDLib hoặc không thể kết nối, thử kiểm tra Bot API
-  if (config.telegram.botToken && config.telegram.chatId) {
-    logger.info(`Sử dụng Telegram Bot API cho file có kích thước ${Math.round(fileSize/1024/1024)}MB`);
-    return telegramStorage;
-  } else {
-    throw new Error('Không có phương thức lưu trữ khả dụng. Vui lòng cấu hình TDLib hoặc Telegram Bot API');
-  }
+  // Mặc định sử dụng Bot API nếu không có TDLib
+  logger.info(`Sử dụng Telegram Bot API cho file có kích thước ${Math.round(fileSize/1024/1024)}MB`);
+  return telegramStorage;
 }
 
 /**
