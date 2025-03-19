@@ -164,37 +164,6 @@ class TelegramTDLibClient {
       this.isConnected = true;
       logger.info('Đã kết nối đến TDLib');
 
-      // Thiết lập tham số TDLib - sử dụng cấu hình đã thiết lập trong constructor
-      try {
-        await this.client.invoke({
-          _: 'setTdlibParameters',
-          parameters: {
-            _: 'tdlibParameters',
-            use_test_dc: false,
-            database_directory: path.join(config.paths.data, 'tdlib'),
-            files_directory: path.join(config.paths.data, 'tdlib', 'files'),
-            use_message_database: true,
-            use_secret_chats: false,
-            api_id: parseInt(config.telegram.apiId, 10),
-            api_hash: config.telegram.apiHash,
-            system_language_code: 'vi',
-            device_model: 'TeleDrive Server',
-            application_version: '1.0.0',
-            enable_storage_optimizer: true
-          }
-        });
-      } catch (paramError) {
-        logger.error(`Lỗi thiết lập tham số TDLib: ${paramError.message}`);
-        // Không dừng quá trình, vẫn cố gắng đăng nhập
-      }
-
-      // Lắng nghe update từ TDLib
-      this.client.on('update', update => {
-        if (update._ === 'updateAuthorizationState') {
-          this.handleAuthorizationState(update.authorization_state);
-        }
-      });
-
       // Nếu có bot token, đăng nhập bằng bot
       if (config.telegram.botToken) {
         try {
