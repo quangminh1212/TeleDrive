@@ -2,8 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { promisify } = require('util');
-const telegramStorage = require('../storage/telegram');
-const { getClient: getTDLibClient } = require('../storage/tdlib-client');
+const { tdlibStorage } = require('../storage/tdlib-client');
 const File = require('../db/models/File');
 const User = require('../db/models/User');
 const logger = require('../common/logger');
@@ -12,43 +11,6 @@ const { config } = require('../common/config');
 // Promisify fs functions
 const unlinkAsync = promisify(fs.unlink);
 const statAsync = promisify(fs.stat);
-
-/**
- * Trả về storage provider phù hợp (ưu tiên TDLib, mặc định dùng Bot API nếu không có TDLib)
- * @param {number} fileSize - Kích thước file
- * @returns {Promise<Object>} - Đối tượng storage provider
- */
-async function getStorageProvider(fileSize) {
-  try {
-    // Ưu tiên sử dụng TDLib nếu có thể
-    const tdlibClient = await getTDLibClient();
-    
-    // Kiểm tra nếu TDLib khả dụng và đã kết nối
-    if (tdlibClient && tdlibClient.hasCredentials && tdlibClient.isConnected) {
-      logger.info(`Sử dụng TDLib cho file có kích thước ${Math.round(fileSize/1024/1024)}MB`);
-      return tdlibClient;
-    } else {
-      // Nếu chưa kết nối, thử kết nối
-      if (tdlibClient && tdlibClient.hasCredentials && !tdlibClient.isConnected) {
-        try {
-          await tdlibClient.init();
-          if (tdlibClient.isConnected) {
-            logger.info(`Đã kết nối TDLib, sử dụng cho file có kích thước ${Math.round(fileSize/1024/1024)}MB`);
-            return tdlibClient;
-          }
-        } catch (initError) {
-          logger.warn(`Không thể khởi tạo TDLib: ${initError.message}, sẽ sử dụng Telegram Bot API`);
-        }
-      }
-    }
-  } catch (err) {
-    logger.warn(`Lỗi khi lấy TDLib client: ${err.message}, sẽ sử dụng Telegram Bot API`);
-  }
-  
-  // Mặc định sử dụng Bot API nếu không có TDLib
-  logger.info(`Sử dụng Telegram Bot API cho file có kích thước ${Math.round(fileSize/1024/1024)}MB`);
-  return telegramStorage;
-}
 
 /**
  * FileService class to handle file operations
@@ -62,7 +24,7 @@ class FileService {
    */
   async uploadFile(fileData, user) {
     try {
-      logger.info(`Chuẩn bị tải lên file: ${fileData.originalname} cho người dùng: ${user.firstName} (${user.telegramId})`);
+      logger.info(`Chuẩn bị tải lên file: ${fileData.originalname} cho người dùng: ${user.firstName} (${user.telegramId || user._id})`);
       
       // Kiểm tra file
       if (!fileData || !fileData.path || !fileData.size) {
@@ -108,13 +70,10 @@ class FileService {
       logger.info(`Đã tạo bản ghi tạm thời cho file: ${tempFile._id}`);
       
       try {
-        // Lấy storage provider phù hợp (TDLib hoặc Bot API)
-        const storageProvider = await getStorageProvider(fileData.size);
-        
-        // Upload file sử dụng provider đã chọn
-        const telegramFile = await storageProvider.uploadFile(
+        // Upload file sử dụng TDLib
+        const telegramFile = await tdlibStorage.uploadFile(
           fileData.path,
-          `Uploaded by: ${user.firstName} (${user.telegramId})`
+          `Uploaded by: ${user.firstName} (${user.telegramId || user._id})`
         );
         
         // Cập nhật bản ghi với thông tin từ Telegram
@@ -237,14 +196,11 @@ class FileService {
       
       logger.info(`Đã hoàn thành việc chia file thành ${chunks.length} phần`);
       
-      // Lấy storage provider phù hợp
-      const storageProvider = await getStorageProvider(chunkSize);
-      
-      // Tải lên từng phần lên Telegram sử dụng provider đã chọn
+      // Tải lên từng phần lên Telegram sử dụng TDLib
       for (let i = 0; i < chunks.length; i++) {
         try {
           const chunkPath = chunks[i];
-          const caption = `Part ${i + 1}/${chunks.length} of ${fileData.originalname} (${user.telegramId})`;
+          const caption = `Part ${i + 1}/${chunks.length} of ${fileData.originalname} (${user.telegramId || user._id})`;
           
           logger.info(`Đang tải lên phần ${i + 1}/${chunks.length} - ${chunkPath}`);
           
@@ -255,7 +211,7 @@ class FileService {
           
           while (retries > 0 && !telegramFile) {
             try {
-              telegramFile = await storageProvider.uploadFile(chunkPath, caption);
+              telegramFile = await tdlibStorage.uploadFile(chunkPath, caption);
             } catch (err) {
               lastError = err;
               retries--;
@@ -293,88 +249,104 @@ class FileService {
           
           // Thêm thời gian nghỉ giữa các lần tải lên để tránh bị giới hạn tần suất
           if (i < chunks.length - 1) {
-            const cooldown = 2000; // 2 giây
-            logger.info(`Cooldown ${cooldown/1000}s trước khi tải lên phần tiếp theo...`);
-            await new Promise(resolve => setTimeout(resolve, cooldown));
+            await new Promise(resolve => setTimeout(resolve, 2000));
           }
         } catch (error) {
-          logger.error(`Lỗi khi tải lên phần ${i + 1}/${chunks.length}: ${error.message}`);
+          logger.error(`Lỗi tải lên phần ${i + 1}/${chunks.length}: ${error.message}`);
           
-          // Cập nhật trạng thái lỗi vào database
+          // Xóa các tin nhắn đã tải lên nếu có lỗi
+          for (const message of telegramMessages) {
+            try {
+              await tdlibStorage.deleteFile(message.messageId);
+              logger.info(`Đã xóa phần đã tải lên trước đó (messageId: ${message.messageId})`);
+            } catch (deleteError) {
+              logger.warn(`Không thể xóa phần đã tải lên: ${deleteError.message}`);
+            }
+          }
+          
+          // Cập nhật trạng thái file
           await File.findByIdAndUpdate(
             parentFile._id,
-            { 
-              uploadErrors: `Lỗi khi tải lên phần ${i + 1}: ${error.message}`,
-              isUploading: false
-            }
+            { isUploading: false, error: error.message }
           );
           
-          throw error;
+          throw new Error(`Lỗi khi tải lên phần ${i + 1}/${chunks.length}: ${error.message}`);
         }
       }
       
-      // Sắp xếp lại telegramMessages theo thứ tự nếu cần
+      // Sắp xếp các tin nhắn theo thứ tự đúng
       telegramMessages.sort((a, b) => a.index - b.index);
       
-      // Hoàn thành việc tải lên
+      // Lưu danh sách file ID và message ID vào cơ sở dữ liệu
+      const fileIds = telegramMessages.map(message => message.fileId);
+      const messageIds = telegramMessages.map(message => message.messageId);
+      
       const updatedFile = await File.findByIdAndUpdate(
         parentFile._id,
-        {
-          telegramFileIds: telegramMessages.map(msg => msg.fileId),
-          telegramMessageIds: telegramMessages.map(msg => msg.messageId),
+        { 
           isUploading: false,
+          uploadedParts: chunks.length,
           uploadProgress: 100,
-          isMultipart: true,
-          uploadedParts: chunks.length
+          telegramFileIds: fileIds,
+          telegramMessageIds: messageIds
         },
         { new: true }
       );
       
-      // Update user storage usage
+      // Cập nhật dung lượng đã sử dụng
       await user.addStorageUsed(fileData.size);
       
-      // Xóa tất cả các file tạm
-      logger.info('Đang dọn dẹp các file tạm...');
-      
-      // Xóa file tạm gốc
-      if (fs.existsSync(fileData.path)) {
-        await unlinkAsync(fileData.path);
-      }
-      
-      // Xóa tất cả các phần
-      for (const chunkPath of chunks) {
-        if (fs.existsSync(chunkPath)) {
-          await unlinkAsync(chunkPath);
+      // Xóa file tạm và thư mục tạm
+      try {
+        // Xóa file gốc
+        if (fs.existsSync(fileData.path)) {
+          await unlinkAsync(fileData.path);
+          logger.info(`Đã xóa file gốc: ${fileData.path}`);
         }
+        
+        // Xóa các phần
+        for (const chunkPath of chunks) {
+          if (fs.existsSync(chunkPath)) {
+            await unlinkAsync(chunkPath);
+            logger.info(`Đã xóa phần: ${chunkPath}`);
+          }
+        }
+        
+        // Xóa thư mục tạm
+        if (fs.existsSync(tempFolder)) {
+          fs.rmdirSync(tempFolder);
+          logger.info(`Đã xóa thư mục tạm: ${tempFolder}`);
+        }
+      } catch (error) {
+        logger.warn(`Lỗi khi xóa file tạm: ${error.message}`);
       }
       
-      // Xóa thư mục tạm
-      if (fs.existsSync(tempFolder)) {
-        fs.rmdirSync(tempFolder, { recursive: true });
-      }
+      logger.info(`Tải lên file đa phần thành công: ${updatedFile._id}`);
       
-      logger.info(`File lớn đã được tải lên thành công: ${updatedFile._id}`);
       return updatedFile;
     } catch (error) {
       logger.error(`Lỗi khi xử lý file lớn: ${error.message}`);
-      logger.error(`Stack trace: ${error.stack}`);
       
-      // Dọn dẹp trong trường hợp lỗi
-      // Xóa file tạm nếu còn tồn tại
-      if (fileData.path && fs.existsSync(fileData.path)) {
-        await unlinkAsync(fileData.path);
-      }
-      
-      // Xóa tất cả các phần
-      for (const chunkPath of chunks) {
-        if (fs.existsSync(chunkPath)) {
-          await unlinkAsync(chunkPath);
+      // Xóa file tạm và thư mục tạm
+      try {
+        // Xóa các phần
+        for (const chunkPath of chunks) {
+          if (fs.existsSync(chunkPath)) {
+            await unlinkAsync(chunkPath);
+          }
         }
-      }
-      
-      // Xóa thư mục tạm
-      if (fs.existsSync(tempFolder)) {
-        fs.rmdirSync(tempFolder, { recursive: true });
+        
+        // Xóa thư mục tạm
+        if (fs.existsSync(tempFolder)) {
+          fs.rmdirSync(tempFolder);
+        }
+        
+        // Xóa file gốc
+        if (fs.existsSync(fileData.path)) {
+          await unlinkAsync(fileData.path);
+        }
+      } catch (cleanupError) {
+        logger.warn(`Lỗi khi dọn dẹp file tạm: ${cleanupError.message}`);
       }
       
       throw error;
@@ -382,14 +354,14 @@ class FileService {
   }
   
   /**
-   * Download a file from Telegram
-   * @param {string} fileId - File ID in database
+   * Tải xuống file từ Telegram
+   * @param {string} fileId - ID của file
    * @param {Object} user - User object
    * @returns {Promise<string>} - Path to downloaded file
    */
   async downloadFile(fileId, user) {
     try {
-      logger.info(`Downloading file: ${fileId} for user: ${user.firstName} (${user.telegramId})`);
+      logger.info(`Downloading file: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id})`);
       
       // Find file in database
       const file = await File.findById(fileId);
@@ -422,23 +394,8 @@ class FileService {
       // Xác định output path
       const outputPath = path.join(userDownloadDir, file.name);
       
-      // Kiểm tra xem có thể sử dụng TDLib không
-      let storageProvider = telegramStorage;
-      // Chỉ thử dùng TDLib với file > 20MB
-      if (file.size > 20 * 1024 * 1024) {
-        try {
-          const tdlibClient = await getTDLibClient();
-          if (tdlibClient && tdlibClient.hasCredentials && tdlibClient.isConnected) {
-            logger.info(`Sử dụng TDLib để tải xuống file lớn: ${file.name}`);
-            storageProvider = tdlibClient;
-          }
-        } catch (tdlibError) {
-          logger.warn(`Không thể sử dụng TDLib, sử dụng Bot API: ${tdlibError.message}`);
-        }
-      }
-      
-      // Download file using selected provider
-      const filePath = await storageProvider.downloadFile(file.telegramFileId, outputPath);
+      // Download file using TDLib
+      const filePath = await tdlibStorage.downloadFile(file.telegramFileId, outputPath);
       
       logger.info(`File downloaded successfully: ${filePath}`);
       
@@ -480,21 +437,6 @@ class FileService {
     const parts = [];
     
     try {
-      // Kiểm tra xem có thể sử dụng TDLib không
-      let storageProvider = telegramStorage;
-      const CHUNK_SIZE = 10 * 1024 * 1024; // Đoán kích thước mỗi chunk là 10MB
-      if (CHUNK_SIZE > 20 * 1024 * 1024) {
-        try {
-          const tdlibClient = await getTDLibClient();
-          if (tdlibClient && tdlibClient.hasCredentials && tdlibClient.isConnected) {
-            logger.info(`Sử dụng TDLib để tải xuống các phần của file: ${file.name}`);
-            storageProvider = tdlibClient;
-          }
-        } catch (tdlibError) {
-          logger.warn(`Không thể sử dụng TDLib, sử dụng Bot API: ${tdlibError.message}`);
-        }
-      }
-      
       // Tải xuống từng phần
       logger.info(`Tải xuống ${file.telegramFileIds.length} phần của file ${file.name}`);
       
@@ -511,7 +453,7 @@ class FileService {
         
         while (attempts < 3 && !downloaded) {
           try {
-            const downloadedPart = await storageProvider.downloadFile(fileId, partPath);
+            const downloadedPart = await tdlibStorage.downloadFile(fileId, partPath);
             parts.push(downloadedPart);
             downloaded = true;
             logger.info(`Phần ${i + 1} đã được tải xuống: ${downloadedPart}`);
@@ -528,70 +470,83 @@ class FileService {
         }
         
         if (!downloaded) {
-          throw error || new Error(`Không thể tải xuống phần ${i + 1} sau nhiều lần thử`);
+          throw error || new Error(`Không thể tải xuống phần ${i + 1}`);
         }
       }
       
-      // Ghép các phần lại với nhau
+      // Ghép các phần lại thành file hoàn chỉnh
       logger.info(`Đang ghép ${parts.length} phần thành file hoàn chỉnh: ${outputPath}`);
       
-      const writeStream = fs.createWriteStream(outputPath);
-      
-      for (const partPath of parts) {
-        const content = fs.readFileSync(partPath);
-        writeStream.write(content);
-      }
-      
-      writeStream.end();
-      
-      // Đảm bảo writeStream đã hoàn thành
-      await new Promise((resolve, reject) => {
-        writeStream.on('finish', resolve);
-        writeStream.on('error', reject);
-      });
-      
-      // Kiểm tra kích thước file sau khi ghép
-      const stats = fs.statSync(outputPath);
-      logger.info(`File đã được ghép xong, kích thước: ${stats.size} bytes (Dự kiến: ${file.size} bytes)`);
-      
-      if (Math.abs(stats.size - file.size) > 1024) { // Cho phép sai lệch 1KB
-        logger.warn(`Kích thước file ghép ${stats.size} bytes khác với kích thước dự kiến ${file.size} bytes`);
-      }
-      
-      // Dọn dẹp các file tạm
-      logger.info('Đang dọn dẹp các file tạm...');
-      for (const partPath of parts) {
-        if (fs.existsSync(partPath)) {
-          fs.unlinkSync(partPath);
-        }
-      }
-      
-      // Xóa thư mục tạm
-      if (fs.existsSync(tempDir)) {
-        fs.rmdirSync(tempDir, { recursive: true });
-      }
-      
-      logger.info(`File đa phần đã được tải xuống và ghép thành công: ${outputPath}`);
-      return outputPath;
-    } catch (error) {
-      // Dọn dẹp trong trường hợp lỗi
-      logger.error(`Lỗi khi tải xuống file đa phần: ${error.message}`);
-      
-      // Xóa tất cả các phần đã tải
-      for (const partPath of parts) {
-        if (fs.existsSync(partPath)) {
-          fs.unlinkSync(partPath);
-        }
-      }
-      
-      // Xóa file đích nếu đã tạo
+      // Nếu file đầu ra đã tồn tại, xóa nó
       if (fs.existsSync(outputPath)) {
         fs.unlinkSync(outputPath);
       }
       
-      // Xóa thư mục tạm
-      if (fs.existsSync(tempDir)) {
-        fs.rmdirSync(tempDir, { recursive: true });
+      // Sử dụng writeStream để ghép file
+      const outStream = fs.createWriteStream(outputPath);
+      
+      for (let i = 0; i < parts.length; i++) {
+        const partData = fs.readFileSync(parts[i]);
+        outStream.write(partData);
+      }
+      
+      outStream.end();
+      
+      // Đợi stream kết thúc
+      await new Promise((resolve, reject) => {
+        outStream.on('finish', resolve);
+        outStream.on('error', reject);
+      });
+      
+      logger.info(`Đã ghép thành công các phần thành file: ${outputPath}`);
+      
+      // Cập nhật thống kê tải xuống
+      await File.findByIdAndUpdate(file._id, {
+        lastDownloadedAt: new Date(),
+        $inc: { downloadCount: 1 }
+      });
+      
+      // Dọn dẹp các phần tạm thời
+      try {
+        for (const part of parts) {
+          if (fs.existsSync(part)) {
+            fs.unlinkSync(part);
+          }
+        }
+        
+        if (fs.existsSync(tempDir)) {
+          fs.rmdirSync(tempDir, { recursive: true });
+        }
+        
+        logger.info('Đã dọn dẹp các file tạm');
+      } catch (cleanupError) {
+        logger.warn(`Lỗi khi dọn dẹp các file tạm: ${cleanupError.message}`);
+      }
+      
+      return outputPath;
+    } catch (error) {
+      logger.error(`Lỗi khi tải xuống và ghép file đa phần: ${error.message}`);
+      
+      // Thử dọn dẹp nếu có lỗi
+      try {
+        // Xóa các phần tạm nếu tồn tại
+        for (const part of parts) {
+          if (fs.existsSync(part)) {
+            fs.unlinkSync(part);
+          }
+        }
+        
+        // Xóa thư mục tạm
+        if (fs.existsSync(tempDir)) {
+          fs.rmdirSync(tempDir, { recursive: true });
+        }
+        
+        // Xóa file đầu ra nếu đã tạo một phần
+        if (fs.existsSync(outputPath)) {
+          fs.unlinkSync(outputPath);
+        }
+      } catch (cleanupError) {
+        logger.warn(`Lỗi khi dọn dẹp sau lỗi: ${cleanupError.message}`);
       }
       
       throw error;
@@ -607,7 +562,7 @@ class FileService {
    */
   async deleteFile(fileId, user, permanent = false) {
     try {
-      logger.info(`Deleting file: ${fileId} for user: ${user.firstName} (${user.telegramId}), permanent: ${permanent}`);
+      logger.info(`Deleting file: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id}), permanent: ${permanent}`);
       
       // Find file in database
       const file = await File.findById(fileId);
@@ -628,7 +583,7 @@ class FileService {
           
           for (const messageId of file.telegramMessageIds) {
             try {
-              await telegramStorage.deleteFile(messageId);
+              await tdlibStorage.deleteFile(messageId);
               logger.info(`Đã xóa phần với messageId: ${messageId}`);
             } catch (error) {
               logger.warn(`Không thể xóa phần với messageId: ${messageId} - ${error.message}`);
@@ -637,7 +592,7 @@ class FileService {
           }
         } else {
           // Permanently delete file from Telegram
-          await telegramStorage.deleteFile(file.telegramMessageId);
+          await tdlibStorage.deleteFile(file.telegramMessageId);
         }
         
         // Remove file from database
@@ -669,7 +624,7 @@ class FileService {
    */
   async restoreFile(fileId, user) {
     try {
-      logger.info(`Restoring file: ${fileId} for user: ${user.firstName} (${user.telegramId})`);
+      logger.info(`Restoring file: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id})`);
       
       // Find file in database
       const file = await File.findById(fileId);
@@ -707,7 +662,7 @@ class FileService {
    */
   async emptyTrash(user) {
     try {
-      logger.info(`Emptying trash for user: ${user.firstName} (${user.telegramId})`);
+      logger.info(`Emptying trash for user: ${user.firstName} (${user.telegramId || user._id})`);
       
       // Find all trashed files for this user
       const trashedFiles = await File.find({ 
@@ -722,7 +677,7 @@ class FileService {
       // For each file, permanently delete from Telegram
       let totalSize = 0;
       for (const file of trashedFiles) {
-        await telegramStorage.deleteFile(file.telegramMessageId);
+        await tdlibStorage.deleteFile(file.telegramMessageId);
         totalSize += file.size;
       }
       
@@ -752,7 +707,7 @@ class FileService {
    */
   async getFileInfo(fileId, user) {
     try {
-      logger.info(`Getting file info: ${fileId} for user: ${user.firstName} (${user.telegramId})`);
+      logger.info(`Getting file info: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id})`);
       
       // Find file in database
       const file = await File.findById(fileId);
@@ -793,7 +748,7 @@ class FileService {
         deleted = false,
       } = options;
       
-      logger.info(`Listing files for user: ${user.firstName} (${user.telegramId}), page: ${page}, limit: ${limit}`);
+      logger.info(`Listing files for user: ${user.firstName} (${user.telegramId || user._id}), page: ${page}, limit: ${limit}`);
       
       // Create base query
       let query = {
@@ -876,7 +831,7 @@ class FileService {
    */
   async shareFile(fileId, user, expiresInHours = 24) {
     try {
-      logger.info(`Sharing file: ${fileId} for user: ${user.firstName} (${user.telegramId})`);
+      logger.info(`Sharing file: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id})`);
       
       // Find file in database
       const file = await File.findById(fileId);
@@ -951,7 +906,7 @@ class FileService {
    */
   async updateFileMetadata(fileId, user, metadata) {
     try {
-      logger.info(`Updating file metadata: ${fileId} for user: ${user.firstName} (${user.telegramId})`);
+      logger.info(`Updating file metadata: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id})`);
       
       // Find file in database
       const file = await File.findById(fileId);
