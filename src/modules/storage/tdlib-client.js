@@ -12,11 +12,40 @@ const mkdir = promisify(fs.mkdir);
 let TDLib;
 // Thử tải TDLib Addon
 try {
-  const { TDLib: TDLibModule } = require('tdl-tdlib-addon');
-  TDLib = TDLibModule;
+  // Thử tải prebuilt-tdlib trước
+  try {
+    const { getTdjson } = require('prebuilt-tdlib');
+    const tdjsonPath = getTdjson();
+    logger.info(`Đã tìm thấy tdjson tại đường dẫn: ${tdjsonPath}`);
+    
+    // Cấu hình tdl để sử dụng tdjson prebuilt
+    require('tdl').configure({ tdjson: tdjsonPath });
+    TDLib = true; // Không cần thực sự tải TDLib, chỉ cần đánh dấu là có sẵn
+    logger.info('Đã cấu hình thành công tdl để sử dụng prebuilt-tdlib');
+  } catch (prebuiltError) {
+    logger.warn(`Không thể sử dụng prebuilt-tdlib: ${prebuiltError.message}, đang thử phương pháp khác...`);
+    
+    // Thử tải tdlib-addon
+    try {
+      const { TDLib: TDLibModule } = require('tdl-tdlib-addon');
+      TDLib = TDLibModule;
+      logger.info('Đã tải thành công tdlib-addon');
+    } catch (addonError) {
+      logger.warn(`Không thể tải thư viện tdlib-addon: ${addonError.message}`);
+      
+      // Nếu không có addon, thử tải phiên bản prebuilt cho Windows
+      try {
+        TDLib = require('tdl-tdlib-prebuilt-win32-x64');
+        logger.info('Đã tải thành công tdlib-prebuilt cho Windows');
+      } catch (prebuiltError) {
+        logger.warn(`Không thể tải thư viện tdlib-prebuilt: ${prebuiltError.message}`);
+        throw new Error('Không thể tải bất kỳ phiên bản TDLib nào');
+      }
+    }
+  }
 } catch (e) {
-  logger.warn(`Không thể tải thư viện tdlib-addon: ${e.message}`);
-  logger.warn('TDLib sẽ không được sử dụng. Để sử dụng TDLib, hãy cài đặt/biên dịch tdlib cho hệ thống của bạn.');
+  logger.warn(`Không thể tải thư viện TDLib: ${e.message}`);
+  logger.warn('TDLib sẽ không được sử dụng. Để sử dụng TDLib, hãy cài đặt prebuilt-tdlib hoặc biên dịch tdlib cho hệ thống của bạn.');
   TDLib = null;
 }
 
@@ -56,7 +85,7 @@ class TelegramTDLibClient {
 
     try {
       // Tạo client TDLib
-      this.client = createClient({
+      const clientOptions = {
         apiId: parseInt(config.telegram.apiId, 10),
         apiHash: config.telegram.apiHash,
         tdlibParameters: {
@@ -69,9 +98,15 @@ class TelegramTDLibClient {
           device_model: 'TeleDrive Server',
           system_version: 'Node.js',
         },
-        databaseEncryptionKey: config.sessionSecret,
-        tdlibInstance: TDLib
-      });
+        databaseEncryptionKey: config.sessionSecret
+      };
+
+      // Chỉ thêm TDLib instance nếu cần thiết
+      if (TDLib !== true) {
+        clientOptions.tdlibInstance = TDLib;
+      }
+
+      this.client = createClient(clientOptions);
 
       // Ghi lại ID chat từ token bot
       if (config.telegram.botToken && !this.chatId) {
