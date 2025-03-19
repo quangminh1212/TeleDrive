@@ -77,10 +77,9 @@ class TelegramTDLibClient {
       return;
     }
 
-    // Nếu không có thông tin xác thực, không tạo client
+    // Cảnh báo nếu không có thông tin xác thực, nhưng vẫn tạo client
     if (!this.hasCredentials) {
-      logger.warn('TELEGRAM_API_ID hoặc TELEGRAM_API_HASH không được cung cấp. TDLib sẽ không được khởi tạo.');
-      return;
+      logger.warn('TELEGRAM_API_ID hoặc TELEGRAM_API_HASH không được cung cấp. TDLib vẫn sẽ được khởi tạo nhưng một số tính năng có thể bị hạn chế.');
     }
 
     // Đảm bảo đường dẫn cho TDLib
@@ -92,8 +91,8 @@ class TelegramTDLibClient {
     try {
       // Tạo client TDLib
       const clientOptions = {
-        apiId: parseInt(config.telegram.apiId, 10),
-        apiHash: config.telegram.apiHash,
+        apiId: parseInt(config.telegram.apiId, 10) || 0,
+        apiHash: config.telegram.apiHash || '',
         tdlibParameters: {
           database_directory: tdlibDir,
           files_directory: path.join(tdlibDir, 'files'),
@@ -132,7 +131,7 @@ class TelegramTDLibClient {
    * Khởi tạo kết nối với TDLib
    */
   async init() {
-    if (!this.hasCredentials || this.isInitializing || !this.client) {
+    if (this.isInitializing || !this.client) {
       return;
     }
 
@@ -146,12 +145,19 @@ class TelegramTDLibClient {
         logger.error(`Lỗi TDLib: ${error.message}`);
       });
 
+      // Lắng nghe update từ TDLib
+      this.client.on('update', update => {
+        if (update._ === 'updateAuthorizationState') {
+          this.handleAuthorizationState(update.authorization_state);
+        }
+      });
+
       // Kết nối đến TDLib
       await this.client.connect();
       this.isConnected = true;
       logger.info('Đã kết nối đến TDLib');
 
-      // Đăng nhập sử dụng bot token
+      // Nếu có bot token, đăng nhập bằng bot
       if (config.telegram.botToken) {
         try {
           await this.client.invoke({
@@ -167,6 +173,7 @@ class TelegramTDLibClient {
               _: 'getMe'
             });
 
+            // Tạo chat riêng tư với chính mình để lưu trữ file
             const chat = await this.client.invoke({
               _: 'createPrivateChat',
               user_id: me.id
@@ -175,13 +182,37 @@ class TelegramTDLibClient {
             this.chatId = chat.id;
             logger.info(`Đã tạo chat riêng tư với ID: ${this.chatId}`);
           }
-        } catch (error) {
-          logger.error(`Lỗi đăng nhập bằng bot token: ${error.message}`);
-          throw error;
+        } catch (botError) {
+          logger.error(`Lỗi đăng nhập bằng bot token: ${botError.message}`);
+          
+          // Nếu không thể sử dụng bot token, tạo một saved messages chat
+          try {
+            const me = await this.client.invoke({
+              _: 'getMe'
+            });
+            
+            const savedMessagesChat = await this.client.invoke({
+              _: 'createPrivateChat',
+              user_id: me.id
+            });
+            
+            this.chatId = savedMessagesChat.id;
+            logger.info(`Đã tạo Saved Messages chat với ID: ${this.chatId}`);
+            this.isLoggedIn = true;
+          } catch (savedMsgError) {
+            logger.error(`Không thể tạo Saved Messages chat: ${savedMsgError.message}`);
+            throw savedMsgError;
+          }
         }
       } else {
-        logger.warn('Không có bot token, yêu cầu đăng nhập bằng phương thức khác');
-        throw new Error('Không có bot token');
+        logger.warn('Không có bot token, sẽ sử dụng Saved Messages của tài khoản');
+        // Thử lấy trạng thái đăng nhập hiện tại
+        const authState = await this.client.invoke({
+          _: 'getAuthorizationState'
+        });
+        
+        // Xử lý trạng thái đăng nhập
+        await this.handleAuthorizationState(authState);
       }
     } catch (error) {
       logger.error(`Lỗi khởi tạo TDLib: ${error.message}`);
@@ -190,6 +221,63 @@ class TelegramTDLibClient {
       throw error;
     } finally {
       this.isInitializing = false;
+    }
+  }
+
+  /**
+   * Xử lý trạng thái xác thực của TDLib
+   * @param {Object} authState - Đối tượng trạng thái xác thực
+   */
+  async handleAuthorizationState(authState) {
+    switch (authState._) {
+      case 'authorizationStateWaitTdlibParameters':
+        // TDLib parameters đã được cung cấp trong constructor
+        break;
+        
+      case 'authorizationStateWaitEncryptionKey':
+        await this.client.invoke({
+          _: 'checkDatabaseEncryptionKey',
+          encryption_key: Buffer.from(config.sessionSecret).toString('hex')
+        });
+        break;
+        
+      case 'authorizationStateWaitPhoneNumber':
+        logger.warn('TDLib yêu cầu số điện thoại để đăng nhập. Vui lòng cấu hình bot token thay vì đăng nhập bằng người dùng.');
+        break;
+        
+      case 'authorizationStateReady':
+        this.isLoggedIn = true;
+        logger.info('TDLib đã được xác thực thành công!');
+        
+        // Nếu chưa có chatId, tạo chat riêng tư Saved Messages
+        if (!this.chatId) {
+          try {
+            const me = await this.client.invoke({
+              _: 'getMe'
+            });
+            
+            const savedMessagesChat = await this.client.invoke({
+              _: 'createPrivateChat',
+              user_id: me.id
+            });
+            
+            this.chatId = savedMessagesChat.id;
+            logger.info(`Đã tạo Saved Messages chat với ID: ${this.chatId}`);
+          } catch (error) {
+            logger.error(`Không thể tạo Saved Messages chat: ${error.message}`);
+          }
+        }
+        break;
+        
+      case 'authorizationStateClosed':
+        this.isConnected = false;
+        this.isLoggedIn = false;
+        logger.info('Kết nối TDLib đã bị đóng');
+        break;
+        
+      default:
+        logger.info(`Trạng thái xác thực chưa được xử lý: ${authState._}`);
+        break;
     }
   }
 
@@ -427,6 +515,145 @@ class TelegramTDLibClient {
       } catch (error) {
         logger.error(`Lỗi đóng kết nối TDLib: ${error.message}`);
       }
+    }
+
+  /**
+   * Tải lên nhiều phần của file lớn sử dụng TDLib
+   * @param {Array<string>} filePaths - Mảng đường dẫn đến các phần file cần tải lên
+   * @param {Array<string>} captions - Mảng chú thích tương ứng cho các phần
+   * @returns {Promise<Array<Object>>} - Mảng thông tin về các phần file đã tải lên
+   */
+  async uploadMultipartFile(filePaths, captions = []) {
+    if (!this.client || !this.isConnected) {
+      throw new Error('TDLib không khả dụng hoặc chưa kết nối');
+    }
+
+    const results = [];
+    
+    for (let i = 0; i < filePaths.length; i++) {
+      const filePath = filePaths[i];
+      const caption = captions[i] || `Part ${i + 1}/${filePaths.length}`;
+      
+      logger.info(`Tải lên phần ${i + 1}/${filePaths.length} thông qua TDLib: ${filePath}`);
+      
+      try {
+        const result = await this.uploadFile(filePath, caption);
+        results.push(result);
+        logger.info(`Đã tải lên thành công phần ${i + 1}/${filePaths.length}`);
+      } catch (error) {
+        logger.error(`Lỗi khi tải lên phần ${i + 1}/${filePaths.length}: ${error.message}`);
+        throw error;
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * Tải xuống và ghép lại các phần của file lớn
+   * @param {Array<string>} fileIds - Mảng ID file của các phần
+   * @param {string} outputPath - Đường dẫn đầu ra cho file đã ghép
+   * @returns {Promise<string>} - Đường dẫn đến file đã ghép
+   */
+  async downloadMultipartFile(fileIds, outputPath) {
+    if (!this.client || !this.isConnected) {
+      throw new Error('TDLib không khả dụng hoặc chưa kết nối');
+    }
+    
+    const tempDir = path.join(path.dirname(outputPath), 'temp_parts_' + Date.now());
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    
+    const downloadedParts = [];
+    
+    try {
+      // Tải xuống từng phần
+      for (let i = 0; i < fileIds.length; i++) {
+        const fileId = fileIds[i];
+        const partPath = path.join(tempDir, `part_${i}.bin`);
+        
+        logger.info(`Tải xuống phần ${i + 1}/${fileIds.length} thông qua TDLib: ID ${fileId}`);
+        
+        try {
+          const downloadedPath = await this.downloadFile(fileId, partPath);
+          downloadedParts.push(downloadedPath);
+          logger.info(`Đã tải xuống thành công phần ${i + 1}/${fileIds.length}`);
+        } catch (error) {
+          logger.error(`Lỗi khi tải xuống phần ${i + 1}/${fileIds.length}: ${error.message}`);
+          throw error;
+        }
+      }
+      
+      // Ghép các phần đã tải xuống
+      logger.info(`Ghép ${downloadedParts.length} phần thành một file duy nhất: ${outputPath}`);
+      
+      // Đảm bảo thư mục đầu ra tồn tại
+      const outputDir = path.dirname(outputPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      
+      // Nếu file đầu ra đã tồn tại, xóa nó
+      if (fs.existsSync(outputPath)) {
+        fs.unlinkSync(outputPath);
+      }
+      
+      // Tạo write stream cho file đầu ra
+      const outputStream = fs.createWriteStream(outputPath);
+      
+      // Ghép các phần
+      for (const partPath of downloadedParts) {
+        const partContent = fs.readFileSync(partPath);
+        outputStream.write(partContent);
+      }
+      
+      // Đóng stream
+      outputStream.end();
+      
+      // Chờ cho đến khi đã ghi xong
+      await new Promise((resolve, reject) => {
+        outputStream.on('finish', resolve);
+        outputStream.on('error', reject);
+      });
+      
+      logger.info(`Đã ghép thành công các phần thành một file: ${outputPath}`);
+      
+      // Xóa thư mục tạm
+      for (const partPath of downloadedParts) {
+        try {
+          fs.unlinkSync(partPath);
+        } catch (error) {
+          logger.warn(`Không thể xóa file tạm: ${partPath} - ${error.message}`);
+        }
+      }
+      
+      try {
+        fs.rmdirSync(tempDir);
+      } catch (error) {
+        logger.warn(`Không thể xóa thư mục tạm: ${tempDir} - ${error.message}`);
+      }
+      
+      return outputPath;
+    } catch (error) {
+      logger.error(`Lỗi khi xử lý file đa phần: ${error.message}`);
+      
+      // Xóa thư mục tạm nếu có lỗi
+      try {
+        for (const partPath of downloadedParts) {
+          if (fs.existsSync(partPath)) {
+            fs.unlinkSync(partPath);
+          }
+        }
+        
+        if (fs.existsSync(tempDir)) {
+          fs.rmdirSync(tempDir);
+        }
+      } catch (cleanupError) {
+        logger.warn(`Lỗi khi dọn dẹp thư mục tạm: ${cleanupError.message}`);
+      }
+      
+      throw error;
     }
   }
 }

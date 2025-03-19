@@ -33,9 +33,22 @@ async function initTDLib() {
     const tdlibClient = await getTDLibClient();
     
     if (tdlibClient) {
-      logger.info('TDLib client đã được khởi tạo thành công.');
+      if (tdlibClient.isConnected) {
+        logger.info('TDLib client đã được khởi tạo và kết nối thành công.');
+      } else {
+        try {
+          await tdlibClient.init();
+          if (tdlibClient.isConnected) {
+            logger.info('TDLib client đã được khởi tạo và kết nối thành công.');
+          } else {
+            logger.warn('TDLib client đã được khởi tạo nhưng chưa thể kết nối. Kiểm tra kết nối mạng và cấu hình.');
+          }
+        } catch (initError) {
+          logger.error(`Không thể khởi tạo TDLib client: ${initError.message}`);
+        }
+      }
     } else {
-      logger.info('TDLib client không khả dụng, sẽ sử dụng Bot API thông thường.');
+      logger.warn('TDLib client không khả dụng. Vui lòng cài đặt thư viện TDLib và cấu hình API ID/Hash để sử dụng.');
     }
   } catch (error) {
     logger.error(`Lỗi khởi tạo TDLib client: ${error.message}`);
@@ -45,6 +58,9 @@ async function initTDLib() {
 // Kết nối MongoDB và khởi động server, cho phép chạy ứng dụng mà không cần MongoDB
 async function start() {
   try {
+    // Khởi tạo TDLib client trước tiên (độc lập với MongoDB)
+    await initTDLib();
+    
     // Kết nối MongoDB
     try {
       await mongoose.connect(config.db.uri, {
@@ -68,12 +84,19 @@ async function start() {
       }
     }
     
-    // Khởi tạo TDLib client (độc lập với MongoDB)
-    await initTDLib();
-    
     // Khởi động HTTP server
     server.listen(config.port, () => {
       logger.info(`Server đang chạy trên cổng ${config.port} (${config.nodeEnv})`);
+      
+      // Kiểm tra cấu hình TDLib
+      if (!config.telegram.apiId || !config.telegram.apiHash) {
+        logger.warn('TELEGRAM_API_ID hoặc TELEGRAM_API_HASH không được cung cấp. Một số tính năng của TDLib có thể không hoạt động.');
+      }
+      
+      // Kiểm tra cấu hình Bot API
+      if (!config.telegram.botToken || !config.telegram.chatId) {
+        logger.warn('TELEGRAM_BOT_TOKEN hoặc TELEGRAM_CHAT_ID không được cung cấp. Bot API sẽ không hoạt động.');
+      }
     });
   } catch (error) {
     logger.error(`Lỗi khởi động server: ${error.message}`);
