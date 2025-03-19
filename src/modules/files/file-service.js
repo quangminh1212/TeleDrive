@@ -421,11 +421,34 @@ class FileService {
         fs.mkdirSync(userDownloadDir, { recursive: true });
       }
       
-      // Download file from Telegram
+      // Xác định output path
       const outputPath = path.join(userDownloadDir, file.name);
-      const filePath = await telegramStorage.downloadFile(file.telegramFileId, outputPath);
+      
+      // Kiểm tra xem có thể sử dụng TDLib không
+      let storageProvider = telegramStorage;
+      // Chỉ thử dùng TDLib với file > 20MB
+      if (file.size > 20 * 1024 * 1024) {
+        try {
+          const tdlibClient = await getTDLibClient();
+          if (tdlibClient && tdlibClient.hasCredentials && tdlibClient.isConnected) {
+            logger.info(`Sử dụng TDLib để tải xuống file lớn: ${file.name}`);
+            storageProvider = tdlibClient;
+          }
+        } catch (tdlibError) {
+          logger.warn(`Không thể sử dụng TDLib, sử dụng Bot API: ${tdlibError.message}`);
+        }
+      }
+      
+      // Download file using selected provider
+      const filePath = await storageProvider.downloadFile(file.telegramFileId, outputPath);
       
       logger.info(`File downloaded successfully: ${filePath}`);
+      
+      // Cập nhật thống kê tải xuống
+      await File.findByIdAndUpdate(fileId, {
+        lastDownloadedAt: new Date(),
+        $inc: { downloadCount: 1 }
+      });
       
       return filePath;
     } catch (error) {
@@ -459,6 +482,21 @@ class FileService {
     const parts = [];
     
     try {
+      // Kiểm tra xem có thể sử dụng TDLib không
+      let storageProvider = telegramStorage;
+      const CHUNK_SIZE = 10 * 1024 * 1024; // Đoán kích thước mỗi chunk là 10MB
+      if (CHUNK_SIZE > 20 * 1024 * 1024) {
+        try {
+          const tdlibClient = await getTDLibClient();
+          if (tdlibClient && tdlibClient.hasCredentials && tdlibClient.isConnected) {
+            logger.info(`Sử dụng TDLib để tải xuống các phần của file: ${file.name}`);
+            storageProvider = tdlibClient;
+          }
+        } catch (tdlibError) {
+          logger.warn(`Không thể sử dụng TDLib, sử dụng Bot API: ${tdlibError.message}`);
+        }
+      }
+      
       // Tải xuống từng phần
       logger.info(`Tải xuống ${file.telegramFileIds.length} phần của file ${file.name}`);
       
@@ -475,7 +513,7 @@ class FileService {
         
         while (attempts < 3 && !downloaded) {
           try {
-            const downloadedPart = await telegramStorage.downloadFile(fileId, partPath);
+            const downloadedPart = await storageProvider.downloadFile(fileId, partPath);
             parts.push(downloadedPart);
             downloaded = true;
             logger.info(`Phần ${i + 1} đã được tải xuống: ${downloadedPart}`);
