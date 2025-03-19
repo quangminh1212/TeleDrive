@@ -3,7 +3,6 @@ const path = require('path');
 const { Telegraf } = require('telegraf');
 const { config } = require('../common/config');
 const logger = require('../common/logger');
-const tdlibClient = require('./tdlib-client');
 
 // Initialize Telegram bot
 const bot = new Telegraf(config.telegram.botToken);
@@ -13,8 +12,6 @@ class TelegramStorage {
   constructor() {
     this.bot = bot;
     this.chatId = config.telegram.chatId;
-    this.useTDLib = !!(config.telegram.apiId && config.telegram.apiHash);
-    this.tdlibClientPromise = null;
     
     // Ensure temp directory exists
     if (!fs.existsSync(config.paths.temp)) {
@@ -24,14 +21,6 @@ class TelegramStorage {
     // Ensure downloads directory exists
     if (!fs.existsSync(config.paths.downloads)) {
       fs.mkdirSync(config.paths.downloads, { recursive: true });
-    }
-
-    if (this.useTDLib) {
-      logger.info('TDLib được kích hoạt với API ID và API Hash, sẽ sử dụng cho upload/download file');
-      // Khởi tạo client TDLib
-      this.tdlibClientPromise = tdlibClient.getClient();
-    } else {
-      logger.info('Sử dụng Bot API tiêu chuẩn cho upload/download file');
     }
   }
   
@@ -50,28 +39,14 @@ class TelegramStorage {
         throw new Error(`File not found: ${filePath}`);
       }
       
-      logger.info(`Uploading file: ${fileName} (Size: ${fs.statSync(filePath).size} bytes)`);
-      
       // Get file stats
       const stats = fs.statSync(filePath);
       
-      // Check file size
+      logger.info(`Đang chuẩn bị tải lên file: ${fileName} (Kích thước: ${stats.size} bytes)`);
+      
+      // Check file size against config limit
       if (stats.size > config.file.maxSize) {
-        throw new Error(`File size exceeds the maximum allowed size of ${config.file.maxSize} bytes`);
-      }
-
-      // Nếu có TDLib client và file > 10MB, sử dụng TDLib
-      if (this.useTDLib && stats.size > 10 * 1024 * 1024) {
-        try {
-          const client = await this.tdlibClientPromise;
-          if (client) {
-            logger.info(`Sử dụng TDLib để tải lên file lớn: ${fileName}`);
-            return await client.uploadFile(filePath, caption);
-          }
-        } catch (tdlibError) {
-          logger.error(`Lỗi tải lên qua TDLib, chuyển về Bot API: ${tdlibError.message}`);
-          // Continue with Bot API if TDLib fails
-        }
+        throw new Error(`Kích thước file (${Math.round(stats.size/1024/1024)}MB) vượt quá giới hạn cho phép (${Math.round(config.file.maxSize/1024/1024)}MB)`);
       }
       
       // Thêm retry logic
@@ -81,63 +56,118 @@ class TelegramStorage {
       
       while (retries > 0) {
         try {
+          logger.info(`Đang thử tải lên file (lần thử ${4-retries}/3): ${fileName}`);
+          
+          // Tạo stream để tải lên file, với timeout
+          const createUploadStream = () => {
+            const stream = fs.createReadStream(filePath);
+            
+            // Xử lý lỗi stream
+            stream.on('error', (err) => {
+              logger.error(`Stream error: ${err.message}`);
+              // Không ném lỗi ở đây vì chúng ta đã xử lý lỗi ở catch block
+            });
+            
+            return stream;
+          };
+          
           // Determine the upload method based on file type
           if (this.isImageFile(filePath)) {
-            logger.info(`Uploading as image: ${fileName}`);
-            message = await this.bot.telegram.sendPhoto(this.chatId, {
-              source: fs.createReadStream(filePath),
-            }, {
-              caption,
-              disable_notification: true
-            });
+            logger.info(`Tải lên dưới dạng hình ảnh: ${fileName}`);
+            // Đặt timeout cho request
+            message = await Promise.race([
+              this.bot.telegram.sendPhoto(this.chatId, {
+                source: createUploadStream(),
+              }, {
+                caption,
+                disable_notification: true
+              }),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Upload timeout')), 300000) // 5 phút timeout
+              )
+            ]);
           } else if (this.isVideoFile(filePath)) {
-            logger.info(`Uploading as video: ${fileName}`);
-            message = await this.bot.telegram.sendVideo(this.chatId, {
-              source: fs.createReadStream(filePath),
-            }, {
-              caption,
-              disable_notification: true
-            });
+            logger.info(`Tải lên dưới dạng video: ${fileName}`);
+            message = await Promise.race([
+              this.bot.telegram.sendVideo(this.chatId, {
+                source: createUploadStream(),
+              }, {
+                caption,
+                disable_notification: true
+              }),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Upload timeout')), 600000) // 10 phút timeout
+              )
+            ]);
           } else if (this.isAudioFile(filePath)) {
-            logger.info(`Uploading as audio: ${fileName}`);
-            message = await this.bot.telegram.sendAudio(this.chatId, {
-              source: fs.createReadStream(filePath),
-            }, {
-              caption,
-              disable_notification: true
-            });
+            logger.info(`Tải lên dưới dạng audio: ${fileName}`);
+            message = await Promise.race([
+              this.bot.telegram.sendAudio(this.chatId, {
+                source: createUploadStream(),
+              }, {
+                caption,
+                disable_notification: true
+              }),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Upload timeout')), 300000) // 5 phút timeout
+              )
+            ]);
           } else {
-            logger.info(`Uploading as document: ${fileName}`);
-            message = await this.bot.telegram.sendDocument(this.chatId, {
-              source: fs.createReadStream(filePath),
-              filename: fileName,
-            }, {
-              caption,
-              disable_notification: true
-            });
+            logger.info(`Tải lên dưới dạng document: ${fileName}`);
+            message = await Promise.race([
+              this.bot.telegram.sendDocument(
+                this.chatId,
+                { source: createUploadStream(), filename: fileName },
+                { 
+                  caption,
+                  disable_notification: true
+                }
+              ),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Upload timeout')), 600000) // 10 phút timeout
+              )
+            ]);
           }
           
-          // Nếu thành công, thoát khỏi vòng lặp
-          break;
+          // Nếu có message, tải lên thành công
+          if (message) {
+            logger.info(`Tải lên thành công: ${fileName}`);
+            break;
+          }
         } catch (uploadError) {
           lastError = uploadError;
-          logger.warn(`Upload attempt failed (${retries} retries left): ${uploadError.message}`);
           retries--;
           
-          // Nếu còn lượt retry, chờ 2 giây trước khi thử lại
-          if (retries > 0) {
-            logger.info(`Retrying upload in 2 seconds...`);
-            await new Promise(resolve => setTimeout(resolve, 2000));
+          // Ghi log chi tiết lỗi
+          logger.error(`Lỗi khi tải lên file (còn ${retries} lần thử): ${uploadError.message}`);
+          if (uploadError.response) {
+            logger.error(`Response code: ${uploadError.response.status}, Message: ${uploadError.response.statusText}`);
+          }
+          
+          if (uploadError.message.includes('413') || uploadError.message.includes('Too Large')) {
+            logger.error(`File quá lớn cho Bot API. Vui lòng chia nhỏ file hoặc cấu hình TDLib.`);
+            break; // Không retry nếu lỗi kích thước
+          }
+          
+          if (uploadError.message.includes('429') || uploadError.message.includes('Too Many Requests')) {
+            // Nếu bị rate limit, chờ lâu hơn
+            const waitTime = 10000 * (4 - retries); // 10s, 20s, 30s
+            logger.warn(`Bị giới hạn tần suất, đợi ${waitTime/1000}s trước khi thử lại...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          } else {
+            // Đợi thời gian thông thường
+            const waitTime = 3000; // 3 giây
+            if (retries > 0) {
+              logger.info(`Đợi ${waitTime/1000}s trước khi thử lại...`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
           }
         }
       }
       
-      // Nếu tất cả các lần thử đều thất bại
       if (!message) {
-        throw lastError || new Error('Failed to upload file after multiple attempts');
+        throw lastError || new Error('Không thể tải lên file sau nhiều lần thử');
       }
-      
-      logger.info(`File uploaded successfully: ${fileName}`);
       
       // Determine file ID based on the message type
       let fileId;
@@ -150,8 +180,10 @@ class TelegramStorage {
       } else if (message.audio) {
         fileId = message.audio.file_id;
       } else {
-        throw new Error('Failed to get file ID from Telegram response');
+        throw new Error('Không thể lấy file ID từ phản hồi của Telegram');
       }
+      
+      logger.info(`File đã được tải lên thành công: ${fileName} (ID: ${fileId})`);
       
       // Return message info
       return {
@@ -163,8 +195,17 @@ class TelegramStorage {
         caption: message.caption || '',
       };
     } catch (error) {
-      logger.error(`Error uploading file: ${error.message}`);
-      logger.error(`Upload error details: ${JSON.stringify(error, Object.getOwnPropertyNames(error))}`);
+      logger.error(`Lỗi tải lên file: ${error.message}`);
+      
+      // Thêm thông tin chi tiết lỗi
+      if (error.code) {
+        logger.error(`Mã lỗi: ${error.code}`);
+      }
+      
+      if (error.response) {
+        logger.error(`Phản hồi API: ${JSON.stringify(error.response)}`);
+      }
+      
       throw error;
     }
   }
@@ -178,20 +219,6 @@ class TelegramStorage {
   async downloadFile(fileId, outputPath = null) {
     try {
       logger.info(`Downloading file with ID: ${fileId}`);
-
-      // Nếu có TDLib client, thử sử dụng TDLib trước
-      if (this.useTDLib) {
-        try {
-          const client = await this.tdlibClientPromise;
-          if (client) {
-            logger.info(`Sử dụng TDLib để tải xuống file: ${fileId}`);
-            return await client.downloadFile(fileId, outputPath);
-          }
-        } catch (tdlibError) {
-          logger.error(`Lỗi tải xuống qua TDLib, chuyển về Bot API: ${tdlibError.message}`);
-          // Continue with Bot API if TDLib fails
-        }
-      }
       
       // Get file link from Telegram
       const fileLink = await this.bot.telegram.getFileLink(fileId);
@@ -233,20 +260,6 @@ class TelegramStorage {
   async deleteFile(messageId) {
     try {
       logger.info(`Deleting message with ID: ${messageId}`);
-
-      // Nếu có TDLib client, thử sử dụng TDLib trước
-      if (this.useTDLib) {
-        try {
-          const client = await this.tdlibClientPromise;
-          if (client) {
-            logger.info(`Sử dụng TDLib để xóa tin nhắn: ${messageId}`);
-            return await client.deleteMessage(messageId);
-          }
-        } catch (tdlibError) {
-          logger.error(`Lỗi xóa tin nhắn qua TDLib, chuyển về Bot API: ${tdlibError.message}`);
-          // Continue with Bot API if TDLib fails
-        }
-      }
       
       await this.bot.telegram.deleteMessage(this.chatId, messageId);
       
@@ -267,20 +280,6 @@ class TelegramStorage {
   async getFileInfo(fileId) {
     try {
       logger.info(`Getting file info for ID: ${fileId}`);
-
-      // Nếu có TDLib client, thử sử dụng TDLib trước
-      if (this.useTDLib) {
-        try {
-          const client = await this.tdlibClientPromise;
-          if (client) {
-            logger.info(`Sử dụng TDLib để lấy thông tin file: ${fileId}`);
-            return await client.getFileInfo(fileId);
-          }
-        } catch (tdlibError) {
-          logger.error(`Lỗi lấy thông tin file qua TDLib, chuyển về Bot API: ${tdlibError.message}`);
-          // Continue with Bot API if TDLib fails
-        }
-      }
       
       const fileInfo = await this.bot.telegram.getFile(fileId);
       
