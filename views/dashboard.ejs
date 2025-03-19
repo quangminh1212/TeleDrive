@@ -692,10 +692,25 @@
         fileGrid.style.display = 'grid';
         fileGrid.innerHTML = '';
         
+        // Sắp xếp file theo tên nếu cần
+        files.sort((a, b) => a.name.localeCompare(b.name));
+        
         files.forEach(file => {
           const fileCard = createFileCard(file);
           fileGrid.appendChild(fileCard);
         });
+        
+        // Cập nhật thông tin số lượng file
+        const fileCount = document.createElement('div');
+        fileCount.className = 'file-count';
+        fileCount.innerHTML = `Hiển thị ${files.length} file`;
+        fileCount.style.marginTop = '10px';
+        fileCount.style.fontSize = '0.9em';
+        fileCount.style.color = '#666';
+        
+        if (fileGrid.children.length > 0) {
+          fileGrid.parentNode.insertBefore(fileCount, fileGrid);
+        }
       }
       
       // Create a file card element
@@ -739,6 +754,88 @@
           const deleteBtn = fileCard.querySelector('.delete-btn');
           deleteBtn.addEventListener('click', () => deleteFile(file._id));
         }
+        
+        // Click vào file card để xem chi tiết
+        fileCard.addEventListener('click', function(e) {
+          // Chỉ xử lý khi click vào card, không phải các nút hành động
+          if (!e.target.closest('.file-action')) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            
+            // Tạo nội dung chi tiết file
+            modalContent.innerHTML = `
+              <div class="modal-header">
+                <h3>Chi tiết file</h3>
+                <span class="close">&times;</span>
+              </div>
+              <div class="file-details">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <div style="font-size: 64px;">${fileIcon}</div>
+                </div>
+                <p><strong>Tên file:</strong> ${file.name}</p>
+                <p><strong>Kích thước:</strong> ${formattedSize}</p>
+                <p><strong>Loại file:</strong> ${file.mimeType || 'Không xác định'}</p>
+                <p><strong>Ngày tạo:</strong> ${new Date(file.createdAt).toLocaleString('vi-VN')}</p>
+                ${file.updatedAt ? `<p><strong>Cập nhật lần cuối:</strong> ${new Date(file.updatedAt).toLocaleString('vi-VN')}</p>` : ''}
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <button class="btn btn-primary" id="detail-download-btn">Tải xuống</button>
+                <button class="btn btn-primary" id="detail-share-btn">Chia sẻ</button>
+                ${fileType === 'trash' 
+                  ? '<button class="btn btn-primary" id="detail-restore-btn">Khôi phục</button>' 
+                  : '<button class="btn btn-danger" id="detail-delete-btn">Xóa</button>'}
+              </div>
+            `;
+            
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
+            // Xử lý đóng modal
+            const closeBtn = modal.querySelector('.close');
+            closeBtn.addEventListener('click', function() {
+              document.body.removeChild(modal);
+            });
+            
+            // Click bên ngoài để đóng
+            window.addEventListener('click', function(e) {
+              if (e.target === modal) {
+                document.body.removeChild(modal);
+              }
+            });
+            
+            // Xử lý các nút trong chi tiết file
+            const detailDownloadBtn = modal.querySelector('#detail-download-btn');
+            const detailShareBtn = modal.querySelector('#detail-share-btn');
+            
+            detailDownloadBtn.addEventListener('click', function() {
+              downloadFile(file._id);
+            });
+            
+            detailShareBtn.addEventListener('click', function() {
+              shareFile(file._id);
+            });
+            
+            if (fileType === 'trash') {
+              const detailRestoreBtn = modal.querySelector('#detail-restore-btn');
+              detailRestoreBtn.addEventListener('click', function() {
+                restoreFile(file._id);
+                document.body.removeChild(modal);
+              });
+            } else {
+              const detailDeleteBtn = modal.querySelector('#detail-delete-btn');
+              detailDeleteBtn.addEventListener('click', function() {
+                if (confirm('Bạn có chắc chắn muốn xóa file này?')) {
+                  deleteFile(file._id);
+                  document.body.removeChild(modal);
+                }
+              });
+            }
+          }
+        });
         
         return fileCard;
       }
