@@ -145,17 +145,36 @@ class TelegramTDLibClient {
         logger.error(`Lỗi TDLib: ${error.message}`);
       });
 
+      // Kết nối đến TDLib
+      await this.client.connect();
+      this.isConnected = true;
+      logger.info('Đã kết nối đến TDLib');
+
+      // Thiết lập tham số TDLib
+      await this.client.invoke({
+        _: 'setTdlibParameters',
+        parameters: {
+          _: 'tdlibParameters',
+          use_test_dc: false,
+          database_directory: path.join(config.paths.data, 'tdlib'),
+          files_directory: path.join(config.paths.data, 'tdlib', 'files'),
+          use_message_database: true,
+          use_secret_chats: false,
+          api_id: parseInt(config.telegram.apiId, 10),
+          api_hash: config.telegram.apiHash,
+          system_language_code: 'vi',
+          device_model: 'TeleDrive Server',
+          application_version: '1.0.0',
+          enable_storage_optimizer: true
+        }
+      });
+
       // Lắng nghe update từ TDLib
       this.client.on('update', update => {
         if (update._ === 'updateAuthorizationState') {
           this.handleAuthorizationState(update.authorization_state);
         }
       });
-
-      // Kết nối đến TDLib
-      await this.client.connect();
-      this.isConnected = true;
-      logger.info('Đã kết nối đến TDLib');
 
       // Nếu có bot token, đăng nhập bằng bot
       if (config.telegram.botToken) {
@@ -164,6 +183,7 @@ class TelegramTDLibClient {
             _: 'checkAuthenticationBotToken',
             token: config.telegram.botToken
           });
+          
           this.isLoggedIn = true;
           logger.info('Đã đăng nhập thành công vào TDLib bằng bot token');
 
@@ -206,6 +226,7 @@ class TelegramTDLibClient {
         }
       } else {
         logger.warn('Không có bot token, sẽ sử dụng Saved Messages của tài khoản');
+        
         // Thử lấy trạng thái đăng nhập hiện tại
         const authState = await this.client.invoke({
           _: 'getAuthorizationState'
@@ -516,6 +537,7 @@ class TelegramTDLibClient {
         logger.error(`Lỗi đóng kết nối TDLib: ${error.message}`);
       }
     }
+  }
 
   /**
    * Tải lên nhiều phần của file lớn sử dụng TDLib
