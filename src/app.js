@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const morgan = require('morgan');
 const session = require('express-session');
-const MongoStore = require('connect-mongo');
 const { config, validateConfig } = require('./modules/common/config');
 const logger = require('./modules/common/logger');
 const { loadUser, logRequest, handleShareToken } = require('./modules/auth/middleware');
@@ -26,7 +25,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(config.paths.public));
 
 // Session setup
-app.use(session({
+let sessionOptions = {
   secret: config.sessionSecret,
   resave: false,
   saveUninitialized: false,
@@ -34,13 +33,25 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  },
-  store: new MongoStore({
+  }
+};
+
+// Thêm MongoDB store nếu có kết nối
+try {
+  const MongoStore = require('connect-mongo');
+  sessionOptions.store = new MongoStore({
     mongoUrl: config.db.uri,
     collection: 'sessions',
     ttl: 24 * 60 * 60 // 1 day
-  })
-}));
+  });
+  
+  logger.info('Đã kết nối session với MongoDB');
+} catch (error) {
+  logger.warn(`Không thể kết nối session với MongoDB: ${error.message}`);
+  logger.warn('Sử dụng session lưu trong bộ nhớ (không bền vững giữa các lần khởi động)');
+}
+
+app.use(session(sessionOptions));
 
 // Custom middleware
 app.use(logRequest);

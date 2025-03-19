@@ -36,8 +36,13 @@ try {
       
       // Nếu không có addon, thử tải phiên bản prebuilt cho Windows
       try {
-        TDLib = require('tdl-tdlib-prebuilt-win32-x64');
-        logger.info('Đã tải thành công tdlib-prebuilt cho Windows');
+        const tdlibWin = require('tdl-tdlib-addon');
+        TDLib = tdlibWin && tdlibWin.TDLib;
+        if (TDLib) {
+          logger.info('Đã tải thành công tdlib-addon cho Windows');
+        } else {
+          throw new Error('Không thể lấy TDLib từ tdl-tdlib-addon');
+        }
       } catch (prebuiltError) {
         logger.warn(`Không thể tải thư viện tdlib-prebuilt: ${prebuiltError.message}`);
         throw new Error('Không thể tải bất kỳ phiên bản TDLib nào');

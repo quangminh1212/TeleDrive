@@ -1,9 +1,9 @@
 const http = require('http');
+const mongoose = require('mongoose');
 const app = require('./app');
 const { config } = require('./modules/common/config');
 const logger = require('./modules/common/logger');
-const { connectDB } = require('./modules/db');
-const { setupAuthBot } = require('./modules/auth/telegram-auth');
+const { getClient: getTDLibClient } = require('./modules/storage/tdlib-client');
 
 // Normalize port
 const normalizePort = (val) => {
@@ -27,67 +27,80 @@ app.set('port', port);
 // Create HTTP server
 const server = http.createServer(app);
 
-// Event listener for HTTP server "error" event
-const onError = (error) => {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-  
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
-  
-  // Handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      logger.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      logger.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-};
-
-// Event listener for HTTP server "listening" event
-const onListening = () => {
-  const addr = server.address();
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  logger.info('Server listening on ' + bind);
-};
-
-// Initialize application
-const init = async () => {
+// Khởi tạo TDLib client nếu có API ID và API Hash
+async function initTDLib() {
   try {
-    // Connect to MongoDB
-    await connectDB();
+    const tdlibClient = await getTDLibClient();
     
-    // Kiểm tra và khởi động Telegram bot
+    if (tdlibClient) {
+      logger.info('TDLib client đã được khởi tạo thành công.');
+    } else {
+      logger.info('TDLib client không khả dụng, sẽ sử dụng Bot API thông thường.');
+    }
+  } catch (error) {
+    logger.error(`Lỗi khởi tạo TDLib client: ${error.message}`);
+  }
+}
+
+// Kết nối MongoDB và khởi động server, cho phép chạy ứng dụng mà không cần MongoDB
+async function start() {
+  try {
+    // Kết nối MongoDB
     try {
-      await setupAuthBot();
-      logger.info('Telegram bot đã được khởi động thành công');
-    } catch (botError) {
-      logger.error('Không thể khởi động Telegram bot: ' + botError.message);
-      logger.error('Đang dừng ứng dụng do lỗi bot Telegram. Vui lòng kiểm tra lại cấu hình token.');
-      process.exit(1);
+      await mongoose.connect(config.db.uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      logger.info(`Đã kết nối thành công đến MongoDB: ${config.db.uri}`);
+    } catch (dbError) {
+      logger.error(`Lỗi khi kết nối MongoDB: ${dbError.message}`);
+      logger.warn('Ứng dụng sẽ chạy mà không có MongoDB. Một số tính năng sẽ không hoạt động.');
     }
     
-    // Start server
-    server.listen(port);
-    server.on('error', onError);
-    server.on('listening', onListening);
+    // Khởi tạo TDLib client (độc lập với MongoDB)
+    await initTDLib();
     
-    logger.info(`Server started in ${config.nodeEnv} mode`);
+    // Khởi động HTTP server
+    server.listen(config.port, () => {
+      logger.info(`Server đang chạy trên cổng ${config.port} (${config.nodeEnv})`);
+    });
   } catch (error) {
-    logger.error(`Server initialization error: ${error.message}`);
+    logger.error(`Lỗi khởi động server: ${error.message}`);
     process.exit(1);
   }
-};
+}
 
-// Start the application
-init(); 
+// Xử lý các sự kiện process
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error(`Unhandled Rejection tại: ${promise}, lý do: ${reason}`);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error(`Uncaught Exception: ${error.message}`);
+  logger.error(error.stack);
+});
+
+// Xử lý tắt ứng dụng
+process.on('SIGINT', async () => {
+  logger.info('Đã nhận SIGINT, đang tắt ứng dụng...');
+  
+  try {
+    // Đóng kết nối MongoDB
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.close();
+      logger.info('Đã đóng kết nối MongoDB');
+    }
+    
+    // Đóng HTTP server
+    server.close(() => {
+      logger.info('HTTP server đã đóng');
+      process.exit(0);
+    });
+  } catch (error) {
+    logger.error(`Lỗi khi tắt ứng dụng: ${error.message}`);
+    process.exit(1);
+  }
+});
+
+// Khởi động ứng dụng
+start(); 
