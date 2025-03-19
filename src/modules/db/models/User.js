@@ -1,172 +1,183 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { config } = require('../../common/config');
 
-const UserSchema = new mongoose.Schema({
+const { Schema } = mongoose;
+
+// User schema
+const userSchema = new Schema({
   telegramId: {
     type: String,
-    required: true,
-    unique: true,
+    sparse: true
   },
   firstName: {
     type: String,
-    required: true,
-    trim: true,
+    required: true
   },
   lastName: {
     type: String,
-    trim: true,
+    default: ''
   },
   username: {
     type: String,
-    trim: true,
+    sparse: true
   },
-  isAdmin: {
-    type: Boolean,
-    default: false,
+  email: {
+    type: String,
+    sparse: true,
+    lowercase: true
+  },
+  password: {
+    type: String
+  },
+  avatarUrl: {
+    type: String,
+    default: null
   },
   storageUsed: {
     type: Number,
-    default: 0,
+    default: 0
   },
   storageLimit: {
     type: Number,
-    default: 1024 * 1024 * 1024, // 1GB default
+    default: 1024 * 1024 * 1024 // 1GB default
   },
-  isPremium: {
+  isAdmin: {
     type: Boolean,
-    default: false,
+    default: false
   },
-  settings: {
-    language: {
-      type: String,
-      default: 'en',
+  isBlocked: {
+    type: Boolean,
+    default: false
+  },
+  lastLogin: {
+    type: Date,
+    default: null
+  },
+  telegramAuth: {
+    hash: String,
+    authDate: Date,
+    accessToken: String
+  },
+  apiKeys: [{
+    key: String,
+    name: String,
+    createdAt: {
+      type: Date,
+      default: Date.now
     },
+    lastUsed: Date
+  }],
+  settings: {
     theme: {
       type: String,
-      default: 'light',
+      enum: ['light', 'dark', 'system'],
+      default: 'system'
     },
-    autoDeleteDownloads: {
-      type: Boolean,
-      default: true,
+    language: {
+      type: String,
+      enum: ['en', 'vi'],
+      default: 'vi'
     },
-    notificationsEnabled: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  lastSeen: {
-    type: Date,
-    default: Date.now,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
+    notifications: {
+      enabled: {
+        type: Boolean,
+        default: true
+      }
+    }
+  }
+}, { timestamps: true });
+
+// Virtual for full name
+userSchema.virtual('fullName').get(function() {
+  if (this.lastName) {
+    return `${this.firstName} ${this.lastName}`;
+  }
+  return this.firstName;
 });
 
-// Update the 'updatedAt' field on save
-UserSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
+// Password hashing middleware
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password') || !this.password) {
+    return next();
+  }
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
-// Methods
-UserSchema.methods = {
-  // Update last seen
-  updateLastSeen: function() {
-    this.lastSeen = Date.now();
-    return this.save();
-  },
-  
-  // Add storage used
-  addStorageUsed: function(bytes) {
-    this.storageUsed += bytes;
-    return this.save();
-  },
-  
-  // Subtract storage used
-  subtractStorageUsed: function(bytes) {
-    this.storageUsed = Math.max(0, this.storageUsed - bytes);
-    return this.save();
-  },
-  
-  // Check if user has enough storage
-  hasEnoughStorage: function(bytes) {
-    return (this.storageUsed + bytes) <= this.storageLimit;
-  },
-  
-  // Get storage usage percentage
-  getStoragePercentage: function() {
-    return (this.storageUsed / this.storageLimit) * 100;
-  },
-  
-  // Reset storage usage
-  resetStorageUsed: function() {
-    this.storageUsed = 0;
-    return this.save();
-  },
-  
-  // Set premium status
-  setPremium: function(isPremium = true, storageLimit = null) {
-    this.isPremium = isPremium;
-    
-    if (storageLimit !== null) {
-      this.storageLimit = storageLimit;
-    } else if (isPremium) {
-      this.storageLimit = 10 * 1024 * 1024 * 1024; // 10GB for premium
-    } else {
-      this.storageLimit = 1024 * 1024 * 1024; // 1GB for free users
-    }
-    
-    return this.save();
-  },
-  
-  // Update user settings
-  updateSettings: function(settings) {
-    this.settings = { ...this.settings, ...settings };
-    return this.save();
-  },
+// Method to check password
+userSchema.methods.comparePassword = async function(password) {
+  if (!this.password) return false;
+  return await bcrypt.compare(password, this.password);
 };
 
-// Static methods
-UserSchema.statics = {
-  // Find premium users
-  findPremiumUsers: function() {
-    return this.find({ isPremium: true });
-  },
-  
-  // Find by Telegram ID
-  findByTelegramId: function(telegramId) {
-    return this.findOne({ telegramId });
-  },
-  
-  // Find or create user by Telegram data
-  findOrCreateUser: async function(telegramData) {
-    const user = await this.findOne({ telegramId: telegramData.id });
-    
-    if (user) {
-      // Update user data
-      user.firstName = telegramData.first_name;
-      user.lastName = telegramData.last_name || '';
-      user.username = telegramData.username || '';
-      user.lastSeen = Date.now();
-      await user.save();
-      return user;
-    }
-    
-    // Create new user
-    return this.create({
-      telegramId: telegramData.id,
-      firstName: telegramData.first_name,
-      lastName: telegramData.last_name || '',
-      username: telegramData.username || '',
-    });
-  },
+// Method to generate JWT
+userSchema.methods.generateToken = function() {
+  return jwt.sign(
+    { userId: this._id, isAdmin: this.isAdmin },
+    config.jwtSecret,
+    { expiresIn: '7d' }
+  );
 };
 
-const User = mongoose.model('User', UserSchema);
+// Method to generate API key
+userSchema.methods.generateApiKey = function(name) {
+  const apiKey = jwt.sign(
+    { userId: this._id, type: 'api' },
+    config.jwtSecret,
+    { expiresIn: '365d' }
+  );
+  
+  this.apiKeys.push({
+    key: apiKey,
+    name: name || 'API Key',
+    createdAt: new Date()
+  });
+  
+  return apiKey;
+};
+
+// Method to check if user has enough storage
+userSchema.methods.hasEnoughStorage = function(fileSize) {
+  return this.storageUsed + fileSize <= this.storageLimit;
+};
+
+// Method to add storage used
+userSchema.methods.addStorageUsed = async function(bytes) {
+  this.storageUsed += bytes;
+  await this.save();
+  return this.storageUsed;
+};
+
+// Method to remove storage used
+userSchema.methods.removeStorageUsed = async function(bytes) {
+  this.storageUsed = Math.max(0, this.storageUsed - bytes);
+  await this.save();
+  return this.storageUsed;
+};
+
+// Method to update last login
+userSchema.methods.updateLastLogin = async function() {
+  this.lastLogin = new Date();
+  await this.save();
+  return this;
+};
+
+let User;
+
+try {
+  // Try to load existing model
+  User = mongoose.model('User');
+} catch (e) {
+  // Create model if it doesn't exist
+  User = mongoose.model('User', userSchema);
+}
 
 module.exports = User; 
