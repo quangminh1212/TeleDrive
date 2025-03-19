@@ -151,6 +151,20 @@ router.post('/:id/restore', isAuthenticated, async (req, res) => {
 });
 
 /**
+ * @route POST /files/empty-trash
+ * @desc Permanently delete all files from trash
+ */
+router.post('/empty-trash', isAuthenticated, async (req, res) => {
+  try {
+    await fileService.emptyTrash(req.user);
+    
+    res.json({ message: 'Đã dọn sạch thùng rác' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * @route POST /files/:id/share
  * @desc Share a file
  */

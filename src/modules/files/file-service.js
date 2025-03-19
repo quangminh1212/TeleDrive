@@ -209,6 +209,50 @@ class FileService {
   }
   
   /**
+   * Empty user's trash (permanently delete all trashed files)
+   * @param {Object} user - User object
+   * @returns {Promise<number>} - Number of files deleted
+   */
+  async emptyTrash(user) {
+    try {
+      logger.info(`Emptying trash for user: ${user.firstName} (${user.telegramId})`);
+      
+      // Find all trashed files for this user
+      const trashedFiles = await File.find({ 
+        createdBy: user._id,
+        isDeleted: true
+      });
+      
+      if (trashedFiles.length === 0) {
+        return 0;
+      }
+      
+      // For each file, permanently delete from Telegram
+      let totalSize = 0;
+      for (const file of trashedFiles) {
+        await telegramStorage.deleteFile(file.telegramMessageId);
+        totalSize += file.size;
+      }
+      
+      // Delete all files from database
+      await File.deleteMany({
+        createdBy: user._id,
+        isDeleted: true
+      });
+      
+      // Update user storage usage
+      await user.subtractStorageUsed(totalSize);
+      
+      logger.info(`Emptied trash for user: ${user.firstName}, deleted ${trashedFiles.length} files`);
+      
+      return trashedFiles.length;
+    } catch (error) {
+      logger.error(`Error emptying trash: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
    * Get file info
    * @param {string} fileId - File ID in database
    * @param {Object} user - User object

@@ -626,74 +626,58 @@
           const formData = new FormData();
           formData.append('file', file);
           
-          // Simulating upload progress (in real app, use XMLHttpRequest)
-          let progress = 0;
-          const interval = setInterval(function() {
-            progress += 10;
-            progressBar.style.width = `${progress}%`;
-            
-            if (progress >= 100) {
-              clearInterval(interval);
-              uploadStatus.textContent = 'Tải lên thành công!';
-              
-              // In real app, this would be the actual file upload request
-              uploadFile(formData);
-            }
-          }, 300);
+          // Tải file lên sử dụng API thật
+          uploadFile(formData);
         });
       }
       
       // Fetch files from API
       function fetchFiles(type) {
-        let url = '/api/files';
+        // Hiển thị trạng thái loading
+        loadingElement.style.display = 'block';
+        emptyState.style.display = 'none';
+        fileGrid.style.display = 'none';
         
-        const params = new URLSearchParams();
-        params.append('limit', '50');
+        // Cấu hình tham số tìm kiếm
+        const options = {
+          limit: 50
+        };
         
         if (type === 'photos') {
-          params.append('type', 'image');
+          options.type = 'image';
         } else if (type === 'videos') {
-          params.append('type', 'video');
+          options.type = 'video';
         } else if (type === 'documents') {
-          params.append('type', 'document');
+          options.type = 'document';
         } else if (type === 'audio') {
-          params.append('type', 'audio');
+          options.type = 'audio';
         } else if (type === 'trash') {
-          params.append('trash', 'true');
+          options.trash = true;
         }
         
-        url = `${url}?${params.toString()}`;
-        
-        // In a real application, we would make a fetch request here
-        // For now, simulate with a timeout
-        setTimeout(() => {
-          // Hide loading
-          loadingElement.style.display = 'none';
-          
-          // For demonstration, show empty state
-          emptyState.style.display = 'block';
-          
-          // In a real application, we would fetch real files:
-          /*
-          fetch(url)
-            .then(response => response.json())
-            .then(data => {
-              loadingElement.style.display = 'none';
-              
-              if (data.files && data.files.length > 0) {
-                currentFiles = data.files;
-                renderFiles(data.files);
-              } else {
-                emptyState.style.display = 'block';
-              }
-            })
-            .catch(error => {
-              console.error('Error fetching files:', error);
-              loadingElement.style.display = 'none';
+        // Sử dụng FileAPI đã định nghĩa trong main.js
+        FileAPI.listFiles(options)
+          .then(response => {
+            // Ẩn trạng thái loading
+            loadingElement.style.display = 'none';
+            
+            if (response.files && response.files.length > 0) {
+              currentFiles = response.files;
+              renderFiles(response.files);
+            } else {
+              // Hiển thị trạng thái trống nếu không có file nào
               emptyState.style.display = 'block';
-            });
-          */
-        }, 1000);
+              fileGrid.style.display = 'none';
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching files:', error);
+            loadingElement.style.display = 'none';
+            emptyState.style.display = 'block';
+            
+            // Hiển thị thông báo lỗi
+            Utils.showNotification('Không thể tải danh sách file. Vui lòng thử lại sau.', 'error');
+          });
       }
       
       // Render files in the grid
@@ -720,115 +704,95 @@
         fileCard.className = 'file-card';
         
         // Determine icon based on file type
-        let fileIcon = '📄';
-        if (file.mimeType) {
-          if (file.mimeType.startsWith('image/')) fileIcon = '🖼️';
-          else if (file.mimeType.startsWith('video/')) fileIcon = '🎬';
-          else if (file.mimeType.startsWith('audio/')) fileIcon = '🎵';
-          else if (file.mimeType.includes('pdf')) fileIcon = '📑';
-          else if (file.mimeType.includes('word')) fileIcon = '📝';
-          else if (file.mimeType.includes('excel') || file.mimeType.includes('spreadsheet')) fileIcon = '📊';
-          else if (file.mimeType.includes('presentation') || file.mimeType.includes('powerpoint')) fileIcon = '📽️';
-        }
+        const fileIcon = Utils.getFileIcon(file.mimeType);
         
         // Format file size
-        const formattedSize = formatFileSize(file.size);
+        const formattedSize = Utils.formatFileSize(file.size);
+        
+        // Cắt tên file nếu quá dài
+        const displayName = Utils.truncateText(file.name, 25);
         
         fileCard.innerHTML = `
           <div class="file-icon">${fileIcon}</div>
-          <div class="file-name">${file.name}</div>
+          <div class="file-name" title="${file.name}">${displayName}</div>
           <div class="file-size">${formattedSize}</div>
           <div class="file-actions">
             <div class="file-action download-btn" title="Tải xuống">⬇️</div>
             <div class="file-action share-btn" title="Chia sẻ">🔗</div>
-            <div class="file-action delete-btn" title="Xóa">🗑️</div>
+            ${fileType === 'trash' 
+              ? '<div class="file-action restore-btn" title="Khôi phục">♻️</div>' 
+              : '<div class="file-action delete-btn" title="Xóa">🗑️</div>'}
           </div>
         `;
         
         // Add event listeners for file actions
         const downloadBtn = fileCard.querySelector('.download-btn');
         const shareBtn = fileCard.querySelector('.share-btn');
-        const deleteBtn = fileCard.querySelector('.delete-btn');
         
         downloadBtn.addEventListener('click', () => downloadFile(file._id));
         shareBtn.addEventListener('click', () => shareFile(file._id));
-        deleteBtn.addEventListener('click', () => deleteFile(file._id));
+        
+        if (fileType === 'trash') {
+          const restoreBtn = fileCard.querySelector('.restore-btn');
+          restoreBtn.addEventListener('click', () => restoreFile(file._id));
+        } else {
+          const deleteBtn = fileCard.querySelector('.delete-btn');
+          deleteBtn.addEventListener('click', () => deleteFile(file._id));
+        }
         
         return fileCard;
       }
       
-      // Format file size (e.g. 1.5 MB)
-      function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      }
-      
       // Upload a file
       function uploadFile(formData) {
-        // In a real application, send a POST request to the server
-        /*
-        fetch('/api/files/upload', {
-          method: 'POST',
-          body: formData,
+        // Sử dụng FileAPI đã định nghĩa trong main.js với callback tiến trình
+        FileAPI.uploadFile(formData, (percentComplete) => {
+          progressBar.style.width = `${percentComplete}%`;
         })
-          .then(response => response.json())
           .then(data => {
-            // Handle successful upload
+            // Đóng modal upload
             closeUploadModal();
-            // Refresh files
+            
+            // Thông báo thành công
+            Utils.showNotification('Tải lên file thành công!', 'success');
+            
+            // Làm mới danh sách file
             fetchFiles(fileType);
           })
           .catch(error => {
             console.error('Error uploading file:', error);
-            alert('Có lỗi xảy ra khi tải lên file. Vui lòng thử lại.');
+            
+            // Hiển thị lỗi
+            uploadStatus.textContent = 'Tải lên thất bại: ' + error.message;
+            Utils.showNotification('Có lỗi xảy ra khi tải lên file: ' + error.message, 'error');
+            
+            // Reset nút upload
+            uploadSubmit.disabled = false;
           });
-        */
-        
-        // For now, simulate a successful upload
-        setTimeout(() => {
-          closeUploadModal();
-          alert('Tải lên thành công! (Giả lập)');
-        }, 1000);
       }
       
       // Download a file
       function downloadFile(fileId) {
-        // In a real application, redirect to download endpoint
-        // window.location.href = `/api/files/${fileId}/download`;
-        
-        // For now, show alert
-        alert(`Đang tải xuống file (ID: ${fileId})... (Giả lập)`);
+        // Gọi trực tiếp API download
+        FileAPI.downloadFile(fileId);
       }
       
       // Share a file
       function shareFile(fileId) {
-        // In a real application, make a request to create a share link
-        /*
-        fetch(`/api/files/${fileId}/share`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ expiresInHours: 24 }),
-        })
-          .then(response => response.json())
+        // Mặc định hết hạn sau 24 giờ
+        FileAPI.shareFile(fileId, 24)
           .then(data => {
-            // Show share link to user
-            prompt('Copy and share this link:', data.shareLink);
+            if (data.shareLink) {
+              prompt('Sao chép đường dẫn này để chia sẻ:', data.shareLink);
+              Utils.showNotification('Đã tạo link chia sẻ thành công!', 'success');
+            } else {
+              Utils.showNotification('Không thể tạo link chia sẻ', 'error');
+            }
           })
           .catch(error => {
             console.error('Error sharing file:', error);
-            alert('Có lỗi xảy ra khi chia sẻ file. Vui lòng thử lại.');
+            Utils.showNotification('Có lỗi xảy ra khi chia sẻ file', 'error');
           });
-        */
-        
-        // For now, show a fake share link
-        prompt('Copy and share this link (giả lập):', `https://teledrive.example.com/share/${fileId}`);
       }
       
       // Delete a file
@@ -837,25 +801,39 @@
           return;
         }
         
-        // In a real application, send a DELETE request to the server
-        /*
-        fetch(`/api/files/${fileId}`, {
-          method: 'DELETE',
-        })
-          .then(response => response.json())
+        // Xóa file (di chuyển vào thùng rác)
+        const isPermanent = fileType === 'trash';
+        
+        FileAPI.deleteFile(fileId, isPermanent)
           .then(data => {
-            // Remove file from the UI
+            // Cập nhật UI bằng cách loại bỏ file đã xóa
             currentFiles = currentFiles.filter(file => file._id !== fileId);
             renderFiles(currentFiles);
+            
+            // Thông báo
+            const message = isPermanent ? 'Đã xóa vĩnh viễn file' : 'Đã chuyển file vào thùng rác';
+            Utils.showNotification(message, 'success');
           })
           .catch(error => {
             console.error('Error deleting file:', error);
-            alert('Có lỗi xảy ra khi xóa file. Vui lòng thử lại.');
+            Utils.showNotification('Có lỗi xảy ra khi xóa file', 'error');
           });
-        */
-        
-        // For now, show alert
-        alert(`Xóa file thành công (ID: ${fileId})! (Giả lập)`);
+      }
+      
+      // Restore file from trash
+      function restoreFile(fileId) {
+        FileAPI.restoreFile(fileId)
+          .then(data => {
+            // Cập nhật UI bằng cách loại bỏ file đã khôi phục khỏi thùng rác
+            currentFiles = currentFiles.filter(file => file._id !== fileId);
+            renderFiles(currentFiles);
+            
+            Utils.showNotification('Đã khôi phục file thành công', 'success');
+          })
+          .catch(error => {
+            console.error('Error restoring file:', error);
+            Utils.showNotification('Có lỗi xảy ra khi khôi phục file', 'error');
+          });
       }
       
       // Event listeners for settings page if it exists
@@ -869,30 +847,18 @@
           const autoDeleteDownloads = document.getElementById('auto-delete-downloads').checked;
           const notifications = document.getElementById('notifications').checked;
           
-          // In a real application, send settings to the server
-          /*
-          fetch('/api/auth/settings', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              autoDeleteDownloads,
-              notificationsEnabled: notifications,
-            }),
+          // Lưu cài đặt bằng cách gọi API
+          UserAPI.updateSettings({
+            autoDeleteDownloads,
+            notificationsEnabled: notifications
           })
-            .then(response => response.json())
             .then(data => {
-              alert('Cài đặt đã được lưu thành công!');
+              Utils.showNotification('Cài đặt đã được lưu thành công!', 'success');
             })
             .catch(error => {
               console.error('Error saving settings:', error);
-              alert('Có lỗi xảy ra khi lưu cài đặt. Vui lòng thử lại.');
+              Utils.showNotification('Có lỗi xảy ra khi lưu cài đặt', 'error');
             });
-          */
-          
-          // For now, show alert
-          alert('Cài đặt đã được lưu thành công! (Giả lập)');
         });
       }
       
@@ -913,7 +879,22 @@
       if (emptyTrashBtn) {
         emptyTrashBtn.addEventListener('click', function() {
           if (confirm('Bạn có chắc chắn muốn dọn sạch thùng rác? Tất cả file sẽ bị xóa vĩnh viễn.')) {
-            alert('Đã xóa tất cả file trong thùng rác. (Giả lập)');
+            // Gọi API để dọn thùng rác
+            fetch('/api/files/empty-trash', {
+              method: 'POST'
+            })
+              .then(response => response.json())
+              .then(data => {
+                Utils.showNotification('Đã dọn sạch thùng rác', 'success');
+                // Cập nhật UI
+                currentFiles = [];
+                emptyState.style.display = 'block';
+                fileGrid.style.display = 'none';
+              })
+              .catch(error => {
+                console.error('Error emptying trash:', error);
+                Utils.showNotification('Có lỗi xảy ra khi dọn thùng rác', 'error');
+              });
           }
         });
       }
