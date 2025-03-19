@@ -15,6 +15,8 @@ const config = {
     botToken: process.env.TELEGRAM_BOT_TOKEN,
     chatId: process.env.TELEGRAM_CHAT_ID,
     botUsername: process.env.TELEGRAM_BOT_USERNAME,
+    apiId: process.env.TELEGRAM_API_ID,
+    apiHash: process.env.TELEGRAM_API_HASH,
   },
   
   // File Configuration
@@ -91,6 +93,11 @@ TELEGRAM_BOT_USERNAME=your_bot_name_bot
     }
     
     process.exit(1);
+  }
+  
+  // Kiểm tra TDLib API ID và API Hash nếu có
+  if (config.telegram.apiId && config.telegram.apiHash) {
+    console.info('Đã phát hiện Telegram API ID và API Hash - có thể sử dụng TDLib cho hiệu suất cao hơn');
   }
 };
 

@@ -302,4 +302,346 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+});
+
+// Xử lý upload file
+function handleFileUpload() {
+  const fileInput = document.getElementById('fileInput');
+  const uploadForm = document.getElementById('uploadForm');
+  const uploadBtn = document.getElementById('uploadBtn');
+  
+  if (!fileInput || !uploadForm) return;
+  
+  // Thêm container cho thông báo và thanh tiến trình
+  let uploadStatusContainer;
+  if (!document.getElementById('uploadStatusContainer')) {
+    uploadStatusContainer = document.createElement('div');
+    uploadStatusContainer.id = 'uploadStatusContainer';
+    uploadStatusContainer.className = 'upload-status-container';
+    uploadForm.parentNode.insertBefore(uploadStatusContainer, uploadForm.nextSibling);
+  } else {
+    uploadStatusContainer = document.getElementById('uploadStatusContainer');
+  }
+  
+  uploadForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const files = fileInput.files;
+    
+    if (files.length === 0) {
+      showNotification('Vui lòng chọn ít nhất một file để tải lên', 'error');
+      return;
+    }
+    
+    // Vô hiệu hóa nút upload
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải lên...';
+    
+    // Xử lý từng file
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      await uploadFile(file, uploadStatusContainer);
+    }
+    
+    // Reset form
+    uploadForm.reset();
+    uploadBtn.disabled = false;
+    uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Tải lên';
+    
+    // Làm mới danh sách file
+    if (typeof refreshFilesList === 'function') {
+      refreshFilesList();
+    }
+  });
+}
+
+// Tải lên một file
+async function uploadFile(file, statusContainer) {
+  // Định dạng kích thước file
+  const formatSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Tạo item hiển thị trạng thái upload
+  const uploadItem = document.createElement('div');
+  uploadItem.className = 'upload-item';
+  uploadItem.innerHTML = `
+    <div class="upload-item-header">
+      <span class="filename">${file.name}</span>
+      <span class="filesize">(${formatSize(file.size)})</span>
+      <span class="status">Đang chuẩn bị...</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+    <div class="upload-actions">
+      <button class="btn-cancel" data-filename="${file.name}">Hủy</button>
+      <button class="btn-retry" data-filename="${file.name}" style="display: none;">Thử lại</button>
+    </div>
+  `;
+  
+  statusContainer.appendChild(uploadItem);
+  
+  const progressBarFill = uploadItem.querySelector('.progress-bar-fill');
+  const statusText = uploadItem.querySelector('.status');
+  const cancelBtn = uploadItem.querySelector('.btn-cancel');
+  const retryBtn = uploadItem.querySelector('.btn-retry');
+  
+  // Xử lý nút hủy
+  let isCancelled = false;
+  cancelBtn.addEventListener('click', function() {
+    isCancelled = true;
+    statusText.textContent = 'Đã hủy';
+    uploadItem.classList.add('cancelled');
+    // Xóa item sau 3 giây
+    setTimeout(() => {
+      uploadItem.remove();
+    }, 3000);
+  });
+  
+  // Xử lý nút thử lại
+  retryBtn.addEventListener('click', function() {
+    // Ẩn nút thử lại, reset trạng thái
+    retryBtn.style.display = 'none';
+    statusText.textContent = 'Đang tải lên...';
+    uploadItem.classList.remove('error');
+    progressBarFill.style.width = '0%';
+    
+    // Tải lên lại file
+    uploadFile(file, statusContainer);
+  });
+  
+  // Nếu đã hủy, không tiếp tục
+  if (isCancelled) return;
+  
+  try {
+    // Tạo FormData để gửi file
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Cập nhật UI
+    statusText.textContent = 'Đang tải lên...';
+    progressBarFill.style.width = '5%';
+    
+    // Gửi request với XMLHttpRequest để theo dõi tiến trình
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/files/upload', true);
+    
+    // Theo dõi tiến trình
+    xhr.upload.addEventListener('progress', function(e) {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        progressBarFill.style.width = `${percent}%`;
+        statusText.textContent = `Đang tải lên... ${percent}%`;
+      }
+    });
+    
+    // Xử lý khi hoàn thành
+    xhr.addEventListener('load', function() {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        statusText.textContent = 'Tải lên thành công';
+        progressBarFill.style.width = '100%';
+        uploadItem.classList.add('success');
+        
+        // Xóa item sau 5 giây
+        setTimeout(() => {
+          uploadItem.remove();
+        }, 5000);
+      } else {
+        let errorMessage = 'Tải lên thất bại';
+        try {
+          const response = JSON.parse(xhr.responseText);
+          errorMessage = response.error || errorMessage;
+        } catch (e) {
+          console.error('Không thể phân tích phản hồi lỗi', e);
+        }
+        
+        statusText.textContent = errorMessage;
+        uploadItem.classList.add('error');
+        progressBarFill.style.width = '100%';
+        progressBarFill.style.backgroundColor = '#f44336';
+        retryBtn.style.display = 'inline-block';
+      }
+    });
+    
+    // Xử lý lỗi
+    xhr.addEventListener('error', function() {
+      statusText.textContent = 'Lỗi kết nối';
+      uploadItem.classList.add('error');
+      progressBarFill.style.width = '100%';
+      progressBarFill.style.backgroundColor = '#f44336';
+      retryBtn.style.display = 'inline-block';
+    });
+    
+    // Xử lý timeout
+    xhr.addEventListener('timeout', function() {
+      statusText.textContent = 'Quá thời gian kết nối';
+      uploadItem.classList.add('error');
+      progressBarFill.style.width = '100%';
+      progressBarFill.style.backgroundColor = '#f44336';
+      retryBtn.style.display = 'inline-block';
+    });
+    
+    // Gửi request
+    xhr.send(formData);
+  } catch (error) {
+    console.error('Lỗi khi tải lên file:', error);
+    statusText.textContent = `Lỗi: ${error.message}`;
+    uploadItem.classList.add('error');
+    progressBarFill.style.width = '100%';
+    progressBarFill.style.backgroundColor = '#f44336';
+    retryBtn.style.display = 'inline-block';
+  }
+}
+
+// Hiển thị thông báo
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.innerHTML = `
+    <div class="notification-content">
+      <span>${message}</span>
+      <button class="close-notification">&times;</button>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Xử lý nút đóng
+  const closeBtn = notification.querySelector('.close-notification');
+  closeBtn.addEventListener('click', function() {
+    notification.remove();
+  });
+  
+  // Tự động đóng sau 5 giây
+  setTimeout(() => {
+    notification.remove();
+  }, 5000);
+}
+
+// Khởi tạo trang
+document.addEventListener('DOMContentLoaded', function() {
+  handleFileUpload();
+  
+  // Thêm CSS nếu chưa có
+  if (!document.getElementById('upload-styles')) {
+    const style = document.createElement('style');
+    style.id = 'upload-styles';
+    style.innerHTML = `
+      .upload-status-container {
+        margin-top: 20px;
+      }
+      .upload-item {
+        background-color: #f9f9f9;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .upload-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .filename {
+        font-weight: bold;
+        margin-right: 5px;
+      }
+      .filesize {
+        color: #666;
+      }
+      .status {
+        margin-left: auto;
+      }
+      .progress-bar {
+        height: 6px;
+        background-color: #e0e0e0;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 5px;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        background-color: #4caf50;
+        width: 0;
+        transition: width 0.3s;
+      }
+      .upload-actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+      .upload-actions button {
+        border: none;
+        padding: 3px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-left: 5px;
+      }
+      .btn-cancel {
+        background-color: #f44336;
+        color: white;
+      }
+      .btn-retry {
+        background-color: #2196f3;
+        color: white;
+      }
+      .upload-item.success .status {
+        color: #4caf50;
+      }
+      .upload-item.error .status {
+        color: #f44336;
+      }
+      .upload-item.cancelled .status {
+        color: #ff9800;
+      }
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 15px;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        animation: slideIn 0.3s ease;
+        z-index: 9999;
+      }
+      .notification-content {
+        display: flex;
+        align-items: center;
+      }
+      .notification.info {
+        background-color: #2196f3;
+        color: white;
+      }
+      .notification.success {
+        background-color: #4caf50;
+        color: white;
+      }
+      .notification.error {
+        background-color: #f44336;
+        color: white;
+      }
+      .notification.warning {
+        background-color: #ff9800;
+        color: white;
+      }
+      .close-notification {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 10px;
+      }
+      @keyframes slideIn {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 }); 
