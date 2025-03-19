@@ -29,16 +29,16 @@ async function initializeApp() {
 async function start() {
   try {
     // Kết nối đến MongoDB
-    if (config.mongodb.uri) {
+    if (config.db && config.db.uri) {
       try {
-        await mongoose.connect(config.mongodb.uri);
+        await mongoose.connect(config.db.uri);
         logger.info('Đã kết nối thành công đến MongoDB');
       } catch (mongoError) {
         logger.error(`Lỗi khi kết nối MongoDB: ${mongoError.message}`);
         logger.warn('Ứng dụng sẽ chạy mà không có MongoDB. Một số tính năng sẽ không hoạt động.');
         
         // Thiết lập mock database cho development
-        if (config.env === 'development') {
+        if (config.nodeEnv === 'development') {
           logger.info('Setting up mock database for development');
           setupMockDatabase();
           logger.info('Đã thiết lập mock database cho development');
@@ -53,11 +53,11 @@ async function start() {
     await initializeApp();
 
     // Lấy port từ environment hoặc sử dụng port mặc định
-    const port = process.env.PORT || 3001;
+    const port = process.env.PORT || config.port || 3001;
 
     // Khởi động server
     server.listen(port, () => {
-      logger.info(`Server đang chạy trên cổng ${port} (${config.env})`);
+      logger.info(`Server đang chạy trên cổng ${port} (${config.nodeEnv})`);
       
       // Log TDLib status
       const tdlibAvailable = require('./modules/storage/tdlib-client').tdlibStorage !== null;
@@ -67,7 +67,7 @@ async function start() {
         logger.warn('TDLib không khả dụng - Chức năng xử lý file lớn sẽ bị hạn chế');
       }
       
-      console.log(`Server đang chạy trên cổng ${port} (${config.env})`);
+      console.log(`Server đang chạy trên cổng ${port} (${config.nodeEnv})`);
       console.log('TDLib status:', tdlibAvailable ? 'Available' : 'Not available');
     });
   } catch (error) {
