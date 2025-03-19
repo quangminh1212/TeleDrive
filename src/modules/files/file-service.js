@@ -52,6 +52,11 @@ class FileService {
       if (!user.hasEnoughStorage(fileData.size)) {
         throw new Error('Không đủ dung lượng lưu trữ. Vui lòng xóa bớt file hoặc nâng cấp tài khoản.');
       }
+
+      // Xử lý tải lên file lớn (split file nếu cần)
+      if (fileData.size > 50 * 1024 * 1024) { // Nếu file lớn hơn 50MB
+        return await this.handleLargeFileUpload(fileData, user);
+      }
       
       // Tạo bản ghi tạm thời trong cơ sở dữ liệu
       const tempFile = await File.create({
@@ -119,6 +124,178 @@ class FileService {
   }
   
   /**
+   * Xử lý tải lên file lớn bằng cách chia thành nhiều phần
+   * @param {Object} fileData - File data from multer
+   * @param {Object} user - User object
+   * @returns {Promise<Object>} - Uploaded file data
+   */
+  async handleLargeFileUpload(fileData, user) {
+    const chunkSize = 20 * 1024 * 1024; // 20MB mỗi phần
+    const totalChunks = Math.ceil(fileData.size / chunkSize);
+    const tempFolder = path.join(config.paths.temp, 'chunks', crypto.randomBytes(8).toString('hex'));
+    const chunks = [];
+    let telegramMessages = [];
+    
+    logger.info(`Chia file lớn thành ${totalChunks} phần, mỗi phần ${chunkSize / (1024 * 1024)}MB`);
+    
+    try {
+      // Tạo thư mục tạm cho các phần
+      if (!fs.existsSync(tempFolder)) {
+        fs.mkdirSync(tempFolder, { recursive: true });
+      }
+      
+      // Tạo bản ghi chính cho file
+      const parentFile = await File.create({
+        name: fileData.originalname,
+        mimeType: fileData.mimetype,
+        size: fileData.size,
+        createdBy: user._id,
+        isUploading: true,
+        isMultipart: true,
+        totalParts: totalChunks,
+        uploadedParts: 0
+      });
+      
+      // Đọc file gốc và chia thành các phần
+      const fileStream = fs.createReadStream(fileData.path);
+      let chunkIndex = 0;
+      let bytesRead = 0;
+      
+      // Chia file thành các phần nhỏ
+      await new Promise((resolve, reject) => {
+        fileStream.on('data', (chunk) => {
+          const chunkPath = path.join(tempFolder, `chunk_${chunkIndex}.bin`);
+          fs.writeFileSync(chunkPath, chunk);
+          chunks.push(chunkPath);
+          bytesRead += chunk.length;
+          
+          logger.info(`Đã tạo phần ${chunkIndex + 1}/${totalChunks}, kích thước: ${chunk.length} bytes`);
+          chunkIndex++;
+        });
+        
+        fileStream.on('end', resolve);
+        fileStream.on('error', reject);
+      });
+      
+      // Tải lên từng phần lên Telegram
+      for (let i = 0; i < chunks.length; i++) {
+        try {
+          const chunkPath = chunks[i];
+          const caption = `Part ${i + 1}/${totalChunks} of ${fileData.originalname} (${user.telegramId})`;
+          
+          logger.info(`Đang tải lên phần ${i + 1}/${totalChunks} - ${chunkPath}`);
+          
+          // Upload với 3 lần thử lại
+          let retries = 3;
+          let telegramFile;
+          let lastError;
+          
+          while (retries > 0 && !telegramFile) {
+            try {
+              telegramFile = await telegramStorage.uploadFile(chunkPath, caption);
+            } catch (err) {
+              lastError = err;
+              retries--;
+              logger.warn(`Lỗi khi tải lên phần ${i + 1}, còn ${retries} lần thử lại: ${err.message}`);
+              
+              if (retries > 0) {
+                // Chờ 2 giây trước khi thử lại
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              }
+            }
+          }
+          
+          if (!telegramFile) {
+            throw lastError || new Error(`Không thể tải lên phần ${i + 1} sau nhiều lần thử`);
+          }
+          
+          telegramMessages.push({
+            index: i,
+            messageId: telegramFile.messageId,
+            fileId: telegramFile.fileId
+          });
+          
+          // Cập nhật tiến độ
+          await File.findByIdAndUpdate(
+            parentFile._id,
+            { 
+              $inc: { uploadedParts: 1 },
+              $set: { uploadProgress: Math.round((i + 1) * 100 / totalChunks) }
+            }
+          );
+          
+          logger.info(`Đã tải lên phần ${i + 1}/${totalChunks} thành công`);
+        } catch (error) {
+          logger.error(`Lỗi khi tải lên phần ${i + 1}/${totalChunks}: ${error.message}`);
+          throw new Error(`Lỗi khi tải lên phần ${i + 1}: ${error.message}`);
+        }
+      }
+      
+      // Hoàn thành việc tải lên
+      const updatedFile = await File.findByIdAndUpdate(
+        parentFile._id,
+        {
+          telegramFileIds: telegramMessages.map(msg => msg.fileId),
+          telegramMessageIds: telegramMessages.map(msg => msg.messageId),
+          isUploading: false,
+          uploadProgress: 100,
+          isMultipart: true,
+          uploadedParts: totalChunks
+        },
+        { new: true }
+      );
+      
+      // Update user storage usage
+      await user.addStorageUsed(fileData.size);
+      
+      // Xóa tất cả các file tạm
+      logger.info('Đang dọn dẹp các file tạm...');
+      
+      // Xóa file tạm gốc
+      if (fs.existsSync(fileData.path)) {
+        await unlinkAsync(fileData.path);
+      }
+      
+      // Xóa tất cả các phần
+      for (const chunkPath of chunks) {
+        if (fs.existsSync(chunkPath)) {
+          await unlinkAsync(chunkPath);
+        }
+      }
+      
+      // Xóa thư mục tạm
+      if (fs.existsSync(tempFolder)) {
+        fs.rmdirSync(tempFolder, { recursive: true });
+      }
+      
+      logger.info(`File lớn đã được tải lên thành công: ${updatedFile._id}`);
+      return updatedFile;
+    } catch (error) {
+      logger.error(`Lỗi khi xử lý file lớn: ${error.message}`);
+      
+      // Dọn dẹp trong trường hợp lỗi
+      // Xóa file tạm nếu còn tồn tại
+      if (fileData.path && fs.existsSync(fileData.path)) {
+        await unlinkAsync(fileData.path);
+      }
+      
+      // Xóa tất cả các phần
+      for (const chunkPath of chunks) {
+        if (fs.existsSync(chunkPath)) {
+          await unlinkAsync(chunkPath);
+        }
+      }
+      
+      // Xóa thư mục tạm
+      if (fs.existsSync(tempFolder)) {
+        fs.rmdirSync(tempFolder, { recursive: true });
+      }
+      
+      throw error;
+    }
+  }
+  
+  /**
    * Download a file from Telegram
    * @param {string} fileId - File ID in database
    * @param {Object} user - User object
@@ -145,6 +322,11 @@ class FileService {
         throw new Error('Bạn không có quyền truy cập file này');
       }
       
+      // Kiểm tra xem file có phải là file đa phần không
+      if (file.isMultipart && file.telegramFileIds && file.telegramFileIds.length > 0) {
+        return await this.downloadMultipartFile(file, user);
+      }
+      
       // Create user-specific download folder
       const userDownloadDir = path.join(config.paths.downloads, user._id.toString());
       if (!fs.existsSync(userDownloadDir)) {
@@ -160,6 +342,134 @@ class FileService {
       return filePath;
     } catch (error) {
       logger.error(`Error downloading file: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * Tải xuống file đa phần từ Telegram và ghép lại
+   * @param {Object} file - Thông tin file từ cơ sở dữ liệu
+   * @param {Object} user - User object
+   * @returns {Promise<string>} - Path to merged file
+   */
+  async downloadMultipartFile(file, user) {
+    logger.info(`Tải xuống file đa phần: ${file._id} (${file.name})`);
+    
+    // Tạo thư mục tạm để lưu các phần
+    const tempDir = path.join(config.paths.temp, 'downloads', crypto.randomBytes(8).toString('hex'));
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    
+    // Tạo thư mục download cho người dùng
+    const userDownloadDir = path.join(config.paths.downloads, user._id.toString());
+    if (!fs.existsSync(userDownloadDir)) {
+      fs.mkdirSync(userDownloadDir, { recursive: true });
+    }
+    
+    const outputPath = path.join(userDownloadDir, file.name);
+    const parts = [];
+    
+    try {
+      // Tải xuống từng phần
+      logger.info(`Tải xuống ${file.telegramFileIds.length} phần của file ${file.name}`);
+      
+      for (let i = 0; i < file.telegramFileIds.length; i++) {
+        const fileId = file.telegramFileIds[i];
+        const partPath = path.join(tempDir, `part_${i}.bin`);
+        
+        logger.info(`Đang tải xuống phần ${i + 1}/${file.telegramFileIds.length} - ${fileId}`);
+        
+        // Thử tải xuống tối đa 3 lần
+        let attempts = 0;
+        let downloaded = false;
+        let error;
+        
+        while (attempts < 3 && !downloaded) {
+          try {
+            const downloadedPart = await telegramStorage.downloadFile(fileId, partPath);
+            parts.push(downloadedPart);
+            downloaded = true;
+            logger.info(`Phần ${i + 1} đã được tải xuống: ${downloadedPart}`);
+          } catch (err) {
+            attempts++;
+            error = err;
+            logger.warn(`Lỗi khi tải xuống phần ${i + 1}, lần thử ${attempts}/3: ${err.message}`);
+            
+            // Chờ 1 giây trước khi thử lại
+            if (attempts < 3) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        }
+        
+        if (!downloaded) {
+          throw error || new Error(`Không thể tải xuống phần ${i + 1} sau nhiều lần thử`);
+        }
+      }
+      
+      // Ghép các phần lại với nhau
+      logger.info(`Đang ghép ${parts.length} phần thành file hoàn chỉnh: ${outputPath}`);
+      
+      const writeStream = fs.createWriteStream(outputPath);
+      
+      for (const partPath of parts) {
+        const content = fs.readFileSync(partPath);
+        writeStream.write(content);
+      }
+      
+      writeStream.end();
+      
+      // Đảm bảo writeStream đã hoàn thành
+      await new Promise((resolve, reject) => {
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
+      });
+      
+      // Kiểm tra kích thước file sau khi ghép
+      const stats = fs.statSync(outputPath);
+      logger.info(`File đã được ghép xong, kích thước: ${stats.size} bytes (Dự kiến: ${file.size} bytes)`);
+      
+      if (Math.abs(stats.size - file.size) > 1024) { // Cho phép sai lệch 1KB
+        logger.warn(`Kích thước file ghép ${stats.size} bytes khác với kích thước dự kiến ${file.size} bytes`);
+      }
+      
+      // Dọn dẹp các file tạm
+      logger.info('Đang dọn dẹp các file tạm...');
+      for (const partPath of parts) {
+        if (fs.existsSync(partPath)) {
+          fs.unlinkSync(partPath);
+        }
+      }
+      
+      // Xóa thư mục tạm
+      if (fs.existsSync(tempDir)) {
+        fs.rmdirSync(tempDir, { recursive: true });
+      }
+      
+      logger.info(`File đa phần đã được tải xuống và ghép thành công: ${outputPath}`);
+      return outputPath;
+    } catch (error) {
+      // Dọn dẹp trong trường hợp lỗi
+      logger.error(`Lỗi khi tải xuống file đa phần: ${error.message}`);
+      
+      // Xóa tất cả các phần đã tải
+      for (const partPath of parts) {
+        if (fs.existsSync(partPath)) {
+          fs.unlinkSync(partPath);
+        }
+      }
+      
+      // Xóa file đích nếu đã tạo
+      if (fs.existsSync(outputPath)) {
+        fs.unlinkSync(outputPath);
+      }
+      
+      // Xóa thư mục tạm
+      if (fs.existsSync(tempDir)) {
+        fs.rmdirSync(tempDir, { recursive: true });
+      }
+      
       throw error;
     }
   }
@@ -188,8 +498,23 @@ class FileService {
       }
       
       if (permanent) {
-        // Permanently delete file from Telegram
-        await telegramStorage.deleteFile(file.telegramMessageId);
+        // Xóa file đa phần
+        if (file.isMultipart && file.telegramMessageIds && file.telegramMessageIds.length > 0) {
+          logger.info(`Đang xóa vĩnh viễn file đa phần: ${fileId} (${file.telegramMessageIds.length} phần)`);
+          
+          for (const messageId of file.telegramMessageIds) {
+            try {
+              await telegramStorage.deleteFile(messageId);
+              logger.info(`Đã xóa phần với messageId: ${messageId}`);
+            } catch (error) {
+              logger.warn(`Không thể xóa phần với messageId: ${messageId} - ${error.message}`);
+              // Tiếp tục xóa các phần khác
+            }
+          }
+        } else {
+          // Permanently delete file from Telegram
+          await telegramStorage.deleteFile(file.telegramMessageId);
+        }
         
         // Remove file from database
         await file.deleteOne();

@@ -8,12 +8,21 @@ const FileSchema = new mongoose.Schema({
   },
   telegramFileId: {
     type: String,
-    required: true,
-    unique: true,
+    required: function() { return !this.isMultipart; },
+    unique: function() { return !this.isMultipart; },
+    sparse: true,
   },
   telegramMessageId: {
     type: String,
-    required: true,
+    required: function() { return !this.isMultipart; },
+  },
+  telegramFileIds: {
+    type: [String],
+    default: [],
+  },
+  telegramMessageIds: {
+    type: [String],
+    default: [],
   },
   mimeType: {
     type: String,
@@ -46,6 +55,24 @@ const FileSchema = new mongoose.Schema({
   uploadAttempts: {
     type: Number,
     default: 0,
+  },
+  uploadProgress: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  isMultipart: {
+    type: Boolean,
+    default: false
+  },
+  totalParts: {
+    type: Number,
+    default: 0
+  },
+  uploadedParts: {
+    type: Number, 
+    default: 0
   },
   createdBy: {
     type: String,
