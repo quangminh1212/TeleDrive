@@ -75,58 +75,62 @@ class TelegramStorage {
           if (this.isImageFile(filePath)) {
             logger.info(`Tải lên dưới dạng hình ảnh: ${fileName}`);
             // Đặt timeout cho request
-            message = await Promise.race([
-              this.bot.telegram.sendPhoto(this.chatId, {
-                source: createUploadStream(),
-              }, {
-                caption,
-                disable_notification: true
-              }),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Upload timeout')), 300000) // 5 phút timeout
-              )
-            ]);
+            const uploadPromise = this.bot.telegram.sendPhoto(this.chatId, {
+              source: createUploadStream(),
+            }, {
+              caption,
+              disable_notification: true
+            });
+            
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Upload timeout')), 300000) // 5 phút timeout
+            );
+            
+            message = await Promise.race([uploadPromise, timeoutPromise]);
           } else if (this.isVideoFile(filePath)) {
             logger.info(`Tải lên dưới dạng video: ${fileName}`);
-            message = await Promise.race([
-              this.bot.telegram.sendVideo(this.chatId, {
-                source: createUploadStream(),
-              }, {
-                caption,
-                disable_notification: true
-              }),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Upload timeout')), 600000) // 10 phút timeout
-              )
-            ]);
+            const uploadPromise = this.bot.telegram.sendVideo(this.chatId, {
+              source: createUploadStream(),
+            }, {
+              caption,
+              disable_notification: true
+            });
+            
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Upload timeout')), 600000) // 10 phút timeout
+            );
+            
+            message = await Promise.race([uploadPromise, timeoutPromise]);
           } else if (this.isAudioFile(filePath)) {
             logger.info(`Tải lên dưới dạng audio: ${fileName}`);
-            message = await Promise.race([
-              this.bot.telegram.sendAudio(this.chatId, {
-                source: createUploadStream(),
-              }, {
-                caption,
-                disable_notification: true
-              }),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Upload timeout')), 300000) // 5 phút timeout
-              )
-            ]);
+            const uploadPromise = this.bot.telegram.sendAudio(this.chatId, {
+              source: createUploadStream(),
+            }, {
+              caption,
+              disable_notification: true
+            });
+            
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Upload timeout')), 300000) // 5 phút timeout
+            );
+            
+            message = await Promise.race([uploadPromise, timeoutPromise]);
           } else {
             logger.info(`Tải lên dưới dạng document: ${fileName}`);
-            message = await Promise.race([
-              this.bot.telegram.sendDocument(
-                this.chatId,
-                { source: createUploadStream(), filename: fileName },
-                { 
-                  caption,
-                  disable_notification: true
-                }
-              ),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Upload timeout')), 600000) // 10 phút timeout
-              )
-            ]);
+            const uploadPromise = this.bot.telegram.sendDocument(
+              this.chatId,
+              { source: createUploadStream(), filename: fileName },
+              { 
+                caption,
+                disable_notification: true
+              }
+            );
+            
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Upload timeout')), 600000) // 10 phút timeout
+            );
+            
+            message = await Promise.race([uploadPromise, timeoutPromise]);
           }
           
           // Nếu có message, tải lên thành công

@@ -62,4 +62,12 @@ coverage/
 sessions/
 
 # Placeholder images
-public/img/hero-image.png 
+public/img/hero-image.png
+
+# TDLib files
+telegram driver/td/bin/
+telegram driver/td/build/
+telegram driver/td/lib/
+telegram driver/build/
+telegram driver/bin/
+telegram driver/lib/ 

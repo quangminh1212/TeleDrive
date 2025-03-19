@@ -29,6 +29,11 @@ class TelegramTDLibClient {
   constructor() {
     // Kiểm tra nếu có api ID và api Hash
     this.hasCredentials = !!(config.telegram.apiId && config.telegram.apiHash);
+    this.isConnected = false;
+    this.isLoggedIn = false;
+    this.isInitializing = false;
+    this.client = null;
+    this.chatId = config.telegram.chatId;
 
     // Kiểm tra xem có TDLib không
     if (!TDLib) {
@@ -68,12 +73,6 @@ class TelegramTDLibClient {
         tdlibInstance: TDLib
       });
 
-      // Biến để lưu trữ trạng thái đã kết nối
-      this.isConnected = false;
-      this.isLoggedIn = false;
-      this.isInitializing = false;
-      this.chatId = config.telegram.chatId;
-
       // Ghi lại ID chat từ token bot
       if (config.telegram.botToken && !this.chatId) {
         const botTokenParts = config.telegram.botToken.split(':');
@@ -84,6 +83,7 @@ class TelegramTDLibClient {
     } catch (error) {
       logger.error(`Không thể khởi tạo TDLib client: ${error.message}`);
       this.hasCredentials = false;
+      this.client = null;
     }
   }
 

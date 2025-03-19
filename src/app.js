@@ -51,6 +51,26 @@ app.use(handleShareToken);
 app.use('/api/files', fileRoutes);
 app.use('/', authRoutes);
 
+// API route để kiểm tra trạng thái TDLib
+app.get('/api/telegram/status', async (req, res) => {
+  try {
+    const { getClient } = require('./modules/storage/tdlib-client');
+    const client = await getClient();
+    
+    res.json({
+      isAvailable: !!client && client.hasCredentials,
+      isConnected: !!client && client.isConnected,
+      isLoggedIn: !!client && client.isLoggedIn
+    });
+  } catch (error) {
+    logger.error(`Lỗi kiểm tra trạng thái TDLib: ${error.message}`);
+    res.status(500).json({
+      isAvailable: false,
+      error: error.message
+    });
+  }
+});
+
 // Home page
 app.get('/', (req, res) => {
   res.render('index', {

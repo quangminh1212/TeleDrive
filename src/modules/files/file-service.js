@@ -3,6 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { promisify } = require('util');
 const telegramStorage = require('../storage/telegram');
+const { getClient: getTDLibClient } = require('../storage/tdlib-client');
 const File = require('../db/models/File');
 const User = require('../db/models/User');
 const logger = require('../common/logger');
@@ -11,6 +12,45 @@ const { config } = require('../common/config');
 // Promisify fs functions
 const unlinkAsync = promisify(fs.unlink);
 const statAsync = promisify(fs.stat);
+
+/**
+ * Trả về storage provider phù hợp (TDLib hoặc Bot API) dựa trên kích thước file và tình trạng kết nối
+ * @param {number} fileSize - Kích thước file
+ * @returns {Promise<Object>} - Đối tượng storage provider
+ */
+async function getStorageProvider(fileSize) {
+  // Chỉ dùng TDLib cho file lớn (> 20MB)
+  if (fileSize > 20 * 1024 * 1024) {
+    try {
+      const tdlibClient = await getTDLibClient();
+      
+      // Kiểm tra nếu TDLib khả dụng và đã kết nối
+      if (tdlibClient && tdlibClient.hasCredentials && tdlibClient.isConnected) {
+        logger.info(`Sử dụng TDLib cho file có kích thước ${Math.round(fileSize/1024/1024)}MB`);
+        return tdlibClient;
+      } else {
+        // Nếu chưa kết nối, thử kết nối
+        if (tdlibClient && tdlibClient.hasCredentials && !tdlibClient.isConnected) {
+          try {
+            await tdlibClient.init();
+            if (tdlibClient.isConnected) {
+              logger.info(`Đã kết nối TDLib, sử dụng cho file có kích thước ${Math.round(fileSize/1024/1024)}MB`);
+              return tdlibClient;
+            }
+          } catch (initError) {
+            logger.warn(`Không thể khởi tạo TDLib: ${initError.message}, sẽ sử dụng Telegram Bot API`);
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn(`Lỗi khi lấy TDLib client: ${err.message}, sẽ sử dụng Telegram Bot API`);
+    }
+  }
+  
+  // Mặc định sử dụng Bot API
+  logger.info(`Sử dụng Telegram Bot API cho file có kích thước ${Math.round(fileSize/1024/1024)}MB`);
+  return telegramStorage;
+}
 
 /**
  * FileService class to handle file operations
@@ -70,8 +110,11 @@ class FileService {
       logger.info(`Đã tạo bản ghi tạm thời cho file: ${tempFile._id}`);
       
       try {
-        // Upload file to Telegram
-        const telegramFile = await telegramStorage.uploadFile(
+        // Lấy storage provider phù hợp (TDLib hoặc Bot API)
+        const storageProvider = await getStorageProvider(fileData.size);
+        
+        // Upload file sử dụng provider đã chọn
+        const telegramFile = await storageProvider.uploadFile(
           fileData.path,
           `Uploaded by: ${user.firstName} (${user.telegramId})`
         );
@@ -196,7 +239,10 @@ class FileService {
       
       logger.info(`Đã hoàn thành việc chia file thành ${chunks.length} phần`);
       
-      // Tải lên từng phần lên Telegram
+      // Lấy storage provider phù hợp
+      const storageProvider = await getStorageProvider(chunkSize);
+      
+      // Tải lên từng phần lên Telegram sử dụng provider đã chọn
       for (let i = 0; i < chunks.length; i++) {
         try {
           const chunkPath = chunks[i];
@@ -211,7 +257,7 @@ class FileService {
           
           while (retries > 0 && !telegramFile) {
             try {
-              telegramFile = await telegramStorage.uploadFile(chunkPath, caption);
+              telegramFile = await storageProvider.uploadFile(chunkPath, caption);
             } catch (err) {
               lastError = err;
               retries--;
