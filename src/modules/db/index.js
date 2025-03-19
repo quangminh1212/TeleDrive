@@ -74,17 +74,55 @@ const setupMockDatabase = () => {
   
   // Mock model
   mongoose.model = function(name, schema) {
-    // Lưu ý: đây chỉ là mock đơn giản, không hoạt động thực tế
-    return function() {
-      return {
-        name: 'mock model',
-        mockDB: true,
-        save: async () => ({ _id: 'mock_id' }),
-        findById: async () => null,
-        find: async () => [],
-        findOne: async () => null,
+    const mockData = [];
+    
+    // Trả về một hàm constructor cho model với các phương thức giả lập
+    const ModelClass = function(data) {
+      Object.assign(this, data);
+      this._id = 'mock_' + Date.now();
+      
+      this.save = async function() {
+        mockData.push(this);
+        return this;
       };
     };
+    
+    // Thêm static methods cho model class
+    ModelClass.find = async function() { 
+      return mockData;
+    };
+    
+    ModelClass.findById = async function(id) {
+      return mockData.find(item => item._id === id) || null;
+    };
+    
+    ModelClass.findOne = async function(criteria) {
+      return mockData[0] || null;
+    };
+    
+    ModelClass.findByIdAndUpdate = async function(id, update) {
+      const item = mockData.find(item => item._id === id);
+      if (item) {
+        Object.assign(item, update);
+      }
+      return item;
+    };
+    
+    ModelClass.findByIdAndRemove = async function(id) {
+      const index = mockData.findIndex(item => item._id === id);
+      if (index !== -1) {
+        return mockData.splice(index, 1)[0];
+      }
+      return null;
+    };
+    
+    ModelClass.create = async function(data) {
+      const model = new ModelClass(data);
+      await model.save();
+      return model;
+    };
+    
+    return ModelClass;
   };
   
   // Mock connection

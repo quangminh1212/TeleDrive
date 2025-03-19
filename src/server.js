@@ -55,6 +55,17 @@ async function start() {
     } catch (dbError) {
       logger.error(`Lỗi khi kết nối MongoDB: ${dbError.message}`);
       logger.warn('Ứng dụng sẽ chạy mà không có MongoDB. Một số tính năng sẽ không hoạt động.');
+      
+      // Sử dụng mock database nếu đang ở development mode
+      if (config.nodeEnv === 'development') {
+        try {
+          const { setupMockDatabase } = require('./modules/db');
+          setupMockDatabase();
+          logger.info('Đã thiết lập mock database cho development');
+        } catch (mockError) {
+          logger.error(`Lỗi thiết lập mock database: ${mockError.message}`);
+        }
+      }
     }
     
     // Khởi tạo TDLib client (độc lập với MongoDB)
