@@ -90,8 +90,23 @@ class TelegramTDLibClient {
 
     try {
       // Tạo client TDLib
+      // Đảm bảo API ID được parse đúng
+      let apiId = 0;
+      try {
+        apiId = parseInt(config.telegram.apiId, 10);
+        if (isNaN(apiId) || apiId <= 0) {
+          logger.error(`API ID không hợp lệ: ${config.telegram.apiId}`);
+          this.hasCredentials = false;
+          return;
+        }
+      } catch (parseError) {
+        logger.error(`Lỗi parse API ID: ${parseError.message}`);
+        this.hasCredentials = false;
+        return;
+      }
+
       const clientOptions = {
-        apiId: parseInt(config.telegram.apiId, 10) || 0,
+        apiId: apiId,
         apiHash: config.telegram.apiHash || '',
         tdlibParameters: {
           database_directory: tdlibDir,
@@ -105,13 +120,6 @@ class TelegramTDLibClient {
         },
         databaseEncryptionKey: config.sessionSecret
       };
-
-      // Kiểm tra api_id phải là một số hợp lệ
-      if (!clientOptions.apiId || isNaN(clientOptions.apiId) || clientOptions.apiId <= 0) {
-        logger.error('API ID không hợp lệ hoặc không được cung cấp');
-        this.hasCredentials = false;
-        return;
-      }
 
       // Kiểm tra api_hash phải được cung cấp
       if (!clientOptions.apiHash || clientOptions.apiHash.length < 5) {
@@ -706,33 +714,56 @@ let tdlibClient = null;
  * @returns {Promise<TelegramTDLibClient|null>} - Client TDLib hoặc null nếu không khởi tạo được
  */
 async function getClient() {
-  // Nếu TDLib không tồn tại, trả về null
-  if (!TDLib) {
+  // Kiểm tra cấu hình TDLib
+  if (!config.telegram.apiId || !config.telegram.apiHash) {
+    logger.warn('TELEGRAM_API_ID hoặc TELEGRAM_API_HASH không được cung cấp. Không thể sử dụng TDLib.');
+    return null;
+  }
+  
+  // Kiểm tra xem đã có TDLib instance
+  if (TDLib === null) {
+    logger.warn('TDLib library không có sẵn trên hệ thống. Không thể khởi tạo TDLib client.');
     return null;
   }
 
+  // Tạo TDLib client nếu chưa có
   if (!tdlibClient) {
     try {
       tdlibClient = new TelegramTDLibClient();
       
-      if (tdlibClient.hasCredentials) {
+      if (tdlibClient.hasCredentials && tdlibClient.client) {
         try {
           await tdlibClient.init();
         } catch (error) {
           logger.error(`Không thể khởi tạo TDLib client: ${error.message}`);
-          logger.info('Tiếp tục sử dụng Bot API thông thường');
+          logger.info('TDLib không khả dụng để sử dụng');
+          tdlibClient = null;
           return null;
         }
       } else {
+        logger.warn('TDLib client không có đủ thông tin xác thực');
+        tdlibClient = null;
         return null;
       }
     } catch (error) {
       logger.error(`Lỗi khởi tạo TDLib client: ${error.message}`);
+      tdlibClient = null;
       return null;
     }
   }
   
-  return tdlibClient;
+  // Kiểm tra nếu client đã kết nối
+  if (tdlibClient && !tdlibClient.isConnected && tdlibClient.client) {
+    try {
+      await tdlibClient.init();
+    } catch (error) {
+      logger.error(`Lỗi kết nối lại TDLib client: ${error.message}`);
+      return null;
+    }
+  }
+  
+  // Trả về client nếu đã kết nối thành công, ngược lại trả về null
+  return (tdlibClient && tdlibClient.isConnected) ? tdlibClient : null;
 }
 
 module.exports = {

@@ -68,11 +68,31 @@ app.get('/api/telegram/status', async (req, res) => {
     const { getClient } = require('./modules/storage/tdlib-client');
     const client = await getClient();
     
-    res.json({
-      isAvailable: !!client && client.hasCredentials,
-      isConnected: !!client && client.isConnected,
-      isLoggedIn: !!client && client.isLoggedIn
-    });
+    // Kiểm tra cấu hình
+    const apiId = config.telegram.apiId;
+    const apiHash = config.telegram.apiHash;
+    const botToken = config.telegram.botToken;
+    const chatId = config.telegram.chatId;
+    
+    const status = {
+      config: {
+        api_id_provided: !!apiId,
+        api_hash_provided: !!apiHash,
+        bot_token_provided: !!botToken,
+        chat_id_provided: !!chatId
+      },
+      tdlib: {
+        isAvailable: !!client,
+        isConnected: !!client && client.isConnected,
+        isLoggedIn: !!client && client.isLoggedIn,
+        chatId: client ? client.chatId : null
+      },
+      // Kiểm tra xem có đang sử dụng TDLib
+      using_tdlib: !!client && client.isConnected,
+      fallback_to_bot_api: (!client || !client.isConnected) && !!botToken && !!chatId
+    };
+    
+    res.json(status);
   } catch (error) {
     logger.error(`Lỗi kiểm tra trạng thái TDLib: ${error.message}`);
     res.status(500).json({
