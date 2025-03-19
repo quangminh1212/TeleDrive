@@ -80,6 +80,13 @@ async function start() {
     // Khởi tạo TDLib client trước tiên (độc lập với MongoDB)
     const tdlibClient = await initTDLib();
     
+    // Cấu hình để sử dụng TDLib
+    if (tdlibClient) {
+      logger.info('TDLib đã được khởi tạo và sẵn sàng sử dụng');
+    } else {
+      logger.warn('TDLib không khả dụng - một số tính năng có thể bị hạn chế');
+    }
+    
     // Kết nối MongoDB
     try {
       await mongoose.connect(config.db.uri, {
@@ -107,14 +114,11 @@ async function start() {
     server.listen(config.port, () => {
       logger.info(`Server đang chạy trên cổng ${config.port} (${config.nodeEnv})`);
       
-      // Kiểm tra cấu hình TDLib
-      if (!config.telegram.apiId || !config.telegram.apiHash) {
-        logger.warn('TELEGRAM_API_ID hoặc TELEGRAM_API_HASH không được cung cấp. Một số tính năng của TDLib có thể không hoạt động.');
-      }
-      
-      // Kiểm tra cấu hình Bot API
-      if (!config.telegram.botToken || !config.telegram.chatId) {
-        logger.warn('TELEGRAM_BOT_TOKEN hoặc TELEGRAM_CHAT_ID không được cung cấp. Bot API sẽ không hoạt động.');
+      // Thông báo về TDLib
+      if (tdlibClient && tdlibClient.isConnected) {
+        logger.info('TDLib đang hoạt động - Có thể xử lý file lớn');
+      } else {
+        logger.warn('TDLib không được kết nối - Sẽ sử dụng phương pháp thay thế');
       }
     });
   } catch (error) {
