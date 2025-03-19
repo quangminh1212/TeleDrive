@@ -2,6 +2,7 @@ const { createClient } = require('tdl');
 const path = require('path');
 const fs = require('fs');
 const { promisify } = require('util');
+const fetch = require('node-fetch');
 const logger = require('../common/logger');
 const { config } = require('../common/config');
 

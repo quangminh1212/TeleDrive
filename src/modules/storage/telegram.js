@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Telegraf } = require('telegraf');
+const fetch = require('node-fetch');
 const { config } = require('../common/config');
 const logger = require('../common/logger');
 
