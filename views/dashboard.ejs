@@ -370,7 +370,7 @@
         <div class="storage-info">
           <h4>Dung lượng lưu trữ</h4>
           <div class="storage-bar">
-            <div class="storage-used" style="width: <%= typeof user.getStoragePercentage === 'function' ? user.getStoragePercentage() : (user.storagePercentage || 0) %>%"></div>
+            <div class="storage-used" style="width: <% var percentage = typeof user.getStoragePercentage === 'function' ? user.getStoragePercentage() : (user.storagePercentage || 0); %><%= percentage %>%"></div>
           </div>
           <p>Đã sử dụng: <%= typeof user.getStoragePercentage === 'function' ? user.getStoragePercentage() : (user.storagePercentage || 0) %>%</p>
         </div>
