@@ -289,4 +289,36 @@ router.get('/share/:token', async (req, res) => {
   }
 });
 
+/**
+ * @route GET /files/upload-status/:id
+ * @desc Check upload status of a file
+ */
+router.get('/upload-status/:id', isAuthenticated, async (req, res) => {
+  try {
+    const file = await fileService.getFileInfo(req.params.id, req.user);
+    
+    if (!file) {
+      return res.status(404).json({ error: 'File không tồn tại' });
+    }
+    
+    // Trả về thông tin trạng thái tải lên
+    const status = {
+      id: file._id,
+      name: file.name,
+      isUploading: file.isUploading,
+      uploadProgress: file.uploadProgress || 0,
+      isMultipart: file.isMultipart || false,
+      uploadedParts: file.uploadedParts || 0,
+      totalParts: file.totalParts || 0,
+      error: file.uploadErrors || null,
+      isComplete: !file.isUploading && (file.telegramFileId || (file.isMultipart && file.telegramFileIds.length > 0))
+    };
+    
+    res.json(status);
+  } catch (error) {
+    logger.error(`Lỗi khi kiểm tra trạng thái upload: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

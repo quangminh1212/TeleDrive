@@ -130,7 +130,8 @@ class FileService {
    * @returns {Promise<Object>} - Uploaded file data
    */
   async handleLargeFileUpload(fileData, user) {
-    const chunkSize = 20 * 1024 * 1024; // 20MB mỗi phần
+    // Giảm kích thước chunk từ 20MB xuống 10MB để tránh lỗi khi tải lên
+    const chunkSize = 10 * 1024 * 1024; // 10MB mỗi phần
     const totalChunks = Math.ceil(fileData.size / chunkSize);
     const tempFolder = path.join(config.paths.temp, 'chunks', crypto.randomBytes(8).toString('hex'));
     const chunks = [];
@@ -156,37 +157,55 @@ class FileService {
         uploadedParts: 0
       });
       
-      // Đọc file gốc và chia thành các phần
-      const fileStream = fs.createReadStream(fileData.path);
-      let chunkIndex = 0;
-      let bytesRead = 0;
+      // Sử dụng phương pháp chia file an toàn hơn với stream
+      logger.info('Bắt đầu chia file thành các phần nhỏ...');
       
-      // Chia file thành các phần nhỏ
-      await new Promise((resolve, reject) => {
-        fileStream.on('data', (chunk) => {
-          const chunkPath = path.join(tempFolder, `chunk_${chunkIndex}.bin`);
-          fs.writeFileSync(chunkPath, chunk);
-          chunks.push(chunkPath);
-          bytesRead += chunk.length;
-          
-          logger.info(`Đã tạo phần ${chunkIndex + 1}/${totalChunks}, kích thước: ${chunk.length} bytes`);
-          chunkIndex++;
-        });
-        
-        fileStream.on('end', resolve);
-        fileStream.on('error', reject);
+      const fileStream = fs.createReadStream(fileData.path, {
+        highWaterMark: chunkSize  // Đọc theo từng chunk có kích thước cụ thể
       });
+      
+      let chunkIndex = 0;
+      let bytesProcessed = 0;
+      
+      // Tạo thư mục tạm cho các phần nếu chưa tồn tại
+      if (!fs.existsSync(tempFolder)) {
+        fs.mkdirSync(tempFolder, { recursive: true });
+      }
+      
+      // Xử lý từng chunk dữ liệu
+      for await (const chunk of fileStream) {
+        // Lưu chunk vào file tạm
+        const chunkPath = path.join(tempFolder, `chunk_${chunkIndex}.bin`);
+        fs.writeFileSync(chunkPath, chunk);
+        chunks.push(chunkPath);
+        
+        bytesProcessed += chunk.length;
+        
+        logger.info(`Đã tạo phần ${chunkIndex + 1}/${totalChunks}, kích thước: ${chunk.length} bytes (Tổng: ${bytesProcessed}/${fileData.size} bytes)`);
+        
+        // Cập nhật tiến độ xử lý
+        await File.findByIdAndUpdate(
+          parentFile._id,
+          { 
+            uploadProgress: Math.round(bytesProcessed * 50 / fileData.size) // 50% cho việc chia file
+          }
+        );
+        
+        chunkIndex++;
+      }
+      
+      logger.info(`Đã hoàn thành việc chia file thành ${chunks.length} phần`);
       
       // Tải lên từng phần lên Telegram
       for (let i = 0; i < chunks.length; i++) {
         try {
           const chunkPath = chunks[i];
-          const caption = `Part ${i + 1}/${totalChunks} of ${fileData.originalname} (${user.telegramId})`;
+          const caption = `Part ${i + 1}/${chunks.length} of ${fileData.originalname} (${user.telegramId})`;
           
-          logger.info(`Đang tải lên phần ${i + 1}/${totalChunks} - ${chunkPath}`);
+          logger.info(`Đang tải lên phần ${i + 1}/${chunks.length} - ${chunkPath}`);
           
-          // Upload với 3 lần thử lại
-          let retries = 3;
+          // Upload với tối đa 5 lần thử lại
+          let retries = 5;
           let telegramFile;
           let lastError;
           
@@ -199,8 +218,10 @@ class FileService {
               logger.warn(`Lỗi khi tải lên phần ${i + 1}, còn ${retries} lần thử lại: ${err.message}`);
               
               if (retries > 0) {
-                // Chờ 2 giây trước khi thử lại
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Tăng thời gian chờ giữa các lần thử
+                const waitTime = 5000 * (6 - retries); // 5s, 10s, 15s, 20s, 25s
+                logger.info(`Đợi ${waitTime/1000}s trước khi thử lại...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
               }
             }
           }
@@ -215,21 +236,41 @@ class FileService {
             fileId: telegramFile.fileId
           });
           
-          // Cập nhật tiến độ
+          // Cập nhật tiến độ - 50% cho việc chia file, 50% cho việc tải lên
           await File.findByIdAndUpdate(
             parentFile._id,
             { 
               $inc: { uploadedParts: 1 },
-              $set: { uploadProgress: Math.round((i + 1) * 100 / totalChunks) }
+              $set: { uploadProgress: 50 + Math.round((i + 1) * 50 / chunks.length) }
             }
           );
           
-          logger.info(`Đã tải lên phần ${i + 1}/${totalChunks} thành công`);
+          logger.info(`Đã tải lên phần ${i + 1}/${chunks.length} thành công`);
+          
+          // Thêm thời gian nghỉ giữa các lần tải lên để tránh bị giới hạn tần suất
+          if (i < chunks.length - 1) {
+            const cooldown = 2000; // 2 giây
+            logger.info(`Cooldown ${cooldown/1000}s trước khi tải lên phần tiếp theo...`);
+            await new Promise(resolve => setTimeout(resolve, cooldown));
+          }
         } catch (error) {
-          logger.error(`Lỗi khi tải lên phần ${i + 1}/${totalChunks}: ${error.message}`);
-          throw new Error(`Lỗi khi tải lên phần ${i + 1}: ${error.message}`);
+          logger.error(`Lỗi khi tải lên phần ${i + 1}/${chunks.length}: ${error.message}`);
+          
+          // Cập nhật trạng thái lỗi vào database
+          await File.findByIdAndUpdate(
+            parentFile._id,
+            { 
+              uploadErrors: `Lỗi khi tải lên phần ${i + 1}: ${error.message}`,
+              isUploading: false
+            }
+          );
+          
+          throw error;
         }
       }
+      
+      // Sắp xếp lại telegramMessages theo thứ tự nếu cần
+      telegramMessages.sort((a, b) => a.index - b.index);
       
       // Hoàn thành việc tải lên
       const updatedFile = await File.findByIdAndUpdate(
@@ -240,7 +281,7 @@ class FileService {
           isUploading: false,
           uploadProgress: 100,
           isMultipart: true,
-          uploadedParts: totalChunks
+          uploadedParts: chunks.length
         },
         { new: true }
       );
@@ -272,6 +313,7 @@ class FileService {
       return updatedFile;
     } catch (error) {
       logger.error(`Lỗi khi xử lý file lớn: ${error.message}`);
+      logger.error(`Stack trace: ${error.stack}`);
       
       // Dọn dẹp trong trường hợp lỗi
       // Xóa file tạm nếu còn tồn tại
