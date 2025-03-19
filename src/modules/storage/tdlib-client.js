@@ -21,7 +21,7 @@ try {
     
     // Cấu hình tdl để sử dụng tdjson prebuilt
     require('tdl').configure({ tdjson: tdjsonPath });
-    TDLib = { isTDLibPrebuilt: true }; // Sử dụng đối tượng để theo dõi loại TDLib
+    TDLib = true; // Không cần thực sự tải TDLib, chỉ cần đánh dấu là có sẵn
     logger.info('Đã cấu hình thành công tdl để sử dụng prebuilt-tdlib');
   } catch (prebuiltError) {
     logger.warn(`Không thể sử dụng prebuilt-tdlib: ${prebuiltError.message}, đang thử phương pháp khác...`);
@@ -90,23 +90,8 @@ class TelegramTDLibClient {
 
     try {
       // Tạo client TDLib
-      // Đảm bảo API ID được parse đúng
-      let apiId = 0;
-      try {
-        apiId = parseInt(config.telegram.apiId, 10);
-        if (isNaN(apiId) || apiId <= 0) {
-          logger.error(`API ID không hợp lệ: ${config.telegram.apiId}`);
-          this.hasCredentials = false;
-          return;
-        }
-      } catch (parseError) {
-        logger.error(`Lỗi parse API ID: ${parseError.message}`);
-        this.hasCredentials = false;
-        return;
-      }
-
       const clientOptions = {
-        apiId: apiId,
+        apiId: parseInt(config.telegram.apiId, 10) || 0,
         apiHash: config.telegram.apiHash || '',
         tdlibParameters: {
           database_directory: tdlibDir,
@@ -121,6 +106,13 @@ class TelegramTDLibClient {
         databaseEncryptionKey: config.sessionSecret
       };
 
+      // Kiểm tra api_id phải là một số hợp lệ
+      if (!clientOptions.apiId || isNaN(clientOptions.apiId) || clientOptions.apiId <= 0) {
+        logger.error('API ID không hợp lệ hoặc không được cung cấp');
+        this.hasCredentials = false;
+        return;
+      }
+
       // Kiểm tra api_hash phải được cung cấp
       if (!clientOptions.apiHash || clientOptions.apiHash.length < 5) {
         logger.error('API Hash không hợp lệ hoặc không được cung cấp');
@@ -129,7 +121,7 @@ class TelegramTDLibClient {
       }
 
       // Chỉ thêm TDLib instance nếu cần thiết
-      if (TDLib && !TDLib.isTDLibPrebuilt) {
+      if (TDLib !== true) {
         clientOptions.tdlibInstance = TDLib;
       }
 
@@ -766,6 +758,102 @@ async function getClient() {
   return (tdlibClient && tdlibClient.isConnected) ? tdlibClient : null;
 }
 
+/**
+ * Tạo một wrapper để thay thế hoàn toàn telegram.js bằng tdlib-client.js
+ * Điều này cho phép sử dụng TDLib thay vì Bot API mà không cần sửa đổi code khác
+ */
+const tdlibStorage = {
+  async uploadFile(filePath, caption = '') {
+    const client = await getClient();
+    if (!client) {
+      throw new Error('TDLib không khả dụng, không thể tải lên file');
+    }
+    return client.uploadFile(filePath, caption);
+  },
+  
+  async downloadFile(fileId, outputPath = null) {
+    const client = await getClient();
+    if (!client) {
+      throw new Error('TDLib không khả dụng, không thể tải xuống file');
+    }
+    return client.downloadFile(fileId, outputPath);
+  },
+  
+  async deleteFile(messageId) {
+    const client = await getClient();
+    if (!client) {
+      throw new Error('TDLib không khả dụng, không thể xóa file');
+    }
+    return client.deleteMessage(messageId);
+  },
+  
+  async getFileInfo(fileId) {
+    const client = await getClient();
+    if (!client) {
+      throw new Error('TDLib không khả dụng, không thể lấy thông tin file');
+    }
+    return client.getFileInfo(fileId);
+  },
+  
+  // Phương thức tiện ích giống như trong telegram.js
+  isImageFile(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext);
+  },
+  
+  isVideoFile(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    return ['.mp4', '.mov', '.avi', '.mkv', '.webm'].includes(ext);
+  },
+  
+  isAudioFile(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    return ['.mp3', '.wav', '.ogg', '.m4a', '.flac'].includes(ext);
+  },
+  
+  getMimeType(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeTypes = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+      '.mp4': 'video/mp4',
+      '.mov': 'video/quicktime',
+      '.avi': 'video/x-msvideo',
+      '.mkv': 'video/x-matroska',
+      '.webm': 'video/webm',
+      '.mp3': 'audio/mpeg',
+      '.wav': 'audio/wav',
+      '.ogg': 'audio/ogg',
+      '.m4a': 'audio/m4a',
+      '.flac': 'audio/flac',
+      '.pdf': 'application/pdf',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.xls': 'application/vnd.ms-excel',
+      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.ppt': 'application/vnd.ms-powerpoint',
+      '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      '.zip': 'application/zip',
+      '.rar': 'application/x-rar-compressed',
+      '.7z': 'application/x-7z-compressed',
+      '.tar': 'application/x-tar',
+      '.gz': 'application/gzip',
+      '.txt': 'text/plain',
+      '.html': 'text/html',
+      '.css': 'text/css',
+      '.js': 'application/javascript',
+      '.json': 'application/json',
+      '.xml': 'application/xml',
+    };
+    
+    return mimeTypes[ext] || 'application/octet-stream';
+  }
+};
+
 module.exports = {
-  getClient
+  getClient,
+  tdlibStorage
 }; 
