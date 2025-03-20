@@ -82,4 +82,61 @@ telegram driver/td/build/
 telegram driver/td/lib/
 telegram driver/build/
 telegram driver/bin/
-telegram driver/lib/ 
+telegram driver/lib/
+
+# Node dependencies
+node_modules/
+
+# npm
+npm-debug.log
+*.log
+logs/
+
+# Thư mục uploads
+public/uploads/
+uploads/
+
+# Thư mục tạm thời
+temp/
+tmp/
+.tmp/
+
+# Các file môi trường
+.env
+.env.local
+.env.development
+.env.production
+
+# Thư mục cache
+.cache/
+
+# Thư mục build
+build/
+dist/
+
+# IDE và editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# MongoDB
+data/
+mongod.lock
+
+# Telegram data
+tdlib-data/
+td_log.*
+
+# Debug logs
+debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage reports
+coverage/
+
+# Thư mục sessions
+sessions/ 
