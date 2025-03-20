@@ -140,4 +140,52 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request 
+5. Open a Pull Request
+
+## Cấu hình API Telegram
+
+Để sử dụng tính năng đăng nhập bằng QR code, bạn cần cấu hình API Telegram hợp lệ:
+
+1. Đăng ký ứng dụng Telegram tại https://my.telegram.org/auth
+2. Vào mục "API development tools" và tạo ứng dụng mới
+3. Lấy thông tin API ID và API Hash
+4. Cập nhật file `.env` với thông tin API ID và API Hash thật:
+
+```
+TELEGRAM_API_ID=your_api_id
+TELEGRAM_API_HASH=your_api_hash
+TELEGRAM_USE_QR_CODE_AUTH=true
+```
+
+## Khởi động ứng dụng
+
+```bash
+npm install
+npm run dev
+```
+
+## Đăng nhập bằng QR code
+
+1. Khi ứng dụng chạy, mở trình duyệt và truy cập http://localhost:3000
+2. Chọn đăng nhập bằng QR code
+3. Sử dụng ứng dụng Telegram trên điện thoại để quét mã QR 
+4. Sau khi xác nhận, bạn sẽ được đăng nhập vào ứng dụng
+
+## Lưu ý quan trọng
+
+- **TELEGRAM_API_ID** và **TELEGRAM_API_HASH** trong file `.env` cần được cập nhật với giá trị thật từ trang my.telegram.org
+- Dùng tài khoản có số điện thoại đã xác minh để tạo API credentials
+- Không chia sẻ API ID và API Hash của bạn với người khác
+
+## Xử lý sự cố
+
+Nếu gặp lỗi "Initialization parameters are needed: call setTdlibParameters first", hãy kiểm tra:
+1. API ID và API Hash đã được cấu hình đúng chưa
+2. Thư mục `data/tdlib` có quyền ghi không
+3. Khởi động lại ứng dụng và thử lại
+
+## Tính năng
+
+- Lưu trữ file không giới hạn
+- Bảo mật cao với xác thực Telegram
+- Truy cập mọi lúc mọi nơi 

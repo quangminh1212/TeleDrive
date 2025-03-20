@@ -139,4 +139,31 @@ yarn-error.log*
 coverage/
 
 # Thư mục sessions
-sessions/ 
+sessions/
+
+# Dependency directories
+jspm_packages/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Directory for uploads and runtime files
+downloaded/
+
+# TDLib specific
+data/tdlib/
+*/tdlib_*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Temp files
+.tmp/
+temp/ 
