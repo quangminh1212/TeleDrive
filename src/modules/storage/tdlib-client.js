@@ -161,7 +161,7 @@ class TelegramTDLibClient {
     this.isInitializing = true;
 
     try {
-      logger.info('Khởi tạo client TDLib...');
+      logger.info('Khởi tạo client TDLib để đăng nhập với tài khoản người dùng...');
 
       // Lắng nghe lỗi
       this.client.on('error', error => {
@@ -204,55 +204,65 @@ class TelegramTDLibClient {
         }
       });
 
-      // Thử đăng nhập với bot token nếu có
-      if (config.telegram.botToken) {
-        try {
-          await this.client.invoke({
-            _: 'checkAuthenticationBotToken',
-            token: config.telegram.botToken
-          });
-          
-          this.isLoggedIn = true;
-          logger.info('Đã đăng nhập thành công vào TDLib bằng bot token');
-
-          // Nếu chưa có chatId, tạo chat riêng tư để lưu trữ file
-          if (!this.chatId) {
-            try {
-              const me = await this.client.invoke({
-                _: 'getMe'
-              });
-
-              // Tạo chat riêng tư với chính mình để lưu trữ file
-              const chat = await this.client.invoke({
-                _: 'createPrivateChat',
-                user_id: me.id
-              });
-
-              this.chatId = chat.id;
-              logger.info(`Đã tạo chat riêng tư với ID: ${this.chatId}`);
-            } catch (chatError) {
-              logger.error(`Không thể tạo chat: ${chatError.message}`);
-            }
+      // Ưu tiên đăng nhập bằng QR code (không cần thông tin số điện thoại)
+      logger.info('Yêu cầu đăng nhập bằng QR code...');
+      try {
+        await this.requestQRCodeAuthentication();
+        logger.info('Đã tạo QR code, đang đợi người dùng quét...');
+        // Quá trình đăng nhập sẽ được tiếp tục khi người dùng quét QR code
+      } catch (qrError) {
+        logger.warn(`Không thể tạo QR code: ${qrError.message}`);
+        logger.info('Chuyển sang các phương thức đăng nhập khác...');
+        
+        // Nếu có số điện thoại, dùng để đăng nhập
+        if (this.phoneNumber) {
+          try {
+            await this.setPhoneNumber(this.phoneNumber);
+            logger.info(`Đã gửi yêu cầu đăng nhập bằng số điện thoại ${this.phoneNumber}`);
+          } catch (phoneError) {
+            logger.error(`Lỗi khi đăng nhập bằng số điện thoại: ${phoneError.message}`);
           }
-        } catch (botError) {
-          logger.error(`Lỗi đăng nhập bằng bot token: ${botError.message}`);
-          logger.info('Chuyển sang chế độ đăng nhập tương tác với người dùng');
-          
-          // Nếu không thành công với bot token, chờ đăng nhập người dùng tương tác
-          // handleAuthorizationState sẽ xử lý quá trình đăng nhập
+        } else if (config.telegram.botToken) {
+          // Nếu không có thông tin người dùng, thử với bot token
+          try {
+            logger.info('Đang đăng nhập bằng bot token...');
+            await this.client.invoke({
+              _: 'checkAuthenticationBotToken',
+              token: config.telegram.botToken
+            });
+            
+            this.isLoggedIn = true;
+            logger.info('Đã đăng nhập thành công vào TDLib bằng bot token');
+
+            // Nếu chưa có chatId, tạo chat riêng tư để lưu trữ file
+            if (!this.chatId) {
+              try {
+                const me = await this.client.invoke({
+                  _: 'getMe'
+                });
+
+                // Tạo chat riêng tư với chính mình để lưu trữ file
+                const chat = await this.client.invoke({
+                  _: 'createPrivateChat',
+                  user_id: me.id
+                });
+
+                this.chatId = chat.id;
+                logger.info(`Đã tạo chat riêng tư với ID: ${this.chatId}`);
+              } catch (chatError) {
+                logger.error(`Không thể tạo chat: ${chatError.message}`);
+              }
+            }
+          } catch (botError) {
+            logger.error(`Lỗi đăng nhập bằng bot token: ${botError.message}`);
+            logger.info('Chờ đăng nhập tương tác từ người dùng...');
+            this.waitingForPhoneNumber = true;
+          }
+        } else {
+          // Nếu không có thông tin gì, đợi đăng nhập tương tác
+          logger.info('Đang chờ đăng nhập tương tác từ người dùng qua UI...');
+          this.waitingForPhoneNumber = true;
         }
-      } else if (this.phoneNumber) {
-        // Nếu có sẵn số điện thoại, dùng nó để bắt đầu đăng nhập
-        await this.setPhoneNumber(this.phoneNumber);
-      } else if (config.telegram.chatId) {
-        // Nếu có sẵn chatId, sử dụng luôn chatId đó
-        this.chatId = config.telegram.chatId;
-        logger.info(`Sử dụng chat ID từ cấu hình: ${this.chatId}`);
-        this.isLoggedIn = true;
-      } else {
-        // Nếu không có thông tin gì, đợi đăng nhập tương tác
-        logger.info('Đang chờ đăng nhập tương tác từ người dùng');
-        this.waitingForPhoneNumber = true;
       }
 
       logger.info('TDLib client đã được khởi tạo và kết nối thành công.');
