@@ -7,6 +7,7 @@ const { config } = require('./modules/common/config');
 const { initTDLib } = require('./modules/storage/tdlib-client');
 const { setupMockDatabase } = require('./modules/db');
 const fs = require('fs');
+const path = require('path');
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -33,11 +34,32 @@ async function initializeApp() {
   }
 }
 
+// Đảm bảo các thư mục cần thiết tồn tại
+const ensureDirectories = () => {
+  const dirs = [
+    config.paths.data,
+    config.paths.uploads,
+    config.paths.temp,
+    config.paths.downloads,
+    path.join(config.paths.data, 'tdlib')
+  ];
+
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      logger.info(`Đã tạo thư mục: ${dir}`);
+    }
+  }
+};
+
 // Start server
 async function start() {
   try {
     console.log('Starting server...');
     
+    // Đảm bảo thư mục cần thiết
+    ensureDirectories();
+
     // Kết nối đến MongoDB
     if (config.db && config.db.uri) {
       try {
@@ -98,28 +120,6 @@ async function start() {
     logger.error(`Error starting server: ${error.message}`);
     console.error('Failed to start server:', error);
     process.exit(1);
-  }
-}
-
-// Đảm bảo các thư mục tồn tại
-function ensureDirectories() {
-  const directories = [
-    config.paths.uploads,
-    config.paths.downloads,
-    config.paths.temp,
-    config.paths.data,
-    config.paths.logs
-  ];
-  
-  for (const dir of directories) {
-    if (!fs.existsSync(dir)) {
-      try {
-        fs.mkdirSync(dir, { recursive: true });
-        logger.info(`Đã tạo thư mục: ${dir}`);
-      } catch (error) {
-        logger.warn(`Không thể tạo thư mục ${dir}: ${error.message}`);
-      }
-    }
   }
 }
 

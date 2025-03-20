@@ -213,19 +213,54 @@
 
     <main>
       <section class="hero">
-        <h2>Lưu trữ file không giới hạn trên Telegram</h2>
-        <p>TeleDrive giúp bạn lưu trữ và quản lý file bằng cách tận dụng không gian lưu trữ của Telegram. An toàn, nhanh chóng và dễ dàng sử dụng.</p>
-        
-        <div class="cta">
-          <% if (typeof user !== 'undefined' && user) { %>
-            <a href="/dashboard" class="button">Trang quản lý</a>
-            <a href="/api/auth/logout" class="button secondary">Đăng xuất</a>
-          <% } else { %>
-            <a href="/api/auth/login" class="button">Đăng nhập với Telegram</a>
-            <a href="/about" class="button secondary">Tìm hiểu thêm</a>
-          <% } %>
+        <div class="hero-content">
+          <h1 class="title">TeleDrive</h1>
+          <p class="subtitle">Lưu trữ file không giới hạn với Telegram</p>
+          <div class="cta-buttons">
+            <a href="/login" class="button primary">Đăng nhập</a>
+            <a href="#features" class="button secondary">Tìm hiểu thêm</a>
+          </div>
         </div>
       </section>
+
+      <!-- Form đăng nhập Telegram -->
+      <div class="login-container" id="telegram-login" style="display: none;">
+        <div class="login-form">
+          <h2>Đăng nhập Telegram</h2>
+          <div id="login-phone-step">
+            <p>Nhập số điện thoại Telegram của bạn để đăng nhập</p>
+            <div class="form-group">
+              <input type="text" id="phone" placeholder="+84xxxxxxxxx" class="form-control">
+            </div>
+            <button id="btn-send-phone" class="button primary">Gửi mã xác thực</button>
+          </div>
+          
+          <div id="login-code-step" style="display: none;">
+            <p>Nhập mã xác thực Telegram đã gửi đến điện thoại của bạn</p>
+            <div class="form-group">
+              <input type="text" id="code" placeholder="12345" class="form-control">
+            </div>
+            <button id="btn-send-code" class="button primary">Xác thực</button>
+          </div>
+          
+          <div id="login-password-step" style="display: none;">
+            <p>Nhập mật khẩu 2FA của tài khoản Telegram</p>
+            <div class="form-group">
+              <input type="password" id="password" placeholder="Mật khẩu" class="form-control">
+            </div>
+            <button id="btn-send-password" class="button primary">Đăng nhập</button>
+          </div>
+          
+          <div id="login-success" style="display: none;">
+            <p class="success-message">Đăng nhập thành công!</p>
+            <p>Bạn có thể sử dụng TeleDrive ngay bây giờ.</p>
+          </div>
+          
+          <div id="login-error" style="display: none;">
+            <p class="error-message" id="error-text"></p>
+          </div>
+        </div>
+      </div>
 
       <section class="features">
         <div class="feature">
@@ -249,5 +284,239 @@
       <p>&copy; <%= new Date().getFullYear() %> TeleDrive. Tất cả các quyền được bảo lưu.</p>
     </footer>
   </div>
+
+  <!-- Thêm phần JavaScript cho đăng nhập -->
+  <script>
+  document.addEventListener('DOMContentLoaded', async function() {
+    // Kiểm tra trạng thái đăng nhập khi tải trang
+    checkTelegramStatus();
+    
+    // Gắn sự kiện cho các nút đăng nhập
+    document.getElementById('btn-send-phone').addEventListener('click', sendPhoneNumber);
+    document.getElementById('btn-send-code').addEventListener('click', sendAuthCode);
+    document.getElementById('btn-send-password').addEventListener('click', sendPassword);
+    
+    // Hiển thị form đăng nhập khi nhấn nút đăng nhập
+    const loginButtons = document.querySelectorAll('a[href="/login"]');
+    loginButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('telegram-login').style.display = 'block';
+        // Cuộn đến form đăng nhập
+        document.getElementById('telegram-login').scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+  });
+
+  // Kiểm tra trạng thái đăng nhập Telegram
+  async function checkTelegramStatus() {
+    try {
+      const response = await fetch('/api/telegram/status');
+      const data = await response.json();
+      
+      // Kiểm tra xem có đăng nhập không
+      if (data.tdlib && data.tdlib.isLoggedIn) {
+        showLoginSuccess();
+      } else if (data.tdlib) {
+        // Xác định bước đăng nhập hiện tại
+        if (data.tdlib.waitingForPhoneNumber) {
+          showLoginPhoneStep();
+        } else if (data.tdlib.waitingForCode) {
+          showLoginCodeStep();
+        } else if (data.tdlib.waitingForPassword) {
+          showLoginPasswordStep();
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi khi kiểm tra trạng thái:', error);
+    }
+  }
+
+  // Gửi số điện thoại
+  async function sendPhoneNumber() {
+    const phone = document.getElementById('phone').value.trim();
+    if (!phone) {
+      showError('Vui lòng nhập số điện thoại');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/telegram/login/phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        showLoginCodeStep();
+      } else {
+        showError(data.error || 'Lỗi khi gửi số điện thoại');
+      }
+    } catch (error) {
+      showError('Lỗi kết nối với máy chủ');
+    }
+  }
+
+  // Gửi mã xác thực
+  async function sendAuthCode() {
+    const code = document.getElementById('code').value.trim();
+    if (!code) {
+      showError('Vui lòng nhập mã xác thực');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/telegram/login/code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        if (data.needPassword) {
+          showLoginPasswordStep();
+        } else {
+          showLoginSuccess();
+        }
+      } else {
+        showError(data.error || 'Mã xác thực không hợp lệ');
+      }
+    } catch (error) {
+      showError('Lỗi kết nối với máy chủ');
+    }
+  }
+
+  // Gửi mật khẩu
+  async function sendPassword() {
+    const password = document.getElementById('password').value;
+    if (!password) {
+      showError('Vui lòng nhập mật khẩu');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/telegram/login/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        showLoginSuccess();
+      } else {
+        showError(data.error || 'Mật khẩu không đúng');
+      }
+    } catch (error) {
+      showError('Lỗi kết nối với máy chủ');
+    }
+  }
+
+  // Hiển thị các bước đăng nhập
+  function showLoginPhoneStep() {
+    document.getElementById('login-phone-step').style.display = 'block';
+    document.getElementById('login-code-step').style.display = 'none';
+    document.getElementById('login-password-step').style.display = 'none';
+    document.getElementById('login-success').style.display = 'none';
+    document.getElementById('login-error').style.display = 'none';
+  }
+
+  function showLoginCodeStep() {
+    document.getElementById('login-phone-step').style.display = 'none';
+    document.getElementById('login-code-step').style.display = 'block';
+    document.getElementById('login-password-step').style.display = 'none';
+    document.getElementById('login-success').style.display = 'none';
+    document.getElementById('login-error').style.display = 'none';
+  }
+
+  function showLoginPasswordStep() {
+    document.getElementById('login-phone-step').style.display = 'none';
+    document.getElementById('login-code-step').style.display = 'none';
+    document.getElementById('login-password-step').style.display = 'block';
+    document.getElementById('login-success').style.display = 'none';
+    document.getElementById('login-error').style.display = 'none';
+  }
+
+  function showLoginSuccess() {
+    document.getElementById('login-phone-step').style.display = 'none';
+    document.getElementById('login-code-step').style.display = 'none';
+    document.getElementById('login-password-step').style.display = 'none';
+    document.getElementById('login-success').style.display = 'block';
+    document.getElementById('login-error').style.display = 'none';
+    
+    // Hiển thị thông báo đăng nhập thành công và tự động chuyển hướng
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 2000);
+  }
+
+  function showError(message) {
+    document.getElementById('error-text').textContent = message;
+    document.getElementById('login-error').style.display = 'block';
+  }
+  </script>
+
+  <style>
+  /* CSS cho form đăng nhập */
+  .login-container {
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .login-form h2 {
+    margin-bottom: 20px;
+    color: #333;
+    text-align: center;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+
+  .button {
+    display: inline-block;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    background-color: #0088cc;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-align: center;
+    width: 100%;
+  }
+
+  .button:hover {
+    background-color: #006699;
+  }
+
+  .success-message {
+    color: #28a745;
+    font-weight: bold;
+  }
+
+  .error-message {
+    color: #dc3545;
+    font-weight: bold;
+  }
+  </style>
 </body>
 </html> 

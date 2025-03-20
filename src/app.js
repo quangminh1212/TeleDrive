@@ -3,12 +3,14 @@ const path = require('path');
 const morgan = require('morgan');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const bodyParser = require('body-parser');
 const { config } = require('./modules/common/config');
 const logger = require('./modules/common/logger');
 const fileRoutes = require('./modules/files/routes');
 const authRoutes = require('./modules/auth/routes');
 const telegramRoutes = require('./modules/telegram/routes');
 const { tdlibStorage } = require('./modules/storage/tdlib-client');
+const { connectDB } = require('./modules/db');
 
 // Create Express app
 const app = express();
@@ -29,11 +31,11 @@ app.set('view engine', 'ejs');
 const sessionOptions = {
   secret: config.sessionSecret,
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: {
     secure: config.nodeEnv === 'production',
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    maxAge: 1000 * 60 * 60 * 24 * 7 // 1 tuần
   }
 };
 
@@ -43,12 +45,13 @@ if (config.db && config.db.uri) {
     // Connect to MongoDB for session
     sessionOptions.store = MongoStore.create({
       mongoUrl: config.db.uri,
-      ttl: 14 * 24 * 60 * 60 // 14 days
+      ttl: 14 * 24 * 60 * 60, // 14 ngày
+      autoRemove: 'native'
     });
     logger.info('Đã kết nối session với MongoDB');
   } catch (error) {
     logger.error(`Lỗi kết nối session với MongoDB: ${error.message}`);
-    logger.info('Sử dụng session memory (không lưu trữ)');
+    logger.warn('Sử dụng session memory (không lưu trữ)');
     // In-memory session store will be used
   }
 }
@@ -59,16 +62,15 @@ app.use(session(sessionOptions));
 // Main routes
 app.get('/', (req, res) => {
   res.render('index', { 
-    title: 'TeleDrive',
-    tdlibAvailable: !!tdlibStorage 
+    title: 'TeleDrive - Lưu trữ không giới hạn với Telegram',
+    user: req.session.user
   });
 });
 
 // API routes
-app.use('/api/files', fileRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/files', fileRoutes);
 app.use('/api/telegram', telegramRoutes);
-app.use('/api/users', require('./modules/users/routes'));
 
 // Telegram status API
 app.get('/api/telegram/status', (req, res) => {
@@ -107,16 +109,18 @@ app.use((req, res) => {
     res.status(404).json({ error: 'Not Found', status: 404 });
   } else {
     res.status(404).render('error', {
-      title: 'Not Found',
-      message: 'Trang bạn tìm kiếm không tồn tại.',
-      status: 404
+      title: 'Không tìm thấy',
+      error: {
+        status: 404,
+        message: 'Trang bạn tìm kiếm không tồn tại'
+      }
     });
   }
 });
 
 // Error handler
 app.use((err, req, res, next) => {
-  logger.error(`Error: ${err.message}`);
+  logger.error(`Lỗi ${err.statusCode || 500}: ${err.message}`);
   if (err.stack) {
     logger.error(`Stack: ${err.stack}`);
   }
@@ -125,7 +129,7 @@ app.use((err, req, res, next) => {
     return next(err);
   }
   
-  const statusCode = err.status || 500;
+  const statusCode = err.statusCode || 500;
   
   if (req.path.startsWith('/api')) {
     res.status(statusCode).json({
@@ -134,10 +138,11 @@ app.use((err, req, res, next) => {
     });
   } else {
     res.status(statusCode).render('error', {
-      title: 'Error',
-      message: err.message,
-      status: statusCode,
-      stack: config.nodeEnv === 'development' ? err.stack : null
+      title: 'Lỗi',
+      error: {
+        status: statusCode,
+        message: config.nodeEnv === 'development' ? err.message : 'Đã xảy ra lỗi'
+      }
     });
   }
 });
