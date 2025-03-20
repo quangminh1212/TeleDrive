@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TeleDrive - Lưu trữ file trên Telegram</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Roboto', sans-serif;
       margin: 0;
       padding: 0;
       color: #333;
-      background-color: #f5f5f5;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
     }
     
     .container {
@@ -21,116 +23,177 @@
     }
     
     header {
-      background-color: #4285f4;
-      padding: 1rem 0;
+      background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+      padding: 1.5rem 0;
       color: white;
       text-align: center;
-      border-radius: 4px;
+      border-radius: 8px;
       margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+    
+    header:hover {
+      transform: translateY(-2px);
     }
     
     header h1 {
       margin: 0;
-      font-size: 2.5rem;
+      font-size: 2.8rem;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
     }
     
     main {
-      background-color: white;
-      border-radius: 4px;
-      padding: 2rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      background-color: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      padding: 2.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
     }
     
     .hero {
       text-align: center;
-      margin-bottom: 3rem;
+      margin-bottom: 4rem;
     }
     
     .hero h2 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
+      font-size: 2.4rem;
+      margin-bottom: 1.5rem;
+      color: #1a73e8;
+      font-weight: 500;
     }
     
     .hero p {
-      font-size: 1.2rem;
-      color: #666;
-      margin-bottom: 2rem;
+      font-size: 1.3rem;
+      color: #5f6368;
+      margin-bottom: 2.5rem;
+      line-height: 1.6;
     }
     
     .features {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-      margin-bottom: 3rem;
+      gap: 2.5rem;
+      margin-bottom: 4rem;
     }
     
     .feature {
       text-align: center;
-      padding: 1.5rem;
-      border-radius: 4px;
-      background-color: #f9f9f9;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      border-radius: 8px;
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .feature:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     }
     
     .feature h3 {
-      color: #4285f4;
+      color: #1a73e8;
       margin-bottom: 1rem;
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+    
+    .feature p {
+      color: #5f6368;
+      line-height: 1.6;
     }
     
     .cta {
       text-align: center;
-      margin: 2rem 0;
+      margin: 3rem 0;
     }
     
     .button {
       display: inline-block;
-      padding: 0.75rem 1.5rem;
-      background-color: #4285f4;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
       color: white;
-      border-radius: 4px;
+      border-radius: 25px;
       text-decoration: none;
-      font-weight: bold;
-      margin: 0 0.5rem;
+      font-weight: 500;
+      margin: 0 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     .button:hover {
-      background-color: #3367d6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
     
     .button.secondary {
-      background-color: #fff;
+      background: white;
       color: #4285f4;
-      border: 1px solid #4285f4;
+      border: 2px solid #4285f4;
     }
     
     .button.secondary:hover {
-      background-color: #f1f7fe;
+      background-color: #f8f9fa;
+      color: #1a73e8;
+      border-color: #1a73e8;
     }
     
     footer {
       text-align: center;
-      margin-top: 3rem;
-      padding: 1rem 0;
-      color: #666;
+      margin-top: 4rem;
+      padding: 2rem 0;
+      color: #5f6368;
       font-size: 0.9rem;
     }
     
     .status-badge {
       display: inline-block;
-      padding: 0.3rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      margin-left: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      margin-left: 1rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
     }
     
     .status-badge.online {
-      background-color: #4caf50;
+      background-color: #34a853;
       color: white;
+      box-shadow: 0 2px 4px rgba(52, 168, 83, 0.2);
     }
     
     .status-badge.offline {
-      background-color: #f44336;
+      background-color: #ea4335;
       color: white;
+      box-shadow: 0 2px 4px rgba(234, 67, 53, 0.2);
+    }
+
+    .tdlib-status {
+      margin-top: 1rem;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 2rem;
+      }
+      
+      .hero h2 {
+        font-size: 1.8rem;
+      }
+      
+      .features {
+        grid-template-columns: 1fr;
+      }
+      
+      .button {
+        display: block;
+        margin: 1rem auto;
+        max-width: 300px;
+      }
     }
   </style>
 </head>
@@ -151,7 +214,7 @@
     <main>
       <section class="hero">
         <h2>Lưu trữ file không giới hạn trên Telegram</h2>
-        <p>TeleDrive giúp bạn lưu trữ và quản lý file bằng cách tận dụng không gian lưu trữ của Telegram.</p>
+        <p>TeleDrive giúp bạn lưu trữ và quản lý file bằng cách tận dụng không gian lưu trữ của Telegram. An toàn, nhanh chóng và dễ dàng sử dụng.</p>
         
         <div class="cta">
           <% if (typeof user !== 'undefined' && user) { %>
@@ -167,17 +230,17 @@
       <section class="features">
         <div class="feature">
           <h3>Lưu trữ không giới hạn</h3>
-          <p>Tận dụng không gian lưu trữ không giới hạn từ Telegram để lưu trữ file của bạn.</p>
+          <p>Tận dụng không gian lưu trữ không giới hạn từ Telegram để lưu trữ file của bạn. Không còn lo lắng về dung lượng.</p>
         </div>
         
         <div class="feature">
           <h3>Bảo mật cao</h3>
-          <p>Dữ liệu của bạn được bảo vệ bằng mã hóa đầu cuối của Telegram.</p>
+          <p>Dữ liệu của bạn được bảo vệ bằng mã hóa đầu cuối của Telegram. Chỉ bạn mới có thể truy cập file của mình.</p>
         </div>
         
         <div class="feature">
           <h3>Truy cập mọi lúc, mọi nơi</h3>
-          <p>Dễ dàng truy cập và chia sẻ file của bạn từ bất kỳ thiết bị nào.</p>
+          <p>Dễ dàng truy cập và chia sẻ file của bạn từ bất kỳ thiết bị nào. Đồng bộ tự động trên mọi nền tảng.</p>
         </div>
       </section>
     </main>
