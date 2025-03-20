@@ -15,8 +15,12 @@ const server = http.createServer(app);
 async function initializeApp() {
   try {
     logger.info('Initializing TDLib...');
-    const tdlib = await initTDLib();
-    if (tdlib) {
+    // Lấy instance của tdlibStorage
+    const tdlibStorage = require('./modules/storage/tdlib-client').tdlibStorage;
+    
+    if (tdlibStorage) {
+      // Gọi phương thức init() thay vì hàm initTDLib
+      await tdlibStorage.init();
       logger.info('TDLib đã được khởi tạo và sẵn sàng sử dụng');
     } else {
       logger.warn('TDLib không thể khởi tạo, một số tính năng sẽ bị hạn chế');
