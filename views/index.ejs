@@ -227,28 +227,54 @@
       <div class="login-container" id="telegram-login" style="display: none;">
         <div class="login-form">
           <h2>Đăng nhập Telegram</h2>
-          <div id="login-phone-step">
-            <p>Nhập số điện thoại Telegram của bạn để đăng nhập</p>
-            <div class="form-group">
-              <input type="text" id="phone" placeholder="+84xxxxxxxxx" class="form-control">
-            </div>
-            <button id="btn-send-phone" class="button primary">Gửi mã xác thực</button>
+          
+          <div class="login-tabs">
+            <button id="tab-phone" class="tab-button active">Số điện thoại</button>
+            <button id="tab-qrcode" class="tab-button">QR Code</button>
           </div>
           
-          <div id="login-code-step" style="display: none;">
-            <p>Nhập mã xác thực Telegram đã gửi đến điện thoại của bạn</p>
-            <div class="form-group">
-              <input type="text" id="code" placeholder="12345" class="form-control">
+          <div id="login-phone-section">
+            <div id="login-phone-step">
+              <p>Nhập số điện thoại Telegram của bạn để đăng nhập</p>
+              <div class="form-group">
+                <input type="text" id="phone" placeholder="+84xxxxxxxxx" class="form-control">
+              </div>
+              <button id="btn-send-phone" class="button primary">Gửi mã xác thực</button>
             </div>
-            <button id="btn-send-code" class="button primary">Xác thực</button>
+            
+            <div id="login-code-step" style="display: none;">
+              <p>Nhập mã xác thực Telegram đã gửi đến điện thoại của bạn</p>
+              <div class="form-group">
+                <input type="text" id="code" placeholder="12345" class="form-control">
+              </div>
+              <button id="btn-send-code" class="button primary">Xác thực</button>
+            </div>
+            
+            <div id="login-password-step" style="display: none;">
+              <p>Nhập mật khẩu 2FA của tài khoản Telegram</p>
+              <div class="form-group">
+                <input type="password" id="password" placeholder="Mật khẩu" class="form-control">
+              </div>
+              <button id="btn-send-password" class="button primary">Đăng nhập</button>
+            </div>
           </div>
           
-          <div id="login-password-step" style="display: none;">
-            <p>Nhập mật khẩu 2FA của tài khoản Telegram</p>
-            <div class="form-group">
-              <input type="password" id="password" placeholder="Mật khẩu" class="form-control">
+          <div id="login-qrcode-section" style="display: none;">
+            <p>Quét mã QR code bằng ứng dụng Telegram trên điện thoại của bạn</p>
+            <div class="qrcode-container">
+              <div id="qrcode-placeholder">
+                <button id="btn-generate-qrcode" class="button primary">Tạo mã QR</button>
+              </div>
+              <div id="qrcode-display" style="display: none;">
+                <div id="qrcode"></div>
+                <p class="qrcode-help">
+                  1. Mở Telegram trên điện thoại<br>
+                  2. Vào <strong>Cài đặt > Thiết bị > Quét QR Code</strong><br>
+                  3. Quét mã QR này để đăng nhập
+                </p>
+                <div class="qrcode-status" id="qrcode-status">Đang chờ quét...</div>
+              </div>
             </div>
-            <button id="btn-send-password" class="button primary">Đăng nhập</button>
           </div>
           
           <div id="login-success" style="display: none;">
@@ -285,6 +311,9 @@
     </footer>
   </div>
 
+  <!-- Thêm thư viện QR code -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+
   <!-- Thêm phần JavaScript cho đăng nhập -->
   <script>
   document.addEventListener('DOMContentLoaded', async function() {
@@ -295,6 +324,16 @@
     document.getElementById('btn-send-phone').addEventListener('click', sendPhoneNumber);
     document.getElementById('btn-send-code').addEventListener('click', sendAuthCode);
     document.getElementById('btn-send-password').addEventListener('click', sendPassword);
+    document.getElementById('btn-generate-qrcode').addEventListener('click', generateQRCode);
+    
+    // Gắn sự kiện cho các tab
+    document.getElementById('tab-phone').addEventListener('click', function() {
+      showLoginSection('phone');
+    });
+    
+    document.getElementById('tab-qrcode').addEventListener('click', function() {
+      showLoginSection('qrcode');
+    });
     
     // Hiển thị form đăng nhập khi nhấn nút đăng nhập
     const loginButtons = document.querySelectorAll('a[href="/login"]');
@@ -307,6 +346,28 @@
       });
     });
   });
+
+  // Chuyển đổi giữa các tab đăng nhập
+  function showLoginSection(section) {
+    // Update active tab
+    document.querySelectorAll('.tab-button').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    
+    if (section === 'phone') {
+      document.getElementById('tab-phone').classList.add('active');
+      document.getElementById('login-phone-section').style.display = 'block';
+      document.getElementById('login-qrcode-section').style.display = 'none';
+    } else if (section === 'qrcode') {
+      document.getElementById('tab-qrcode').classList.add('active');
+      document.getElementById('login-phone-section').style.display = 'none';
+      document.getElementById('login-qrcode-section').style.display = 'block';
+    }
+    
+    // Ẩn thông báo lỗi và thành công
+    document.getElementById('login-success').style.display = 'none';
+    document.getElementById('login-error').style.display = 'none';
+  }
 
   // Kiểm tra trạng thái đăng nhập Telegram
   async function checkTelegramStatus() {
@@ -325,6 +386,9 @@
           showLoginCodeStep();
         } else if (data.tdlib.waitingForPassword) {
           showLoginPasswordStep();
+        } else if (data.tdlib.qrCodeLink) {
+          showLoginSection('qrcode');
+          showQRCode(data.tdlib.qrCodeLink);
         }
       }
     } catch (error) {
@@ -459,6 +523,93 @@
     document.getElementById('error-text').textContent = message;
     document.getElementById('login-error').style.display = 'block';
   }
+
+  // Tạo và hiển thị QR code
+  async function generateQRCode() {
+    try {
+      document.getElementById('qrcode-placeholder').style.display = 'none';
+      document.getElementById('qrcode-display').style.display = 'block';
+      document.getElementById('qrcode-status').textContent = 'Đang tạo mã QR...';
+      
+      const response = await fetch('/api/telegram/login/qrcode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.qrCodeLink) {
+        showQRCode(data.qrCodeLink);
+        startQRCodeStatusCheck();
+      } else {
+        document.getElementById('qrcode-status').textContent = 'Lỗi khi tạo mã QR';
+        showError(data.error || 'Không thể tạo mã QR code');
+      }
+    } catch (error) {
+      document.getElementById('qrcode-status').textContent = 'Lỗi khi tạo mã QR';
+      showError('Lỗi kết nối với máy chủ');
+    }
+  }
+
+  // Hiển thị QR code
+  function showQRCode(qrCodeLink) {
+    const qrcodeElement = document.getElementById('qrcode');
+    qrcodeElement.innerHTML = '';
+    
+    QRCode.toCanvas(qrcodeElement, qrCodeLink, {
+      width: 256,
+      margin: 1,
+      color: {
+        dark: '#0088cc',
+        light: '#ffffff'
+      }
+    }, function(error) {
+      if (error) {
+        console.error('Lỗi khi tạo QR code:', error);
+        document.getElementById('qrcode-status').textContent = 'Lỗi khi tạo mã QR';
+      } else {
+        document.getElementById('qrcode-status').textContent = 'Đang chờ quét...';
+      }
+    });
+  }
+
+  // Kiểm tra trạng thái QR code
+  let qrCodeCheckInterval;
+  function startQRCodeStatusCheck() {
+    // Xóa interval cũ nếu có
+    if (qrCodeCheckInterval) {
+      clearInterval(qrCodeCheckInterval);
+    }
+    
+    // Kiểm tra trạng thái mỗi 2 giây
+    qrCodeCheckInterval = setInterval(async function() {
+      try {
+        const response = await fetch('/api/telegram/login/qrcode/status');
+        const data = await response.json();
+        
+        if (data.success) {
+          if (data.status === 'authenticated') {
+            // Đã đăng nhập thành công
+            clearInterval(qrCodeCheckInterval);
+            showLoginSuccess();
+          } else if (data.status === 'waiting_confirmation') {
+            // Vẫn đang chờ xác nhận
+            document.getElementById('qrcode-status').textContent = 'Đang chờ xác nhận từ thiết bị...';
+          } else if (data.status === 'expired') {
+            // QR code hết hạn
+            clearInterval(qrCodeCheckInterval);
+            document.getElementById('qrcode-status').textContent = 'Mã QR đã hết hạn, vui lòng tạo mã mới';
+            document.getElementById('qrcode-placeholder').style.display = 'block';
+            document.getElementById('qrcode-display').style.display = 'none';
+          }
+        } else {
+          document.getElementById('qrcode-status').textContent = data.message || 'Lỗi khi kiểm tra trạng thái';
+        }
+      } catch (error) {
+        console.error('Lỗi khi kiểm tra trạng thái QR code:', error);
+      }
+    }, 2000);
+  }
   </script>
 
   <style>
@@ -516,6 +667,71 @@
   .error-message {
     color: #dc3545;
     font-weight: bold;
+  }
+
+  /* CSS cho tab đăng nhập */
+  .login-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .tab-button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 500;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+  }
+
+  .tab-button.active {
+    color: #0088cc;
+    border-bottom-color: #0088cc;
+  }
+
+  .tab-button:hover {
+    color: #0088cc;
+  }
+
+  /* CSS cho QR code */
+  .qrcode-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    text-align: center;
+  }
+
+  #qrcode {
+    margin: 20px auto;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+  }
+
+  .qrcode-help {
+    font-size: 14px;
+    color: #666;
+    margin: 15px 0;
+    line-height: 1.6;
+    text-align: left;
+  }
+
+  .qrcode-status {
+    font-weight: 500;
+    margin-top: 15px;
+    padding: 8px 16px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    color: #0088cc;
   }
   </style>
 </body>
