@@ -3,313 +3,650 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TeleDrive - Lưu trữ file trên Telegram</title>
-  <link rel="stylesheet" href="/css/styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <title>TeleDrive - Lưu trữ không giới hạn với Telegram</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    body {
-      font-family: 'Roboto', sans-serif;
+    :root {
+      --primary-color: #0088cc;
+      --primary-dark: #006699;
+      --primary-light: #00aaff;
+      --accent-color: #fe9800;
+      --text-color: #202324;
+      --text-secondary: #666666;
+      --background-color: #f7f9fb;
+      --card-bg: #ffffff;
+      --border-color: #e1e4e8;
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 20px;
+    }
+    
+    * {
       margin: 0;
       padding: 0;
-      color: #333;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      color: var(--text-color);
+      background-color: var(--background-color);
+      line-height: 1.6;
+      overflow-x: hidden;
     }
     
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 1rem;
+      padding: 0 1.5rem;
     }
     
-    header {
-      background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       padding: 1.5rem 0;
-      color: white;
-      text-align: center;
-      border-radius: 8px;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s ease;
     }
     
-    header:hover {
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo img {
+      height: 40px;
+      margin-right: 10px;
+    }
+    
+    .logo h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin: 0;
+    }
+    
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    
+    .nav-links a {
+      color: var(--text-color);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    
+    .nav-links a:hover {
+      color: var(--primary-color);
+    }
+    
+    .auth-buttons {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+      font-size: 0.95rem;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      box-shadow: 0 2px 10px rgba(0, 136, 204, 0.2);
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
+    }
+    
+    .btn-outline {
+      background: transparent;
+      color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+    }
+    
+    .btn-outline:hover {
+      background-color: rgba(0, 136, 204, 0.1);
       transform: translateY(-2px);
     }
     
-    header h1 {
-      margin: 0;
-      font-size: 2.8rem;
-      font-weight: 700;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    
-    main {
-      background-color: rgba(255, 255, 255, 0.95);
-      border-radius: 8px;
-      padding: 2.5rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(10px);
-    }
-    
+    /* Hero Section */
     .hero {
-      text-align: center;
-      margin-bottom: 4rem;
+      position: relative;
+      padding: 5rem 0;
+      overflow: hidden;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
     }
     
-    .hero h2 {
-      font-size: 2.4rem;
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('/img/grid-pattern.svg');
+      opacity: 0.4;
+      z-index: 0;
+    }
+    
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
       margin-bottom: 1.5rem;
-      color: #1a73e8;
-      font-weight: 500;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
     }
     
     .hero p {
-      font-size: 1.3rem;
-      color: #5f6368;
+      font-size: 1.25rem;
+      color: var(--text-secondary);
       margin-bottom: 2.5rem;
-      line-height: 1.6;
+      max-width: 600px;
     }
     
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 3rem;
+    }
+    
+    .hero-image {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    
+    /* Features Section */
     .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2.5rem;
+      padding: 5rem 0;
+    }
+    
+    .section-header {
+      text-align: center;
       margin-bottom: 4rem;
     }
     
-    .feature {
-      text-align: center;
-      padding: 2rem;
-      border-radius: 8px;
-      background-color: white;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    
-    .feature:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    }
-    
-    .feature h3 {
-      color: #1a73e8;
+    .section-header h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
       margin-bottom: 1rem;
-      font-size: 1.5rem;
-      font-weight: 500;
+      color: var(--text-color);
     }
     
-    .feature p {
-      color: #5f6368;
-      line-height: 1.6;
+    .section-header p {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
     }
     
-    .cta {
-      text-align: center;
-      margin: 3rem 0;
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
     }
     
-    .button {
-      display: inline-block;
-      padding: 1rem 2rem;
-      background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
-      color: white;
-      border-radius: 25px;
-      text-decoration: none;
-      font-weight: 500;
-      margin: 0 1rem;
+    .feature-card {
+      background-color: var(--card-bg);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      box-shadow: var(--shadow-sm);
       transition: all 0.3s ease;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border-color);
     }
     
-    .button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-md);
     }
     
-    .button.secondary {
-      background: white;
-      color: #4285f4;
-      border: 2px solid #4285f4;
+    .feature-icon {
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+      color: white;
+      border-radius: 50%;
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
     }
     
-    .button.secondary:hover {
-      background-color: #f8f9fa;
-      color: #1a73e8;
-      border-color: #1a73e8;
+    .feature-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-color);
     }
     
-    footer {
+    .feature-card p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    
+    /* QR Code Login Section */
+    .login-container {
+      background-color: var(--card-bg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 3rem;
+      margin: 3rem auto;
+      max-width: 500px;
+      display: none;
+    }
+    
+    .login-form {
       text-align: center;
-      margin-top: 4rem;
-      padding: 2rem 0;
-      color: #5f6368;
-      font-size: 0.9rem;
     }
     
-    .status-badge {
+    .login-form h2 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: var(--text-color);
+    }
+    
+    .login-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .tab-button {
+      background: none;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .tab-button.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: white;
+      transition: border-color 0.2s;
+    }
+    
+    .form-control:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+    }
+    
+    .qrcode-container {
+      background-color: white;
+      padding: 2rem;
+      border-radius: var(--radius-md);
+      margin-top: 1.5rem;
+      border: 1px solid var(--border-color);
+    }
+    
+    #qrcode {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 1.5rem;
+    }
+    
+    .qrcode-help {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      text-align: left;
+      line-height: 1.5;
+    }
+    
+    .qrcode-status {
       display: inline-block;
       padding: 0.5rem 1rem;
+      background-color: #f0f2f5;
+      color: var(--text-secondary);
       border-radius: 20px;
       font-size: 0.9rem;
-      margin-left: 1rem;
       font-weight: 500;
-      transition: all 0.3s ease;
+    }
+    
+    /* Footer */
+    footer {
+      background-color: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      padding: 3rem 0;
+      margin-top: 5rem;
+    }
+    
+    .footer-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .footer-logo {
+      margin-bottom: 1.5rem;
+    }
+    
+    .footer-logo img {
+      height: 40px;
+    }
+    
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .footer-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    
+    .footer-links a:hover {
+      color: var(--primary-color);
+    }
+    
+    .copyright {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    
+    /* Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 20px;
+      margin-left: 0.5rem;
     }
     
     .status-badge.online {
-      background-color: #34a853;
-      color: white;
-      box-shadow: 0 2px 4px rgba(52, 168, 83, 0.2);
+      background-color: rgba(52, 199, 89, 0.15);
+      color: #34c759;
     }
     
     .status-badge.offline {
-      background-color: #ea4335;
-      color: white;
-      box-shadow: 0 2px 4px rgba(234, 67, 53, 0.2);
+      background-color: rgba(255, 69, 58, 0.15);
+      color: #ff453a;
     }
-
-    .tdlib-status {
-      margin-top: 1rem;
-      font-size: 1.1rem;
-      font-weight: 500;
+    
+    /* Success Message */
+    .success-message {
+      color: #34c759;
+      font-weight: 600;
+      margin-bottom: 1rem;
     }
-
+    
+    /* Error Message */
+    .error-message {
+      color: #ff453a;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    
+    /* Responsive */
     @media (max-width: 768px) {
-      header h1 {
-        font-size: 2rem;
+      .navbar {
+        flex-direction: column;
+        gap: 1rem;
       }
       
-      .hero h2 {
-        font-size: 1.8rem;
+      .nav-links, .auth-buttons {
+        flex-direction: column;
+        width: 100%;
       }
       
-      .features {
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+      
+      .hero-buttons {
+        flex-direction: column;
+      }
+      
+      .features-grid {
         grid-template-columns: 1fr;
       }
       
-      .button {
-        display: block;
-        margin: 1rem auto;
-        max-width: 300px;
+      .login-container {
+        padding: 2rem 1.5rem;
+        margin: 2rem 1rem;
       }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <header>
+    <nav class="navbar">
+      <div class="logo">
         <h1>TeleDrive</h1>
-      <% if (typeof tdlibAvailable !== 'undefined') { %>
-        <div class="tdlib-status">
-          TDLib: 
-          <span class="status-badge <%= tdlibAvailable ? 'online' : 'offline' %>">
-            <%= tdlibAvailable ? 'Hoạt động' : 'Không hoạt động' %>
-          </span>
       </div>
-          <% } %>
-    </header>
+      <div class="nav-links">
+        <a href="#features">Tính năng</a>
+        <a href="#about">Giới thiệu</a>
+        <a href="#faq">Hỏi đáp</a>
+      </div>
+      <div class="auth-buttons">
+        <a href="#" class="btn btn-outline login-button">Đăng nhập</a>
+      </div>
+    </nav>
+  </div>
 
-    <main>
-      <section class="hero">
-        <div class="hero-content">
-          <h1 class="title">TeleDrive</h1>
-          <p class="subtitle">Lưu trữ file không giới hạn với Telegram</p>
-          <div class="cta-buttons">
-            <a href="/login" class="button primary">Đăng nhập</a>
-            <a href="#features" class="button secondary">Tìm hiểu thêm</a>
-          </div>
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <h1>Lưu trữ không giới hạn với Telegram</h1>
+        <p>TeleDrive giúp bạn lưu trữ và quản lý file không giới hạn dung lượng, an toàn và hoàn toàn miễn phí thông qua nền tảng Telegram.</p>
+        <div class="hero-buttons">
+          <a href="#" class="btn btn-primary login-button">
+            <i class="fab fa-telegram" style="margin-right: 8px;"></i>
+            Đăng nhập với Telegram
+          </a>
+          <a href="#features" class="btn btn-outline">Tìm hiểu thêm</a>
         </div>
-      </section>
-
-      <!-- Form đăng nhập Telegram -->
-      <div class="login-container" id="telegram-login" style="display: none;">
-        <div class="login-form">
-          <h2>Đăng nhập Telegram</h2>
-          
-          <div class="login-tabs">
-            <button id="tab-phone" class="tab-button active">Số điện thoại</button>
-            <button id="tab-qrcode" class="tab-button">QR Code</button>
-          </div>
-          
-          <div id="login-phone-section">
-            <div id="login-phone-step">
-              <p>Nhập số điện thoại Telegram của bạn để đăng nhập</p>
-              <div class="form-group">
-                <input type="text" id="phone" placeholder="+84xxxxxxxxx" class="form-control">
-              </div>
-              <button id="btn-send-phone" class="button primary">Gửi mã xác thực</button>
-            </div>
-            
-            <div id="login-code-step" style="display: none;">
-              <p>Nhập mã xác thực Telegram đã gửi đến điện thoại của bạn</p>
-              <div class="form-group">
-                <input type="text" id="code" placeholder="12345" class="form-control">
-              </div>
-              <button id="btn-send-code" class="button primary">Xác thực</button>
-            </div>
-            
-            <div id="login-password-step" style="display: none;">
-              <p>Nhập mật khẩu 2FA của tài khoản Telegram</p>
-              <div class="form-group">
-                <input type="password" id="password" placeholder="Mật khẩu" class="form-control">
-              </div>
-              <button id="btn-send-password" class="button primary">Đăng nhập</button>
-            </div>
-          </div>
-          
-          <div id="login-qrcode-section" style="display: none;">
-            <p>Quét mã QR code bằng ứng dụng Telegram trên điện thoại của bạn</p>
-            <div class="qrcode-container">
-              <div id="qrcode-placeholder">
-                <button id="btn-generate-qrcode" class="button primary">Tạo mã QR</button>
-              </div>
-              <div id="qrcode-display" style="display: none;">
-                <div id="qrcode"></div>
-                <p class="qrcode-help">
-                  1. Mở Telegram trên điện thoại<br>
-                  2. Vào <strong>Cài đặt > Thiết bị > Quét QR Code</strong><br>
-                  3. Quét mã QR này để đăng nhập
-                </p>
-                <div class="qrcode-status" id="qrcode-status">Đang chờ quét...</div>
-              </div>
-            </div>
-          </div>
-          
-          <div id="login-success" style="display: none;">
-            <p class="success-message">Đăng nhập thành công!</p>
-            <p>Bạn có thể sử dụng TeleDrive ngay bây giờ.</p>
-          </div>
-          
-          <div id="login-error" style="display: none;">
-            <p class="error-message" id="error-text"></p>
-          </div>
+        <div class="hero-image">
+          <img src="https://i.imgur.com/7adyJ5W.png" alt="TeleDrive Dashboard" style="width: 100%; height: auto;">
         </div>
       </div>
+    </div>
+  </section>
 
-      <section class="features">
-        <div class="feature">
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Tính năng nổi bật</h2>
+        <p>TeleDrive cung cấp các tính năng lưu trữ mạnh mẽ, giúp bạn quản lý file dễ dàng như các dịch vụ cloud storage khác.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-infinity"></i>
+          </div>
           <h3>Lưu trữ không giới hạn</h3>
-          <p>Tận dụng không gian lưu trữ không giới hạn từ Telegram để lưu trữ file của bạn. Không còn lo lắng về dung lượng.</p>
+          <p>Tận dụng không gian lưu trữ không giới hạn từ Telegram để lưu trữ file của bạn, không còn lo lắng về dung lượng.</p>
         </div>
-        
-        <div class="feature">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-shield-alt"></i>
+          </div>
           <h3>Bảo mật cao</h3>
           <p>Dữ liệu của bạn được bảo vệ bằng mã hóa đầu cuối của Telegram. Chỉ bạn mới có thể truy cập file của mình.</p>
         </div>
-        
-        <div class="feature">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-globe"></i>
+          </div>
           <h3>Truy cập mọi lúc, mọi nơi</h3>
           <p>Dễ dàng truy cập và chia sẻ file của bạn từ bất kỳ thiết bị nào. Đồng bộ tự động trên mọi nền tảng.</p>
         </div>
-      </section>
-    </main>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-share-alt"></i>
+          </div>
+          <h3>Chia sẻ dễ dàng</h3>
+          <p>Tạo link chia sẻ cho bất kỳ file nào và gửi cho mọi người, họ không cần tài khoản Telegram để tải xuống.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <h3>Tốc độ cao</h3>
+          <p>Tải lên và tải xuống file với tốc độ cao nhờ hạ tầng server của Telegram trên toàn thế giới.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-sort"></i>
+          </div>
+          <h3>Quản lý file linh hoạt</h3>
+          <p>Tạo thư mục, sắp xếp và tìm kiếm file một cách dễ dàng với giao diện thân thiện người dùng.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <footer>
-      <p>&copy; <%= new Date().getFullYear() %> TeleDrive. Tất cả các quyền được bảo lưu.</p>
-    </footer>
+  <!-- Form đăng nhập Telegram -->
+  <div class="login-container" id="telegram-login">
+    <div class="login-form">
+      <h2>Đăng nhập Telegram</h2>
+      
+      <div class="login-tabs">
+        <button id="tab-phone" class="tab-button active">Số điện thoại</button>
+        <button id="tab-qrcode" class="tab-button">QR Code</button>
+      </div>
+      
+      <div id="login-phone-section">
+        <div id="login-phone-step">
+          <p>Nhập số điện thoại Telegram của bạn để đăng nhập</p>
+          <div class="form-group">
+            <input type="text" id="phone" placeholder="+84xxxxxxxxx" class="form-control">
+          </div>
+          <button id="btn-send-phone" class="btn btn-primary">Gửi mã xác thực</button>
+        </div>
+        
+        <div id="login-code-step" style="display: none;">
+          <p>Nhập mã xác thực Telegram đã gửi đến điện thoại của bạn</p>
+          <div class="form-group">
+            <input type="text" id="code" placeholder="12345" class="form-control">
+          </div>
+          <button id="btn-send-code" class="btn btn-primary">Xác thực</button>
+        </div>
+        
+        <div id="login-password-step" style="display: none;">
+          <p>Nhập mật khẩu 2FA của tài khoản Telegram</p>
+          <div class="form-group">
+            <input type="password" id="password" placeholder="Mật khẩu" class="form-control">
+          </div>
+          <button id="btn-send-password" class="btn btn-primary">Đăng nhập</button>
+        </div>
+      </div>
+      
+      <div id="login-qrcode-section" style="display: none;">
+        <p>Quét mã QR code bằng ứng dụng Telegram trên điện thoại của bạn</p>
+        <div class="qrcode-container">
+          <div id="qrcode-placeholder">
+            <button id="btn-generate-qrcode" class="btn btn-primary">Tạo mã QR</button>
+          </div>
+          <div id="qrcode-display" style="display: none;">
+            <div id="qrcode"></div>
+            <p class="qrcode-help">
+              1. Mở Telegram trên điện thoại<br>
+              2. Vào <strong>Cài đặt > Thiết bị > Quét QR Code</strong><br>
+              3. Quét mã QR này để đăng nhập
+            </p>
+            <div class="qrcode-status" id="qrcode-status">Đang chờ quét...</div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="login-success" style="display: none;">
+        <p class="success-message">Đăng nhập thành công!</p>
+        <p>Bạn có thể sử dụng TeleDrive ngay bây giờ.</p>
+        <a href="/dashboard" class="btn btn-primary">Đi đến Dashboard</a>
+      </div>
+      
+      <div id="login-error" style="display: none;">
+        <p class="error-message" id="error-text"></p>
+      </div>
+    </div>
   </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <h1>TeleDrive</h1>
+          <% if (typeof tdlibAvailable !== 'undefined') { %>
+            <span>
+              TDLib: 
+              <span class="status-badge <%= tdlibAvailable ? 'online' : 'offline' %>">
+                <%= tdlibAvailable ? 'Hoạt động' : 'Không hoạt động' %>
+              </span>
+            </span>
+          <% } %>
+        </div>
+        <div class="footer-links">
+          <a href="#">Chính sách bảo mật</a>
+          <a href="#">Điều khoản sử dụng</a>
+          <a href="https://github.com/your-username/teledrive" target="_blank">GitHub</a>
+        </div>
+        <p class="copyright">&copy; <%= new Date().getFullYear() %> TeleDrive. Tất cả các quyền được bảo lưu.</p>
+      </div>
+    </div>
+  </footer>
 
   <!-- Thêm thư viện QR code -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
@@ -336,7 +673,7 @@
     });
     
     // Hiển thị form đăng nhập khi nhấn nút đăng nhập
-    const loginButtons = document.querySelectorAll('a[href="/login"]');
+    const loginButtons = document.querySelectorAll('.login-button');
     loginButtons.forEach(button => {
       button.addEventListener('click', function(e) {
         e.preventDefault();
@@ -349,54 +686,36 @@
 
   // Chuyển đổi giữa các tab đăng nhập
   function showLoginSection(section) {
-    // Update active tab
-    document.querySelectorAll('.tab-button').forEach(tab => {
-      tab.classList.remove('active');
-    });
+    // Cập nhật tab active
+    document.getElementById('tab-phone').classList.remove('active');
+    document.getElementById('tab-qrcode').classList.remove('active');
+    document.getElementById(`tab-${section}`).classList.add('active');
     
+    // Hiển thị section tương ứng
     if (section === 'phone') {
-      document.getElementById('tab-phone').classList.add('active');
       document.getElementById('login-phone-section').style.display = 'block';
       document.getElementById('login-qrcode-section').style.display = 'none';
-    } else if (section === 'qrcode') {
-      document.getElementById('tab-qrcode').classList.add('active');
+    } else {
       document.getElementById('login-phone-section').style.display = 'none';
       document.getElementById('login-qrcode-section').style.display = 'block';
     }
-    
-    // Ẩn thông báo lỗi và thành công
-    document.getElementById('login-success').style.display = 'none';
-    document.getElementById('login-error').style.display = 'none';
   }
 
-  // Kiểm tra trạng thái đăng nhập Telegram
+  // Các hàm xử lý đăng nhập
   async function checkTelegramStatus() {
     try {
       const response = await fetch('/api/telegram/status');
       const data = await response.json();
       
-      // Kiểm tra xem có đăng nhập không
+      // Nếu đã đăng nhập, chuyển đến dashboard
       if (data.tdlib && data.tdlib.isLoggedIn) {
-        showLoginSuccess();
-      } else if (data.tdlib) {
-        // Xác định bước đăng nhập hiện tại
-        if (data.tdlib.waitingForPhoneNumber) {
-          showLoginPhoneStep();
-        } else if (data.tdlib.waitingForCode) {
-          showLoginCodeStep();
-        } else if (data.tdlib.waitingForPassword) {
-          showLoginPasswordStep();
-        } else if (data.tdlib.qrCodeLink) {
-          showLoginSection('qrcode');
-          showQRCode(data.tdlib.qrCodeLink);
-        }
+        window.location.href = '/dashboard';
       }
     } catch (error) {
-      console.error('Lỗi khi kiểm tra trạng thái:', error);
+      console.error('Lỗi kiểm tra trạng thái Telegram:', error);
     }
   }
 
-  // Gửi số điện thoại
   async function sendPhoneNumber() {
     const phone = document.getElementById('phone').value.trim();
     if (!phone) {
@@ -413,17 +732,18 @@
       
       const data = await response.json();
       
-      if (response.ok) {
-        showLoginCodeStep();
+      if (data.success) {
+        document.getElementById('login-phone-step').style.display = 'none';
+        document.getElementById('login-code-step').style.display = 'block';
       } else {
-        showError(data.error || 'Lỗi khi gửi số điện thoại');
+        showError(data.error || 'Không thể gửi số điện thoại');
       }
     } catch (error) {
-      showError('Lỗi kết nối với máy chủ');
+      showError('Lỗi kết nối');
+      console.error('Lỗi gửi số điện thoại:', error);
     }
   }
 
-  // Gửi mã xác thực
   async function sendAuthCode() {
     const code = document.getElementById('code').value.trim();
     if (!code) {
@@ -440,23 +760,24 @@
       
       const data = await response.json();
       
-      if (response.ok) {
+      if (data.success) {
         if (data.needPassword) {
-          showLoginPasswordStep();
+          document.getElementById('login-code-step').style.display = 'none';
+          document.getElementById('login-password-step').style.display = 'block';
         } else {
           showLoginSuccess();
         }
       } else {
-        showError(data.error || 'Mã xác thực không hợp lệ');
+        showError(data.error || 'Mã xác thực không đúng');
       }
     } catch (error) {
-      showError('Lỗi kết nối với máy chủ');
+      showError('Lỗi kết nối');
+      console.error('Lỗi gửi mã xác thực:', error);
     }
   }
 
-  // Gửi mật khẩu
   async function sendPassword() {
-    const password = document.getElementById('password').value;
+    const password = document.getElementById('password').value.trim();
     if (!password) {
       showError('Vui lòng nhập mật khẩu');
       return;
@@ -471,49 +792,87 @@
       
       const data = await response.json();
       
-      if (response.ok) {
+      if (data.success) {
         showLoginSuccess();
       } else {
         showError(data.error || 'Mật khẩu không đúng');
       }
     } catch (error) {
-      showError('Lỗi kết nối với máy chủ');
+      showError('Lỗi kết nối');
+      console.error('Lỗi gửi mật khẩu:', error);
     }
   }
 
-  // Hiển thị các bước đăng nhập
-  function showLoginPhoneStep() {
-    document.getElementById('login-phone-step').style.display = 'block';
-    document.getElementById('login-code-step').style.display = 'none';
-    document.getElementById('login-password-step').style.display = 'none';
-    document.getElementById('login-success').style.display = 'none';
-    document.getElementById('login-error').style.display = 'none';
+  async function generateQRCode() {
+    document.getElementById('qrcode-placeholder').style.display = 'none';
+    document.getElementById('qrcode-display').style.display = 'block';
+    document.getElementById('qrcode').innerHTML = '';
+    document.getElementById('qrcode-status').textContent = 'Đang tạo QR code...';
+    
+    try {
+      const response = await fetch('/api/telegram/login/qrcode', {
+        method: 'POST'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.qrCodeLink) {
+        // Tạo QR code từ link
+        QRCode.toCanvas(document.getElementById('qrcode'), data.qrCodeLink, {
+          width: 200,
+          margin: 1,
+          color: {
+            dark: '#0088cc',
+            light: '#ffffff'
+          }
+        });
+        
+        document.getElementById('qrcode-status').textContent = 'Đang chờ quét...';
+        
+        // Kiểm tra trạng thái QR code mỗi 2 giây
+        checkQRCodeStatus();
+      } else {
+        document.getElementById('qrcode-status').textContent = 'Không thể tạo QR code';
+        showError(data.error || 'Không thể tạo QR code');
+      }
+    } catch (error) {
+      document.getElementById('qrcode-status').textContent = 'Lỗi kết nối';
+      showError('Lỗi kết nối');
+      console.error('Lỗi tạo QR code:', error);
+    }
   }
 
-  function showLoginCodeStep() {
-    document.getElementById('login-phone-step').style.display = 'none';
-    document.getElementById('login-code-step').style.display = 'block';
-    document.getElementById('login-password-step').style.display = 'none';
-    document.getElementById('login-success').style.display = 'none';
-    document.getElementById('login-error').style.display = 'none';
-  }
-
-  function showLoginPasswordStep() {
-    document.getElementById('login-phone-step').style.display = 'none';
-    document.getElementById('login-code-step').style.display = 'none';
-    document.getElementById('login-password-step').style.display = 'block';
-    document.getElementById('login-success').style.display = 'none';
-    document.getElementById('login-error').style.display = 'none';
+  async function checkQRCodeStatus() {
+    try {
+      const response = await fetch('/api/telegram/login/qrcode/status');
+      const data = await response.json();
+      
+      if (data.status === 'authenticated') {
+        document.getElementById('qrcode-status').textContent = 'Đã xác thực thành công!';
+        showLoginSuccess();
+      } else if (data.status === 'waiting_confirmation') {
+        document.getElementById('qrcode-status').textContent = 'Đang chờ xác nhận...';
+        setTimeout(checkQRCodeStatus, 2000);
+      } else if (data.status === 'expired') {
+        document.getElementById('qrcode-status').textContent = 'QR code đã hết hạn';
+        setTimeout(() => {
+          document.getElementById('qrcode-placeholder').style.display = 'block';
+          document.getElementById('qrcode-display').style.display = 'none';
+        }, 3000);
+      }
+    } catch (error) {
+      document.getElementById('qrcode-status').textContent = 'Lỗi kiểm tra trạng thái';
+      console.error('Lỗi kiểm tra trạng thái QR code:', error);
+    }
   }
 
   function showLoginSuccess() {
-    document.getElementById('login-phone-step').style.display = 'none';
-    document.getElementById('login-code-step').style.display = 'none';
-    document.getElementById('login-password-step').style.display = 'none';
+    document.getElementById('login-phone-section').style.display = 'none';
+    document.getElementById('login-qrcode-section').style.display = 'none';
     document.getElementById('login-success').style.display = 'block';
     document.getElementById('login-error').style.display = 'none';
     
-    // Hiển thị thông báo đăng nhập thành công và tự động chuyển hướng
+    // Chuyển đến dashboard sau 2 giây
     setTimeout(() => {
       window.location.href = '/dashboard';
     }, 2000);
@@ -523,216 +882,6 @@
     document.getElementById('error-text').textContent = message;
     document.getElementById('login-error').style.display = 'block';
   }
-
-  // Tạo và hiển thị QR code
-  async function generateQRCode() {
-    try {
-      document.getElementById('qrcode-placeholder').style.display = 'none';
-      document.getElementById('qrcode-display').style.display = 'block';
-      document.getElementById('qrcode-status').textContent = 'Đang tạo mã QR...';
-      
-      const response = await fetch('/api/telegram/login/qrcode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok && data.qrCodeLink) {
-        showQRCode(data.qrCodeLink);
-        startQRCodeStatusCheck();
-      } else {
-        document.getElementById('qrcode-status').textContent = 'Lỗi khi tạo mã QR';
-        showError(data.error || 'Không thể tạo mã QR code');
-      }
-    } catch (error) {
-      document.getElementById('qrcode-status').textContent = 'Lỗi khi tạo mã QR';
-      showError('Lỗi kết nối với máy chủ');
-    }
-  }
-
-  // Hiển thị QR code
-  function showQRCode(qrCodeLink) {
-    const qrcodeElement = document.getElementById('qrcode');
-    qrcodeElement.innerHTML = '';
-    
-    QRCode.toCanvas(qrcodeElement, qrCodeLink, {
-      width: 256,
-      margin: 1,
-      color: {
-        dark: '#0088cc',
-        light: '#ffffff'
-      }
-    }, function(error) {
-      if (error) {
-        console.error('Lỗi khi tạo QR code:', error);
-        document.getElementById('qrcode-status').textContent = 'Lỗi khi tạo mã QR';
-      } else {
-        document.getElementById('qrcode-status').textContent = 'Đang chờ quét...';
-      }
-    });
-  }
-
-  // Kiểm tra trạng thái QR code
-  let qrCodeCheckInterval;
-  function startQRCodeStatusCheck() {
-    // Xóa interval cũ nếu có
-    if (qrCodeCheckInterval) {
-      clearInterval(qrCodeCheckInterval);
-    }
-    
-    // Kiểm tra trạng thái mỗi 2 giây
-    qrCodeCheckInterval = setInterval(async function() {
-      try {
-        const response = await fetch('/api/telegram/login/qrcode/status');
-        const data = await response.json();
-        
-        if (data.success) {
-          if (data.status === 'authenticated') {
-            // Đã đăng nhập thành công
-            clearInterval(qrCodeCheckInterval);
-            showLoginSuccess();
-          } else if (data.status === 'waiting_confirmation') {
-            // Vẫn đang chờ xác nhận
-            document.getElementById('qrcode-status').textContent = 'Đang chờ xác nhận từ thiết bị...';
-          } else if (data.status === 'expired') {
-            // QR code hết hạn
-            clearInterval(qrCodeCheckInterval);
-            document.getElementById('qrcode-status').textContent = 'Mã QR đã hết hạn, vui lòng tạo mã mới';
-            document.getElementById('qrcode-placeholder').style.display = 'block';
-            document.getElementById('qrcode-display').style.display = 'none';
-          }
-        } else {
-          document.getElementById('qrcode-status').textContent = data.message || 'Lỗi khi kiểm tra trạng thái';
-        }
-      } catch (error) {
-        console.error('Lỗi khi kiểm tra trạng thái QR code:', error);
-      }
-    }, 2000);
-  }
   </script>
-
-  <style>
-  /* CSS cho form đăng nhập */
-  .login-container {
-    max-width: 500px;
-    margin: 20px auto;
-    padding: 30px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-  }
-
-  .login-form h2 {
-    margin-bottom: 20px;
-    color: #333;
-    text-align: center;
-  }
-
-  .form-group {
-    margin-bottom: 20px;
-  }
-
-  .form-control {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-  }
-
-  .button {
-    display: inline-block;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 4px;
-    background-color: #0088cc;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    text-align: center;
-    width: 100%;
-  }
-
-  .button:hover {
-    background-color: #006699;
-  }
-
-  .success-message {
-    color: #28a745;
-    font-weight: bold;
-  }
-
-  .error-message {
-    color: #dc3545;
-    font-weight: bold;
-  }
-
-  /* CSS cho tab đăng nhập */
-  .login-tabs {
-    display: flex;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .tab-button {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    text-align: center;
-    font-size: 16px;
-    font-weight: 500;
-    color: #666;
-    border-bottom: 3px solid transparent;
-    transition: all 0.3s;
-  }
-
-  .tab-button.active {
-    color: #0088cc;
-    border-bottom-color: #0088cc;
-  }
-
-  .tab-button:hover {
-    color: #0088cc;
-  }
-
-  /* CSS cho QR code */
-  .qrcode-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    text-align: center;
-  }
-
-  #qrcode {
-    margin: 20px auto;
-    padding: 15px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    display: inline-block;
-  }
-
-  .qrcode-help {
-    font-size: 14px;
-    color: #666;
-    margin: 15px 0;
-    line-height: 1.6;
-    text-align: left;
-  }
-
-  .qrcode-status {
-    font-weight: 500;
-    margin-top: 15px;
-    padding: 8px 16px;
-    background: #f5f5f5;
-    border-radius: 4px;
-    color: #0088cc;
-  }
-  </style>
 </body>
 </html> 
