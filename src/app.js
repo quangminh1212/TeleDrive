@@ -68,6 +68,7 @@ app.get('/', (req, res) => {
 app.use('/api/files', fileRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/telegram', telegramRoutes);
+app.use('/api/users', require('./modules/users/routes'));
 
 // Telegram status API
 app.get('/api/telegram/status', (req, res) => {

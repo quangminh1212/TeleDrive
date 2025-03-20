@@ -69,6 +69,14 @@ class TelegramTDLibClient {
     this.isInitializing = false;
     this.client = null;
     this.chatId = config.telegram.chatId;
+    
+    // Thêm các biến để quản lý đăng nhập tương tác
+    this.waitingForPhoneNumber = false;
+    this.waitingForCode = false;
+    this.waitingForPassword = false;
+    this.authCallbacks = {};
+    this.phoneNumber = config.telegram.phoneNumber || null;
+    this.authState = null;
 
     // Kiểm tra xem có TDLib không
     if (!TDLib) {
@@ -195,18 +203,8 @@ class TelegramTDLibClient {
         }
       });
 
-      // Ưu tiên đăng nhập bằng tài khoản người dùng
-      // Bỏ điều kiện useUserAuth để luôn ưu tiên đăng nhập bằng tài khoản người dùng
-      if (config.telegram.phoneNumber) {
-        // Đăng nhập bằng tài khoản người dùng với số điện thoại
-        await this.loginWithPhoneNumber();
-      } else if (config.telegram.chatId) {
-        // Nếu có sẵn chatId, sử dụng luôn chatId đó
-        this.chatId = config.telegram.chatId;
-        logger.info(`Sử dụng chat ID từ cấu hình: ${this.chatId}`);
-        this.isLoggedIn = true;
-      } else if (config.telegram.botToken) {
-        // Chỉ sử dụng bot token nếu không có thông tin người dùng và chatId
+      // Thử đăng nhập với bot token nếu có
+      if (config.telegram.botToken) {
         try {
           await this.client.invoke({
             _: 'checkAuthenticationBotToken',
@@ -237,11 +235,23 @@ class TelegramTDLibClient {
           }
         } catch (botError) {
           logger.error(`Lỗi đăng nhập bằng bot token: ${botError.message}`);
-          throw new Error(`Không thể đăng nhập vào Telegram: ${botError.message}`);
+          logger.info('Chuyển sang chế độ đăng nhập tương tác với người dùng');
+          
+          // Nếu không thành công với bot token, chờ đăng nhập người dùng tương tác
+          // handleAuthorizationState sẽ xử lý quá trình đăng nhập
         }
+      } else if (this.phoneNumber) {
+        // Nếu có sẵn số điện thoại, dùng nó để bắt đầu đăng nhập
+        await this.setPhoneNumber(this.phoneNumber);
+      } else if (config.telegram.chatId) {
+        // Nếu có sẵn chatId, sử dụng luôn chatId đó
+        this.chatId = config.telegram.chatId;
+        logger.info(`Sử dụng chat ID từ cấu hình: ${this.chatId}`);
+        this.isLoggedIn = true;
       } else {
-        logger.warn('Không có thông tin đăng nhập Telegram (số điện thoại, bot token, hoặc chat ID). TDLib khởi tạo nhưng chưa thể sử dụng.');
-        throw new Error('Không có thông tin đăng nhập Telegram');
+        // Nếu không có thông tin gì, đợi đăng nhập tương tác
+        logger.info('Đang chờ đăng nhập tương tác từ người dùng');
+        this.waitingForPhoneNumber = true;
       }
 
       logger.info('TDLib client đã được khởi tạo và kết nối thành công.');
@@ -256,106 +266,84 @@ class TelegramTDLibClient {
   }
 
   /**
-   * Đăng nhập bằng số điện thoại
+   * Đặt số điện thoại để đăng nhập
+   * @param {string} phoneNumber - Số điện thoại (bao gồm mã quốc gia)
    */
-  async loginWithPhoneNumber() {
-    if (!config.telegram.phoneNumber) {
-      logger.error('Không có số điện thoại để đăng nhập!');
-      throw new Error('Không có số điện thoại để đăng nhập!');
+  async setPhoneNumber(phoneNumber) {
+    if (!this.client || !this.isConnected) {
+      throw new Error('TDLib chưa được kết nối');
     }
 
-    logger.info(`Đang đăng nhập bằng số điện thoại ${config.telegram.phoneNumber}...`);
+    this.phoneNumber = phoneNumber;
+    this.waitingForPhoneNumber = false;
+    this.waitingForCode = true;
+
+    logger.info(`Đang đăng nhập bằng số điện thoại ${phoneNumber}...`);
 
     try {
-      // Bắt đầu đăng nhập bằng số điện thoại
-      const response = await this.client.invoke({
+      // Bắt đầu quy trình đăng nhập bằng số điện thoại
+      await this.client.invoke({
         _: 'setAuthenticationPhoneNumber',
-        phone_number: config.telegram.phoneNumber
+        phone_number: phoneNumber
       });
-
-      // Đợi xác thực từ TDLib (thông qua handleAuthorizationState)
-      // Thiết lập timeout để tránh treo ứng dụng
-      const authPromise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Quá thời gian chờ đăng nhập Telegram'));
-        }, 30000); // 30 giây timeout
-
-        // Đợi sự kiện đăng nhập thành công
-        const authCheckInterval = setInterval(() => {
-          if (this.isLoggedIn) {
-            clearTimeout(timeout);
-            clearInterval(authCheckInterval);
-            resolve(true);
-          }
-        }, 1000); // Kiểm tra mỗi giây
-      });
-
-      // Nếu có cấu hình mã xác thực, nhập luôn
-      if (config.telegram.authCode) {
-        setTimeout(async () => {
-          try {
-            await this.client.invoke({
-              _: 'checkAuthenticationCode',
-              code: config.telegram.authCode
-            });
-            logger.info('Đã nhập mã xác thực Telegram');
-          } catch (codeError) {
-            logger.error(`Lỗi khi nhập mã xác thực: ${codeError.message}`);
-          }
-        }, 2000); // Đợi 2 giây sau khi yêu cầu số điện thoại
-      }
-
-      // Nếu có mật khẩu, nhập luôn
-      if (config.telegram.password) {
-        setTimeout(async () => {
-          try {
-            await this.client.invoke({
-              _: 'checkAuthenticationPassword',
-              password: config.telegram.password
-            });
-            logger.info('Đã nhập mật khẩu Telegram');
-          } catch (passwordError) {
-            logger.error(`Lỗi khi nhập mật khẩu: ${passwordError.message}`);
-          }
-        }, 4000); // Đợi 4 giây sau khi yêu cầu số điện thoại
-      }
-
-      await authPromise;
-      logger.info('Đã đăng nhập thành công vào Telegram bằng tài khoản người dùng');
-
-      // Lấy thông tin người dùng
-      const me = await this.client.invoke({
-        _: 'getMe'
-      });
-      logger.info(`Đã đăng nhập với tài khoản: ${me.first_name} ${me.last_name || ''} (@${me.username || 'không có username'})`);
-
-      // Nếu chưa có chatId, sử dụng Saved Messages
-      if (!this.chatId) {
-        try {
-          // Tạo chat Saved Messages
-          const chat = await this.client.invoke({
-            _: 'createPrivateChat',
-            user_id: me.id
-          });
-          
-          this.chatId = chat.id;
-          logger.info(`Sử dụng Saved Messages làm nơi lưu trữ với chat ID: ${this.chatId}`);
-        } catch (chatError) {
-          logger.error(`Không thể tạo chat Saved Messages: ${chatError.message}`);
-          
-          // Kiểm tra nếu có sẵn chatId trong cấu hình
-          if (config.telegram.chatId) {
-            this.chatId = config.telegram.chatId;
-            logger.info(`Sử dụng chat ID từ cấu hình: ${this.chatId}`);
-          } else {
-            throw new Error('Không thể tạo hoặc sử dụng chat để lưu trữ file');
-          }
-        }
-      }
-
+      
       return true;
     } catch (error) {
-      logger.error(`Lỗi đăng nhập bằng số điện thoại: ${error.message}`);
+      logger.error(`Lỗi khi đặt số điện thoại: ${error.message}`);
+      this.waitingForPhoneNumber = true;
+      this.waitingForCode = false;
+      throw error;
+    }
+  }
+
+  /**
+   * Nhập mã xác thực
+   * @param {string} code - Mã xác thực nhận từ Telegram
+   */
+  async checkAuthCode(code) {
+    if (!this.client || !this.isConnected || !this.waitingForCode) {
+      throw new Error('TDLib không ở trạng thái chờ mã xác thực');
+    }
+
+    this.waitingForCode = false;
+    
+    try {
+      await this.client.invoke({
+        _: 'checkAuthenticationCode',
+        code: code
+      });
+      
+      logger.info('Đã nhập mã xác thực thành công');
+      return true;
+    } catch (error) {
+      logger.error(`Lỗi khi kiểm tra mã xác thực: ${error.message}`);
+      this.waitingForCode = true;
+      throw error;
+    }
+  }
+
+  /**
+   * Nhập mật khẩu (cho tài khoản 2FA)
+   * @param {string} password - Mật khẩu 2FA
+   */
+  async checkAuthPassword(password) {
+    if (!this.client || !this.isConnected || !this.waitingForPassword) {
+      throw new Error('TDLib không ở trạng thái chờ mật khẩu');
+    }
+
+    this.waitingForPassword = false;
+    
+    try {
+      await this.client.invoke({
+        _: 'checkAuthenticationPassword',
+        password: password
+      });
+      
+      logger.info('Đã nhập mật khẩu thành công');
+      return true;
+    } catch (error) {
+      logger.error(`Lỗi khi kiểm tra mật khẩu: ${error.message}`);
+      this.waitingForPassword = true;
       throw error;
     }
   }
@@ -366,6 +354,7 @@ class TelegramTDLibClient {
   handleAuthorizationState(authState) {
     if (!authState) return;
 
+    this.authState = authState._;
     logger.debug(`Trạng thái xác thực TDLib: ${authState._}`);
 
     switch (authState._) {
@@ -374,32 +363,35 @@ class TelegramTDLibClient {
         break;
 
       case 'authorizationStateWaitPhoneNumber':
-        if (config.telegram.phoneNumber) {
-          // Đã xử lý trong loginWithPhoneNumber
-        } else {
-          logger.warn('TDLib yêu cầu số điện thoại nhưng không được cung cấp trong cấu hình');
-        }
+        this.waitingForPhoneNumber = true;
+        this.waitingForCode = false;
+        this.waitingForPassword = false;
+        logger.info('TDLib yêu cầu số điện thoại để đăng nhập');
         break;
 
       case 'authorizationStateWaitCode':
-        if (config.telegram.authCode) {
-          // Đã xử lý trong loginWithPhoneNumber
-        } else {
-          logger.warn('TDLib yêu cầu mã xác thực nhưng không được cung cấp trong cấu hình');
-        }
+        this.waitingForPhoneNumber = false;
+        this.waitingForCode = true;
+        this.waitingForPassword = false;
+        logger.info('TDLib yêu cầu mã xác thực từ Telegram');
         break;
 
       case 'authorizationStateWaitPassword':
-        if (config.telegram.password) {
-          // Đã xử lý trong loginWithPhoneNumber
-        } else {
-          logger.warn('TDLib yêu cầu mật khẩu nhưng không được cung cấp trong cấu hình');
-        }
+        this.waitingForPhoneNumber = false;
+        this.waitingForCode = false;
+        this.waitingForPassword = true;
+        logger.info('TDLib yêu cầu mật khẩu 2FA');
         break;
 
       case 'authorizationStateReady':
+        this.waitingForPhoneNumber = false;
+        this.waitingForCode = false;
+        this.waitingForPassword = false;
         this.isLoggedIn = true;
         logger.info('TDLib đã sẵn sàng, đăng nhập thành công');
+        
+        // Khởi tạo chat ID nếu chưa có
+        this.setupChatAfterLogin();
         break;
 
       case 'authorizationStateLoggingOut':
@@ -421,6 +413,83 @@ class TelegramTDLibClient {
 
       default:
         logger.debug(`Trạng thái xác thực không xử lý: ${authState._}`);
+    }
+  }
+
+  /**
+   * Thiết lập chat sau khi đăng nhập thành công
+   */
+  async setupChatAfterLogin() {
+    if (!this.isLoggedIn || !this.client) return;
+    
+    try {
+      // Nếu đã có sẵn chatId, sử dụng luôn
+      if (this.chatId) {
+        logger.info(`Sử dụng chat ID đã cấu hình: ${this.chatId}`);
+        return;
+      }
+      
+      // Lấy thông tin người dùng
+      const me = await this.client.invoke({
+        _: 'getMe'
+      });
+      logger.info(`Đã đăng nhập với tài khoản: ${me.first_name} ${me.last_name || ''} (@${me.username || 'không có username'})`);
+
+      // Tạo chat Saved Messages
+      const chat = await this.client.invoke({
+        _: 'createPrivateChat',
+        user_id: me.id
+      });
+      
+      this.chatId = chat.id;
+      logger.info(`Sử dụng Saved Messages làm nơi lưu trữ với chat ID: ${this.chatId}`);
+    } catch (error) {
+      logger.error(`Lỗi khi thiết lập chat sau đăng nhập: ${error.message}`);
+      
+      // Vẫn tiếp tục nếu có lỗi, người dùng có thể thiết lập chat ID sau
+      if (config.telegram.chatId) {
+        this.chatId = config.telegram.chatId;
+        logger.info(`Sử dụng chat ID từ cấu hình: ${this.chatId}`);
+      }
+    }
+  }
+
+  /**
+   * Lấy trạng thái xác thực hiện tại
+   */
+  getAuthState() {
+    return {
+      isLoggedIn: this.isLoggedIn,
+      waitingForPhoneNumber: this.waitingForPhoneNumber,
+      waitingForCode: this.waitingForCode,
+      waitingForPassword: this.waitingForPassword,
+      authState: this.authState
+    };
+  }
+
+  /**
+   * Đăng xuất khỏi TDLib
+   */
+  async logout() {
+    if (!this.client || !this.isConnected) {
+      throw new Error('TDLib chưa được kết nối');
+    }
+    
+    try {
+      await this.client.invoke({
+        _: 'logOut'
+      });
+      
+      this.isLoggedIn = false;
+      this.waitingForPhoneNumber = true;
+      this.waitingForCode = false;
+      this.waitingForPassword = false;
+      
+      logger.info('Đã đăng xuất khỏi TDLib');
+      return true;
+    } catch (error) {
+      logger.error(`Lỗi khi đăng xuất: ${error.message}`);
+      throw error;
     }
   }
 
@@ -954,6 +1023,58 @@ const tdlibStorage = {
     };
     
     return mimeTypes[ext] || 'application/octet-stream';
+  },
+  
+  /**
+   * Lấy trạng thái xác thực hiện tại
+   */
+  async getAuthState() {
+    const client = await getClient();
+    return client ? client.getAuthState() : null;
+  },
+  
+  /**
+   * Đặt số điện thoại để đăng nhập
+   */
+  async setPhoneNumber(phoneNumber) {
+    const client = await getClient();
+    if (!client) {
+      throw new Error('TDLib không khả dụng, không thể đặt số điện thoại');
+    }
+    return client.setPhoneNumber(phoneNumber);
+  },
+  
+  /**
+   * Nhập mã xác thực
+   */
+  async checkAuthCode(code) {
+    const client = await getClient();
+    if (!client) {
+      throw new Error('TDLib không khả dụng, không thể kiểm tra mã xác thực');
+    }
+    return client.checkAuthCode(code);
+  },
+  
+  /**
+   * Nhập mật khẩu (cho tài khoản 2FA)
+   */
+  async checkAuthPassword(password) {
+    const client = await getClient();
+    if (!client) {
+      throw new Error('TDLib không khả dụng, không thể kiểm tra mật khẩu');
+    }
+    return client.checkAuthPassword(password);
+  },
+  
+  /**
+   * Đăng xuất khỏi TDLib
+   */
+  async logout() {
+    const client = await getClient();
+    if (!client) {
+      throw new Error('TDLib không khả dụng, không thể đăng xuất');
+    }
+    return client.logout();
   }
 };
 
