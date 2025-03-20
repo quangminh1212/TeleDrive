@@ -57,7 +57,7 @@ async function start() {
     const port = process.env.PORT || config.port || 3001;
 
     // Khởi động server
-    server.listen(port, () => {
+    server.listen(port, '0.0.0.0', () => {
       logger.info(`Server đang chạy trên cổng ${port} (${config.nodeEnv})`);
       
       // Log TDLib status
