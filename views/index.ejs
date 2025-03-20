@@ -3,79 +3,188 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TeleDrive - Lưu trữ file qua Telegram</title>
+  <title>TeleDrive - Lưu trữ file trên Telegram</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    
+    header {
+      background-color: #4285f4;
+      padding: 1rem 0;
+      color: white;
+      text-align: center;
+      border-radius: 4px;
+      margin-bottom: 2rem;
+    }
+    
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+    }
+    
+    main {
+      background-color: white;
+      border-radius: 4px;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .hero {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .hero h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    
+    .hero p {
+      font-size: 1.2rem;
+      color: #666;
+      margin-bottom: 2rem;
+    }
+    
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    
+    .feature {
+      text-align: center;
+      padding: 1.5rem;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .feature h3 {
+      color: #4285f4;
+      margin-bottom: 1rem;
+    }
+    
+    .cta {
+      text-align: center;
+      margin: 2rem 0;
+    }
+    
+    .button {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: #4285f4;
+      color: white;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: bold;
+      margin: 0 0.5rem;
+    }
+    
+    .button:hover {
+      background-color: #3367d6;
+    }
+    
+    .button.secondary {
+      background-color: #fff;
+      color: #4285f4;
+      border: 1px solid #4285f4;
+    }
+    
+    .button.secondary:hover {
+      background-color: #f1f7fe;
+    }
+    
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding: 1rem 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 0.3rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+    }
+    
+    .status-badge.online {
+      background-color: #4caf50;
+      color: white;
+    }
+    
+    .status-badge.offline {
+      background-color: #f44336;
+      color: white;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <div class="logo">
-        <h1>TeleDrive</h1>
-      </div>
-      <nav>
-        <ul>
-          <li><a href="/">Trang chủ</a></li>
-          <li><a href="#features">Tính năng</a></li>
-          <% if (user) { %>
-            <li><a href="/dashboard">Dashboard</a></li>
-            <li><a href="/logout">Đăng xuất</a></li>
-          <% } else { %>
-            <li><a href="/login" class="login-btn">Đăng nhập</a></li>
-          <% } %>
-        </ul>
-      </nav>
+      <h1>TeleDrive</h1>
+      <% if (typeof tdlibAvailable !== 'undefined') { %>
+        <div class="tdlib-status">
+          TDLib: 
+          <span class="status-badge <%= tdlibAvailable ? 'online' : 'offline' %>">
+            <%= tdlibAvailable ? 'Hoạt động' : 'Không hoạt động' %>
+          </span>
+        </div>
+      <% } %>
     </header>
 
     <main>
       <section class="hero">
-        <div class="hero-content">
-          <h2>Lưu trữ file không giới hạn qua Telegram</h2>
-          <p>TeleDrive giúp bạn lưu trữ và quản lý file sử dụng tài khoản Telegram, tận dụng khả năng lưu trữ không giới hạn của Telegram.</p>
-          <div class="cta-buttons">
-            <% if (user) { %>
-              <a href="/dashboard" class="btn btn-primary">Đi đến Dashboard</a>
-            <% } else { %>
-              <a href="/login" class="btn btn-primary">Bắt đầu ngay</a>
-            <% } %>
-          </div>
-        </div>
-        <div class="hero-image">
-          <img src="/img/hero-image.png" alt="TeleDrive illustration">
+        <h2>Lưu trữ file không giới hạn trên Telegram</h2>
+        <p>TeleDrive giúp bạn lưu trữ và quản lý file bằng cách tận dụng không gian lưu trữ của Telegram.</p>
+        
+        <div class="cta">
+          <% if (typeof user !== 'undefined' && user) { %>
+            <a href="/dashboard" class="button">Trang quản lý</a>
+            <a href="/api/auth/logout" class="button secondary">Đăng xuất</a>
+          <% } else { %>
+            <a href="/api/auth/login" class="button">Đăng nhập với Telegram</a>
+            <a href="/about" class="button secondary">Tìm hiểu thêm</a>
+          <% } %>
         </div>
       </section>
 
-      <section id="features" class="features">
-        <h2>Tính năng chính</h2>
-        <div class="feature-grid">
-          <div class="feature-card">
-            <div class="feature-icon">📁</div>
-            <h3>Lưu trữ không giới hạn</h3>
-            <p>Tận dụng khả năng lưu trữ không giới hạn của Telegram để lưu trữ file</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">🔒</div>
-            <h3>Bảo mật cao</h3>
-            <p>File được mã hóa end-to-end và chỉ bạn mới có quyền truy cập</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">🔄</div>
-            <h3>Chia sẻ dễ dàng</h3>
-            <p>Chia sẻ file với bạn bè và đồng nghiệp qua liên kết</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">📱</div>
-            <h3>Truy cập mọi nơi</h3>
-            <p>Truy cập file từ mọi thiết bị và mọi lúc</p>
-          </div>
+      <section class="features">
+        <div class="feature">
+          <h3>Lưu trữ không giới hạn</h3>
+          <p>Tận dụng không gian lưu trữ không giới hạn từ Telegram để lưu trữ file của bạn.</p>
+        </div>
+        
+        <div class="feature">
+          <h3>Bảo mật cao</h3>
+          <p>Dữ liệu của bạn được bảo vệ bằng mã hóa đầu cuối của Telegram.</p>
+        </div>
+        
+        <div class="feature">
+          <h3>Truy cập mọi lúc, mọi nơi</h3>
+          <p>Dễ dàng truy cập và chia sẻ file của bạn từ bất kỳ thiết bị nào.</p>
         </div>
       </section>
     </main>
 
     <footer>
-      <p>&copy; 2025 TeleDrive. Tất cả các quyền được bảo lưu.</p>
+      <p>&copy; <%= new Date().getFullYear() %> TeleDrive. Tất cả các quyền được bảo lưu.</p>
     </footer>
   </div>
-
-  <script src="/js/main.js"></script>
 </body>
 </html> 
