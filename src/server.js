@@ -15,15 +15,18 @@ const server = http.createServer(app);
 async function initializeApp() {
   try {
     logger.info('Initializing TDLib...');
-    // Lấy instance của tdlibStorage
-    const tdlibStorage = require('./modules/storage/tdlib-client').tdlibStorage;
+    // Sử dụng hàm initTDLib từ module tdlib-client
+    const { initTDLib } = require('./modules/storage/tdlib-client');
     
-    if (tdlibStorage) {
-      // Gọi phương thức init() thay vì hàm initTDLib
-      await tdlibStorage.init();
-      logger.info('TDLib đã được khởi tạo và sẵn sàng sử dụng');
+    if (typeof initTDLib === 'function') {
+      const tdlib = await initTDLib();
+      if (tdlib) {
+        logger.info('TDLib đã được khởi tạo và sẵn sàng sử dụng');
+      } else {
+        logger.warn('TDLib không thể khởi tạo, một số tính năng sẽ bị hạn chế');
+      }
     } else {
-      logger.warn('TDLib không thể khởi tạo, một số tính năng sẽ bị hạn chế');
+      logger.error('Hàm initTDLib không tồn tại hoặc không phải là một hàm');
     }
   } catch (error) {
     logger.error(`Error initializing TDLib: ${error.message}`);
