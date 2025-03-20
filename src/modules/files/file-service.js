@@ -1,14 +1,14 @@
-const fs = require('fs'); 
-const path = require('path'); 
-const crypto = require('crypto'); 
-const { promisify } = require('util'); 
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const { promisify } = require('util');
 const { tdlibStorage } = require('../storage/tdlib-client'); 
-const File = require('../db/models/File'); 
-const User = require('../db/models/User'); 
-const logger = require('../common/logger'); 
-const { config } = require('../common/config'); 
- 
-class FileService { 
+const File = require('../db/models/File');
+const User = require('../db/models/User');
+const logger = require('../common/logger');
+const { config } = require('../common/config');
+
+class FileService {
   constructor() { 
     // Đảm bảo thư mục uploads tồn tại 
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads'); 
@@ -40,14 +40,14 @@ class FileService {
  
       // Kiểm tra dung lượng người dùng 
       // Tạo bản ghi file tạm thời 
-      const tempFile = await File.create({ 
+      const tempFile = await File.create({
         filename: fileData.originalname, 
         mimetype: fileData.mimetype, 
-        size: fileData.size, 
+        size: fileData.size,
         userId: user._id, 
-        isUploading: true 
-      }); 
- 
+        isUploading: true
+      });
+      
       logger.info(`Đã tạo bản ghi file tạm thời: ${tempFile._id}`); 
  
       // Tải file lên Telegram sử dụng TDLib 
@@ -55,11 +55,11 @@ class FileService {
       const telegramFile = await this.uploadFileToTelegram(fileData, user); 
  
       // Cập nhật bản ghi file 
-      const file = await File.findByIdAndUpdate( 
-        tempFile._id, 
-        { 
-          telegramFileId: telegramFile.fileId, 
-          telegramMessageId: telegramFile.messageId, 
+        const file = await File.findByIdAndUpdate(
+          tempFile._id,
+          {
+            telegramFileId: telegramFile.fileId,
+            telegramMessageId: telegramFile.messageId,
           isUploading: false, 
           isUploaded: true } 
       ); 
@@ -70,8 +70,8 @@ class FileService {
       logger.info(`Đã xóa file tạm thời: ${fileData.path}`); 
  
       logger.info(`Upload hoàn tất cho file ${file._id}`); 
-      return file; 
-    } catch (error) { 
+        return file;
+    } catch (error) {
       // Xử lý lỗi 
       logger.error(`Lỗi khi tải file lên: ${error.message}`); 
       logger.error(`Stack: ${error.stack}`); 
@@ -83,12 +83,12 @@ class FileService {
         } 
       } catch (unlinkError) { 
         logger.error(`Không thể xóa file tạm: ${unlinkError.message}`); 
-      } 
- 
-      throw error; 
-    } 
-  } 
- 
+      }
+      
+      throw error;
+    }
+  }
+  
   async uploadFileToTelegram(fileData, user) { 
     try { 
       // Với TDLib, quy trình tải lên sẽ khác nhau 
@@ -132,12 +132,12 @@ class FileService {
  
       logger.info(`Đã tải file lên Telegram, message ID: ${telegramFile.messageId}`); 
       return telegramFile; 
-    } catch (error) { 
+    } catch (error) {
       logger.error(`Lỗi khi tải file lên Telegram: ${error.message}`); 
-      throw error; 
-    } 
-  } 
- 
+      throw error;
+    }
+  }
+  
   async splitLargeFile(fileData, totalChunks) { 
     return new Promise(async (resolve, reject) => { 
       try { 
@@ -189,7 +189,7 @@ class FileService {
           logger.error(`Lỗi khi đọc file: ${err.message}`); 
           reject(err); 
         }); 
-      } catch (error) { 
+    } catch (error) {
         logger.error(`Lỗi khi chia file: ${error.message}`); 
         reject(error); 
       } 
@@ -203,8 +203,8 @@ class FileService {
         _id: fileId, 
         userId: user._id // Chỉ cho phép chủ sở hữu tạo link 
       }); 
- 
-      if (!file) { 
+      
+      if (!file) {
         throw new Error(`Không tìm thấy file có ID ${fileId} for user ${user._id}`); 
       } 
  
@@ -224,12 +224,12 @@ class FileService {
       logger.info(`Đã tạo link chia sẻ cho file ${fileId}, share link: ${shareLink}`); 
       
       return shareLink; 
-    } catch (error) { 
+    } catch (error) {
       logger.error(`Lỗi khi tạo link chia sẻ: ${error.message}`); 
-      throw error; 
-    } 
-  } 
- 
+      throw error;
+    }
+  }
+  
   async getFileByShareToken(token) { 
     try { 
       // Tìm file theo token chia sẻ 
@@ -238,18 +238,18 @@ class FileService {
         shareEnabled: true 
       }); 
       
-      if (!file) { 
+      if (!file) {
         throw new Error('Link chia sẻ không hợp lệ hoặc đã hết hạn'); 
       } 
       
       logger.info(`Đã tìm thấy file qua share token: ${file._id}`); 
-      return file; 
-    } catch (error) { 
+      return file;
+    } catch (error) {
       logger.error(`Lỗi khi lấy file theo share token: ${error.message}`); 
-      throw error; 
-    } 
-  } 
- 
+      throw error;
+    }
+  }
+  
   async deleteFile(fileId, user) { 
     try { 
       // Tìm file theo ID 
@@ -257,8 +257,8 @@ class FileService {
         _id: fileId, 
         userId: user._id // Chỉ cho phép chủ sở hữu xóa 
       }); 
- 
-      if (!file) { 
+      
+      if (!file) {
         throw new Error('File không tồn tại hoặc bạn không có quyền xóa'); 
       } 
  
@@ -278,11 +278,11 @@ class FileService {
       logger.info(`Đã xóa file ${fileId}`); 
  
       return { success: true, message: 'Đã xóa file thành công' }; 
-    } catch (error) { 
+    } catch (error) {
       logger.error(`Lỗi khi xóa file: ${error.message}`); 
-      throw error; 
-    } 
-  } 
-} 
- 
+      throw error;
+    }
+  }
+}
+
 module.exports = new FileService(); 

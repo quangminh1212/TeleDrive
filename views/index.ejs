@@ -200,15 +200,15 @@
 <body>
   <div class="container">
     <header>
-      <h1>TeleDrive</h1>
+        <h1>TeleDrive</h1>
       <% if (typeof tdlibAvailable !== 'undefined') { %>
         <div class="tdlib-status">
           TDLib: 
           <span class="status-badge <%= tdlibAvailable ? 'online' : 'offline' %>">
             <%= tdlibAvailable ? 'Hoạt động' : 'Không hoạt động' %>
           </span>
-        </div>
-      <% } %>
+      </div>
+          <% } %>
     </header>
 
     <main>
