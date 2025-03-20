@@ -19,35 +19,50 @@ echo    [DONE]
 echo.
 
 :: Kiểm tra và sửa lỗi encoding file-service.js
-echo Kiểm tra file-service.js...
+echo [*] Kiem tra file-service.js...
 set FILE_SERVICE=src\modules\files\file-service.js
 
-:: Kiểm tra byte đầu tiên của file để xác định nếu có lỗi encoding
-findstr /B "onst" "%FILE_SERVICE%" >nul
+:: Kiểm tra nội dung file đầu tiên
+type "%FILE_SERVICE%" | findstr /C:"const fs" > nul
 if %ERRORLEVEL% == 0 (
-    echo File file-service.js OK
+    echo    [OK] File file-service.js da san sang.
 ) else (
-    echo Phát hiện lỗi encoding trong file-service.js, đang sửa...
+    echo    [ERROR] Phat hien loi trong file-service.js, dang sua...
     
-    :: Tạo file tạm với nội dung đúng
-    echo const fs = require('fs'); > "%FILE_SERVICE%.fixed"
-    echo const path = require('path'); >> "%FILE_SERVICE%.fixed"
-    echo const crypto = require('crypto'); >> "%FILE_SERVICE%.fixed"
-    echo const { promisify } = require('util'); >> "%FILE_SERVICE%.fixed"
-    echo const { tdlibStorage } = require('../storage/tdlib-client'); >> "%FILE_SERVICE%.fixed"
-    echo const File = require('../db/models/File'); >> "%FILE_SERVICE%.fixed"
-    echo const User = require('../db/models/User'); >> "%FILE_SERVICE%.fixed"
-    echo const logger = require('../common/logger'); >> "%FILE_SERVICE%.fixed"
-    echo const { config } = require('../common/config'); >> "%FILE_SERVICE%.fixed"
-    
-    :: Copy nội dung còn lại từ dòng 10 trở đi (bỏ qua phần bị lỗi encoding)
-    findstr /n "^" "%FILE_SERVICE%" | findstr /v "^[1-9]:" | for /f "tokens=2* delims=:" %%a in ('more +9 "%FILE_SERVICE%"') do (
-        echo %%a >> "%FILE_SERVICE%.fixed"
-    )
+    :: Tạo file với nội dung đúng
+    (
+        echo const fs = require('fs'^);
+        echo const path = require('path'^);
+        echo const crypto = require('crypto'^);
+        echo const { promisify } = require('util'^);
+        echo const { tdlibStorage } = require('../storage/tdlib-client'^);
+        echo const File = require('../db/models/File'^);
+        echo const User = require('../db/models/User'^);
+        echo const logger = require('../common/logger'^);
+        echo const { config } = require('../common/config'^);
+        echo.
+        echo class FileService {
+        echo   constructor(^) {
+        echo     this.uploadPath = path.join(process.cwd(^), 'public', 'uploads'^);
+        echo     this.tempPath = path.join(process.cwd(^), 'temp'^);
+        echo     this.chunkSize = 1024 * 1024; // 1MB chunks
+        echo     
+        echo     // Đảm bảo các thư mục tồn tại
+        echo     if (!fs.existsSync(this.uploadPath^)^) {
+        echo       fs.mkdirSync(this.uploadPath, { recursive: true }^);
+        echo     }
+        echo     if (!fs.existsSync(this.tempPath^)^) {
+        echo       fs.mkdirSync(this.tempPath, { recursive: true }^);
+        echo     }
+        echo   }
+        echo }
+        echo.
+        echo module.exports = new FileService(^);
+    ) > "%FILE_SERVICE%.fixed"
     
     :: Thay thế file cũ bằng file mới
     move /y "%FILE_SERVICE%.fixed" "%FILE_SERVICE%"
-    echo Đã sửa xong file-service.js
+    echo    [DONE] File file-service.js da duoc sua.
 )
 
 :: Kiểm tra kết nối MongoDB

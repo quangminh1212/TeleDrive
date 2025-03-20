@@ -1,10 +1,210 @@
-Phát hiện lỗi encoding trong file-service.js, đang sửa...
-const fs = require('fs'
-const path = require('path'); 
-const crypto = require('crypto'); 
-const { promisify } = require('util'); 
-const { tdlibStorage } = require('../storage/tdlib-client'); 
-const File = require('../db/models/File'); 
-const User = require('../db/models/User'); 
-const logger = require('../common/logger'); 
-const { config } = require('../common/config'); 
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const { promisify } = require('util');
+const { tdlibStorage } = require('../storage/tdlib-client');
+const File = require('../db/models/File');
+const User = require('../db/models/User');
+const logger = require('../common/logger');
+const { config } = require('../common/config');
+
+class FileService {
+  constructor() {
+    this.uploadPath = path.join(process.cwd(), 'public', 'uploads');
+    this.tempPath = path.join(process.cwd(), 'temp');
+    this.chunkSize = 1024 * 1024; // 1MB chunks
+    
+    // Đảm bảo các thư mục tồn tại
+    if (!fs.existsSync(this.uploadPath)) {
+      fs.mkdirSync(this.uploadPath, { recursive: true });
+    }
+    if (!fs.existsSync(this.tempPath)) {
+      fs.mkdirSync(this.tempPath, { recursive: true });
+    }
+  }
+
+  async uploadFile(fileData, user) {
+    try {
+      // Kiểm tra file tồn tại
+      if (!fs.existsSync(fileData.path)) {
+        logger.error(`File không tồn tại: ${fileData.path}`);
+        throw new Error('File không tồn tại');
+      }
+
+      // Lấy thông tin file
+      const stats = await promisify(fs.stat)(fileData.path);
+      
+      logger.info(`Đang tải lên file ${fileData.originalname} cho người dùng ${user.firstName || user._id}`);
+      logger.debug(`File size: ${fileData.size} (reported) vs ${stats.size} (actual)`);
+
+      // Kiểm tra người dùng có đủ dung lượng không
+      if (user.storageUsed + stats.size > user.storageLimit) {
+        throw new Error('Không đủ dung lượng lưu trữ');
+      }
+
+      // Tạo bản ghi file tạm thời
+      const tempFile = await File.create({
+        name: fileData.originalname,
+        mimeType: fileData.mimetype,
+        size: fileData.size,
+        userId: user._id,
+        isUploading: true,
+        isComplete: false
+      });
+
+      logger.info(`Đã tạo bản ghi file tạm: ${tempFile._id}`);
+      logger.info(`Đang tải lên file cho ${user.firstName} (${user.telegramId || user._id})`);
+
+      // Tải lên file lên Telegram
+      const telegramFile = await this.uploadFileToTelegram(fileData, user);
+
+      // Cập nhật bản ghi file
+      await File.findByIdAndUpdate(tempFile._id, {
+        telegramFileId: telegramFile.fileId,
+        telegramMessageId: telegramFile.messageId,
+        isUploading: false,
+        isComplete: true
+      });
+
+      logger.info(`Đã hoàn thành tải lên file ${fileData.path}`);
+
+      // Xóa file tạm
+      await promisify(fs.unlink)(fileData.path);
+      logger.debug(`Đã xóa file tạm: ${fileData.path}`);
+
+      // Trả về thông tin file đã tải lên
+      const file = await File.findById(tempFile._id);
+      logger.info(`Trả về thông tin file: ${file._id}`);
+
+      return file;
+    } catch (error) {
+      // Xóa file tạm nếu có lỗi
+      try {
+        if (fileData && fileData.path && fs.existsSync(fileData.path)) {
+          await promisify(fs.unlink)(fileData.path);
+          logger.debug(`Đã xóa file tạm khi có lỗi: ${fileData.path}`);
+        }
+      } catch (unlinkError) {
+        logger.error(`Lỗi khi xóa file tạm: ${unlinkError.message}`);
+      }
+
+      logger.error(`Lỗi khi tải lên file: ${error.message}`);
+      logger.debug(`Stack trace: ${error.stack}`);
+      throw error;
+    }
+  }
+
+  async uploadFileToTelegram(fileData, user) {
+    return await tdlibStorage.uploadFile({
+      filePath: fileData.path,
+      fileName: fileData.originalname,
+      mimeType: fileData.mimetype,
+      fileSize: fileData.size,
+      userId: user._id,
+      generatePreview: true,
+      enableCompression: true
+    });
+  }
+
+  async splitLargeFile(fileData, totalChunks) {
+    const filePath = fileData.path;
+    const chunkSize = this.chunkSize;
+    
+    // Tạo thư mục chunks nếu chưa tồn tại
+    const chunksDir = path.join(this.tempPath, 'chunks');
+    if (!fs.existsSync(chunksDir)) {
+      fs.mkdirSync(chunksDir, { recursive: true });
+    }
+
+    // Mở file để đọc
+    const fileHandle = await fs.promises.open(filePath, 'r');
+    const fileSize = (await fileHandle.stat()).size;
+    const chunks = [];
+    let bytesProcessed = 0;
+
+    try {
+      for (let i = 0; i < totalChunks; i++) {
+        // Tính toán kích thước chunk
+        const start = i * chunkSize;
+        const end = Math.min(start + chunkSize, fileSize);
+        const length = end - start;
+        
+        // Đọc chunk từ file
+        const buffer = Buffer.alloc(length);
+        await fileHandle.read(buffer, 0, length, start);
+        
+        // Tạo tên file chunk
+        const chunkFileName = `${path.basename(filePath)}.part${i}`;
+        const chunkPath = path.join(chunksDir, chunkFileName);
+        
+        // Ghi chunk ra file
+        await fs.promises.writeFile(chunkPath, buffer);
+        
+        chunks.push({
+          path: chunkPath,
+          index: i
+        });
+        
+        bytesProcessed += length;
+        logger.debug(`Đã xử lý chunk ${i+1}/${totalChunks}: ${chunk.length} bytes (Tổng: ${bytesProcessed}/${fileSize})`);
+        
+        // Báo cáo tiến độ nếu cần
+        const progress = Math.round(bytesProcessed * 50 / fileData.size); // 50% cho việc chia file
+        // Có thể thêm code báo cáo tiến độ ở đây
+      }
+    } catch (err) {
+      logger.error(`Lỗi khi chia file: ${err.message}`);
+      throw err;
+    } finally {
+      await fileHandle.close();
+    }
+    
+    return chunks;
+  }
+
+  async createShareLink(fileId, user) {
+    try {
+      // Tìm file trong database
+      const file = await File.findOne({ _id: fileId, userId: user._id });
+      if (!file) {
+        throw new Error('File không tồn tại hoặc bạn không có quyền truy cập');
+      }
+      
+      // Tạo token chia sẻ nếu chưa có
+      if (!file.shareToken) {
+        const token = crypto.randomBytes(32).toString('hex');
+        await File.findByIdAndUpdate(fileId, { shareToken: token });
+        file.shareToken = token;
+      }
+      
+      // Tạo URL chia sẻ
+      const baseUrl = config.baseUrl || `http://localhost:${process.env.PORT || 3000}`;
+      const shareLink = `${baseUrl}/share/${file.shareToken}`;
+      
+      logger.info(`Đã tạo link chia sẻ cho file ${fileId} cho user ${user.firstName || user._id}`);
+      logger.debug(`Share link cho file ${fileId}, share link: ${shareLink}`);
+      
+      return { shareLink, fileId: file._id };
+    } catch (error) {
+      logger.error(`Lỗi khi tạo link chia sẻ: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getFileByShareToken(token) {
+    try {
+      const file = await File.findOne({ shareToken: token });
+      if (!file) {
+        throw new Error('Link chia sẻ không hợp lệ hoặc đã hết hạn');
+      }
+      
+      logger.info(`Truy cập file qua link chia sẻ: ${file._id}`);
+      return file;
+    } catch (error) {
+      logger.error(`Lỗi khi truy cập file qua link chia sẻ: ${error.message}`);
+      throw error;
+    }
+  }
+}
+
+module.exports = new FileService();
