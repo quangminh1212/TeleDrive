@@ -6,6 +6,7 @@ const logger = require('./modules/common/logger');
 const { config } = require('./modules/common/config');
 const { initTDLib } = require('./modules/storage/tdlib-client');
 const { setupMockDatabase } = require('./modules/db');
+const fs = require('fs');
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -60,7 +61,8 @@ async function start() {
       logger.info(`Server đang chạy trên cổng ${port} (${config.nodeEnv})`);
       
       // Log TDLib status
-      const tdlibAvailable = require('./modules/storage/tdlib-client').tdlibStorage !== null;
+      const tdlibStorage = require('./modules/storage/tdlib-client').tdlibStorage;
+      const tdlibAvailable = tdlibStorage !== null;
       if (tdlibAvailable) {
         logger.info('TDLib đang hoạt động - Có thể xử lý file lớn');
       } else {
@@ -69,11 +71,36 @@ async function start() {
       
       console.log(`Server đang chạy trên cổng ${port} (${config.nodeEnv})`);
       console.log('TDLib status:', tdlibAvailable ? 'Available' : 'Not available');
+      
+      // Đảm bảo các thư mục tồn tại
+      ensureDirectories();
     });
   } catch (error) {
     logger.error(`Error starting server: ${error.message}`);
     console.error('Failed to start server:', error);
     process.exit(1);
+  }
+}
+
+// Đảm bảo các thư mục tồn tại
+function ensureDirectories() {
+  const directories = [
+    config.paths.uploads,
+    config.paths.downloads,
+    config.paths.temp,
+    config.paths.data,
+    config.paths.logs
+  ];
+  
+  for (const dir of directories) {
+    if (!fs.existsSync(dir)) {
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+        logger.info(`Đã tạo thư mục: ${dir}`);
+      } catch (error) {
+        logger.warn(`Không thể tạo thư mục ${dir}: ${error.message}`);
+      }
+    }
   }
 }
 
