@@ -3,18 +3,81 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %> | TeleDrive</title>
+  <title><%= title || 'Lỗi' %> | TeleDrive</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .error-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 70vh;
+      padding: 2rem;
+      text-align: center;
+    }
+    
+    .status-code {
+      font-size: 6rem;
+      font-weight: bold;
+      color: #c62828;
+      margin-bottom: 1rem;
+    }
+    
+    .error-message {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .error-stack {
+      margin-top: 2rem;
+      text-align: left;
+      background-color: #f5f5f5;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow: auto;
+      max-width: 100%;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+    
+    .back-button {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: #4285f4;
+      color: white;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 2rem;
+    }
+    
+    .back-button:hover {
+      background-color: #3367d6;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <div class="error-page">
-      <h1><%= message %></h1>
-      <% if (error && error.stack) { %>
-        <pre><%= error.stack %></pre>
+    <header>
+      <h1>TeleDrive</h1>
+    </header>
+    
+    <main class="error-container">
+      <div class="status-code"><%= status || 500 %></div>
+      <div class="error-message"><%= message || 'Đã xảy ra lỗi không mong muốn' %></div>
+      
+      <a href="/" class="back-button">Quay lại trang chủ</a>
+      
+      <% if (stack) { %>
+        <div class="error-stack">
+          <%= stack %>
+        </div>
       <% } %>
-      <a href="/" class="btn btn-primary">Về trang chủ</a>
-    </div>
+    </main>
+    
+    <footer>
+      <p>&copy; <%= new Date().getFullYear() %> TeleDrive. Tất cả các quyền được bảo lưu.</p>
+    </footer>
   </div>
 </body>
 </html> 
