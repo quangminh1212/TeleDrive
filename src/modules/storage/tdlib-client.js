@@ -192,9 +192,10 @@ class TelegramTDLibClient {
             enable_storage_optimizer: true
           }
         });
+        logger.info('Đã thiết lập tham số TDLib thành công');
       } catch (paramError) {
         logger.error(`Lỗi thiết lập tham số TDLib: ${paramError.message}`);
-        // Không dừng quá trình, vẫn cố gắng đăng nhập
+        throw new Error(`Không thể thiết lập tham số TDLib: ${paramError.message}`);
       }
 
       // Lắng nghe update từ TDLib
@@ -494,6 +495,10 @@ class TelegramTDLibClient {
    * Lấy trạng thái xác thực hiện tại
    */
   getAuthState() {
+    if (!this.client) {
+      return null;
+    }
+    
     return {
       isLoggedIn: this.isLoggedIn,
       waitingForPhoneNumber: this.waitingForPhoneNumber,
@@ -911,12 +916,52 @@ class TelegramTDLibClient {
    * Yêu cầu đăng nhập bằng QR code
    */
   async requestQRCodeAuthentication() {
-    if (!this.client || !this.isConnected) {
-      throw new Error('TDLib chưa được kết nối');
+    if (!this.client) {
+      throw new Error('TDLib chưa được khởi tạo');
+    }
+
+    if (!this.isConnected) {
+      logger.info('Client chưa kết nối, đang kết nối lại...');
+      try {
+        await this.init();
+      } catch (error) {
+        logger.error(`Không thể kết nối TDLib: ${error.message}`);
+        throw new Error(`Không thể kết nối TDLib: ${error.message}`);
+      }
     }
 
     try {
       logger.info('Đang yêu cầu đăng nhập bằng QR code...');
+      
+      // Đảm bảo đã thiết lập TDLib parameters
+      try {
+        await this.client.invoke({
+          _: 'setTdlibParameters',
+          parameters: {
+            _: 'tdlibParameters',
+            use_test_dc: false,
+            database_directory: path.join(config.paths.data, 'tdlib'),
+            files_directory: path.join(config.paths.data, 'tdlib', 'files'),
+            use_message_database: true,
+            use_secret_chats: false,
+            api_id: parseInt(config.telegram.apiId, 10),
+            api_hash: config.telegram.apiHash,
+            system_language_code: 'vi',
+            device_model: 'TeleDrive Server',
+            application_version: '1.0.0',
+            enable_storage_optimizer: true
+          }
+        });
+        logger.info('Đã thiết lập tham số TDLib thành công');
+      } catch (paramError) {
+        // Nếu lỗi "already set" thì có thể bỏ qua và tiếp tục
+        if (!paramError.message.includes('already set')) {
+          logger.error(`Lỗi thiết lập tham số TDLib: ${paramError.message}`);
+          throw paramError;
+        } else {
+          logger.info('Tham số TDLib đã được thiết lập trước đó');
+        }
+      }
       
       // Gửi yêu cầu tạo QR code để đăng nhập
       await this.client.invoke({
@@ -961,44 +1006,47 @@ async function getClient() {
     return null;
   }
 
-  // Tạo TDLib client nếu chưa có
-  if (!tdlibClient) {
+  // Kiểm tra client hiện tại
+  if (tdlibClient && tdlibClient.client && tdlibClient.hasCredentials) {
+    // Nếu client đã kết nối, trả về
+    if (tdlibClient.isConnected) {
+      return tdlibClient;
+    }
+    
+    // Thử kết nối lại nếu client chưa kết nối
     try {
-      tdlibClient = new TelegramTDLibClient();
-      
-      if (tdlibClient.hasCredentials && tdlibClient.client) {
-        try {
-          await tdlibClient.init();
-        } catch (error) {
-          logger.error(`Không thể khởi tạo TDLib client: ${error.message}`);
-          logger.info('TDLib không khả dụng để sử dụng');
-          tdlibClient = null;
-          return null;
-        }
-      } else {
-        logger.warn('TDLib client không có đủ thông tin xác thực');
+      await tdlibClient.init();
+      return tdlibClient.isConnected ? tdlibClient : null;
+    } catch (error) {
+      logger.error(`Không thể kết nối lại TDLib client: ${error.message}`);
+      // Tiếp tục và tạo client mới
+    }
+  }
+
+  // Tạo TDLib client mới
+  try {
+    tdlibClient = new TelegramTDLibClient();
+    
+    if (tdlibClient.hasCredentials && tdlibClient.client) {
+      try {
+        await tdlibClient.init();
+        return tdlibClient.isConnected ? tdlibClient : null;
+      } catch (error) {
+        logger.error(`Không thể khởi tạo TDLib client: ${error.message}`);
+        logger.info('TDLib không khả dụng để sử dụng');
         tdlibClient = null;
         return null;
       }
-    } catch (error) {
-      logger.error(`Lỗi khởi tạo TDLib client: ${error.message}`);
+    } else {
+      logger.warn('TDLib client không có đủ thông tin xác thực');
       tdlibClient = null;
       return null;
     }
+  } catch (error) {
+    logger.error(`Lỗi khởi tạo TDLib client: ${error.message}`);
+    tdlibClient = null;
+    return null;
   }
-  
-  // Kiểm tra nếu client đã kết nối
-  if (tdlibClient && !tdlibClient.isConnected && tdlibClient.client) {
-    try {
-      await tdlibClient.init();
-    } catch (error) {
-      logger.error(`Lỗi kết nối lại TDLib client: ${error.message}`);
-      return null;
-    }
-  }
-  
-  // Trả về client nếu đã kết nối thành công, ngược lại trả về null
-  return (tdlibClient && tdlibClient.isConnected) ? tdlibClient : null;
 }
 
 /**

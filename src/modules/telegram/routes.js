@@ -143,6 +143,23 @@ router.post('/logout', async (req, res) => {
  */
 router.post('/login/qrcode', async (req, res) => {
   try {
+    // Lấy trạng thái hiện tại để kiểm tra
+    const currentState = await tdlibStorage.getAuthState();
+    
+    if (!currentState) {
+      // Nếu chưa có client hoặc client chưa được khởi tạo, khởi tạo lại
+      try {
+        const { initTDLib } = require('../storage/tdlib-client');
+        await initTDLib();
+      } catch (initError) {
+        logger.error(`Không thể khởi tạo TDLib client: ${initError.message}`);
+        return res.status(500).json({ 
+          error: 'Không thể khởi tạo TDLib. Vui lòng kiểm tra API ID và API Hash trong cấu hình.',
+          details: initError.message
+        });
+      }
+    }
+    
     // Gọi phương thức yêu cầu tạo QR code để đăng nhập
     await tdlibStorage.requestQRCodeAuthentication();
     
