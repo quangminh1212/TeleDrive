@@ -45,91 +45,246 @@ const connectDB = async () => {
   }
 };
 
-// Thiết lập mock database cho phát triển khi không có MongoDB
+// Thiết lập cơ sở dữ liệu giả lập cho development
 const setupMockDatabase = () => {
-  // Chỉ giả lập trong môi trường development
-  if (config.nodeEnv !== 'development') return;
-  
   logger.info('Setting up mock database for development');
   
-  // Mock schema và model method
-  mongoose.Schema = function(definition, options) {
+  // Lưu trữ dữ liệu trong bộ nhớ
+  const mockData = {
+    users: [],
+    files: [],
+    sessions: []
+  };
+
+  // Đối tượng lưu trữ model đã định nghĩa
+  const mockModels = {};
+
+  // Tạo đối tượng giả lập cho Schema
+  mongoose.Schema = function(definition) {
     this.definition = definition;
-    this.options = options;
     this.methods = {};
     this.statics = {};
-    
-    this.method = function(name, fn) {
-      this.methods[name] = fn;
-      return this;
-    };
-    
-    this.static = function(name, fn) {
-      this.statics[name] = fn;
-      return this;
-    };
-    
-    return this;
+    this.virtual = function() { return { get: function() {}, set: function() {} }; };
+    this.pre = function() { return this; };
+    this.post = function() { return this; };
   };
-  
-  // Mock model
-  mongoose.model = function(name, schema) {
-    const mockData = [];
-    
-    // Trả về một hàm constructor cho model với các phương thức giả lập
-    const ModelClass = function(data) {
+
+  // Tạo lớp ModelClass để giả lập các phương thức của Model
+  class ModelClass {
+    constructor(data) {
       Object.assign(this, data);
-      this._id = 'mock_' + Date.now();
+      this._id = this._id || mongoose.Types.ObjectId().toString();
+      this.createdAt = this.createdAt || new Date();
+      this.updatedAt = new Date();
+    }
+
+    // Phương thức lưu
+    async save() {
+      this.updatedAt = new Date();
+      const collection = this.constructor.collection;
+      const existingIndex = mockData[collection].findIndex(item => item._id === this._id);
       
-      this.save = async function() {
-        mockData.push(this);
-        return this;
-      };
-    };
-    
-    // Thêm static methods cho model class
-    ModelClass.find = async function() { 
-      return mockData;
-    };
-    
-    ModelClass.findById = async function(id) {
-      return mockData.find(item => item._id === id) || null;
-    };
-    
-    ModelClass.findOne = async function(criteria) {
-      return mockData[0] || null;
-    };
-    
-    ModelClass.findByIdAndUpdate = async function(id, update) {
-      const item = mockData.find(item => item._id === id);
-      if (item) {
-        Object.assign(item, update);
+      if (existingIndex >= 0) {
+        mockData[collection][existingIndex] = this;
+      } else {
+        mockData[collection].push(this);
       }
-      return item;
-    };
-    
-    ModelClass.findByIdAndRemove = async function(id) {
-      const index = mockData.findIndex(item => item._id === id);
-      if (index !== -1) {
-        return mockData.splice(index, 1)[0];
+      
+      return this;
+    }
+
+    // Xóa
+    async remove() {
+      const collection = this.constructor.collection;
+      const index = mockData[collection].findIndex(item => item._id === this._id);
+      if (index >= 0) {
+        mockData[collection].splice(index, 1);
+      }
+      return this;
+    }
+  }
+
+  // Các phương thức tĩnh cho model
+  const modelStatics = {
+    // Tìm tất cả
+    find: function(query = {}) {
+      return {
+        exec: async () => {
+          return mockData[this.collection].filter(item => matchQuery(item, query));
+        },
+        limit: function() { return this; },
+        skip: function() { return this; },
+        sort: function() { return this; },
+        populate: function() { return this; },
+        lean: function() { return this; }
+      };
+    },
+
+    // Tìm theo ID
+    findById: function(id) {
+      return {
+        exec: async () => mockData[this.collection].find(item => item._id === id),
+        populate: function() { return this; }
+      };
+    },
+
+    // Tìm một đối tượng
+    findOne: function(query = {}) {
+      return {
+        exec: async () => mockData[this.collection].find(item => matchQuery(item, query)),
+        populate: function() { return this; }
+      };
+    },
+
+    // Tạo mới
+    create: async function(data) {
+      if (Array.isArray(data)) {
+        return Promise.all(data.map(item => this.create(item)));
+      }
+      
+      const newItem = new ModelClass(data);
+      newItem.constructor = this;
+      await newItem.save();
+      return newItem;
+    },
+
+    // Cập nhật theo ID
+    findByIdAndUpdate: async function(id, update, options = {}) {
+      const item = mockData[this.collection].find(item => item._id === id);
+      if (!item) return null;
+      
+      // Áp dụng cập nhật
+      Object.assign(item, update);
+      item.updatedAt = new Date();
+      
+      return options.new !== false ? item : { _id: id };
+    },
+
+    // Xóa theo ID
+    findByIdAndDelete: async function(id) {
+      const index = mockData[this.collection].findIndex(item => item._id === id);
+      if (index >= 0) {
+        const item = mockData[this.collection][index];
+        mockData[this.collection].splice(index, 1);
+        return item;
       }
       return null;
-    };
+    },
+
+    // Mới có thể bị thiếu, thêm vào
+    findByIdAndRemove: async function(id) {
+      return this.findByIdAndDelete(id);
+    },
+
+    // Đếm số lượng
+    countDocuments: async function(query = {}) {
+      return mockData[this.collection].filter(item => matchQuery(item, query)).length;
+    },
+
+    // Kiểm tra tồn tại
+    exists: async function(query = {}) {
+      return mockData[this.collection].some(item => matchQuery(item, query));
+    }
+  };
+
+  // Hàm kiểm tra xem item có khớp với query không
+  function matchQuery(item, query) {
+    // Query đơn giản
+    for (const key in query) {
+      // Bỏ qua các toán tử đặc biệt
+      if (key.startsWith('$')) continue;
+      
+      // Query lồng nhau
+      if (typeof query[key] === 'object' && !Array.isArray(query[key])) {
+        // Phép so sánh đặc biệt ($gt, $lt, vv)
+        const subQuery = query[key];
+        for (const operator in subQuery) {
+          switch (operator) {
+            case '$eq':
+              if (item[key] !== subQuery[operator]) return false;
+              break;
+            case '$ne':
+              if (item[key] === subQuery[operator]) return false;
+              break;
+            case '$gt':
+              if (!(item[key] > subQuery[operator])) return false;
+              break;
+            case '$gte':
+              if (!(item[key] >= subQuery[operator])) return false;
+              break;
+            case '$lt':
+              if (!(item[key] < subQuery[operator])) return false;
+              break;
+            case '$lte':
+              if (!(item[key] <= subQuery[operator])) return false;
+              break;
+            case '$in':
+              if (!Array.isArray(subQuery[operator]) || !subQuery[operator].includes(item[key])) return false;
+              break;
+            case '$nin':
+              if (!Array.isArray(subQuery[operator]) || subQuery[operator].includes(item[key])) return false;
+              break;
+          }
+        }
+      } else {
+        // So sánh đơn giản
+        if (item[key] !== query[key]) return false;
+      }
+    }
     
-    ModelClass.create = async function(data) {
-      const model = new ModelClass(data);
-      await model.save();
-      return model;
-    };
+    return true;
+  }
+
+  // Tạo model giả lập
+  mongoose.model = function(name, schema) {
+    // Tạo constructor cho model
+    function Model(data) {
+      ModelClass.call(this, data);
+    }
     
-    return ModelClass;
+    // Kế thừa từ ModelClass
+    Model.prototype = Object.create(ModelClass.prototype);
+    Model.prototype.constructor = Model;
+    
+    // Thêm các phương thức từ schema
+    if (schema && schema.methods) {
+      Object.assign(Model.prototype, schema.methods);
+    }
+    
+    // Thiết lập các thuộc tính và phương thức tĩnh
+    Model.collection = name.toLowerCase() + 's';
+    Object.assign(Model, modelStatics);
+    
+    // Thêm các phương thức tĩnh từ schema
+    if (schema && schema.statics) {
+      Object.assign(Model, schema.statics);
+    }
+    
+    // Lưu vào danh sách model
+    mockModels[name] = Model;
+    
+    // Tạo collection nếu chưa có
+    if (!mockData[Model.collection]) {
+      mockData[Model.collection] = [];
+    }
+    
+    return Model;
+  };
+
+  // Types.ObjectId giả lập
+  mongoose.Types = {
+    ObjectId: function(id) {
+      return id || Math.random().toString(36).substring(2, 15);
+    }
   };
   
-  // Mock connection
   mongoose.connection = {
-    readyState: 0,
-    close: async () => {},
+    on: function() { return this; },
+    once: function() { return this; }
   };
+  
+  logger.info('Đã thiết lập mock database cho development');
+  return true;
 };
 
 module.exports = {
