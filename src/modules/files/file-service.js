@@ -153,6 +153,7 @@ class FileService {
         let currentChunk = null; 
         
         readStream.on('data', (chunk) => { 
+          logger.info(`Đọc chunk ${chunk.length} bytes (Tổng ${bytesProcessed} / ${fileSize})`); 
           bytesProcessed += chunk.length; 
           
           // Cập nhật tiến trình 
@@ -188,7 +189,7 @@ class FileService {
           logger.error(`Lỗi khi đọc file: ${err.message}`); 
           reject(err); 
         }); 
-      } catch (error) {
+    } catch (error) {
         logger.error(`Lỗi khi chia file: ${error.message}`); 
         reject(error); 
       } 
@@ -248,37 +249,35 @@ class FileService {
       throw error;
     }
   }
-
+  
   async deleteFile(fileId, user) { 
     try { 
       // Tìm file theo ID 
       const file = await File.findOne({ 
         _id: fileId, 
-        userId: user._id // Chỉ cho phép chủ sở hữu xóa 
+        userId: user._id // Chỉ cho phép chủ sở hữu xóa file 
       }); 
       
       if (!file) {
         throw new Error(`Không tìm thấy file có ID ${fileId} for user ${user._id}`); 
       } 
- 
-      // Xóa file khỏi Telegram nếu có message ID 
+      
+      // Xóa file từ Telegram nếu có message ID 
       if (file.telegramMessageId) { 
-        logger.info(`Đang xóa file khỏi Telegram, message ID: ${file.telegramMessageId}`); 
-        
         try { 
-          await tdlibStorage.deleteFile(file.telegramMessageId); 
-          logger.info(`Đã xóa file khỏi Telegram`); 
+          await tdlibStorage.deleteMessage(config.telegram.chatId, file.telegramMessageId); 
+          logger.info(`Đã xóa message ${file.telegramMessageId} từ Telegram`); 
         } catch (telegramError) { 
-          logger.error(`Không thể xóa file khỏi Telegram: ${telegramError.message}`); 
+          logger.warn(`Không thể xóa message từ Telegram: ${telegramError.message}`); 
           // Vẫn tiếp tục xóa bản ghi trong DB 
         } 
       } 
       
-      // Xóa bản ghi file trong cơ sở dữ liệu 
+      // Xóa bản ghi file 
       await File.findByIdAndDelete(fileId); 
-      logger.info(`Đã xóa bản ghi file ${fileId}`); 
+      logger.info(`Đã xóa file ${fileId} khỏi database`); 
       
-      return { success: true, message: 'Đã xóa file thành công' }; 
+      return true; 
     } catch (error) {
       logger.error(`Lỗi khi xóa file: ${error.message}`); 
       throw error;

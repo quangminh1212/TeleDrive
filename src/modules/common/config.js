@@ -12,14 +12,15 @@ const config = {
   
   // Telegram Configuration
   telegram: {
-    botToken: process.env.TELEGRAM_BOT_TOKEN || null,
-    chatId: process.env.TELEGRAM_CHAT_ID || null,
+    botToken: process.env.TELEGRAM_BOT_TOKEN,
+    chatId: process.env.TELEGRAM_CHAT_ID,
     botUsername: process.env.TELEGRAM_BOT_USERNAME,
     apiId: process.env.TELEGRAM_API_ID,
     apiHash: process.env.TELEGRAM_API_HASH,
-    phoneNumber: process.env.TELEGRAM_PHONE_NUMBER || null,
-    authCode: process.env.TELEGRAM_AUTH_CODE || null,
-    password: process.env.TELEGRAM_PASSWORD || null,
+    phoneNumber: process.env.TELEGRAM_PHONE_NUMBER,
+    authCode: process.env.TELEGRAM_AUTH_CODE,
+    password: process.env.TELEGRAM_PASSWORD,
+    useQRCodeAuth: process.env.TELEGRAM_USE_QR_CODE_AUTH === 'true'
   },
   
   // File Configuration
