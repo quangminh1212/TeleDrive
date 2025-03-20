@@ -77,6 +77,7 @@ class TelegramTDLibClient {
     this.authCallbacks = {};
     this.phoneNumber = config.telegram.phoneNumber || null;
     this.authState = null;
+    this.qrCodeLink = null;
 
     // Kiểm tra xem có TDLib không
     if (!TDLib) {
@@ -366,13 +367,24 @@ class TelegramTDLibClient {
         this.waitingForPhoneNumber = true;
         this.waitingForCode = false;
         this.waitingForPassword = false;
+        this.qrCodeLink = null;
         logger.info('TDLib yêu cầu số điện thoại để đăng nhập');
+        break;
+
+      case 'authorizationStateWaitOtherDeviceConfirmation':
+        // Trạng thái đang chờ xác nhận QR Code
+        this.waitingForPhoneNumber = false;
+        this.waitingForCode = false;
+        this.waitingForPassword = false;
+        this.qrCodeLink = authState.link;
+        logger.info('TDLib đang chờ xác nhận qua QR Code: ' + authState.link);
         break;
 
       case 'authorizationStateWaitCode':
         this.waitingForPhoneNumber = false;
         this.waitingForCode = true;
         this.waitingForPassword = false;
+        this.qrCodeLink = null;
         logger.info('TDLib yêu cầu mã xác thực từ Telegram');
         break;
 
@@ -380,6 +392,7 @@ class TelegramTDLibClient {
         this.waitingForPhoneNumber = false;
         this.waitingForCode = false;
         this.waitingForPassword = true;
+        this.qrCodeLink = null;
         logger.info('TDLib yêu cầu mật khẩu 2FA');
         break;
 
@@ -387,6 +400,7 @@ class TelegramTDLibClient {
         this.waitingForPhoneNumber = false;
         this.waitingForCode = false;
         this.waitingForPassword = false;
+        this.qrCodeLink = null;
         this.isLoggedIn = true;
         logger.info('TDLib đã sẵn sàng, đăng nhập thành công');
         
@@ -463,7 +477,8 @@ class TelegramTDLibClient {
       waitingForPhoneNumber: this.waitingForPhoneNumber,
       waitingForCode: this.waitingForCode,
       waitingForPassword: this.waitingForPassword,
-      authState: this.authState
+      authState: this.authState,
+      qrCodeLink: this.qrCodeLink
     };
   }
 
@@ -869,6 +884,39 @@ class TelegramTDLibClient {
       throw error;
     }
   }
+
+  /**
+   * Yêu cầu đăng nhập bằng QR code
+   */
+  async requestQRCodeAuthentication() {
+    if (!this.client || !this.isConnected) {
+      throw new Error('TDLib chưa được kết nối');
+    }
+
+    try {
+      logger.info('Đang yêu cầu đăng nhập bằng QR code...');
+      
+      // Gửi yêu cầu tạo QR code để đăng nhập
+      await this.client.invoke({
+        _: 'requestQrCodeAuthentication'
+      });
+      
+      // handleAuthorizationState sẽ nhận trạng thái 'authorizationStateWaitOtherDeviceConfirmation'
+      // và lưu trữ link QR code trong this.qrCodeLink
+      
+      return true;
+    } catch (error) {
+      logger.error(`Lỗi khi yêu cầu đăng nhập bằng QR code: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Lấy link QR code hiện tại cho việc đăng nhập
+   */
+  getQRCodeLink() {
+    return this.qrCodeLink;
+  }
 }
 
 // Singleton instance
@@ -1075,7 +1123,29 @@ const tdlibStorage = {
       throw new Error('TDLib không khả dụng, không thể đăng xuất');
     }
     return client.logout();
-  }
+  },
+
+  /**
+   * Yêu cầu đăng nhập bằng QR code
+   */
+  async requestQRCodeAuthentication() {
+    const client = await getClient();
+    if (!client) {
+      throw new Error('TDLib không khả dụng, không thể tạo QR code đăng nhập');
+    }
+    return client.requestQRCodeAuthentication();
+  },
+  
+  /**
+   * Lấy link QR code hiện tại nếu có
+   */
+  async getQRCodeLink() {
+    const client = await getClient();
+    if (!client) {
+      return null;
+    }
+    return client.getQRCodeLink();
+  },
 };
 
 /**

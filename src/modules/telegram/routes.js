@@ -136,6 +136,68 @@ router.post('/logout', async (req, res) => {
   }
 });
 
+/**
+ * @route POST /api/telegram/login/qrcode
+ * @desc Yêu cầu đăng nhập bằng QR code
+ * @access Public
+ */
+router.post('/login/qrcode', async (req, res) => {
+  try {
+    // Gọi phương thức yêu cầu tạo QR code để đăng nhập
+    await tdlibStorage.requestQRCodeAuthentication();
+    
+    // Lấy trạng thái sau khi yêu cầu QR code
+    const authState = await tdlibStorage.getAuthState();
+    
+    if (authState && authState.qrCodeLink) {
+      res.json({ 
+        success: true, 
+        qrCodeLink: authState.qrCodeLink
+      });
+    } else {
+      res.status(500).json({ error: 'Không thể tạo QR code đăng nhập' });
+    }
+  } catch (error) {
+    logger.error(`Lỗi khi tạo QR code đăng nhập: ${error.message}`);
+    res.status(500).json({ error: error.message || 'Không thể tạo QR code đăng nhập' });
+  }
+});
+
+/**
+ * @route GET /api/telegram/login/qrcode/status
+ * @desc Kiểm tra trạng thái đăng nhập QR code
+ * @access Public
+ */
+router.get('/login/qrcode/status', async (req, res) => {
+  try {
+    const authState = await tdlibStorage.getAuthState();
+    
+    if (authState.isLoggedIn) {
+      res.json({ 
+        success: true, 
+        status: 'authenticated',
+        message: 'Đã đăng nhập thành công' 
+      });
+    } else if (authState.qrCodeLink) {
+      res.json({ 
+        success: true, 
+        status: 'waiting_confirmation',
+        qrCodeLink: authState.qrCodeLink,
+        message: 'Đang chờ xác nhận từ thiết bị khác' 
+      });
+    } else {
+      res.json({ 
+        success: false, 
+        status: 'expired',
+        message: 'QR code đã hết hạn hoặc không hợp lệ' 
+      });
+    }
+  } catch (error) {
+    logger.error(`Lỗi khi kiểm tra trạng thái QR code: ${error.message}`);
+    res.status(500).json({ error: error.message || 'Không thể kiểm tra trạng thái QR code' });
+  }
+});
+
 // Test upload route (development only)
 if (config.nodeEnv === 'development') {
   router.post('/test-upload', async (req, res) => {
