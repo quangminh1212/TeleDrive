@@ -195,8 +195,12 @@ class TelegramTDLibClient {
         }
       });
 
-      // Nếu có bot token, đăng nhập bằng bot
-      if (config.telegram.botToken) {
+      // Thử đăng nhập theo phương thức ưu tiên
+      if (config.telegram.useUserAuth && config.telegram.phoneNumber) {
+        // Ưu tiên đăng nhập bằng tài khoản người dùng nếu có số điện thoại
+        await this.loginWithPhoneNumber();
+      } else if (config.telegram.botToken) {
+        // Nếu không có thông tin tài khoản người dùng, sử dụng bot token
         try {
           await this.client.invoke({
             _: 'checkAuthenticationBotToken',
@@ -264,59 +268,185 @@ class TelegramTDLibClient {
   }
 
   /**
-   * Xử lý trạng thái xác thực của TDLib
-   * @param {Object} authState - Đối tượng trạng thái xác thực
+   * Xử lý trạng thái xác thực từ Telegram
+   * @param {Object} authState - Trạng thái xác thực
    */
   async handleAuthorizationState(authState) {
+    if (!authState) return;
+
+    // Ghi nhật ký trạng thái xác thực hiện tại
+    logger.debug(`Trạng thái xác thực TDLib: ${authState._}`);
+
     switch (authState._) {
       case 'authorizationStateWaitTdlibParameters':
-        // TDLib parameters đã được cung cấp trong constructor
+        // Đã xử lý trong phương thức init
         break;
-        
+
       case 'authorizationStateWaitEncryptionKey':
         await this.client.invoke({
           _: 'checkDatabaseEncryptionKey',
-          encryption_key: Buffer.from(config.sessionSecret).toString('hex')
+          encryption_key: config.sessionSecret
         });
         break;
-        
+
       case 'authorizationStateWaitPhoneNumber':
-        logger.warn('TDLib yêu cầu số điện thoại để đăng nhập. Vui lòng cấu hình bot token thay vì đăng nhập bằng người dùng.');
+        if (config.telegram.useUserAuth && config.telegram.phoneNumber) {
+          await this.client.invoke({
+            _: 'setAuthenticationPhoneNumber',
+            phone_number: config.telegram.phoneNumber
+          });
+          logger.info(`Đã gửi số điện thoại: ${config.telegram.phoneNumber}`);
+        } else {
+          logger.warn('Cần số điện thoại để đăng nhập nhưng không được cung cấp trong cấu hình. Hãy thêm TELEGRAM_PHONE_NUMBER và USE_USER_AUTH=true trong file .env');
+        }
         break;
-        
+
+      case 'authorizationStateWaitCode':
+        if (config.telegram.authCode) {
+          await this.client.invoke({
+            _: 'checkAuthenticationCode',
+            code: config.telegram.authCode
+          });
+          logger.info('Đã gửi mã xác thực');
+          
+          // Xóa mã xác thực sau khi sử dụng để tránh sử dụng lại mã cũ
+          config.telegram.authCode = '';
+        } else {
+          logger.warn('Cần mã xác thực để đăng nhập. Hãy thêm TELEGRAM_AUTH_CODE trong file .env');
+          
+          // Lưu trạng thái cho lần chạy tiếp theo
+          fs.writeFileSync(
+            path.join(config.paths.data, 'auth_state.json'),
+            JSON.stringify({ state: 'wait_code', phone: config.telegram.phoneNumber })
+          );
+        }
+        break;
+
+      case 'authorizationStateWaitPassword':
+        if (config.telegram.password) {
+          await this.client.invoke({
+            _: 'checkAuthenticationPassword',
+            password: config.telegram.password
+          });
+          logger.info('Đã gửi mật khẩu xác thực hai yếu tố');
+        } else {
+          logger.warn('Tài khoản yêu cầu mật khẩu hai yếu tố. Hãy thêm TELEGRAM_PASSWORD trong file .env');
+          
+          // Lưu trạng thái cho lần chạy tiếp theo
+          fs.writeFileSync(
+            path.join(config.paths.data, 'auth_state.json'),
+            JSON.stringify({ state: 'wait_password', phone: config.telegram.phoneNumber })
+          );
+        }
+        break;
+
       case 'authorizationStateReady':
         this.isLoggedIn = true;
-        logger.info('TDLib đã được xác thực thành công!');
+        logger.info('Đã đăng nhập thành công vào TDLib bằng tài khoản người dùng');
         
-        // Nếu chưa có chatId, tạo chat riêng tư Saved Messages
-        if (!this.chatId) {
-          try {
-            const me = await this.client.invoke({
-              _: 'getMe'
-            });
-            
-            const savedMessagesChat = await this.client.invoke({
+        // Lấy thông tin người dùng
+        try {
+          const me = await this.client.invoke({
+            _: 'getMe'
+          });
+          logger.info(`Đăng nhập với tư cách: ${me.first_name} (ID: ${me.id})`);
+          
+          // Nếu không có chatId được cấu hình sẵn, tạo chat để lưu trữ file
+          if (!this.chatId) {
+            const savedMessages = await this.client.invoke({
               _: 'createPrivateChat',
               user_id: me.id
             });
-            
-            this.chatId = savedMessagesChat.id;
-            logger.info(`Đã tạo Saved Messages chat với ID: ${this.chatId}`);
-          } catch (error) {
-            logger.error(`Không thể tạo Saved Messages chat: ${error.message}`);
+            this.chatId = savedMessages.id;
+            logger.info(`Đã tạo chat "Tin nhắn đã lưu" với ID: ${this.chatId}`);
           }
+          
+          // Xóa file trạng thái xác thực
+          try {
+            const authStatePath = path.join(config.paths.data, 'auth_state.json');
+            if (fs.existsSync(authStatePath)) {
+              fs.unlinkSync(authStatePath);
+            }
+          } catch (e) {
+            logger.warn(`Không thể xóa file trạng thái xác thực: ${e.message}`);
+          }
+        } catch (error) {
+          logger.error(`Lỗi sau khi đăng nhập: ${error.message}`);
         }
         break;
-        
+
+      case 'authorizationStateLoggingOut':
+        this.isLoggedIn = false;
+        logger.info('Đang đăng xuất khỏi tài khoản');
+        break;
+
+      case 'authorizationStateClosing':
+        this.isConnected = false;
+        this.isLoggedIn = false;
+        logger.info('Đang đóng kết nối TDLib');
+        break;
+
       case 'authorizationStateClosed':
         this.isConnected = false;
         this.isLoggedIn = false;
-        logger.info('Kết nối TDLib đã bị đóng');
+        logger.info('Kết nối TDLib đã đóng');
         break;
-        
+
       default:
-        logger.info(`Trạng thái xác thực chưa được xử lý: ${authState._}`);
-        break;
+        logger.warn(`Trạng thái xác thực không xử lý: ${authState._}`);
+    }
+  }
+
+  /**
+   * Đăng nhập bằng số điện thoại
+   * @returns {Promise<boolean>} Kết quả đăng nhập
+   */
+  async loginWithPhoneNumber() {
+    if (!this.client || !this.isConnected || !config.telegram.phoneNumber) {
+      logger.error('Không thể đăng nhập: TDLib chưa kết nối hoặc không có số điện thoại');
+      return false;
+    }
+
+    try {
+      // Kiểm tra xem có file trạng thái xác thực không
+      const authStatePath = path.join(config.paths.data, 'auth_state.json');
+      if (fs.existsSync(authStatePath)) {
+        try {
+          const authState = JSON.parse(fs.readFileSync(authStatePath, 'utf8'));
+          
+          if (authState.state === 'wait_code' && config.telegram.authCode) {
+            await this.client.invoke({
+              _: 'checkAuthenticationCode',
+              code: config.telegram.authCode
+            });
+            logger.info('Tiếp tục quá trình xác thực với mã đã lưu');
+            return true;
+          } else if (authState.state === 'wait_password' && config.telegram.password) {
+            await this.client.invoke({
+              _: 'checkAuthenticationPassword',
+              password: config.telegram.password
+            });
+            logger.info('Tiếp tục quá trình xác thực với mật khẩu hai yếu tố');
+            return true;
+          }
+        } catch (e) {
+          logger.warn(`Lỗi khi đọc/xử lý file trạng thái xác thực: ${e.message}`);
+        }
+      }
+
+      // Bắt đầu quá trình đăng nhập bằng số điện thoại
+      await this.client.invoke({
+        _: 'setAuthenticationPhoneNumber',
+        phone_number: config.telegram.phoneNumber
+      });
+      
+      logger.info(`Đã gửi yêu cầu đăng nhập với số điện thoại: ${config.telegram.phoneNumber}`);
+      
+      // Lưu ý: Các trạng thái tiếp theo sẽ được xử lý bởi handleAuthorizationState
+      return true;
+    } catch (error) {
+      logger.error(`Lỗi khi đăng nhập bằng số điện thoại: ${error.message}`);
+      return false;
     }
   }
 

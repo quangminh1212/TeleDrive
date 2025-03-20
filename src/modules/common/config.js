@@ -17,6 +17,10 @@ const config = {
     botUsername: process.env.TELEGRAM_BOT_USERNAME,
     apiId: process.env.TELEGRAM_API_ID,
     apiHash: process.env.TELEGRAM_API_HASH,
+    useUserAuth: process.env.USE_USER_AUTH === 'true',
+    phoneNumber: process.env.TELEGRAM_PHONE_NUMBER,
+    authCode: process.env.TELEGRAM_AUTH_CODE,
+    password: process.env.TELEGRAM_PASSWORD,
   },
   
   // File Configuration
@@ -50,10 +54,15 @@ const config = {
 // Validate required configuration
 const validateConfig = () => {
   const required = [
-    'telegram.botToken',
-    'telegram.botUsername',
     'sessionSecret',
   ];
+  
+  // Kiểm tra xem sử dụng bot token hay tài khoản người dùng
+  if (process.env.USE_USER_AUTH === 'true') {
+    required.push('telegram.apiId', 'telegram.apiHash', 'telegram.phoneNumber');
+  } else {
+    required.push('telegram.botToken', 'telegram.botUsername');
+  }
   
   const missing = required.filter(key => {
     const keys = key.split('.');
@@ -72,7 +81,7 @@ const validateConfig = () => {
     console.error(`Lỗi: Thiếu các thông tin cấu hình bắt buộc: ${missing.join(', ')}`);
     console.error('Vui lòng kiểm tra file .env hoặc biến môi trường. Dừng chương trình...');
     
-    if (missing.includes('telegram.botToken')) {
+    if (missing.includes('telegram.botToken') && !config.telegram.useUserAuth) {
       console.error(`
 ====================================================
 LỖI CẤU HÌNH: TELEGRAM BOT TOKEN KHÔNG HỢP LỆ
@@ -92,12 +101,47 @@ TELEGRAM_BOT_USERNAME=your_bot_name_bot
 `);
     }
     
+    if (config.telegram.useUserAuth && (missing.includes('telegram.apiId') || missing.includes('telegram.apiHash'))) {
+      console.error(`
+====================================================
+LỖI CẤU HÌNH: TELEGRAM API ID VÀ API HASH KHÔNG HỢP LỆ
+====================================================
+Để sử dụng tài khoản người dùng thông thường, bạn cần:
+1. Truy cập https://my.telegram.org/auth
+2. Đăng nhập và chọn "API development tools"
+3. Tạo ứng dụng mới và nhận API ID và API HASH
+4. Đặt thông tin vào file .env:
+
+TELEGRAM_API_ID=123456
+TELEGRAM_API_HASH=abcdef1234567890abcdef1234567890
+USE_USER_AUTH=true
+TELEGRAM_PHONE_NUMBER=+84xxxxxxxxx (bao gồm mã quốc gia)
+====================================================
+`);
+    }
+    
+    if (config.telegram.useUserAuth && missing.includes('telegram.phoneNumber')) {
+      console.error(`
+====================================================
+LỖI CẤU HÌNH: THIẾU SỐ ĐIỆN THOẠI TELEGRAM
+====================================================
+Để đăng nhập bằng tài khoản người dùng, bạn cần cung cấp số điện thoại:
+
+TELEGRAM_PHONE_NUMBER=+84xxxxxxxxx (bao gồm mã quốc gia)
+====================================================
+`);
+    }
+    
     process.exit(1);
   }
   
-  // Kiểm tra TDLib API ID và API Hash nếu có
+  // Kiểm tra TDLib API ID và API Hash
   if (config.telegram.apiId && config.telegram.apiHash) {
-    console.info('Đã phát hiện Telegram API ID và API Hash - có thể sử dụng TDLib cho hiệu suất cao hơn');
+    if (config.telegram.useUserAuth) {
+      console.info('Đã phát hiện cấu hình đăng nhập bằng tài khoản Telegram - sẽ đăng nhập bằng số điện thoại');
+    } else {
+      console.info('Đã phát hiện Telegram API ID và API Hash - có thể sử dụng TDLib cho hiệu suất cao hơn');
+    }
   }
 };
 
