@@ -33,35 +33,46 @@ async function initializeApp() {
 // Start server
 async function start() {
   try {
+    console.log('Starting server...');
+    
     // Kết nối đến MongoDB
     if (config.db && config.db.uri) {
       try {
+        console.log('Attempting to connect to MongoDB...');
         await mongoose.connect(config.db.uri);
         logger.info('Đã kết nối thành công đến MongoDB');
       } catch (mongoError) {
+        console.log('MongoDB connection error:', mongoError.message);
         logger.error(`Lỗi khi kết nối MongoDB: ${mongoError.message}`);
         logger.warn('Ứng dụng sẽ chạy mà không có MongoDB. Một số tính năng sẽ không hoạt động.');
         
         // Thiết lập mock database cho development
         if (config.nodeEnv === 'development') {
+          console.log('Setting up mock database for development...');
           logger.info('Setting up mock database for development');
           setupMockDatabase();
           logger.info('Đã thiết lập mock database cho development');
         }
       }
     } else {
+      console.log('No MongoDB URI provided, using mock database');
       logger.warn('Không có URI MongoDB được cung cấp, sử dụng mock database');
       setupMockDatabase();
     }
 
     // Khởi tạo TDLib
+    console.log('Initializing TDLib...');
     await initializeApp();
+    console.log('TDLib initialization completed');
 
     // Lấy port từ environment hoặc sử dụng port mặc định
     const port = process.env.PORT || config.port || 3001;
+    
+    console.log(`Attempting to start server on port ${port}...`);
 
     // Khởi động server
     server.listen(port, '0.0.0.0', () => {
+      console.log(`Server is now running on port ${port} (${config.nodeEnv})`);
       logger.info(`Server đang chạy trên cổng ${port} (${config.nodeEnv})`);
       
       // Log TDLib status
@@ -80,6 +91,7 @@ async function start() {
       ensureDirectories();
     });
   } catch (error) {
+    console.error('Critical error starting server:', error);
     logger.error(`Error starting server: ${error.message}`);
     console.error('Failed to start server:', error);
     process.exit(1);
