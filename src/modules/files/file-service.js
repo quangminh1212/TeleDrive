@@ -70,7 +70,7 @@ class FileService {
       logger.info(`Đã tạo bản ghi tạm thời cho file: ${tempFile._id}`);
       
       try {
-        // Tải lên file sử dụng TDLib
+        // Upload file sử dụng TDLib
         const telegramFile = await tdlibStorage.uploadFile(
           fileData.path,
           `Uploaded by: ${user.firstName} (${user.telegramId || user._id})`
@@ -196,140 +196,157 @@ class FileService {
       
       logger.info(`Đã hoàn thành việc chia file thành ${chunks.length} phần`);
       
-      // Tải lên đồng thời nhiều phần 
-      try {
-        logger.info(`Tải lên nhiều phần sử dụng TDLib: ${chunks.length} phần`);
-        
-        const captions = chunks.map((_, i) => 
-          `Part ${i + 1}/${chunks.length} of ${fileData.originalname} (${user.telegramId || user._id})`
-        );
-        
-        telegramMessages = await tdlibStorage.uploadMultipartFile(chunks, captions);
-        
-        logger.info(`Đã tải lên thành công tất cả ${telegramMessages.length} phần`);
-      } catch (multipartError) {
-        logger.error(`Lỗi khi tải lên nhiều phần: ${multipartError.message}`);
-        
-        // Thử tải từng phần nếu tải đồng thời thất bại
-        for (let i = 0; i < chunks.length; i++) {
-          try {
-            const chunkPath = chunks[i];
-            const caption = `Part ${i + 1}/${chunks.length} of ${fileData.originalname} (${user.telegramId || user._id})`;
-            
-            logger.info(`Đang tải lên phần ${i + 1}/${chunks.length} - ${chunkPath}`);
-            
-            // Tải lên với tối đa 5 lần thử lại
-            let retries = 5;
-            let telegramFile;
-            let lastError;
-            
-            while (retries > 0 && !telegramFile) {
-              try {
-                telegramFile = await tdlibStorage.uploadFile(chunkPath, caption);
-              } catch (err) {
-                lastError = err;
-                retries--;
-                logger.warn(`Lỗi khi tải lên phần ${i + 1}, còn ${retries} lần thử lại: ${err.message}`);
-                
-                if (retries > 0) {
-                  // Tăng thời gian chờ giữa các lần thử
-                  const waitTime = 5000 * (6 - retries); // 5s, 10s, 15s, 20s, 25s
-                  logger.info(`Đợi ${waitTime/1000}s trước khi thử lại...`);
-                  await new Promise(resolve => setTimeout(resolve, waitTime));
-                }
+      // Tải lên từng phần lên Telegram sử dụng TDLib
+      for (let i = 0; i < chunks.length; i++) {
+        try {
+          const chunkPath = chunks[i];
+          const caption = `Part ${i + 1}/${chunks.length} of ${fileData.originalname} (${user.telegramId || user._id})`;
+          
+          logger.info(`Đang tải lên phần ${i + 1}/${chunks.length} - ${chunkPath}`);
+          
+          // Upload với tối đa 5 lần thử lại
+          let retries = 5;
+          let telegramFile;
+          let lastError;
+          
+          while (retries > 0 && !telegramFile) {
+            try {
+              telegramFile = await tdlibStorage.uploadFile(chunkPath, caption);
+            } catch (err) {
+              lastError = err;
+              retries--;
+              logger.warn(`Lỗi khi tải lên phần ${i + 1}, còn ${retries} lần thử lại: ${err.message}`);
+              
+              if (retries > 0) {
+                // Tăng thời gian chờ giữa các lần thử
+                const waitTime = 5000 * (6 - retries); // 5s, 10s, 15s, 20s, 25s
+                logger.info(`Đợi ${waitTime/1000}s trước khi thử lại...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
               }
             }
-            
-            if (!telegramFile) {
-              throw lastError || new Error(`Không thể tải lên phần ${i + 1} sau nhiều lần thử`);
-            }
-            
-            telegramMessages.push(telegramFile);
-            
-            // Cập nhật tiến độ - 50% cho việc chia file, 50% cho việc tải lên
-            await File.findByIdAndUpdate(
-              parentFile._id,
-              { 
-                $inc: { uploadedParts: 1 },
-                $set: { uploadProgress: 50 + Math.round((i + 1) * 50 / chunks.length) }
-              }
-            );
-            
-            logger.info(`Đã tải lên phần ${i + 1}/${chunks.length} thành công`);
-          } catch (error) {
-            logger.error(`Lỗi tải lên phần ${i + 1}: ${error.message}`);
-            throw error;
           }
+          
+          if (!telegramFile) {
+            throw lastError || new Error(`Không thể tải lên phần ${i + 1} sau nhiều lần thử`);
+          }
+          
+          telegramMessages.push({
+            index: i,
+            messageId: telegramFile.messageId,
+            fileId: telegramFile.fileId
+          });
+          
+          // Cập nhật tiến độ - 50% cho việc chia file, 50% cho việc tải lên
+          await File.findByIdAndUpdate(
+            parentFile._id,
+            { 
+              $inc: { uploadedParts: 1 },
+              $set: { uploadProgress: 50 + Math.round((i + 1) * 50 / chunks.length) }
+            }
+          );
+          
+          logger.info(`Đã tải lên phần ${i + 1}/${chunks.length} thành công`);
+          
+          // Thêm thời gian nghỉ giữa các lần tải lên để tránh bị giới hạn tần suất
+          if (i < chunks.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        } catch (error) {
+          logger.error(`Lỗi tải lên phần ${i + 1}/${chunks.length}: ${error.message}`);
+          
+          // Xóa các tin nhắn đã tải lên nếu có lỗi
+          for (const message of telegramMessages) {
+            try {
+              await tdlibStorage.deleteFile(message.messageId);
+              logger.info(`Đã xóa phần đã tải lên trước đó (messageId: ${message.messageId})`);
+            } catch (deleteError) {
+              logger.warn(`Không thể xóa phần đã tải lên: ${deleteError.message}`);
+            }
+          }
+          
+          // Cập nhật trạng thái file
+          await File.findByIdAndUpdate(
+            parentFile._id,
+            { isUploading: false, error: error.message }
+          );
+          
+          throw new Error(`Lỗi khi tải lên phần ${i + 1}/${chunks.length}: ${error.message}`);
         }
       }
       
-      if (telegramMessages.length !== chunks.length) {
-        throw new Error(`Số lượng phần đã tải lên (${telegramMessages.length}) không khớp với số phần đã chia (${chunks.length})`);
-      }
+      // Sắp xếp các tin nhắn theo thứ tự đúng
+      telegramMessages.sort((a, b) => a.index - b.index);
       
-      // Cập nhật thông tin file trong cơ sở dữ liệu
-      const updates = {
-        isUploading: false,
-        uploadedParts: chunks.length,
-        uploadProgress: 100,
-        telegramFileIds: telegramMessages.map(msg => msg.fileId),
-        telegramMessageIds: telegramMessages.map(msg => msg.messageId)
-      };
+      // Lưu danh sách file ID và message ID vào cơ sở dữ liệu
+      const fileIds = telegramMessages.map(message => message.fileId);
+      const messageIds = telegramMessages.map(message => message.messageId);
       
-      const file = await File.findByIdAndUpdate(parentFile._id, updates, { new: true });
+      const updatedFile = await File.findByIdAndUpdate(
+        parentFile._id,
+        { 
+          isUploading: false,
+          uploadedParts: chunks.length,
+          uploadProgress: 100,
+          telegramFileIds: fileIds,
+          telegramMessageIds: messageIds
+        },
+        { new: true }
+      );
       
       // Cập nhật dung lượng đã sử dụng
       await user.addStorageUsed(fileData.size);
       
-      // Xóa các file tạm và thư mục
-      for (const chunkPath of chunks) {
-        try {
-          if (fs.existsSync(chunkPath)) {
-            fs.unlinkSync(chunkPath);
-          }
-        } catch (e) {
-          logger.warn(`Không thể xóa file tạm: ${chunkPath}`);
+      // Xóa file tạm và thư mục tạm
+      try {
+        // Xóa file gốc
+        if (fs.existsSync(fileData.path)) {
+          await unlinkAsync(fileData.path);
+          logger.info(`Đã xóa file gốc: ${fileData.path}`);
         }
-      }
-      
-      // Xóa thư mục tạm
-      try {
-        fs.rmdirSync(tempFolder, { recursive: true });
-      } catch (e) {
-        logger.warn(`Không thể xóa thư mục tạm: ${tempFolder}`);
-      }
-      
-      // Xóa file gốc
-      try {
-        await unlinkAsync(fileData.path);
-      } catch (e) {
-        logger.warn(`Không thể xóa file gốc: ${fileData.path}`);
-      }
-      
-      logger.info(`File đa phần đã được tải lên thành công: ${file._id} (${file.name})`);
-      
-      return file;
-    } catch (error) {
-      logger.error(`Lỗi xử lý file lớn: ${error.message}`);
-      
-      // Xóa các file tạm nếu có
-      for (const chunkPath of chunks) {
-        try {
+        
+        // Xóa các phần
+        for (const chunkPath of chunks) {
           if (fs.existsSync(chunkPath)) {
-            fs.unlinkSync(chunkPath);
+            await unlinkAsync(chunkPath);
+            logger.info(`Đã xóa phần: ${chunkPath}`);
           }
-        } catch (e) {
-          logger.warn(`Không thể xóa file tạm: ${chunkPath}`);
         }
-      }
-      
-      // Xóa thư mục tạm
-      try {
+        
+        // Xóa thư mục tạm
         if (fs.existsSync(tempFolder)) {
-          fs.rmdirSync(tempFolder, { recursive: true });
+          fs.rmdirSync(tempFolder);
+          logger.info(`Đã xóa thư mục tạm: ${tempFolder}`);
         }
-      } catch (e) {
-        logger.warn(`Không thể xóa thư mục tạm: ${tempFolder}`);
+      } catch (error) {
+        logger.warn(`Lỗi khi xóa file tạm: ${error.message}`);
+      }
+      
+      logger.info(`Tải lên file đa phần thành công: ${updatedFile._id}`);
+      
+      return updatedFile;
+    } catch (error) {
+      logger.error(`Lỗi khi xử lý file lớn: ${error.message}`);
+      
+      // Xóa file tạm và thư mục tạm
+      try {
+        // Xóa các phần
+        for (const chunkPath of chunks) {
+          if (fs.existsSync(chunkPath)) {
+            await unlinkAsync(chunkPath);
+          }
+        }
+        
+        // Xóa thư mục tạm
+        if (fs.existsSync(tempFolder)) {
+          fs.rmdirSync(tempFolder);
+        }
+        
+        // Xóa file gốc
+        if (fs.existsSync(fileData.path)) {
+          await unlinkAsync(fileData.path);
+        }
+      } catch (cleanupError) {
+        logger.warn(`Lỗi khi dọn dẹp file tạm: ${cleanupError.message}`);
       }
       
       throw error;
@@ -337,10 +354,10 @@ class FileService {
   }
   
   /**
-   * Download a file from Telegram
-   * @param {string} fileId - ID of the file
+   * Tải xuống file từ Telegram
+   * @param {string} fileId - ID của file
    * @param {Object} user - User object
-   * @returns {Promise<string>} - Path to the downloaded file
+   * @returns {Promise<string>} - Path to downloaded file
    */
   async downloadFile(fileId, user) {
     try {
@@ -377,7 +394,7 @@ class FileService {
       // Xác định output path
       const outputPath = path.join(userDownloadDir, file.name);
       
-      // Download file từ TDLib
+      // Download file using TDLib
       const filePath = await tdlibStorage.downloadFile(file.telegramFileId, outputPath);
       
       logger.info(`File downloaded successfully: ${filePath}`);
@@ -404,10 +421,6 @@ class FileService {
   async downloadMultipartFile(file, user) {
     logger.info(`Tải xuống file đa phần: ${file._id} (${file.name})`);
     
-    if (!file.telegramFileIds || file.telegramFileIds.length === 0) {
-      throw new Error('File không có dữ liệu về các phần');
-    }
-    
     // Tạo thư mục tạm để lưu các phần
     const tempDir = path.join(config.paths.temp, 'downloads', crypto.randomBytes(8).toString('hex'));
     if (!fs.existsSync(tempDir)) {
@@ -421,211 +434,137 @@ class FileService {
     }
     
     const outputPath = path.join(userDownloadDir, file.name);
+    const parts = [];
     
     try {
-      // Tải xuống các phần bằng TDLib
-      logger.info(`Tải xuống đồng thời ${file.telegramFileIds.length} phần của file ${file.name}`);
+      // Tải xuống từng phần
+      logger.info(`Tải xuống ${file.telegramFileIds.length} phần của file ${file.name}`);
       
-      try {
-        // Thử tải xuống và ghép file bằng phương thức có sẵn của TDLib
-        await tdlibStorage.downloadMultipartFile(file.telegramFileIds, outputPath);
-        logger.info(`Đã tải xuống và ghép file thành công: ${outputPath}`);
-      } catch (bulkError) {
-        logger.warn(`Lỗi khi tải xuống nhiều phần cùng lúc: ${bulkError.message}. Đang thử tải từng phần riêng lẻ...`);
+      for (let i = 0; i < file.telegramFileIds.length; i++) {
+        const fileId = file.telegramFileIds[i];
+        const partPath = path.join(tempDir, `part_${i}.bin`);
         
-        // Nếu tải xuống đồng thời thất bại, thử tải từng phần
-        const parts = [];
+        logger.info(`Đang tải xuống phần ${i + 1}/${file.telegramFileIds.length} - ${fileId}`);
         
-        for (let i = 0; i < file.telegramFileIds.length; i++) {
-          const fileId = file.telegramFileIds[i];
-          const partPath = path.join(tempDir, `part_${i}.bin`);
-          
-          logger.info(`Đang tải xuống phần ${i + 1}/${file.telegramFileIds.length} - ${fileId}`);
-          
-          // Thử tải xuống tối đa 3 lần
-          let attempts = 0;
-          let downloaded = false;
-          let error;
-          
-          while (attempts < 3 && !downloaded) {
-            try {
-              const downloadedPart = await tdlibStorage.downloadFile(fileId, partPath);
-              parts.push(downloadedPart);
-              downloaded = true;
-              logger.info(`Phần ${i + 1} đã được tải xuống: ${downloadedPart}`);
-            } catch (err) {
-              attempts++;
-              error = err;
-              logger.warn(`Lỗi khi tải xuống phần ${i + 1}, lần thử ${attempts}/3: ${err.message}`);
-              
-              // Chờ 1 giây trước khi thử lại
-              if (attempts < 3) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-              }
+        // Thử tải xuống tối đa 3 lần
+        let attempts = 0;
+        let downloaded = false;
+        let error;
+        
+        while (attempts < 3 && !downloaded) {
+          try {
+            const downloadedPart = await tdlibStorage.downloadFile(fileId, partPath);
+            parts.push(downloadedPart);
+            downloaded = true;
+            logger.info(`Phần ${i + 1} đã được tải xuống: ${downloadedPart}`);
+          } catch (err) {
+            attempts++;
+            error = err;
+            logger.warn(`Lỗi khi tải xuống phần ${i + 1}, lần thử ${attempts}/3: ${err.message}`);
+            
+            // Chờ 1 giây trước khi thử lại
+            if (attempts < 3) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
             }
           }
-          
-          if (!downloaded) {
-            throw error || new Error(`Không thể tải xuống phần ${i + 1} sau nhiều lần thử`);
-          }
         }
         
-        // Nếu tất cả các phần đã được tải xuống, ghép chúng lại
-        logger.info(`Tất cả ${parts.length} phần đã được tải xuống, bắt đầu ghép...`);
-        
-        // Kiểm tra nếu file đầu ra đã tồn tại
-        if (fs.existsSync(outputPath)) {
-          fs.unlinkSync(outputPath);
-        }
-        
-        // Tạo writeStream để ghi vào file đầu ra
-        const outputStream = fs.createWriteStream(outputPath);
-        
-        // Ghép các phần lại với nhau
-        for (const partPath of parts) {
-          const partData = fs.readFileSync(partPath);
-          outputStream.write(partData);
-        }
-        
-        // Kết thúc ghi
-        outputStream.end();
-        
-        // Đợi cho writeStream ghi xong
-        await new Promise((resolve, reject) => {
-          outputStream.on('finish', resolve);
-          outputStream.on('error', reject);
-        });
-        
-        logger.info(`Đã ghép thành công ${parts.length} phần thành file: ${outputPath}`);
-        
-        // Xóa các file tạm
-        for (const partPath of parts) {
-          try {
-            fs.unlinkSync(partPath);
-          } catch (e) {
-            logger.warn(`Không thể xóa file tạm: ${partPath}`);
-          }
+        if (!downloaded) {
+          throw error || new Error(`Không thể tải xuống phần ${i + 1}`);
         }
       }
       
-      // Xóa thư mục tạm
-      try {
-        fs.rmdirSync(tempDir, { recursive: true });
-      } catch (e) {
-        logger.warn(`Không thể xóa thư mục tạm: ${tempDir}`);
+      // Ghép các phần lại thành file hoàn chỉnh
+      logger.info(`Đang ghép ${parts.length} phần thành file hoàn chỉnh: ${outputPath}`);
+      
+      // Nếu file đầu ra đã tồn tại, xóa nó
+      if (fs.existsSync(outputPath)) {
+        fs.unlinkSync(outputPath);
       }
       
-      // Cập nhật thông tin tải xuống
+      // Sử dụng writeStream để ghép file
+      const outStream = fs.createWriteStream(outputPath);
+      
+      for (let i = 0; i < parts.length; i++) {
+        const partData = fs.readFileSync(parts[i]);
+        outStream.write(partData);
+      }
+      
+      outStream.end();
+      
+      // Đợi stream kết thúc
+      await new Promise((resolve, reject) => {
+        outStream.on('finish', resolve);
+        outStream.on('error', reject);
+      });
+      
+      logger.info(`Đã ghép thành công các phần thành file: ${outputPath}`);
+      
+      // Cập nhật thống kê tải xuống
       await File.findByIdAndUpdate(file._id, {
         lastDownloadedAt: new Date(),
         $inc: { downloadCount: 1 }
       });
       
+      // Dọn dẹp các phần tạm thời
+      try {
+        for (const part of parts) {
+          if (fs.existsSync(part)) {
+            fs.unlinkSync(part);
+          }
+        }
+        
+        if (fs.existsSync(tempDir)) {
+          fs.rmdirSync(tempDir, { recursive: true });
+        }
+        
+        logger.info('Đã dọn dẹp các file tạm');
+      } catch (cleanupError) {
+        logger.warn(`Lỗi khi dọn dẹp các file tạm: ${cleanupError.message}`);
+      }
+      
       return outputPath;
     } catch (error) {
-      logger.error(`Lỗi khi tải xuống file đa phần: ${error.message}`);
+      logger.error(`Lỗi khi tải xuống và ghép file đa phần: ${error.message}`);
       
-      // Xóa thư mục tạm khi có lỗi
+      // Thử dọn dẹp nếu có lỗi
       try {
-        fs.rmdirSync(tempDir, { recursive: true });
-      } catch (e) {
-        logger.warn(`Không thể xóa thư mục tạm: ${tempDir}`);
+        // Xóa các phần tạm nếu tồn tại
+        for (const part of parts) {
+          if (fs.existsSync(part)) {
+            fs.unlinkSync(part);
+          }
+        }
+        
+        // Xóa thư mục tạm
+        if (fs.existsSync(tempDir)) {
+          fs.rmdirSync(tempDir, { recursive: true });
+        }
+        
+        // Xóa file đầu ra nếu đã tạo một phần
+        if (fs.existsSync(outputPath)) {
+          fs.unlinkSync(outputPath);
+        }
+      } catch (cleanupError) {
+        logger.warn(`Lỗi khi dọn dẹp sau lỗi: ${cleanupError.message}`);
       }
       
-      throw error;
-    }
-  }
-  
-  /**
-   * List files for a user
-   * @param {Object} user - User object
-   * @param {Object} options - Listing options
-   * @returns {Promise<Object>} - List result
-   */
-  async listFiles(user, options = {}) {
-    try {
-      const { page = 1, limit = 50, sortBy = 'createdAt', sortOrder = 'desc', search = '', tag = '', deleted = false } = options;
-      
-      // Build query
-      const query = {
-        createdBy: user._id,
-        isDeleted: deleted
-      };
-      
-      // Add search
-      if (search) {
-        query.name = { $regex: search, $options: 'i' };
-      }
-      
-      // Add tag filter
-      if (tag) {
-        query.tags = tag;
-      }
-      
-      // Build sort
-      const sort = {};
-      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
-      
-      // Calculate pagination
-      const skip = (page - 1) * limit;
-      
-      // Find files
-      const files = await File.find(query)
-        .sort(sort)
-        .skip(skip)
-        .limit(limit);
-      
-      // Count total
-      const total = await File.find(query).countDocuments();
-      
-      return {
-        files,
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit)
-      };
-    } catch (error) {
-      logger.error(`Error listing files: ${error.message}`);
-      throw error;
-    }
-  }
-  
-  /**
-   * Get file info
-   * @param {string} fileId - ID of the file
-   * @param {Object} user - User object
-   * @returns {Promise<Object>} - File object
-   */
-  async getFileInfo(fileId, user) {
-    try {
-      const file = await File.findById(fileId);
-      
-      if (!file) {
-        throw new Error('File không tồn tại');
-      }
-      
-      // Check if user has access to file
-      if (file.createdBy.toString() !== user._id.toString() && !file.isPublic) {
-        throw new Error('Bạn không có quyền truy cập file này');
-      }
-      
-      return file;
-    } catch (error) {
-      logger.error(`Error getting file info: ${error.message}`);
       throw error;
     }
   }
   
   /**
    * Delete a file
-   * @param {string} fileId - ID of the file
+   * @param {string} fileId - File ID in database
    * @param {Object} user - User object
-   * @param {boolean} permanent - Whether to delete permanently
-   * @returns {Promise<Object>} - Result
+   * @param {boolean} permanent - Whether to permanently delete the file
+   * @returns {Promise<Object>} - Deleted file data
    */
   async deleteFile(fileId, user, permanent = false) {
     try {
+      logger.info(`Deleting file: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id}), permanent: ${permanent}`);
+      
+      // Find file in database
       const file = await File.findById(fileId);
       
       if (!file) {
@@ -638,36 +577,39 @@ class FileService {
       }
       
       if (permanent) {
-        // Permanently delete from Telegram if using TDLib
-        try {
-          if (file.isMultipart && file.telegramMessageIds && file.telegramMessageIds.length > 0) {
-            for (const messageId of file.telegramMessageIds) {
+        // Xóa file đa phần
+        if (file.isMultipart && file.telegramMessageIds && file.telegramMessageIds.length > 0) {
+          logger.info(`Đang xóa vĩnh viễn file đa phần: ${fileId} (${file.telegramMessageIds.length} phần)`);
+          
+          for (const messageId of file.telegramMessageIds) {
+            try {
               await tdlibStorage.deleteFile(messageId);
+              logger.info(`Đã xóa phần với messageId: ${messageId}`);
+            } catch (error) {
+              logger.warn(`Không thể xóa phần với messageId: ${messageId} - ${error.message}`);
+              // Tiếp tục xóa các phần khác
             }
-          } else if (file.telegramMessageId) {
-            await tdlibStorage.deleteFile(file.telegramMessageId);
           }
-        } catch (telegramError) {
-          logger.error(`Lỗi khi xóa file từ Telegram: ${telegramError.message}`);
-          // Vẫn tiếp tục xóa trong DB
+        } else {
+          // Permanently delete file from Telegram
+          await tdlibStorage.deleteFile(file.telegramMessageId);
         }
         
-        // Reduce user storage
-        await user.removeStorageUsed(file.size);
+        // Remove file from database
+        await file.deleteOne();
         
-        // Delete from database
-        await File.findByIdAndRemove(fileId);
+        // Update user storage usage
+        await user.subtractStorageUsed(file.size);
         
-        return { success: true, message: 'File đã được xóa vĩnh viễn' };
+        logger.info(`File permanently deleted: ${fileId}`);
       } else {
-        // Move to trash
-        await File.findByIdAndUpdate(fileId, { 
-          isDeleted: true,
-          deletedAt: new Date()
-        });
+        // Soft delete file (move to trash)
+        await file.softDelete();
         
-        return { success: true, message: 'File đã được chuyển vào thùng rác' };
+        logger.info(`File moved to trash: ${fileId}`);
       }
+      
+      return file;
     } catch (error) {
       logger.error(`Error deleting file: ${error.message}`);
       throw error;
@@ -676,21 +618,19 @@ class FileService {
   
   /**
    * Restore a file from trash
-   * @param {string} fileId - ID of the file
+   * @param {string} fileId - File ID in database
    * @param {Object} user - User object
-   * @returns {Promise<Object>} - Result
+   * @returns {Promise<Object>} - Restored file data
    */
   async restoreFile(fileId, user) {
     try {
+      logger.info(`Restoring file: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id})`);
+      
+      // Find file in database
       const file = await File.findById(fileId);
       
       if (!file) {
         throw new Error('File không tồn tại');
-      }
-      
-      // Check if user has access to file
-      if (file.createdBy.toString() !== user._id.toString()) {
-        throw new Error('Bạn không có quyền khôi phục file này');
       }
       
       // Check if file is in trash
@@ -698,13 +638,17 @@ class FileService {
         throw new Error('File không ở trong thùng rác');
       }
       
-      // Restore from trash
-      await File.findByIdAndUpdate(fileId, { 
-        isDeleted: false,
-        deletedAt: null
-      });
+      // Check if user has access to file
+      if (file.createdBy.toString() !== user._id.toString()) {
+        throw new Error('Bạn không có quyền khôi phục file này');
+      }
       
-      return { success: true, message: 'File đã được khôi phục' };
+      // Restore file
+      await file.restore();
+      
+      logger.info(`File restored: ${fileId}`);
+      
+      return file;
     } catch (error) {
       logger.error(`Error restoring file: ${error.message}`);
       throw error;
@@ -712,53 +656,43 @@ class FileService {
   }
   
   /**
-   * Empty trash for a user
+   * Empty user's trash (permanently delete all trashed files)
    * @param {Object} user - User object
-   * @returns {Promise<Object>} - Result
+   * @returns {Promise<number>} - Number of files deleted
    */
   async emptyTrash(user) {
     try {
-      // Find all files in trash
-      const files = await File.find({
+      logger.info(`Emptying trash for user: ${user.firstName} (${user.telegramId || user._id})`);
+      
+      // Find all trashed files for this user
+      const trashedFiles = await File.find({ 
         createdBy: user._id,
         isDeleted: true
       });
       
-      // Delete all files from Telegram and database
-      let totalSize = 0;
+      if (trashedFiles.length === 0) {
+        return 0;
+      }
       
-      for (const file of files) {
-        try {
-          if (file.isMultipart && file.telegramMessageIds && file.telegramMessageIds.length > 0) {
-            for (const messageId of file.telegramMessageIds) {
-              await tdlibStorage.deleteFile(messageId);
-            }
-          } else if (file.telegramMessageId) {
-            await tdlibStorage.deleteFile(file.telegramMessageId);
-          }
-        } catch (telegramError) {
-          logger.error(`Lỗi khi xóa file từ Telegram: ${telegramError.message}`);
-          // Vẫn tiếp tục xóa trong DB
-        }
-        
+      // For each file, permanently delete from Telegram
+      let totalSize = 0;
+      for (const file of trashedFiles) {
+        await tdlibStorage.deleteFile(file.telegramMessageId);
         totalSize += file.size;
       }
       
-      // Remove all files from database
+      // Delete all files from database
       await File.deleteMany({
         createdBy: user._id,
         isDeleted: true
       });
       
-      // Update user storage
-      await user.removeStorageUsed(totalSize);
+      // Update user storage usage
+      await user.subtractStorageUsed(totalSize);
       
-      return { 
-        success: true, 
-        message: `Đã xóa vĩnh viễn ${files.length} file từ thùng rác`,
-        deletedCount: files.length,
-        freedSpace: totalSize
-      };
+      logger.info(`Emptied trash for user: ${user.firstName}, deleted ${trashedFiles.length} files`);
+      
+      return trashedFiles.length;
     } catch (error) {
       logger.error(`Error emptying trash: ${error.message}`);
       throw error;
@@ -766,18 +700,149 @@ class FileService {
   }
   
   /**
-   * Share a file
-   * @param {string} fileId - ID of the file
+   * Get file info
+   * @param {string} fileId - File ID in database
    * @param {Object} user - User object
-   * @param {number} expiresInHours - Hours until the share expires
-   * @returns {Promise<Object>} - Share information
+   * @returns {Promise<Object>} - File data
    */
-  async shareFile(fileId, user, expiresInHours = 24) {
+  async getFileInfo(fileId, user) {
     try {
+      logger.info(`Getting file info: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id})`);
+      
+      // Find file in database
       const file = await File.findById(fileId);
       
       if (!file) {
         throw new Error('File không tồn tại');
+      }
+      
+      // Check if user has access to file (owner or public file)
+      if (!file.isPublic && file.createdBy.toString() !== user._id.toString()) {
+        throw new Error('Bạn không có quyền truy cập file này');
+      }
+      
+      logger.info(`File info retrieved: ${fileId}`);
+      
+      return file;
+    } catch (error) {
+      logger.error(`Error getting file info: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * List files for a user
+   * @param {Object} user - User object
+   * @param {Object} options - List options (page, limit, sortBy, sortOrder, search, tag)
+   * @returns {Promise<Object>} - List of files and pagination data
+   */
+  async listFiles(user, options = {}) {
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        search = '',
+        tag = '',
+        deleted = false,
+      } = options;
+      
+      logger.info(`Listing files for user: ${user.firstName} (${user.telegramId || user._id}), page: ${page}, limit: ${limit}`);
+      
+      // Create base query
+      let query = {
+        createdBy: user._id,
+        isDeleted: deleted === true,
+      };
+      
+      // Add search filter if provided
+      if (search) {
+        query.$text = { $search: search };
+      }
+      
+      // Add tag filter if provided
+      if (tag) {
+        query.tags = tag;
+      }
+      
+      // Create sort object
+      const sort = {};
+      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+      
+      // If searching, add text score to sort
+      if (search) {
+        sort.score = { $meta: 'textScore' };
+      }
+      
+      // Calculate pagination
+      const skip = (page - 1) * limit;
+      
+      // Get total count
+      const total = await File.countDocuments(query);
+      
+      // Get files
+      let files;
+      if (search) {
+        files = await File.find(
+          query,
+          { score: { $meta: 'textScore' } }
+        )
+          .sort(sort)
+          .skip(skip)
+          .limit(limit);
+      } else {
+        files = await File.find(query)
+          .sort(sort)
+          .skip(skip)
+          .limit(limit);
+      }
+      
+      // Calculate pagination data
+      const totalPages = Math.ceil(total / limit);
+      const hasNext = page < totalPages;
+      const hasPrev = page > 1;
+      
+      logger.info(`Listed ${files.length} files for user`);
+      
+      return {
+        files,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext,
+          hasPrev,
+        },
+      };
+    } catch (error) {
+      logger.error(`Error listing files: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * Share a file
+   * @param {string} fileId - File ID in database
+   * @param {Object} user - User object
+   * @param {number} expiresInHours - Number of hours until the share link expires (0 for no expiration)
+   * @returns {Promise<Object>} - File with share link
+   */
+  async shareFile(fileId, user, expiresInHours = 24) {
+    try {
+      logger.info(`Sharing file: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id})`);
+      
+      // Find file in database
+      const file = await File.findById(fileId);
+      
+      if (!file) {
+        throw new Error('File không tồn tại');
+      }
+      
+      // Check if file is deleted
+      if (file.isDeleted) {
+        throw new Error('File đã bị xóa');
       }
       
       // Check if user has access to file
@@ -785,24 +850,12 @@ class FileService {
         throw new Error('Bạn không có quyền chia sẻ file này');
       }
       
-      // Generate share token
-      const shareToken = crypto.randomBytes(16).toString('hex');
+      // Generate share link
+      await file.generateShareLink(expiresInHours);
       
-      // Calculate expiry time
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + expiresInHours);
+      logger.info(`File shared: ${fileId}, share link: ${file.shareLink}`);
       
-      // Update file with share info
-      await File.findByIdAndUpdate(fileId, {
-        shareLink: shareToken,
-        shareExpiresAt: expiresAt
-      });
-      
-      return {
-        shareToken,
-        expiresAt,
-        file
-      };
+      return file;
     } catch (error) {
       logger.error(`Error sharing file: ${error.message}`);
       throw error;
@@ -810,18 +863,61 @@ class FileService {
   }
   
   /**
+   * Get file by share link
+   * @param {string} shareLink - Share link token
+   * @returns {Promise<Object>} - File data
+   */
+  async getFileByShareLink(shareLink) {
+    try {
+      logger.info(`Getting file by share link: ${shareLink}`);
+      
+      // Find file in database
+      const file = await File.findOne({ shareLink });
+      
+      if (!file) {
+        throw new Error('Đường dẫn chia sẻ không hợp lệ');
+      }
+      
+      // Check if file is deleted
+      if (file.isDeleted) {
+        throw new Error('File đã bị xóa');
+      }
+      
+      // Check if share link is expired
+      if (file.isShareExpired()) {
+        throw new Error('Đường dẫn chia sẻ đã hết hạn');
+      }
+      
+      logger.info(`File retrieved by share link: ${file._id}`);
+      
+      return file;
+    } catch (error) {
+      logger.error(`Error getting file by share link: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
    * Update file metadata
-   * @param {string} fileId - ID of the file
+   * @param {string} fileId - File ID in database
    * @param {Object} user - User object
-   * @param {Object} metadata - Metadata to update
-   * @returns {Promise<Object>} - Updated file
+   * @param {Object} metadata - File metadata to update
+   * @returns {Promise<Object>} - Updated file data
    */
   async updateFileMetadata(fileId, user, metadata) {
     try {
+      logger.info(`Updating file metadata: ${fileId} for user: ${user.firstName} (${user.telegramId || user._id})`);
+      
+      // Find file in database
       const file = await File.findById(fileId);
       
       if (!file) {
         throw new Error('File không tồn tại');
+      }
+      
+      // Check if file is deleted
+      if (file.isDeleted) {
+        throw new Error('File đã bị xóa');
       }
       
       // Check if user has access to file
@@ -829,28 +925,18 @@ class FileService {
         throw new Error('Bạn không có quyền cập nhật file này');
       }
       
-      // Update file with metadata
-      const updates = {};
+      // Update fields
+      if (metadata.name) file.name = metadata.name;
+      if (metadata.description !== undefined) file.description = metadata.description;
+      if (metadata.isPublic !== undefined) file.isPublic = metadata.isPublic;
+      if (metadata.tags !== undefined) file.tags = metadata.tags;
       
-      if (metadata.name) {
-        updates.name = metadata.name;
-      }
+      // Save changes
+      await file.save();
       
-      if (metadata.description !== undefined) {
-        updates.description = metadata.description;
-      }
+      logger.info(`File metadata updated: ${fileId}`);
       
-      if (metadata.isPublic !== undefined) {
-        updates.isPublic = metadata.isPublic;
-      }
-      
-      if (metadata.tags) {
-        updates.tags = metadata.tags;
-      }
-      
-      const updatedFile = await File.findByIdAndUpdate(fileId, updates, { new: true });
-      
-      return updatedFile;
+      return file;
     } catch (error) {
       logger.error(`Error updating file metadata: ${error.message}`);
       throw error;
