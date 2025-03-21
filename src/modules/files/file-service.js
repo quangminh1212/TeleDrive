@@ -250,36 +250,163 @@ class FileService {
     }
   }
   
-  async deleteFile(fileId, user) { 
+  async getFileById(fileId, user) { 
     try { 
       // Tìm file theo ID 
       const file = await File.findOne({ 
         _id: fileId, 
-        userId: user._id // Chỉ cho phép chủ sở hữu xóa file 
+        userId: user._id 
       }); 
       
       if (!file) {
-        throw new Error(`Không tìm thấy file có ID ${fileId} for user ${user._id}`); 
+        throw new Error(`Không tìm thấy file có ID ${fileId} cho người dùng ${user._id}`); 
       } 
       
-      // Xóa file từ Telegram nếu có message ID 
-      if (file.telegramMessageId) { 
+      logger.info(`Đã tìm thấy file ${fileId} cho người dùng ${user._id}`); 
+      return file;
+    } catch (error) {
+      logger.error(`Lỗi khi lấy file theo ID: ${error.message}`); 
+      throw error;
+    }
+  }
+  
+  async deleteFile(fileId, user, permanent = false) { 
+    try { 
+      // Tìm file theo ID 
+      const file = await File.findOne({ 
+        _id: fileId, 
+        userId: user._id 
+      }); 
+      
+      if (!file) {
+        throw new Error(`Không tìm thấy file có ID ${fileId}`); 
+      } 
+      
+      if (permanent) { 
+        // Xóa vĩnh viễn 
+        logger.info(`Xóa vĩnh viễn file ${fileId} (Telegram Message ID: ${file.telegramMessageId})`); 
+        
+        // Xóa file trên Telegram 
+        await tdlibStorage.deleteFile(file.telegramMessageId, config.telegram.chatId); 
+        
+        // Xóa bản ghi trong database 
+        await File.findByIdAndDelete(fileId); 
+        
+        logger.info(`Đã xóa vĩnh viễn file ${fileId}`); 
+      } else { 
+        // Đưa vào thùng rác 
+        logger.info(`Đưa file ${fileId} vào thùng rác`); 
+        file.isDeleted = true; 
+        file.deletedAt = new Date(); 
+        await file.save(); 
+        
+        logger.info(`Đã đưa file ${fileId} vào thùng rác`); 
+      } 
+      
+      return { success: true, permanent }; 
+    } catch (error) {
+      logger.error(`Lỗi khi xóa file: ${error.message}`); 
+      throw error;
+    }
+  }
+  
+  async restoreFile(fileId, user) { 
+    try { 
+      // Tìm file trong thùng rác 
+      const file = await File.findOne({ 
+        _id: fileId, 
+        userId: user._id, 
+        isDeleted: true 
+      }); 
+      
+      if (!file) {
+        throw new Error(`Không tìm thấy file có ID ${fileId} trong thùng rác`); 
+      } 
+      
+      // Khôi phục file 
+      file.isDeleted = false; 
+      file.deletedAt = null; 
+      await file.save(); 
+      
+      logger.info(`Đã khôi phục file ${fileId} từ thùng rác`); 
+      return { success: true }; 
+    } catch (error) {
+      logger.error(`Lỗi khi khôi phục file: ${error.message}`); 
+      throw error;
+    }
+  }
+  
+  async emptyTrash(user) { 
+    try { 
+      // Tìm tất cả file trong thùng rác 
+      const files = await File.find({ 
+        userId: user._id, 
+        isDeleted: true 
+      }); 
+      
+      logger.info(`Tìm thấy ${files.length} file trong thùng rác của người dùng ${user._id}`); 
+      
+      // Xóa từng file 
+      let deletedCount = 0; 
+      for (const file of files) { 
         try { 
-          await tdlibStorage.deleteMessage(config.telegram.chatId, file.telegramMessageId); 
-          logger.info(`Đã xóa message ${file.telegramMessageId} từ Telegram`); 
-        } catch (telegramError) { 
-          logger.warn(`Không thể xóa message từ Telegram: ${telegramError.message}`); 
-          // Vẫn tiếp tục xóa bản ghi trong DB 
+          // Xóa file trên Telegram 
+          await tdlibStorage.deleteFile(file.telegramMessageId, config.telegram.chatId); 
+          
+          // Xóa bản ghi trong database 
+          await File.findByIdAndDelete(file._id); 
+          
+          deletedCount++; 
+        } catch (error) {
+          logger.error(`Lỗi khi xóa file ${file._id}: ${error.message}`); 
         } 
       } 
       
-      // Xóa bản ghi file 
-      await File.findByIdAndDelete(fileId); 
-      logger.info(`Đã xóa file ${fileId} khỏi database`); 
-      
-      return true; 
+      logger.info(`Đã xóa ${deletedCount}/${files.length} file trong thùng rác`); 
+      return { success: true, deletedCount }; 
     } catch (error) {
-      logger.error(`Lỗi khi xóa file: ${error.message}`); 
+      logger.error(`Lỗi khi dọn thùng rác: ${error.message}`); 
+      throw error;
+    }
+  }
+  
+  async downloadFile(fileId, user) { 
+    try { 
+      // Tìm file theo ID 
+      let file; 
+      if (user) { 
+        // Người dùng đã đăng nhập, tìm file của họ 
+        file = await File.findOne({ 
+          _id: fileId, 
+          userId: user._id 
+        }); 
+      } else { 
+        // Không có người dùng, có thể là link chia sẻ 
+        file = await File.findById(fileId); 
+      } 
+      
+      if (!file) {
+        throw new Error(`Không tìm thấy file có ID ${fileId}`); 
+      } 
+      
+      logger.info(`Chuẩn bị tải xuống file ${file.filename} (ID: ${file._id})`); 
+      
+      // Kiểm tra thư mục temp 
+      const tempDir = path.join(process.cwd(), 'temp'); 
+      if (!fs.existsSync(tempDir)) { 
+        fs.mkdirSync(tempDir, { recursive: true }); 
+      } 
+      
+      // Tạo đường dẫn file tạm 
+      const tempFilePath = path.join(tempDir, file.filename); 
+      
+      // Tải file từ Telegram 
+      await tdlibStorage.downloadFile(file.telegramMessageId, config.telegram.chatId, tempFilePath); 
+      
+      logger.info(`Đã tải xuống file ${file.filename} (ID: ${file._id}) vào ${tempFilePath}`); 
+      return { filePath: tempFilePath, filename: file.filename, mimetype: file.mimetype }; 
+    } catch (error) {
+      logger.error(`Lỗi khi tải xuống file: ${error.message}`); 
       throw error;
     }
   }
