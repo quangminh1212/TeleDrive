@@ -35,7 +35,20 @@ pip install -r requirements.txt
 
 ## Lấy ID của nhóm/kênh
 
-- Đối với nhóm/kênh công khai, bạn có thể sử dụng username (ví dụ: @tenchannel).
-- Đối với nhóm/kênh riêng tư, bạn cần tìm ID bằng cách:
-  1. Chuyển tiếp một tin nhắn từ nhóm đó đến @userinfobot
-  2. Bot sẽ trả về ID của nhóm/kênh (thường bắt đầu bằng -100). 
+### Đối với kênh công khai:
+- Bạn có thể sử dụng username (ví dụ: @tenchannel)
+- Nhớ nhập kèm dấu @ phía trước
+
+### Đối với kênh riêng tư:
+1. **Cách 1:** Chuyển tiếp một tin nhắn từ nhóm đó đến @userinfobot
+   - Bot sẽ trả về ID của kênh (dạng -1001234567890)
+   - Sao chép toàn bộ ID này (bao gồm cả dấu trừ) để sử dụng trong ứng dụng
+
+2. **Cách 2:** Thông qua Telegram Web
+   - Mở kênh trong [Telegram Web](https://web.telegram.org)
+   - URL sẽ có dạng: web.telegram.org/a/#-1001234567890
+   - Lấy số sau dấu #
+
+> **Quan trọng:** Tài khoản Telegram của bạn PHẢI là thành viên của kênh riêng tư để có thể truy cập file!
+
+Chi tiết hơn có thể xem trong tập tin `private_channel_guide.md` 

@@ -4,9 +4,10 @@ import asyncio
 import threading
 from datetime import datetime
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, scrolledtext
 from telethon import TelegramClient, events
 from telethon.tl.types import DocumentAttributeFilename, MessageMediaDocument
+from telethon.errors import ChatAdminRequiredError, ChannelPrivateError
 import config
 
 # Khởi tạo client Telegram
@@ -46,6 +47,15 @@ class TeleDriveApp:
         ttk.Label(status_frame, text="Trạng thái:").pack(side=tk.LEFT)
         ttk.Label(status_frame, textvariable=self.status).pack(side=tk.LEFT, padx=5)
         
+        # Menu bar
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+        
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Trợ giúp", menu=help_menu)
+        help_menu.add_command(label="Hướng dẫn kênh riêng tư", command=self._show_private_channel_help)
+        help_menu.add_command(label="Giới thiệu", command=self._show_about)
+        
         # Khung nhập ID chat
         input_frame = ttk.Frame(main_frame)
         input_frame.pack(fill=tk.X, pady=(0, 10))
@@ -57,6 +67,7 @@ class TeleDriveApp:
         ttk.Entry(input_frame, textvariable=self.file_limit, width=10).pack(side=tk.LEFT, padx=5)
         
         ttk.Button(input_frame, text="Lấy danh sách", command=self._get_files).pack(side=tk.LEFT, padx=5)
+        ttk.Button(input_frame, text="Trợ giúp ID", command=self._show_id_help).pack(side=tk.LEFT, padx=5)
         
         # Khung tìm kiếm
         search_frame = ttk.Frame(main_frame)
@@ -101,6 +112,71 @@ class TeleDriveApp:
         ttk.Button(button_frame, text="Tải tất cả", command=self._download_all).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Sao chép link", command=self._copy_link).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Thoát", command=self._on_exit).pack(side=tk.RIGHT, padx=5)
+    
+    def _show_id_help(self):
+        help_window = tk.Toplevel(self.root)
+        help_window.title("Cách lấy ID kênh riêng tư")
+        help_window.geometry("600x400")
+        
+        text = scrolledtext.ScrolledText(help_window, wrap=tk.WORD, font=("Arial", 10))
+        text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        text.insert(tk.END, """# Cách lấy ID của kênh riêng tư
+
+1. Sử dụng @userinfobot:
+   - Chuyển tiếp một tin nhắn từ kênh tới @userinfobot
+   - Bot sẽ trả về ID của kênh (thường có dạng -1001234567890)
+   - Sử dụng toàn bộ ID này (bao gồm cả dấu trừ)
+
+2. Thông qua Telegram Web:
+   - Mở kênh trong Telegram Web (web.telegram.org)
+   - URL sẽ có dạng: web.telegram.org/a/#-1001234567890
+   - Lấy số sau dấu #
+
+3. Đối với nhóm/kênh công khai:
+   - Có thể sử dụng username (ví dụ: @tenchannel)
+   - Nhập chính xác username bắt đầu bằng @
+
+LƯU Ý: Tài khoản của bạn phải là thành viên của kênh để truy cập được file!
+""")
+        text.config(state=tk.DISABLED)
+        
+    def _show_private_channel_help(self):
+        # Kiểm tra xem file hướng dẫn đã tồn tại
+        try:
+            with open('private_channel_guide.md', 'r', encoding='utf-8') as file:
+                help_content = file.read()
+        except FileNotFoundError:
+            help_content = """# Hướng dẫn sử dụng TeleDrive với kênh riêng tư (Private Channel)
+
+## Điều kiện tiên quyết
+1. Tài khoản Telegram của bạn PHẢI là thành viên của kênh riêng tư đó
+2. Bạn cần có ID chính xác của kênh riêng tư
+
+## Cách lấy ID của kênh riêng tư
+1. Chuyển tiếp một tin nhắn từ kênh tới bot @userinfobot
+2. Bot sẽ trả về ID của kênh (thường có dạng -1001234567890)
+3. Sử dụng toàn bộ ID này (bao gồm cả dấu trừ) để truy cập kênh
+"""
+        
+        # Hiển thị cửa sổ trợ giúp
+        help_window = tk.Toplevel(self.root)
+        help_window.title("Hướng dẫn kênh riêng tư")
+        help_window.geometry("700x500")
+        
+        text = scrolledtext.ScrolledText(help_window, wrap=tk.WORD, font=("Arial", 10))
+        text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        text.insert(tk.END, help_content)
+        text.config(state=tk.DISABLED)
+    
+    def _show_about(self):
+        messagebox.showinfo(
+            "Giới thiệu", 
+            "TeleDrive - Ứng dụng quản lý file Telegram\n\n"
+            "Được phát triển bởi Claude 3.7 Sonnet\n\n"
+            "Phiên bản: 1.0\n\n"
+            "Hỗ trợ tải file từ kênh/nhóm Telegram, bao gồm kênh riêng tư."
+        )
     
     def _connect_telegram(self):
         global client
@@ -153,20 +229,48 @@ class TeleDriveApp:
         
         async def fetch():
             try:
-                self.files = await self._get_files_from_chat(chat_id, limit)
+                # Chuẩn hóa chat_id
+                if chat_id.isdigit() or (chat_id.startswith('-') and chat_id[1:].isdigit()):
+                    # Đây là ID số, đã đúng định dạng
+                    normalized_chat_id = int(chat_id)
+                elif chat_id.startswith('@'):
+                    # Đây là username, giữ nguyên
+                    normalized_chat_id = chat_id
+                else:
+                    # Có thể đây là username nhưng thiếu @ 
+                    normalized_chat_id = '@' + chat_id
                 
-                # Cập nhật UI trong main thread
-                self.root.after(0, self._update_file_list)
+                # Thử kết nối với chat
+                try:
+                    entity = await client.get_entity(normalized_chat_id)
+                    self.files = await self._get_files_from_chat(entity, limit)
+                    self.root.after(0, self._update_file_list)
+                except ValueError as e:
+                    # Không tìm thấy entity
+                    error_msg = f"Không tìm thấy chat: {str(e)}"
+                    self.root.after(0, lambda: self.status.set(error_msg))
+                    self.root.after(0, lambda: messagebox.showerror("Lỗi", error_msg))
+                except ChannelPrivateError:
+                    # Kênh riêng tư và không phải thành viên
+                    error_msg = "Kênh này là riêng tư và bạn không phải là thành viên. Vui lòng tham gia kênh trước."
+                    self.root.after(0, lambda: self.status.set(error_msg))
+                    self.root.after(0, lambda: messagebox.showerror("Lỗi truy cập", error_msg))
+                except ChatAdminRequiredError:
+                    # Yêu cầu quyền admin
+                    error_msg = "Bạn cần có quyền admin để truy cập kênh này."
+                    self.root.after(0, lambda: self.status.set(error_msg))
+                    self.root.after(0, lambda: messagebox.showerror("Lỗi quyền", error_msg))
+                
             except Exception as e:
                 self.root.after(0, lambda: self.status.set(f"Lỗi: {str(e)}"))
                 self.root.after(0, lambda: messagebox.showerror("Lỗi", str(e)))
         
         loop.run_until_complete(fetch())
     
-    async def _get_files_from_chat(self, chat_id, limit=100):
+    async def _get_files_from_chat(self, chat, limit=100):
         files_info = []
         
-        async for message in client.iter_messages(chat_id, limit=limit):
+        async for message in client.iter_messages(chat, limit=limit):
             if message.media and isinstance(message.media, MessageMediaDocument):
                 file_name = "Unknown"
                 
@@ -175,6 +279,11 @@ class TeleDriveApp:
                     if isinstance(attribute, DocumentAttributeFilename):
                         file_name = attribute.file_name
                         break
+                
+                # Lấy chat id
+                chat_id = 0
+                if hasattr(chat, 'id'):
+                    chat_id = chat.id
                 
                 # Tạo link tải file
                 chat_id_str = str(chat_id)
@@ -304,17 +413,28 @@ class TeleDriveApp:
         
         async def download():
             chat_id = self.chat_id.get().strip()
-            for i, file in enumerate(files):
-                self.root.after(0, lambda: self.status.set(f"Đang tải {i+1}/{len(files)}: {file['file_name']}"))
-                await self._download_file(chat_id, file['message_id'], destination)
             
-            self.root.after(0, lambda: self.status.set(f"Đã tải xong {len(files)} file"))
-            self.root.after(0, lambda: messagebox.showinfo("Hoàn tất", f"Đã tải xong {len(files)} file"))
+            # Chuẩn hóa chat_id nếu cần
+            if chat_id.isdigit() or (chat_id.startswith('-') and chat_id[1:].isdigit()):
+                chat_id = int(chat_id)
+            
+            try:
+                entity = await client.get_entity(chat_id)
+                
+                for i, file in enumerate(files):
+                    self.root.after(0, lambda: self.status.set(f"Đang tải {i+1}/{len(files)}: {file['file_name']}"))
+                    await self._download_file(entity, file['message_id'], destination)
+                
+                self.root.after(0, lambda: self.status.set(f"Đã tải xong {len(files)} file"))
+                self.root.after(0, lambda: messagebox.showinfo("Hoàn tất", f"Đã tải xong {len(files)} file"))
+            except Exception as e:
+                self.root.after(0, lambda: self.status.set(f"Lỗi: {str(e)}"))
+                self.root.after(0, lambda: messagebox.showerror("Lỗi tải file", str(e)))
         
         loop.run_until_complete(download())
     
-    async def _download_file(self, chat_id, message_id, destination):
-        message = await client.get_messages(chat_id, ids=message_id)
+    async def _download_file(self, chat, message_id, destination):
+        message = await client.get_messages(chat, ids=message_id)
         if message and message.media and isinstance(message.media, MessageMediaDocument):
             # Lấy tên file
             file_name = "downloaded_file"
