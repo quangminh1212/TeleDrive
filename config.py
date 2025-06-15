@@ -1,0 +1,3 @@
+API_ID = 21272067
+API_HASH = 'b7690dc86952dbc9b16717b101164af3'
+SESSION_NAME = 'teledrive_session' 
