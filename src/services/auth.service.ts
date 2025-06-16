@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
-import { TelegramClient } from 'telegram';
-import { StringSession } from 'telegram/sessions';
 import User, { IUserDocument } from '../models/user.model';
 import config from '../config';
+import logger from '../utils/logger';
+import telegramService from './telegram.service';
 
 class AuthService {
   /**
@@ -23,6 +23,7 @@ class AuthService {
     const user = await User.create(userData);
     const token = user.generateAuthToken();
 
+    logger.info(`Đã đăng ký người dùng mới: ${user.email}`);
     return { user, token };
   }
 
@@ -45,6 +46,7 @@ class AuthService {
     await user.save();
 
     const token = user.generateAuthToken();
+    logger.info(`Đăng nhập thành công: ${user.email}`);
     return { user, token };
   }
 
@@ -77,6 +79,8 @@ class AuthService {
         telegramPhotoUrl: telegramData.photo_url,
         telegramAuthDate: new Date(telegramData.auth_date * 1000),
       });
+      
+      logger.info(`Đã tạo tài khoản mới với Telegram ID: ${telegramData.id}`);
     } else {
       // Cập nhật thông tin Telegram
       user.telegramUsername = telegramData.username;
@@ -84,6 +88,8 @@ class AuthService {
       user.telegramAuthDate = new Date(telegramData.auth_date * 1000);
       user.lastLogin = new Date();
       await user.save();
+      
+      logger.info(`Đăng nhập qua Telegram thành công: ${user.telegramId}`);
     }
 
     const token = user.generateAuthToken();
@@ -104,25 +110,30 @@ class AuthService {
     
     // TODO: Xác thực hash theo tài liệu Telegram Login
     // Trong môi trường thực tế, cần kiểm tra hash từ Telegram
+    // https://core.telegram.org/widgets/login#checking-authorization
 
     return true;
   }
 
   /**
-   * Khởi tạo Telegram client
+   * Khởi tạo phiên làm việc với Telegram
    */
-  async initTelegramClient(session?: string): Promise<TelegramClient> {
-    const stringSession = new StringSession(session || '');
-    
-    const client = new TelegramClient(
-      stringSession, 
-      config.telegram.apiId, 
-      config.telegram.apiHash, 
-      { connectionRetries: 5 }
-    );
-    
-    await client.connect();
-    return client;
+  async initTelegramSession(userId: string): Promise<string> {
+    try {
+      // Kết nối với Telegram API
+      const client = await telegramService.connect();
+      
+      // Lưu session string
+      const sessionString = telegramService.getSessionString();
+      
+      // Trong môi trường thực tế, bạn sẽ lưu session string này vào database
+      // cho người dùng cụ thể để tái sử dụng
+      
+      return sessionString;
+    } catch (error) {
+      logger.error('Lỗi khi khởi tạo phiên Telegram', error);
+      throw new Error(`Không thể khởi tạo phiên Telegram: ${(error as Error).message}`);
+    }
   }
 }
 

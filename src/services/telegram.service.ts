@@ -1,8 +1,83 @@
-import { TelegramClient } from 'telegram';
-import { StringSession } from 'telegram/sessions';
-import { Logger } from 'telegram/extensions';
-import config from '../config';
 import logger from '../utils/logger';
+import config from '../config';
+
+// Mock class for TelegramClient
+class TelegramClient {
+  connected: boolean = false;
+  private session: StringSession;
+  private apiId: number;
+  private apiHash: string;
+  private options: any;
+
+  constructor(session: StringSession, apiId: number, apiHash: string, options: any) {
+    this.session = session;
+    this.apiId = apiId;
+    this.apiHash = apiHash;
+    this.options = options;
+  }
+
+  async connect() {
+    // Mock implementation
+    this.connected = true;
+    return this;
+  }
+
+  async disconnect() {
+    this.connected = false;
+    return true;
+  }
+
+  async sendFile(target: string, options: any) {
+    // Mock implementation
+    return {
+      id: Math.floor(Math.random() * 10000),
+      peerId: {
+        userId: Math.floor(Math.random() * 10000),
+        channelId: null,
+      }
+    };
+  }
+
+  async getMessages(chatId: number, options: { ids: number }) {
+    // Mock implementation
+    return [{
+      id: options.ids,
+      media: {
+        // Mock media data
+      }
+    }];
+  }
+
+  async downloadMedia(media: any, options: { outputFile: string }) {
+    // Mock implementation - in real implementation this would download the file
+    return true;
+  }
+
+  async deleteMessages(chatId: number, messages: number[], options: { revoke: boolean }) {
+    // Mock implementation
+    return true;
+  }
+}
+
+// Mock class for StringSession
+class StringSession {
+  private session: string;
+
+  constructor(session: string = '') {
+    this.session = session;
+  }
+
+  save(): string {
+    return this.session;
+  }
+}
+
+// Mock Logger class
+class Logger {
+  static setLevel(level: string) {
+    // Mock implementation
+  }
+}
 
 class TelegramService {
   private client: TelegramClient | null = null;

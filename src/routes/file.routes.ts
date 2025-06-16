@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,10 +9,10 @@ const router = express.Router();
 
 // Cấu hình multer để upload file
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (req: Express.Request, file: Express.Multer.File, cb: Function) => {
     cb(null, './uploads/');
   },
-  filename: (req, file, cb) => {
+  filename: (req: Express.Request, file: Express.Multer.File, cb: Function) => {
     const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
   },

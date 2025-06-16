@@ -12,16 +12,20 @@ import { Buffer } from 'buffer';
 import telegramService from './telegram.service';
 import logger from '../utils/logger';
 import { AppError } from '../utils/error-handler';
+import { Express } from 'express';
+
+// Định nghĩa interface cho file upload
+interface IUploadFile {
+  file: Express.Multer.File;
+  parentId?: string;
+  isPublic?: boolean;
+}
 
 class FileService {
   /**
    * Tải file lên Telegram
    */
-  async uploadFile(userId: string, fileData: {
-    file: Express.Multer.File;
-    parentId?: string;
-    isPublic?: boolean;
-  }): Promise<IFileDocument> {
+  async uploadFile(userId: string, fileData: IUploadFile): Promise<IFileDocument> {
     // Kiểm tra người dùng
     const user = await User.findById(userId);
     if (!user) {
