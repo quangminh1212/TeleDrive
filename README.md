@@ -1,6 +1,12 @@
 # TeleDrive - Telegram Channel File Manager
 
-A desktop application for managing files in Telegram channels with download and upload capabilities.
+A premium desktop application for managing files in Telegram channels with download and upload capabilities.
+
+## 🎨 **New Premium Interface**
+- **Card Design**: Modern card layout with subtle shadow effects
+- **Telegram-Style**: Interface inspired by official Telegram mobile app
+- **Smooth Interactions**: Hover effects and smooth transitions
+- **Smart Placeholders**: Intelligent input field placeholders
 
 ## Features
 

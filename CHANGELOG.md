@@ -1,5 +1,43 @@
 # TeleDrive - Changelog
 
+## Version 3.0 - Premium Card Design Interface 🎨
+
+### 🌟 **Giao diện hoàn toàn mới - Giống Telegram Mobile**
+
+#### ✨ **Thiết kế Card với Shadow:**
+- **Card Layout**: Giao diện dạng thẻ nổi với hiệu ứng đổ bóng 3 lớp
+- **Background**: Nền gradient nhẹ (#f5f5f5) thay vì trắng đơn thuần
+- **Shadow Effect**: Đổ bóng tinh tế với 3 lớp màu khác nhau
+- **Rounded Corners**: Bo góc mềm mại (mô phỏng bằng frame)
+
+#### 🎯 **Logo và Typography:**
+- **Logo Size**: Tăng kích thước logo lên 120x120px
+- **App Name**: "TeleDrive" với font Segoe UI 28pt
+- **Subtitle**: "Telegram Channel File Manager\nFast and secure."
+- **Color Scheme**: Xám nhẹ (#8e8e93) cho text phụ
+
+#### 📱 **Input Fields Hiện Đại:**
+- **Background**: Màu xám nhẹ (#f7f7f7) thay vì viền
+- **Placeholder**: Text placeholder thông minh (ẩn/hiện)
+- **Separator**: Đường phân cách giữa mã vùng và số điện thoại
+- **Focus Effect**: Màu xanh Telegram khi focus
+- **Padding**: Khoảng cách hợp lý (15px padding)
+
+#### 🔘 **Button Design:**
+- **Primary Button**: "Start Messaging" thay vì "NEXT"
+- **Full Width**: Button rộng toàn bộ container
+- **Hover Effect**: Màu đậm hơn khi hover (#3d9cdb)
+- **Disabled State**: Màu xám khi đang xử lý
+
+#### 🎨 **Color Palette:**
+- **Primary**: #40a7e3 (Telegram Blue)
+- **Background**: #f5f5f5 (Light Gray)
+- **Card**: #ffffff (Pure White)
+- **Input**: #f7f7f7 (Input Gray)
+- **Text**: #2c2c2c (Dark Gray)
+- **Placeholder**: #8e8e93 (Light Gray)
+- **Error**: #ff3b30 (iOS Red)
+
 ## Version 2.0 - Telegram-Style Interface Update
 
 ### 🎨 **Giao diện đăng nhập mới - Giống Telegram chính thức**
