@@ -882,7 +882,7 @@ class TeleDriveApp:
             except Exception as e:
                 self.root.after(0, lambda: self.on_connect_error(str(e)))
 
-        self.run_async(connect())
+        threading.Thread(target=lambda: asyncio.run(connect()), daemon=True).start()
 
     def disconnect_telegram(self):
         """Disconnect from Telegram"""
