@@ -72,85 +72,149 @@ class TeleDriveApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Main container
-        main_container = tk.Frame(self.root, bg='#ffffff')
+        # Main container with gradient-like background
+        main_container = tk.Frame(self.root, bg='#f5f5f5')
         main_container.pack(expand=True, fill='both')
 
-        # Center frame
-        center_frame = tk.Frame(main_container, bg='#ffffff')
-        center_frame.place(relx=0.5, rely=0.5, anchor='center')
+        # Center card frame
+        card_frame = tk.Frame(main_container, bg='#ffffff', relief='flat', bd=0)
+        card_frame.place(relx=0.5, rely=0.5, anchor='center')
 
-        # Logo
+        # Add subtle shadow effect with multiple frames
+        shadow_frame3 = tk.Frame(main_container, bg='#e8e8e8', relief='flat', bd=0)
+        shadow_frame3.place(relx=0.5, rely=0.5, anchor='center',
+                           width=420, height=520)
+
+        shadow_frame2 = tk.Frame(main_container, bg='#f0f0f0', relief='flat', bd=0)
+        shadow_frame2.place(relx=0.5, rely=0.5, anchor='center',
+                           width=415, height=515)
+
+        shadow_frame1 = tk.Frame(main_container, bg='#f8f8f8', relief='flat', bd=0)
+        shadow_frame1.place(relx=0.5, rely=0.5, anchor='center',
+                           width=410, height=510)
+
+        # Main card
+        card_frame.configure(width=400, height=500)
+        card_frame.pack_propagate(False)
+
+        # Content frame with padding
+        content_frame = tk.Frame(card_frame, bg='#ffffff')
+        content_frame.pack(expand=True, fill='both', padx=40, pady=50)
+
+        # Logo with better sizing
         if self.logo:
-            logo_label = tk.Label(center_frame, image=self.logo, bg='#ffffff')
-            logo_label.pack(pady=(0, 30))
+            # Create larger logo
+            try:
+                image = Image.open('teledrive.png')
+                image = image.resize((120, 120), Image.Resampling.LANCZOS)
+                self.large_logo = ImageTk.PhotoImage(image)
+                logo_label = tk.Label(content_frame, image=self.large_logo, bg='#ffffff')
+                logo_label.pack(pady=(0, 25))
+            except:
+                logo_label = tk.Label(content_frame, text="📱", font=('Segoe UI', 48),
+                                     bg='#ffffff', fg='#40a7e3')
+                logo_label.pack(pady=(0, 25))
 
-        # Title
-        title_label = tk.Label(center_frame, text="Sign in to Telegram",
-                              font=('Segoe UI', 20), bg='#ffffff', fg='#000000')
-        title_label.pack(pady=(0, 8))
+        # App name
+        app_name = tk.Label(content_frame, text="TeleDrive",
+                           font=('Segoe UI', 28, 'normal'), bg='#ffffff', fg='#2c2c2c')
+        app_name.pack(pady=(0, 5))
 
-        # Subtitle
-        subtitle_label = tk.Label(center_frame,
-                                 text="Please confirm your country code and\nenter your phone number.",
-                                 font=('Segoe UI', 11), bg='#ffffff', fg='#707579',
-                                 justify='center')
-        subtitle_label.pack(pady=(0, 30))
+        # Subtitle with better typography
+        subtitle_label = tk.Label(content_frame,
+                                 text="Telegram Channel File Manager\nFast and secure.",
+                                 font=('Segoe UI', 11), bg='#ffffff', fg='#8e8e93',
+                                 justify='center', height=3)
+        subtitle_label.pack(pady=(0, 35))
 
-        # Phone input frame
-        phone_frame = tk.Frame(center_frame, bg='#ffffff')
-        phone_frame.pack(pady=(0, 20))
+        # Phone input container
+        input_container = tk.Frame(content_frame, bg='#ffffff')
+        input_container.pack(fill='x', pady=(0, 25))
 
-        # Country code and phone number in one line
-        input_frame = tk.Frame(phone_frame, bg='#ffffff')
-        input_frame.pack()
+        # Phone input with modern styling
+        phone_bg_frame = tk.Frame(input_container, bg='#f7f7f7', relief='flat', bd=0)
+        phone_bg_frame.pack(fill='x', ipady=2)
 
-        # Country code entry
-        self.country_entry = tk.Entry(input_frame, font=('Segoe UI', 14), width=4,
-                                     justify='center', relief='flat', bd=0,
-                                     highlightthickness=1, highlightcolor='#40a7e3',
-                                     highlightbackground='#dadce0')
-        self.country_entry.pack(side='left', padx=(0, 10), ipady=8)
+        input_frame = tk.Frame(phone_bg_frame, bg='#f7f7f7')
+        input_frame.pack(expand=True, fill='x', padx=15, pady=12)
+
+        # Country code with better styling
+        self.country_entry = tk.Entry(input_frame, font=('Segoe UI', 14), width=5,
+                                     justify='center', relief='flat', bd=0, bg='#f7f7f7',
+                                     fg='#2c2c2c', insertbackground='#40a7e3')
+        self.country_entry.pack(side='left', padx=(0, 8))
         self.country_entry.insert(0, "+84")
 
-        # Phone number entry
-        self.phone_entry = tk.Entry(input_frame, font=('Segoe UI', 14), width=18,
-                                   relief='flat', bd=0, highlightthickness=1,
-                                   highlightcolor='#40a7e3', highlightbackground='#dadce0')
-        self.phone_entry.pack(side='left', ipady=8)
-        self.phone_entry.focus()
+        # Separator
+        separator = tk.Frame(input_frame, width=1, height=20, bg='#d1d1d6')
+        separator.pack(side='left', padx=(0, 8))
 
-        # Underline effect
-        underline_frame = tk.Frame(phone_frame, height=1, bg='#dadce0')
-        underline_frame.pack(fill='x', pady=(2, 0))
+        # Phone number entry with placeholder effect
+        self.phone_entry = tk.Entry(input_frame, font=('Segoe UI', 14),
+                                   relief='flat', bd=0, bg='#f7f7f7',
+                                   fg='#2c2c2c', insertbackground='#40a7e3')
+        self.phone_entry.pack(side='left', fill='x', expand=True)
+        self.phone_entry.insert(0, "Phone number")
+        self.phone_entry.config(fg='#8e8e93')
 
-        # Next button
-        self.next_btn = tk.Button(center_frame, text="NEXT", font=('Segoe UI', 10, 'bold'),
-                                 bg='#40a7e3', fg='white', relief='flat', bd=0,
-                                 padx=40, pady=12, cursor='hand2',
-                                 command=self.send_code)
-        self.next_btn.pack(pady=(20, 0))
+        # Bind focus events for placeholder
+        def on_phone_focus_in(event):
+            if self.phone_entry.get() == "Phone number":
+                self.phone_entry.delete(0, tk.END)
+                self.phone_entry.config(fg='#2c2c2c')
 
-        # Status label
-        self.status_label = tk.Label(center_frame, text="", font=('Segoe UI', 9),
-                                    bg='#ffffff', fg='#e53935')
-        self.status_label.pack(pady=(15, 0))
+        def on_phone_focus_out(event):
+            if not self.phone_entry.get():
+                self.phone_entry.insert(0, "Phone number")
+                self.phone_entry.config(fg='#8e8e93')
+
+        self.phone_entry.bind('<FocusIn>', on_phone_focus_in)
+        self.phone_entry.bind('<FocusOut>', on_phone_focus_out)
+
+        # Start Messaging button with modern design
+        self.start_btn = tk.Button(content_frame, text="Start Messaging",
+                                  font=('Segoe UI', 12, 'normal'),
+                                  bg='#40a7e3', fg='white', relief='flat', bd=0,
+                                  padx=30, pady=15, cursor='hand2',
+                                  command=self.send_code)
+        self.start_btn.pack(fill='x', pady=(0, 15))
+
+        # Add hover effect
+        def on_enter(e):
+            self.start_btn.config(bg='#3d9cdb')
+        def on_leave(e):
+            self.start_btn.config(bg='#40a7e3')
+
+        self.start_btn.bind("<Enter>", on_enter)
+        self.start_btn.bind("<Leave>", on_leave)
+
+        # Status label with better styling
+        self.status_label = tk.Label(content_frame, text="", font=('Segoe UI', 10),
+                                    bg='#ffffff', fg='#ff3b30', justify='center')
+        self.status_label.pack(pady=(5, 0))
 
         # Bind Enter key
         self.phone_entry.bind('<Return>', lambda e: self.send_code())
         self.country_entry.bind('<Return>', lambda e: self.phone_entry.focus())
+
+        # Focus on phone entry initially
+        self.root.after(100, lambda: self.phone_entry.focus())
     
     def send_code(self):
         country_code = self.country_entry.get().strip()
         phone = self.phone_entry.get().strip()
+
+        # Check placeholder text
+        if phone == "Phone number":
+            phone = ""
 
         if not country_code or not phone:
             self.status_label.config(text="Please enter your phone number")
             return
 
         full_phone = country_code + phone
-        self.status_label.config(text="Sending code...")
-        self.next_btn.config(state='disabled', text="SENDING...")
+        self.status_label.config(text="Sending verification code...")
+        self.start_btn.config(state='disabled', text="Sending...", bg='#a0a0a0')
         self.root.update()
 
         try:
@@ -160,84 +224,141 @@ class TeleDriveApp:
             self.show_code_interface()
         except Exception as e:
             self.status_label.config(text=f"Error: {str(e)}")
-            self.next_btn.config(state='normal', text="NEXT")
+            self.start_btn.config(state='normal', text="Start Messaging", bg='#40a7e3')
     
     def show_code_interface(self):
         # Clear window
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Main container
-        main_container = tk.Frame(self.root, bg='#ffffff')
+        # Main container with gradient-like background
+        main_container = tk.Frame(self.root, bg='#f5f5f5')
         main_container.pack(expand=True, fill='both')
 
-        # Center frame
-        center_frame = tk.Frame(main_container, bg='#ffffff')
-        center_frame.place(relx=0.5, rely=0.5, anchor='center')
+        # Center card frame with shadow
+        shadow_frame3 = tk.Frame(main_container, bg='#e8e8e8', relief='flat', bd=0)
+        shadow_frame3.place(relx=0.5, rely=0.5, anchor='center',
+                           width=420, height=520)
+
+        shadow_frame2 = tk.Frame(main_container, bg='#f0f0f0', relief='flat', bd=0)
+        shadow_frame2.place(relx=0.5, rely=0.5, anchor='center',
+                           width=415, height=515)
+
+        shadow_frame1 = tk.Frame(main_container, bg='#f8f8f8', relief='flat', bd=0)
+        shadow_frame1.place(relx=0.5, rely=0.5, anchor='center',
+                           width=410, height=510)
+
+        card_frame = tk.Frame(main_container, bg='#ffffff', relief='flat', bd=0)
+        card_frame.place(relx=0.5, rely=0.5, anchor='center')
+        card_frame.configure(width=400, height=500)
+        card_frame.pack_propagate(False)
+
+        # Content frame with padding
+        content_frame = tk.Frame(card_frame, bg='#ffffff')
+        content_frame.pack(expand=True, fill='both', padx=40, pady=50)
 
         # Logo
-        if self.logo:
-            logo_label = tk.Label(center_frame, image=self.logo, bg='#ffffff')
-            logo_label.pack(pady=(0, 30))
+        if hasattr(self, 'large_logo'):
+            logo_label = tk.Label(content_frame, image=self.large_logo, bg='#ffffff')
+            logo_label.pack(pady=(0, 25))
+        else:
+            logo_label = tk.Label(content_frame, text="📱", font=('Segoe UI', 48),
+                                 bg='#ffffff', fg='#40a7e3')
+            logo_label.pack(pady=(0, 25))
 
-        # Title
-        title_label = tk.Label(center_frame, text=f"{self.phone_number}",
-                              font=('Segoe UI', 16), bg='#ffffff', fg='#000000')
-        title_label.pack(pady=(0, 8))
+        # Phone number display
+        phone_label = tk.Label(content_frame, text=f"{self.phone_number}",
+                              font=('Segoe UI', 18, 'normal'), bg='#ffffff', fg='#2c2c2c')
+        phone_label.pack(pady=(0, 10))
 
         # Subtitle
-        subtitle_label = tk.Label(center_frame,
+        subtitle_label = tk.Label(content_frame,
                                  text="We have sent you a code via SMS.\nPlease enter it below.",
-                                 font=('Segoe UI', 11), bg='#ffffff', fg='#707579',
-                                 justify='center')
-        subtitle_label.pack(pady=(0, 30))
+                                 font=('Segoe UI', 11), bg='#ffffff', fg='#8e8e93',
+                                 justify='center', height=3)
+        subtitle_label.pack(pady=(0, 35))
 
-        # Code input frame
-        code_frame = tk.Frame(center_frame, bg='#ffffff')
-        code_frame.pack(pady=(0, 20))
+        # Code input container
+        code_container = tk.Frame(content_frame, bg='#ffffff')
+        code_container.pack(fill='x', pady=(0, 25))
+
+        # Code input with modern styling
+        code_bg_frame = tk.Frame(code_container, bg='#f7f7f7', relief='flat', bd=0)
+        code_bg_frame.pack(fill='x', ipady=2)
+
+        code_input_frame = tk.Frame(code_bg_frame, bg='#f7f7f7')
+        code_input_frame.pack(expand=True, fill='x', padx=15, pady=12)
 
         # Code entry
-        self.code_entry = tk.Entry(code_frame, font=('Segoe UI', 16), width=12,
-                                  justify='center', relief='flat', bd=0,
-                                  highlightthickness=1, highlightcolor='#40a7e3',
-                                  highlightbackground='#dadce0')
-        self.code_entry.pack(ipady=10)
-        self.code_entry.focus()
+        self.code_entry = tk.Entry(code_input_frame, font=('Segoe UI', 16),
+                                  justify='center', relief='flat', bd=0, bg='#f7f7f7',
+                                  fg='#2c2c2c', insertbackground='#40a7e3')
+        self.code_entry.pack(fill='x', expand=True)
+        self.code_entry.insert(0, "Verification code")
+        self.code_entry.config(fg='#8e8e93')
 
-        # Underline effect
-        underline_frame = tk.Frame(code_frame, height=1, bg='#dadce0')
-        underline_frame.pack(fill='x', pady=(2, 0))
+        # Bind focus events for placeholder
+        def on_code_focus_in(event):
+            if self.code_entry.get() == "Verification code":
+                self.code_entry.delete(0, tk.END)
+                self.code_entry.config(fg='#2c2c2c')
 
-        # Next button
-        self.verify_btn = tk.Button(center_frame, text="NEXT", font=('Segoe UI', 10, 'bold'),
+        def on_code_focus_out(event):
+            if not self.code_entry.get():
+                self.code_entry.insert(0, "Verification code")
+                self.code_entry.config(fg='#8e8e93')
+
+        self.code_entry.bind('<FocusIn>', on_code_focus_in)
+        self.code_entry.bind('<FocusOut>', on_code_focus_out)
+
+        # Verify button
+        self.verify_btn = tk.Button(content_frame, text="Continue",
+                                   font=('Segoe UI', 12, 'normal'),
                                    bg='#40a7e3', fg='white', relief='flat', bd=0,
-                                   padx=40, pady=12, cursor='hand2',
+                                   padx=30, pady=15, cursor='hand2',
                                    command=self.verify_code)
-        self.verify_btn.pack(pady=(20, 10))
+        self.verify_btn.pack(fill='x', pady=(0, 15))
+
+        # Add hover effect
+        def on_enter(e):
+            self.verify_btn.config(bg='#3d9cdb')
+        def on_leave(e):
+            self.verify_btn.config(bg='#40a7e3')
+
+        self.verify_btn.bind("<Enter>", on_enter)
+        self.verify_btn.bind("<Leave>", on_leave)
 
         # Back button
-        back_btn = tk.Button(center_frame, text="← EDIT PHONE NUMBER",
-                            font=('Segoe UI', 9), bg='#ffffff', fg='#40a7e3',
+        back_btn = tk.Button(content_frame, text="← Edit Phone Number",
+                            font=('Segoe UI', 10), bg='#ffffff', fg='#40a7e3',
                             relief='flat', bd=0, cursor='hand2',
                             command=self.show_login_interface)
         back_btn.pack(pady=(0, 10))
 
         # Status label
-        self.status_label = tk.Label(center_frame, text="", font=('Segoe UI', 9),
-                                    bg='#ffffff', fg='#e53935')
-        self.status_label.pack(pady=(10, 0))
+        self.status_label = tk.Label(content_frame, text="", font=('Segoe UI', 10),
+                                    bg='#ffffff', fg='#ff3b30', justify='center')
+        self.status_label.pack(pady=(5, 0))
 
         # Bind Enter key
         self.code_entry.bind('<Return>', lambda e: self.verify_code())
+
+        # Focus on code entry initially
+        self.root.after(100, lambda: self.code_entry.focus())
     
     def verify_code(self):
         code = self.code_entry.get().strip()
+
+        # Check placeholder text
+        if code == "Verification code":
+            code = ""
+
         if not code:
             self.status_label.config(text="Please enter the verification code")
             return
 
-        self.status_label.config(text="Verifying...")
-        self.verify_btn.config(state='disabled', text="VERIFYING...")
+        self.status_label.config(text="Verifying code...")
+        self.verify_btn.config(state='disabled', text="Verifying...", bg='#a0a0a0')
         self.root.update()
 
         try:
@@ -246,9 +367,11 @@ class TeleDriveApp:
         except SessionPasswordNeededError:
             self.show_password_interface()
         except Exception as e:
-            self.status_label.config(text=f"Invalid code. Please try again.")
-            self.verify_btn.config(state='normal', text="NEXT")
+            self.status_label.config(text="Invalid code. Please try again.")
+            self.verify_btn.config(state='normal', text="Continue", bg='#40a7e3')
             self.code_entry.delete(0, tk.END)
+            self.code_entry.insert(0, "Verification code")
+            self.code_entry.config(fg='#8e8e93')
             self.code_entry.focus()
     
     def show_password_interface(self):
