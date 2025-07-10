@@ -83,7 +83,7 @@ class LoginWindow:
         logo_container = ctk.CTkFrame(header, fg_color="transparent")
         logo_container.pack(expand=True)
 
-        # Logo Telegram chính thức (paper plane)
+        # Logo Telegram chính thức
         logo_bg = ctk.CTkFrame(logo_container,
                               fg_color=COLORS["telegram_blue"],
                               width=80, height=80,
@@ -91,9 +91,9 @@ class LoginWindow:
         logo_bg.pack(pady=(25, 8))
         logo_bg.pack_propagate(False)
 
-        # Icon paper plane trắng
+        # Logo Telegram chính thức - paper plane
         logo = ctk.CTkLabel(logo_bg, text="✈",
-                          font=ctk.CTkFont(size=40, weight="bold"),
+                          font=ctk.CTkFont(size=36, weight="bold"),
                           text_color="white")
         logo.pack(expand=True)
 
@@ -543,9 +543,9 @@ class TeleDriveApp:
         logo_bg.pack(side="left", padx=(0, 12))
         logo_bg.pack_propagate(False)
 
-        # Icon paper plane xanh
+        # Logo Telegram chính thức
         logo = ctk.CTkLabel(logo_bg, text="✈",
-                          font=ctk.CTkFont(size=18, weight="bold"),
+                          font=ctk.CTkFont(size=16, weight="bold"),
                           text_color=COLORS["telegram_blue"])
         logo.pack(expand=True)
 
@@ -601,9 +601,9 @@ class TeleDriveApp:
         logo_bg.pack()
         logo_bg.pack_propagate(False)
 
-        # Icon paper plane trắng lớn
+        # Logo Telegram chính thức lớn
         welcome_icon = ctk.CTkLabel(logo_bg, text="✈",
-                                  font=ctk.CTkFont(size=60, weight="bold"),
+                                  font=ctk.CTkFont(size=56, weight="bold"),
                                   text_color="white")
         welcome_icon.pack(expand=True)
 
@@ -657,12 +657,15 @@ class TeleDriveApp:
         self.show_main_interface()
 
     def on_not_logged_in(self):
-        """Xử lý chưa đăng nhập"""
+        """Xử lý chưa đăng nhập - tự động hiển thị giao diện đăng nhập"""
         self.connected = False
         self.user_label.configure(text="")
         self.connect_btn.configure(text="Đăng nhập",
                                  fg_color="white",
                                  hover_color=COLORS["bg_secondary"])
+
+        # Tự động hiển thị giao diện đăng nhập
+        self.root.after(500, self.login)
 
     def on_connection_error(self, error):
         """Xử lý lỗi kết nối"""

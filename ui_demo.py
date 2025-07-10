@@ -8,12 +8,13 @@ def show_ui_features():
     print("🎨 TeleDrive - Giao diện giống hệt Telegram")
     print("=" * 60)
     print()
-    
+
     print("✨ LOGO VÀ THIẾT KẾ:")
-    print("   • Logo paper plane (✈) trong vòng tròn xanh Telegram")
+    print("   • Logo paper plane (✈) chính thức của Telegram")
     print("   • Màu xanh chính thức: #2AABEE")
-    print("   • Typography và spacing giống Telegram")
+    print("   • Typography và spacing giống Telegram Desktop")
     print("   • Border radius và shadow chuẩn Material Design")
+    print("   • TỰ ĐỘNG HIỂN THỊ ĐĂNG NHẬP khi khởi chạy")
     print()
     
     print("🔐 CỬA SỔ ĐĂNG NHẬP:")
@@ -56,16 +57,18 @@ def show_ui_features():
     
     print("🚀 CÁCH SỬ DỤNG:")
     print("   1. Chạy: python app.py hoặc run.bat")
-    print("   2. Click 'Đăng nhập' ở góc phải")
+    print("   2. ✨ TỰ ĐỘNG hiển thị giao diện đăng nhập")
     print("   3. Chọn quốc gia (mặc định Việt Nam)")
     print("   4. Nhập số điện thoại")
     print("   5. Nhập mã SMS từ Telegram")
     print("   6. Nhập mật khẩu 2FA (nếu có)")
+    print("   7. Tự động vào giao diện chính sau đăng nhập")
     print()
     
     print("✅ HOÀN THIỆN 100%:")
     print("   • Giao diện giống hệt Telegram Desktop")
-    print("   • Logo và màu sắc chính thức")
+    print("   • Logo paper plane chính thức của Telegram")
+    print("   • Tự động hiển thị đăng nhập khi khởi chạy")
     print("   • Trải nghiệm người dùng mượt mà")
     print("   • Code clean và dễ bảo trì")
 
