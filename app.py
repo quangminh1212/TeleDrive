@@ -92,7 +92,7 @@ class LoginWindow:
         logo_bg.pack_propagate(False)
 
         # Logo Telegram chính thức - paper plane
-        logo = ctk.CTkLabel(logo_bg, text="✈",
+        logo = ctk.CTkLabel(logo_bg, text="🛫",
                           font=ctk.CTkFont(size=36, weight="bold"),
                           text_color="white")
         logo.pack(expand=True)
@@ -504,6 +504,9 @@ class TeleDriveApp:
         self.root.geometry("1200x800")
         self.root.configure(fg_color=COLORS["bg_primary"])
 
+        # Ẩn cửa sổ chính ban đầu
+        self.root.withdraw()
+
         # Khởi tạo Telegram client
         api_id = os.getenv('API_ID')
         api_hash = os.getenv('API_HASH')
@@ -544,7 +547,7 @@ class TeleDriveApp:
         logo_bg.pack_propagate(False)
 
         # Logo Telegram chính thức
-        logo = ctk.CTkLabel(logo_bg, text="✈",
+        logo = ctk.CTkLabel(logo_bg, text="🛫",
                           font=ctk.CTkFont(size=16, weight="bold"),
                           text_color=COLORS["telegram_blue"])
         logo.pack(expand=True)
@@ -644,6 +647,9 @@ class TeleDriveApp:
         self.user = user
         self.connected = True
 
+        # Hiển thị cửa sổ chính
+        self.root.deiconify()
+
         # Cập nhật giao diện
         self.user_label.configure(text=f"👤 {user.first_name}")
         self.connect_btn.configure(text="Đăng xuất",
@@ -659,22 +665,22 @@ class TeleDriveApp:
     def on_not_logged_in(self):
         """Xử lý chưa đăng nhập - tự động hiển thị giao diện đăng nhập"""
         self.connected = False
-        self.user_label.configure(text="")
-        self.connect_btn.configure(text="Đăng nhập",
-                                 fg_color="white",
-                                 hover_color=COLORS["bg_secondary"])
 
-        # Tự động hiển thị giao diện đăng nhập
-        self.root.after(500, self.login)
+        # Tự động hiển thị giao diện đăng nhập mà không hiển thị cửa sổ chính
+        self.login()
 
     def on_connection_error(self, error):
         """Xử lý lỗi kết nối"""
         self.connected = False
-        self.user_label.configure(text="")
-        self.connect_btn.configure(text="Đăng nhập",
-                                 fg_color="white",
-                                 hover_color=COLORS["bg_secondary"])
+
+        # Tạo cửa sổ tạm thời để hiển thị lỗi
+        temp_root = ctk.CTk()
+        temp_root.withdraw()
         messagebox.showerror("Lỗi kết nối", f"Không thể kết nối: {error}")
+        temp_root.destroy()
+
+        # Hiển thị giao diện đăng nhập
+        self.login()
 
     def show_main_interface(self):
         """Hiển thị giao diện chính sau khi đăng nhập"""
@@ -701,11 +707,20 @@ class TeleDriveApp:
     
     def login(self):
         """Đăng nhập Telegram"""
-        login_window = LoginWindow(self.root, self.client)
-        self.root.wait_window(login_window.window)
-        
+        # Tạo cửa sổ tạm thời để làm parent cho login window
+        temp_root = ctk.CTk()
+        temp_root.withdraw()
+
+        login_window = LoginWindow(temp_root, self.client)
+        temp_root.wait_window(login_window.window)
+
         if login_window.result:
             self.on_login_success(login_window.result)
+        else:
+            # Nếu không đăng nhập thành công, thoát ứng dụng
+            self.root.quit()
+
+        temp_root.destroy()
     
     def disconnect(self):
         """Ngắt kết nối"""
@@ -725,18 +740,11 @@ class TeleDriveApp:
         self.connected = False
         self.user = None
 
-        # Cập nhật giao diện
-        self.user_label.configure(text="")
-        self.connect_btn.configure(text="Đăng nhập",
-                                 fg_color="white",
-                                 hover_color=COLORS["bg_secondary"])
+        # Ẩn cửa sổ chính
+        self.root.withdraw()
 
-        # Hiển thị lại welcome screen
-        if hasattr(self, 'file_frame'):
-            self.file_frame.pack_forget()
-
-        self.welcome_frame.pack(expand=True)
-        self.welcome_label.configure(text="Đã đăng xuất khỏi Telegram.\nVui lòng đăng nhập để tiếp tục.")
+        # Hiển thị giao diện đăng nhập
+        self.login()
     
     def run(self):
         """Chạy ứng dụng"""
