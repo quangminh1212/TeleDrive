@@ -13,15 +13,25 @@ TeleDrive là một ứng dụng Python cho phép bạn quản lý files trong c
 
 ## 🚀 Cài đặt
 
-### 1. Clone repository
+### Cách 1: Cài đặt tự động (Windows)
 ```bash
-git clone <repository-url>
-cd TeleDrive
+# Cài đặt và chạy ngay
+install.bat
+
+# Hoặc chỉ setup môi trường
+setup.bat
+
+# Chạy ứng dụng
+run.bat
 ```
 
-### 2. Cài đặt dependencies
+### Cách 2: Cài đặt thủ công
 ```bash
+# 1. Cài đặt dependencies
 pip install -r requirements.txt
+
+# 2. Tạo file cấu hình
+copy .env.example .env
 ```
 
 ### 3. Cấu hình Telegram API
@@ -45,13 +55,18 @@ python setup_check.py
 
 ## 📖 Hướng dẫn sử dụng
 
-### Kiểm tra cấu hình trước khi sử dụng
+### Cách 1: Sử dụng file batch (Windows)
 ```bash
-python setup_check.py
+# Chạy trực tiếp (tự động kiểm tra cấu hình)
+run.bat
 ```
 
-### Chạy ứng dụng
+### Cách 2: Chạy thủ công
 ```bash
+# Kiểm tra cấu hình trước
+python setup_check.py
+
+# Chạy ứng dụng
 python main.py
 ```
 
@@ -97,15 +112,20 @@ logging.basicConfig(level=logging.INFO)  # Đổi thành DEBUG để xem chi ti�
 
 ```
 TeleDrive/
-├── main.py              # Ứng dụng chính
-├── telegram_client.py   # Telegram client wrapper
-├── file_manager.py      # Quản lý files
-├── config.py           # Cấu hình
-├── requirements.txt    # Dependencies
-├── .env.example       # Template environment variables
-├── .gitignore         # Git ignore rules
-├── downloads/         # Thư mục download mặc định
-└── README.md          # Tài liệu này
+├── main.py              # Ứng dụng chính với menu tương tác
+├── telegram_client.py   # Wrapper cho Telegram API
+├── file_manager.py      # Quản lý files (list, download, upload)
+├── config.py           # Cấu hình và environment variables
+├── setup_check.py      # Script kiểm tra cấu hình
+├── requirements.txt    # Dependencies cần thiết
+├── install.bat         # Script cài đặt tự động (Windows)
+├── setup.bat          # Script setup môi trường (Windows)
+├── run.bat            # Script chạy ứng dụng (Windows)
+├── .env.example       # Template cho cấu hình
+├── .env              # File cấu hình thực tế
+├── .gitignore        # Git ignore rules
+├── downloads/        # Thư mục download mặc định
+└── README.md         # Hướng dẫn chi tiết
 ```
 
 ## 🔒 Bảo mật
