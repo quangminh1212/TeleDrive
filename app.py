@@ -93,8 +93,8 @@ class LoginWindow:
         logo_bg.pack(pady=(25, 8))
         logo_bg.pack_propagate(False)
 
-        # Logo Telegram chính thức - paper plane
-        logo = ctk.CTkLabel(logo_bg, text="🛫",
+        # Logo TeleDrive - cloud with paper plane (giống hình bạn gửi)
+        logo = ctk.CTkLabel(logo_bg, text="☁✈",
                           font=ctk.CTkFont(size=36, weight="bold"),
                           text_color="white")
         logo.pack(expand=True)
@@ -560,8 +560,8 @@ class TeleDriveApp:
         logo_bg.pack(side="left", padx=(0, 12))
         logo_bg.pack_propagate(False)
 
-        # Logo Telegram chính thức
-        logo = ctk.CTkLabel(logo_bg, text="🛫",
+        # Logo TeleDrive - cloud with paper plane (giống hình bạn gửi)
+        logo = ctk.CTkLabel(logo_bg, text="☁✈",
                           font=ctk.CTkFont(size=16, weight="bold"),
                           text_color=COLORS["telegram_blue"])
         logo.pack(expand=True)
