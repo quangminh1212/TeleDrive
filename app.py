@@ -21,20 +21,21 @@ load_dotenv()
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-# Màu sắc theo phong cách Telegram
+# Màu sắc chính xác của Telegram
 COLORS = {
-    "bg_primary": "#FEFEFE",        # Trắng sữa chính
-    "bg_secondary": "#F7F7F7",      # Xám nhạt
+    "bg_primary": "#FFFFFF",        # Trắng tinh khiết
+    "bg_secondary": "#F4F4F5",      # Xám nhạt Telegram
     "bg_card": "#FFFFFF",           # Trắng card
-    "telegram_blue": "#0088CC",     # Xanh Telegram
-    "telegram_light": "#54A9EB",    # Xanh nhạt
+    "telegram_blue": "#2AABEE",     # Xanh Telegram chính thức
+    "telegram_dark": "#229ED9",     # Xanh đậm
+    "telegram_light": "#64B5F6",    # Xanh nhạt
     "text_primary": "#000000",      # Đen chính
-    "text_secondary": "#707579",    # Xám text
-    "text_hint": "#A8A8A8",        # Xám gợi ý
+    "text_secondary": "#707579",    # Xám text Telegram
+    "text_hint": "#A2ACB0",        # Xám gợi ý
     "border": "#E4E4E4",           # Viền
-    "success": "#4DCD5E",          # Xanh lá thành công
-    "error": "#E53E3E",            # Đỏ lỗi
-    "warning": "#F5A623"           # Vàng cảnh báo
+    "success": "#00C851",          # Xanh lá
+    "error": "#FF3B30",            # Đỏ iOS
+    "warning": "#FF9500"           # Cam cảnh báo
 }
 
 class LoginWindow:
@@ -72,20 +73,32 @@ class LoginWindow:
         self.window.geometry(f"420x580+{x}+{y}")
 
     def create_ui(self):
-        """Tạo giao diện đăng nhập theo phong cách Telegram"""
-        # Header với logo Telegram
-        header = ctk.CTkFrame(self.window, fg_color=COLORS["bg_primary"], height=120)
+        """Tạo giao diện đăng nhập giống hệt Telegram"""
+        # Header với logo Telegram chính thức
+        header = ctk.CTkFrame(self.window, fg_color=COLORS["bg_primary"], height=140)
         header.pack(fill="x", padx=0, pady=(0, 0))
         header.pack_propagate(False)
 
-        # Logo Telegram
-        logo_frame = ctk.CTkFrame(header, fg_color="transparent")
-        logo_frame.pack(expand=True)
+        # Logo container
+        logo_container = ctk.CTkFrame(header, fg_color="transparent")
+        logo_container.pack(expand=True)
 
-        logo = ctk.CTkLabel(logo_frame, text="✈️", font=ctk.CTkFont(size=64))
-        logo.pack(pady=(20, 5))
+        # Logo Telegram chính thức (paper plane)
+        logo_bg = ctk.CTkFrame(logo_container,
+                              fg_color=COLORS["telegram_blue"],
+                              width=80, height=80,
+                              corner_radius=40)
+        logo_bg.pack(pady=(25, 8))
+        logo_bg.pack_propagate(False)
 
-        title = ctk.CTkLabel(logo_frame, text="Telegram",
+        # Icon paper plane trắng
+        logo = ctk.CTkLabel(logo_bg, text="✈",
+                          font=ctk.CTkFont(size=40, weight="bold"),
+                          text_color="white")
+        logo.pack(expand=True)
+
+        # Tiêu đề Telegram
+        title = ctk.CTkLabel(logo_container, text="Telegram",
                            font=ctk.CTkFont(size=28, weight="bold"),
                            text_color=COLORS["text_primary"])
         title.pack()
@@ -116,9 +129,13 @@ class LoginWindow:
                               text_color=COLORS["text_secondary"])
         subtitle.pack(pady=(0, 30))
 
-        # Chọn quốc gia
-        country_frame = ctk.CTkFrame(self.phone_frame, fg_color=COLORS["bg_card"],
-                                   corner_radius=12, height=50)
+        # Chọn quốc gia với border
+        country_frame = ctk.CTkFrame(self.phone_frame,
+                                   fg_color=COLORS["bg_card"],
+                                   border_width=1,
+                                   border_color=COLORS["border"],
+                                   corner_radius=8,
+                                   height=52)
         country_frame.pack(fill="x", padx=40, pady=(0, 1))
         country_frame.pack_propagate(False)
 
@@ -132,9 +149,13 @@ class LoginWindow:
                                        command=self.show_country_selector)
         self.country_btn.pack(fill="both", expand=True, padx=15, pady=10)
 
-        # Khung nhập số điện thoại
-        phone_input_frame = ctk.CTkFrame(self.phone_frame, fg_color=COLORS["bg_card"],
-                                       corner_radius=12, height=50)
+        # Khung nhập số điện thoại với border Telegram
+        phone_input_frame = ctk.CTkFrame(self.phone_frame,
+                                       fg_color=COLORS["bg_card"],
+                                       border_width=1,
+                                       border_color=COLORS["border"],
+                                       corner_radius=8,
+                                       height=52)
         phone_input_frame.pack(fill="x", padx=40, pady=(0, 20))
         phone_input_frame.pack_propagate(False)
 
@@ -159,17 +180,17 @@ class LoginWindow:
         self.phone_entry.pack(side="left", fill="x", expand=True, padx=(10, 0))
         self.phone_entry.bind("<Return>", lambda e: self.send_code())
 
-        # Nút tiếp tục
+        # Nút tiếp tục theo style Telegram
         self.send_btn = ctk.CTkButton(self.phone_frame,
                                     text="TIẾP TỤC",
                                     height=50,
                                     width=320,
-                                    font=ctk.CTkFont(size=14, weight="bold"),
+                                    font=ctk.CTkFont(size=15, weight="bold"),
                                     fg_color=COLORS["telegram_blue"],
-                                    hover_color=COLORS["telegram_light"],
-                                    corner_radius=25,
+                                    hover_color=COLORS["telegram_dark"],
+                                    corner_radius=12,
                                     command=self.send_code)
-        self.send_btn.pack(pady=(20, 10))
+        self.send_btn.pack(pady=(30, 10))
 
         # Thông báo lỗi
         self.phone_status = ctk.CTkLabel(self.phone_frame, text="",
@@ -252,9 +273,13 @@ class LoginWindow:
                                         text_color=COLORS["text_secondary"])
         self.phone_display.pack(pady=(0, 30))
 
-        # Khung nhập mã
-        code_frame = ctk.CTkFrame(self.code_frame, fg_color=COLORS["bg_card"],
-                                corner_radius=12, height=50)
+        # Khung nhập mã với border
+        code_frame = ctk.CTkFrame(self.code_frame,
+                                fg_color=COLORS["bg_card"],
+                                border_width=1,
+                                border_color=COLORS["border"],
+                                corner_radius=8,
+                                height=52)
         code_frame.pack(fill="x", padx=40, pady=(0, 20))
         code_frame.pack_propagate(False)
 
@@ -273,12 +298,12 @@ class LoginWindow:
                                       text="TIẾP TỤC",
                                       height=50,
                                       width=320,
-                                      font=ctk.CTkFont(size=14, weight="bold"),
+                                      font=ctk.CTkFont(size=15, weight="bold"),
                                       fg_color=COLORS["telegram_blue"],
-                                      hover_color=COLORS["telegram_light"],
-                                      corner_radius=25,
+                                      hover_color=COLORS["telegram_dark"],
+                                      corner_radius=12,
                                       command=self.verify_code)
-        self.verify_btn.pack(pady=(20, 10))
+        self.verify_btn.pack(pady=(30, 10))
 
         # Nút quay lại
         back_btn = ctk.CTkButton(self.code_frame, text="← Quay lại",
@@ -312,9 +337,13 @@ class LoginWindow:
                               text_color=COLORS["text_secondary"])
         subtitle.pack(pady=(0, 30))
 
-        # Khung nhập mật khẩu
-        password_frame = ctk.CTkFrame(self.password_frame, fg_color=COLORS["bg_card"],
-                                    corner_radius=12, height=50)
+        # Khung nhập mật khẩu với border
+        password_frame = ctk.CTkFrame(self.password_frame,
+                                    fg_color=COLORS["bg_card"],
+                                    border_width=1,
+                                    border_color=COLORS["border"],
+                                    corner_radius=8,
+                                    height=52)
         password_frame.pack(fill="x", padx=40, pady=(0, 20))
         password_frame.pack_propagate(False)
 
@@ -333,12 +362,12 @@ class LoginWindow:
                                         text="TIẾP TỤC",
                                         height=50,
                                         width=320,
-                                        font=ctk.CTkFont(size=14, weight="bold"),
+                                        font=ctk.CTkFont(size=15, weight="bold"),
                                         fg_color=COLORS["telegram_blue"],
-                                        hover_color=COLORS["telegram_light"],
-                                        corner_radius=25,
+                                        hover_color=COLORS["telegram_dark"],
+                                        corner_radius=12,
                                         command=self.verify_password)
-        self.password_btn.pack(pady=(20, 10))
+        self.password_btn.pack(pady=(30, 10))
 
         # Thông báo lỗi
         self.password_status = ctk.CTkLabel(self.password_frame, text="",
@@ -492,27 +521,36 @@ class TeleDriveApp:
         self.check_login()
     
     def create_ui(self):
-        """Tạo giao diện chính theo phong cách Telegram"""
-        # Header với thiết kế Telegram
-        header = ctk.CTkFrame(self.root, height=70, corner_radius=0, fg_color=COLORS["telegram_blue"])
+        """Tạo giao diện chính giống hệt Telegram"""
+        # Header với thiết kế Telegram chính thức
+        header = ctk.CTkFrame(self.root, height=64, corner_radius=0, fg_color=COLORS["telegram_blue"])
         header.pack(fill="x")
         header.pack_propagate(False)
 
         # Container cho header
         header_container = ctk.CTkFrame(header, fg_color="transparent")
-        header_container.pack(fill="both", expand=True, padx=20, pady=15)
+        header_container.pack(fill="both", expand=True, padx=16, pady=12)
 
         # Logo và tiêu đề bên trái
         left_frame = ctk.CTkFrame(header_container, fg_color="transparent")
         left_frame.pack(side="left")
 
-        logo_title = ctk.CTkFrame(left_frame, fg_color="transparent")
-        logo_title.pack(side="left")
+        # Logo container với background tròn nhỏ
+        logo_bg = ctk.CTkFrame(left_frame,
+                              fg_color="white",
+                              width=32, height=32,
+                              corner_radius=16)
+        logo_bg.pack(side="left", padx=(0, 12))
+        logo_bg.pack_propagate(False)
 
-        logo = ctk.CTkLabel(logo_title, text="✈️", font=ctk.CTkFont(size=24))
-        logo.pack(side="left", padx=(0, 8))
+        # Icon paper plane xanh
+        logo = ctk.CTkLabel(logo_bg, text="✈",
+                          font=ctk.CTkFont(size=18, weight="bold"),
+                          text_color=COLORS["telegram_blue"])
+        logo.pack(expand=True)
 
-        title = ctk.CTkLabel(logo_title, text="TeleDrive",
+        # Tiêu đề
+        title = ctk.CTkLabel(left_frame, text="TeleDrive",
                            font=ctk.CTkFont(size=20, weight="bold"),
                            text_color="white")
         title.pack(side="left")
@@ -530,16 +568,16 @@ class TeleDriveApp:
                                      text_color="white")
         self.user_label.pack()
 
-        # Nút kết nối/đăng nhập
+        # Nút kết nối/đăng nhập theo style Telegram
         self.connect_btn = ctk.CTkButton(right_frame,
                                        text="Đăng nhập",
-                                       width=100,
-                                       height=35,
+                                       width=90,
+                                       height=32,
                                        font=ctk.CTkFont(size=13, weight="bold"),
                                        fg_color="white",
                                        text_color=COLORS["telegram_blue"],
-                                       hover_color=COLORS["bg_secondary"],
-                                       corner_radius=18,
+                                       hover_color="#F0F0F0",
+                                       corner_radius=16,
                                        command=self.toggle_connection)
         self.connect_btn.pack(side="left")
 
@@ -547,28 +585,41 @@ class TeleDriveApp:
         self.main_frame = ctk.CTkFrame(self.root, fg_color=COLORS["bg_primary"], corner_radius=0)
         self.main_frame.pack(fill="both", expand=True)
 
-        # Welcome screen
+        # Welcome screen giống Telegram
         self.welcome_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         self.welcome_frame.pack(expand=True)
 
-        # Icon lớn
-        welcome_icon = ctk.CTkLabel(self.welcome_frame, text="✈️",
-                                  font=ctk.CTkFont(size=80))
-        welcome_icon.pack(pady=(50, 20))
+        # Logo lớn giống Telegram
+        logo_container = ctk.CTkFrame(self.welcome_frame, fg_color="transparent")
+        logo_container.pack(pady=(80, 30))
+
+        # Background tròn cho logo
+        logo_bg = ctk.CTkFrame(logo_container,
+                              fg_color=COLORS["telegram_blue"],
+                              width=120, height=120,
+                              corner_radius=60)
+        logo_bg.pack()
+        logo_bg.pack_propagate(False)
+
+        # Icon paper plane trắng lớn
+        welcome_icon = ctk.CTkLabel(logo_bg, text="✈",
+                                  font=ctk.CTkFont(size=60, weight="bold"),
+                                  text_color="white")
+        welcome_icon.pack(expand=True)
 
         # Tiêu đề chào mừng
         welcome_title = ctk.CTkLabel(self.welcome_frame,
                                    text="Chào mừng đến với TeleDrive",
-                                   font=ctk.CTkFont(size=28, weight="bold"),
+                                   font=ctk.CTkFont(size=24, weight="bold"),
                                    text_color=COLORS["text_primary"])
-        welcome_title.pack(pady=(0, 10))
+        welcome_title.pack(pady=(0, 8))
 
         # Mô tả
         self.welcome_label = ctk.CTkLabel(self.welcome_frame,
                                         text="Quản lý file Telegram một cách dễ dàng\nVui lòng đăng nhập để bắt đầu",
-                                        font=ctk.CTkFont(size=16),
+                                        font=ctk.CTkFont(size=15),
                                         text_color=COLORS["text_secondary"])
-        self.welcome_label.pack(pady=(0, 30))
+        self.welcome_label.pack(pady=(0, 40))
     
     def check_login(self):
         """Kiểm tra trạng thái đăng nhập"""
