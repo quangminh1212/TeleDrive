@@ -26,24 +26,29 @@ pip install -r requirements.txt
 
 ### 3. Cấu hình Telegram API
 
-1. Truy cập https://my.telegram.org/apps
-2. Tạo một ứng dụng mới để lấy `API_ID` và `API_HASH`
-3. Copy file `.env.example` thành `.env`:
-```bash
-cp .env.example .env
+API credentials đã được cấu hình sẵn trong dự án. Bạn chỉ cần:
+
+1. Cập nhật số điện thoại trong file `.env`:
+```env
+PHONE_NUMBER=+84123456789  # Thay bằng số điện thoại của bạn
 ```
 
-4. Chỉnh sửa file `.env` với thông tin của bạn:
-```env
-API_ID=your_api_id_here
-API_HASH=your_api_hash_here
-PHONE_NUMBER=+84123456789
-SESSION_NAME=teledrive_session
-DOWNLOAD_DIR=./downloads
-DEFAULT_CHANNEL=@your_channel_username
+2. Hoặc chạy script setup để kiểm tra và cấu hình:
+```bash
+python setup_check.py
 ```
+
+**Thông tin API đã cấu hình:**
+- API ID: 21272067
+- API Hash: b7690dc86952dbc9b16717b101164af3
+- App Name: Telegram Unlimited Driver
 
 ## 📖 Hướng dẫn sử dụng
+
+### Kiểm tra cấu hình trước khi sử dụng
+```bash
+python setup_check.py
+```
 
 ### Chạy ứng dụng
 ```bash
