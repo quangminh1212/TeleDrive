@@ -12,10 +12,14 @@
 - 💻 Giao diện dòng lệnh
 - 🎨 Thiết kế đơn giản, dễ sử dụng
 
-## Cài đặt
+## Cài đặt nhanh
 
 1. **Cài đặt thư viện:**
    ```bash
+   # Windows
+   install.bat
+
+   # Hoặc thủ công
    pip install -r requirements.txt
    ```
 
@@ -24,11 +28,15 @@
 
 3. **Chạy ứng dụng:**
    ```bash
-   # Giao diện desktop (khuyến nghị)
-   python app.py
+   # Windows - Giao diện desktop
+   run.bat
 
-   # Hoặc dòng lệnh
-   python cmd.py
+   # Windows - Dòng lệnh
+   run.bat cmd
+
+   # Hoặc chạy trực tiếp
+   python app.py      # Desktop
+   python cmd.py      # Command line
    ```
 
 ## Sử dụng dòng lệnh
