@@ -1,6 +1,6 @@
 # TeleDrive
 
-Modern Telegram channel file management with both CLI and Web interface.
+Modern Telegram channel file management with desktop app and CLI.
 
 ## Features
 
@@ -8,7 +8,7 @@ Modern Telegram channel file management with both CLI and Web interface.
 - 🔍 Search files by name
 - ⬇️ Download files
 - ⬆️ Upload files
-- 🌐 Modern web interface
+- 🖥️ Modern desktop app
 - 💻 Command-line interface
 - 🎨 Clean, minimalist design
 
@@ -30,36 +30,24 @@ Modern Telegram channel file management with both CLI and Web interface.
 
 3. **Run Desktop App:**
    ```bash
-   python app_desktop.py
-   # Or use: run_desktop.bat
+   python desktop.py
+   # Or use: run.bat
    ```
 
-4. **Demo:** Try `python demo_desktop.py` to see the interface
-
-### Option 2: Web Interface
-
-1. **Run Web Interface:**
-   ```bash
-   python app.py
-   # Or use: run_web.bat
-   ```
-
-2. **Access:** Open http://localhost:5000 in your browser
-
-### Option 3: Command Line Interface
+### Option 2: Command Line Interface
 
 ```bash
 # List files
-python teledrive.py list @mychannel 10
+python cli.py list @mychannel 10
 
 # Search files
-python teledrive.py search @mychannel "video" 5
+python cli.py search @mychannel "video" 5
 
 # Download file (by number from list)
-python teledrive.py download @mychannel 1
+python cli.py download @mychannel 1
 
 # Upload file
-python teledrive.py upload @mychannel ./file.pdf "My document"
+python cli.py upload @mychannel ./file.pdf "My document"
 ```
 
 ## Commands
@@ -92,21 +80,15 @@ DOWNLOAD_DIR=./downloads
 ## File Structure
 
 ```
-app_desktop.py        # Desktop application
-app.py               # Web application
-teledrive.py         # CLI application
-teledrive_core.py    # Core functionality
-demo_desktop.py      # Desktop demo
-requirements.txt     # Dependencies
-.env                 # Configuration
+desktop.py          # Desktop application
+cli.py              # CLI application
+core.py             # Core functionality
+requirements.txt    # Dependencies
+.env                # Configuration
 README.md           # This file
 setup.bat           # Setup script
-run_desktop.bat     # Run desktop app
-run_web.bat         # Run web interface
-templates/          # HTML templates
-static/             # CSS, JS, images
+run.bat             # Run desktop app
 downloads/          # Downloaded files (auto-created)
-uploads/            # Temporary upload files (auto-created)
 ```
 
 ## Desktop App Features
@@ -115,33 +97,22 @@ uploads/            # Temporary upload files (auto-created)
 - 🎨 **Modern UI** - Clean, professional interface
 - 🚀 **Fast Performance** - No browser overhead
 - 📁 **File Management** - Browse, search, download files
-- ⬆️ **Easy Upload** - File picker and drag-drop support
+- ⬆️ **Easy Upload** - File picker support
 - 📊 **Progress Tracking** - Real-time upload/download progress
 - ⚙️ **Settings Panel** - Configure API credentials
 - 🌓 **Theme Support** - Light and dark modes
-- 💾 **Offline Ready** - Works without internet for local files
-
-## Web Interface Features
-
-- 🌐 **Browser-based** - No installation required
-- 📱 **Responsive** - Works on desktop and mobile
-- 🔄 **Real-time Updates** - Live connection status via WebSocket
-- 📁 **File Management** - Grid and list views
-- 🔍 **Search** - Real-time file search
-- ⬆️ **Drag & Drop Upload** - Modern file uploading
-- 📊 **Progress Tracking** - Upload/download progress
-- 🎨 **Modern Design** - Clean, minimalist interface
+- 💾 **Simple & Clean** - Minimalist design
 
 ## Advantages
 
-- ✅ **Triple Interface** - Desktop app, web interface, and CLI
+- ✅ **Dual Interface** - Desktop app and CLI
 - ✅ **Modern UI** - Beautiful, professional design
 - ✅ **Native Performance** - Fast desktop application
-- ✅ **Easy to Use** - Intuitive graphical interfaces
+- ✅ **Easy to Use** - Intuitive graphical interface
 - ✅ **Cross-platform** - Works on Windows, Linux, macOS
-- ✅ **Flexible** - Choose the interface that suits your needs
+- ✅ **Minimal Dependencies** - Simple and lightweight
 - ✅ **Real-time Updates** - Live status and progress tracking
-- ✅ **Drag & Drop** - Modern file upload experience
+- ✅ **Clean Design** - Minimalist and focused
 
 ## Examples
 

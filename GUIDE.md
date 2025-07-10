@@ -34,36 +34,19 @@ Choose your preferred interface:
 
 #### 🖥️ Desktop App (Recommended)
 ```bash
-run_desktop.bat
-# or: python app_desktop.py
-```
-
-#### 🌐 Web Interface
-```bash
-run_web.bat
-# or: python app.py
-# Then open: http://localhost:5000
+run.bat
+# or: python desktop.py
 ```
 
 #### 💻 Command Line
 ```bash
-python teledrive.py list @mychannel 10
+python cli.py list @mychannel 10
 ```
-
-## 🎯 Quick Demo
-
-Want to see the interface first? Try the demo:
-
-```bash
-python demo_desktop.py
-```
-
-This shows the desktop interface without needing API credentials.
 
 ## 📋 Common Tasks
 
 ### Connect to Telegram
-1. Open the app
+1. Open the desktop app
 2. Click "Connect" button
 3. Enter phone verification code when prompted
 
@@ -81,14 +64,13 @@ This shows the desktop interface without needing API credentials.
 ### Upload Files
 1. Go to "Upload" tab
 2. Enter target channel
-3. Click "Select Files" or drag & drop
+3. Click "Select Files"
 4. Add optional caption
 5. Click "Upload Files"
 
 ### Search Files
 1. In the Files tab
 2. Use the search box to filter files
-3. Or use the search dialog from Dashboard
 
 ## ⚙️ Settings
 
@@ -114,44 +96,32 @@ Configure your API credentials in the Settings tab:
 - Run `pip install -r requirements.txt`
 - Make sure you're in the correct directory
 
-## 📁 Interface Comparison
+## 📁 File Structure
 
-| Feature | Desktop App | Web Interface | CLI |
-|---------|-------------|---------------|-----|
-| **Ease of Use** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **Performance** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **Features** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **Mobile Support** | ❌ | ✅ | ❌ |
-| **Automation** | ❌ | ❌ | ✅ |
-
-## 🎨 Screenshots
-
-### Desktop App
-- Modern native interface
-- File browser with thumbnails
-- Drag & drop upload
-- Real-time progress tracking
-
-### Web Interface  
-- Responsive design
-- Works on any device
-- Real-time updates
-- Modern web UI
+```
+desktop.py          # Desktop application
+cli.py              # CLI application
+core.py             # Core functionality
+requirements.txt    # Dependencies
+.env                # Configuration
+README.md           # Documentation
+setup.bat           # Setup script
+run.bat             # Run desktop app
+downloads/          # Downloaded files
+```
 
 ## 💡 Tips
 
 1. **Use Desktop App** for daily file management
-2. **Use Web Interface** when away from your computer
-3. **Use CLI** for automation and scripting
-4. **Bookmark channels** you use frequently
-5. **Use search** to quickly find specific files
+2. **Use CLI** for automation and scripting
+3. **Use search** to quickly find specific files
+4. **Check Settings** if connection fails
 
 ## 🆘 Need Help?
 
 1. Check the main README.md for detailed documentation
-2. Try the demo first: `python demo_desktop.py`
-3. Make sure all dependencies are installed
-4. Check your .env configuration
+2. Make sure all dependencies are installed
+3. Check your .env configuration
 
 ---
 
