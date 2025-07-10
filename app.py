@@ -12,6 +12,7 @@ import os
 import signal
 import sys
 from pathlib import Path
+from PIL import Image
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError
 from dotenv import load_dotenv
@@ -93,11 +94,19 @@ class LoginWindow:
         logo_bg.pack(pady=(25, 8))
         logo_bg.pack_propagate(False)
 
-        # Logo TeleDrive - cloud with paper plane (giống hình bạn gửi)
-        logo = ctk.CTkLabel(logo_bg, text="☁✈",
-                          font=ctk.CTkFont(size=36, weight="bold"),
-                          text_color="white")
-        logo.pack(expand=True)
+        # Logo TeleDrive từ file PNG
+        try:
+            logo_image = Image.open("teledrive.png")
+            logo_image = logo_image.resize((64, 64), Image.Resampling.LANCZOS)
+            logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(64, 64))
+            logo = ctk.CTkLabel(logo_bg, image=logo_photo, text="")
+            logo.pack(expand=True)
+        except Exception:
+            # Fallback nếu không load được hình
+            logo = ctk.CTkLabel(logo_bg, text="☁✈",
+                              font=ctk.CTkFont(size=36, weight="bold"),
+                              text_color="white")
+            logo.pack(expand=True)
 
         # Tiêu đề Telegram
         title = ctk.CTkLabel(logo_container, text="Telegram",
@@ -560,11 +569,19 @@ class TeleDriveApp:
         logo_bg.pack(side="left", padx=(0, 12))
         logo_bg.pack_propagate(False)
 
-        # Logo TeleDrive - cloud with paper plane (giống hình bạn gửi)
-        logo = ctk.CTkLabel(logo_bg, text="☁✈",
-                          font=ctk.CTkFont(size=16, weight="bold"),
-                          text_color=COLORS["telegram_blue"])
-        logo.pack(expand=True)
+        # Logo TeleDrive từ file PNG (nhỏ hơn cho header)
+        try:
+            logo_image = Image.open("teledrive.png")
+            logo_image = logo_image.resize((32, 32), Image.Resampling.LANCZOS)
+            logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(32, 32))
+            logo = ctk.CTkLabel(logo_bg, image=logo_photo, text="")
+            logo.pack(expand=True)
+        except Exception:
+            # Fallback nếu không load được hình
+            logo = ctk.CTkLabel(logo_bg, text="☁✈",
+                              font=ctk.CTkFont(size=16, weight="bold"),
+                              text_color=COLORS["telegram_blue"])
+            logo.pack(expand=True)
 
         # Tiêu đề
         title = ctk.CTkLabel(left_frame, text="TeleDrive",
