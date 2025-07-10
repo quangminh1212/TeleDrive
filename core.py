@@ -13,7 +13,7 @@ from datetime import datetime
 
 from telethon import TelegramClient
 from telethon.tl.types import Message, DocumentAttributeFilename
-from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError
+from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneNumberInvalidError
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -33,37 +33,38 @@ class TeleDriveCore:
     """Core TeleDrive functionality for web interface"""
     
     def __init__(self):
-        if not all([API_ID, API_HASH, PHONE_NUMBER]):
-            raise ValueError("Missing required configuration: API_ID, API_HASH, PHONE_NUMBER")
-        
+        if not all([API_ID, API_HASH]):
+            raise ValueError("Missing required configuration: API_ID, API_HASH")
+
         self.client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
         self.connected = False
         self._connection_lock = asyncio.Lock()
+        self._login_state = {"step": "none", "phone": None, "phone_code_hash": None}
     
     async def connect(self) -> Dict[str, Any]:
-        """Connect to Telegram"""
+        """Connect to Telegram using existing session"""
         async with self._connection_lock:
             if self.connected:
                 return {"success": True, "message": "Already connected"}
-            
+
             try:
-                await self.client.start(phone=PHONE_NUMBER)
-                self.connected = True
-                me = await self.client.get_me()
-                return {
-                    "success": True,
-                    "message": f"Connected as: {me.first_name} {me.last_name or ''}",
-                    "user": {
-                        "first_name": me.first_name,
-                        "last_name": me.last_name or "",
-                        "username": me.username or "",
-                        "phone": me.phone or ""
+                # Try to connect with existing session
+                await self.client.connect()
+                if await self.client.is_user_authorized():
+                    self.connected = True
+                    me = await self.client.get_me()
+                    return {
+                        "success": True,
+                        "message": f"Connected as: {me.first_name} {me.last_name or ''}",
+                        "user": {
+                            "first_name": me.first_name,
+                            "last_name": me.last_name or "",
+                            "username": me.username or "",
+                            "phone": me.phone or ""
+                        }
                     }
-                }
-            except SessionPasswordNeededError:
-                return {"success": False, "message": "Two-factor authentication enabled. Please disable it temporarily."}
-            except PhoneCodeInvalidError:
-                return {"success": False, "message": "Invalid phone code."}
+                else:
+                    return {"success": False, "message": "Not authorized. Please login first.", "needs_login": True}
             except Exception as e:
                 return {"success": False, "message": f"Connection failed: {str(e)}"}
     
@@ -73,6 +74,89 @@ class TeleDriveCore:
             if self.connected:
                 await self.client.disconnect()
                 self.connected = False
+
+    async def send_code(self, phone_number: str) -> Dict[str, Any]:
+        """Send verification code to phone number"""
+        try:
+            await self.client.connect()
+            result = await self.client.send_code_request(phone_number)
+            self._login_state = {
+                "step": "code_sent",
+                "phone": phone_number,
+                "phone_code_hash": result.phone_code_hash
+            }
+            return {
+                "success": True,
+                "message": f"Verification code sent to {phone_number}",
+                "phone_code_hash": result.phone_code_hash
+            }
+        except PhoneNumberInvalidError:
+            return {"success": False, "message": "Invalid phone number format"}
+        except Exception as e:
+            return {"success": False, "message": f"Failed to send code: {str(e)}"}
+
+    async def verify_code(self, code: str) -> Dict[str, Any]:
+        """Verify the phone code"""
+        try:
+            if self._login_state["step"] != "code_sent":
+                return {"success": False, "message": "No code was sent. Please request a code first."}
+
+            await self.client.sign_in(
+                phone=self._login_state["phone"],
+                code=code,
+                phone_code_hash=self._login_state["phone_code_hash"]
+            )
+
+            self.connected = True
+            me = await self.client.get_me()
+            self._login_state = {"step": "completed", "phone": None, "phone_code_hash": None}
+
+            return {
+                "success": True,
+                "message": f"Successfully logged in as {me.first_name}",
+                "user": {
+                    "first_name": me.first_name,
+                    "last_name": me.last_name or "",
+                    "username": me.username or "",
+                    "phone": me.phone or ""
+                }
+            }
+        except SessionPasswordNeededError:
+            self._login_state["step"] = "password_needed"
+            return {
+                "success": False,
+                "message": "Two-factor authentication is enabled. Please enter your password.",
+                "needs_password": True
+            }
+        except PhoneCodeInvalidError:
+            return {"success": False, "message": "Invalid verification code"}
+        except Exception as e:
+            return {"success": False, "message": f"Verification failed: {str(e)}"}
+
+    async def verify_password(self, password: str) -> Dict[str, Any]:
+        """Verify 2FA password"""
+        try:
+            if self._login_state["step"] != "password_needed":
+                return {"success": False, "message": "Password verification not required"}
+
+            await self.client.sign_in(password=password)
+
+            self.connected = True
+            me = await self.client.get_me()
+            self._login_state = {"step": "completed", "phone": None, "phone_code_hash": None}
+
+            return {
+                "success": True,
+                "message": f"Successfully logged in as {me.first_name}",
+                "user": {
+                    "first_name": me.first_name,
+                    "last_name": me.last_name or "",
+                    "username": me.username or "",
+                    "phone": me.phone or ""
+                }
+            }
+        except Exception as e:
+            return {"success": False, "message": f"Password verification failed: {str(e)}"}
     
     def get_filename(self, message: Message) -> str:
         """Extract filename from message"""

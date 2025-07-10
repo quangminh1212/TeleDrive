@@ -19,6 +19,381 @@ from core import get_teledrive_instance
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# Custom color scheme for bright interface
+COLORS = {
+    "primary": "#4A90E2",      # Bright blue
+    "secondary": "#7ED321",    # Bright green
+    "accent": "#F5A623",       # Bright orange
+    "success": "#50E3C2",      # Bright teal
+    "warning": "#F8E71C",      # Bright yellow
+    "error": "#D0021B",        # Bright red
+    "background": "#F8F9FA",   # Light gray
+    "surface": "#FFFFFF",      # White
+    "text_primary": "#2C3E50", # Dark blue-gray
+    "text_secondary": "#7F8C8D", # Medium gray
+    "gradient_start": "#667eea", # Purple-blue
+    "gradient_end": "#764ba2"    # Purple
+}
+
+class LoginDialog:
+    """Modern login dialog for Telegram authentication"""
+
+    def __init__(self, parent, teledrive_core):
+        self.parent = parent
+        self.teledrive = teledrive_core
+        self.result = None
+
+        # Create dialog window
+        self.dialog = ctk.CTkToplevel(parent)
+        self.dialog.title("Login to Telegram")
+        self.dialog.geometry("450x600")
+        self.dialog.resizable(False, False)
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        # Center the dialog
+        self.dialog.update_idletasks()
+        x = (self.dialog.winfo_screenwidth() // 2) - (450 // 2)
+        y = (self.dialog.winfo_screenheight() // 2) - (600 // 2)
+        self.dialog.geometry(f"450x600+{x}+{y}")
+
+        self.current_step = "phone"
+        self.phone_number = ""
+        self.phone_code_hash = ""
+
+        self.create_ui()
+
+    def create_ui(self):
+        """Create the login dialog UI"""
+        # Main container with gradient-like background
+        self.main_frame = ctk.CTkFrame(self.dialog, fg_color=COLORS["surface"])
+        self.main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Header with logo and title
+        header_frame = ctk.CTkFrame(self.main_frame, fg_color=COLORS["primary"], height=120)
+        header_frame.pack(fill="x", padx=0, pady=(0, 30))
+        header_frame.pack_propagate(False)
+
+        # Logo
+        logo_label = ctk.CTkLabel(
+            header_frame,
+            text="🚀",
+            font=ctk.CTkFont(size=48)
+        )
+        logo_label.pack(pady=(20, 5))
+
+        # Title
+        title_label = ctk.CTkLabel(
+            header_frame,
+            text="Connect to Telegram",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            text_color="white"
+        )
+        title_label.pack(pady=(0, 20))
+
+        # Content area
+        self.content_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        self.content_frame.pack(fill="both", expand=True, padx=20)
+
+        # Create different step frames
+        self.create_phone_step()
+        self.create_code_step()
+        self.create_password_step()
+
+        # Show initial step
+        self.show_step("phone")
+
+    def create_phone_step(self):
+        """Create phone number input step"""
+        self.phone_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+
+        # Step indicator
+        step_label = ctk.CTkLabel(
+            self.phone_frame,
+            text="Step 1 of 2",
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"]
+        )
+        step_label.pack(pady=(0, 10))
+
+        # Instruction
+        instruction_label = ctk.CTkLabel(
+            self.phone_frame,
+            text="Enter your phone number",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color=COLORS["text_primary"]
+        )
+        instruction_label.pack(pady=(0, 20))
+
+        # Phone input
+        self.phone_entry = ctk.CTkEntry(
+            self.phone_frame,
+            placeholder_text="+1234567890",
+            font=ctk.CTkFont(size=16),
+            height=50,
+            width=300
+        )
+        self.phone_entry.pack(pady=(0, 20))
+        self.phone_entry.bind("<Return>", lambda e: self.send_code())
+
+        # Send code button
+        self.send_code_btn = ctk.CTkButton(
+            self.phone_frame,
+            text="Send Verification Code",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            height=50,
+            width=300,
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["gradient_start"],
+            command=self.send_code
+        )
+        self.send_code_btn.pack(pady=(0, 20))
+
+        # Status label
+        self.phone_status = ctk.CTkLabel(
+            self.phone_frame,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["error"]
+        )
+        self.phone_status.pack()
+
+    def create_code_step(self):
+        """Create verification code input step"""
+        self.code_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+
+        # Step indicator
+        step_label = ctk.CTkLabel(
+            self.code_frame,
+            text="Step 2 of 2",
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"]
+        )
+        step_label.pack(pady=(0, 10))
+
+        # Instruction
+        self.code_instruction = ctk.CTkLabel(
+            self.code_frame,
+            text="Enter the verification code",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color=COLORS["text_primary"]
+        )
+        self.code_instruction.pack(pady=(0, 10))
+
+        # Phone number display
+        self.phone_display = ctk.CTkLabel(
+            self.code_frame,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"]
+        )
+        self.phone_display.pack(pady=(0, 20))
+
+        # Code input
+        self.code_entry = ctk.CTkEntry(
+            self.code_frame,
+            placeholder_text="12345",
+            font=ctk.CTkFont(size=16),
+            height=50,
+            width=300
+        )
+        self.code_entry.pack(pady=(0, 20))
+        self.code_entry.bind("<Return>", lambda e: self.verify_code())
+
+        # Verify button
+        self.verify_code_btn = ctk.CTkButton(
+            self.code_frame,
+            text="Verify Code",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            height=50,
+            width=300,
+            fg_color=COLORS["success"],
+            hover_color=COLORS["secondary"],
+            command=self.verify_code
+        )
+        self.verify_code_btn.pack(pady=(0, 20))
+
+        # Back button
+        back_btn = ctk.CTkButton(
+            self.code_frame,
+            text="← Back",
+            font=ctk.CTkFont(size=12),
+            height=35,
+            width=100,
+            fg_color="transparent",
+            text_color=COLORS["text_secondary"],
+            hover_color=COLORS["background"],
+            command=lambda: self.show_step("phone")
+        )
+        back_btn.pack(pady=(0, 10))
+
+        # Status label
+        self.code_status = ctk.CTkLabel(
+            self.code_frame,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["error"]
+        )
+        self.code_status.pack()
+
+    def create_password_step(self):
+        """Create 2FA password input step"""
+        self.password_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+
+        # Step indicator
+        step_label = ctk.CTkLabel(
+            self.password_frame,
+            text="Two-Factor Authentication",
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"]
+        )
+        step_label.pack(pady=(0, 10))
+
+        # Instruction
+        instruction_label = ctk.CTkLabel(
+            self.password_frame,
+            text="Enter your 2FA password",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color=COLORS["text_primary"]
+        )
+        instruction_label.pack(pady=(0, 20))
+
+        # Password input
+        self.password_entry = ctk.CTkEntry(
+            self.password_frame,
+            placeholder_text="Password",
+            font=ctk.CTkFont(size=16),
+            height=50,
+            width=300,
+            show="*"
+        )
+        self.password_entry.pack(pady=(0, 20))
+        self.password_entry.bind("<Return>", lambda e: self.verify_password())
+
+        # Verify button
+        self.verify_password_btn = ctk.CTkButton(
+            self.password_frame,
+            text="Verify Password",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            height=50,
+            width=300,
+            fg_color=COLORS["accent"],
+            hover_color=COLORS["warning"],
+            command=self.verify_password
+        )
+        self.verify_password_btn.pack(pady=(0, 20))
+
+        # Status label
+        self.password_status = ctk.CTkLabel(
+            self.password_frame,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["error"]
+        )
+        self.password_status.pack()
+
+    def show_step(self, step):
+        """Show specific step"""
+        # Hide all frames
+        self.phone_frame.pack_forget()
+        self.code_frame.pack_forget()
+        self.password_frame.pack_forget()
+
+        # Show selected frame
+        if step == "phone":
+            self.phone_frame.pack(fill="both", expand=True)
+            self.phone_entry.focus()
+        elif step == "code":
+            self.code_frame.pack(fill="both", expand=True)
+            self.code_entry.focus()
+        elif step == "password":
+            self.password_frame.pack(fill="both", expand=True)
+            self.password_entry.focus()
+
+        self.current_step = step
+
+    def send_code(self):
+        """Send verification code"""
+        phone = self.phone_entry.get().strip()
+        if not phone:
+            self.phone_status.configure(text="Please enter your phone number")
+            return
+
+        self.phone_number = phone
+        self.send_code_btn.configure(state="disabled", text="Sending...")
+        self.phone_status.configure(text="Sending verification code...")
+
+        async def send():
+            result = await self.teledrive.send_code(phone)
+            self.dialog.after(0, lambda: self.on_code_sent(result))
+
+        threading.Thread(target=lambda: asyncio.run(send()), daemon=True).start()
+
+    def on_code_sent(self, result):
+        """Handle code sent result"""
+        self.send_code_btn.configure(state="normal", text="Send Verification Code")
+
+        if result["success"]:
+            self.phone_code_hash = result["phone_code_hash"]
+            self.phone_display.configure(text=f"Code sent to {self.phone_number}")
+            self.show_step("code")
+        else:
+            self.phone_status.configure(text=result["message"])
+
+    def verify_code(self):
+        """Verify the code"""
+        code = self.code_entry.get().strip()
+        if not code:
+            self.code_status.configure(text="Please enter the verification code")
+            return
+
+        self.verify_code_btn.configure(state="disabled", text="Verifying...")
+        self.code_status.configure(text="Verifying code...")
+
+        async def verify():
+            result = await self.teledrive.verify_code(code)
+            self.dialog.after(0, lambda: self.on_code_verified(result))
+
+        threading.Thread(target=lambda: asyncio.run(verify()), daemon=True).start()
+
+    def on_code_verified(self, result):
+        """Handle code verification result"""
+        self.verify_code_btn.configure(state="normal", text="Verify Code")
+
+        if result["success"]:
+            self.result = result
+            self.dialog.destroy()
+        elif result.get("needs_password"):
+            self.show_step("password")
+        else:
+            self.code_status.configure(text=result["message"])
+
+    def verify_password(self):
+        """Verify 2FA password"""
+        password = self.password_entry.get().strip()
+        if not password:
+            self.password_status.configure(text="Please enter your password")
+            return
+
+        self.verify_password_btn.configure(state="disabled", text="Verifying...")
+        self.password_status.configure(text="Verifying password...")
+
+        async def verify():
+            result = await self.teledrive.verify_password(password)
+            self.dialog.after(0, lambda: self.on_password_verified(result))
+
+        threading.Thread(target=lambda: asyncio.run(verify()), daemon=True).start()
+
+    def on_password_verified(self, result):
+        """Handle password verification result"""
+        self.verify_password_btn.configure(state="normal", text="Verify Password")
+
+        if result["success"]:
+            self.result = result
+            self.dialog.destroy()
+        else:
+            self.password_status.configure(text=result["message"])
+
 class TeleDriveApp:
     """Main TeleDrive Desktop Application"""
     
@@ -28,14 +403,17 @@ class TeleDriveApp:
         self.root.title("TeleDrive - Telegram File Manager")
         self.root.geometry("1200x800")
         self.root.minsize(1000, 600)
-        
+
+        # Set window icon and styling
+        self.root.configure(fg_color=COLORS["background"])
+
         # Initialize variables
         self.teledrive = get_teledrive_instance()
         self.connection_status = {"connected": False, "user": None}
         self.current_channel = ""
         self.current_files = []
         self.selected_files = []
-        
+
         # Create UI
         self.create_ui()
         self.check_connection_status()
@@ -59,35 +437,48 @@ class TeleDriveApp:
         self.create_status_bar()
     
     def create_header(self):
-        """Create the header bar"""
-        self.header_frame = ctk.CTkFrame(self.root, height=60, corner_radius=0)
+        """Create the header bar with bright gradient design"""
+        self.header_frame = ctk.CTkFrame(
+            self.root,
+            height=80,
+            corner_radius=0,
+            fg_color=COLORS["primary"]
+        )
         self.header_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
         self.header_frame.grid_columnconfigure(1, weight=1)
-        
-        # Logo
+
+        # Logo with emoji and modern styling
         logo_label = ctk.CTkLabel(
-            self.header_frame, 
-            text="📁 TeleDrive", 
-            font=ctk.CTkFont(size=20, weight="bold")
+            self.header_frame,
+            text="🚀 TeleDrive",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            text_color="white"
         )
-        logo_label.grid(row=0, column=0, sticky="w", padx=20, pady=15)
-        
-        # Connection controls
+        logo_label.grid(row=0, column=0, sticky="w", padx=30, pady=20)
+
+        # Connection controls with modern styling
         controls = ctk.CTkFrame(self.header_frame, fg_color="transparent")
-        controls.grid(row=0, column=1, sticky="e", padx=20, pady=15)
-        
+        controls.grid(row=0, column=1, sticky="e", padx=30, pady=20)
+
+        # Status with colored indicator
         self.status_label = ctk.CTkLabel(
-            controls, 
-            text="● Disconnected", 
-            text_color="red",
-            font=ctk.CTkFont(size=12)
+            controls,
+            text="● Disconnected",
+            text_color=COLORS["error"],
+            font=ctk.CTkFont(size=14, weight="bold")
         )
-        self.status_label.pack(side="left", padx=(0, 10))
-        
+        self.status_label.pack(side="left", padx=(0, 15))
+
+        # Modern connect button
         self.connect_btn = ctk.CTkButton(
             controls,
             text="Connect",
-            width=100,
+            width=120,
+            height=40,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=COLORS["success"],
+            hover_color=COLORS["secondary"],
+            corner_radius=20,
             command=self.toggle_connection
         )
         self.connect_btn.pack(side="left")
