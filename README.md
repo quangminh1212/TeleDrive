@@ -121,6 +121,8 @@ TeleDrive/
 ├── install.bat         # Script cài đặt tự động (Windows)
 ├── setup.bat          # Script setup môi trường (Windows)
 ├── run.bat            # Script chạy ứng dụng (Windows)
+├── change_phone.bat   # Script thay đổi số điện thoại (Windows)
+├── troubleshoot.bat   # Script xử lý lỗi tự động (Windows)
 ├── .env.example       # Template cho cấu hình
 ├── .env              # File cấu hình thực tế
 ├── .gitignore        # Git ignore rules
@@ -142,6 +144,25 @@ TeleDrive/
 4. **2FA**: Nếu tài khoản có bật 2FA, bạn cần tắt hoặc implement thêm code xử lý
 
 ## 🐛 Troubleshooting
+
+### Script tự động xử lý lỗi
+```bash
+# Chạy script troubleshooting tự động
+troubleshoot.bat
+```
+
+### Lỗi số điện thoại bị ban
+```
+The used phone number has been banned from Telegram
+```
+**Giải pháp:**
+```bash
+# Thay đổi số điện thoại
+change_phone.bat
+```
+- Sử dụng số điện thoại khác chưa bị ban
+- Liên hệ Telegram support nếu tin rằng đây là lỗi
+- Xem thêm: https://www.telegram.org/faq_spam
 
 ### Lỗi kết nối
 ```

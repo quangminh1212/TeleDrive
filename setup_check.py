@@ -4,7 +4,6 @@ Validates configuration and tests Telegram connection
 """
 
 import asyncio
-import sys
 from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
@@ -35,7 +34,7 @@ async def check_config():
 async def test_connection():
     """Test Telegram connection"""
     console.print("\n[bold blue]🔗 Testing Telegram connection...[/bold blue]")
-    
+
     try:
         async with TelegramClient() as client:
             me = await client.client.get_me()
@@ -44,7 +43,19 @@ async def test_connection():
                 console.print(f"[cyan]Username: @{me.username}[/cyan]")
             return True
     except Exception as e:
-        console.print(f"[red]❌ Connection failed: {e}[/red]")
+        error_msg = str(e).lower()
+        if 'banned' in error_msg:
+            console.print(f"[red]❌ Phone number is banned by Telegram[/red]")
+            console.print(f"[yellow]💡 Solution: Use change_phone.bat to set a different phone number[/yellow]")
+            console.print(f"[cyan]ℹ️  Check https://www.telegram.org/faq_spam for more info[/cyan]")
+        elif 'phone code' in error_msg:
+            console.print(f"[yellow]⚠️  Phone number is valid but needs verification[/yellow]")
+            console.print(f"[cyan]ℹ️  This is normal for first-time setup[/cyan]")
+        elif 'network' in error_msg or 'connection' in error_msg:
+            console.print(f"[red]❌ Network connection issue[/red]")
+            console.print(f"[yellow]💡 Check your internet connection[/yellow]")
+        else:
+            console.print(f"[red]❌ Connection failed: {e}[/red]")
         return False
 
 def update_phone_number():
