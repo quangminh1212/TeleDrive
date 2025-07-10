@@ -19,6 +19,7 @@ class TeleDriveApp:
         self.root.title("TeleDrive - Telegram Channel File Manager")
         self.root.geometry("1000x700")
         self.root.configure(bg='#ffffff')
+        self.root.minsize(800, 600)
         
         # Telegram client
         self.client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
@@ -70,169 +71,265 @@ class TeleDriveApp:
         # Clear window
         for widget in self.root.winfo_children():
             widget.destroy()
-        
-        # Login frame
-        login_frame = tk.Frame(self.root, bg='#ffffff')
-        login_frame.pack(expand=True, fill='both')
-        
-        # Logo and title
+
+        # Main container
+        main_container = tk.Frame(self.root, bg='#ffffff')
+        main_container.pack(expand=True, fill='both')
+
+        # Center frame
+        center_frame = tk.Frame(main_container, bg='#ffffff')
+        center_frame.place(relx=0.5, rely=0.5, anchor='center')
+
+        # Logo
         if self.logo:
-            logo_label = tk.Label(login_frame, image=self.logo, bg='#ffffff')
-            logo_label.pack(pady=20)
-        
-        title_label = tk.Label(login_frame, text="TeleDrive", font=('Arial', 24, 'bold'), 
-                              bg='#ffffff', fg='#0088cc')
-        title_label.pack(pady=10)
-        
-        subtitle_label = tk.Label(login_frame, text="Telegram Channel File Manager", 
-                                 font=('Arial', 12), bg='#ffffff', fg='#666666')
-        subtitle_label.pack(pady=5)
-        
-        # Phone number input
-        phone_label = tk.Label(login_frame, text="Phone Number:", font=('Arial', 12), 
-                              bg='#ffffff', fg='#333333')
-        phone_label.pack(pady=(40, 5))
-        
-        self.phone_entry = tk.Entry(login_frame, font=('Arial', 12), width=20, justify='center')
-        self.phone_entry.pack(pady=5)
-        self.phone_entry.insert(0, "+")
-        
-        login_btn = tk.Button(login_frame, text="Send Code", font=('Arial', 12), 
-                             bg='#0088cc', fg='white', padx=20, pady=5,
-                             command=self.send_code)
-        login_btn.pack(pady=20)
-        
+            logo_label = tk.Label(center_frame, image=self.logo, bg='#ffffff')
+            logo_label.pack(pady=(0, 30))
+
+        # Title
+        title_label = tk.Label(center_frame, text="Sign in to Telegram",
+                              font=('Segoe UI', 20), bg='#ffffff', fg='#000000')
+        title_label.pack(pady=(0, 8))
+
+        # Subtitle
+        subtitle_label = tk.Label(center_frame,
+                                 text="Please confirm your country code and\nenter your phone number.",
+                                 font=('Segoe UI', 11), bg='#ffffff', fg='#707579',
+                                 justify='center')
+        subtitle_label.pack(pady=(0, 30))
+
+        # Phone input frame
+        phone_frame = tk.Frame(center_frame, bg='#ffffff')
+        phone_frame.pack(pady=(0, 20))
+
+        # Country code and phone number in one line
+        input_frame = tk.Frame(phone_frame, bg='#ffffff')
+        input_frame.pack()
+
+        # Country code entry
+        self.country_entry = tk.Entry(input_frame, font=('Segoe UI', 14), width=4,
+                                     justify='center', relief='flat', bd=0,
+                                     highlightthickness=1, highlightcolor='#40a7e3',
+                                     highlightbackground='#dadce0')
+        self.country_entry.pack(side='left', padx=(0, 10), ipady=8)
+        self.country_entry.insert(0, "+84")
+
+        # Phone number entry
+        self.phone_entry = tk.Entry(input_frame, font=('Segoe UI', 14), width=18,
+                                   relief='flat', bd=0, highlightthickness=1,
+                                   highlightcolor='#40a7e3', highlightbackground='#dadce0')
+        self.phone_entry.pack(side='left', ipady=8)
+        self.phone_entry.focus()
+
+        # Underline effect
+        underline_frame = tk.Frame(phone_frame, height=1, bg='#dadce0')
+        underline_frame.pack(fill='x', pady=(2, 0))
+
+        # Next button
+        self.next_btn = tk.Button(center_frame, text="NEXT", font=('Segoe UI', 10, 'bold'),
+                                 bg='#40a7e3', fg='white', relief='flat', bd=0,
+                                 padx=40, pady=12, cursor='hand2',
+                                 command=self.send_code)
+        self.next_btn.pack(pady=(20, 0))
+
         # Status label
-        self.status_label = tk.Label(login_frame, text="", font=('Arial', 10), 
-                                    bg='#ffffff', fg='#666666')
-        self.status_label.pack(pady=10)
+        self.status_label = tk.Label(center_frame, text="", font=('Segoe UI', 9),
+                                    bg='#ffffff', fg='#e53935')
+        self.status_label.pack(pady=(15, 0))
+
+        # Bind Enter key
+        self.phone_entry.bind('<Return>', lambda e: self.send_code())
+        self.country_entry.bind('<Return>', lambda e: self.phone_entry.focus())
     
     def send_code(self):
+        country_code = self.country_entry.get().strip()
         phone = self.phone_entry.get().strip()
-        if not phone or phone == "+":
-            messagebox.showerror("Error", "Please enter a valid phone number")
+
+        if not country_code or not phone:
+            self.status_label.config(text="Please enter your phone number")
             return
-        
-        self.status_label.config(text="Sending verification code...")
+
+        full_phone = country_code + phone
+        self.status_label.config(text="Sending code...")
+        self.next_btn.config(state='disabled', text="SENDING...")
         self.root.update()
-        
+
         try:
             self.run_async(self.client.connect())
-            self.run_async(self.client.send_code_request(phone))
-            self.phone_number = phone
+            self.run_async(self.client.send_code_request(full_phone))
+            self.phone_number = full_phone
             self.show_code_interface()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send code: {str(e)}")
-            self.status_label.config(text="")
+            self.status_label.config(text=f"Error: {str(e)}")
+            self.next_btn.config(state='normal', text="NEXT")
     
     def show_code_interface(self):
         # Clear window
         for widget in self.root.winfo_children():
             widget.destroy()
-        
-        # Code frame
-        code_frame = tk.Frame(self.root, bg='#ffffff')
-        code_frame.pack(expand=True, fill='both')
-        
-        # Logo and title
+
+        # Main container
+        main_container = tk.Frame(self.root, bg='#ffffff')
+        main_container.pack(expand=True, fill='both')
+
+        # Center frame
+        center_frame = tk.Frame(main_container, bg='#ffffff')
+        center_frame.place(relx=0.5, rely=0.5, anchor='center')
+
+        # Logo
         if self.logo:
-            logo_label = tk.Label(code_frame, image=self.logo, bg='#ffffff')
-            logo_label.pack(pady=20)
-        
-        title_label = tk.Label(code_frame, text="Verification Code", font=('Arial', 20, 'bold'), 
-                              bg='#ffffff', fg='#0088cc')
-        title_label.pack(pady=10)
-        
-        info_label = tk.Label(code_frame, text=f"Enter the code sent to {self.phone_number}", 
-                             font=('Arial', 12), bg='#ffffff', fg='#666666')
-        info_label.pack(pady=5)
-        
-        # Code input
-        self.code_entry = tk.Entry(code_frame, font=('Arial', 14), width=15, justify='center')
-        self.code_entry.pack(pady=20)
+            logo_label = tk.Label(center_frame, image=self.logo, bg='#ffffff')
+            logo_label.pack(pady=(0, 30))
+
+        # Title
+        title_label = tk.Label(center_frame, text=f"{self.phone_number}",
+                              font=('Segoe UI', 16), bg='#ffffff', fg='#000000')
+        title_label.pack(pady=(0, 8))
+
+        # Subtitle
+        subtitle_label = tk.Label(center_frame,
+                                 text="We have sent you a code via SMS.\nPlease enter it below.",
+                                 font=('Segoe UI', 11), bg='#ffffff', fg='#707579',
+                                 justify='center')
+        subtitle_label.pack(pady=(0, 30))
+
+        # Code input frame
+        code_frame = tk.Frame(center_frame, bg='#ffffff')
+        code_frame.pack(pady=(0, 20))
+
+        # Code entry
+        self.code_entry = tk.Entry(code_frame, font=('Segoe UI', 16), width=12,
+                                  justify='center', relief='flat', bd=0,
+                                  highlightthickness=1, highlightcolor='#40a7e3',
+                                  highlightbackground='#dadce0')
+        self.code_entry.pack(ipady=10)
         self.code_entry.focus()
-        
-        verify_btn = tk.Button(code_frame, text="Verify", font=('Arial', 12), 
-                              bg='#0088cc', fg='white', padx=20, pady=5,
-                              command=self.verify_code)
-        verify_btn.pack(pady=10)
-        
-        back_btn = tk.Button(code_frame, text="Back", font=('Arial', 10), 
-                            bg='#f0f0f0', fg='#333333', padx=15, pady=3,
+
+        # Underline effect
+        underline_frame = tk.Frame(code_frame, height=1, bg='#dadce0')
+        underline_frame.pack(fill='x', pady=(2, 0))
+
+        # Next button
+        self.verify_btn = tk.Button(center_frame, text="NEXT", font=('Segoe UI', 10, 'bold'),
+                                   bg='#40a7e3', fg='white', relief='flat', bd=0,
+                                   padx=40, pady=12, cursor='hand2',
+                                   command=self.verify_code)
+        self.verify_btn.pack(pady=(20, 10))
+
+        # Back button
+        back_btn = tk.Button(center_frame, text="← EDIT PHONE NUMBER",
+                            font=('Segoe UI', 9), bg='#ffffff', fg='#40a7e3',
+                            relief='flat', bd=0, cursor='hand2',
                             command=self.show_login_interface)
-        back_btn.pack(pady=5)
-        
+        back_btn.pack(pady=(0, 10))
+
         # Status label
-        self.status_label = tk.Label(code_frame, text="", font=('Arial', 10), 
-                                    bg='#ffffff', fg='#666666')
-        self.status_label.pack(pady=10)
+        self.status_label = tk.Label(center_frame, text="", font=('Segoe UI', 9),
+                                    bg='#ffffff', fg='#e53935')
+        self.status_label.pack(pady=(10, 0))
+
+        # Bind Enter key
+        self.code_entry.bind('<Return>', lambda e: self.verify_code())
     
     def verify_code(self):
         code = self.code_entry.get().strip()
         if not code:
-            messagebox.showerror("Error", "Please enter the verification code")
+            self.status_label.config(text="Please enter the verification code")
             return
-        
-        self.status_label.config(text="Verifying code...")
+
+        self.status_label.config(text="Verifying...")
+        self.verify_btn.config(state='disabled', text="VERIFYING...")
         self.root.update()
-        
+
         try:
             self.run_async(self.client.sign_in(self.phone_number, code))
             self.show_main_interface()
         except SessionPasswordNeededError:
             self.show_password_interface()
         except Exception as e:
-            messagebox.showerror("Error", f"Invalid code: {str(e)}")
-            self.status_label.config(text="")
+            self.status_label.config(text=f"Invalid code. Please try again.")
+            self.verify_btn.config(state='normal', text="NEXT")
+            self.code_entry.delete(0, tk.END)
+            self.code_entry.focus()
     
     def show_password_interface(self):
         # Clear window
         for widget in self.root.winfo_children():
             widget.destroy()
-        
-        # Password frame
-        pass_frame = tk.Frame(self.root, bg='#ffffff')
-        pass_frame.pack(expand=True, fill='both')
-        
-        title_label = tk.Label(pass_frame, text="Two-Factor Authentication", font=('Arial', 20, 'bold'), 
-                              bg='#ffffff', fg='#0088cc')
-        title_label.pack(pady=20)
-        
-        info_label = tk.Label(pass_frame, text="Enter your cloud password", 
-                             font=('Arial', 12), bg='#ffffff', fg='#666666')
-        info_label.pack(pady=5)
-        
-        # Password input
-        self.password_entry = tk.Entry(pass_frame, font=('Arial', 14), width=20, 
-                                      justify='center', show='*')
-        self.password_entry.pack(pady=20)
+
+        # Main container
+        main_container = tk.Frame(self.root, bg='#ffffff')
+        main_container.pack(expand=True, fill='both')
+
+        # Center frame
+        center_frame = tk.Frame(main_container, bg='#ffffff')
+        center_frame.place(relx=0.5, rely=0.5, anchor='center')
+
+        # Logo
+        if self.logo:
+            logo_label = tk.Label(center_frame, image=self.logo, bg='#ffffff')
+            logo_label.pack(pady=(0, 30))
+
+        # Title
+        title_label = tk.Label(center_frame, text="Two-Step Verification",
+                              font=('Segoe UI', 20), bg='#ffffff', fg='#000000')
+        title_label.pack(pady=(0, 8))
+
+        # Subtitle
+        subtitle_label = tk.Label(center_frame,
+                                 text="Your account is protected with\nan additional password.",
+                                 font=('Segoe UI', 11), bg='#ffffff', fg='#707579',
+                                 justify='center')
+        subtitle_label.pack(pady=(0, 30))
+
+        # Password input frame
+        password_frame = tk.Frame(center_frame, bg='#ffffff')
+        password_frame.pack(pady=(0, 20))
+
+        # Password entry
+        self.password_entry = tk.Entry(password_frame, font=('Segoe UI', 14), width=20,
+                                      justify='center', show='•', relief='flat', bd=0,
+                                      highlightthickness=1, highlightcolor='#40a7e3',
+                                      highlightbackground='#dadce0')
+        self.password_entry.pack(ipady=10)
         self.password_entry.focus()
-        
-        verify_btn = tk.Button(pass_frame, text="Sign In", font=('Arial', 12), 
-                              bg='#0088cc', fg='white', padx=20, pady=5,
-                              command=self.verify_password)
-        verify_btn.pack(pady=10)
-        
+
+        # Underline effect
+        underline_frame = tk.Frame(password_frame, height=1, bg='#dadce0')
+        underline_frame.pack(fill='x', pady=(2, 0))
+
+        # Next button
+        self.password_btn = tk.Button(center_frame, text="NEXT", font=('Segoe UI', 10, 'bold'),
+                                     bg='#40a7e3', fg='white', relief='flat', bd=0,
+                                     padx=40, pady=12, cursor='hand2',
+                                     command=self.verify_password)
+        self.password_btn.pack(pady=(20, 0))
+
         # Status label
-        self.status_label = tk.Label(pass_frame, text="", font=('Arial', 10), 
-                                    bg='#ffffff', fg='#666666')
-        self.status_label.pack(pady=10)
+        self.status_label = tk.Label(center_frame, text="", font=('Segoe UI', 9),
+                                    bg='#ffffff', fg='#e53935')
+        self.status_label.pack(pady=(15, 0))
+
+        # Bind Enter key
+        self.password_entry.bind('<Return>', lambda e: self.verify_password())
     
     def verify_password(self):
         password = self.password_entry.get()
         if not password:
-            messagebox.showerror("Error", "Please enter your password")
+            self.status_label.config(text="Please enter your password")
             return
-        
+
         self.status_label.config(text="Signing in...")
+        self.password_btn.config(state='disabled', text="SIGNING IN...")
         self.root.update()
-        
+
         try:
             self.run_async(self.client.sign_in(password=password))
             self.show_main_interface()
         except Exception as e:
-            messagebox.showerror("Error", f"Invalid password: {str(e)}")
-            self.status_label.config(text="")
+            self.status_label.config(text="Invalid password. Please try again.")
+            self.password_btn.config(state='normal', text="NEXT")
+            self.password_entry.delete(0, tk.END)
+            self.password_entry.focus()
     
     def show_main_interface(self):
         # Clear window
