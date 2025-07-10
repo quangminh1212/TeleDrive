@@ -28,15 +28,17 @@
 
 3. **Chạy ứng dụng:**
    ```bash
-   # Windows - Giao diện desktop
-   run.bat
+   # Windows (khuyến nghị)
+   run.bat              # Desktop app
+   run.bat cmd          # Command line
 
-   # Windows - Dòng lệnh
-   run.bat cmd
+   # Cross-platform
+   python run.py        # Desktop app
+   python run.py cmd    # Command line
 
-   # Hoặc chạy trực tiếp
-   python app.py      # Desktop
-   python cmd.py      # Command line
+   # Chạy trực tiếp
+   python app.py        # Desktop app
+   python cmd.py        # Command line
    ```
 
 ## Sử dụng dòng lệnh
