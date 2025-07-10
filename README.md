@@ -21,6 +21,11 @@ A desktop application for managing files in Telegram channels with download and 
 
 ## Installation
 
+### Option 1: Quick Start (Recommended)
+1. Double-click `install.bat` to automatically install dependencies
+2. Double-click `run.bat` to start the application
+
+### Option 2: Manual Installation
 1. Clone or download this repository
 2. Install dependencies:
    ```bash
@@ -29,10 +34,14 @@ A desktop application for managing files in Telegram channels with download and 
 
 ## Usage
 
-1. Run the application:
-   ```bash
-   python main.py
-   ```
+### Easy Start
+- Double-click `run.bat` - Full featured launcher with error checking
+- Double-click `start.bat` - Simple launcher
+
+### Manual Start
+```bash
+python main.py
+```
 
 2. **First Time Setup**:
    - Enter your phone number (with country code, e.g., +1234567890)
@@ -58,6 +67,9 @@ TeleDrive/
 ├── main.py              # Main application file
 ├── requirements.txt     # Python dependencies
 ├── teledrive.png       # Application logo
+├── run.bat             # Full featured launcher (recommended)
+├── start.bat           # Simple launcher
+├── install.bat         # Dependency installer
 └── README.md           # This file
 ```
 
