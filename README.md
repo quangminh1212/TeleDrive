@@ -14,7 +14,7 @@ Modern Telegram channel file management with both CLI and Web interface.
 
 ## Quick Start
 
-### Option 1: Web Interface (Recommended)
+### Option 1: Desktop App (Recommended)
 
 1. **Setup:**
    ```bash
@@ -28,15 +28,25 @@ Modern Telegram channel file management with both CLI and Web interface.
 2. **Configure:**
    Edit `.env` with your Telegram API credentials
 
-3. **Run Web Interface:**
+3. **Run Desktop App:**
+   ```bash
+   python app_desktop.py
+   # Or use: run_desktop.bat
+   ```
+
+4. **Demo:** Try `python demo_desktop.py` to see the interface
+
+### Option 2: Web Interface
+
+1. **Run Web Interface:**
    ```bash
    python app.py
    # Or use: run_web.bat
    ```
 
-4. **Access:** Open http://localhost:5000 in your browser
+2. **Access:** Open http://localhost:5000 in your browser
 
-### Option 2: Command Line Interface
+### Option 3: Command Line Interface
 
 ```bash
 # List files
@@ -82,39 +92,55 @@ DOWNLOAD_DIR=./downloads
 ## File Structure
 
 ```
-app.py                 # Web application
-teledrive.py          # CLI application
-teledrive_core.py     # Core functionality
-requirements.txt      # Dependencies
-.env                  # Configuration
-README.md            # This file
-setup.bat            # Setup script
-run_web.bat          # Run web interface
-templates/           # HTML templates
-static/              # CSS, JS, images
-downloads/           # Downloaded files (auto-created)
-uploads/             # Temporary upload files (auto-created)
+app_desktop.py        # Desktop application
+app.py               # Web application
+teledrive.py         # CLI application
+teledrive_core.py    # Core functionality
+demo_desktop.py      # Desktop demo
+requirements.txt     # Dependencies
+.env                 # Configuration
+README.md           # This file
+setup.bat           # Setup script
+run_desktop.bat     # Run desktop app
+run_web.bat         # Run web interface
+templates/          # HTML templates
+static/             # CSS, JS, images
+downloads/          # Downloaded files (auto-created)
+uploads/            # Temporary upload files (auto-created)
 ```
+
+## Desktop App Features
+
+- 🖥️ **Native Desktop** - True desktop application
+- 🎨 **Modern UI** - Clean, professional interface
+- 🚀 **Fast Performance** - No browser overhead
+- 📁 **File Management** - Browse, search, download files
+- ⬆️ **Easy Upload** - File picker and drag-drop support
+- 📊 **Progress Tracking** - Real-time upload/download progress
+- ⚙️ **Settings Panel** - Configure API credentials
+- 🌓 **Theme Support** - Light and dark modes
+- 💾 **Offline Ready** - Works without internet for local files
 
 ## Web Interface Features
 
-- 🎨 **Modern Design** - Clean, minimalist interface
+- 🌐 **Browser-based** - No installation required
 - 📱 **Responsive** - Works on desktop and mobile
-- 🔄 **Real-time Updates** - Live connection status
+- 🔄 **Real-time Updates** - Live connection status via WebSocket
 - 📁 **File Management** - Grid and list views
 - 🔍 **Search** - Real-time file search
-- ⬆️ **Drag & Drop Upload** - Easy file uploading
+- ⬆️ **Drag & Drop Upload** - Modern file uploading
 - 📊 **Progress Tracking** - Upload/download progress
-- 🌙 **Dark Mode Ready** - Modern color scheme
+- 🎨 **Modern Design** - Clean, minimalist interface
 
 ## Advantages
 
-- ✅ **Dual Interface** - Both web and CLI
-- ✅ **Modern UI** - Beautiful, responsive design
-- ✅ **Easy to Use** - Intuitive web interface
-- ✅ **Minimal Dependencies** - Flask, Telethon, python-dotenv
-- ✅ **Real-time Updates** - WebSocket support
+- ✅ **Triple Interface** - Desktop app, web interface, and CLI
+- ✅ **Modern UI** - Beautiful, professional design
+- ✅ **Native Performance** - Fast desktop application
+- ✅ **Easy to Use** - Intuitive graphical interfaces
 - ✅ **Cross-platform** - Works on Windows, Linux, macOS
+- ✅ **Flexible** - Choose the interface that suits your needs
+- ✅ **Real-time Updates** - Live status and progress tracking
 - ✅ **Drag & Drop** - Modern file upload experience
 
 ## Examples
