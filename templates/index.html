@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - TeleDrive{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <h1>Welcome to TeleDrive</h1>
+        <p class="subtitle">Modern Telegram Channel File Management</p>
+        
+        {% if connection_status.connected %}
+        <div class="user-info">
+            <div class="user-avatar">
+                <i data-feather="user"></i>
+            </div>
+            <div class="user-details">
+                <h3>{{ connection_status.user.first_name }} {{ connection_status.user.last_name }}</h3>
+                <p>@{{ connection_status.user.username or 'No username' }}</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="connection-prompt">
+            <div class="prompt-icon">
+                <i data-feather="wifi-off"></i>
+            </div>
+            <h3>Connect to Telegram</h3>
+            <p>Connect your Telegram account to start managing channel files</p>
+            <button class="btn btn-primary btn-large" onclick="toggleConnection()">
+                <i data-feather="wifi"></i>
+                Connect Now
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    {% if connection_status.connected %}
+    <div class="quick-actions">
+        <h2>Quick Actions</h2>
+        <div class="actions-grid">
+            <div class="action-card" onclick="showChannelModal()">
+                <div class="action-icon">
+                    <i data-feather="folder"></i>
+                </div>
+                <h3>Browse Files</h3>
+                <p>View and manage files in a channel</p>
+            </div>
+            
+            <div class="action-card" onclick="showUploadModal()">
+                <div class="action-icon">
+                    <i data-feather="upload"></i>
+                </div>
+                <h3>Upload Files</h3>
+                <p>Upload files to a channel</p>
+            </div>
+            
+            <div class="action-card" onclick="showSearchModal()">
+                <div class="action-icon">
+                    <i data-feather="search"></i>
+                </div>
+                <h3>Search Files</h3>
+                <p>Find specific files in channels</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="recent-activity">
+        <h2>Recent Activity</h2>
+        <div class="activity-list" id="activityList">
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <i data-feather="info"></i>
+                </div>
+                <div class="activity-content">
+                    <p>Welcome to TeleDrive! Start by browsing files in a channel.</p>
+                    <span class="activity-time">Just now</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Channel Modal -->
+<div class="modal" id="channelModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Browse Channel Files</h3>
+            <button class="modal-close" onclick="closeModal('channelModal')">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="channelInput">Channel Username or ID</label>
+                <input type="text" id="channelInput" placeholder="@mychannel or channel_id" class="form-input">
+                <small class="form-help">Enter the channel username (with @) or channel ID</small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('channelModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="browseChannel()">Browse Files</button>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal" id="uploadModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Upload to Channel</h3>
+            <button class="modal-close" onclick="closeModal('uploadModal')">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="uploadChannelInput">Channel Username or ID</label>
+                <input type="text" id="uploadChannelInput" placeholder="@mychannel or channel_id" class="form-input">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('uploadModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="goToUpload()">Go to Upload</button>
+        </div>
+    </div>
+</div>
+
+<!-- Search Modal -->
+<div class="modal" id="searchModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Search Files</h3>
+            <button class="modal-close" onclick="closeModal('searchModal')">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="searchChannelInput">Channel Username or ID</label>
+                <input type="text" id="searchChannelInput" placeholder="@mychannel or channel_id" class="form-input">
+            </div>
+            <div class="form-group">
+                <label for="searchQueryInput">Search Query</label>
+                <input type="text" id="searchQueryInput" placeholder="Enter filename or keyword" class="form-input">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('searchModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="searchFiles()">Search</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showChannelModal() {
+    document.getElementById('channelModal').classList.add('active');
+}
+
+function showUploadModal() {
+    document.getElementById('uploadModal').classList.add('active');
+}
+
+function showSearchModal() {
+    document.getElementById('searchModal').classList.add('active');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+function browseChannel() {
+    const channel = document.getElementById('channelInput').value.trim();
+    if (channel) {
+        window.location.href = `/files?channel=${encodeURIComponent(channel)}`;
+    } else {
+        showToast('Please enter a channel username or ID', 'error');
+    }
+}
+
+function goToUpload() {
+    const channel = document.getElementById('uploadChannelInput').value.trim();
+    if (channel) {
+        window.location.href = `/upload?channel=${encodeURIComponent(channel)}`;
+    } else {
+        showToast('Please enter a channel username or ID', 'error');
+    }
+}
+
+function searchFiles() {
+    const channel = document.getElementById('searchChannelInput').value.trim();
+    const query = document.getElementById('searchQueryInput').value.trim();
+    
+    if (channel && query) {
+        window.location.href = `/files?channel=${encodeURIComponent(channel)}&search=${encodeURIComponent(query)}`;
+    } else {
+        showToast('Please enter both channel and search query', 'error');
+    }
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+    }
+});
+</script>
+{% endblock %}

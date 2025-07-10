@@ -1,6 +1,6 @@
 # TeleDrive
 
-A minimalist Telegram channel file manager in a single Python file.
+Modern Telegram channel file management with both CLI and Web interface.
 
 ## Features
 
@@ -8,32 +8,49 @@ A minimalist Telegram channel file manager in a single Python file.
 - 🔍 Search files by name
 - ⬇️ Download files
 - ⬆️ Upload files
-- 🚀 Single file, easy to use
+- 🌐 Modern web interface
+- 💻 Command-line interface
+- 🎨 Clean, minimalist design
 
 ## Quick Start
 
-1. **Install dependencies:**
+### Option 1: Web Interface (Recommended)
+
+1. **Setup:**
    ```bash
+   # Run setup script
+   setup.bat
+
+   # Or manually:
    pip install -r requirements.txt
    ```
 
 2. **Configure:**
    Edit `.env` with your Telegram API credentials
 
-3. **Use:**
+3. **Run Web Interface:**
    ```bash
-   # List files
-   python teledrive.py list @mychannel 10
-   
-   # Search files
-   python teledrive.py search @mychannel "video" 5
-   
-   # Download file (by number from list)
-   python teledrive.py download @mychannel 1
-   
-   # Upload file
-   python teledrive.py upload @mychannel ./file.pdf "My document"
+   python app.py
+   # Or use: run_web.bat
    ```
+
+4. **Access:** Open http://localhost:5000 in your browser
+
+### Option 2: Command Line Interface
+
+```bash
+# List files
+python teledrive.py list @mychannel 10
+
+# Search files
+python teledrive.py search @mychannel "video" 5
+
+# Download file (by number from list)
+python teledrive.py download @mychannel 1
+
+# Upload file
+python teledrive.py upload @mychannel ./file.pdf "My document"
+```
 
 ## Commands
 
@@ -65,23 +82,40 @@ DOWNLOAD_DIR=./downloads
 ## File Structure
 
 ```
-teledrive.py       # Main application (single file)
-requirements.txt   # Dependencies
-.env              # Configuration
-README.md         # This file
-setup.bat         # Setup script
-downloads/        # Downloaded files (auto-created)
+app.py                 # Web application
+teledrive.py          # CLI application
+teledrive_core.py     # Core functionality
+requirements.txt      # Dependencies
+.env                  # Configuration
+README.md            # This file
+setup.bat            # Setup script
+run_web.bat          # Run web interface
+templates/           # HTML templates
+static/              # CSS, JS, images
+downloads/           # Downloaded files (auto-created)
+uploads/             # Temporary upload files (auto-created)
 ```
+
+## Web Interface Features
+
+- 🎨 **Modern Design** - Clean, minimalist interface
+- 📱 **Responsive** - Works on desktop and mobile
+- 🔄 **Real-time Updates** - Live connection status
+- 📁 **File Management** - Grid and list views
+- 🔍 **Search** - Real-time file search
+- ⬆️ **Drag & Drop Upload** - Easy file uploading
+- 📊 **Progress Tracking** - Upload/download progress
+- 🌙 **Dark Mode Ready** - Modern color scheme
 
 ## Advantages
 
-- ✅ **Single file** - easy to understand and modify
-- ✅ **Minimal dependencies** - only Telethon and python-dotenv
-- ✅ **Command-line interface** - scriptable and automatable
-- ✅ **No complex UI** - fast and lightweight
-- ✅ **Easy deployment** - just copy one Python file
-- ✅ **Simple maintenance** - all code in one place
-- ✅ **Cross-platform** - works on Windows, Linux, macOS
+- ✅ **Dual Interface** - Both web and CLI
+- ✅ **Modern UI** - Beautiful, responsive design
+- ✅ **Easy to Use** - Intuitive web interface
+- ✅ **Minimal Dependencies** - Flask, Telethon, python-dotenv
+- ✅ **Real-time Updates** - WebSocket support
+- ✅ **Cross-platform** - Works on Windows, Linux, macOS
+- ✅ **Drag & Drop** - Modern file upload experience
 
 ## Examples
 

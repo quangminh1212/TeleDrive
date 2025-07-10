@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Files - TeleDrive{% endblock %}
+
+{% block content %}
+<div class="files-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Channel Files</h1>
+            <div class="breadcrumb">
+                <span>Channel:</span>
+                <span class="channel-name" id="currentChannel">{{ channel or 'Select a channel' }}</span>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <div class="search-box">
+                <i data-feather="search"></i>
+                <input type="text" id="searchInput" placeholder="Search files..." class="search-input">
+                <button class="search-clear" id="searchClear" onclick="clearSearch()">
+                    <i data-feather="x"></i>
+                </button>
+            </div>
+            
+            <button class="btn btn-secondary" onclick="showChannelSelector()">
+                <i data-feather="folder"></i>
+                Change Channel
+            </button>
+            
+            <button class="btn btn-primary" onclick="refreshFiles()">
+                <i data-feather="refresh-cw"></i>
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters and View Options -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <div class="view-toggle">
+                <button class="view-btn active" data-view="grid" onclick="setView('grid')">
+                    <i data-feather="grid"></i>
+                </button>
+                <button class="view-btn" data-view="list" onclick="setView('list')">
+                    <i data-feather="list"></i>
+                </button>
+            </div>
+            
+            <div class="file-count">
+                <span id="fileCount">0 files</span>
+            </div>
+        </div>
+        
+        <div class="toolbar-right">
+            <select class="form-select" id="limitSelect" onchange="changeLimit()">
+                <option value="25">25 files</option>
+                <option value="50" selected>50 files</option>
+                <option value="100">100 files</option>
+                <option value="200">200 files</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Files Container -->
+    <div class="files-container">
+        <!-- Loading State -->
+        <div class="loading-state" id="loadingState">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <p>Loading files...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-icon">
+                <i data-feather="folder"></i>
+            </div>
+            <h3>No files found</h3>
+            <p>This channel doesn't have any files, or you need to select a channel first.</p>
+            <button class="btn btn-primary" onclick="showChannelSelector()">
+                <i data-feather="folder"></i>
+                Select Channel
+            </button>
+        </div>
+
+        <!-- Files Grid -->
+        <div class="files-grid" id="filesGrid" style="display: none;">
+            <!-- Files will be loaded here -->
+        </div>
+
+        <!-- Files List -->
+        <div class="files-list" id="filesList" style="display: none;">
+            <div class="list-header">
+                <div class="col-name">Name</div>
+                <div class="col-size">Size</div>
+                <div class="col-date">Date</div>
+                <div class="col-actions">Actions</div>
+            </div>
+            <div class="list-body" id="listBody">
+                <!-- Files will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Channel Selector Modal -->
+<div class="modal" id="channelModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Select Channel</h3>
+            <button class="modal-close" onclick="closeModal('channelModal')">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="channelInput">Channel Username or ID</label>
+                <input type="text" id="channelInput" placeholder="@mychannel or channel_id" class="form-input" value="{{ channel or '' }}">
+                <small class="form-help">Enter the channel username (with @) or channel ID</small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('channelModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="loadChannel()">Load Files</button>
+        </div>
+    </div>
+</div>
+
+<!-- File Preview Modal -->
+<div class="modal modal-large" id="previewModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="previewTitle">File Preview</h3>
+            <button class="modal-close" onclick="closeModal('previewModal')">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="file-preview" id="filePreview">
+                <!-- Preview content will be loaded here -->
+            </div>
+            <div class="file-details" id="fileDetails">
+                <!-- File details will be loaded here -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('previewModal')">Close</button>
+            <button class="btn btn-primary" id="downloadBtn" onclick="downloadFile()">
+                <i data-feather="download"></i>
+                Download
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentChannel = '{{ channel or "" }}';
+let currentFiles = [];
+let currentView = 'grid';
+let currentLimit = 50;
+let searchTimeout = null;
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    if (currentChannel) {
+        loadFiles();
+    } else {
+        showEmptyState();
+    }
+    
+    // Setup search
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(handleSearch, 500);
+    });
+    
+    // Load search from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchQuery = urlParams.get('search');
+    if (searchQuery) {
+        searchInput.value = searchQuery;
+        handleSearch();
+    }
+});
+
+function showChannelSelector() {
+    document.getElementById('channelModal').classList.add('active');
+    document.getElementById('channelInput').focus();
+}
+
+function loadChannel() {
+    const channel = document.getElementById('channelInput').value.trim();
+    if (channel) {
+        currentChannel = channel;
+        document.getElementById('currentChannel').textContent = channel;
+        closeModal('channelModal');
+        loadFiles();
+        
+        // Update URL
+        const url = new URL(window.location);
+        url.searchParams.set('channel', channel);
+        window.history.pushState({}, '', url);
+    } else {
+        showToast('Please enter a channel username or ID', 'error');
+    }
+}
+
+function loadFiles() {
+    if (!currentChannel) {
+        showEmptyState();
+        return;
+    }
+    
+    showLoadingState();
+    
+    const searchQuery = document.getElementById('searchInput').value.trim();
+    let url = `/api/files/${encodeURIComponent(currentChannel)}?limit=${currentLimit}`;
+    
+    if (searchQuery) {
+        url = `/api/search/${encodeURIComponent(currentChannel)}?q=${encodeURIComponent(searchQuery)}&limit=${currentLimit}`;
+    }
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentFiles = data.files;
+                displayFiles(data.files);
+                updateFileCount(data.files.length);
+            } else {
+                showToast(data.message, 'error');
+                showEmptyState();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading files:', error);
+            showToast('Failed to load files', 'error');
+            showEmptyState();
+        });
+}
+
+function displayFiles(files) {
+    hideLoadingState();
+    
+    if (files.length === 0) {
+        showEmptyState();
+        return;
+    }
+    
+    if (currentView === 'grid') {
+        displayFilesGrid(files);
+    } else {
+        displayFilesList(files);
+    }
+}
+
+function displayFilesGrid(files) {
+    const grid = document.getElementById('filesGrid');
+    const list = document.getElementById('filesList');
+    
+    grid.style.display = 'grid';
+    list.style.display = 'none';
+    
+    grid.innerHTML = files.map(file => `
+        <div class="file-card" onclick="previewFile(${file.id})">
+            <div class="file-icon">
+                <i data-feather="${getFileIcon(file.mime_type)}"></i>
+            </div>
+            <div class="file-info">
+                <h4 class="file-name" title="${file.name}">${truncateText(file.name, 30)}</h4>
+                <p class="file-size">${file.size_formatted}</p>
+                <p class="file-date">${formatDate(file.date)}</p>
+            </div>
+            <div class="file-actions">
+                <button class="action-btn" onclick="event.stopPropagation(); downloadFileById(${file.id})" title="Download">
+                    <i data-feather="download"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    feather.replace();
+}
+
+function displayFilesList(files) {
+    const grid = document.getElementById('filesGrid');
+    const list = document.getElementById('filesList');
+    const listBody = document.getElementById('listBody');
+    
+    grid.style.display = 'none';
+    list.style.display = 'block';
+    
+    listBody.innerHTML = files.map(file => `
+        <div class="list-row" onclick="previewFile(${file.id})">
+            <div class="col-name">
+                <div class="file-icon-small">
+                    <i data-feather="${getFileIcon(file.mime_type)}"></i>
+                </div>
+                <span title="${file.name}">${truncateText(file.name, 50)}</span>
+            </div>
+            <div class="col-size">${file.size_formatted}</div>
+            <div class="col-date">${formatDate(file.date)}</div>
+            <div class="col-actions">
+                <button class="action-btn" onclick="event.stopPropagation(); downloadFileById(${file.id})" title="Download">
+                    <i data-feather="download"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    feather.replace();
+}
+
+function setView(view) {
+    currentView = view;
+    
+    // Update view buttons
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-view="${view}"]`).classList.add('active');
+    
+    // Redisplay files
+    if (currentFiles.length > 0) {
+        displayFiles(currentFiles);
+    }
+}
+
+function changeLimit() {
+    currentLimit = parseInt(document.getElementById('limitSelect').value);
+    loadFiles();
+}
+
+function handleSearch() {
+    loadFiles();
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    loadFiles();
+}
+
+function refreshFiles() {
+    loadFiles();
+}
+
+function downloadFileById(fileId) {
+    if (!currentChannel) return;
+    
+    showToast('Starting download...', 'info');
+    window.open(`/api/download/${encodeURIComponent(currentChannel)}/${fileId}`, '_blank');
+}
+
+function previewFile(fileId) {
+    const file = currentFiles.find(f => f.id === fileId);
+    if (!file) return;
+    
+    document.getElementById('previewTitle').textContent = file.name;
+    document.getElementById('fileDetails').innerHTML = `
+        <div class="detail-row">
+            <span class="detail-label">Name:</span>
+            <span class="detail-value">${file.name}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Size:</span>
+            <span class="detail-value">${file.size_formatted}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Date:</span>
+            <span class="detail-value">${file.date_formatted}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Type:</span>
+            <span class="detail-value">${file.mime_type}</span>
+        </div>
+    `;
+    
+    document.getElementById('downloadBtn').onclick = () => downloadFileById(fileId);
+    document.getElementById('previewModal').classList.add('active');
+}
+
+function showLoadingState() {
+    document.getElementById('loadingState').style.display = 'flex';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('filesGrid').style.display = 'none';
+    document.getElementById('filesList').style.display = 'none';
+}
+
+function hideLoadingState() {
+    document.getElementById('loadingState').style.display = 'none';
+}
+
+function showEmptyState() {
+    hideLoadingState();
+    document.getElementById('emptyState').style.display = 'flex';
+    document.getElementById('filesGrid').style.display = 'none';
+    document.getElementById('filesList').style.display = 'none';
+}
+
+function updateFileCount(count) {
+    document.getElementById('fileCount').textContent = `${count} file${count !== 1 ? 's' : ''}`;
+}
+
+function getFileIcon(mimeType) {
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType.startsWith('video/')) return 'video';
+    if (mimeType.startsWith('audio/')) return 'music';
+    if (mimeType.includes('pdf')) return 'file-text';
+    if (mimeType.includes('zip') || mimeType.includes('rar')) return 'archive';
+    if (mimeType.includes('document') || mimeType.includes('word')) return 'file-text';
+    return 'file';
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+
+function truncateText(text, maxLength) {
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+    }
+});
+
+// Enter key support for channel input
+document.getElementById('channelInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        loadChannel();
+    }
+});
+</script>
+{% endblock %}
