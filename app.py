@@ -49,6 +49,8 @@ class LoginWindow:
         self.client = client
         self.result = None
 
+
+
         # Tạo cửa sổ đăng nhập
         self.window = ctk.CTkToplevel(parent)
         self.window.title("Đăng nhập Telegram")
@@ -67,7 +69,7 @@ class LoginWindow:
         self.selected_country = {"name": "Việt Nam", "code": "+84", "flag": "🇻🇳"}
 
         self.create_ui()
-    
+
     def center_window(self):
         """Căn giữa cửa sổ"""
         self.window.update_idletasks()
@@ -94,25 +96,11 @@ class LoginWindow:
         logo_bg.pack(pady=(25, 8))
         logo_bg.pack_propagate(False)
 
-        # Logo TeleDrive từ file PNG
-        try:
-            logo_path = os.path.join(os.getcwd(), "teledrive.png")
-            print(f"Đang tải logo từ: {logo_path}")
-            print(f"File tồn tại: {os.path.exists(logo_path)}")
-
-            logo_image = Image.open(logo_path)
-            logo_image = logo_image.resize((64, 64), Image.Resampling.LANCZOS)
-            self.logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(64, 64))
-            logo = ctk.CTkLabel(logo_bg, image=self.logo_photo, text="")
-            logo.pack(expand=True)
-            print("Logo đã được tải thành công!")
-        except Exception as e:
-            print(f"Không thể load logo: {e}")
-            # Fallback nếu không load được hình
-            logo = ctk.CTkLabel(logo_bg, text="☁✈",
-                              font=ctk.CTkFont(size=36, weight="bold"),
-                              text_color="white")
-            logo.pack(expand=True)
+        # Logo TeleDrive - sử dụng text emoji cho login dialog để tránh lỗi
+        logo = ctk.CTkLabel(logo_bg, text="✈️",
+                          font=ctk.CTkFont(size=36, weight="bold"),
+                          text_color="white")
+        logo.pack(expand=True)
 
         # Tiêu đề Telegram
         title = ctk.CTkLabel(logo_container, text="Telegram",
