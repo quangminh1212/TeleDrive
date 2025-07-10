@@ -69,8 +69,45 @@ class LoginWindow:
         self.create_ui()
 
     def create_safe_login_logo(self, parent):
-        """Tạo logo đăng nhập một cách an toàn - sử dụng text fallback để tránh lỗi CTkImage"""
-        print("🔄 Sử dụng logo text cho login dialog để tránh lỗi...")
+        """Tạo logo đăng nhập một cách an toàn với ảnh đã được load sẵn"""
+        if self.login_logo_image is not None:
+            try:
+                print("🖼️ Sử dụng logo image đã load sẵn cho login...")
+
+                # Tạo label trước
+                logo_label = ctk.CTkLabel(parent, text="")
+
+                # Delay việc tạo và set CTkImage
+                def set_login_image():
+                    try:
+                        self.login_logo_photo = ctk.CTkImage(
+                            light_image=self.login_logo_image,
+                            dark_image=self.login_logo_image,
+                            size=(48, 48)
+                        )
+                        print("🖼️ Login: CTkImage đã tạo thành công")
+
+                        logo_label.configure(image=self.login_logo_photo)
+                        print("✅ Logo login đã được tải thành công!")
+
+                    except Exception as img_error:
+                        print(f"❌ Lỗi set login image: {img_error}")
+                        # Fallback về text
+                        logo_label.configure(
+                            text="✈️",
+                            font=ctk.CTkFont(size=36, weight="bold"),
+                            text_color="white"
+                        )
+
+                # Schedule việc set image
+                parent.after(200, set_login_image)  # Tăng delay lên 200ms
+                return logo_label
+
+            except Exception as e:
+                print(f"❌ Lỗi khi tạo login logo: {e}")
+
+        # Fallback về emoji nếu không có image
+        print("🔄 Sử dụng fallback emoji cho login...")
         return ctk.CTkLabel(parent, text="✈️",
                            font=ctk.CTkFont(size=36, weight="bold"),
                            text_color="white")
@@ -549,8 +586,41 @@ class TeleDriveApp:
         self.welcome_logo_image = None
         self.welcome_logo_photo = None
 
+        # Load logo images một lần
+        self.load_logo_images()
+
         self.create_ui()
         self.check_login()
+
+    def load_logo_images(self):
+        """Load tất cả logo images một lần để tránh conflict"""
+        logo_path = os.path.join(os.getcwd(), "teledrive.png")
+
+        if os.path.exists(logo_path):
+            try:
+                print("📁 Loading logo images...")
+                # Load ảnh gốc
+                base_image = Image.open(logo_path)
+                if base_image.mode != 'RGBA':
+                    base_image = base_image.convert('RGBA')
+
+                # Tạo các size khác nhau
+                self.login_logo_image = base_image.resize((48, 48), Image.Resampling.LANCZOS)
+                self.header_logo_image = base_image.resize((24, 24), Image.Resampling.LANCZOS)
+                self.welcome_logo_image = base_image.resize((80, 80), Image.Resampling.LANCZOS)
+
+                print("✅ Logo images loaded successfully!")
+
+            except Exception as e:
+                print(f"❌ Error loading logo images: {e}")
+                self.login_logo_image = None
+                self.header_logo_image = None
+                self.welcome_logo_image = None
+        else:
+            print("❌ Logo file not found!")
+            self.login_logo_image = None
+            self.header_logo_image = None
+            self.welcome_logo_image = None
 
     def create_safe_logo(self, parent, size=(48, 48), fallback_text="✈️", fallback_size=36):
         """Tạo logo một cách an toàn với fallback"""
@@ -623,62 +693,37 @@ class TeleDriveApp:
 
         # Logo TeleDrive từ file PNG (nhỏ hơn cho header)
         header_logo_loaded = False
-        logo_path = os.path.join(os.getcwd(), "teledrive.png")
-        print(f"🔍 Đang tải logo header từ: {logo_path}")
 
-        if os.path.exists(logo_path):
+        if self.header_logo_image is not None:
             try:
-                print("📁 File logo tồn tại, đang load cho header...")
-                logo_image = Image.open(logo_path)
-                print(f"📷 Ảnh gốc cho header: {logo_image.size}, mode: {logo_image.mode}")
+                print("🖼️ Sử dụng header logo image đã load sẵn...")
 
-                # Chuyển đổi sang RGBA nếu cần
-                if logo_image.mode != 'RGBA':
-                    logo_image = logo_image.convert('RGBA')
-                    print("🔄 Header: Đã convert sang RGBA")
+                # Tạo label trước
+                self.header_logo_label = ctk.CTkLabel(logo_bg, text="")
+                self.header_logo_label.pack(expand=True)
 
-                # Resize ảnh cho header (nhỏ hơn)
-                logo_image = logo_image.resize((24, 24), Image.Resampling.LANCZOS)
-                print(f"📐 Header: Đã resize thành: {logo_image.size}")
+                # Delay việc tạo và set CTkImage
+                def set_header_image():
+                    try:
+                        self.header_logo_photo = ctk.CTkImage(
+                            light_image=self.header_logo_image,
+                            dark_image=self.header_logo_image,
+                            size=(24, 24)
+                        )
+                        print("🖼️ Header: CTkImage đã tạo thành công")
 
-                # Tạo CTkImage cho header với cách xử lý an toàn hơn
-                try:
-                    # Đảm bảo image được giữ reference đúng cách
-                    self.header_logo_image = logo_image.copy()  # Giữ bản copy của PIL Image
-                    self.header_logo_photo = ctk.CTkImage(
-                        light_image=self.header_logo_image,
-                        dark_image=self.header_logo_image,
-                        size=(24, 24)
-                    )
-                    print("🖼️ Header: CTkImage đã tạo thành công")
+                        self.header_logo_label.configure(image=self.header_logo_photo)
+                        print("✅ Logo header đã được tải thành công!")
 
-                    # Tạo label trước, sau đó set image
-                    self.header_logo_label = ctk.CTkLabel(logo_bg, text="")
-                    self.header_logo_label.pack(expand=True)
+                    except Exception as set_error:
+                        print(f"❌ Lỗi set header image: {set_error}")
+                        self.header_logo_label.configure(text="📁", font=ctk.CTkFont(size=16, weight="bold"))
 
-                    # Delay việc set image
-                    def set_header_image():
-                        try:
-                            self.header_logo_label.configure(image=self.header_logo_photo)
-                            print("✅ Logo header đã được tải thành công!")
-                        except Exception as set_error:
-                            print(f"❌ Lỗi set header image: {set_error}")
-                            self.header_logo_label.configure(text="📁", font=ctk.CTkFont(size=16, weight="bold"))
-
-                    logo_bg.after(50, set_header_image)
-                    header_logo_loaded = True
-
-                except Exception as img_error:
-                    print(f"❌ Lỗi khi tạo CTkImage cho header: {img_error}")
-                    print("🔄 Thử phương pháp fallback...")
-                    raise img_error
+                logo_bg.after(150, set_header_image)  # Delay khác với login
+                header_logo_loaded = True
 
             except Exception as e:
-                print(f"❌ Lỗi khi load logo header: {e}")
-                import traceback
-                traceback.print_exc()
-        else:
-            print("❌ File logo không tồn tại cho header!")
+                print(f"❌ Lỗi khi tạo header logo: {e}")
 
         # Fallback nếu không load được logo
         if not header_logo_loaded:
@@ -740,64 +785,39 @@ class TeleDriveApp:
         logo_bg.pack()
         logo_bg.pack_propagate(False)
 
-        # Logo TeleDrive từ file PNG (lớn cho welcome screen)
+        # Logo TeleDrive cho welcome screen sử dụng image đã load sẵn
         welcome_logo_loaded = False
-        logo_path = os.path.join(os.getcwd(), "teledrive.png")
-        print(f"🔍 Đang tải logo welcome từ: {logo_path}")
 
-        if os.path.exists(logo_path):
+        if self.welcome_logo_image is not None:
             try:
-                print("📁 File logo tồn tại, đang load cho welcome screen...")
-                logo_image = Image.open(logo_path)
-                print(f"📷 Ảnh gốc cho welcome: {logo_image.size}, mode: {logo_image.mode}")
+                print("🖼️ Sử dụng welcome logo image đã load sẵn...")
 
-                # Chuyển đổi sang RGBA nếu cần
-                if logo_image.mode != 'RGBA':
-                    logo_image = logo_image.convert('RGBA')
-                    print("🔄 Welcome: Đã convert sang RGBA")
+                # Tạo label trước
+                self.welcome_logo_label = ctk.CTkLabel(logo_bg, text="")
+                self.welcome_logo_label.pack(expand=True)
 
-                # Resize ảnh cho welcome screen (lớn hơn)
-                logo_image = logo_image.resize((80, 80), Image.Resampling.LANCZOS)
-                print(f"📐 Welcome: Đã resize thành: {logo_image.size}")
+                # Delay việc tạo và set CTkImage
+                def set_welcome_image():
+                    try:
+                        self.welcome_logo_photo = ctk.CTkImage(
+                            light_image=self.welcome_logo_image,
+                            dark_image=self.welcome_logo_image,
+                            size=(80, 80)
+                        )
+                        print("🖼️ Welcome: CTkImage đã tạo thành công")
 
-                # Tạo CTkImage cho welcome với cách xử lý an toàn hơn
-                try:
-                    # Đảm bảo image được giữ reference đúng cách
-                    self.welcome_logo_image = logo_image.copy()  # Giữ bản copy của PIL Image
-                    self.welcome_logo_photo = ctk.CTkImage(
-                        light_image=self.welcome_logo_image,
-                        dark_image=self.welcome_logo_image,
-                        size=(80, 80)
-                    )
-                    print("🖼️ Welcome: CTkImage đã tạo thành công")
+                        self.welcome_logo_label.configure(image=self.welcome_logo_photo)
+                        print("✅ Logo welcome screen đã được tải thành công!")
 
-                    # Tạo label trước, sau đó set image
-                    self.welcome_logo_label = ctk.CTkLabel(logo_bg, text="")
-                    self.welcome_logo_label.pack(expand=True)
+                    except Exception as set_error:
+                        print(f"❌ Lỗi set welcome image: {set_error}")
+                        self.welcome_logo_label.configure(text="✈️", font=ctk.CTkFont(size=48, weight="bold"))
 
-                    # Delay việc set image
-                    def set_welcome_image():
-                        try:
-                            self.welcome_logo_label.configure(image=self.welcome_logo_photo)
-                            print("✅ Logo welcome screen đã được tải thành công!")
-                        except Exception as set_error:
-                            print(f"❌ Lỗi set welcome image: {set_error}")
-                            self.welcome_logo_label.configure(text="✈️", font=ctk.CTkFont(size=48, weight="bold"))
-
-                    logo_bg.after(50, set_welcome_image)
-                    welcome_logo_loaded = True
-
-                except Exception as img_error:
-                    print(f"❌ Lỗi khi tạo CTkImage cho welcome: {img_error}")
-                    print("🔄 Thử phương pháp fallback...")
-                    raise img_error
+                logo_bg.after(250, set_welcome_image)  # Delay khác với header và login
+                welcome_logo_loaded = True
 
             except Exception as e:
-                print(f"❌ Lỗi khi load logo welcome: {e}")
-                import traceback
-                traceback.print_exc()
-        else:
-            print("❌ File logo không tồn tại cho welcome!")
+                print(f"❌ Lỗi khi tạo welcome logo: {e}")
 
         # Fallback nếu không load được logo
         if not welcome_logo_loaded:
