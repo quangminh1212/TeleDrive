@@ -1,131 +1,102 @@
 # TeleDrive
 
-Modern Telegram channel file management with desktop app and CLI.
+Ứng dụng quản lý file Telegram đơn giản với giao diện desktop và dòng lệnh.
 
-## Features
+## Tính năng
 
-- 📋 List files from Telegram channels
-- 🔍 Search files by name
-- ⬇️ Download files
-- ⬆️ Upload files
-- 🖥️ Modern desktop app
-- 💻 Command-line interface
-- 🎨 Clean, minimalist design
+- 📋 Liệt kê file từ Telegram channel
+- 🔍 Tìm kiếm file theo tên
+- ⬇️ Tải file về máy
+- ⬆️ Upload file lên channel
+- 🖥️ Giao diện desktop hiện đại
+- 💻 Giao diện dòng lệnh
+- 🎨 Thiết kế đơn giản, dễ sử dụng
 
-## Quick Start
+## Cài đặt
 
-### Option 1: Desktop App (Recommended)
-
-1. **Setup:**
+1. **Cài đặt thư viện:**
    ```bash
-   # Run setup script
-   setup.bat
-
-   # Or manually:
    pip install -r requirements.txt
    ```
 
-2. **Configure:**
-   Edit `.env` with your Telegram API credentials
+2. **Cấu hình:**
+   Chỉnh sửa file `.env` với thông tin API Telegram của bạn
 
-3. **Run Desktop App:**
+3. **Chạy ứng dụng:**
    ```bash
-   python desktop.py
-   # Or use: run.bat
+   # Giao diện desktop (khuyến nghị)
+   python app.py
+
+   # Hoặc dòng lệnh
+   python cmd.py
    ```
 
-### Option 2: Command Line Interface
+## Sử dụng dòng lệnh
 
 ```bash
-# List files
-python cli.py list @mychannel 10
+# Liệt kê file
+python cmd.py list @mychannel 10
 
-# Search files
-python cli.py search @mychannel "video" 5
+# Tìm kiếm file
+python cmd.py search @mychannel "video" 5
 
-# Download file (by number from list)
-python cli.py download @mychannel 1
+# Tải file (theo số thứ tự)
+python cmd.py download @mychannel 1
 
 # Upload file
-python cli.py upload @mychannel ./file.pdf "My document"
+python cmd.py upload @mychannel ./file.pdf "Mô tả file"
 ```
 
-## Commands
+## Cấu hình
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `list <channel> [limit]` | List files from channel | `list @mychannel 20` |
-| `search <channel> <query> [limit]` | Search files by name | `search @mychannel "pdf" 10` |
-| `download <channel> <file_number>` | Download file by number | `download @mychannel 1` |
-| `upload <channel> <file_path> [caption]` | Upload file to channel | `upload @mychannel ./file.pdf "Doc"` |
-
-## Configuration
-
-Edit `.env` file:
+Chỉnh sửa file `.env`:
 
 ```env
 API_ID=your_api_id
 API_HASH=your_api_hash
-PHONE_NUMBER=+your_phone_number
-SESSION_NAME=teledrive_session
+SESSION_NAME=session
 DOWNLOAD_DIR=./downloads
 ```
 
-## Getting Telegram API Credentials
+## Lấy API Telegram
 
-1. Go to https://my.telegram.org/apps
-2. Create a new application
-3. Copy API_ID and API_HASH to your `.env` file
+1. Truy cập https://my.telegram.org/apps
+2. Tạo ứng dụng mới
+3. Copy API_ID và API_HASH vào file `.env`
 
-## File Structure
+## Cấu trúc file
 
 ```
-desktop.py          # Desktop application
-cli.py              # CLI application
-core.py             # Core functionality
-requirements.txt    # Dependencies
-.env                # Configuration
-README.md           # This file
-setup.bat           # Setup script
-run.bat             # Run desktop app
-downloads/          # Downloaded files (auto-created)
+app.py              # Ứng dụng desktop
+cmd.py              # Giao diện dòng lệnh
+telegram.py         # Xử lý Telegram API
+requirements.txt    # Thư viện cần thiết
+.env                # Cấu hình
+README.md           # Hướng dẫn
+downloads/          # Thư mục tải file
 ```
 
-## Desktop App Features
+## Tính năng ứng dụng desktop
 
-- 🖥️ **Native Desktop** - True desktop application
-- 🎨 **Modern UI** - Clean, professional interface
-- 🚀 **Fast Performance** - No browser overhead
-- 📁 **File Management** - Browse, search, download files
-- ⬆️ **Easy Upload** - File picker support
-- 📊 **Progress Tracking** - Real-time upload/download progress
-- ⚙️ **Settings Panel** - Configure API credentials
-- 🌓 **Theme Support** - Light and dark modes
-- 💾 **Simple & Clean** - Minimalist design
+- 🖥️ **Giao diện desktop** - Ứng dụng desktop thực sự
+- 🎨 **Giao diện hiện đại** - Thiết kế đẹp, chuyên nghiệp
+- 🚀 **Hiệu suất cao** - Không cần trình duyệt
+- 📁 **Quản lý file** - Duyệt, tìm kiếm, tải file
+- ⬆️ **Upload dễ dàng** - Hỗ trợ chọn file
+- 🔐 **Đăng nhập Telegram** - Tích hợp đăng nhập an toàn
 
-## Advantages
-
-- ✅ **Dual Interface** - Desktop app and CLI
-- ✅ **Modern UI** - Beautiful, professional design
-- ✅ **Native Performance** - Fast desktop application
-- ✅ **Easy to Use** - Intuitive graphical interface
-- ✅ **Cross-platform** - Works on Windows, Linux, macOS
-- ✅ **Minimal Dependencies** - Simple and lightweight
-- ✅ **Real-time Updates** - Live status and progress tracking
-- ✅ **Clean Design** - Minimalist and focused
-
-## Examples
+## Ví dụ sử dụng
 
 ```bash
-# List 20 files from a channel
-python cli.py list @mychannel 20
+# Liệt kê 20 file từ channel
+python cmd.py list @mychannel 20
 
-# Search for PDF files
-python cli.py search @mychannel "pdf" 10
+# Tìm file PDF
+python cmd.py search @mychannel "pdf" 10
 
-# Download the first file from the list
-python cli.py download @mychannel 1
+# Tải file đầu tiên
+python cmd.py download @mychannel 1
 
-# Upload a document with caption
-python cli.py upload @mychannel ./document.pdf "Important document"
+# Upload tài liệu
+python cmd.py upload @mychannel ./document.pdf "Tài liệu quan trọng"
 ```
