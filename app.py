@@ -49,11 +49,9 @@ class LoginWindow:
         self.client = client
         self.result = None
 
-
-
         # Tạo cửa sổ đăng nhập
         self.window = ctk.CTkToplevel(parent)
-        self.window.title("Đăng nhập Telegram")
+        self.window.title("Đăng nhập TeleDrive")
         self.window.geometry("420x580")
         self.window.resizable(False, False)
         self.window.transient(parent)
@@ -95,15 +93,16 @@ class LoginWindow:
                               corner_radius=40)
         logo_bg.pack(pady=(25, 8))
         logo_bg.pack_propagate(False)
-
-        # Logo TeleDrive - sử dụng text emoji cho login dialog để tránh lỗi
+        
+        # Sử dụng emoji làm logo tạm thời thay vì logo từ file
+        # Thay đổi sẽ được làm trong phiên bản tiếp theo
         logo = ctk.CTkLabel(logo_bg, text="✈️",
                           font=ctk.CTkFont(size=36, weight="bold"),
                           text_color="white")
         logo.pack(expand=True)
 
-        # Tiêu đề Telegram
-        title = ctk.CTkLabel(logo_container, text="Telegram",
+        # Tiêu đề TeleDrive
+        title = ctk.CTkLabel(logo_container, text="TeleDrive",
                            font=ctk.CTkFont(size=28, weight="bold"),
                            text_color=COLORS["text_primary"])
         title.pack()
