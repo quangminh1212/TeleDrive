@@ -96,12 +96,18 @@ class LoginWindow:
 
         # Logo TeleDrive từ file PNG
         try:
-            logo_image = Image.open("teledrive.png")
+            logo_path = os.path.join(os.getcwd(), "teledrive.png")
+            print(f"Đang tải logo từ: {logo_path}")
+            print(f"File tồn tại: {os.path.exists(logo_path)}")
+
+            logo_image = Image.open(logo_path)
             logo_image = logo_image.resize((64, 64), Image.Resampling.LANCZOS)
-            logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(64, 64))
-            logo = ctk.CTkLabel(logo_bg, image=logo_photo, text="")
+            self.logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(64, 64))
+            logo = ctk.CTkLabel(logo_bg, image=self.logo_photo, text="")
             logo.pack(expand=True)
-        except Exception:
+            print("Logo đã được tải thành công!")
+        except Exception as e:
+            print(f"Không thể load logo: {e}")
             # Fallback nếu không load được hình
             logo = ctk.CTkLabel(logo_bg, text="☁✈",
                               font=ctk.CTkFont(size=36, weight="bold"),
@@ -571,12 +577,14 @@ class TeleDriveApp:
 
         # Logo TeleDrive từ file PNG (nhỏ hơn cho header)
         try:
-            logo_image = Image.open("teledrive.png")
+            logo_path = os.path.join(os.getcwd(), "teledrive.png")
+            logo_image = Image.open(logo_path)
             logo_image = logo_image.resize((32, 32), Image.Resampling.LANCZOS)
-            logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(32, 32))
-            logo = ctk.CTkLabel(logo_bg, image=logo_photo, text="")
+            self.header_logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(32, 32))
+            logo = ctk.CTkLabel(logo_bg, image=self.header_logo_photo, text="")
             logo.pack(expand=True)
-        except Exception:
+        except Exception as e:
+            print(f"Không thể load logo cho header: {e}")
             # Fallback nếu không load được hình
             logo = ctk.CTkLabel(logo_bg, text="☁✈",
                               font=ctk.CTkFont(size=16, weight="bold"),
@@ -635,11 +643,22 @@ class TeleDriveApp:
         logo_bg.pack()
         logo_bg.pack_propagate(False)
 
-        # Logo Telegram chính thức lớn
-        welcome_icon = ctk.CTkLabel(logo_bg, text="✈",
-                                  font=ctk.CTkFont(size=56, weight="bold"),
-                                  text_color="white")
-        welcome_icon.pack(expand=True)
+        # Logo TeleDrive từ file PNG (lớn cho welcome screen)
+        try:
+            logo_path = os.path.join(os.getcwd(), "teledrive.png")
+            logo_image = Image.open(logo_path)
+            logo_image = logo_image.resize((96, 96), Image.Resampling.LANCZOS)
+            self.welcome_logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(96, 96))
+            welcome_icon = ctk.CTkLabel(logo_bg, image=self.welcome_logo_photo, text="")
+            welcome_icon.pack(expand=True)
+            print("Logo welcome screen đã được tải thành công!")
+        except Exception as e:
+            print(f"Không thể load logo cho welcome screen: {e}")
+            # Fallback nếu không load được hình
+            welcome_icon = ctk.CTkLabel(logo_bg, text="✈",
+                                      font=ctk.CTkFont(size=56, weight="bold"),
+                                      text_color="white")
+            welcome_icon.pack(expand=True)
 
         # Tiêu đề chào mừng
         welcome_title = ctk.CTkLabel(self.welcome_frame,
