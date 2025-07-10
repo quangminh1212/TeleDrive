@@ -44,10 +44,11 @@ COLORS = {
 class LoginWindow:
     """Cửa sổ đăng nhập Telegram theo phong cách Telegram"""
 
-    def __init__(self, parent, client):
+    def __init__(self, parent, client, login_logo_image=None):
         self.parent = parent
         self.client = client
         self.result = None
+        self.login_logo_image = login_logo_image
 
         # Tạo cửa sổ đăng nhập
         self.window = ctk.CTkToplevel(parent)
@@ -69,45 +70,8 @@ class LoginWindow:
         self.create_ui()
 
     def create_safe_login_logo(self, parent):
-        """Tạo logo đăng nhập một cách an toàn với ảnh đã được load sẵn"""
-        if self.login_logo_image is not None:
-            try:
-                print("🖼️ Sử dụng logo image đã load sẵn cho login...")
-
-                # Tạo label trước
-                logo_label = ctk.CTkLabel(parent, text="")
-
-                # Delay việc tạo và set CTkImage
-                def set_login_image():
-                    try:
-                        self.login_logo_photo = ctk.CTkImage(
-                            light_image=self.login_logo_image,
-                            dark_image=self.login_logo_image,
-                            size=(48, 48)
-                        )
-                        print("🖼️ Login: CTkImage đã tạo thành công")
-
-                        logo_label.configure(image=self.login_logo_photo)
-                        print("✅ Logo login đã được tải thành công!")
-
-                    except Exception as img_error:
-                        print(f"❌ Lỗi set login image: {img_error}")
-                        # Fallback về text
-                        logo_label.configure(
-                            text="✈️",
-                            font=ctk.CTkFont(size=36, weight="bold"),
-                            text_color="white"
-                        )
-
-                # Schedule việc set image
-                parent.after(200, set_login_image)  # Tăng delay lên 200ms
-                return logo_label
-
-            except Exception as e:
-                print(f"❌ Lỗi khi tạo login logo: {e}")
-
-        # Fallback về emoji nếu không có image
-        print("🔄 Sử dụng fallback emoji cho login...")
+        """Tạo logo đăng nhập một cách an toàn - sử dụng text để tránh CTkImage conflict"""
+        print("🔄 Sử dụng text logo cho login dialog để tránh CTkImage conflict...")
         return ctk.CTkLabel(parent, text="✈️",
                            font=ctk.CTkFont(size=36, weight="bold"),
                            text_color="white")
@@ -932,7 +896,7 @@ class TeleDriveApp:
         temp_root = ctk.CTk()
         temp_root.withdraw()
 
-        login_window = LoginWindow(temp_root, self.client)
+        login_window = LoginWindow(temp_root, self.client, self.login_logo_image)
         temp_root.wait_window(login_window.window)
 
         if login_window.result:
