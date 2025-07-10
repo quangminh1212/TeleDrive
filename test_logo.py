@@ -1,63 +1,56 @@
 #!/usr/bin/env python3
 """
-Test script để kiểm tra logo TeleDrive
+Script to test loading teledrive.png logo
 """
 
 import os
 import customtkinter as ctk
 from PIL import Image
 
-def test_logo():
-    """Test hiển thị logo"""
-    print("🧪 Test Logo TeleDrive")
-    print("=" * 40)
-    
-    # Kiểm tra file logo
-    logo_path = os.path.join(os.getcwd(), "teledrive.png")
-    print(f"📁 Đường dẫn logo: {logo_path}")
-    print(f"✅ File tồn tại: {os.path.exists(logo_path)}")
-    
-    if not os.path.exists(logo_path):
-        print("❌ File logo không tồn tại!")
-        return
-    
+def main():
+    # Create root window
+    root = ctk.CTk()
+    root.title("TeleDrive Logo Test")
+    root.geometry("300x300")
+
+    # Create frame
+    frame = ctk.CTkFrame(root)
+    frame.pack(expand=True, fill="both", padx=20, pady=20)
+
+    # Try to load logo
     try:
-        # Test load hình ảnh
-        logo_image = Image.open(logo_path)
-        print(f"📐 Kích thước gốc: {logo_image.size}")
-        print(f"🎨 Định dạng: {logo_image.format}")
-        print(f"🔧 Mode: {logo_image.mode}")
+        print("Current directory:", os.getcwd())
+        logo_path = os.path.join(os.getcwd(), "teledrive.png")
+        print("Looking for logo at:", logo_path)
         
-        # Test resize
-        logo_64 = logo_image.resize((64, 64), Image.Resampling.LANCZOS)
-        print(f"📐 Kích thước 64x64: {logo_64.size}")
-        
-        # Test CustomTkinter
-        ctk.set_appearance_mode("light")
-        root = ctk.CTk()
-        root.title("Test Logo")
-        root.geometry("300x200")
-        
-        # Tạo CTkImage
-        logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(64, 64))
-        
-        # Hiển thị logo
-        logo_label = ctk.CTkLabel(root, image=logo_photo, text="")
-        logo_label.pack(pady=20)
-        
-        # Text thông tin
-        info_label = ctk.CTkLabel(root, text="Logo TeleDrive đã được tải thành công!")
-        info_label.pack(pady=10)
-        
-        print("✅ Logo test thành công!")
-        print("🖥️ Cửa sổ test đang mở...")
-        
-        root.mainloop()
-        
+        if os.path.exists(logo_path):
+            print("Logo file exists!")
+            logo_image = Image.open(logo_path)
+            logo_image = logo_image.resize((100, 100), Image.LANCZOS)
+            logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(100, 100))
+            
+            # Display logo
+            logo_label = ctk.CTkLabel(frame, image=logo_photo, text="")
+            logo_label.pack(pady=20)
+            
+            # Add text label
+            text_label = ctk.CTkLabel(frame, text="TeleDrive Logo Loaded Successfully")
+            text_label.pack(pady=10)
+            
+            print("Logo loaded successfully!")
+        else:
+            print("Logo file not found!")
+            # Show error text
+            error_label = ctk.CTkLabel(frame, text="Logo file not found!")
+            error_label.pack(pady=20)
+            
     except Exception as e:
-        print(f"❌ Lỗi khi test logo: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Error loading logo: {e}")
+        # Show error text
+        error_label = ctk.CTkLabel(frame, text=f"Error: {str(e)}")
+        error_label.pack(pady=20)
+    
+    root.mainloop()
 
 if __name__ == "__main__":
-    test_logo()
+    main()
