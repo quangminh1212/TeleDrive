@@ -94,12 +94,50 @@ class LoginWindow:
         logo_bg.pack(pady=(25, 8))
         logo_bg.pack_propagate(False)
         
-        # Sử dụng emoji làm logo tạm thời thay vì logo từ file
-        # Thay đổi sẽ được làm trong phiên bản tiếp theo
-        logo = ctk.CTkLabel(logo_bg, text="✈️",
-                          font=ctk.CTkFont(size=36, weight="bold"),
-                          text_color="white")
-        logo.pack(expand=True)
+        # Logo TeleDrive từ file PNG cho cửa sổ đăng nhập
+        logo_loaded = False
+        logo_path = os.path.join(os.getcwd(), "teledrive.png")
+        print(f"🔍 Đang tải logo đăng nhập từ: {logo_path}")
+
+        if os.path.exists(logo_path):
+            try:
+                print("📁 File logo tồn tại, đang load...")
+                logo_image = Image.open(logo_path)
+                print(f"📷 Ảnh gốc: {logo_image.size}, mode: {logo_image.mode}")
+
+                # Chuyển đổi sang RGBA nếu cần
+                if logo_image.mode != 'RGBA':
+                    logo_image = logo_image.convert('RGBA')
+                    print("🔄 Đã convert sang RGBA")
+
+                # Resize ảnh
+                logo_image = logo_image.resize((48, 48), Image.Resampling.LANCZOS)
+                print(f"📐 Đã resize thành: {logo_image.size}")
+
+                # Tạo CTkImage và giữ reference
+                self.login_logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(48, 48))
+                print("🖼️ CTkImage đã tạo thành công")
+
+                # Tạo label với ảnh và giữ reference
+                self.login_logo_label = ctk.CTkLabel(logo_bg, image=self.login_logo_photo, text="")
+                self.login_logo_label.pack(expand=True)
+                print("✅ Logo đăng nhập đã được tải thành công!")
+                logo_loaded = True
+
+            except Exception as e:
+                print(f"❌ Lỗi khi load logo đăng nhập: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print("❌ File logo không tồn tại!")
+
+        # Fallback nếu không load được logo
+        if not logo_loaded:
+            print("🔄 Sử dụng fallback emoji...")
+            self.login_logo_label = ctk.CTkLabel(logo_bg, text="✈️",
+                                               font=ctk.CTkFont(size=36, weight="bold"),
+                                               text_color="white")
+            self.login_logo_label.pack(expand=True)
 
         # Tiêu đề TeleDrive
         title = ctk.CTkLabel(logo_container, text="TeleDrive",
@@ -563,20 +601,49 @@ class TeleDriveApp:
         logo_bg.pack_propagate(False)
 
         # Logo TeleDrive từ file PNG (nhỏ hơn cho header)
-        try:
-            logo_path = os.path.join(os.getcwd(), "teledrive.png")
-            logo_image = Image.open(logo_path)
-            logo_image = logo_image.resize((32, 32), Image.Resampling.LANCZOS)
-            self.header_logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(32, 32))
-            logo = ctk.CTkLabel(logo_bg, image=self.header_logo_photo, text="")
-            logo.pack(expand=True)
-        except Exception as e:
-            print(f"Không thể load logo cho header: {e}")
-            # Fallback nếu không load được hình
-            logo = ctk.CTkLabel(logo_bg, text="☁✈",
-                              font=ctk.CTkFont(size=16, weight="bold"),
-                              text_color=COLORS["telegram_blue"])
-            logo.pack(expand=True)
+        header_logo_loaded = False
+        logo_path = os.path.join(os.getcwd(), "teledrive.png")
+        print(f"🔍 Đang tải logo header từ: {logo_path}")
+
+        if os.path.exists(logo_path):
+            try:
+                print("📁 File logo tồn tại, đang load cho header...")
+                logo_image = Image.open(logo_path)
+                print(f"📷 Ảnh gốc cho header: {logo_image.size}, mode: {logo_image.mode}")
+
+                # Chuyển đổi sang RGBA nếu cần
+                if logo_image.mode != 'RGBA':
+                    logo_image = logo_image.convert('RGBA')
+                    print("🔄 Header: Đã convert sang RGBA")
+
+                # Resize ảnh cho header (nhỏ hơn)
+                logo_image = logo_image.resize((24, 24), Image.Resampling.LANCZOS)
+                print(f"📐 Header: Đã resize thành: {logo_image.size}")
+
+                # Tạo CTkImage cho header và giữ reference
+                self.header_logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(24, 24))
+                print("🖼️ Header: CTkImage đã tạo thành công")
+
+                # Tạo label với ảnh và giữ reference
+                self.header_logo_label = ctk.CTkLabel(logo_bg, image=self.header_logo_photo, text="")
+                self.header_logo_label.pack(expand=True)
+                print("✅ Logo header đã được tải thành công!")
+                header_logo_loaded = True
+
+            except Exception as e:
+                print(f"❌ Lỗi khi load logo header: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print("❌ File logo không tồn tại cho header!")
+
+        # Fallback nếu không load được logo
+        if not header_logo_loaded:
+            print("🔄 Header: Sử dụng fallback emoji...")
+            self.header_logo_label = ctk.CTkLabel(logo_bg, text="✈️",
+                                                font=ctk.CTkFont(size=18, weight="bold"),
+                                                text_color=COLORS["telegram_blue"])
+            self.header_logo_label.pack(expand=True)
 
         # Tiêu đề
         title = ctk.CTkLabel(left_frame, text="TeleDrive",
@@ -631,21 +698,49 @@ class TeleDriveApp:
         logo_bg.pack_propagate(False)
 
         # Logo TeleDrive từ file PNG (lớn cho welcome screen)
-        try:
-            logo_path = os.path.join(os.getcwd(), "teledrive.png")
-            logo_image = Image.open(logo_path)
-            logo_image = logo_image.resize((96, 96), Image.Resampling.LANCZOS)
-            self.welcome_logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(96, 96))
-            welcome_icon = ctk.CTkLabel(logo_bg, image=self.welcome_logo_photo, text="")
-            welcome_icon.pack(expand=True)
-            print("Logo welcome screen đã được tải thành công!")
-        except Exception as e:
-            print(f"Không thể load logo cho welcome screen: {e}")
-            # Fallback nếu không load được hình
-            welcome_icon = ctk.CTkLabel(logo_bg, text="✈",
-                                      font=ctk.CTkFont(size=56, weight="bold"),
-                                      text_color="white")
-            welcome_icon.pack(expand=True)
+        welcome_logo_loaded = False
+        logo_path = os.path.join(os.getcwd(), "teledrive.png")
+        print(f"🔍 Đang tải logo welcome từ: {logo_path}")
+
+        if os.path.exists(logo_path):
+            try:
+                print("📁 File logo tồn tại, đang load cho welcome screen...")
+                logo_image = Image.open(logo_path)
+                print(f"📷 Ảnh gốc cho welcome: {logo_image.size}, mode: {logo_image.mode}")
+
+                # Chuyển đổi sang RGBA nếu cần
+                if logo_image.mode != 'RGBA':
+                    logo_image = logo_image.convert('RGBA')
+                    print("🔄 Welcome: Đã convert sang RGBA")
+
+                # Resize ảnh cho welcome screen (lớn hơn)
+                logo_image = logo_image.resize((80, 80), Image.Resampling.LANCZOS)
+                print(f"📐 Welcome: Đã resize thành: {logo_image.size}")
+
+                # Tạo CTkImage cho welcome và giữ reference
+                self.welcome_logo_photo = ctk.CTkImage(light_image=logo_image, dark_image=logo_image, size=(80, 80))
+                print("🖼️ Welcome: CTkImage đã tạo thành công")
+
+                # Tạo label với ảnh và giữ reference
+                self.welcome_logo_label = ctk.CTkLabel(logo_bg, image=self.welcome_logo_photo, text="")
+                self.welcome_logo_label.pack(expand=True)
+                print("✅ Logo welcome screen đã được tải thành công!")
+                welcome_logo_loaded = True
+
+            except Exception as e:
+                print(f"❌ Lỗi khi load logo welcome: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print("❌ File logo không tồn tại cho welcome!")
+
+        # Fallback nếu không load được logo
+        if not welcome_logo_loaded:
+            print("🔄 Welcome: Sử dụng fallback emoji...")
+            self.welcome_logo_label = ctk.CTkLabel(logo_bg, text="✈️",
+                                                 font=ctk.CTkFont(size=48, weight="bold"),
+                                                 text_color="white")
+            self.welcome_logo_label.pack(expand=True)
 
         # Tiêu đề chào mừng
         welcome_title = ctk.CTkLabel(self.welcome_frame,
