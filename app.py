@@ -9,6 +9,8 @@ from tkinter import filedialog, messagebox
 import threading
 import asyncio
 import os
+import signal
+import sys
 from pathlib import Path
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError
@@ -407,13 +409,17 @@ class LoginWindow:
         self.send_btn.configure(state="disabled", text="ĐANG GỬI...")
         self.phone_status.configure(text="")
 
-        def run_async():
+        async def send_code_async():
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                result = loop.run_until_complete(self.client.send_code_request(full_phone))
+                result = await self.client.send_code_request(full_phone)
                 self.code_hash = result.phone_code_hash
                 self.window.after(0, self.on_code_sent)
+            except Exception as e:
+                self.window.after(0, lambda: self.on_code_error(str(e)))
+
+        def run_async():
+            try:
+                asyncio.run(send_code_async())
             except Exception as e:
                 self.window.after(0, lambda: self.on_code_error(str(e)))
 
@@ -445,17 +451,21 @@ class LoginWindow:
         self.verify_btn.configure(state="disabled", text="Đang xác nhận...")
         self.code_status.configure(text="Đang xác nhận...")
         
-        def run_async():
+        async def verify_code_async():
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                user = loop.run_until_complete(self.client.sign_in(phone=self.phone, code=code, phone_code_hash=self.code_hash))
+                user = await self.client.sign_in(phone=self.phone, code=code, phone_code_hash=self.code_hash)
                 self.window.after(0, lambda: self.on_login_success(user))
             except SessionPasswordNeededError:
                 self.window.after(0, lambda: self.show_step("password"))
             except Exception as e:
                 self.window.after(0, lambda: self.on_verify_error(str(e)))
-        
+
+        def run_async():
+            try:
+                asyncio.run(verify_code_async())
+            except Exception as e:
+                self.window.after(0, lambda: self.on_verify_error(str(e)))
+
         threading.Thread(target=run_async, daemon=True).start()
     
     def on_verify_error(self, error):
@@ -473,15 +483,19 @@ class LoginWindow:
         self.password_btn.configure(state="disabled", text="Đang xác nhận...")
         self.password_status.configure(text="Đang xác nhận...")
         
-        def run_async():
+        async def verify_password_async():
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                user = loop.run_until_complete(self.client.sign_in(password=password))
+                user = await self.client.sign_in(password=password)
                 self.window.after(0, lambda: self.on_login_success(user))
             except Exception as e:
                 self.window.after(0, lambda: self.on_password_error(str(e)))
-        
+
+        def run_async():
+            try:
+                asyncio.run(verify_password_async())
+            except Exception as e:
+                self.window.after(0, lambda: self.on_password_error(str(e)))
+
         threading.Thread(target=run_async, daemon=True).start()
     
     def on_password_error(self, error):
@@ -626,20 +640,24 @@ class TeleDriveApp:
     
     def check_login(self):
         """Kiểm tra trạng thái đăng nhập"""
-        def run_async():
+        async def check_auth():
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(self.client.connect())
-                
-                if loop.run_until_complete(self.client.is_user_authorized()):
-                    user = loop.run_until_complete(self.client.get_me())
+                await self.client.connect()
+
+                if await self.client.is_user_authorized():
+                    user = await self.client.get_me()
                     self.root.after(0, lambda: self.on_login_success(user))
                 else:
                     self.root.after(0, self.on_not_logged_in)
             except Exception as e:
                 self.root.after(0, lambda: self.on_connection_error(str(e)))
-        
+
+        def run_async():
+            try:
+                asyncio.run(check_auth())
+            except Exception as e:
+                self.root.after(0, lambda: self.on_connection_error(str(e)))
+
         threading.Thread(target=run_async, daemon=True).start()
     
     def on_login_success(self, user):
@@ -724,12 +742,16 @@ class TeleDriveApp:
     
     def disconnect(self):
         """Ngắt kết nối"""
+        async def disconnect_client():
+            try:
+                await self.client.disconnect()
+                self.root.after(0, self.on_disconnected)
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror("Lỗi", f"Lỗi ngắt kết nối: {e}"))
+
         def run_async():
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(self.client.disconnect())
-                self.root.after(0, self.on_disconnected)
+                asyncio.run(disconnect_client())
             except Exception as e:
                 self.root.after(0, lambda: messagebox.showerror("Lỗi", f"Lỗi ngắt kết nối: {e}"))
 
@@ -746,17 +768,60 @@ class TeleDriveApp:
         # Hiển thị giao diện đăng nhập
         self.login()
     
+    def cleanup(self):
+        """Dọn dẹp tài nguyên khi đóng ứng dụng"""
+        async def cleanup_client():
+            try:
+                if self.client and self.client.is_connected():
+                    await self.client.disconnect()
+            except Exception:
+                pass  # Ignore cleanup errors
+
+        def run_cleanup():
+            try:
+                asyncio.run(cleanup_client())
+            except Exception:
+                pass  # Ignore cleanup errors
+
+        threading.Thread(target=run_cleanup, daemon=True).start()
+
     def run(self):
         """Chạy ứng dụng"""
-        self.root.mainloop()
+        try:
+            # Thêm cleanup khi đóng cửa sổ
+            self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+            self.root.mainloop()
+        except KeyboardInterrupt:
+            self.cleanup()
+
+    def on_closing(self):
+        """Xử lý khi đóng ứng dụng"""
+        self.cleanup()
+        self.root.quit()
+        self.root.destroy()
 
 def main():
     """Hàm chính"""
+    app = None
+
+    def signal_handler(signum, frame):
+        """Xử lý tín hiệu để cleanup"""
+        if app:
+            app.cleanup()
+        sys.exit(0)
+
+    # Đăng ký signal handler
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     try:
         app = TeleDriveApp()
         app.run()
     except Exception as e:
         print(f"Lỗi khởi động ứng dụng: {e}")
+    finally:
+        if app:
+            app.cleanup()
 
 if __name__ == "__main__":
     main()
