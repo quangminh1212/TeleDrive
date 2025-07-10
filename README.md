@@ -118,14 +118,14 @@ downloads/          # Downloaded files (auto-created)
 
 ```bash
 # List 20 files from a channel
-python teledrive.py list @mychannel 20
+python cli.py list @mychannel 20
 
 # Search for PDF files
-python teledrive.py search @mychannel "pdf" 10
+python cli.py search @mychannel "pdf" 10
 
 # Download the first file from the list
-python teledrive.py download @mychannel 1
+python cli.py download @mychannel 1
 
 # Upload a document with caption
-python teledrive.py upload @mychannel ./document.pdf "Important document"
+python cli.py upload @mychannel ./document.pdf "Important document"
 ```

@@ -199,15 +199,15 @@ async def main():
     if len(sys.argv) < 2:
         print("TeleDrive - Simple Telegram Channel File Manager")
         print("\nUsage:")
-        print("  python teledrive.py list <channel> [limit]")
-        print("  python teledrive.py search <channel> <query> [limit]")
-        print("  python teledrive.py download <channel> <file_number>")
-        print("  python teledrive.py upload <channel> <file_path> [caption]")
+        print("  python cli.py list <channel> [limit]")
+        print("  python cli.py search <channel> <query> [limit]")
+        print("  python cli.py download <channel> <file_number>")
+        print("  python cli.py upload <channel> <file_path> [caption]")
         print("\nExamples:")
-        print("  python teledrive.py list @mychannel 10")
-        print("  python teledrive.py search @mychannel 'video' 5")
-        print("  python teledrive.py download @mychannel 1")
-        print("  python teledrive.py upload @mychannel ./file.pdf 'My document'")
+        print("  python cli.py list @mychannel 10")
+        print("  python cli.py search @mychannel 'video' 5")
+        print("  python cli.py download @mychannel 1")
+        print("  python cli.py upload @mychannel ./file.pdf 'My document'")
         return
     
     command = sys.argv[1].lower()

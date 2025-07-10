@@ -906,6 +906,10 @@ class TeleDriveApp:
             self.update_connection_status(True, result.get("user"))
             self.update_status("Connected to Telegram")
             messagebox.showinfo("Success", "Connected successfully!")
+        elif result.get("needs_login"):
+            # User needs to authenticate - show login dialog
+            self.update_status("Authentication required")
+            self.show_login_dialog()
         else:
             self.update_connection_status(False, None)
             self.update_status("Connection failed")
@@ -930,6 +934,27 @@ class TeleDriveApp:
         self.connect_btn.configure(state="normal")
         self.update_status("Disconnect failed")
         messagebox.showerror("Error", f"Disconnect error: {error}")
+
+    def show_login_dialog(self):
+        """Show login dialog for authentication"""
+        try:
+            dialog = LoginDialog(self.root, self.teledrive)
+            self.root.wait_window(dialog.dialog)
+
+            if dialog.result and dialog.result["success"]:
+                # Login successful
+                self.update_connection_status(True, dialog.result.get("user"))
+                self.update_status("Connected to Telegram")
+                messagebox.showinfo("Success", "Connected successfully!")
+            else:
+                # Login failed or cancelled
+                self.update_connection_status(False, None)
+                self.update_status("Authentication failed")
+
+        except Exception as e:
+            self.update_connection_status(False, None)
+            self.update_status("Authentication error")
+            messagebox.showerror("Error", f"Authentication error: {str(e)}")
 
     def load_files(self):
         """Load files from channel"""
