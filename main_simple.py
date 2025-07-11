@@ -20,7 +20,7 @@ class TeleDriveApp:
         self.root.geometry("1000x700")
         self.root.configure(bg='#ffffff')
         self.root.minsize(800, 600)
-
+        
         # Telegram client
         self.client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
         self.loop = None
@@ -28,10 +28,10 @@ class TeleDriveApp:
         self.channels = []
         self.current_channel = None
         self.files = []
-
+        
         # Load logo
         self.load_logo()
-
+        
         # Show initial interface
         self.show_login_interface()
         print("TeleDrive initialized successfully")
@@ -53,7 +53,7 @@ class TeleDriveApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Main container with clean background
+        # Main container
         main_container = tk.Frame(self.root, bg='#ffffff')
         main_container.pack(expand=True, fill='both')
 
@@ -84,10 +84,10 @@ class TeleDriveApp:
         # Phone input
         phone_frame = tk.Frame(content_frame, bg='#ffffff')
         phone_frame.pack(pady=20)
-
-        tk.Label(phone_frame, text="Phone Number:", font=('Arial', 12),
+        
+        tk.Label(phone_frame, text="Phone Number:", font=('Arial', 12), 
                 bg='#ffffff').pack(anchor='w', pady=(0, 5))
-
+        
         self.phone_entry = tk.Entry(phone_frame, font=('Arial', 12), width=25)
         self.phone_entry.pack(pady=(0, 10))
         self.phone_entry.insert(0, "+84")
@@ -108,7 +108,7 @@ class TeleDriveApp:
         # Focus on phone entry
         self.phone_entry.focus()
         self.phone_entry.bind('<Return>', lambda e: self.send_code())
-
+        
         print("Login interface created")
     
     def send_code(self):
@@ -127,15 +127,15 @@ class TeleDriveApp:
                 # Create new event loop for this thread
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-
+                
                 # Connect and send code
                 loop.run_until_complete(self.client.connect())
                 loop.run_until_complete(self.client.send_code_request(phone))
-
+                
                 self.phone_number = phone
                 # Schedule UI update on main thread
                 self.root.after(0, self.show_code_interface)
-
+                
             except Exception as e:
                 # Schedule error display on main thread
                 self.root.after(0, lambda: self.show_error(f"Error: {str(e)}"))
@@ -144,7 +144,7 @@ class TeleDriveApp:
 
         thread = threading.Thread(target=async_send_code, daemon=True)
         thread.start()
-
+    
     def show_error(self, message):
         self.status_label.config(text=message)
         self.start_btn.config(state='normal', text="Send Code")
@@ -168,18 +168,13 @@ class TeleDriveApp:
                               font=('Arial', 18, 'bold'), bg='#ffffff', fg='#0088cc')
         title_label.pack(pady=(0, 20))
 
-        # Phone number display
-        phone_label = tk.Label(content_frame, text=f"Code sent to: {self.phone_number}",
-                              font=('Arial', 12), bg='#ffffff', fg='#666666')
-        phone_label.pack(pady=(0, 20))
-
         # Code input
         code_frame = tk.Frame(content_frame, bg='#ffffff')
         code_frame.pack(pady=20)
-
-        tk.Label(code_frame, text="Verification Code:", font=('Arial', 12),
+        
+        tk.Label(code_frame, text="Verification Code:", font=('Arial', 12), 
                 bg='#ffffff').pack(anchor='w', pady=(0, 5))
-
+        
         self.code_entry = tk.Entry(code_frame, font=('Arial', 12), width=25)
         self.code_entry.pack(pady=(0, 10))
 
@@ -199,7 +194,7 @@ class TeleDriveApp:
         # Focus on code entry
         self.code_entry.focus()
         self.code_entry.bind('<Return>', lambda e: self.verify_code())
-
+        
         print("Code interface created")
     
     def verify_code(self):
@@ -218,13 +213,13 @@ class TeleDriveApp:
                 # Create new event loop for this thread
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-
+                
                 # Sign in with code
                 loop.run_until_complete(self.client.sign_in(self.phone_number, code))
-
+                
                 # Schedule UI update on main thread
                 self.root.after(0, self.show_main_interface)
-
+                
             except SessionPasswordNeededError:
                 # Schedule password interface on main thread
                 self.root.after(0, self.show_password_interface)
@@ -236,7 +231,7 @@ class TeleDriveApp:
 
         thread = threading.Thread(target=async_verify_code, daemon=True)
         thread.start()
-
+    
     def show_verify_error(self, message):
         self.status_label.config(text=message)
         self.verify_btn.config(state='normal', text="Verify")
@@ -245,46 +240,44 @@ class TeleDriveApp:
     
     def show_password_interface(self):
         print("Showing password interface...")
-        messagebox.showinfo("Two-Factor Authentication",
+        messagebox.showinfo("Two-Factor Authentication", 
                            "Two-factor authentication is enabled. This simplified version doesn't support 2FA yet.")
         self.show_login_interface()
-
-
     
     def show_main_interface(self):
         print("Showing main interface...")
         # Clear window
         for widget in self.root.winfo_children():
             widget.destroy()
-
+        
         # Main frame
         main_frame = tk.Frame(self.root, bg='#ffffff')
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
-
+        
         # Title
-        title_label = tk.Label(main_frame, text="TeleDrive - Main Interface",
+        title_label = tk.Label(main_frame, text="TeleDrive - Main Interface", 
                               font=('Arial', 20, 'bold'), bg='#ffffff', fg='#0088cc')
         title_label.pack(pady=20)
-
+        
         # Status
-        status_label = tk.Label(main_frame, text="Successfully logged in to Telegram!",
+        status_label = tk.Label(main_frame, text="Successfully logged in to Telegram!", 
                                font=('Arial', 12), bg='#ffffff', fg='#666666')
         status_label.pack(pady=10)
-
+        
         # Placeholder for future features
-        placeholder_label = tk.Label(main_frame,
-                                    text="Channel management and file operations will be added here.",
+        placeholder_label = tk.Label(main_frame, 
+                                    text="Channel management and file operations will be added here.", 
                                     font=('Arial', 11), bg='#ffffff', fg='#999999')
         placeholder_label.pack(pady=20)
-
+        
         # Logout button
-        logout_btn = tk.Button(main_frame, text="Logout", font=('Arial', 12),
+        logout_btn = tk.Button(main_frame, text="Logout", font=('Arial', 12), 
                               bg='#dc3545', fg='white', padx=20, pady=10,
                               command=self.logout)
         logout_btn.pack(pady=20)
-
+        
         print("Main interface created")
-
+    
     def logout(self):
         print("Logging out...")
         def async_logout():
@@ -303,7 +296,7 @@ class TeleDriveApp:
 
         thread = threading.Thread(target=async_logout, daemon=True)
         thread.start()
-
+    
     def run(self):
         print("Starting main loop...")
         self.root.mainloop()
