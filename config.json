@@ -102,7 +102,15 @@
     "blocked_extensions": [".exe", ".bat", ".cmd", ".scr"],
     "download_timeout": 300,
     "verify_downloads": true,
-    "resume_downloads": true
+    "resume_downloads": true,
+    "chunk_settings": {
+      "_description": "File transfer chunk configuration",
+      "small_file_chunk_kb": 64,
+      "large_file_chunk_kb": 512,
+      "max_chunk_size_kb": 1024,
+      "auto_adjust_chunk_size": true,
+      "chunk_size_threshold_mb": 10
+    }
   },
   
   "display": {
