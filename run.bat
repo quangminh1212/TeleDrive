@@ -61,6 +61,10 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM Tu dong dong bo cau hinh tu .env
+echo Dong bo cau hinh...
+python sync_config.py >nul 2>&1
+
 REM Kiem tra validation cau hinh
 echo Kiem tra cau hinh...
 python config_validator.py >nul 2>&1

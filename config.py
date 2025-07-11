@@ -142,36 +142,65 @@ class ConfigManager:
             return False
 
     def update_from_env(self):
-        """Update config with values from .env"""
+        """Update config with values from .env and auto-save"""
+        updated = False
+
         # Update telegram credentials from .env
         api_id = os.getenv('TELEGRAM_API_ID')
         api_hash = os.getenv('TELEGRAM_API_HASH')
         phone = os.getenv('TELEGRAM_PHONE')
 
+        # Check if credentials are properly configured
         if api_id and api_hash and phone:
-            self.set('telegram.api_id', api_id)
-            self.set('telegram.api_hash', api_hash)
-            self.set('telegram.phone_number', phone)
+            if (api_id not in ['', 'your_api_id_here'] and
+                api_hash not in ['', 'your_api_hash_here'] and
+                phone not in ['', '+84xxxxxxxxx']):
+
+                # Update config if values are different
+                current_api_id = self.get('telegram.api_id', '')
+                current_api_hash = self.get('telegram.api_hash', '')
+                current_phone = self.get('telegram.phone_number', '')
+
+                if (str(current_api_id) != str(api_id) or
+                    str(current_api_hash) != str(api_hash) or
+                    str(current_phone) != str(phone)):
+
+                    self.set('telegram.api_id', api_id)
+                    self.set('telegram.api_hash', api_hash)
+                    self.set('telegram.phone_number', phone)
+                    updated = True
+                    logger.info("Đã cập nhật API credentials từ .env")
 
         # Update optional settings from .env
         optional_settings = {
-            'TELEGRAM_SESSION_NAME': 'telegram.session_name',
-            'TELEGRAM_CONNECTION_TIMEOUT': 'telegram.connection_timeout',
-            'TELEGRAM_REQUEST_TIMEOUT': 'telegram.request_timeout',
-            'TELEGRAM_RETRY_ATTEMPTS': 'telegram.retry_attempts',
-            'TELEGRAM_RETRY_DELAY': 'telegram.retry_delay'
+            'TELEGRAM_SESSION_NAME': ('telegram.session_name', str),
+            'TELEGRAM_CONNECTION_TIMEOUT': ('telegram.connection_timeout', int),
+            'TELEGRAM_REQUEST_TIMEOUT': ('telegram.request_timeout', int),
+            'TELEGRAM_RETRY_ATTEMPTS': ('telegram.retry_attempts', int),
+            'TELEGRAM_RETRY_DELAY': ('telegram.retry_delay', int)
         }
 
-        for env_key, config_path in optional_settings.items():
+        for env_key, (config_path, value_type) in optional_settings.items():
             env_value = os.getenv(env_key)
             if env_value:
-                # Convert to appropriate type
-                if 'timeout' in env_key.lower() or 'attempts' in env_key.lower() or 'delay' in env_key.lower():
-                    try:
-                        env_value = int(env_value)
-                    except ValueError:
-                        continue
-                self.set(config_path, env_value)
+                try:
+                    # Convert to appropriate type
+                    converted_value = value_type(env_value)
+                    current_value = self.get(config_path)
+
+                    if current_value != converted_value:
+                        self.set(config_path, converted_value)
+                        updated = True
+                        logger.info(f"Đã cập nhật {config_path} từ .env")
+
+                except ValueError as e:
+                    logger.warning(f"Không thể convert {env_key}={env_value}: {e}")
+
+        # Update last_updated timestamp if any changes were made
+        if updated:
+            from datetime import datetime
+            self.set('_last_updated', datetime.now().strftime('%Y-%m-%d'))
+            logger.info("Đã đồng bộ cấu hình từ .env vào config.json")
 
 # Initialize global config manager
 config_manager = ConfigManager()
