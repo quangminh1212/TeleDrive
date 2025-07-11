@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox
 import asyncio
 import threading
 import os
@@ -8,7 +8,7 @@ from telethon.errors import SessionPasswordNeededError
 from PIL import Image, ImageTk
 
 # Import logging configuration
-from logger_config import get_logger, log_startup_info
+from log import get_logger, log_startup_info
 
 # Setup logging and log startup info
 logger = get_logger('TeleDrive.Main')

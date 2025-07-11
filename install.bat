@@ -1,59 +1,27 @@
 @echo off
-title TeleDrive - Installation
-color 0A
+echo Installing TeleDrive...
 
-echo.
-echo ========================================
-echo    TeleDrive - Installation Script
-echo ========================================
-echo.
-
-REM Check if Python is installed
+REM Check Python
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Python is not installed or not in PATH
-    echo.
-    echo Please install Python 3.7+ from https://python.org
-    echo Make sure to check "Add Python to PATH" during installation
-    echo.
+    echo Python not found! Please install Python 3.7+
     pause
     exit /b 1
 )
 
-echo [SUCCESS] Python found
+echo Python found
 python --version
 
-echo.
-echo [INFO] Installing TeleDrive dependencies...
-echo This may take a few minutes...
-echo.
-
-REM Install dependencies
+echo Installing dependencies...
 pip install -r requirements.txt
 
 if errorlevel 1 (
-    echo.
-    echo [ERROR] Installation failed
-    echo Please check your internet connection and try again
-    echo.
+    echo Installation failed!
     pause
     exit /b 1
 )
 
 echo.
-echo ========================================
-echo    Installation Complete!
-echo ========================================
-echo.
-echo [SUCCESS] TeleDrive is ready to use
-echo.
-echo To start the application:
-echo 1. Double-click "run.bat"
-echo 2. Or run: python main.py
-echo.
-echo First time setup:
-echo - Enter your phone number with country code
-echo - Enter verification code from Telegram
-echo - If you have 2FA, enter your cloud password
-echo.
+echo Installation complete!
+echo Run "run.bat" to start TeleDrive
 pause
