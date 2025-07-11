@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
 Config Manager cho Telegram File Scanner
-Quản lý cấu hình trong config.json
+Quản lý cấu hình trong config.json với validation
 """
 
 import json
 import os
 from datetime import datetime
+from config_validator import ConfigValidator
 
 class ConfigManager:
     def __init__(self, config_file='config.json'):
@@ -26,12 +27,29 @@ class ConfigManager:
             return self.get_default_config()
     
     def save_config(self):
-        """Save configuration to JSON file"""
+        """Save configuration to JSON file with validation"""
         try:
-            with open(self.config_file, 'w', encoding='utf-8') as f:
+            # Validate before saving
+            validator = ConfigValidator()
+            temp_file = self.config_file + '.tmp'
+
+            # Save to temp file first
+            with open(temp_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=2, ensure_ascii=False)
-            print(f"Đã lưu cấu hình vào {self.config_file}")
-            return True
+
+            # Validate temp file
+            if validator.validate_config_json(temp_file):
+                # Move temp file to actual file
+                os.rename(temp_file, self.config_file)
+                print(f"✅ Đã lưu và validate cấu hình vào {self.config_file}")
+                return True
+            else:
+                # Remove temp file and show errors
+                os.remove(temp_file)
+                print("❌ Cấu hình không hợp lệ:")
+                print(validator.get_validation_report())
+                return False
+
         except Exception as e:
             print(f"Lỗi lưu {self.config_file}: {e}")
             return False
@@ -178,12 +196,13 @@ def main():
         print("3. Cấu hình Output")
         print("4. Cấu hình Scanning")
         print("5. Cấu hình Filters")
-        print("6. Reset về mặc định")
+        print("6. Kiểm tra validation")
+        print("7. Reset về mặc định")
         print("0. Thoát")
         print("-"*50)
-        
-        choice = input("Chọn (0-6): ").strip()
-        
+
+        choice = input("Chọn (0-7): ").strip()
+
         if choice == '0':
             break
         elif choice == '1':
@@ -197,6 +216,8 @@ def main():
         elif choice == '5':
             configure_filters(config_mgr)
         elif choice == '6':
+            validate_configuration()
+        elif choice == '7':
             config_mgr.config = config_mgr.get_default_config()
             config_mgr.save_config()
             print("Đã reset về cấu hình mặc định!")
@@ -261,21 +282,55 @@ def configure_filters(config_mgr):
     """Configure filter settings"""
     print("\n🔧 CẤU HÌNH FILTERS")
     print("-"*26)
-    
+
     min_size = input("Kích thước file tối thiểu (bytes, Enter để bỏ qua): ").strip()
     min_file_size = int(min_size) if min_size.isdigit() else None
-    
+
     max_size = input("Kích thước file tối đa (bytes, Enter để bỏ qua): ").strip()
     max_file_size = int(max_size) if max_size.isdigit() else None
-    
+
     extensions = input("Phần mở rộng cho phép (cách nhau bởi dấu phẩy, Enter để bỏ qua): ").strip()
     file_extensions = [ext.strip() for ext in extensions.split(',')] if extensions else None
-    
+
     config_mgr.update_filter_config(
         min_size=min_file_size,
         max_size=max_file_size,
         extensions=file_extensions
     )
+
+def validate_configuration():
+    """Validate current configuration"""
+    print("\n🔍 KIỂM TRA CẤU HÌNH")
+    print("-"*30)
+
+    validator = ConfigValidator()
+
+    # Validate .env
+    print("📄 Kiểm tra .env...")
+    env_valid = validator.validate_env_file()
+    if env_valid:
+        print("✅ .env hợp lệ!")
+    else:
+        print("❌ .env có lỗi:")
+        print(validator.get_validation_report())
+
+    # Validate config.json
+    print("\n📄 Kiểm tra config.json...")
+    config_valid = validator.validate_config_json()
+    if config_valid:
+        print("✅ config.json hợp lệ!")
+    else:
+        print("❌ config.json có lỗi:")
+        print(validator.get_validation_report())
+
+    # Overall result
+    print("\n" + "-"*30)
+    if env_valid and config_valid:
+        print("🎉 TẤT CẢ CẤU HÌNH HỢP LỆ!")
+    else:
+        print("⚠️ CÓ LỖI TRONG CẤU HÌNH!")
+
+    input("\nNhấn Enter để tiếp tục...")
 
 if __name__ == "__main__":
     main()
