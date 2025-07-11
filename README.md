@@ -96,7 +96,7 @@ TeleDrive/
 ├── config_manager.py # Quan ly cau hinh tich hop (sync + validation)
 ├── logger.py         # He thong logging chi tiet
 ├── config.json       # Cau hinh chi tiet (bao gom logging)
-├── test_logging.py   # Test logging system
+
 ├── logs/             # Thu muc chua tat ca log files
 │   ├── scanner.log   # Log chinh
 │   ├── config.log    # Log cau hinh

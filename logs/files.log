@@ -1,3 +1,0 @@
-2025-07-12 03:26:39,336 - files - INFO - log_file_operation:151 - FILE CREATE: test_file.txt | Test file creation
-2025-07-12 03:26:39,336 - files - INFO - log_file_operation:151 - FILE READ: config.json | Reading configuration
-2025-07-12 03:26:39,336 - files - INFO - log_file_operation:151 - FILE WRITE: output/test.csv | Writing test data

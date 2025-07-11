@@ -1,5 +1,0 @@
-2025-07-12 03:26:39,335 - config - INFO - log_config_change:131 - CONFIG UPDATE: {
-  "path": "test.setting",
-  "old_value": "old",
-  "new_value": "new"
-}

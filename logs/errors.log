@@ -1,6 +1,0 @@
-2025-07-12 03:26:39,340 - errors - ERROR - log_error:175 - ERROR: {
-  "error_type": "ValueError",
-  "error_message": "This is a test error",
-  "context": "Testing error logging",
-  "traceback": "Traceback (most recent call last):\n  File \"C:\\VF\\TeleDrive\\test_logging.py\", line 48, in test_logging\n    raise ValueError(\"This is a test error\")\nValueError: This is a test error\n"
-}

@@ -1,1 +1,0 @@
-2025-07-12 03:26:39,336 - api - DEBUG - log_api_call:141 - API CALL: test_api_method | Params: {'param1': 'value1', 'param2': 'value2'} | Result: success
