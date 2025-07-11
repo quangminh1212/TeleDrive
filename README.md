@@ -2,11 +2,11 @@
 
 A premium desktop application for managing files in Telegram channels with download and upload capabilities.
 
-## 🎨 **New Premium Interface**
-- **Card Design**: Modern card layout with subtle shadow effects
+## 🎨 **Premium Interface & Logging**
+- **Simplified Design**: Clean, reliable interface that works consistently
 - **Telegram-Style**: Interface inspired by official Telegram mobile app
-- **Smooth Interactions**: Hover effects and smooth transitions
-- **Smart Placeholders**: Intelligent input field placeholders
+- **Comprehensive Logging**: Detailed step-by-step logging for easy debugging
+- **Smart Error Handling**: Graceful error handling with detailed logging
 
 ## Features
 
@@ -19,6 +19,8 @@ A premium desktop application for managing files in Telegram channels with downl
   - Upload files to channels
 - **Progress Tracking**: Visual progress indicators for file operations
 - **Session Persistence**: Stay logged in between app sessions
+- **Comprehensive Logging**: Detailed logs for debugging and monitoring
+- **Error Tracking**: Complete error logging with stack traces
 
 ## Requirements
 
@@ -71,11 +73,14 @@ The application uses the following Telegram API credentials (already configured)
 ```
 TeleDrive/
 ├── main.py              # Main application file
+├── logger_config.py     # Logging configuration
 ├── requirements.txt     # Python dependencies
 ├── teledrive.png       # Application logo
 ├── run.bat             # Full featured launcher (recommended)
 ├── start.bat           # Simple launcher
 ├── install.bat         # Dependency installer
+├── logs/               # Log files directory (auto-created)
+│   └── teledrive_YYYYMMDD.log  # Daily log files
 └── README.md           # This file
 ```
 
@@ -84,6 +89,43 @@ TeleDrive/
 - Session data is stored locally in `teledrive_session.session`
 - No passwords or sensitive data are stored in plain text
 - Uses official Telegram API for secure communication
+
+## 📊 Logging & Debugging
+
+TeleDrive includes comprehensive logging to help with debugging and monitoring:
+
+### **Log Features:**
+- **Daily Log Files**: Automatic daily log rotation (`teledrive_YYYYMMDD.log`)
+- **Multi-Level Logging**: DEBUG, INFO, WARNING, ERROR levels
+- **Console & File Output**: Logs displayed in console and saved to files
+- **Thread-Safe**: Separate loggers for different components and threads
+- **Emoji Indicators**: Easy-to-read log messages with emoji status indicators
+
+### **Log Locations:**
+- **Log Directory**: `logs/` (auto-created)
+- **Current Log**: `logs/teledrive_YYYYMMDD.log`
+- **Console Output**: Real-time logging in terminal/command prompt
+
+### **Log Categories:**
+- `TeleDrive.Main` - Main application events
+- `TeleDrive.App` - Application initialization and UI
+- `TeleDrive.SendCode` - Phone verification process
+- `TeleDrive.VerifyCode` - Code verification process
+- `TeleDrive.Logout` - Logout process
+- `TeleDrive.System` - System information
+- `TeleDrive.Dependencies` - Dependency checking
+
+### **Reading Logs:**
+```bash
+# View today's log
+type logs\teledrive_20241211.log
+
+# Monitor real-time (Windows)
+Get-Content logs\teledrive_20241211.log -Wait
+
+# Search for errors
+findstr "ERROR" logs\teledrive_20241211.log
+```
 
 ## Troubleshooting
 
