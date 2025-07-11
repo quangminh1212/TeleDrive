@@ -9,15 +9,44 @@ echo ================================================================
 echo.
 
 REM Kiem tra file .env
-if not exist .env (
-    echo CHUA CAU HINH API!
+set "ENV_CONFIGURED=0"
+if exist .env (
+    REM Kiem tra xem .env co cau hinh dung chua
+    findstr /C:"your_api_id_here" .env >nul
+    if not errorlevel 1 set "ENV_CONFIGURED=0"
+
+    findstr /C:"your_api_hash_here" .env >nul
+    if not errorlevel 1 set "ENV_CONFIGURED=0"
+
+    findstr /C:"+84xxxxxxxxx" .env >nul
+    if not errorlevel 1 set "ENV_CONFIGURED=0"
+
+    REM Kiem tra xem co API_ID va API_HASH thuc su chua
+    findstr /R "TELEGRAM_API_ID=[0-9]" .env >nul
+    if not errorlevel 1 (
+        findstr /R "TELEGRAM_API_HASH=[a-zA-Z0-9]" .env >nul
+        if not errorlevel 1 (
+            findstr /R "TELEGRAM_PHONE=\+[0-9]" .env >nul
+            if not errorlevel 1 set "ENV_CONFIGURED=1"
+        )
+    )
+)
+
+if "%ENV_CONFIGURED%"=="0" (
+    echo CHUA CAU HINH API HOAC CAU HINH SAI!
     echo.
-    echo 1. Tao file .env tu .env.example
-    echo 2. Dien so dien thoai (vi du: +84xxxxxxxxx)
+    echo 1. Tao file .env moi tu .env.example
+    echo 2. Dien API_ID, API_HASH va so dien thoai
     echo.
     if exist .env.example (
         copy .env.example .env >nul
-        echo Da tao file .env. Vui long chinh sua so dien thoai!
+        echo Da tao file .env moi. Vui long chinh sua thong tin API!
+        echo.
+        echo Huong dan:
+        echo - Lay API_ID va API_HASH tu: https://my.telegram.org/apps
+        echo - Dien so dien thoai dang: +84xxxxxxxxx
+    ) else (
+        echo KHONG TIM THAY FILE .env.example!
     )
     pause
     exit /b 1
