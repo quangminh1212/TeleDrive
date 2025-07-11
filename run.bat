@@ -33,13 +33,13 @@ if exist .env (
     )
 
     REM Kiem tra xem co API_ID va API_HASH thuc su chua
-    findstr /R "TELEGRAM_API_ID=[0-9]" .env >nul
+    findstr /C:"TELEGRAM_API_ID=" .env | findstr /V /C:"your_api_id_here" >nul
     if not errorlevel 1 (
         echo    ^> Tim thay API_ID hop le
-        findstr /R "TELEGRAM_API_HASH=[a-zA-Z0-9]" .env >nul
+        findstr /C:"TELEGRAM_API_HASH=" .env | findstr /V /C:"your_api_hash_here" >nul
         if not errorlevel 1 (
             echo    ^> Tim thay API_HASH hop le
-            findstr /R "TELEGRAM_PHONE=\+[0-9]" .env >nul
+            findstr /C:"TELEGRAM_PHONE=" .env | findstr /V /C:"+84xxxxxxxxx" >nul
             if not errorlevel 1 (
                 echo    ^> Tim thay PHONE hop le
                 set "ENV_CONFIGURED=1"
