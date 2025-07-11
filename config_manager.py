@@ -6,8 +6,118 @@ Quản lý cấu hình trong config.json với validation
 
 import json
 import os
+import re
 from datetime import datetime
-from config_validator import ConfigValidator
+from dotenv import load_dotenv
+
+
+class ConfigValidator:
+    """Validator cho config.json và .env"""
+
+    def __init__(self):
+        self.errors = []
+        self.warnings = []
+
+    def validate_env_file(self, env_path: str = '.env') -> bool:
+        """Validate .env file"""
+        self.errors.clear()
+        self.warnings.clear()
+
+        if not os.path.exists(env_path):
+            self.errors.append(f"File {env_path} không tồn tại")
+            return False
+
+        try:
+            with open(env_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except Exception as e:
+            self.errors.append(f"Không thể đọc file {env_path}: {e}")
+            return False
+
+        # Parse environment variables
+        env_vars = {}
+        for line in content.split('\n'):
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, value = line.split('=', 1)
+                env_vars[key.strip()] = value.strip()
+
+        # Validate required fields
+        required_fields = ['TELEGRAM_API_ID', 'TELEGRAM_API_HASH', 'TELEGRAM_PHONE']
+        for field in required_fields:
+            if field not in env_vars or not env_vars[field]:
+                self.errors.append(f"Thiếu hoặc trống {field}")
+            elif env_vars[field] in ['your_api_id_here', 'your_api_hash_here', '+84xxxxxxxxx']:
+                self.errors.append(f"{field} chưa được cấu hình (vẫn là giá trị mặc định)")
+
+        # Validate API_ID
+        if 'TELEGRAM_API_ID' in env_vars:
+            try:
+                api_id = int(env_vars['TELEGRAM_API_ID'])
+                if api_id <= 0:
+                    self.errors.append("TELEGRAM_API_ID phải là số nguyên dương")
+            except ValueError:
+                self.errors.append("TELEGRAM_API_ID phải là số nguyên")
+
+        # Validate API_HASH
+        if 'TELEGRAM_API_HASH' in env_vars:
+            api_hash = env_vars['TELEGRAM_API_HASH']
+            if not re.match(r'^[a-fA-F0-9]{32}$', api_hash):
+                self.errors.append("TELEGRAM_API_HASH phải là chuỗi 32 ký tự hex")
+
+        # Validate PHONE
+        if 'TELEGRAM_PHONE' in env_vars:
+            phone = env_vars['TELEGRAM_PHONE']
+            if not re.match(r'^\+\d{10,15}$', phone):
+                self.errors.append("TELEGRAM_PHONE phải có format +[mã quốc gia][số điện thoại] (10-15 chữ số)")
+
+        return len(self.errors) == 0
+
+    def validate_config_json(self, config_path: str = 'config.json') -> bool:
+        """Validate config.json file"""
+        self.errors.clear()
+        self.warnings.clear()
+
+        if not os.path.exists(config_path):
+            self.errors.append(f"File {config_path} không tồn tại")
+            return False
+
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+        except json.JSONDecodeError as e:
+            self.errors.append(f"Lỗi JSON trong {config_path}: {e}")
+            return False
+        except Exception as e:
+            self.errors.append(f"Không thể đọc file {config_path}: {e}")
+            return False
+
+        # Validate required sections
+        required_sections = ['telegram', 'output', 'scanning', 'download', 'display', 'filters']
+        for section in required_sections:
+            if section not in config:
+                self.errors.append(f"Thiếu section '{section}'")
+
+        return len(self.errors) == 0
+
+    def get_validation_report(self) -> str:
+        """Get validation report"""
+        report = []
+
+        if self.errors:
+            report.append("❌ LỖI:")
+            for error in self.errors:
+                report.append(f"  - {error}")
+
+        if self.warnings:
+            report.append("⚠️ CẢNH BÁO:")
+            for warning in self.warnings:
+                report.append(f"  - {warning}")
+
+        if not self.errors and not self.warnings:
+            report.append("✅ Cấu hình hợp lệ!")
+
+        return "\n".join(report)
 
 class ConfigManager:
     def __init__(self, config_file='config.json'):
@@ -93,7 +203,135 @@ class ConfigManager:
                 "date_from": None, "date_to": None
             }
         }
-    
+
+    def load_env_vars(self):
+        """Load environment variables from .env file"""
+        load_dotenv()
+        return {
+            'api_id': os.getenv('TELEGRAM_API_ID', ''),
+            'api_hash': os.getenv('TELEGRAM_API_HASH', ''),
+            'phone_number': os.getenv('TELEGRAM_PHONE', ''),
+            'session_name': os.getenv('TELEGRAM_SESSION_NAME', 'telegram_scanner_session'),
+            'connection_timeout': int(os.getenv('TELEGRAM_CONNECTION_TIMEOUT', '30')),
+            'request_timeout': int(os.getenv('TELEGRAM_REQUEST_TIMEOUT', '60')),
+            'retry_attempts': int(os.getenv('TELEGRAM_RETRY_ATTEMPTS', '3')),
+            'retry_delay': int(os.getenv('TELEGRAM_RETRY_DELAY', '5'))
+        }
+
+    def sync_env_to_config(self):
+        """Sync environment variables to config.json"""
+        print("🔄 ĐỒNG BỘ CẤU HÌNH")
+        print("=" * 40)
+
+        # Load .env variables
+        print("📄 Đọc file .env...")
+        env_vars = self.load_env_vars()
+
+        # Validate required fields
+        required_fields = ['api_id', 'api_hash', 'phone_number']
+        missing_fields = []
+
+        for field in required_fields:
+            if not env_vars[field] or env_vars[field] in ['your_api_id_here', 'your_api_hash_here', '+84xxxxxxxxx']:
+                missing_fields.append(field)
+
+        if missing_fields:
+            print(f"❌ Thiếu thông tin trong .env: {', '.join(missing_fields)}")
+            print("💡 Vui lòng cấu hình .env trước khi sync")
+            return False
+
+        # Update telegram section
+        if 'telegram' not in self.config:
+            self.config['telegram'] = {}
+
+        telegram_section = self.config['telegram']
+        updated_fields = []
+
+        # Sync each field
+        for field, value in env_vars.items():
+            if field in ['connection_timeout', 'request_timeout', 'retry_attempts', 'retry_delay']:
+                # Convert to int for numeric fields
+                try:
+                    value = int(value)
+                except (ValueError, TypeError):
+                    continue
+
+            old_value = telegram_section.get(field, '')
+            if str(old_value) != str(value):
+                telegram_section[field] = value
+                updated_fields.append(field)
+
+        # Update last_updated timestamp
+        self.config['_last_updated'] = datetime.now().strftime('%Y-%m-%d')
+
+        # Save config
+        if updated_fields:
+            print(f"🔄 Cập nhật: {', '.join(updated_fields)}")
+            if self.save_config():
+                print("✅ Đã đồng bộ thành công!")
+                return True
+            else:
+                return False
+        else:
+            print("✅ Cấu hình đã được đồng bộ!")
+            return True
+
+    def validate_sync(self):
+        """Validate that sync was successful"""
+        print("\n🔍 KIỂM TRA ĐỒNG BỘ")
+        print("-" * 30)
+
+        env_vars = self.load_env_vars()
+        telegram_section = self.config.get('telegram', {})
+
+        # Check each field
+        all_synced = True
+        for field in ['api_id', 'api_hash', 'phone_number']:
+            env_value = env_vars[field]
+            config_value = telegram_section.get(field, '')
+
+            if str(env_value) == str(config_value):
+                print(f"✅ {field}: Đã đồng bộ")
+            else:
+                print(f"❌ {field}: Chưa đồng bộ (.env: {env_value}, config: {config_value})")
+                all_synced = False
+
+        return all_synced
+
+    def validate_configuration(self):
+        """Validate current configuration"""
+        print("\n🔍 KIỂM TRA CẤU HÌNH")
+        print("-"*30)
+
+        validator = ConfigValidator()
+
+        # Validate .env
+        print("📄 Kiểm tra .env...")
+        env_valid = validator.validate_env_file()
+        if env_valid:
+            print("✅ .env hợp lệ!")
+        else:
+            print("❌ .env có lỗi:")
+            print(validator.get_validation_report())
+
+        # Validate config.json
+        print("\n📄 Kiểm tra config.json...")
+        config_valid = validator.validate_config_json()
+        if config_valid:
+            print("✅ config.json hợp lệ!")
+        else:
+            print("❌ config.json có lỗi:")
+            print(validator.get_validation_report())
+
+        # Overall result
+        print("\n" + "-"*30)
+        if env_valid and config_valid:
+            print("🎉 TẤT CẢ CẤU HÌNH HỢP LỆ!")
+            return True
+        else:
+            print("⚠️ CÓ LỖI TRONG CẤU HÌNH!")
+            return False
+
     def update_telegram_config(self, api_id=None, api_hash=None, phone_number=None):
         """Update Telegram configuration"""
         if api_id:
@@ -196,12 +434,13 @@ def main():
         print("3. Cấu hình Output")
         print("4. Cấu hình Scanning")
         print("5. Cấu hình Filters")
-        print("6. Kiểm tra validation")
-        print("7. Reset về mặc định")
+        print("6. Đồng bộ từ .env sang config.json")
+        print("7. Kiểm tra validation")
+        print("8. Reset về mặc định")
         print("0. Thoát")
         print("-"*50)
 
-        choice = input("Chọn (0-7): ").strip()
+        choice = input("Chọn (0-8): ").strip()
 
         if choice == '0':
             break
@@ -216,8 +455,13 @@ def main():
         elif choice == '5':
             configure_filters(config_mgr)
         elif choice == '6':
-            validate_configuration()
+            config_mgr.sync_env_to_config()
+            config_mgr.validate_sync()
+            input("\nNhấn Enter để tiếp tục...")
         elif choice == '7':
+            config_mgr.validate_configuration()
+            input("\nNhấn Enter để tiếp tục...")
+        elif choice == '8':
             config_mgr.config = config_mgr.get_default_config()
             config_mgr.save_config()
             print("Đã reset về cấu hình mặc định!")
@@ -299,37 +543,9 @@ def configure_filters(config_mgr):
     )
 
 def validate_configuration():
-    """Validate current configuration"""
-    print("\n🔍 KIỂM TRA CẤU HÌNH")
-    print("-"*30)
-
-    validator = ConfigValidator()
-
-    # Validate .env
-    print("📄 Kiểm tra .env...")
-    env_valid = validator.validate_env_file()
-    if env_valid:
-        print("✅ .env hợp lệ!")
-    else:
-        print("❌ .env có lỗi:")
-        print(validator.get_validation_report())
-
-    # Validate config.json
-    print("\n📄 Kiểm tra config.json...")
-    config_valid = validator.validate_config_json()
-    if config_valid:
-        print("✅ config.json hợp lệ!")
-    else:
-        print("❌ config.json có lỗi:")
-        print(validator.get_validation_report())
-
-    # Overall result
-    print("\n" + "-"*30)
-    if env_valid and config_valid:
-        print("🎉 TẤT CẢ CẤU HÌNH HỢP LỆ!")
-    else:
-        print("⚠️ CÓ LỖI TRONG CẤU HÌNH!")
-
+    """Validate current configuration (wrapper function)"""
+    config_mgr = ConfigManager()
+    config_mgr.validate_configuration()
     input("\nNhấn Enter để tiếp tục...")
 
 if __name__ == "__main__":

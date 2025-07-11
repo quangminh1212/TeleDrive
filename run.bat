@@ -61,18 +61,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Tu dong dong bo cau hinh tu .env
-echo Dong bo cau hinh...
-python sync_config.py >nul 2>&1
-
-REM Kiem tra validation cau hinh
-echo Kiem tra cau hinh...
-python config_validator.py >nul 2>&1
+REM Tu dong dong bo va kiem tra cau hinh
+echo Dong bo va kiem tra cau hinh...
+python -c "from config_manager import ConfigManager; cm = ConfigManager(); cm.sync_env_to_config(); exit(0 if cm.validate_configuration() else 1)" >nul 2>&1
 if errorlevel 1 (
     echo.
     echo CAU HINH CHUA HOP LE!
-    echo Chay 'validate.bat' de xem chi tiet loi
-    echo Hoac chay 'config.bat' de sua cau hinh
+    echo Chay 'config.bat' de sua cau hinh
     echo.
     pause
     exit /b 1
