@@ -12,46 +12,76 @@ Phần mềm quét và lấy thông tin tất cả các file trong kênh Telegra
 - ✅ Progress bar theo dõi tiến trình
 - ✅ Thống kê chi tiết sau khi quét
 
-## Cài đặt
+## 📁 Cấu trúc file
 
-### 1. Clone repository
+**🔧 Batch Files (Windows):**
+- **`start.bat`** - Menu chính, chọn chức năng
+- **`setup.bat`** - Cài đặt tự động
+- **`run.bat`** - Quét public channel
+- **`private.bat`** - Quét private channel
+- **`demo.bat`** - Demo và hướng dẫn
+
+**🐍 Python Scripts:**
+- **`scanner.py`** - Engine chính
+- **`private.py`** - Chuyên dụng private channel
+- **`demo.py`** - Demo và troubleshooting
+- **`run.py`** - Script chạy đơn giản
+
+**⚙️ Cấu hình:**
+- **`config.py`** - Cấu hình chi tiết
+- **`.env.example`** - Template API credentials
+- **`requirements.txt`** - Dependencies
+
+## 🚀 Cài đặt & Sử dụng
+
+### ⚡ Cách nhanh nhất (Windows):
+1. **Nhấp đúp vào `start.bat`** - Menu chính
+2. **Chọn "1" để Setup** - Cài đặt tự động
+3. **Chỉnh sửa file `.env`** với API credentials
+4. **Chạy scanner** từ menu
+
+### 🔧 Cài đặt thủ công:
+
+#### 1. Chuẩn bị
 ```bash
 git clone <repository-url>
 cd TeleDrive
 ```
 
-### 2. Cài đặt dependencies
+#### 2. Setup tự động
 ```bash
-pip install -r requirements.txt
+setup.bat          # Windows
+# hoặc
+python -m pip install -r requirements.txt
 ```
 
-### 3. Cấu hình Telegram API
-
+#### 3. Cấu hình API
 1. Truy cập https://my.telegram.org/apps
-2. Tạo ứng dụng mới để lấy `API_ID` và `API_HASH`
-3. Copy file `.env.example` thành `.env`:
-```bash
-cp .env.example .env
-```
-4. Điền thông tin vào file `.env`:
+2. Tạo app mới → lấy `API_ID` và `API_HASH`
+3. Copy `.env.example` → `.env`
+4. Điền thông tin:
 ```
 TELEGRAM_API_ID=your_api_id_here
 TELEGRAM_API_HASH=your_api_hash_here
 TELEGRAM_PHONE=+84xxxxxxxxx
 ```
 
-## Sử dụng
+## 🎯 Sử dụng
 
-### Chạy chương trình
-
-#### Cho Public Channel:
+### 🖱️ Giao diện Windows (Khuyến nghị):
 ```bash
-python run.py
+start.bat           # Menu chính
+setup.bat          # Cài đặt
+run.bat            # Public channel
+private.bat        # Private channel
+demo.bat           # Demo & help
 ```
 
-#### Cho Private Channel:
+### 💻 Command Line:
 ```bash
-python private_channel_scanner.py
+python run.py      # Public channel
+python private.py  # Private channel
+python demo.py     # Demo & help
 ```
 
 ### Nhập thông tin kênh

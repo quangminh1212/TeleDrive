@@ -5,7 +5,7 @@ Script chạy nhanh Telegram File Scanner với giao diện đơn giản
 
 import asyncio
 import sys
-from telegram_file_scanner import TelegramFileScanner
+from scanner import TelegramFileScanner
 
 async def quick_scan():
     """Chạy nhanh với giao diện đơn giản"""

@@ -6,7 +6,7 @@ Chuyên dụng cho việc quét file trong private channel/group Telegram
 
 import asyncio
 import sys
-from telegram_file_scanner import TelegramFileScanner
+from scanner import TelegramFileScanner
 
 class PrivateChannelScanner(TelegramFileScanner):
     """Scanner chuyên dụng cho private channel"""

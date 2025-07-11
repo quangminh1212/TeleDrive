@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Telegram File Scanner
-Quét và lấy thông tin tất cả các file trong kênh Telegram
+Main Scanner - Quét file trong kênh Telegram
+Hỗ trợ cả public và private channel
 """
 
 import asyncio

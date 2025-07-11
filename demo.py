@@ -6,7 +6,7 @@ Hướng dẫn chi tiết cách sử dụng với private channel
 
 import asyncio
 import sys
-from private_channel_scanner import PrivateChannelScanner
+from private import PrivateChannelScanner
 
 def print_instructions():
     """In hướng dẫn chi tiết"""
