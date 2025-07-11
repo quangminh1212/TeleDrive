@@ -32,11 +32,7 @@ class TelegramFileScanner:
         
     async def initialize(self):
         """Khởi tạo Telegram client"""
-        # Kiểm tra API credentials
-        if not config.API_ID or config.API_ID == 'your_api_id_here':
-            raise ValueError("CHUA CAU HINH API_ID trong file .env")
-        if not config.API_HASH or config.API_HASH == 'your_api_hash_here':
-            raise ValueError("CHUA CAU HINH API_HASH trong file .env")
+        # Kiểm tra số điện thoại
         if not config.PHONE_NUMBER or config.PHONE_NUMBER == '+84xxxxxxxxx':
             raise ValueError("CHUA CAU HINH PHONE_NUMBER trong file .env")
 

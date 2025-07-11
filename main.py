@@ -167,14 +167,13 @@ async def main():
         print("\n⏹️ Đã dừng bởi người dùng")
     except Exception as e:
         print(f"LOI: {e}")
-        if "CHUA CAU HINH" in str(e):
+        if "CHUA CAU HINH PHONE_NUMBER" in str(e):
             print()
-            print("HUONG DAN CAU HINH:")
+            print("HUONG DAN CAU HINH SO DIEN THOAI:")
             print("1. Mo file .env")
-            print("2. Thay 'your_api_id_here' bang API_ID that")
-            print("3. Thay 'your_api_hash_here' bang API_HASH that")
-            print("4. Thay '+84xxxxxxxxx' bang so dien thoai that")
-            print("5. Lay API tu: https://my.telegram.org/apps")
+            print("2. Thay '+84xxxxxxxxx' bang so dien thoai that")
+            print("3. Vi du: +84987654321")
+            print("4. Phai co ma quoc gia (+84 cho Viet Nam)")
         else:
             import traceback
             traceback.print_exc()

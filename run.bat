@@ -13,12 +13,11 @@ if not exist .env (
     echo CHUA CAU HINH API!
     echo.
     echo 1. Tao file .env tu .env.example
-    echo 2. Dien API_ID va API_HASH tu https://my.telegram.org/apps
-    echo 3. Dien so dien thoai (vi du: +84xxxxxxxxx)
+    echo 2. Dien so dien thoai (vi du: +84xxxxxxxxx)
     echo.
     if exist .env.example (
         copy .env.example .env >nul
-        echo Da tao file .env. Vui long chinh sua no!
+        echo Da tao file .env. Vui long chinh sua so dien thoai!
     )
     pause
     exit /b 1
