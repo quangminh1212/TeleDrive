@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Main Scanner - Quét file trong kênh Telegram
+Main Scanner - Quét file trong kênh Telegram với logging chi tiết
 Hỗ trợ cả public và private channel
 """
 
@@ -13,7 +13,7 @@ from pathlib import Path
 
 from telethon import TelegramClient
 from telethon.tl.types import (
-    MessageMediaDocument, MessageMediaPhoto, 
+    MessageMediaDocument, MessageMediaPhoto,
     DocumentAttributeFilename, DocumentAttributeVideo,
     DocumentAttributeAudio, DocumentAttributeSticker,
     DocumentAttributeAnimated
@@ -22,6 +22,16 @@ from tqdm.asyncio import tqdm
 import aiofiles
 
 import config
+
+# Import detailed logging
+try:
+    from logger import log_step, log_api_call, log_file_operation, log_progress, log_error, get_logger
+    DETAILED_LOGGING_AVAILABLE = True
+    logger = get_logger('engine')
+except ImportError:
+    DETAILED_LOGGING_AVAILABLE = False
+    import logging
+    logger = logging.getLogger(__name__)
 
 class TelegramFileScanner:
     def __init__(self):
@@ -32,22 +42,48 @@ class TelegramFileScanner:
         
     async def initialize(self):
         """Khởi tạo Telegram client"""
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("KHỞI TẠO CLIENT", "Bắt đầu khởi tạo Telegram client")
+
         # Kiểm tra số điện thoại
         if not config.PHONE_NUMBER or config.PHONE_NUMBER == '+84xxxxxxxxx':
-            raise ValueError("CHUA CAU HINH PHONE_NUMBER trong file .env")
+            error_msg = "CHUA CAU HINH PHONE_NUMBER trong config"
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("VALIDATION ERROR", error_msg, "ERROR")
+            raise ValueError(error_msg)
 
         try:
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("TẠO CLIENT", f"API_ID: {config.API_ID}, Session: {config.SESSION_NAME}")
+
             self.client = TelegramClient(
                 config.SESSION_NAME,
                 int(config.API_ID),
                 config.API_HASH
             )
 
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("ĐĂNG NHẬP", f"Đăng nhập với số: {config.PHONE_NUMBER}")
+                log_api_call("client.start", {"phone": config.PHONE_NUMBER})
+
             await self.client.start(phone=config.PHONE_NUMBER)
+
             print("Da ket noi thanh cong voi Telegram!")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("KHỞI TẠO THÀNH CÔNG", "Đã kết nối thành công với Telegram")
+
         except ValueError as e:
             if "invalid literal for int()" in str(e):
-                raise ValueError("API_ID phai la so nguyen, khong phai text")
+                error_msg = "API_ID phai la so nguyen, khong phai text"
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_error(e, "API_ID validation")
+                raise ValueError(error_msg)
+            if DETAILED_LOGGING_AVAILABLE:
+                log_error(e, "Client initialization")
+            raise e
+        except Exception as e:
+            if DETAILED_LOGGING_AVAILABLE:
+                log_error(e, "Client initialization - unexpected error")
             raise e
         
     async def get_channel_entity(self, channel_input: str):
@@ -203,54 +239,87 @@ class TelegramFileScanner:
         
     async def scan_channel(self, channel_input: str):
         """Quét tất cả file trong kênh"""
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("BẮT ĐẦU QUÉT", f"Kênh: {channel_input}")
+
         entity = await self.get_channel_entity(channel_input)
         if not entity:
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("LỖI ENTITY", "Không thể lấy thông tin kênh", "ERROR")
             return
-            
+
         print(f"📡 Bắt đầu quét kênh: {entity.title}")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("THÔNG TIN KÊNH", f"Tên: {entity.title}, ID: {entity.id}")
+
         print(f"📊 Đang đếm tổng số tin nhắn...")
-        
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("ĐẾM TIN NHẮN", "Bắt đầu đếm tổng số tin nhắn")
+
         # Đếm tổng số tin nhắn
         total_messages = 0
         async for _ in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
             total_messages += 1
-            
+
         print(f"📝 Tổng số tin nhắn: {total_messages:,}")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("TỔNG TIN NHẮN", f"Tìm thấy {total_messages:,} tin nhắn")
+            log_api_call("iter_messages", {"entity": entity.title, "limit": config.MAX_MESSAGES}, f"{total_messages} messages")
+
         print(f"🔍 Bắt đầu quét file...")
-        
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("BẮT ĐẦU QUÉT FILE", f"Quét {total_messages:,} tin nhắn để tìm file")
+
         # Quét các tin nhắn và tìm file
         progress_bar = tqdm(total=total_messages, desc="Đang quét")
-        
+        processed_count = 0
+
         async for message in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
             file_info = self.extract_file_info(message)
-            
+
             if file_info and self.should_include_file_type(file_info['file_type']):
                 self.files_data.append(file_info)
-                
+                if DETAILED_LOGGING_AVAILABLE and len(self.files_data) % 10 == 0:
+                    log_progress(len(self.files_data), total_messages, "files found")
+
+            processed_count += 1
             progress_bar.update(1)
-            
+
         progress_bar.close()
-        
+
         print(f"✅ Hoàn thành! Tìm thấy {len(self.files_data)} file")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("HOÀN THÀNH QUÉT", f"Đã quét {processed_count:,} tin nhắn, tìm thấy {len(self.files_data)} file")
         
     async def save_results(self):
         """Lưu kết quả ra các file"""
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("BẮT ĐẦU LƯU KẾT QUẢ", f"Có {len(self.files_data)} file để lưu")
+
         if not self.files_data:
             print("⚠️ Không có dữ liệu để lưu")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("KHÔNG CÓ DỮ LIỆU", "Không có file nào để lưu", "WARNING")
             return
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("CHUẨN BỊ LƯU", f"Timestamp: {timestamp}")
 
         # Lưu CSV
         csv_path = self.output_dir / f"{timestamp}_{config.CSV_FILENAME}"
         df = pd.DataFrame(self.files_data)
         df.to_csv(csv_path, index=False, encoding='utf-8-sig')
         print(f"💾 Đã lưu CSV: {csv_path}")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_file_operation("SAVE", str(csv_path), f"CSV với {len(self.files_data)} records")
 
         # Lưu Excel
         excel_path = self.output_dir / f"{timestamp}_{config.EXCEL_FILENAME}"
         df.to_excel(excel_path, index=False, engine='openpyxl')
         print(f"💾 Đã lưu Excel: {excel_path}")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_file_operation("SAVE", str(excel_path), f"Excel với {len(self.files_data)} records")
 
         # Tạo JSON với format tối ưu cho file và link
         json_data = {
@@ -297,6 +366,8 @@ class TelegramFileScanner:
         async with aiofiles.open(json_path, 'w', encoding='utf-8') as f:
             await f.write(json.dumps(json_data, ensure_ascii=False, indent=2))
         print(f"💾 Đã lưu JSON: {json_path}")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_file_operation("SAVE", str(json_path), f"JSON chi tiết với {len(self.files_data)} files")
 
         # Lưu JSON đơn giản chỉ tên file và link
         simple_json_data = [
@@ -313,9 +384,14 @@ class TelegramFileScanner:
         async with aiofiles.open(simple_json_path, 'w', encoding='utf-8') as f:
             await f.write(json.dumps(simple_json_data, ensure_ascii=False, indent=2))
         print(f"💾 Đã lưu JSON đơn giản: {simple_json_path}")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_file_operation("SAVE", str(simple_json_path), f"JSON đơn giản với {len(self.files_data)} files")
 
         # Thống kê
         self.print_statistics()
+
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("HOÀN THÀNH LƯU KẾT QUẢ", f"Đã lưu thành công {len(self.files_data)} files vào 4 định dạng")
         
     def print_statistics(self):
         """In thống kê"""

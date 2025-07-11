@@ -1,6 +1,6 @@
 """
 Cấu hình cho Telegram File Scanner
-Hỗ trợ đầy đủ validation và error handling
+Hỗ trợ đầy đủ validation và error handling với logging chi tiết
 """
 import os
 import json
@@ -11,8 +11,14 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+# Import detailed logging
+try:
+    from logger import setup_detailed_logging, log_step, log_config_change, get_logger
+    DETAILED_LOGGING_AVAILABLE = True
+except ImportError:
+    DETAILED_LOGGING_AVAILABLE = False
+    logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 class ConfigManager:
@@ -21,7 +27,20 @@ class ConfigManager:
     def __init__(self, config_file='config.json'):
         self.config_file = config_file
         self._config = None
+        self._detailed_logger = None
         self._load_config()
+        self._setup_detailed_logging()
+
+    def _setup_detailed_logging(self):
+        """Setup detailed logging system"""
+        if DETAILED_LOGGING_AVAILABLE and self._config:
+            logging_config = self._config.get('logging', {})
+            if logging_config.get('enabled', True):
+                try:
+                    self._detailed_logger = setup_detailed_logging(logging_config)
+                    log_step("KHỞI TẠO LOGGING", "Đã thiết lập logging chi tiết")
+                except Exception as e:
+                    logger.warning(f"Không thể setup detailed logging: {e}")
 
     def _load_config(self):
         """Load configuration from config.json with error handling"""
@@ -29,16 +48,32 @@ class ConfigManager:
             with open(self.config_file, 'r', encoding='utf-8') as f:
                 self._config = json.load(f)
                 logger.info(f"Đã load config từ {self.config_file}")
+
+            # Log chi tiết nếu có
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("LOAD CONFIG", f"Đã tải cấu hình từ {self.config_file}")
+
         except FileNotFoundError:
             logger.warning(f"Không tìm thấy {self.config_file}, tạo config mặc định")
             self._config = self._get_default_config()
             self._save_config()
+
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("CONFIG ERROR", f"File {self.config_file} không tồn tại, tạo config mặc định", "WARNING")
+
         except json.JSONDecodeError as e:
             logger.error(f"Lỗi JSON trong {self.config_file}: {e}")
             self._config = self._get_default_config()
+
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("CONFIG ERROR", f"Lỗi JSON: {e}", "ERROR")
+
         except Exception as e:
             logger.error(f"Lỗi đọc {self.config_file}: {e}")
             self._config = self._get_default_config()
+
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("CONFIG ERROR", f"Lỗi không xác định: {e}", "ERROR")
 
     def _save_config(self):
         """Save configuration to config.json"""
@@ -129,6 +164,9 @@ class ConfigManager:
     def set(self, path: str, value: Any) -> bool:
         """Set configuration value by path"""
         try:
+            # Lấy giá trị cũ để log
+            old_value = self.get(path, "NOT_SET")
+
             keys = path.split('.')
             config = self._config
             for key in keys[:-1]:
@@ -136,6 +174,15 @@ class ConfigManager:
                     config[key] = {}
                 config = config[key]
             config[keys[-1]] = value
+
+            # Log thay đổi
+            if DETAILED_LOGGING_AVAILABLE:
+                log_config_change("SET", {
+                    "path": path,
+                    "old_value": old_value,
+                    "new_value": value
+                })
+
             return self._save_config()
         except Exception as e:
             logger.error(f"Lỗi set config {path}: {e}")

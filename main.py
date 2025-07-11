@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
 """
-Private Channel Scanner
+Private Channel Scanner với logging chi tiết
 Chuyên dụng cho việc quét file trong private channel/group Telegram
 """
 
 import asyncio
 import sys
 from engine import TelegramFileScanner
+
+# Import detailed logging
+try:
+    from logger import log_step, log_error, get_logger
+    DETAILED_LOGGING_AVAILABLE = True
+    logger = get_logger('main')
+except ImportError:
+    DETAILED_LOGGING_AVAILABLE = False
+    import logging
+    logger = logging.getLogger(__name__)
 
 class PrivateChannelScanner(TelegramFileScanner):
     """Scanner chuyên dụng cho private channel"""
@@ -158,19 +168,34 @@ class PrivateChannelScanner(TelegramFileScanner):
 
 async def main():
     """Main function cho private channel scanner"""
+    if DETAILED_LOGGING_AVAILABLE:
+        log_step("KHỞI ĐỘNG ỨNG DỤNG", "Bắt đầu Private Channel Scanner")
+
     scanner = PrivateChannelScanner()
-    
+
     try:
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("BẮT ĐẦU QUÉT", "Khởi động quá trình quét interactive")
+
         await scanner.scan_private_channel_interactive()
-        
+
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("HOÀN THÀNH", "Quá trình quét đã hoàn thành thành công")
+
     except KeyboardInterrupt:
         print("\n⏹️ Đã dừng bởi người dùng")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("DỪNG BỞI NGƯỜI DÙNG", "Ứng dụng bị dừng bởi Ctrl+C", "WARNING")
+
     except Exception as e:
         print(f"LOI: {e}")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_error(e, "Main application error")
+
         if "CHUA CAU HINH PHONE_NUMBER" in str(e):
             print()
             print("HUONG DAN CAU HINH SO DIEN THOAI:")
-            print("1. Mo file .env")
+            print("1. Mo file config.json")
             print("2. Thay '+84xxxxxxxxx' bang so dien thoai that")
             print("3. Vi du: +84987654321")
             print("4. Phai co ma quoc gia (+84 cho Viet Nam)")
@@ -178,10 +203,23 @@ async def main():
             import traceback
             traceback.print_exc()
     finally:
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("ĐÓNG ỨNG DỤNG", "Đang đóng kết nối và dọn dẹp")
         await scanner.close()
 
 if __name__ == "__main__":
     import config
+
+    # Setup detailed logging nếu có
+    if DETAILED_LOGGING_AVAILABLE:
+        try:
+            from logger import setup_detailed_logging
+            logging_config = config.CONFIG.get('logging', {})
+            if logging_config.get('enabled', True):
+                setup_detailed_logging(logging_config)
+                log_step("KHỞI TẠO HỆ THỐNG", "Đã thiết lập logging chi tiết")
+        except Exception as e:
+            print(f"Warning: Không thể setup detailed logging: {e}")
 
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
