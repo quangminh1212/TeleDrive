@@ -53,50 +53,63 @@ class PrivateChannelScanner(TelegramFileScanner):
     
     async def scan_private_channel_interactive(self):
         """Quét private channel với giao diện tương tác"""
-        print("🔐 PRIVATE CHANNEL SCANNER")
-        print("=" * 50)
-        
+        print("\n🔧 Đang khởi tạo kết nối Telegram...")
         await self.initialize()
-        
+        print("✅ Kết nối Telegram đã sẵn sàng")
+
         print("\n📋 Chọn cách truy cập private channel:")
-        print("1. Tôi đã là thành viên (nhập username hoặc link)")
-        print("2. Join từ invite link")
-        
+        print("   1. Tôi đã là thành viên (nhập username hoặc link)")
+        print("   2. Join từ invite link")
+
         choice = input("\n👉 Lựa chọn (1/2): ").strip()
+        print(f"📝 Bạn đã chọn: {choice}")
         
         if choice == "2":
+            print("\n🔗 Chế độ: Join từ invite link")
             invite_link = input("👉 Nhập invite link (https://t.me/joinchat/xxx hoặc https://t.me/+xxx): ").strip()
             if not invite_link:
                 print("❌ Link không hợp lệ!")
                 return
-                
+
+            print(f"🔗 Đang xử lý link: {invite_link}")
             success = await self.join_private_channel(invite_link)
             if not success:
+                print("❌ Không thể join channel")
                 return
-                
+
+            print("🔍 Đang lấy thông tin channel sau khi join...")
             # Sau khi join, lấy entity
             entity = await self.get_channel_entity(invite_link)
-            
+
         else:
+            print("\n👤 Chế độ: Đã là thành viên")
             channel_input = input("👉 Nhập username hoặc link channel: ").strip()
             if not channel_input:
                 print("❌ Vui lòng nhập thông tin channel!")
                 return
-                
+
+            print(f"🔍 Đang tìm channel: {channel_input}")
             entity = await self.get_channel_entity(channel_input)
         
         if not entity:
+            print("❌ Không thể lấy thông tin channel")
             return
-            
+
+        print("✅ Đã lấy thông tin channel thành công")
+
         # Kiểm tra quyền truy cập chi tiết
+        print("\n🔐 Đang kiểm tra quyền truy cập...")
         await self.check_channel_permissions(entity)
-        
+
         # Quét channel
+        print("\n🔍 Bắt đầu quét channel...")
         await self.scan_channel_by_entity(entity)
-        
+
         if self.files_data:
+            print(f"\n💾 Đang lưu kết quả ({len(self.files_data)} file)...")
             await self.save_results()
-            print(f"\n🎉 Hoàn thành! Đã tìm thấy {len(self.files_data)} file")
+            print(f"🎉 Hoàn thành! Đã tìm thấy và lưu {len(self.files_data)} file")
+            print("📁 Kết quả được lưu trong thư mục 'output/'")
         else:
             print("\n⚠️ Không tìm thấy file nào trong channel này")
     
@@ -168,17 +181,23 @@ class PrivateChannelScanner(TelegramFileScanner):
 
 async def main():
     """Main function cho private channel scanner"""
+    print("🔐 PRIVATE CHANNEL SCANNER")
+    print("=" * 50)
+
     if DETAILED_LOGGING_AVAILABLE:
         log_step("KHỞI ĐỘNG ỨNG DỤNG", "Bắt đầu Private Channel Scanner")
 
+    print("🔧 Đang khởi tạo scanner...")
     scanner = PrivateChannelScanner()
 
     try:
+        print("✅ Scanner đã sẵn sàng")
         if DETAILED_LOGGING_AVAILABLE:
             log_step("BẮT ĐẦU QUÉT", "Khởi động quá trình quét interactive")
 
         await scanner.scan_private_channel_interactive()
 
+        print("\n🎉 Quá trình quét hoàn thành!")
         if DETAILED_LOGGING_AVAILABLE:
             log_step("HOÀN THÀNH", "Quá trình quét đã hoàn thành thành công")
 
@@ -188,29 +207,41 @@ async def main():
             log_step("DỪNG BỞI NGƯỜI DÙNG", "Ứng dụng bị dừng bởi Ctrl+C", "WARNING")
 
     except Exception as e:
-        print(f"LOI: {e}")
+        print(f"\n❌ LỖI: {e}")
         if DETAILED_LOGGING_AVAILABLE:
             log_error(e, "Main application error")
 
         if "CHUA CAU HINH PHONE_NUMBER" in str(e):
-            print()
-            print("HUONG DAN CAU HINH SO DIEN THOAI:")
-            print("1. Mo file config.json")
-            print("2. Thay '+84xxxxxxxxx' bang so dien thoai that")
-            print("3. Vi du: +84987654321")
-            print("4. Phai co ma quoc gia (+84 cho Viet Nam)")
+            print("\n📋 HƯỚNG DẪN CẤU HÌNH SỐ ĐIỆN THOẠI:")
+            print("   1. Mở file config.json")
+            print("   2. Thay '+84xxxxxxxxx' bằng số điện thoại thật")
+            print("   3. Ví dụ: +84987654321")
+            print("   4. Phải có mã quốc gia (+84 cho Việt Nam)")
         else:
+            print("\n📊 Chi tiết lỗi:")
             import traceback
             traceback.print_exc()
     finally:
+        print("\n🔧 Đang đóng kết nối...")
         if DETAILED_LOGGING_AVAILABLE:
             log_step("ĐÓNG ỨNG DỤNG", "Đang đóng kết nối và dọn dẹp")
         await scanner.close()
+        print("✅ Đã đóng kết nối thành công")
 
 if __name__ == "__main__":
-    import config
+    print("🔧 Đang khởi tạo hệ thống...")
+
+    # Load config
+    print("📋 Đang tải cấu hình...")
+    try:
+        import config
+        print("✅ Đã tải cấu hình thành công")
+    except Exception as e:
+        print(f"❌ Lỗi tải cấu hình: {e}")
+        sys.exit(1)
 
     # Setup detailed logging nếu có
+    print("📊 Đang thiết lập hệ thống logging...")
     if DETAILED_LOGGING_AVAILABLE:
         try:
             from logger import setup_detailed_logging
@@ -218,10 +249,22 @@ if __name__ == "__main__":
             if logging_config.get('enabled', True):
                 setup_detailed_logging(logging_config)
                 log_step("KHỞI TẠO HỆ THỐNG", "Đã thiết lập logging chi tiết")
+                print("✅ Hệ thống logging chi tiết đã sẵn sàng")
+            else:
+                print("⚠️ Logging bị tắt trong cấu hình")
         except Exception as e:
-            print(f"Warning: Không thể setup detailed logging: {e}")
+            print(f"⚠️ Không thể setup detailed logging: {e}")
+            print("   (Ứng dụng sẽ chạy với logging cơ bản)")
+    else:
+        print("⚠️ Module logging chi tiết không khả dụng")
 
+    # Setup Windows event loop
+    print("🔧 Đang cấu hình event loop...")
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        print("✅ Đã cấu hình Windows ProactorEventLoopPolicy")
+
+    print("🚀 Khởi động ứng dụng chính...")
+    print("=" * 60)
 
     asyncio.run(main())
