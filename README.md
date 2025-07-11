@@ -1,221 +1,43 @@
 # Telegram File Scanner
 
-Phần mềm quét và lấy thông tin tất cả các file trong kênh Telegram, bao gồm tên file và link download.
+Quet va lay thong tin tat ca file trong private channel Telegram.
 
-## Tính năng
+## Cai dat
 
-- ✅ Quét tất cả file trong kênh Telegram (public/private)
-- ✅ Hỗ trợ nhiều loại file: documents, photos, videos, audio, voice, stickers, animations
-- ✅ Lấy thông tin chi tiết: tên file, kích thước, loại file, ngày tải lên
-- ✅ Tạo link download cho từng file
-- ✅ Export kết quả ra CSV, Excel, JSON
-- ✅ Progress bar theo dõi tiến trình
-- ✅ Thống kê chi tiết sau khi quét
+1. **Chay setup**: Nhap doi `setup.bat`
+2. **Cau hinh API**: Chinh sua file `.env`
+   - Lay API tu: https://my.telegram.org/apps
+   - Dien API_ID, API_HASH, so dien thoai
+3. **Chay scanner**: Nhap doi `run.bat`
 
-## 📁 Cấu trúc file
+## Su dung
 
-**🔧 Batch Files (Windows):**
-- **`start.bat`** - Menu chính, chọn chức năng
-- **`setup.bat`** - Cài đặt tự động
-- **`run.bat`** - Quét public channel
-- **`private.bat`** - Quét private channel
-- **`demo.bat`** - Demo và hướng dẫn
+- **Private channel**: `https://t.me/joinchat/xxxxx` hoac `https://t.me/+xxxxx`
+- **Neu da join**: `@channelname`
+- **Ket qua**: Luu trong thu muc `output/`
 
-**🐍 Python Scripts:**
-- **`scanner.py`** - Engine chính
-- **`private.py`** - Chuyên dụng private channel
-- **`demo.py`** - Demo và troubleshooting
-- **`run.py`** - Script chạy đơn giản
+## File structure
 
-**⚙️ Cấu hình:**
-- **`config.py`** - Cấu hình chi tiết
-- **`.env.example`** - Template API credentials
-- **`requirements.txt`** - Dependencies
-
-## 🚀 Cài đặt & Sử dụng
-
-### ⚡ Cách nhanh nhất (Windows):
-1. **Nhấp đúp vào `start.bat`** - Menu chính
-2. **Chọn "1" để Setup** - Cài đặt tự động
-3. **Chỉnh sửa file `.env`** với API credentials
-4. **Chạy scanner** từ menu
-
-### 🔧 Cài đặt thủ công:
-
-#### 1. Chuẩn bị
-```bash
-git clone <repository-url>
-cd TeleDrive
+```
+TeleDrive/
+├── setup.bat      # Cai dat
+├── run.bat        # Chay scanner  
+├── main.py        # Script chinh
+├── engine.py      # Engine
+├── config.py      # Cau hinh
+├── .env           # API credentials
+└── output/        # Ket qua
 ```
 
-#### 2. Setup tự động
-```bash
-setup.bat          # Windows
-# hoặc
-python -m pip install -r requirements.txt
-```
+## Loi thuong gap
 
-#### 3. Cấu hình API
-1. Truy cập https://my.telegram.org/apps
-2. Tạo app mới → lấy `API_ID` và `API_HASH`
-3. Copy `.env.example` → `.env`
-4. Điền thông tin:
-```
-TELEGRAM_API_ID=your_api_id_here
-TELEGRAM_API_HASH=your_api_hash_here
-TELEGRAM_PHONE=+84xxxxxxxxx
-```
+- **"invalid literal for int()"**: Chua cau hinh .env
+- **"Could not find entity"**: Sai ten channel hoac chua join
+- **"Python not found"**: Chua cai Python
 
-## 🎯 Sử dụng
+## Output format
 
-### 🖱️ Giao diện Windows (Khuyến nghị):
-```bash
-start.bat           # Menu chính
-setup.bat          # Cài đặt
-run.bat            # Public channel
-private.bat        # Private channel
-demo.bat           # Demo & help
-```
-
-### 💻 Command Line:
-```bash
-python run.py      # Public channel
-python private.py  # Private channel
-python demo.py     # Demo & help
-```
-
-### Nhập thông tin kênh
-
-#### Public Channel:
-- Username: `@channelname`
-- Link: `https://t.me/channelname`
-- Chỉ tên: `channelname`
-
-#### Private Channel:
-- Invite link: `https://t.me/joinchat/AAAxxxxxxxxxxxxx`
-- Invite link mới: `https://t.me/+xxxxxxxxxxxxx`
-- Hoặc username nếu đã là thành viên: `@privatechannelname`
-
-**Lưu ý cho Private Channel:**
-- Bạn phải là thành viên của kênh private
-- Hoặc có invite link hợp lệ để join
-- Script sẽ tự động join nếu bạn cung cấp invite link
-
-### Kết quả
-Sau khi quét xong, kết quả sẽ được lưu trong thư mục `output/` với format:
-- `YYYYMMDD_HHMMSS_telegram_files.csv` - Dữ liệu đầy đủ dạng bảng
-- `YYYYMMDD_HHMMSS_telegram_files.xlsx` - Excel với format đẹp
-- `YYYYMMDD_HHMMSS_telegram_files.json` - JSON chi tiết với cấu trúc rõ ràng
-- `YYYYMMDD_HHMMSS_simple_files.json` - JSON đơn giản chỉ tên file và link
-
-## Cấu hình nâng cao
-
-Chỉnh sửa file `config.py` để tùy chỉnh:
-
-```python
-# Giới hạn số tin nhắn quét (None = tất cả)
-MAX_MESSAGES = 1000
-
-# Loại file cần quét
-SCAN_DOCUMENTS = True
-SCAN_PHOTOS = True
-SCAN_VIDEOS = True
-SCAN_AUDIO = True
-SCAN_VOICE = True
-SCAN_STICKERS = False
-SCAN_ANIMATIONS = True
-
-# Tạo link download
-GENERATE_DOWNLOAD_LINKS = True
-```
-
-## Cấu trúc dữ liệu output
-
-### CSV/Excel Format:
-| Trường | Mô tả |
-|--------|-------|
-| message_id | ID tin nhắn chứa file |
-| date | Ngày tải lên |
-| file_type | Loại file (document, photo, video, audio, voice, sticker, animation) |
-| file_name | Tên file |
-| file_size | Kích thước file (bytes) |
-| mime_type | MIME type |
-| duration | Thời lượng (cho video/audio) |
-| width/height | Kích thước (cho ảnh/video) |
-| download_link | Link để download (hỗ trợ cả public và private channel) |
-| message_text | Nội dung tin nhắn |
-| sender_id | ID người gửi |
-
-### JSON Format (Chi tiết):
-```json
-{
-  "scan_info": {
-    "timestamp": "20241211_143022",
-    "total_files": 150,
-    "scan_date": "2024-12-11T14:30:22"
-  },
-  "files": [
-    {
-      "file_name": "document.pdf",
-      "download_link": "https://t.me/c/1234567890/123",
-      "file_info": {
-        "type": "document",
-        "size": 1048576,
-        "size_formatted": "1.0 MB",
-        "mime_type": "application/pdf",
-        "upload_date": "2024-12-11T10:30:00"
-      },
-      "message_info": {
-        "message_id": 123,
-        "message_text": "Tài liệu quan trọng",
-        "sender_id": 987654321
-      }
-    }
-  ]
-}
-```
-
-### JSON Format (Đơn giản):
-```json
-[
-  {
-    "file_name": "document.pdf",
-    "download_link": "https://t.me/c/1234567890/123",
-    "file_size": "1.0 MB",
-    "file_type": "document"
-  }
-]
-```
-
-## Lưu ý
-
-- Lần đầu chạy sẽ cần xác thực số điện thoại qua OTP
-- **Đối với kênh private**:
-  - Tài khoản phải là thành viên của kênh HOẶC
-  - Có invite link hợp lệ để join tự động
-  - Sử dụng `private_channel_scanner.py` để có trải nghiệm tốt hơn
-- **Link download**:
-  - Public channel: `https://t.me/channelname/messageid`
-  - Private channel: `https://t.me/c/channelid/messageid`
-- Quá trình quét có thể mất thời gian tùy thuộc vào số lượng tin nhắn
-- Chương trình tự động xử lý rate limiting của Telegram API
-- File JSON được tối ưu để dễ đọc tên file và link download
-
-## Troubleshooting
-
-### Lỗi "Could not find the input entity"
-- Kiểm tra tên kênh có đúng không
-- Đảm bảo tài khoản có quyền truy cập kênh
-- Thử với link đầy đủ thay vì username
-
-### Lỗi "API credentials"
-- Kiểm tra file `.env` có đúng format không
-- Đảm bảo API_ID và API_HASH từ my.telegram.org là chính xác
-
-### Lỗi "Phone number"
-- Số điện thoại phải có mã quốc gia (+84 cho VN)
-- Số điện thoại phải đã đăng ký Telegram
-
-## License
-
-MIT License
+- CSV: Du lieu bang
+- Excel: Format dep
+- JSON: Du lieu chi tiet
+- Simple JSON: Chi ten file + link

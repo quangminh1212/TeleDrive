@@ -5,15 +5,13 @@ Hỗ trợ cả public và private channel
 """
 
 import asyncio
-import os
 import json
-import csv
 import pandas as pd
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import Dict, Optional
 from pathlib import Path
 
-from telethon import TelegramClient, events
+from telethon import TelegramClient
 from telethon.tl.types import (
     MessageMediaDocument, MessageMediaPhoto, 
     DocumentAttributeFilename, DocumentAttributeVideo,
@@ -34,17 +32,27 @@ class TelegramFileScanner:
         
     async def initialize(self):
         """Khởi tạo Telegram client"""
-        if not all([config.API_ID, config.API_HASH, config.PHONE_NUMBER]):
-            raise ValueError("Vui lòng cấu hình API credentials trong file .env")
-            
-        self.client = TelegramClient(
-            config.SESSION_NAME, 
-            config.API_ID, 
-            config.API_HASH
-        )
-        
-        await self.client.start(phone=config.PHONE_NUMBER)
-        print("✅ Đã kết nối thành công với Telegram!")
+        # Kiểm tra API credentials
+        if not config.API_ID or config.API_ID == 'your_api_id_here':
+            raise ValueError("CHUA CAU HINH API_ID trong file .env")
+        if not config.API_HASH or config.API_HASH == 'your_api_hash_here':
+            raise ValueError("CHUA CAU HINH API_HASH trong file .env")
+        if not config.PHONE_NUMBER or config.PHONE_NUMBER == '+84xxxxxxxxx':
+            raise ValueError("CHUA CAU HINH PHONE_NUMBER trong file .env")
+
+        try:
+            self.client = TelegramClient(
+                config.SESSION_NAME,
+                int(config.API_ID),
+                config.API_HASH
+            )
+
+            await self.client.start(phone=config.PHONE_NUMBER)
+            print("Da ket noi thanh cong voi Telegram!")
+        except ValueError as e:
+            if "invalid literal for int()" in str(e):
+                raise ValueError("API_ID phai la so nguyen, khong phai text")
+            raise e
         
     async def get_channel_entity(self, channel_input: str):
         """Lấy entity của kênh từ username hoặc invite link"""

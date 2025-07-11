@@ -6,7 +6,7 @@ Chuyên dụng cho việc quét file trong private channel/group Telegram
 
 import asyncio
 import sys
-from scanner import TelegramFileScanner
+from engine import TelegramFileScanner
 
 class PrivateChannelScanner(TelegramFileScanner):
     """Scanner chuyên dụng cho private channel"""
@@ -166,9 +166,18 @@ async def main():
     except KeyboardInterrupt:
         print("\n⏹️ Đã dừng bởi người dùng")
     except Exception as e:
-        print(f"❌ Lỗi: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"LOI: {e}")
+        if "CHUA CAU HINH" in str(e):
+            print()
+            print("HUONG DAN CAU HINH:")
+            print("1. Mo file .env")
+            print("2. Thay 'your_api_id_here' bang API_ID that")
+            print("3. Thay 'your_api_hash_here' bang API_HASH that")
+            print("4. Thay '+84xxxxxxxxx' bang so dien thoai that")
+            print("5. Lay API tu: https://my.telegram.org/apps")
+        else:
+            import traceback
+            traceback.print_exc()
     finally:
         await scanner.close()
 
