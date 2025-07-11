@@ -6,13 +6,40 @@ Quet va lay thong tin tat ca file trong private channel Telegram.
 
 1. **Chay setup**: Nhap doi `setup.bat`
 2. **Cau hinh so dien thoai**: Nhap doi `config_phone.bat`
-3. **Chay scanner**: Nhap doi `run.bat`
+3. **Cau hinh chi tiet**: Nhap doi `config.bat` (tuy chon)
+4. **Chay scanner**: Nhap doi `run.bat`
 
 ## Cai dat thu cong
 
 1. **Chay setup**: Nhap doi `setup.bat`
 2. **Chinh sua .env**: Thay `+84xxxxxxxxx` bang so dien thoai that
-3. **Chay scanner**: Nhap doi `run.bat`
+3. **Chinh sua config.json**: Tuy chinh cau hinh (tuy chon)
+4. **Chay scanner**: Nhap doi `run.bat`
+
+## Quan ly cau hinh
+
+### File .env (API Credentials)
+```
+TELEGRAM_API_ID=21272067
+TELEGRAM_API_HASH=b7690dc86952dbc9b16717b101164af3
+TELEGRAM_PHONE=+84936374950
+```
+
+### File config.json (Cau hinh chi tiet)
+- **Telegram**: API credentials, session name
+- **Output**: Thu muc, format file (CSV, JSON, Excel)
+- **Scanning**: Gioi han message, batch size, loai file
+- **Download**: Tao link download, auto download
+- **Display**: Hien thi progress, ngon ngu, format ngay
+- **Filters**: Loc theo kich thuoc, phan mo rong, ngay thang
+
+### Config Manager
+Chay `config.bat` de quan ly cau hinh qua giao dien:
+- Xem cau hinh hien tai
+- Thay doi cau hinh Telegram API
+- Tuy chinh output format
+- Cau hinh scanning options
+- Dat filter cho file
 
 ## Su dung
 
@@ -24,13 +51,16 @@ Quet va lay thong tin tat ca file trong private channel Telegram.
 
 ```
 TeleDrive/
-├── setup.bat         # Cai dat
+├── setup.bat         # Cai dat dependencies
 ├── config_phone.bat  # Cau hinh so dien thoai
+├── config.bat        # Quan ly cau hinh chi tiet
 ├── run.bat           # Chay scanner
 ├── main.py           # Script chinh
 ├── engine.py         # Engine
-├── config.py         # Cau hinh
+├── config.py         # Load cau hinh
+├── config_manager.py # Quan ly cau hinh
 ├── .env              # API credentials
+├── config.json       # Cau hinh chi tiet
 └── output/           # Ket qua
 ```
 

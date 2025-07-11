@@ -1,0 +1,58 @@
+{
+  "telegram": {
+    "api_id": "",
+    "api_hash": "",
+    "phone_number": "",
+    "session_name": "telegram_scanner_session"
+  },
+  "output": {
+    "directory": "output",
+    "formats": {
+      "csv": {
+        "enabled": true,
+        "filename": "telegram_files.csv"
+      },
+      "json": {
+        "enabled": true,
+        "filename": "telegram_files.json"
+      },
+      "excel": {
+        "enabled": true,
+        "filename": "telegram_files.xlsx"
+      }
+    }
+  },
+  "scanning": {
+    "max_messages": null,
+    "batch_size": 100,
+    "file_types": {
+      "documents": true,
+      "photos": true,
+      "videos": true,
+      "audio": true,
+      "voice": true,
+      "stickers": true,
+      "animations": true
+    }
+  },
+  "download": {
+    "generate_links": true,
+    "include_preview": false,
+    "auto_download": false,
+    "download_directory": "downloads"
+  },
+  "display": {
+    "show_progress": true,
+    "show_file_details": true,
+    "language": "vi",
+    "date_format": "DD/MM/YYYY HH:mm:ss"
+  },
+  "filters": {
+    "min_file_size": 0,
+    "max_file_size": null,
+    "file_extensions": [],
+    "exclude_extensions": [],
+    "date_from": null,
+    "date_to": null
+  }
+}
