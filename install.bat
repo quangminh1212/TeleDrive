@@ -45,6 +45,8 @@ echo ========================================
 echo.
 echo Next steps:
 echo 1. Edit .env file with your Telegram API credentials
-echo 2. Run: python run.py
+echo 2. For public channels: python run.py
+echo 3. For private channels: python private_channel_scanner.py
+echo 4. For demo/help: python demo_private.py
 echo.
 pause

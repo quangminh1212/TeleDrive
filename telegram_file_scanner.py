@@ -49,15 +49,42 @@ class TelegramFileScanner:
     async def get_channel_entity(self, channel_input: str):
         """Lấy entity của kênh từ username hoặc invite link"""
         try:
+            # Xử lý invite link cho private channel
+            if 'joinchat' in channel_input or '+' in channel_input:
+                print("🔐 Phát hiện private channel invite link")
+                entity = await self.client.get_entity(channel_input)
+                return entity
+
+            # Xử lý username hoặc public link
             if channel_input.startswith('https://t.me/'):
                 channel_input = channel_input.replace('https://t.me/', '')
+                # Xử lý private channel link với +
+                if channel_input.startswith('+'):
+                    entity = await self.client.get_entity(channel_input)
+                    return entity
+
             if channel_input.startswith('@'):
                 channel_input = channel_input[1:]
-                
+
             entity = await self.client.get_entity(channel_input)
+
+            # Kiểm tra quyền truy cập
+            try:
+                # Thử lấy thông tin cơ bản để kiểm tra quyền
+                await self.client.get_messages(entity, limit=1)
+                print(f"✅ Có quyền truy cập kênh: {getattr(entity, 'title', 'Unknown')}")
+            except Exception as access_error:
+                print(f"⚠️ Cảnh báo quyền truy cập: {access_error}")
+                print("💡 Đảm bảo bạn là thành viên của kênh private này")
+
             return entity
+
         except Exception as e:
             print(f"❌ Không thể truy cập kênh '{channel_input}': {e}")
+            print("💡 Gợi ý:")
+            print("   - Đối với public channel: @channelname hoặc https://t.me/channelname")
+            print("   - Đối với private channel: https://t.me/joinchat/xxxxx hoặc https://t.me/+xxxxx")
+            print("   - Đảm bảo bạn đã join kênh private trước")
             return None
             
     def extract_file_info(self, message) -> Optional[Dict]:
@@ -124,7 +151,20 @@ class TelegramFileScanner:
                 
         # Tạo download link nếu được yêu cầu
         if config.GENERATE_DOWNLOAD_LINKS and file_info['file_type']:
-            file_info['download_link'] = f"tg://resolve?domain={message.chat.username}&post={message.id}" if hasattr(message.chat, 'username') else f"message_id_{message.id}"
+            # Tạo link download phù hợp cho cả public và private channel
+            if hasattr(message.chat, 'username') and message.chat.username:
+                # Public channel
+                file_info['download_link'] = f"https://t.me/{message.chat.username}/{message.id}"
+            else:
+                # Private channel hoặc group - sử dụng chat_id
+                chat_id = message.chat.id
+                if str(chat_id).startswith('-100'):
+                    # Supergroup/Channel
+                    clean_id = str(chat_id)[4:]  # Remove -100 prefix
+                    file_info['download_link'] = f"https://t.me/c/{clean_id}/{message.id}"
+                else:
+                    # Fallback
+                    file_info['download_link'] = f"tg://openmessage?chat_id={chat_id}&message_id={message.id}"
             
         return file_info if file_info['file_type'] else None
         
@@ -194,26 +234,82 @@ class TelegramFileScanner:
         if not self.files_data:
             print("⚠️ Không có dữ liệu để lưu")
             return
-            
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         # Lưu CSV
         csv_path = self.output_dir / f"{timestamp}_{config.CSV_FILENAME}"
         df = pd.DataFrame(self.files_data)
         df.to_csv(csv_path, index=False, encoding='utf-8-sig')
         print(f"💾 Đã lưu CSV: {csv_path}")
-        
+
         # Lưu Excel
         excel_path = self.output_dir / f"{timestamp}_{config.EXCEL_FILENAME}"
         df.to_excel(excel_path, index=False, engine='openpyxl')
         print(f"💾 Đã lưu Excel: {excel_path}")
-        
+
+        # Tạo JSON với format tối ưu cho file và link
+        json_data = {
+            "scan_info": {
+                "timestamp": timestamp,
+                "total_files": len(self.files_data),
+                "scan_date": datetime.now().isoformat()
+            },
+            "files": []
+        }
+
+        # Format lại data cho JSON với focus vào tên file và link
+        for file_data in self.files_data:
+            json_file = {
+                "file_name": file_data['file_name'],
+                "download_link": file_data['download_link'],
+                "file_info": {
+                    "type": file_data['file_type'],
+                    "size": file_data['file_size'],
+                    "size_formatted": self.format_size(file_data['file_size']) if file_data['file_size'] else "N/A",
+                    "mime_type": file_data['mime_type'],
+                    "upload_date": file_data['date']
+                },
+                "message_info": {
+                    "message_id": file_data['message_id'],
+                    "message_text": file_data['message_text'],
+                    "sender_id": file_data['sender_id']
+                }
+            }
+
+            # Thêm thông tin media nếu có
+            if file_data['duration']:
+                json_file['file_info']['duration'] = file_data['duration']
+            if file_data['width'] and file_data['height']:
+                json_file['file_info']['dimensions'] = {
+                    "width": file_data['width'],
+                    "height": file_data['height']
+                }
+
+            json_data["files"].append(json_file)
+
         # Lưu JSON
         json_path = self.output_dir / f"{timestamp}_{config.JSON_FILENAME}"
         async with aiofiles.open(json_path, 'w', encoding='utf-8') as f:
-            await f.write(json.dumps(self.files_data, ensure_ascii=False, indent=2))
+            await f.write(json.dumps(json_data, ensure_ascii=False, indent=2))
         print(f"💾 Đã lưu JSON: {json_path}")
-        
+
+        # Lưu JSON đơn giản chỉ tên file và link
+        simple_json_data = [
+            {
+                "file_name": file_data['file_name'],
+                "download_link": file_data['download_link'],
+                "file_size": self.format_size(file_data['file_size']) if file_data['file_size'] else "N/A",
+                "file_type": file_data['file_type']
+            }
+            for file_data in self.files_data
+        ]
+
+        simple_json_path = self.output_dir / f"{timestamp}_simple_files.json"
+        async with aiofiles.open(simple_json_path, 'w', encoding='utf-8') as f:
+            await f.write(json.dumps(simple_json_data, ensure_ascii=False, indent=2))
+        print(f"💾 Đã lưu JSON đơn giản: {simple_json_path}")
+
         # Thống kê
         self.print_statistics()
         

@@ -43,21 +43,40 @@ TELEGRAM_PHONE=+84xxxxxxxxx
 ## Sử dụng
 
 ### Chạy chương trình
+
+#### Cho Public Channel:
 ```bash
-python telegram_file_scanner.py
+python run.py
+```
+
+#### Cho Private Channel:
+```bash
+python private_channel_scanner.py
 ```
 
 ### Nhập thông tin kênh
-Khi được yêu cầu, nhập một trong các định dạng sau:
+
+#### Public Channel:
 - Username: `@channelname`
 - Link: `https://t.me/channelname`
 - Chỉ tên: `channelname`
 
+#### Private Channel:
+- Invite link: `https://t.me/joinchat/AAAxxxxxxxxxxxxx`
+- Invite link mới: `https://t.me/+xxxxxxxxxxxxx`
+- Hoặc username nếu đã là thành viên: `@privatechannelname`
+
+**Lưu ý cho Private Channel:**
+- Bạn phải là thành viên của kênh private
+- Hoặc có invite link hợp lệ để join
+- Script sẽ tự động join nếu bạn cung cấp invite link
+
 ### Kết quả
 Sau khi quét xong, kết quả sẽ được lưu trong thư mục `output/` với format:
-- `YYYYMMDD_HHMMSS_telegram_files.csv`
-- `YYYYMMDD_HHMMSS_telegram_files.xlsx`
-- `YYYYMMDD_HHMMSS_telegram_files.json`
+- `YYYYMMDD_HHMMSS_telegram_files.csv` - Dữ liệu đầy đủ dạng bảng
+- `YYYYMMDD_HHMMSS_telegram_files.xlsx` - Excel với format đẹp
+- `YYYYMMDD_HHMMSS_telegram_files.json` - JSON chi tiết với cấu trúc rõ ràng
+- `YYYYMMDD_HHMMSS_simple_files.json` - JSON đơn giản chỉ tên file và link
 
 ## Cấu hình nâng cao
 
@@ -82,8 +101,7 @@ GENERATE_DOWNLOAD_LINKS = True
 
 ## Cấu trúc dữ liệu output
 
-Mỗi file sẽ có các thông tin sau:
-
+### CSV/Excel Format:
 | Trường | Mô tả |
 |--------|-------|
 | message_id | ID tin nhắn chứa file |
@@ -94,16 +112,64 @@ Mỗi file sẽ có các thông tin sau:
 | mime_type | MIME type |
 | duration | Thời lượng (cho video/audio) |
 | width/height | Kích thước (cho ảnh/video) |
-| download_link | Link để download |
+| download_link | Link để download (hỗ trợ cả public và private channel) |
 | message_text | Nội dung tin nhắn |
 | sender_id | ID người gửi |
+
+### JSON Format (Chi tiết):
+```json
+{
+  "scan_info": {
+    "timestamp": "20241211_143022",
+    "total_files": 150,
+    "scan_date": "2024-12-11T14:30:22"
+  },
+  "files": [
+    {
+      "file_name": "document.pdf",
+      "download_link": "https://t.me/c/1234567890/123",
+      "file_info": {
+        "type": "document",
+        "size": 1048576,
+        "size_formatted": "1.0 MB",
+        "mime_type": "application/pdf",
+        "upload_date": "2024-12-11T10:30:00"
+      },
+      "message_info": {
+        "message_id": 123,
+        "message_text": "Tài liệu quan trọng",
+        "sender_id": 987654321
+      }
+    }
+  ]
+}
+```
+
+### JSON Format (Đơn giản):
+```json
+[
+  {
+    "file_name": "document.pdf",
+    "download_link": "https://t.me/c/1234567890/123",
+    "file_size": "1.0 MB",
+    "file_type": "document"
+  }
+]
+```
 
 ## Lưu ý
 
 - Lần đầu chạy sẽ cần xác thực số điện thoại qua OTP
-- Đối với kênh private, tài khoản phải là thành viên của kênh
+- **Đối với kênh private**:
+  - Tài khoản phải là thành viên của kênh HOẶC
+  - Có invite link hợp lệ để join tự động
+  - Sử dụng `private_channel_scanner.py` để có trải nghiệm tốt hơn
+- **Link download**:
+  - Public channel: `https://t.me/channelname/messageid`
+  - Private channel: `https://t.me/c/channelid/messageid`
 - Quá trình quét có thể mất thời gian tùy thuộc vào số lượng tin nhắn
 - Chương trình tự động xử lý rate limiting của Telegram API
+- File JSON được tối ưu để dễ đọc tên file và link download
 
 ## Troubleshooting
 
