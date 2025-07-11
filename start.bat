@@ -1,28 +1,27 @@
 @echo off
-chcp 65001 >nul
 title Telegram File Scanner
 color 0F
 
 :MAIN_MENU
 cls
 echo.
-echo ╔══════════════════════════════════════════════════════════════╗
-echo ║                    TELEGRAM FILE SCANNER                    ║
-echo ║                  Quét file trong kênh Telegram              ║
-echo ╚══════════════════════════════════════════════════════════════╝
+echo ================================================================
+echo                    TELEGRAM FILE SCANNER
+echo                  Quet file trong kenh Telegram
+echo ================================================================
 echo.
-echo 📋 CHỌN CHỨC NĂNG:
+echo CHON CHUC NANG:
 echo.
-echo    1️⃣  Setup & Cài đặt
-echo    2️⃣  Quét Public Channel
-echo    3️⃣  Quét Private Channel  
-echo    4️⃣  Demo & Hướng dẫn
-echo    5️⃣  Mở thư mục kết quả
-echo    0️⃣  Thoát
+echo    1. Setup va Cai dat
+echo    2. Quet Public Channel
+echo    3. Quet Private Channel
+echo    4. Demo va Huong dan
+echo    5. Mo thu muc ket qua
+echo    0. Thoat
 echo.
-echo ╔══════════════════════════════════════════════════════════════╗
+echo ================================================================
 
-set /p choice="👉 Nhập lựa chọn (0-5): "
+set /p choice="Nhap lua chon (0-5): "
 
 if "%choice%"=="1" goto SETUP
 if "%choice%"=="2" goto PUBLIC
@@ -31,63 +30,63 @@ if "%choice%"=="4" goto DEMO
 if "%choice%"=="5" goto OPEN_OUTPUT
 if "%choice%"=="0" goto EXIT
 
-echo ❌ Lựa chọn không hợp lệ!
+echo Lua chon khong hop le!
 timeout /t 2 >nul
 goto MAIN_MENU
 
 :SETUP
 echo.
-echo 🔧 Đang chạy setup...
+echo Dang chay setup...
 call setup.bat
 echo.
-echo 📋 Nhấn phím bất kỳ để quay lại menu...
+echo Nhan phim bat ky de quay lai menu...
 pause >nul
 goto MAIN_MENU
 
 :PUBLIC
 echo.
-echo 🌐 Đang khởi động Public Channel Scanner...
+echo Dang khoi dong Public Channel Scanner...
 call run.bat
 echo.
-echo 📋 Nhấn phím bất kỳ để quay lại menu...
+echo Nhan phim bat ky de quay lai menu...
 pause >nul
 goto MAIN_MENU
 
 :PRIVATE
 echo.
-echo 🔐 Đang khởi động Private Channel Scanner...
+echo Dang khoi dong Private Channel Scanner...
 call private.bat
 echo.
-echo 📋 Nhấn phím bất kỳ để quay lại menu...
+echo Nhan phim bat ky de quay lai menu...
 pause >nul
 goto MAIN_MENU
 
 :DEMO
 echo.
-echo 🎯 Đang khởi động Demo & Help...
+echo Dang khoi dong Demo va Help...
 call demo.bat
 echo.
-echo 📋 Nhấn phím bất kỳ để quay lại menu...
+echo Nhan phim bat ky de quay lai menu...
 pause >nul
 goto MAIN_MENU
 
 :OPEN_OUTPUT
 if exist output (
     echo.
-    echo 📁 Đang mở thư mục output...
+    echo Dang mo thu muc output...
     start "" "output"
     timeout /t 2 >nul
 ) else (
     echo.
-    echo ❌ Thư mục output chưa tồn tại!
-    echo 💡 Chạy scanner ít nhất 1 lần để tạo thư mục
+    echo Thu muc output chua ton tai!
+    echo Chay scanner it nhat 1 lan de tao thu muc
     timeout /t 3 >nul
 )
 goto MAIN_MENU
 
 :EXIT
 echo.
-echo 👋 Cảm ơn bạn đã sử dụng Telegram File Scanner!
+echo Cam on ban da su dung Telegram File Scanner!
 echo.
 timeout /t 2 >nul
 exit

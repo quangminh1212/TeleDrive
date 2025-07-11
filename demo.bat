@@ -1,40 +1,39 @@
 @echo off
-chcp 65001 >nul
 title Telegram File Scanner - Demo & Help
 color 0E
 
 echo.
-echo ╔══════════════════════════════════════════════════════════════╗
-echo ║               TELEGRAM FILE SCANNER - DEMO & HELP           ║
-echo ╚══════════════════════════════════════════════════════════════╝
+echo ================================================================
+echo               TELEGRAM FILE SCANNER - DEMO & HELP
+echo ================================================================
 echo.
 
-REM Kiểm tra file .env
+REM Kiem tra file .env
 if not exist .env (
-    echo ❌ CHƯA CẤU HÌNH!
-    echo 📝 Vui lòng chạy setup.bat trước
-    echo 💡 Hoặc tạo file .env với API credentials
+    echo CHUA CAU HINH!
+    echo Vui long chay setup.bat truoc
+    echo Hoac tao file .env voi API credentials
     echo.
     pause
     exit /b 1
 )
 
-REM Kiểm tra Python
+REM Kiem tra Python
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo ❌ KHÔNG TÌM THẤY PYTHON!
-    echo 📝 Vui lòng chạy setup.bat để cài đặt
+    echo KHONG TIM THAY PYTHON!
+    echo Vui long chay setup.bat de cai dat
     echo.
     pause
     exit /b 1
 )
 
-echo 🎯 DEMO & TROUBLESHOOTING GUIDE
-echo 📚 Hướng dẫn chi tiết và giải quyết lỗi
+echo DEMO va TROUBLESHOOTING GUIDE
+echo Huong dan chi tiet va giai quyet loi
 echo.
 
 python demo.py
 
 echo.
-echo 💡 Nhấn phím bất kỳ để thoát...
+echo Nhan phim bat ky de thoat...
 pause >nul
