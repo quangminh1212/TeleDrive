@@ -81,10 +81,19 @@ class TeleDriveApp {
             if (e.key === 'Enter') this.verifyCode();
         });
         document.getElementById('codeInput').addEventListener('input', (e) => {
+            // Only allow numbers
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+
             // Auto-submit when 5 digits entered
             if (e.target.value.length === 5) {
-                setTimeout(() => this.verifyCode(), 500);
+                setTimeout(() => this.verifyCode(), 300);
             }
+        });
+
+        // Phone input formatting
+        document.getElementById('phoneInput').addEventListener('input', (e) => {
+            // Only allow numbers
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
         });
         document.getElementById('backToPhone').addEventListener('click', () => this.showLoginStep('phoneStep'));
         document.getElementById('resendBtn').addEventListener('click', () => this.resendCode());
@@ -170,9 +179,17 @@ class TeleDriveApp {
 
                 document.getElementById('countrySelect').value = countryCode;
                 document.getElementById('phoneInput').value = phoneNumber;
+
+                // Focus on phone input if it's empty, otherwise focus on button
+                if (!phoneNumber) {
+                    document.getElementById('phoneInput').focus();
+                }
+            } else {
+                document.getElementById('phoneInput').focus();
             }
         } catch (error) {
             console.log('Could not prefill phone number');
+            document.getElementById('phoneInput').focus();
         }
     }
 
@@ -195,6 +212,13 @@ class TeleDriveApp {
 
         if (!phoneNumber) {
             this.showLoginError('Vui lòng nhập số điện thoại');
+            document.getElementById('phoneInput').focus();
+            return;
+        }
+
+        if (phoneNumber.length < 8 || phoneNumber.length > 15) {
+            this.showLoginError('Số điện thoại không hợp lệ (8-15 chữ số)');
+            document.getElementById('phoneInput').focus();
             return;
         }
 
@@ -238,6 +262,13 @@ class TeleDriveApp {
 
         if (!code || code.length !== 5) {
             this.showLoginError('Vui lòng nhập mã xác thực 5 số');
+            document.getElementById('codeInput').focus();
+            return;
+        }
+
+        if (!/^\d{5}$/.test(code)) {
+            this.showLoginError('Mã xác thực chỉ được chứa số');
+            document.getElementById('codeInput').focus();
             return;
         }
 

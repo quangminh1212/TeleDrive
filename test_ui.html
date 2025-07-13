@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive Login Test</title>
+    <link rel="stylesheet" href="ui/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .test-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 6000;
+        }
+        
+        .test-btn {
+            background: #0088cc;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .test-btn:hover {
+            background: #0077bb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Test Controls -->
+    <div class="test-controls">
+        <div>Login UI Test</div>
+        <button class="test-btn" onclick="showStep('phoneStep')">Phone</button>
+        <button class="test-btn" onclick="showStep('codeStep')">Code</button>
+        <button class="test-btn" onclick="showStep('twoFactorStep')">2FA</button>
+        <button class="test-btn" onclick="showStep('successStep')">Success</button>
+        <button class="test-btn" onclick="showError()">Error</button>
+        <button class="test-btn" onclick="hideLogin()">Hide</button>
+    </div>
+
+    <!-- Login Screen -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="ui/assets/logo.png" alt="TeleDrive" class="login-logo">
+                <h1 class="login-title">TeleDrive</h1>
+                <p class="login-subtitle">Telegram File Scanner</p>
+            </div>
+
+            <!-- Step 1: Phone Number Input -->
+            <div class="login-step" id="phoneStep">
+                <div class="step-content">
+                    <h2>Đăng nhập vào TeleDrive</h2>
+                    <p class="step-description">Vui lòng nhập số điện thoại của bạn để tiếp tục</p>
+                    
+                    <div class="phone-input-group">
+                        <select class="country-select" id="countrySelect">
+                            <option value="+84" data-country="VN">🇻🇳 Vietnam (+84)</option>
+                            <option value="+1" data-country="US">🇺🇸 United States (+1)</option>
+                            <option value="+86" data-country="CN">🇨🇳 China (+86)</option>
+                        </select>
+                        <input type="tel" class="phone-input" id="phoneInput" placeholder="936374950" maxlength="15" value="936374950">
+                    </div>
+                    
+                    <button class="login-btn" id="sendCodeBtn">
+                        <span class="btn-text">Gửi mã xác thực</span>
+                        <div class="btn-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </button>
+                    
+                    <div class="login-note">
+                        Chúng tôi sẽ gửi mã xác thực qua Telegram
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Verification Code Input -->
+            <div class="login-step" id="codeStep" style="display: none;">
+                <div class="step-content">
+                    <button class="back-btn" onclick="showStep('phoneStep')">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    
+                    <h2>Nhập mã xác thực</h2>
+                    <p class="step-description">
+                        Chúng tôi đã gửi mã xác thực đến số điện thoại<br>
+                        <strong>+84936374950</strong>
+                    </p>
+                    
+                    <div class="code-input-group">
+                        <input type="text" class="code-input" id="codeInput" placeholder="• • • • •" maxlength="5">
+                    </div>
+                    
+                    <button class="login-btn" id="verifyCodeBtn">
+                        <span class="btn-text">Xác thực</span>
+                        <div class="btn-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </button>
+                    
+                    <div class="resend-container">
+                        <span class="resend-text">Không nhận được mã?</span>
+                        <button class="resend-btn" id="resendBtn">
+                            <span id="resendText">Gửi lại sau <span id="countdown">45</span>s</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Two-Factor Authentication -->
+            <div class="login-step" id="twoFactorStep" style="display: none;">
+                <div class="step-content">
+                    <button class="back-btn" onclick="showStep('codeStep')">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    
+                    <h2>Xác thực hai bước</h2>
+                    <p class="step-description">
+                        Tài khoản của bạn được bảo vệ bằng mật khẩu hai bước.<br>
+                        Vui lòng nhập mật khẩu để tiếp tục.
+                    </p>
+                    
+                    <div class="password-input-group">
+                        <input type="password" class="password-input" id="passwordInput" placeholder="Mật khẩu hai bước">
+                        <button class="toggle-password" onclick="togglePassword()">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    
+                    <button class="login-btn" id="verify2FABtn">
+                        <span class="btn-text">Đăng nhập</span>
+                        <div class="btn-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </button>
+                    
+                    <div class="login-note">
+                        <a href="#" class="forgot-password">Quên mật khẩu?</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Success -->
+            <div class="login-step" id="successStep" style="display: none;">
+                <div class="step-content">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2>Đăng nhập thành công!</h2>
+                    <p class="step-description">
+                        Chào mừng bạn đến với TeleDrive
+                    </p>
+                    <div class="user-welcome">
+                        <div class="user-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name">Nguyễn Văn A</div>
+                            <div class="user-phone">+84936374950</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Display -->
+            <div class="login-error" id="loginError" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="errorMessage">Đây là thông báo lỗi mẫu</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showStep(stepId) {
+            // Hide all steps
+            document.querySelectorAll('.login-step').forEach(step => {
+                step.style.display = 'none';
+            });
+            
+            // Show target step
+            document.getElementById(stepId).style.display = 'block';
+            
+            // Hide error
+            document.getElementById('loginError').style.display = 'none';
+            
+            // Show login overlay
+            document.getElementById('loginOverlay').classList.remove('hidden');
+        }
+        
+        function showError() {
+            document.getElementById('loginError').style.display = 'flex';
+        }
+        
+        function hideLogin() {
+            document.getElementById('loginOverlay').classList.add('hidden');
+        }
+        
+        function togglePassword() {
+            const input = document.getElementById('passwordInput');
+            const icon = document.querySelector('.toggle-password i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+        
+        // Auto-format code input
+        document.getElementById('codeInput').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+        
+        // Auto-format phone input
+        document.getElementById('phoneInput').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+        
+        // Show phone step by default
+        showStep('phoneStep');
+    </script>
+</body>
+</html>

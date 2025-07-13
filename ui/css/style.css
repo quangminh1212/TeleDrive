@@ -871,6 +871,7 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 5000;
+    padding: 20px;
 }
 
 .login-overlay.hidden {
@@ -880,11 +881,13 @@ body {
 .login-container {
     background: white;
     border-radius: 16px;
-    padding: 40px;
-    width: 90%;
-    max-width: 400px;
+    padding: 32px;
+    width: 100%;
+    max-width: 420px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .login-header {
@@ -965,7 +968,7 @@ body {
 /* Phone Input Styles */
 .phone-input-group {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     margin-bottom: 24px;
 }
 
@@ -973,16 +976,19 @@ body {
     background: #f8f9fa;
     border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 12px;
+    padding: 14px 12px;
     font-size: 14px;
     cursor: pointer;
-    min-width: 140px;
-    transition: border-color 0.2s;
+    min-width: 160px;
+    transition: all 0.2s;
+    color: #333;
 }
 
 .country-select:focus {
     outline: none;
     border-color: #0088cc;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
 }
 
 .phone-input {
@@ -990,15 +996,21 @@ body {
     background: #f8f9fa;
     border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 12px 16px;
+    padding: 14px 16px;
     font-size: 16px;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
+    color: #333;
 }
 
 .phone-input:focus {
     outline: none;
     border-color: #0088cc;
     background: white;
+    box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+}
+
+.phone-input::placeholder {
+    color: #999;
 }
 
 /* Code Input Styles */
@@ -1011,18 +1023,26 @@ body {
     background: #f8f9fa;
     border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 16px;
-    font-size: 24px;
+    padding: 18px 16px;
+    font-size: 28px;
     text-align: center;
-    letter-spacing: 8px;
+    letter-spacing: 6px;
     font-weight: 600;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
+    color: #333;
+    font-family: 'Courier New', monospace;
 }
 
 .code-input:focus {
     outline: none;
     border-color: #0088cc;
     background: white;
+    box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+}
+
+.code-input::placeholder {
+    color: #ccc;
+    letter-spacing: 4px;
 }
 
 /* Password Input Styles */
@@ -1072,22 +1092,32 @@ body {
     color: white;
     border: none;
     border-radius: 8px;
-    padding: 14px;
+    padding: 16px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
     position: relative;
     margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 136, 204, 0.2);
 }
 
-.login-btn:hover {
+.login-btn:hover:not(:disabled) {
     background: #0077bb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 136, 204, 0.3);
+}
+
+.login-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 136, 204, 0.2);
 }
 
 .login-btn:disabled {
     background: #ccc;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .login-btn .btn-text {
@@ -1202,6 +1232,7 @@ body {
     text-align: center;
     color: #666;
     font-size: 14px;
+    line-height: 1.4;
 }
 
 .forgot-password {
@@ -1213,6 +1244,50 @@ body {
 .forgot-password:hover {
     color: #0077bb;
     text-decoration: underline;
+}
+
+/* Focus styles for accessibility */
+.phone-input:focus,
+.code-input:focus,
+.password-input:focus,
+.country-select:focus {
+    outline: 2px solid #0088cc;
+    outline-offset: 2px;
+}
+
+/* Loading animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Smooth transitions */
+.login-step {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.login-step:not([style*="display: block"]) {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+/* Input validation states */
+.phone-input.error,
+.code-input.error,
+.password-input.error {
+    border-color: #f44336;
+    background-color: #ffebee;
+}
+
+.phone-input.success,
+.code-input.success,
+.password-input.success {
+    border-color: #4caf50;
+    background-color: #e8f5e8;
 }
 
 /* Responsive Design */
@@ -1255,13 +1330,19 @@ body {
     }
 
     /* Login Mobile Styles */
+    .login-overlay {
+        padding: 16px;
+    }
+
     .login-container {
-        padding: 32px 24px;
-        margin: 20px;
+        padding: 24px 20px;
+        margin: 0;
+        border-radius: 12px;
+        max-width: none;
     }
 
     .login-header {
-        margin-bottom: 32px;
+        margin-bottom: 28px;
     }
 
     .login-logo {
@@ -1270,25 +1351,75 @@ body {
     }
 
     .login-title {
-        font-size: 24px;
+        font-size: 22px;
+    }
+
+    .login-subtitle {
+        font-size: 14px;
+    }
+
+    .step-content h2 {
+        font-size: 20px;
+    }
+
+    .step-description {
+        font-size: 13px;
+        margin-bottom: 24px;
     }
 
     .phone-input-group {
         flex-direction: column;
         gap: 12px;
+        margin-bottom: 20px;
     }
 
     .country-select {
         min-width: auto;
+        width: 100%;
+        padding: 16px 12px;
+        font-size: 16px;
+    }
+
+    .phone-input {
+        padding: 16px;
+        font-size: 18px;
     }
 
     .code-input {
-        font-size: 20px;
-        letter-spacing: 6px;
+        font-size: 24px;
+        letter-spacing: 4px;
+        padding: 20px 16px;
+    }
+
+    .password-input {
+        padding: 16px;
+        font-size: 16px;
+    }
+
+    .login-btn {
+        padding: 18px;
+        font-size: 16px;
+        margin-bottom: 16px;
     }
 
     .back-btn {
-        top: 16px;
-        left: 16px;
+        top: 12px;
+        left: 12px;
+        font-size: 16px;
+    }
+
+    .resend-container {
+        margin-top: 12px;
+    }
+
+    .user-welcome {
+        padding: 12px;
+        margin-top: 20px;
+    }
+
+    .login-error {
+        padding: 10px 12px;
+        font-size: 13px;
+        margin-top: 12px;
     }
 }

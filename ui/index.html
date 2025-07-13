@@ -254,7 +254,7 @@
                             <option value="+82" data-country="KR">🇰🇷 South Korea (+82)</option>
                             <option value="+91" data-country="IN">🇮🇳 India (+91)</option>
                         </select>
-                        <input type="tel" class="phone-input" id="phoneInput" placeholder="936374950" maxlength="15">
+                        <input type="tel" class="phone-input" id="phoneInput" placeholder="936374950" maxlength="15" autocomplete="tel">
                     </div>
 
                     <button class="login-btn" id="sendCodeBtn">
@@ -284,7 +284,7 @@
                     </p>
 
                     <div class="code-input-group">
-                        <input type="text" class="code-input" id="codeInput" placeholder="12345" maxlength="5" autocomplete="one-time-code">
+                        <input type="text" class="code-input" id="codeInput" placeholder="• • • • •" maxlength="5" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*">
                     </div>
 
                     <button class="login-btn" id="verifyCodeBtn">
