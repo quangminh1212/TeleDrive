@@ -890,6 +890,19 @@ body {
     overflow-y: auto;
 }
 
+.login-container .step-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.login-container .phone-input-group {
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    margin: 0 auto 24px auto;
+}
+
 .login-header {
     text-align: center;
     margin-bottom: 40px;
@@ -969,8 +982,9 @@ body {
 .phone-input-group {
     display: flex;
     align-items: stretch;
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 24px;
+    max-width: 100%;
 }
 
 .country-select {
@@ -980,8 +994,10 @@ body {
     padding: 14px 12px;
     font-size: 14px;
     cursor: pointer;
-    min-width: 160px;
+    width: 180px;
+    min-width: 180px;
     max-width: 180px;
+    flex-shrink: 0;
     transition: all 0.2s;
     color: #333;
     height: auto;
@@ -997,7 +1013,6 @@ body {
 }
 
 .phone-input {
-    flex: 1;
     background: #f8f9fa;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -1007,6 +1022,9 @@ body {
     color: #333;
     height: auto;
     min-height: 48px;
+    width: 200px;
+    max-width: 200px;
+    flex-shrink: 0;
 }
 
 .phone-input:focus {
@@ -1406,26 +1424,30 @@ body {
     .phone-input-group {
         flex-direction: row;
         align-items: stretch;
-        gap: 8px;
+        gap: 10px;
         margin-bottom: 20px;
+        justify-content: center;
     }
 
     .country-select {
-        min-width: 140px;
-        max-width: 140px;
-        width: 140px;
-        padding: 16px 8px;
-        font-size: 14px;
+        width: 150px;
+        min-width: 150px;
+        max-width: 150px;
+        padding: 16px 10px;
+        font-size: 13px;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .phone-input {
+        width: 160px;
+        max-width: 160px;
         padding: 16px 12px;
         font-size: 16px;
-        flex: 1;
         min-height: 52px;
+        flex-shrink: 0;
     }
 
     .code-input {
@@ -1464,5 +1486,32 @@ body {
         padding: 10px 12px;
         font-size: 13px;
         margin-top: 12px;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .login-container {
+        padding: 20px 16px;
+    }
+
+    .phone-input-group {
+        gap: 8px !important;
+        width: 100% !important;
+        justify-content: stretch !important;
+    }
+
+    .country-select {
+        width: 130px !important;
+        min-width: 130px !important;
+        max-width: 130px !important;
+        font-size: 12px;
+        padding: 16px 8px;
+    }
+
+    .phone-input {
+        width: 140px !important;
+        max-width: 140px !important;
+        font-size: 15px;
     }
 }
