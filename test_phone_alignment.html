@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Phone Input Alignment - TeleDrive</title>
+    <link rel="stylesheet" href="ui/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Additional test styles */
+        body {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 420px;
+            margin: 0 auto;
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .test-section {
+            margin-bottom: 40px;
+        }
+        
+        .test-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        
+        .alignment-guide {
+            border: 1px dashed #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            background: #fafafa;
+        }
+        
+        .guide-text {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">Test Phone Input Alignment</h1>
+        
+        <div class="test-section">
+            <div class="test-label">Normal Phone Input:</div>
+            <div class="phone-input-group">
+                <select class="country-select" id="countrySelect1">
+                    <option value="+84" data-country="VN">🇻🇳 Vietnam (+84)</option>
+                    <option value="+1" data-country="US">🇺🇸 United States (+1)</option>
+                    <option value="+86" data-country="CN">🇨🇳 China (+86)</option>
+                    <option value="+7" data-country="RU">🇷🇺 Russia (+7)</option>
+                    <option value="+44" data-country="GB">🇬🇧 United Kingdom (+44)</option>
+                </select>
+                <input type="tel" class="phone-input" id="phoneInput1" placeholder="936374950" maxlength="15">
+            </div>
+        </div>
+        
+        <div class="alignment-guide">
+            <div class="guide-text">Alignment Guide - Both elements should be perfectly aligned:</div>
+            <div class="phone-input-group">
+                <select class="country-select" id="countrySelect2">
+                    <option value="+84" data-country="VN">🇻🇳 Vietnam (+84)</option>
+                    <option value="+1" data-country="US">🇺🇸 United States (+1)</option>
+                </select>
+                <input type="tel" class="phone-input" id="phoneInput2" placeholder="Số điện thoại" maxlength="15">
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-label">With Focus States:</div>
+            <div class="phone-input-group">
+                <select class="country-select" id="countrySelect3">
+                    <option value="+84" data-country="VN">🇻🇳 Vietnam (+84)</option>
+                    <option value="+1" data-country="US">🇺🇸 United States (+1)</option>
+                    <option value="+86" data-country="CN">🇨🇳 China (+86)</option>
+                </select>
+                <input type="tel" class="phone-input" id="phoneInput3" placeholder="Click to test focus" maxlength="15">
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-label">Long Country Names Test:</div>
+            <div class="phone-input-group">
+                <select class="country-select" id="countrySelect4">
+                    <option value="+44" data-country="GB">🇬🇧 United Kingdom (+44)</option>
+                    <option value="+1" data-country="US">🇺🇸 United States (+1)</option>
+                    <option value="+7" data-country="RU">🇷🇺 Russia (+7)</option>
+                </select>
+                <input type="tel" class="phone-input" id="phoneInput4" placeholder="Test with long names" maxlength="15">
+            </div>
+        </div>
+        
+        <button class="login-btn" style="width: 100%; margin-top: 20px;">
+            <span class="btn-text">Test Button Alignment</span>
+        </button>
+    </div>
+    
+    <script>
+        // Add some interactivity for testing
+        document.querySelectorAll('.phone-input').forEach(input => {
+            input.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            });
+        });
+        
+        // Test focus states
+        document.querySelectorAll('.country-select, .phone-input').forEach(element => {
+            element.addEventListener('focus', () => {
+                console.log('Focused:', element.id);
+            });
+        });
+    </script>
+</body>
+</html>
