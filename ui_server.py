@@ -374,6 +374,21 @@ def index():
     """Serve the main UI"""
     return send_from_directory('ui', 'index.html')
 
+@app.route('/css/<path:filename>')
+def serve_css(filename):
+    """Serve CSS files"""
+    return send_from_directory('ui/css', filename)
+
+@app.route('/js/<path:filename>')
+def serve_js(filename):
+    """Serve JavaScript files"""
+    return send_from_directory('ui/js', filename)
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    """Serve asset files"""
+    return send_from_directory('ui/assets', filename)
+
 @app.route('/api/test')
 def test_api():
     """Test API endpoint"""
@@ -663,5 +678,5 @@ if __name__ == '__main__':
     print("⏹️  Press Ctrl+C to stop the server")
     print("=" * 50)
     
-    # Run the Flask app
-    app.run(host='0.0.0.0', port=5003, debug=False, use_reloader=False)
+    # Run the Flask app with debug mode to see request logs
+    app.run(host='0.0.0.0', port=5003, debug=True, use_reloader=False)
