@@ -28,7 +28,7 @@ except ImportError as e:
 
 app = Flask(__name__,
            static_folder='ui',
-           static_url_path='/static')
+           static_url_path='')
 CORS(app)
 
 # Configure logging
