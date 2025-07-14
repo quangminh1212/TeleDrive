@@ -369,30 +369,50 @@ except Exception as e:
     logger.error(f"Failed to initialize UITelegramScanner: {e}")
     ui_scanner = None
 
+print("🔧 Registering Flask routes...")
+
 @app.route('/')
 def index():
     """Serve the main UI"""
+    print("📄 Serving index.html")
     return send_from_directory('ui', 'index.html')
 
 @app.route('/css/<path:filename>')
 def serve_css(filename):
     """Serve CSS files"""
+    print(f"🎨 CSS request: {filename}")
     return send_from_directory('ui/css', filename)
 
 @app.route('/js/<path:filename>')
 def serve_js(filename):
     """Serve JavaScript files"""
+    print(f"📜 JS request: {filename}")
     return send_from_directory('ui/js', filename)
 
 @app.route('/assets/<path:filename>')
 def serve_assets(filename):
     """Serve asset files"""
+    print(f"🖼️ Assets request: {filename}")
     return send_from_directory('ui/assets', filename)
+
+print("✅ Static file routes registered")
 
 @app.route('/api/test')
 def test_api():
     """Test API endpoint"""
     return jsonify({"status": "ok", "message": "API is working"})
+
+@app.route('/debug/routes')
+def debug_routes():
+    """Debug route để xem tất cả routes"""
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': list(rule.methods),
+            'rule': rule.rule
+        })
+    return jsonify({"routes": routes})
 
 @app.route('/api/auth/status')
 def get_auth_status():
