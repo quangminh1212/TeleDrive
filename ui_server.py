@@ -1,29 +1,31 @@
 #!/usr/bin/env python3
 """
-TeleDrive UI Server
+TeleDrive UI Server - Fixed Version
 Flask server to serve the web UI and handle API requests
+Fixed asyncio event loop issues with detailed logging
 """
 
 import os
 import json
 import asyncio
 import threading
+import sys
+import traceback
 from datetime import datetime
+from concurrent.futures import Future
 from flask import Flask, render_template, jsonify, request, send_file, send_from_directory
 from flask_cors import CORS
 import logging
 
 # Import existing modules
 try:
-    from engine import TelegramFileScanner
+    from ui_telegram_scanner import UITelegramScanner
     from config import CONFIG
     from logger import get_logger, log_step
-    from telethon import TelegramClient
-    from telethon.errors import PhoneCodeInvalidError, PhoneNumberInvalidError, SessionPasswordNeededError
-    from telethon.errors import PhoneCodeExpiredError, PhoneCodeHashEmptyError, PasswordHashInvalidError
     MODULES_AVAILABLE = True
+    print("✅ All Telegram modules imported successfully")
 except ImportError as e:
-    print(f"Warning: Could not import modules: {e}")
+    print(f"❌ Warning: Could not import modules: {e}")
     MODULES_AVAILABLE = False
 
 app = Flask(__name__,
@@ -31,335 +33,68 @@ app = Flask(__name__,
            static_url_path='')
 CORS(app)
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure detailed logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('logs/ui_server.log', encoding='utf-8')
+    ]
+)
 logger = logging.getLogger(__name__)
 
-# Global variables
+# Global variables for asyncio management
+main_loop = None
+loop_thread = None
 scanner = None
 scan_task = None
 scan_cancelled = False
 
-class UITelegramScanner:
-    """Wrapper for TelegramFileScanner with UI-specific methods"""
+def log_detailed(step, message, level="INFO"):
+    """Detailed logging function"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_msg = f"[{timestamp}] {step}: {message}"
 
-    def __init__(self):
-        try:
-            if MODULES_AVAILABLE:
-                logger.info("Initializing TelegramFileScanner...")
-                self.scanner = TelegramFileScanner()
-                self.client = None
-                self.phone_code_hash = None
-                self.is_authenticated = False
-                self.user_info = None
-                logger.info("TelegramFileScanner initialized successfully")
-            else:
-                self.scanner = None
-                self.client = None
-                logger.warning("Running in demo mode - no scanner available")
-            self.channels = []
-            self.current_scan = None
-        except Exception as e:
-            logger.error(f"Failed to initialize UITelegramScanner: {e}")
-            self.scanner = None
-            self.client = None
-            self.channels = []
-            self.current_scan = None
-        
-    async def initialize(self):
-        """Initialize the Telegram client"""
-        if self.scanner:
-            await self.scanner.initialize()
-            return True
-        return False
-    
-    async def get_auth_status(self):
-        """Get authentication status"""
-        if not MODULES_AVAILABLE:
-            return {"authenticated": False, "user": None}
+    if level == "ERROR":
+        logger.error(log_msg)
+        print(f"❌ {log_msg}")
+    elif level == "WARNING":
+        logger.warning(log_msg)
+        print(f"⚠️ {log_msg}")
+    else:
+        logger.info(log_msg)
+        print(f"ℹ️ {log_msg}")
 
-        try:
-            if self.is_authenticated and self.user_info:
-                return {
-                    "authenticated": True,
-                    "user": {
-                        "first_name": getattr(self.user_info, 'first_name', ''),
-                        "last_name": getattr(self.user_info, 'last_name', ''),
-                        "phone": getattr(self.user_info, 'phone', ''),
-                        "username": getattr(self.user_info, 'username', '')
-                    }
-                }
+def run_async_safe(coro):
+    """Safely run coroutine in the main event loop from another thread"""
+    try:
+        log_detailed("ASYNC_CALL", f"Running coroutine: {coro.__name__ if hasattr(coro, '__name__') else str(coro)}")
 
-            # Try to initialize existing session
-            if not self.client:
-                from config import CONFIG
-                self.client = TelegramClient(
-                    CONFIG['telegram']['session_name'],
-                    CONFIG['telegram']['api_id'],
-                    CONFIG['telegram']['api_hash']
-                )
+        if main_loop is None:
+            log_detailed("ASYNC_ERROR", "Main event loop not available", "ERROR")
+            return {"success": False, "error": "Event loop not available"}
 
-            await self.client.connect()
+        if main_loop.is_closed():
+            log_detailed("ASYNC_ERROR", "Main event loop is closed", "ERROR")
+            return {"success": False, "error": "Event loop is closed"}
 
-            if await self.client.is_user_authorized():
-                self.user_info = await self.client.get_me()
-                self.is_authenticated = True
-                return {
-                    "authenticated": True,
-                    "user": {
-                        "first_name": getattr(self.user_info, 'first_name', ''),
-                        "last_name": getattr(self.user_info, 'last_name', ''),
-                        "phone": getattr(self.user_info, 'phone', ''),
-                        "username": getattr(self.user_info, 'username', '')
-                    }
-                }
+        # Use run_coroutine_threadsafe to run coroutine in main loop
+        future = asyncio.run_coroutine_threadsafe(coro, main_loop)
+        result = future.result(timeout=30)  # 30 second timeout
 
-        except Exception as e:
-            logger.error(f"Auth status check failed: {e}")
+        log_detailed("ASYNC_SUCCESS", f"Coroutine completed successfully")
+        return result
 
-        return {"authenticated": False, "user": None}
+    except asyncio.TimeoutError:
+        log_detailed("ASYNC_ERROR", "Coroutine timed out after 30 seconds", "ERROR")
+        return {"success": False, "error": "Operation timed out"}
+    except Exception as e:
+        log_detailed("ASYNC_ERROR", f"Coroutine failed: {str(e)}", "ERROR")
+        log_detailed("ASYNC_ERROR", f"Traceback: {traceback.format_exc()}", "ERROR")
+        return {"success": False, "error": str(e)}
 
-    async def send_code(self, phone_number):
-        """Send verification code to phone number"""
-        try:
-            if not MODULES_AVAILABLE:
-                return {"success": False, "error": "Telegram modules not available"}
-
-            if not self.client:
-                from config import CONFIG
-                self.client = TelegramClient(
-                    CONFIG['telegram']['session_name'],
-                    CONFIG['telegram']['api_id'],
-                    CONFIG['telegram']['api_hash']
-                )
-
-            await self.client.connect()
-
-            # Send code
-            sent_code = await self.client.send_code_request(phone_number)
-            self.phone_code_hash = sent_code.phone_code_hash
-
-            return {
-                "success": True,
-                "phone_code_hash": self.phone_code_hash
-            }
-
-        except PhoneNumberInvalidError:
-            return {"success": False, "error": "Số điện thoại không hợp lệ"}
-        except Exception as e:
-            logger.error(f"Send code failed: {e}")
-            return {"success": False, "error": f"Lỗi gửi mã: {str(e)}"}
-
-    async def verify_code(self, phone_number, code, phone_code_hash):
-        """Verify the received code"""
-        try:
-            if not self.client:
-                return {"success": False, "error": "Client not initialized"}
-
-            # Sign in with code
-            try:
-                user = await self.client.sign_in(phone_number, code, phone_code_hash=phone_code_hash)
-                self.user_info = user
-                self.is_authenticated = True
-
-                return {
-                    "success": True,
-                    "requires_2fa": False,
-                    "user": {
-                        "first_name": getattr(user, 'first_name', ''),
-                        "last_name": getattr(user, 'last_name', ''),
-                        "phone": getattr(user, 'phone', ''),
-                        "username": getattr(user, 'username', '')
-                    }
-                }
-
-            except SessionPasswordNeededError:
-                return {
-                    "success": True,
-                    "requires_2fa": True,
-                    "user": None
-                }
-
-        except PhoneCodeInvalidError:
-            return {"success": False, "error": "Mã xác thực không đúng"}
-        except PhoneCodeExpiredError:
-            return {"success": False, "error": "Mã xác thực đã hết hạn"}
-        except Exception as e:
-            logger.error(f"Code verification failed: {e}")
-            return {"success": False, "error": f"Lỗi xác thực: {str(e)}"}
-
-    async def verify_2fa(self, password):
-        """Verify 2FA password"""
-        try:
-            if not self.client:
-                return {"success": False, "error": "Client not initialized"}
-
-            user = await self.client.sign_in(password=password)
-            self.user_info = user
-            self.is_authenticated = True
-
-            return {
-                "success": True,
-                "user": {
-                    "first_name": getattr(user, 'first_name', ''),
-                    "last_name": getattr(user, 'last_name', ''),
-                    "phone": getattr(user, 'phone', ''),
-                    "username": getattr(user, 'username', '')
-                }
-            }
-
-        except PasswordHashInvalidError:
-            return {"success": False, "error": "Mật khẩu không đúng"}
-        except Exception as e:
-            logger.error(f"2FA verification failed: {e}")
-            return {"success": False, "error": f"Lỗi xác thực 2FA: {str(e)}"}
-
-    async def logout(self):
-        """Logout and disconnect"""
-        try:
-            if self.client:
-                await self.client.log_out()
-                await self.client.disconnect()
-
-            self.client = None
-            self.user_info = None
-            self.is_authenticated = False
-            self.phone_code_hash = None
-
-            return {"success": True}
-
-        except Exception as e:
-            logger.error(f"Logout failed: {e}")
-            return {"success": False, "error": str(e)}
-    
-    async def add_channel(self, channel_input, channel_type='existing', max_messages=1000):
-        """Add a new channel"""
-        try:
-            if not self.scanner:
-                return {"success": False, "error": "Scanner not available"}
-                
-            # Get channel entity
-            entity = await self.scanner.get_channel_entity(channel_input)
-            if not entity:
-                return {"success": False, "error": "Channel not found"}
-            
-            # Create channel info
-            channel_info = {
-                "id": str(entity.id),
-                "name": getattr(entity, 'title', channel_input),
-                "username": getattr(entity, 'username', ''),
-                "type": channel_type,
-                "added_date": datetime.now().isoformat(),
-                "fileCount": 0,
-                "lastScan": None
-            }
-            
-            # Check if channel already exists
-            existing = next((c for c in self.channels if c['id'] == channel_info['id']), None)
-            if existing:
-                return {"success": False, "error": "Channel already added"}
-            
-            self.channels.append(channel_info)
-            self.save_channels()
-            
-            return {"success": True, "channel": channel_info}
-            
-        except Exception as e:
-            logger.error(f"Failed to add channel: {e}")
-            return {"success": False, "error": str(e)}
-    
-    async def scan_channel(self, channel_input, file_types=None):
-        """Scan a channel for files"""
-        try:
-            if not self.scanner:
-                return {"success": False, "error": "Scanner not available"}
-            
-            global scan_cancelled
-            scan_cancelled = False
-            
-            # Set file types filter
-            if file_types:
-                # Update scanner file type settings based on UI selection
-                pass
-            
-            # Get channel entity
-            entity = await self.scanner.get_channel_entity(channel_input)
-            if not entity:
-                return {"success": False, "error": "Channel not found"}
-            
-            # Scan the channel
-            await self.scanner.scan_channel_by_entity(entity)
-            
-            if scan_cancelled:
-                return {"success": False, "error": "Scan cancelled"}
-            
-            # Update channel info
-            channel_id = str(entity.id)
-            channel = next((c for c in self.channels if c['id'] == channel_id), None)
-            
-            if not channel:
-                # Add new channel
-                channel = {
-                    "id": channel_id,
-                    "name": getattr(entity, 'title', channel_input),
-                    "username": getattr(entity, 'username', ''),
-                    "type": "scanned",
-                    "added_date": datetime.now().isoformat(),
-                    "fileCount": len(self.scanner.files_data),
-                    "lastScan": datetime.now().isoformat()
-                }
-                self.channels.append(channel)
-            else:
-                channel['fileCount'] = len(self.scanner.files_data)
-                channel['lastScan'] = datetime.now().isoformat()
-            
-            self.save_channels()
-            
-            # Save scan results
-            if self.scanner.files_data:
-                await self.scanner.save_results()
-            
-            return {
-                "success": True, 
-                "filesFound": len(self.scanner.files_data),
-                "channel": channel
-            }
-            
-        except Exception as e:
-            logger.error(f"Scan failed: {e}")
-            return {"success": False, "error": str(e)}
-    
-    def get_channels(self):
-        """Get list of channels"""
-        return {"channels": self.channels}
-    
-    def get_channel_files(self, channel_id):
-        """Get files for a specific channel"""
-        # This would typically load from saved results
-        # For now, return empty list
-        return {"files": []}
-    
-    def save_channels(self):
-        """Save channels to file"""
-        try:
-            channels_file = os.path.join('output', 'channels.json')
-            os.makedirs('output', exist_ok=True)
-            
-            with open(channels_file, 'w', encoding='utf-8') as f:
-                json.dump(self.channels, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            logger.error(f"Failed to save channels: {e}")
-    
-    def load_channels(self):
-        """Load channels from file"""
-        try:
-            channels_file = os.path.join('output', 'channels.json')
-            if os.path.exists(channels_file):
-                with open(channels_file, 'r', encoding='utf-8') as f:
-                    self.channels = json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to load channels: {e}")
-            self.channels = []
+# Use the standalone UITelegramScanner - no need to redefine it here
 
 # Initialize scanner
 try:
@@ -416,58 +151,73 @@ def debug_routes():
 
 @app.route('/api/auth/status')
 def get_auth_status():
-    """Get authentication status"""
+    """Get authentication status - Fixed Version"""
+    log_detailed("API_AUTH_STATUS", "Received auth status request")
+
     try:
         if not MODULES_AVAILABLE:
+            log_detailed("API_AUTH_STATUS", "Modules not available", "ERROR")
             return jsonify({"authenticated": False, "user": None, "error": "Modules not available"})
 
         if ui_scanner is None:
+            log_detailed("API_AUTH_STATUS", "Scanner not initialized", "ERROR")
             return jsonify({"authenticated": False, "user": None, "error": "Scanner not initialized"})
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        status = loop.run_until_complete(ui_scanner.get_auth_status())
-        loop.close()
+        log_detailed("API_AUTH_STATUS", "Running auth status check...")
+        status = run_async_safe(ui_scanner.get_auth_status())
+
+        log_detailed("API_AUTH_STATUS", f"Auth status result: {status.get('authenticated', False)}")
         return jsonify(status)
+
     except Exception as e:
-        logger.error(f"Auth status check failed: {e}")
+        log_detailed("API_AUTH_STATUS", f"Auth status check failed: {e}", "ERROR")
+        log_detailed("API_AUTH_STATUS", f"Traceback: {traceback.format_exc()}", "ERROR")
         return jsonify({"authenticated": False, "user": None, "error": str(e)})
 
 @app.route('/api/auth/send-code', methods=['POST'])
 def send_verification_code():
-    """Send verification code to phone number"""
+    """Send verification code to phone number - Fixed Version"""
+    log_detailed("API_SEND_CODE", "Received send code request")
+
     try:
         if not MODULES_AVAILABLE:
+            log_detailed("API_SEND_CODE", "Telegram modules not available", "ERROR")
             return jsonify({"success": False, "error": "Telegram modules not available"})
 
         data = request.get_json()
         if not data:
+            log_detailed("API_SEND_CODE", "No data provided", "ERROR")
             return jsonify({"success": False, "error": "No data provided"})
 
         phone_number = data.get('phone_number')
         if not phone_number:
+            log_detailed("API_SEND_CODE", "Phone number is required", "ERROR")
             return jsonify({"success": False, "error": "Phone number is required"})
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(ui_scanner.send_code(phone_number))
-        loop.close()
+        log_detailed("API_SEND_CODE", f"Sending code to: {phone_number}")
+        result = run_async_safe(ui_scanner.send_code(phone_number))
 
+        log_detailed("API_SEND_CODE", f"Send code result: {result.get('success', False)}")
         return jsonify(result)
 
     except Exception as e:
-        logger.error(f"Send code failed: {e}")
+        log_detailed("API_SEND_CODE", f"Send code failed: {e}", "ERROR")
+        log_detailed("API_SEND_CODE", f"Traceback: {traceback.format_exc()}", "ERROR")
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/auth/verify-code', methods=['POST'])
 def verify_code():
-    """Verify the received code"""
+    """Verify the received code - Fixed Version"""
+    log_detailed("API_VERIFY_CODE", "Received verify code request")
+
     try:
         if not MODULES_AVAILABLE:
+            log_detailed("API_VERIFY_CODE", "Telegram modules not available", "ERROR")
             return jsonify({"success": False, "error": "Telegram modules not available"})
 
         data = request.get_json()
         if not data:
+            log_detailed("API_VERIFY_CODE", "No data provided", "ERROR")
             return jsonify({"success": False, "error": "No data provided"})
 
         phone_number = data.get('phone_number')
@@ -475,19 +225,20 @@ def verify_code():
         phone_code_hash = data.get('phone_code_hash')
 
         if not all([phone_number, code, phone_code_hash]):
+            log_detailed("API_VERIFY_CODE", "Missing required parameters", "ERROR")
             return jsonify({"success": False, "error": "Missing required parameters"})
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
+        log_detailed("API_VERIFY_CODE", f"Verifying code for: {phone_number}")
+        result = run_async_safe(
             ui_scanner.verify_code(phone_number, code, phone_code_hash)
         )
-        loop.close()
 
+        log_detailed("API_VERIFY_CODE", f"Verify code result: {result.get('success', False)}")
         return jsonify(result)
 
     except Exception as e:
-        logger.error(f"Code verification failed: {e}")
+        log_detailed("API_VERIFY_CODE", f"Code verification failed: {e}", "ERROR")
+        log_detailed("API_VERIFY_CODE", f"Traceback: {traceback.format_exc()}", "ERROR")
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/auth/verify-2fa', methods=['POST'])
@@ -674,29 +425,83 @@ def initialize_app():
     except Exception as e:
         logger.error(f"Failed to initialize app: {e}")
 
+def start_event_loop():
+    """Start the main asyncio event loop in a separate thread"""
+    global main_loop
+    log_detailed("EVENT_LOOP", "Starting main event loop...")
+
+    try:
+        # Set Windows event loop policy if on Windows
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+            log_detailed("EVENT_LOOP", "Set Windows ProactorEventLoopPolicy")
+
+        # Create and set the event loop
+        main_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(main_loop)
+
+        log_detailed("EVENT_LOOP", "Event loop created and set")
+
+        # Run the event loop forever
+        main_loop.run_forever()
+
+    except Exception as e:
+        log_detailed("EVENT_LOOP", f"Event loop error: {e}", "ERROR")
+    finally:
+        log_detailed("EVENT_LOOP", "Event loop stopped")
+
+def stop_event_loop():
+    """Stop the main event loop"""
+    global main_loop
+    if main_loop and not main_loop.is_closed():
+        log_detailed("EVENT_LOOP", "Stopping event loop...")
+        main_loop.call_soon_threadsafe(main_loop.stop)
+
 if __name__ == '__main__':
-    print("🚀 Starting TeleDrive UI Server...")
-    print("=" * 50)
-    
+    print("🚀 Starting TeleDrive UI Server - Fixed Version...")
+    print("=" * 60)
+
     # Create necessary directories
     os.makedirs('ui/assets', exist_ok=True)
     os.makedirs('output', exist_ok=True)
-    
+    os.makedirs('logs', exist_ok=True)
+
+    log_detailed("STARTUP", "Created necessary directories")
+
     # Copy logo to assets directory
     logo_src = 'logo.png'
     logo_dst = 'ui/assets/logo.png'
     if os.path.exists(logo_src) and not os.path.exists(logo_dst):
         import shutil
         shutil.copy2(logo_src, logo_dst)
-        print("✅ Logo copied to UI assets")
-    
+        log_detailed("STARTUP", "Logo copied to UI assets")
+
+    # Start the event loop in a separate thread
+    log_detailed("STARTUP", "Starting event loop thread...")
+    import threading
+    loop_thread = threading.Thread(target=start_event_loop, daemon=True)
+    loop_thread.start()
+
+    # Wait a bit for the event loop to start
+    import time
+    time.sleep(1)
+
     # Initialize the app
+    log_detailed("STARTUP", "Initializing application...")
     initialize_app()
-    
+
+    log_detailed("STARTUP", "Starting Flask web server...")
     print("🌐 Starting web server...")
     print("📱 Open your browser and go to: http://localhost:5003")
     print("⏹️  Press Ctrl+C to stop the server")
-    print("=" * 50)
-    
-    # Run the Flask app with debug mode to see request logs
-    app.run(host='0.0.0.0', port=5003, debug=True, use_reloader=False)
+    print("=" * 60)
+
+    try:
+        # Run the Flask app
+        app.run(host='0.0.0.0', port=5003, debug=False, use_reloader=False)
+    except KeyboardInterrupt:
+        log_detailed("SHUTDOWN", "Received shutdown signal")
+    finally:
+        log_detailed("SHUTDOWN", "Stopping event loop...")
+        stop_event_loop()
+        log_detailed("SHUTDOWN", "Server shutdown complete")

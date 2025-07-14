@@ -72,7 +72,12 @@ async def login_telegram():
 def main():
     """Main function"""
     print("🚀 Bắt đầu quá trình đăng nhập...")
-    
+
+    # Setup Windows event loop FIRST
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        print("✅ Đã cấu hình Windows ProactorEventLoopPolicy")
+
     try:
         success = asyncio.run(login_telegram())
         

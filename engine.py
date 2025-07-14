@@ -501,4 +501,10 @@ async def main():
         await scanner.close()
 
 if __name__ == "__main__":
+    # Setup Windows event loop FIRST
+    import sys
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        print("✅ Đã cấu hình Windows ProactorEventLoopPolicy")
+
     asyncio.run(main())

@@ -6,6 +6,7 @@ Chuyên dụng cho việc quét file trong private channel/group Telegram
 
 import asyncio
 import sys
+from pathlib import Path
 from engine import TelegramFileScanner
 
 # Import detailed logging
@@ -242,6 +243,12 @@ async def main():
 if __name__ == "__main__":
     print("🔧 Đang khởi tạo hệ thống...")
 
+    # Setup Windows event loop FIRST - before any asyncio operations
+    print("🔧 Đang cấu hình event loop...")
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        print("✅ Đã cấu hình Windows ProactorEventLoopPolicy")
+
     # Load config
     print("📋 Đang tải cấu hình...")
     try:
@@ -250,6 +257,16 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Lỗi tải cấu hình: {e}")
         sys.exit(1)
+
+    # Check session
+    print("🔍 Đang kiểm tra session...")
+    session_file = f"{config.SESSION_NAME}.session"
+    if not Path(session_file).exists():
+        print(f"❌ Không tìm thấy session file: {session_file}")
+        print("💡 Vui lòng chạy: python login_telegram.py")
+        sys.exit(1)
+    else:
+        print("✅ Session file đã tồn tại")
 
     # Setup detailed logging nếu có
     print("📊 Đang thiết lập hệ thống logging...")
@@ -269,13 +286,14 @@ if __name__ == "__main__":
     else:
         print("⚠️ Module logging chi tiết không khả dụng")
 
-    # Setup Windows event loop
-    print("🔧 Đang cấu hình event loop...")
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-        print("✅ Đã cấu hình Windows ProactorEventLoopPolicy")
-
     print("🚀 Khởi động ứng dụng chính...")
     print("=" * 60)
 
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\n⏹️ Đã dừng bởi người dùng")
+    except Exception as e:
+        print(f"\n❌ Lỗi không mong muốn: {e}")
+        import traceback
+        traceback.print_exc()
