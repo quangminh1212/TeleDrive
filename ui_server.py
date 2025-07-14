@@ -26,9 +26,9 @@ except ImportError as e:
     print(f"Warning: Could not import modules: {e}")
     MODULES_AVAILABLE = False
 
-app = Flask(__name__, 
-           static_folder='ui', 
-           static_url_path='')
+app = Flask(__name__,
+           static_folder='ui',
+           static_url_path='/static')
 CORS(app)
 
 # Configure logging
@@ -44,17 +44,27 @@ class UITelegramScanner:
     """Wrapper for TelegramFileScanner with UI-specific methods"""
 
     def __init__(self):
-        if MODULES_AVAILABLE:
-            self.scanner = TelegramFileScanner()
-            self.client = None
-            self.phone_code_hash = None
-            self.is_authenticated = False
-            self.user_info = None
-        else:
+        try:
+            if MODULES_AVAILABLE:
+                logger.info("Initializing TelegramFileScanner...")
+                self.scanner = TelegramFileScanner()
+                self.client = None
+                self.phone_code_hash = None
+                self.is_authenticated = False
+                self.user_info = None
+                logger.info("TelegramFileScanner initialized successfully")
+            else:
+                self.scanner = None
+                self.client = None
+                logger.warning("Running in demo mode - no scanner available")
+            self.channels = []
+            self.current_scan = None
+        except Exception as e:
+            logger.error(f"Failed to initialize UITelegramScanner: {e}")
             self.scanner = None
             self.client = None
-        self.channels = []
-        self.current_scan = None
+            self.channels = []
+            self.current_scan = None
         
     async def initialize(self):
         """Initialize the Telegram client"""
@@ -352,17 +362,33 @@ class UITelegramScanner:
             self.channels = []
 
 # Initialize scanner
-ui_scanner = UITelegramScanner()
+try:
+    ui_scanner = UITelegramScanner()
+    logger.info("UITelegramScanner initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize UITelegramScanner: {e}")
+    ui_scanner = None
 
 @app.route('/')
 def index():
     """Serve the main UI"""
     return send_from_directory('ui', 'index.html')
 
+@app.route('/api/test')
+def test_api():
+    """Test API endpoint"""
+    return jsonify({"status": "ok", "message": "API is working"})
+
 @app.route('/api/auth/status')
 def get_auth_status():
     """Get authentication status"""
     try:
+        if not MODULES_AVAILABLE:
+            return jsonify({"authenticated": False, "user": None, "error": "Modules not available"})
+
+        if ui_scanner is None:
+            return jsonify({"authenticated": False, "user": None, "error": "Scanner not initialized"})
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         status = loop.run_until_complete(ui_scanner.get_auth_status())
@@ -370,15 +396,20 @@ def get_auth_status():
         return jsonify(status)
     except Exception as e:
         logger.error(f"Auth status check failed: {e}")
-        return jsonify({"authenticated": False, "user": None})
+        return jsonify({"authenticated": False, "user": None, "error": str(e)})
 
 @app.route('/api/auth/send-code', methods=['POST'])
 def send_verification_code():
     """Send verification code to phone number"""
     try:
-        data = request.get_json()
-        phone_number = data.get('phone_number')
+        if not MODULES_AVAILABLE:
+            return jsonify({"success": False, "error": "Telegram modules not available"})
 
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"})
+
+        phone_number = data.get('phone_number')
         if not phone_number:
             return jsonify({"success": False, "error": "Phone number is required"})
 
@@ -397,7 +428,13 @@ def send_verification_code():
 def verify_code():
     """Verify the received code"""
     try:
+        if not MODULES_AVAILABLE:
+            return jsonify({"success": False, "error": "Telegram modules not available"})
+
         data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"})
+
         phone_number = data.get('phone_number')
         code = data.get('code')
         phone_code_hash = data.get('phone_code_hash')
@@ -422,9 +459,14 @@ def verify_code():
 def verify_2fa():
     """Verify 2FA password"""
     try:
-        data = request.get_json()
-        password = data.get('password')
+        if not MODULES_AVAILABLE:
+            return jsonify({"success": False, "error": "Telegram modules not available"})
 
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"})
+
+        password = data.get('password')
         if not password:
             return jsonify({"success": False, "error": "Password is required"})
 
@@ -443,6 +485,9 @@ def verify_2fa():
 def logout():
     """Logout and disconnect"""
     try:
+        if not MODULES_AVAILABLE:
+            return jsonify({"success": False, "error": "Telegram modules not available"})
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(ui_scanner.logout())
@@ -458,14 +503,15 @@ def logout():
 def get_config_phone():
     """Get phone number from config"""
     try:
-        if MODULES_AVAILABLE:
-            from config import CONFIG
-            phone = CONFIG.get('telegram', {}).get('phone_number', '')
-            return jsonify({"phone": phone})
-        return jsonify({"phone": ""})
+        if not MODULES_AVAILABLE:
+            return jsonify({"phone": "", "error": "Modules not available"})
+
+        from config import CONFIG
+        phone = CONFIG.get('telegram', {}).get('phone_number', '')
+        return jsonify({"phone": phone})
     except Exception as e:
         logger.error(f"Get config phone failed: {e}")
-        return jsonify({"phone": ""})
+        return jsonify({"phone": "", "error": str(e)})
 
 @app.route('/api/channels', methods=['GET'])
 def get_channels():
@@ -613,9 +659,9 @@ if __name__ == '__main__':
     initialize_app()
     
     print("🌐 Starting web server...")
-    print("📱 Open your browser and go to: http://localhost:5000")
+    print("📱 Open your browser and go to: http://localhost:5003")
     print("⏹️  Press Ctrl+C to stop the server")
     print("=" * 50)
     
     # Run the Flask app
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=5003, debug=False, use_reloader=False)

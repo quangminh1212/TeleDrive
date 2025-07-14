@@ -48,7 +48,7 @@ if exist "logo.png" (
 REM Start the UI server
 echo.
 echo Starting TeleDrive Web UI...
-echo Open your browser and go to: http://localhost:5000
+echo Open your browser and go to: http://localhost:5003
 echo Press Ctrl+C to stop the server
 echo.
 python ui_server.py
