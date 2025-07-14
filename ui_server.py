@@ -432,9 +432,10 @@ def start_event_loop():
 
     try:
         # Set Windows event loop policy if on Windows
+        # Use SelectorEventLoopPolicy instead of ProactorEventLoopPolicy for Telethon compatibility
         if sys.platform == "win32":
-            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-            log_detailed("EVENT_LOOP", "Set Windows ProactorEventLoopPolicy")
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+            log_detailed("EVENT_LOOP", "Set Windows SelectorEventLoopPolicy for Telethon compatibility")
 
         # Create and set the event loop
         main_loop = asyncio.new_event_loop()

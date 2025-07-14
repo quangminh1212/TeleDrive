@@ -48,9 +48,9 @@ class UITelegramScanner:
         log_detailed("UI_SCANNER_INIT", "UI Telegram Scanner initialized")
         
     async def get_auth_status(self):
-        """Get authentication status"""
-        log_detailed("AUTH_STATUS", "Checking authentication status...")
-        
+        """Get authentication status using subprocess"""
+        log_detailed("AUTH_STATUS", "Checking authentication status via subprocess...")
+
         try:
             # Check if already authenticated
             if self.is_authenticated and self.user_info:
@@ -65,33 +65,29 @@ class UITelegramScanner:
                     }
                 }
 
-            # Create fresh client in current event loop
-            log_detailed("AUTH_STATUS", "Creating fresh Telegram client...")
-            await self._create_fresh_client()
+            # Use subprocess to avoid asyncio event loop issues
+            import subprocess
+            import sys
 
-            log_detailed("AUTH_STATUS", "Connecting to Telegram...")
-            await self.client.connect()
+            log_detailed("AUTH_STATUS", "Running auth status check in subprocess...")
+            result = subprocess.run([
+                sys.executable, "telegram_subprocess.py", "auth_status"
+            ], capture_output=True, text=True, cwd=".")
 
-            log_detailed("AUTH_STATUS", "Checking if user is authorized...")
-            if await self.client.is_user_authorized():
-                log_detailed("AUTH_STATUS", "User is authorized, getting user info...")
-                self.user_info = await self.client.get_me()
-                self.is_authenticated = True
-                
-                user_data = {
-                    "first_name": getattr(self.user_info, 'first_name', ''),
-                    "last_name": getattr(self.user_info, 'last_name', ''),
-                    "phone": getattr(self.user_info, 'phone', ''),
-                    "username": getattr(self.user_info, 'username', '')
-                }
-                
-                log_detailed("AUTH_STATUS", f"Authentication successful for user: {user_data.get('first_name', 'Unknown')}")
-                return {
-                    "authenticated": True,
-                    "user": user_data
-                }
+            if result.returncode == 0:
+                import json
+                response = json.loads(result.stdout)
+                log_detailed("AUTH_STATUS", f"Subprocess result: {response}")
+
+                if response.get("authenticated"):
+                    # Cache the result
+                    self.user_info = type('User', (), response.get("user", {}))()
+                    self.is_authenticated = True
+
+                return response
             else:
-                log_detailed("AUTH_STATUS", "User is not authorized")
+                log_detailed("AUTH_STATUS", f"Subprocess failed: {result.stderr}", "ERROR")
+                return {"authenticated": False, "user": None, "error": "Subprocess failed"}
 
         except Exception as e:
             log_detailed("AUTH_STATUS", f"Auth status check failed: {e}", "ERROR")
@@ -101,79 +97,69 @@ class UITelegramScanner:
         return {"authenticated": False, "user": None}
 
     async def send_code(self, phone_number):
-        """Send verification code to phone number"""
-        log_detailed("SEND_CODE", f"Sending verification code to: {phone_number}")
-        
+        """Send verification code to phone number using subprocess"""
+        log_detailed("SEND_CODE", f"Sending verification code to: {phone_number} via subprocess")
+
         try:
-            # Create fresh client in current event loop
-            log_detailed("SEND_CODE", "Creating fresh Telegram client...")
-            await self._create_fresh_client()
+            # Use subprocess to avoid asyncio event loop issues
+            import subprocess
+            import sys
 
-            log_detailed("SEND_CODE", "Connecting to Telegram...")
-            await self.client.connect()
+            log_detailed("SEND_CODE", "Running send code in subprocess...")
+            result = subprocess.run([
+                sys.executable, "telegram_subprocess.py", "send_code", phone_number
+            ], capture_output=True, text=True, cwd=".")
 
-            log_detailed("SEND_CODE", f"Sending verification code to {phone_number}...")
-            sent_code = await self.client.send_code_request(phone_number)
-            self.phone_code_hash = sent_code.phone_code_hash
+            if result.returncode == 0:
+                import json
+                response = json.loads(result.stdout)
+                log_detailed("SEND_CODE", f"Subprocess result: {response}")
 
-            log_detailed("SEND_CODE", "Verification code sent successfully")
-            return {
-                "success": True,
-                "phone_code_hash": self.phone_code_hash
-            }
+                if response.get("success"):
+                    # Cache the phone code hash
+                    self.phone_code_hash = response.get("phone_code_hash")
 
-        except PhoneNumberInvalidError:
-            log_detailed("SEND_CODE", "Invalid phone number", "ERROR")
-            return {"success": False, "error": "Số điện thoại không hợp lệ"}
+                return response
+            else:
+                log_detailed("SEND_CODE", f"Subprocess failed: {result.stderr}", "ERROR")
+                return {"success": False, "error": "Subprocess failed"}
+
         except Exception as e:
             log_detailed("SEND_CODE", f"Send code failed: {e}", "ERROR")
             log_detailed("SEND_CODE", f"Traceback: {traceback.format_exc()}", "ERROR")
             return {"success": False, "error": f"Lỗi gửi mã: {str(e)}"}
 
     async def verify_code(self, phone_number, code, phone_code_hash):
-        """Verify the received code"""
-        log_detailed("VERIFY_CODE", f"Verifying code for: {phone_number}")
-        
+        """Verify the received code using subprocess"""
+        log_detailed("VERIFY_CODE", f"Verifying code for: {phone_number} via subprocess")
+
         try:
-            if not self.client:
-                log_detailed("VERIFY_CODE", "Client not initialized", "ERROR")
-                return {"success": False, "error": "Client not initialized"}
+            # Use subprocess to avoid asyncio event loop issues
+            import subprocess
+            import sys
 
-            # Sign in with code
-            try:
-                log_detailed("VERIFY_CODE", "Attempting to sign in with code...")
-                user = await self.client.sign_in(phone_number, code, phone_code_hash=phone_code_hash)
-                self.user_info = user
-                self.is_authenticated = True
+            log_detailed("VERIFY_CODE", "Running verify code in subprocess...")
+            result = subprocess.run([
+                sys.executable, "telegram_subprocess.py", "verify_code",
+                phone_number, code, phone_code_hash
+            ], capture_output=True, text=True, cwd=".")
 
-                user_data = {
-                    "first_name": getattr(user, 'first_name', ''),
-                    "last_name": getattr(user, 'last_name', ''),
-                    "phone": getattr(user, 'phone', ''),
-                    "username": getattr(user, 'username', '')
-                }
+            if result.returncode == 0:
+                import json
+                response = json.loads(result.stdout)
+                log_detailed("VERIFY_CODE", f"Subprocess result: {response}")
 
-                log_detailed("VERIFY_CODE", f"Sign in successful for: {user_data.get('first_name', 'Unknown')}")
-                return {
-                    "success": True,
-                    "requires_2fa": False,
-                    "user": user_data
-                }
+                if response.get("success") and not response.get("requires_2fa"):
+                    # Cache the user info
+                    user_data = response.get("user", {})
+                    self.user_info = type('User', (), user_data)()
+                    self.is_authenticated = True
 
-            except SessionPasswordNeededError:
-                log_detailed("VERIFY_CODE", "2FA required")
-                return {
-                    "success": True,
-                    "requires_2fa": True,
-                    "user": None
-                }
+                return response
+            else:
+                log_detailed("VERIFY_CODE", f"Subprocess failed: {result.stderr}", "ERROR")
+                return {"success": False, "error": "Subprocess failed"}
 
-        except PhoneCodeInvalidError:
-            log_detailed("VERIFY_CODE", "Invalid verification code", "ERROR")
-            return {"success": False, "error": "Mã xác thực không đúng"}
-        except PhoneCodeExpiredError:
-            log_detailed("VERIFY_CODE", "Verification code expired", "ERROR")
-            return {"success": False, "error": "Mã xác thực đã hết hạn"}
         except Exception as e:
             log_detailed("VERIFY_CODE", f"Code verification failed: {e}", "ERROR")
             log_detailed("VERIFY_CODE", f"Traceback: {traceback.format_exc()}", "ERROR")
@@ -244,19 +230,26 @@ class UITelegramScanner:
                     log_detailed("CLIENT_FRESH", "Disconnected existing client")
                 except:
                     pass
-            
+
             # Load config
             from config import CONFIG
-            
+
+            # Ensure we're using the right event loop policy for Telethon
+            import sys
+            if sys.platform == "win32":
+                import asyncio
+                current_policy = asyncio.get_event_loop_policy()
+                log_detailed("CLIENT_FRESH", f"Current event loop policy: {type(current_policy).__name__}")
+
             # Create new client in current event loop
             self.client = TelegramClient(
                 CONFIG['telegram']['session_name'],
                 CONFIG['telegram']['api_id'],
                 CONFIG['telegram']['api_hash']
             )
-            
+
             log_detailed("CLIENT_FRESH", "Created fresh Telegram client")
-            
+
         except Exception as e:
             log_detailed("CLIENT_FRESH", f"Failed to create fresh client: {e}", "ERROR")
             raise
