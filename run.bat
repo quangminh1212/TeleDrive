@@ -135,7 +135,27 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 6/6] Khoi dong Private Channel Scanner...
+echo [BUOC 6/7] Kiem tra session Telegram...
+echo    ^> Dang kiem tra session hien tai...
+python check_session.py >nul 2>&1
+if errorlevel 1 (
+    echo ❌ Session khong hop le hoac chua dang nhap!
+    echo.
+    echo 🔐 CAN DANG NHAP TELEGRAM:
+    echo    1. Chay: python login_telegram.py
+    echo    2. Hoac chay: python main.py (trong terminal)
+    echo    3. Sau do quay lai chay run.bat
+    echo.
+    echo 💡 LUU Y: Khong the dang nhap qua file .bat!
+    echo.
+    pause
+    exit /b 1
+) else (
+    echo ✅ Session Telegram hop le
+)
+
+echo.
+echo [BUOC 7/7] Khoi dong Private Channel Scanner...
 echo ================================================================
 echo 🚀 DANG KHOI DONG SCANNER...
 echo ================================================================

@@ -41,7 +41,7 @@ class TelegramFileScanner:
         self.output_dir.mkdir(exist_ok=True)
         
     async def initialize(self):
-        """Khởi tạo Telegram client"""
+        """Khởi tạo Telegram client với xử lý lỗi cải thiện"""
         if DETAILED_LOGGING_AVAILABLE:
             log_step("KHỞI TẠO CLIENT", "Bắt đầu khởi tạo Telegram client")
 
@@ -66,15 +66,33 @@ class TelegramFileScanner:
                 log_step("ĐĂNG NHẬP", f"Đăng nhập với số: {config.PHONE_NUMBER}")
                 log_api_call("client.start", {"phone": config.PHONE_NUMBER})
 
-            await self.client.start(phone=config.PHONE_NUMBER)
+            # Kiểm tra session đã tồn tại chưa
+            if await self.client.is_user_authorized():
+                print("✅ Đã có session hợp lệ, không cần đăng nhập lại")
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("SESSION TỒN TẠI", "Sử dụng session đã có")
+            else:
+                print("🔐 Cần đăng nhập...")
+                # Sử dụng custom code callback để xử lý input tốt hơn
+                await self.client.start(
+                    phone=config.PHONE_NUMBER,
+                    code_callback=self._get_verification_code,
+                    password_callback=self._get_2fa_password
+                )
 
-            print("Da ket noi thanh cong voi Telegram!")
+            print("✅ Đã kết nối thành công với Telegram!")
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("KHỞI TẠO THÀNH CÔNG", "Đã kết nối thành công với Telegram")
 
+        except EOFError:
+            error_msg = "Không thể nhập mã xác thực. Vui lòng chạy script trong terminal tương tác."
+            print(f"❌ {error_msg}")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("INPUT ERROR", error_msg, "ERROR")
+            raise ValueError(error_msg)
         except ValueError as e:
             if "invalid literal for int()" in str(e):
-                error_msg = "API_ID phai la so nguyen, khong phai text"
+                error_msg = "API_ID phải là số nguyên, không phải text"
                 if DETAILED_LOGGING_AVAILABLE:
                     log_error(e, "API_ID validation")
                 raise ValueError(error_msg)
@@ -85,6 +103,23 @@ class TelegramFileScanner:
             if DETAILED_LOGGING_AVAILABLE:
                 log_error(e, "Client initialization - unexpected error")
             raise e
+
+    def _get_verification_code(self):
+        """Callback để nhập mã xác thực với xử lý lỗi"""
+        try:
+            return input("📱 Nhập mã xác thực từ Telegram: ")
+        except EOFError:
+            print("❌ Không thể nhập mã xác thực")
+            raise
+
+    def _get_2fa_password(self):
+        """Callback để nhập mật khẩu 2FA"""
+        try:
+            import getpass
+            return getpass.getpass("🔐 Nhập mật khẩu 2FA (nếu có): ")
+        except EOFError:
+            print("❌ Không thể nhập mật khẩu 2FA")
+            raise
         
     async def get_channel_entity(self, channel_input: str):
         """Lấy entity của kênh từ username hoặc invite link"""
@@ -427,9 +462,21 @@ class TelegramFileScanner:
         return f"{size_bytes:.1f} PB"
         
     async def close(self):
-        """Đóng kết nối"""
+        """Đóng kết nối với xử lý lỗi cải thiện"""
         if self.client:
-            await self.client.disconnect()
+            try:
+                if self.client.is_connected():
+                    await self.client.disconnect()
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("ĐÓNG KẾT NỐI", "Đã đóng kết nối Telegram thành công")
+                else:
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("ĐÓNG KẾT NỐI", "Client đã được đóng trước đó")
+            except Exception as e:
+                # Bỏ qua lỗi khi đóng kết nối
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("ĐÓNG KẾT NỐI", f"Lỗi khi đóng kết nối (bỏ qua): {e}", "WARNING")
+                pass
 
 async def main():
     scanner = TelegramFileScanner()

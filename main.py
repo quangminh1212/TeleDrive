@@ -217,6 +217,12 @@ async def main():
             print("   2. Thay '+84xxxxxxxxx' bằng số điện thoại thật")
             print("   3. Ví dụ: +84987654321")
             print("   4. Phải có mã quốc gia (+84 cho Việt Nam)")
+        elif "Không thể nhập mã xác thực" in str(e):
+            print("\n📋 HƯỚNG DẪN CHẠY ĐÚNG CÁCH:")
+            print("   1. Mở Command Prompt hoặc PowerShell")
+            print("   2. Chạy: python main.py")
+            print("   3. KHÔNG chạy qua file .bat khi lần đầu đăng nhập")
+            print("   4. Sau khi đăng nhập thành công, có thể dùng run.bat")
         else:
             print("\n📊 Chi tiết lỗi:")
             import traceback
@@ -225,8 +231,13 @@ async def main():
         print("\n🔧 Đang đóng kết nối...")
         if DETAILED_LOGGING_AVAILABLE:
             log_step("ĐÓNG ỨNG DỤNG", "Đang đóng kết nối và dọn dẹp")
-        await scanner.close()
-        print("✅ Đã đóng kết nối thành công")
+        try:
+            await scanner.close()
+            print("✅ Đã đóng kết nối thành công")
+        except Exception as close_error:
+            print(f"⚠️ Lỗi khi đóng kết nối (bỏ qua): {close_error}")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("ĐÓNG KẾT NỐI", f"Lỗi khi đóng: {close_error}", "WARNING")
 
 if __name__ == "__main__":
     print("🔧 Đang khởi tạo hệ thống...")
