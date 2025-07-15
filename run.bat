@@ -89,7 +89,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 3/6] Dong bo va kiem tra cau hinh chi tiet...
 echo    ^> Dang dong bo tu .env sang config.json...
-python -c "from config_manager import ConfigManager; cm = ConfigManager(); cm.sync_env_to_config(); print('✅ Dong bo thanh cong')" 2>nul
+python -c "from src.teledrive.config.manager import ConfigManager; cm = ConfigManager(); cm.update_from_env(); print('✅ Dong bo thanh cong')" 2>nul
 if errorlevel 1 (
     echo ❌ Loi dong bo cau hinh
     pause
@@ -97,7 +97,7 @@ if errorlevel 1 (
 )
 
 echo    ^> Dang kiem tra tinh hop le cua cau hinh...
-python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
+python -c "from src.teledrive.config.settings import validate_config; result = validate_config(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
 if errorlevel 1 (
     echo.
     echo ❌ CAU HINH CHUA HOP LE!
@@ -129,7 +129,7 @@ echo [BUOC 5/6] Khoi tao he thong logging...
 echo    ^> Tao thu muc logs neu chua co...
 if not exist logs mkdir logs
 echo    ^> Kiem tra cau hinh logging...
-python -c "from logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ He thong logging da san sang')" 2>nul
+python -c "from src.teledrive.utils.logger import setup_logging; from src.teledrive.config.settings import CONFIG; setup_logging(CONFIG.get('logging', {})); print('✅ He thong logging da san sang')" 2>nul
 if errorlevel 1 (
     echo ⚠️ Khong the khoi tao logging (se chay khong co log chi tiet)
 )
