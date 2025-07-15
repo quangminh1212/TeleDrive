@@ -26,11 +26,8 @@ if not exist .env (
 )
 
 echo.
-echo [3/3] Tao cac thu muc can thiet...
+echo [3/3] Tao thu muc output...
 if not exist output mkdir output
-if not exist logs mkdir logs
-if not exist config mkdir config
-echo Da tao cac thu muc: output, logs, config
 
 echo.
 echo ================================================================

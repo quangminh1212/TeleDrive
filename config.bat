@@ -33,7 +33,7 @@ if "%choice%"=="1" (
         goto MENU
     )
 
-    python -c "from src.teledrive.config.manager import ConfigManager; cm = ConfigManager(); print('Config manager not implemented in CLI yet')"
+    python config_manager.py
     echo.
     echo Nhan phim bat ky de quay lai menu...
     pause >nul
