@@ -47,6 +47,21 @@ Chay `config.bat` de quan ly cau hinh qua giao dien:
 
 ## Su dung
 
+### 🚀 Workflow toi uu:
+```bash
+# Lan dau su dung
+setup.bat → config.bat → run.bat
+
+# Su dung hang ngay
+run.bat
+```
+
+### 🔐 Login tu dong:
+- He thong se tu dong xu ly login khi can
+- Khong can chay rieng login.bat nua
+- Chi can chay run.bat la du cho moi tinh huong
+
+### 📋 Dinh dang channel ho tro:
 - **Private channel**: `https://t.me/joinchat/xxxxx` hoac `https://t.me/+xxxxx`
 - **Neu da join**: `@channelname`
 - **Ket qua**: Luu trong thu muc `output/`

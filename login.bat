@@ -56,13 +56,15 @@ echo ================================================================
 echo 🔐 DANG NHAP TELEGRAM
 echo ================================================================
 echo.
-echo 💡 LUU Y:
-echo    - Telegram se gui ma xac thuc den dien thoai cua ban
-echo    - Nhap ma xac thuc khi duoc yeu cau
-echo    - Neu co 2FA, nhap mat khau 2FA
+echo 💡 HE THONG DA DUOC TOI UU HOA:
+echo    - Login se duoc xu ly tu dong trong run.bat
+echo    - Khong can chay rieng login.bat nua
+echo    - Chi can chay run.bat la du
 echo.
 
-python login_telegram.py
+echo 🔄 Dang chuyen huong den run.bat...
+timeout /t 3 >nul
+call run.bat
 
 echo.
 echo ================================================================

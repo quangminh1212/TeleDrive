@@ -220,10 +220,10 @@ async def main():
             print("   4. Phải có mã quốc gia (+84 cho Việt Nam)")
         elif "Không thể nhập mã xác thực" in str(e):
             print("\n📋 HƯỚNG DẪN CHẠY ĐÚNG CÁCH:")
-            print("   1. Mở Command Prompt hoặc PowerShell")
-            print("   2. Chạy: python main.py")
-            print("   3. KHÔNG chạy qua file .bat khi lần đầu đăng nhập")
-            print("   4. Sau khi đăng nhập thành công, có thể dùng run.bat")
+            print("   1. Đảm bảo chạy trong Command Prompt hoặc PowerShell")
+            print("   2. Có thể chạy: run.bat hoặc python main.py")
+            print("   3. Hệ thống sẽ tự động yêu cầu đăng nhập khi cần")
+            print("   4. Nhập mã xác thực khi được yêu cầu")
         else:
             print("\n📊 Chi tiết lỗi:")
             import traceback
@@ -258,15 +258,8 @@ if __name__ == "__main__":
         print(f"❌ Lỗi tải cấu hình: {e}")
         sys.exit(1)
 
-    # Check session
-    print("🔍 Đang kiểm tra session...")
-    session_file = f"{config.SESSION_NAME}.session"
-    if not Path(session_file).exists():
-        print(f"❌ Không tìm thấy session file: {session_file}")
-        print("💡 Vui lòng chạy: python login_telegram.py")
-        sys.exit(1)
-    else:
-        print("✅ Session file đã tồn tại")
+    # Session sẽ được kiểm tra và tạo tự động trong engine.initialize()
+    print("🔐 Hệ thống sẽ tự động xử lý đăng nhập nếu cần")
 
     # Setup detailed logging nếu có
     print("📊 Đang thiết lập hệ thống logging...")

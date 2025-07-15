@@ -66,19 +66,28 @@ class TelegramFileScanner:
                 log_step("ĐĂNG NHẬP", f"Đăng nhập với số: {config.PHONE_NUMBER}")
                 log_api_call("client.start", {"phone": config.PHONE_NUMBER})
 
-            # Kiểm tra session đã tồn tại chưa
+            # Kết nối và kiểm tra session
+            await self.client.connect()
+
             if await self.client.is_user_authorized():
                 print("✅ Đã có session hợp lệ, không cần đăng nhập lại")
                 if DETAILED_LOGGING_AVAILABLE:
                     log_step("SESSION TỒN TẠI", "Sử dụng session đã có")
             else:
-                print("🔐 Cần đăng nhập...")
+                print("🔐 Chưa đăng nhập hoặc session đã hết hạn")
+                print("📱 Hệ thống sẽ gửi mã xác thực đến Telegram của bạn...")
+                print(f"📞 Số điện thoại: {config.PHONE_NUMBER}")
+                print()
+
                 # Sử dụng custom code callback để xử lý input tốt hơn
                 await self.client.start(
                     phone=config.PHONE_NUMBER,
                     code_callback=self._get_verification_code,
                     password_callback=self._get_2fa_password
                 )
+
+                print("🎉 Đăng nhập thành công!")
+                print("💾 Session đã được lưu cho lần sử dụng tiếp theo")
 
             print("✅ Đã kết nối thành công với Telegram!")
             if DETAILED_LOGGING_AVAILABLE:
@@ -107,7 +116,9 @@ class TelegramFileScanner:
     def _get_verification_code(self):
         """Callback để nhập mã xác thực với xử lý lỗi"""
         try:
-            return input("📱 Nhập mã xác thực từ Telegram: ")
+            print("📨 Telegram đã gửi mã xác thực đến điện thoại của bạn")
+            print("💡 Kiểm tra tin nhắn từ Telegram và nhập mã 5 số")
+            return input("📱 Nhập mã xác thực: ")
         except EOFError:
             print("❌ Không thể nhập mã xác thực")
             raise
@@ -115,8 +126,10 @@ class TelegramFileScanner:
     def _get_2fa_password(self):
         """Callback để nhập mật khẩu 2FA"""
         try:
+            print("🔐 Tài khoản của bạn có bật xác thực hai bước")
+            print("💡 Nhập mật khẩu 2FA mà bạn đã thiết lập trong Telegram")
             import getpass
-            return getpass.getpass("🔐 Nhập mật khẩu 2FA (nếu có): ")
+            return getpass.getpass("🔐 Nhập mật khẩu 2FA: ")
         except EOFError:
             print("❌ Không thể nhập mật khẩu 2FA")
             raise
