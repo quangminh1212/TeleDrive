@@ -4,14 +4,14 @@ Advanced Logging System cho Telegram File Scanner
 Hỗ trợ logging chi tiết cho từng bước và module
 """
 
+import json
 import logging
 import logging.handlers
-import os
 import sys
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any
-import json
 
 
 class DetailedLogger:
@@ -34,9 +34,7 @@ class DetailedLogger:
                 '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s')
         )
         
-        simple_format = logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(message)s'
-        )
+
         
         # Setup main logger
         self.main_logger = self._create_logger(
@@ -236,3 +234,10 @@ def log_error(error: Exception, context: str = ""):
     """Log error với global logger"""
     if _detailed_logger:
         _detailed_logger.log_error(error, context)
+
+
+def setup_logging(config: Dict[str, Any]):
+    """Setup logging system"""
+    global _detailed_logger
+    _detailed_logger = DetailedLogger(config)
+    return _detailed_logger

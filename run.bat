@@ -149,7 +149,7 @@ echo 📁 Ket qua se duoc luu trong thu muc 'output/'
 echo 📊 Log chi tiet se duoc luu trong thu muc 'logs/'
 echo.
 
-python main.py
+python -c "import sys; from pathlib import Path; sys.path.insert(0, str(Path('.') / 'src')); from teledrive.cli.main import main; import asyncio; asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy()) if sys.platform == 'win32' else None; asyncio.run(main())"
 
 echo.
 echo ================================================================

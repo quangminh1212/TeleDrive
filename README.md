@@ -1,6 +1,15 @@
-# Telegram File Scanner
+# TeleDrive - Professional Telegram File Scanner
 
-Quet va lay thong tin tat ca file trong private channel Telegram.
+A modern, professional tool for scanning and extracting file information from Telegram channels with clean architecture and comprehensive logging.
+
+## ✨ Features
+
+- 🔐 **Private Channel Support**: Scan private channels with invite links
+- 📁 **Multiple Output Formats**: CSV, Excel, JSON, and Simple JSON
+- 🚀 **Modern Architecture**: Clean, maintainable code structure
+- 📊 **Detailed Logging**: Comprehensive logging system for debugging
+- ⚙️ **Flexible Configuration**: JSON-based configuration with validation
+- 🔄 **Auto-sync**: Environment variables to configuration sync
 
 ## Cai dat nhanh
 
@@ -83,28 +92,51 @@ Du an co he thong logging chi tiet de theo doi tung buoc:
 - **Log realtime**: Hien thi tren console
 - **Log rotation**: Tu dong backup khi file qua lon
 
-## File structure
+## 📁 Project Structure
 
 ```
 TeleDrive/
-├── setup.bat         # Cai dat dependencies
-├── config.bat        # Quan ly cau hinh (bao gom phone + chi tiet)
-├── run.bat           # Chay scanner
-├── main.py           # Script chinh voi logging chi tiet
-├── engine.py         # Core engine voi logging chi tiet
-├── config.py         # Load cau hinh voi logging
-├── config_manager.py # Quan ly cau hinh tich hop (sync + validation)
-├── logger.py         # He thong logging chi tiet
-├── config.json       # Cau hinh chi tiet (bao gom logging)
-
-├── logs/             # Thu muc chua tat ca log files
-│   ├── scanner.log   # Log chinh
-│   ├── config.log    # Log cau hinh
-│   ├── api.log       # Log API calls
-│   ├── files.log     # Log file operations
-│   └── errors.log    # Log loi chi tiet
-└── output/           # Ket qua scan
+├── src/
+│   └── teledrive/
+│       ├── __init__.py
+│       ├── core/
+│       │   ├── __init__.py
+│       │   ├── scanner.py      # Main scanner functionality
+│       │   └── client.py       # Telegram client management
+│       ├── config/
+│       │   ├── __init__.py
+│       │   ├── manager.py      # Configuration management
+│       │   └── settings.py     # Configuration settings
+│       ├── utils/
+│       │   ├── __init__.py
+│       │   └── logger.py       # Logging system
+│       └── cli/
+│           ├── __init__.py
+│           └── main.py         # Command line interface
+├── config/
+│   └── config.json             # Configuration file
+├── logs/                       # Log files directory
+├── output/                     # Scan results directory
+├── tests/                      # Test files
+├── docs/                       # Documentation
+├── pyproject.toml              # Project configuration
+├── setup.py                    # Setup script
+├── requirements.txt            # Dependencies
+├── run.bat                     # Run scanner
+├── setup.bat                   # Setup dependencies
+├── config.bat                  # Configuration manager
+└── README.md                   # This file
 ```
+
+## 🏗️ Architecture
+
+The project follows modern Python packaging standards:
+
+- **src/teledrive/**: Main package with modular structure
+- **core/**: Core functionality (scanner, client)
+- **config/**: Configuration management
+- **utils/**: Utility functions (logging, etc.)
+- **cli/**: Command line interface
 
 ## Loi thuong gap
 
