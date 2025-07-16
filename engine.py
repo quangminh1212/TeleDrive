@@ -41,7 +41,7 @@ class TelegramFileScanner:
         self.output_dir.mkdir(exist_ok=True)
         
     async def initialize(self):
-        """Khởi tạo Telegram client với xử lý lỗi cải thiện"""
+        """Khởi tạo Telegram client"""
         if DETAILED_LOGGING_AVAILABLE:
             log_step("KHỞI TẠO CLIENT", "Bắt đầu khởi tạo Telegram client")
 
@@ -66,42 +66,15 @@ class TelegramFileScanner:
                 log_step("ĐĂNG NHẬP", f"Đăng nhập với số: {config.PHONE_NUMBER}")
                 log_api_call("client.start", {"phone": config.PHONE_NUMBER})
 
-            # Kết nối và kiểm tra session
-            await self.client.connect()
+            await self.client.start(phone=config.PHONE_NUMBER)
 
-            if await self.client.is_user_authorized():
-                print("✅ Đã có session hợp lệ, không cần đăng nhập lại")
-                if DETAILED_LOGGING_AVAILABLE:
-                    log_step("SESSION TỒN TẠI", "Sử dụng session đã có")
-            else:
-                print("🔐 Chưa đăng nhập hoặc session đã hết hạn")
-                print("📱 Hệ thống sẽ gửi mã xác thực đến Telegram của bạn...")
-                print(f"📞 Số điện thoại: {config.PHONE_NUMBER}")
-                print()
-
-                # Sử dụng custom code callback để xử lý input tốt hơn
-                await self.client.start(
-                    phone=config.PHONE_NUMBER,
-                    code_callback=self._get_verification_code,
-                    password_callback=self._get_2fa_password
-                )
-
-                print("🎉 Đăng nhập thành công!")
-                print("💾 Session đã được lưu cho lần sử dụng tiếp theo")
-
-            print("✅ Đã kết nối thành công với Telegram!")
+            print("Da ket noi thanh cong voi Telegram!")
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("KHỞI TẠO THÀNH CÔNG", "Đã kết nối thành công với Telegram")
 
-        except EOFError:
-            error_msg = "Không thể nhập mã xác thực. Vui lòng chạy script trong terminal tương tác."
-            print(f"❌ {error_msg}")
-            if DETAILED_LOGGING_AVAILABLE:
-                log_step("INPUT ERROR", error_msg, "ERROR")
-            raise ValueError(error_msg)
         except ValueError as e:
             if "invalid literal for int()" in str(e):
-                error_msg = "API_ID phải là số nguyên, không phải text"
+                error_msg = "API_ID phai la so nguyen, khong phai text"
                 if DETAILED_LOGGING_AVAILABLE:
                     log_error(e, "API_ID validation")
                 raise ValueError(error_msg)
@@ -112,27 +85,6 @@ class TelegramFileScanner:
             if DETAILED_LOGGING_AVAILABLE:
                 log_error(e, "Client initialization - unexpected error")
             raise e
-
-    def _get_verification_code(self):
-        """Callback để nhập mã xác thực với xử lý lỗi"""
-        try:
-            print("📨 Telegram đã gửi mã xác thực đến điện thoại của bạn")
-            print("💡 Kiểm tra tin nhắn từ Telegram và nhập mã 5 số")
-            return input("📱 Nhập mã xác thực: ")
-        except EOFError:
-            print("❌ Không thể nhập mã xác thực")
-            raise
-
-    def _get_2fa_password(self):
-        """Callback để nhập mật khẩu 2FA"""
-        try:
-            print("🔐 Tài khoản của bạn có bật xác thực hai bước")
-            print("💡 Nhập mật khẩu 2FA mà bạn đã thiết lập trong Telegram")
-            import getpass
-            return getpass.getpass("🔐 Nhập mật khẩu 2FA: ")
-        except EOFError:
-            print("❌ Không thể nhập mật khẩu 2FA")
-            raise
         
     async def get_channel_entity(self, channel_input: str):
         """Lấy entity của kênh từ username hoặc invite link"""
@@ -475,21 +427,9 @@ class TelegramFileScanner:
         return f"{size_bytes:.1f} PB"
         
     async def close(self):
-        """Đóng kết nối với xử lý lỗi cải thiện"""
+        """Đóng kết nối"""
         if self.client:
-            try:
-                if self.client.is_connected():
-                    await self.client.disconnect()
-                    if DETAILED_LOGGING_AVAILABLE:
-                        log_step("ĐÓNG KẾT NỐI", "Đã đóng kết nối Telegram thành công")
-                else:
-                    if DETAILED_LOGGING_AVAILABLE:
-                        log_step("ĐÓNG KẾT NỐI", "Client đã được đóng trước đó")
-            except Exception as e:
-                # Bỏ qua lỗi khi đóng kết nối
-                if DETAILED_LOGGING_AVAILABLE:
-                    log_step("ĐÓNG KẾT NỐI", f"Lỗi khi đóng kết nối (bỏ qua): {e}", "WARNING")
-                pass
+            await self.client.disconnect()
 
 async def main():
     scanner = TelegramFileScanner()
@@ -514,10 +454,4 @@ async def main():
         await scanner.close()
 
 if __name__ == "__main__":
-    # Setup Windows event loop FIRST
-    import sys
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-        print("✅ Đã cấu hình Windows ProactorEventLoopPolicy")
-
     asyncio.run(main())

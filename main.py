@@ -6,7 +6,6 @@ Chuyên dụng cho việc quét file trong private channel/group Telegram
 
 import asyncio
 import sys
-from pathlib import Path
 from engine import TelegramFileScanner
 
 # Import detailed logging
@@ -218,12 +217,6 @@ async def main():
             print("   2. Thay '+84xxxxxxxxx' bằng số điện thoại thật")
             print("   3. Ví dụ: +84987654321")
             print("   4. Phải có mã quốc gia (+84 cho Việt Nam)")
-        elif "Không thể nhập mã xác thực" in str(e):
-            print("\n📋 HƯỚNG DẪN CHẠY ĐÚNG CÁCH:")
-            print("   1. Đảm bảo chạy trong Command Prompt hoặc PowerShell")
-            print("   2. Có thể chạy: run.bat hoặc python main.py")
-            print("   3. Hệ thống sẽ tự động yêu cầu đăng nhập khi cần")
-            print("   4. Nhập mã xác thực khi được yêu cầu")
         else:
             print("\n📊 Chi tiết lỗi:")
             import traceback
@@ -232,22 +225,11 @@ async def main():
         print("\n🔧 Đang đóng kết nối...")
         if DETAILED_LOGGING_AVAILABLE:
             log_step("ĐÓNG ỨNG DỤNG", "Đang đóng kết nối và dọn dẹp")
-        try:
-            await scanner.close()
-            print("✅ Đã đóng kết nối thành công")
-        except Exception as close_error:
-            print(f"⚠️ Lỗi khi đóng kết nối (bỏ qua): {close_error}")
-            if DETAILED_LOGGING_AVAILABLE:
-                log_step("ĐÓNG KẾT NỐI", f"Lỗi khi đóng: {close_error}", "WARNING")
+        await scanner.close()
+        print("✅ Đã đóng kết nối thành công")
 
 if __name__ == "__main__":
     print("🔧 Đang khởi tạo hệ thống...")
-
-    # Setup Windows event loop FIRST - before any asyncio operations
-    print("🔧 Đang cấu hình event loop...")
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-        print("✅ Đã cấu hình Windows ProactorEventLoopPolicy")
 
     # Load config
     print("📋 Đang tải cấu hình...")
@@ -257,9 +239,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Lỗi tải cấu hình: {e}")
         sys.exit(1)
-
-    # Session sẽ được kiểm tra và tạo tự động trong engine.initialize()
-    print("🔐 Hệ thống sẽ tự động xử lý đăng nhập nếu cần")
 
     # Setup detailed logging nếu có
     print("📊 Đang thiết lập hệ thống logging...")
@@ -279,14 +258,13 @@ if __name__ == "__main__":
     else:
         print("⚠️ Module logging chi tiết không khả dụng")
 
+    # Setup Windows event loop
+    print("🔧 Đang cấu hình event loop...")
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        print("✅ Đã cấu hình Windows ProactorEventLoopPolicy")
+
     print("🚀 Khởi động ứng dụng chính...")
     print("=" * 60)
 
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\n⏹️ Đã dừng bởi người dùng")
-    except Exception as e:
-        print(f"\n❌ Lỗi không mong muốn: {e}")
-        import traceback
-        traceback.print_exc()
+    asyncio.run(main())

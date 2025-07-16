@@ -46,24 +46,6 @@ pip install -r requirements/dev.txt
 # Install in development mode
 pip install -e .
 
-<<<<<<< HEAD
-### 🚀 Workflow toi uu:
-```bash
-# Lan dau su dung
-setup.bat → config.bat → run.bat
-
-# Su dung hang ngay
-run.bat
-```
-
-### 🔐 Login tu dong:
-- He thong se tu dong xu ly login khi can
-- Khong can chay rieng login.bat nua
-- Chi can chay run.bat la du cho moi tinh huong
-
-### 📋 Dinh dang channel ho tro:
-- **Private channel**: `https://t.me/joinchat/xxxxx` hoac `https://t.me/+xxxxx`
-=======
 # Run the application
 python -m teledrive.cli.main scan
 ```
@@ -171,7 +153,6 @@ teledrive config --validate
 teledrive config --set telegram.api_id 12345
 teledrive config --set output.directory ./my_output
 ```
->>>>>>> 5cd311c28ab0746a2cc2ce9f78e7bad7d2103098
 - **Neu da join**: `@channelname`
 - **Ket qua**: Luu trong thu muc `output/`
 

@@ -187,28 +187,9 @@ if errorlevel 1 (
 )
 
 echo.
-<<<<<<< HEAD
-echo [BUOC 6/6] Khoi dong Private Channel Scanner...
-echo ================================================================
-echo 🚀 DANG KHOI DONG SCANNER...
-echo ================================================================
-echo.
-echo 🔐 Neu chua dang nhap, he thong se tu dong yeu cau:
-echo    • Nhap ma xac thuc tu Telegram
-echo    • Nhap mat khau 2FA (neu co)
-echo.
-echo 📋 Ho tro cac format channel:
-echo    • https://t.me/joinchat/xxxxx  (invite link cu)
-echo    • https://t.me/+xxxxx          (invite link moi)
-echo    • @privatechannel              (neu da join)
-echo.
-echo 📁 Ket qua se duoc luu trong thu muc 'output/'
-echo 📊 Log chi tiet se duoc luu trong thu muc 'logs/'
-=======
 echo Results saved in 'output' directory
 echo Logs saved in 'logs' directory
 echo Database saved in 'data' directory
->>>>>>> 5cd311c28ab0746a2cc2ce9f78e7bad7d2103098
 echo.
 pause
 goto :menu
