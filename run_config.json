@@ -1,98 +1,18 @@
 {
-  "_description": "Cấu hình tham số đầu vào cho run.bat - File này chứa các thiết lập thường dùng khi chạy scanner",
-  "_version": "1.0",
-  "_created": "2025-01-16",
-  
-  "run_mode": {
-    "_description": "Chế độ chạy của scanner",
-    "auto_mode": true,
-    "use_default_channel": true,
-    "skip_user_input": false,
-    "show_detailed_progress": true
+  "channel": "@duongtinhchat92",
+  "max_messages": 1000,
+  "batch_size": 50,
+  "file_types": {
+    "documents": true,
+    "photos": true,
+    "videos": true,
+    "audio": true
   },
-  
-  "default_channels": {
-    "_description": "Danh sách channel mặc định để scan",
-    "primary_channel": "@duongtinhchat92",
-    "backup_channels": [
-      "@duongtinhchat92",
-      "https://t.me/+abcdefghijklm"
-    ],
-    "scan_all_channels": false
+  "output_formats": {
+    "csv": true,
+    "json": true,
+    "excel": true
   },
-  
-  "scan_settings": {
-    "_description": "Thiết lập quét file cơ bản",
-    "max_messages": 1000,
-    "file_types": {
-      "documents": true,
-      "photos": true,
-      "videos": true,
-      "audio": true,
-      "voice": false,
-      "stickers": false
-    },
-    "scan_direction": "newest_first",
-    "batch_size": 50
-  },
-  
-  "output_settings": {
-    "_description": "Thiết lập file đầu ra",
-    "output_formats": {
-      "csv": true,
-      "json": true,
-      "excel": true,
-      "simple_json": false
-    },
-    "create_timestamp_folder": false,
-    "backup_existing_files": true,
-    "auto_open_result": false
-  },
-  
-  "performance": {
-    "_description": "Thiết lập hiệu suất",
-    "concurrent_downloads": 3,
-    "sleep_between_batches": 1,
-    "memory_limit_mb": 512,
-    "timeout_seconds": 300
-  },
-  
-  "display": {
-    "_description": "Thiết lập hiển thị",
-    "show_progress_bar": true,
-    "show_file_details": true,
-    "show_statistics": true,
-    "language": "vi",
-    "console_colors": true
-  },
-  
-  "filters": {
-    "_description": "Bộ lọc file",
-    "min_file_size_mb": 0,
-    "max_file_size_mb": 100,
-    "allowed_extensions": [],
-    "blocked_extensions": [".exe", ".bat", ".cmd", ".scr"],
-    "date_filter": {
-      "enabled": false,
-      "from_date": "",
-      "to_date": ""
-    }
-  },
-  
-  "automation": {
-    "_description": "Thiết lập tự động hóa",
-    "auto_start": false,
-    "auto_exit_on_complete": false,
-    "save_session": true,
-    "resume_on_error": true,
-    "max_retry_attempts": 3
-  },
-  
-  "notifications": {
-    "_description": "Thông báo và cảnh báo",
-    "show_completion_message": true,
-    "show_error_details": true,
-    "play_sound_on_complete": false,
-    "log_to_file": true
-  }
+  "show_progress": true,
+  "language": "vi"
 }

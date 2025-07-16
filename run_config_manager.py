@@ -67,20 +67,9 @@ class RunConfigManager:
             self.config[section] = {}
         self.config[section][key] = value
     
-    def get_channels_to_scan(self) -> list:
-        """Lấy danh sách channel cần scan"""
-        channels = []
-        
-        if self.get_setting('default_channels', 'scan_all_channels', False):
-            # Scan tất cả channels
-            channels.extend(self.get_setting('default_channels', 'backup_channels', []))
-        else:
-            # Chỉ scan primary channel
-            primary = self.get_setting('default_channels', 'primary_channel', '')
-            if primary:
-                channels.append(primary)
-        
-        return channels
+    def get_channel_to_scan(self) -> str:
+        """Lấy channel cần scan"""
+        return self.config.get('channel', '@duongtinhchat92')
     
     def apply_to_main_config(self) -> bool:
         """Áp dụng run_config vào config.json chính"""
@@ -89,134 +78,91 @@ class RunConfigManager:
             if not os.path.exists('config.json'):
                 print("❌ File config.json không tồn tại!")
                 return False
-            
+
             with open('config.json', 'r', encoding='utf-8') as f:
                 main_config = json.load(f)
-            
-            # Áp dụng các thiết lập từ run_config
-            
-            # Channels
-            if self.get_setting('run_mode', 'use_default_channel', True):
+
+            # Áp dụng các thiết lập từ run_config (cấu trúc tối giản)
+
+            # Channel
+            channel = self.config.get('channel')
+            if channel:
                 main_config['channels']['use_default_channel'] = True
-                primary_channel = self.get_setting('default_channels', 'primary_channel', '')
-                if primary_channel:
-                    main_config['channels']['default_channel'] = primary_channel
-            
+                main_config['channels']['default_channel'] = channel
+
             # Scanning settings
-            max_messages = self.get_setting('scan_settings', 'max_messages')
+            max_messages = self.config.get('max_messages')
             if max_messages:
                 main_config['scanning']['max_messages'] = max_messages
-            
-            batch_size = self.get_setting('scan_settings', 'batch_size')
+
+            batch_size = self.config.get('batch_size')
             if batch_size:
                 main_config['scanning']['batch_size'] = batch_size
-            
-            scan_direction = self.get_setting('scan_settings', 'scan_direction')
-            if scan_direction:
-                main_config['scanning']['scan_direction'] = scan_direction
-            
+
             # File types
-            file_types = self.get_setting('scan_settings', 'file_types', {})
+            file_types = self.config.get('file_types', {})
             for file_type, enabled in file_types.items():
                 if file_type in main_config['scanning']['file_types']:
                     main_config['scanning']['file_types'][file_type] = enabled
-            
+
             # Output formats
-            output_formats = self.get_setting('output_settings', 'output_formats', {})
+            output_formats = self.config.get('output_formats', {})
             for format_name, enabled in output_formats.items():
                 if format_name in main_config['output']['formats']:
                     main_config['output']['formats'][format_name]['enabled'] = enabled
-            
-            # Performance
-            concurrent_downloads = self.get_setting('performance', 'concurrent_downloads')
-            if concurrent_downloads:
-                main_config['scanning']['performance']['concurrent_downloads'] = concurrent_downloads
-            
-            sleep_between_batches = self.get_setting('performance', 'sleep_between_batches')
-            if sleep_between_batches:
-                main_config['scanning']['performance']['sleep_between_batches'] = sleep_between_batches
-            
-            memory_limit = self.get_setting('performance', 'memory_limit_mb')
-            if memory_limit:
-                main_config['scanning']['performance']['memory_limit_mb'] = memory_limit
-            
+
             # Display
-            show_progress = self.get_setting('display', 'show_progress_bar', True)
-            main_config['display']['show_progress'] = show_progress
-            
-            show_details = self.get_setting('display', 'show_file_details', True)
-            main_config['display']['show_file_details'] = show_details
-            
-            show_stats = self.get_setting('display', 'show_statistics', True)
-            main_config['display']['show_statistics'] = show_stats
-            
-            language = self.get_setting('display', 'language', 'vi')
-            main_config['display']['language'] = language
-            
-            # Filters
-            min_size = self.get_setting('filters', 'min_file_size_mb', 0)
-            main_config['filters']['min_file_size'] = min_size * 1024 * 1024  # Convert to bytes
-            
-            max_size = self.get_setting('filters', 'max_file_size_mb')
-            if max_size:
-                main_config['filters']['max_file_size'] = max_size * 1024 * 1024  # Convert to bytes
-            
-            blocked_ext = self.get_setting('filters', 'blocked_extensions', [])
-            if blocked_ext:
-                main_config['filters']['exclude_extensions'] = blocked_ext
-            
+            show_progress = self.config.get('show_progress')
+            if show_progress is not None:
+                main_config['display']['show_progress'] = show_progress
+
+            language = self.config.get('language')
+            if language:
+                main_config['display']['language'] = language
+
             # Lưu config.json đã cập nhật
             with open('config.json', 'w', encoding='utf-8') as f:
                 json.dump(main_config, f, indent=2, ensure_ascii=False)
-            
+
             print("✅ Đã áp dụng run_config vào config.json")
             return True
-            
+
         except Exception as e:
             print(f"❌ Lỗi khi áp dụng cấu hình: {e}")
             return False
     
     def show_current_settings(self) -> None:
         """Hiển thị cấu hình hiện tại"""
-        print("\n" + "="*60)
-        print("           CẤU HÌNH HIỆN TẠI")
-        print("="*60)
-        
-        # Run mode
-        print(f"\n🔧 CHẾĐỘ CHẠY:")
-        print(f"   Auto mode: {self.get_setting('run_mode', 'auto_mode', False)}")
-        print(f"   Dùng channel mặc định: {self.get_setting('run_mode', 'use_default_channel', True)}")
-        print(f"   Bỏ qua input người dùng: {self.get_setting('run_mode', 'skip_user_input', False)}")
-        
-        # Channels
-        print(f"\n📺 CHANNELS:")
-        print(f"   Channel chính: {self.get_setting('default_channels', 'primary_channel', 'Chưa đặt')}")
-        backup_channels = self.get_setting('default_channels', 'backup_channels', [])
-        print(f"   Channels dự phòng: {len(backup_channels)} channel(s)")
-        
+        print("\n" + "="*50)
+        print("        CẤU HÌNH HIỆN TẠI")
+        print("="*50)
+
+        # Channel
+        print(f"\n📺 CHANNEL:")
+        print(f"   {self.config.get('channel', 'Chưa đặt')}")
+
         # Scan settings
         print(f"\n🔍 THIẾT LẬP QUÉT:")
-        print(f"   Số tin nhắn tối đa: {self.get_setting('scan_settings', 'max_messages', 'Không giới hạn')}")
-        print(f"   Batch size: {self.get_setting('scan_settings', 'batch_size', 50)}")
-        print(f"   Hướng quét: {self.get_setting('scan_settings', 'scan_direction', 'newest_first')}")
-        
+        print(f"   Số tin nhắn tối đa: {self.config.get('max_messages', 'Không giới hạn')}")
+        print(f"   Batch size: {self.config.get('batch_size', 50)}")
+
         # File types
-        file_types = self.get_setting('scan_settings', 'file_types', {})
+        file_types = self.config.get('file_types', {})
         enabled_types = [k for k, v in file_types.items() if v]
         print(f"   Loại file: {', '.join(enabled_types) if enabled_types else 'Tất cả'}")
-        
+
         # Output
         print(f"\n📁 ĐẦU RA:")
-        output_formats = self.get_setting('output_settings', 'output_formats', {})
+        output_formats = self.config.get('output_formats', {})
         enabled_formats = [k for k, v in output_formats.items() if v]
         print(f"   Định dạng: {', '.join(enabled_formats) if enabled_formats else 'Mặc định'}")
-        
-        # Performance
-        print(f"\n⚡ HIỆU SUẤT:")
-        print(f"   Downloads đồng thời: {self.get_setting('performance', 'concurrent_downloads', 3)}")
-        print(f"   Giới hạn RAM: {self.get_setting('performance', 'memory_limit_mb', 512)} MB")
-        
-        print("\n" + "="*60)
+
+        # Display
+        print(f"\n🖥️ HIỂN THỊ:")
+        print(f"   Hiện progress: {self.config.get('show_progress', True)}")
+        print(f"   Ngôn ngữ: {self.config.get('language', 'vi')}")
+
+        print("\n" + "="*50)
 
 
 def main():

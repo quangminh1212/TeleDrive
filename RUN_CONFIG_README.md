@@ -39,98 +39,40 @@ python run_config_manager.py apply
 
 Mở file `run_config.json` và chỉnh sửa các giá trị theo nhu cầu.
 
-## Cấu trúc file run_config.json
+## Cấu trúc file run_config.json (Tối giản)
 
-### run_mode - Chế độ chạy
+File `run_config.json` được thiết kế tối giản với chỉ những tham số cần thiết nhất:
+
 ```json
 {
-  "run_mode": {
-    "auto_mode": true,              // Chạy tự động
-    "use_default_channel": true,    // Sử dụng channel mặc định
-    "skip_user_input": false,       // Bỏ qua input từ người dùng
-    "show_detailed_progress": true  // Hiển thị tiến trình chi tiết
-  }
+  "channel": "@duongtinhchat92",    // Channel cần quét
+  "max_messages": 1000,            // Số tin nhắn tối đa (null = không giới hạn)
+  "batch_size": 50,                // Kích thước batch
+  "file_types": {                  // Loại file cần quét
+    "documents": true,
+    "photos": true,
+    "videos": true,
+    "audio": true
+  },
+  "output_formats": {              // Định dạng file đầu ra
+    "csv": true,
+    "json": true,
+    "excel": true
+  },
+  "show_progress": true,           // Hiển thị thanh tiến trình
+  "language": "vi"                 // Ngôn ngữ hiển thị
 }
 ```
 
-### default_channels - Channels mặc định
-```json
-{
-  "default_channels": {
-    "primary_channel": "@duongtinhchat92",  // Channel chính
-    "backup_channels": [                    // Channels dự phòng
-      "@duongtinhchat92",
-      "https://t.me/+abcdefghijklm"
-    ],
-    "scan_all_channels": false              // Quét tất cả channels
-  }
-}
-```
+### Các tham số:
 
-### scan_settings - Thiết lập quét
-```json
-{
-  "scan_settings": {
-    "max_messages": 1000,           // Số tin nhắn tối đa (null = không giới hạn)
-    "file_types": {                 // Loại file cần quét
-      "documents": true,
-      "photos": true,
-      "videos": true,
-      "audio": true,
-      "voice": false,
-      "stickers": false
-    },
-    "scan_direction": "newest_first", // Hướng quét: newest_first/oldest_first
-    "batch_size": 50                // Kích thước batch
-  }
-}
-```
-
-### output_settings - Thiết lập đầu ra
-```json
-{
-  "output_settings": {
-    "output_formats": {             // Định dạng file đầu ra
-      "csv": true,
-      "json": true,
-      "excel": true,
-      "simple_json": false
-    },
-    "create_timestamp_folder": false, // Tạo thư mục theo timestamp
-    "backup_existing_files": true,    // Backup file cũ
-    "auto_open_result": false         // Tự động mở kết quả
-  }
-}
-```
-
-### performance - Hiệu suất
-```json
-{
-  "performance": {
-    "concurrent_downloads": 3,      // Số download đồng thời
-    "sleep_between_batches": 1,     // Nghỉ giữa các batch (giây)
-    "memory_limit_mb": 512,         // Giới hạn RAM (MB)
-    "timeout_seconds": 300          // Timeout (giây)
-  }
-}
-```
-
-### filters - Bộ lọc
-```json
-{
-  "filters": {
-    "min_file_size_mb": 0,          // Kích thước file tối thiểu (MB)
-    "max_file_size_mb": 100,        // Kích thước file tối đa (MB)
-    "allowed_extensions": [],        // Phần mở rộng cho phép
-    "blocked_extensions": [".exe", ".bat", ".cmd", ".scr"], // Phần mở rộng chặn
-    "date_filter": {
-      "enabled": false,
-      "from_date": "",              // Từ ngày (YYYY-MM-DD)
-      "to_date": ""                 // Đến ngày (YYYY-MM-DD)
-    }
-  }
-}
-```
+- **`channel`** - Channel Telegram cần quét (username hoặc invite link)
+- **`max_messages`** - Số tin nhắn tối đa để quét (null = không giới hạn)
+- **`batch_size`** - Số tin nhắn xử lý trong mỗi batch
+- **`file_types`** - Loại file cần quét (documents, photos, videos, audio)
+- **`output_formats`** - Định dạng file đầu ra (csv, json, excel)
+- **`show_progress`** - Hiển thị thanh tiến trình
+- **`language`** - Ngôn ngữ giao diện (vi/en)
 
 ## Quy trình hoạt động
 
@@ -151,41 +93,40 @@ Mở file `run_config.json` và chỉnh sửa các giá trị theo nhu cầu.
 ### Cấu hình nhanh cho quét channel cụ thể
 ```json
 {
-  "default_channels": {
-    "primary_channel": "@mychannel"
-  },
-  "scan_settings": {
-    "max_messages": 500,
-    "file_types": {
-      "documents": true,
-      "photos": false,
-      "videos": true
-    }
+  "channel": "@mychannel",
+  "max_messages": 500,
+  "file_types": {
+    "documents": true,
+    "photos": false,
+    "videos": true,
+    "audio": false
   }
 }
 ```
 
-### Cấu hình cho hiệu suất cao
+### Cấu hình cho batch lớn
 ```json
 {
-  "performance": {
-    "concurrent_downloads": 5,
-    "sleep_between_batches": 0.5,
-    "memory_limit_mb": 1024
-  },
-  "scan_settings": {
-    "batch_size": 100
+  "channel": "@duongtinhchat92",
+  "max_messages": null,
+  "batch_size": 100,
+  "file_types": {
+    "documents": true,
+    "photos": true,
+    "videos": true,
+    "audio": true
   }
 }
 ```
 
-### Cấu hình lọc file theo kích thước
+### Cấu hình chỉ xuất CSV
 ```json
 {
-  "filters": {
-    "min_file_size_mb": 1,
-    "max_file_size_mb": 50,
-    "blocked_extensions": [".exe", ".bat", ".zip"]
+  "channel": "@duongtinhchat92",
+  "output_formats": {
+    "csv": true,
+    "json": false,
+    "excel": false
   }
 }
 ```

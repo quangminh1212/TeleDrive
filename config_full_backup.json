@@ -1,0 +1,220 @@
+{
+  "_schema_version": "1.0",
+  "_description": "Telegram File Scanner Configuration",
+  "_last_updated": "2025-01-11",
+  "telegram": {
+    "_description": "Telegram API configuration - Get credentials from https://my.telegram.org/apps",
+    "api_id": "21272067",
+    "api_hash": "b7690dc86952dbc9b16717b101164af3",
+    "phone_number": "+84936374950",
+    "session_name": "telegram_scanner_session",
+    "connection_timeout": 60,
+    "request_timeout": 120,
+    "retry_attempts": 5,
+    "retry_delay": 5,
+    "flood_sleep_threshold": 60,
+    "device_model": "Telegram File Scanner",
+    "system_version": "1.0",
+    "app_version": "1.0",
+    "lang_code": "vi",
+    "system_lang_code": "vi-VN",
+    "keep_alive": true
+  },
+  "channels": {
+    "_description": "Default channels to scan - Will be used by run.bat without user input",
+    "use_default_channel": true,
+    "default_channel": "@duongtinhchat92",
+    "channels_list": [
+      {
+        "name": "Duong Tinh Chat 92",
+        "identifier": "@duongtinhchat92",
+        "type": "username"
+      },
+      {
+        "name": "Private Channel Example",
+        "identifier": "https://t.me/+abcdefghijklm",
+        "type": "invite_link"
+      }
+    ]
+  },
+  "output": {
+    "_description": "Output file configuration",
+    "directory": "output",
+    "create_subdirs": true,
+    "timestamp_folders": false,
+    "backup_existing": true,
+    "formats": {
+      "csv": {
+        "enabled": true,
+        "filename": "telegram_files.csv",
+        "encoding": "utf-8-sig",
+        "delimiter": ",",
+        "include_headers": true
+      },
+      "json": {
+        "enabled": true,
+        "filename": "telegram_files.json",
+        "encoding": "utf-8",
+        "indent": 2,
+        "ensure_ascii": false
+      },
+      "excel": {
+        "enabled": true,
+        "filename": "telegram_files.xlsx",
+        "sheet_name": "Telegram Files",
+        "auto_filter": true,
+        "freeze_panes": true
+      },
+      "simple_json": {
+        "enabled": false,
+        "filename": "simple_files.json",
+        "encoding": "utf-8",
+        "fields": [
+          "name",
+          "download_link"
+        ]
+      }
+    }
+  },
+  "scanning": {
+    "_description": "Scanning behavior configuration",
+    "max_messages": 1000,
+    "batch_size": 50,
+    "scan_direction": "newest_first",
+    "include_deleted": false,
+    "skip_duplicates": true,
+    "scan_replies": true,
+    "scan_forwards": true,
+    "min_message_id": null,
+    "max_message_id": null,
+    "file_types": {
+      "documents": true,
+      "photos": true,
+      "videos": true,
+      "audio": true,
+      "voice": false,
+      "stickers": false,
+      "animations": true,
+      "video_notes": true,
+      "contacts": false,
+      "locations": false
+    },
+    "performance": {
+      "concurrent_downloads": 3,
+      "sleep_between_batches": 1,
+      "memory_limit_mb": 512,
+      "cache_size": 1000
+    }
+  },
+  "download": {
+    "_description": "Download and link generation settings",
+    "generate_links": true,
+    "include_preview": false,
+    "auto_download": false,
+    "download_directory": "downloads",
+    "create_date_folders": true,
+    "preserve_filename": true,
+    "max_file_size_mb": 100,
+    "allowed_extensions": [],
+    "blocked_extensions": [
+      ".exe",
+      ".bat",
+      ".cmd",
+      ".scr"
+    ],
+    "download_timeout": 300,
+    "verify_downloads": true,
+    "resume_downloads": true
+  },
+  "display": {
+    "_description": "Display and UI configuration",
+    "show_progress": true,
+    "show_file_details": true,
+    "show_statistics": true,
+    "language": "vi",
+    "date_format": "DD/MM/YYYY HH:mm:ss",
+    "file_size_format": "auto",
+    "progress_bar_style": "bar",
+    "console_width": 80,
+    "log_level": "INFO",
+    "colors": {
+      "success": "green",
+      "error": "red",
+      "warning": "yellow",
+      "info": "blue"
+    }
+  },
+  "filters": {
+    "_description": "File filtering configuration",
+    "min_file_size": 0,
+    "max_file_size": 104857600,
+    "file_extensions": [],
+    "exclude_extensions": [
+      ".exe",
+      ".bat",
+      ".cmd",
+      ".scr"
+    ],
+    "date_from": null,
+    "date_to": null,
+    "filename_patterns": [],
+    "exclude_patterns": [],
+    "sender_filter": [],
+    "exclude_senders": [],
+    "message_text_filter": "",
+    "case_sensitive": false
+  },
+  "security": {
+    "_description": "Security and privacy settings",
+    "mask_phone_numbers": true,
+    "mask_user_ids": false,
+    "exclude_personal_info": true,
+    "secure_session": true,
+    "auto_logout": false,
+    "session_timeout": 3600
+  },
+  "logging": {
+    "_description": "Logging configuration",
+    "enabled": true,
+    "level": "DEBUG",
+    "file": "logs/scanner.log",
+    "max_size_mb": 10,
+    "backup_count": 5,
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s",
+    "console_output": true,
+    "detailed_steps": true,
+    "show_progress_details": true,
+    "log_api_calls": true,
+    "log_file_operations": true,
+    "log_config_changes": true,
+    "separate_files": {
+      "enabled": true,
+      "config_log": "logs/config.log",
+      "api_log": "logs/api.log",
+      "files_log": "logs/files.log",
+      "errors_log": "logs/errors.log"
+    }
+  },
+  "advanced": {
+    "_description": "Advanced configuration options",
+    "use_ipv6": false,
+    "proxy": {
+      "enabled": false,
+      "type": "socks5",
+      "host": "",
+      "port": 1080,
+      "username": "",
+      "password": ""
+    },
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_second": 10,
+      "burst_limit": 20
+    },
+    "experimental": {
+      "parallel_scanning": false,
+      "smart_retry": true,
+      "adaptive_batch_size": false
+    }
+  }
+}

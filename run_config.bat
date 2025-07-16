@@ -96,7 +96,7 @@ if "%choice%"=="3" (
         
         if not "!new_channel!"=="" (
             echo Dang cap nhat channel mac dinh...
-            REM TODO: Cap nhat vao run_config.json
+            python -c "import json; config=json.load(open('run_config.json','r',encoding='utf-8')); config['channel']='!new_channel!'; json.dump(config,open('run_config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)"
             echo Da cap nhat channel: !new_channel!
         )
     )
@@ -110,6 +110,7 @@ if "%choice%"=="3" (
         
         if not "!max_msg!"=="" (
             echo Dang cap nhat so tin nhan toi da...
+            python -c "import json; config=json.load(open('run_config.json','r',encoding='utf-8')); config['max_messages']=int('!max_msg!') if '!max_msg!'!='0' else None; json.dump(config,open('run_config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)"
             echo Da cap nhat: !max_msg! tin nhan
         )
     )
@@ -144,19 +145,7 @@ if "%choice%"=="4" (
         )
         
         REM Tao lai file config mac dinh
-        python -c "
-import json
-default_config = {
-    'run_mode': {'auto_mode': True, 'use_default_channel': True},
-    'default_channels': {'primary_channel': '@duongtinhchat92'},
-    'scan_settings': {'max_messages': 1000, 'batch_size': 50},
-    'output_settings': {'output_formats': {'csv': True, 'json': True, 'excel': True}},
-    'performance': {'concurrent_downloads': 3, 'memory_limit_mb': 512}
-}
-with open('run_config.json', 'w', encoding='utf-8') as f:
-    json.dump(default_config, f, indent=2, ensure_ascii=False)
-print('Da reset cau hinh ve mac dinh!')
-"
+        python -c "import json; default_config={'channel': '@duongtinhchat92', 'max_messages': 1000, 'batch_size': 50, 'file_types': {'documents': True, 'photos': True, 'videos': True, 'audio': True}, 'output_formats': {'csv': True, 'json': True, 'excel': True}, 'show_progress': True, 'language': 'vi'}; json.dump(default_config, open('run_config.json', 'w', encoding='utf-8'), indent=2, ensure_ascii=False); print('Da reset cau hinh ve mac dinh!')"
         
         echo.
         echo Da reset thanh cong!
