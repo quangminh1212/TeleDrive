@@ -17,7 +17,7 @@ if errorlevel 1 (
 )
 
 REM Check if virtual environment exists
-if not exist "venv\Scripts\activate.bat" (
+if not exist "venv" (
     echo [INFO] Creating virtual environment...
     python -m venv venv
     if errorlevel 1 (
@@ -25,35 +25,24 @@ if not exist "venv\Scripts\activate.bat" (
         pause
         exit /b 1
     )
-    echo [INFO] Virtual environment created successfully
 )
 
 REM Activate virtual environment
 echo [INFO] Activating virtual environment...
-if exist "venv\Scripts\activate.bat" (
-    call "venv\Scripts\activate.bat"
-    if errorlevel 1 (
-        echo [WARNING] Virtual environment activation failed, continuing without venv
-    ) else (
-        echo [INFO] Virtual environment activated successfully
-    )
-) else (
-    echo [WARNING] Virtual environment not found, running without venv
+call venv\Scripts\activate.bat
+if errorlevel 1 (
+    echo [ERROR] Cannot activate virtual environment
+    pause
+    exit /b 1
 )
 
 REM Install/update dependencies
 echo [INFO] Installing dependencies...
 pip install -r requirements.txt --quiet --upgrade
 if errorlevel 1 (
-    echo [WARNING] Some dependencies may not be installed properly
-    echo [INFO] Trying to install essential packages...
-    pip install telethon pandas tqdm aiofiles openpyxl --quiet
-    if errorlevel 1 (
-        echo [ERROR] Failed to install essential dependencies
-        echo [INFO] Please run: pip install -r requirements.txt
-        pause
-        exit /b 1
-    )
+    echo [ERROR] Failed to install dependencies
+    pause
+    exit /b 1
 )
 
 REM Check if config.json exists
