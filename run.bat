@@ -96,12 +96,25 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo    ^> Dang ap dung run_config.json...
+if exist run_config.json (
+    python run_config_manager.py apply 2>nul
+    if errorlevel 1 (
+        echo ⚠️ Khong the ap dung run_config.json (se dung cau hinh mac dinh^)
+    ) else (
+        echo ✅ Da ap dung cau hinh tu run_config.json
+    )
+) else (
+    echo ⚠️ Khong tim thay run_config.json (se dung cau hinh mac dinh^)
+)
+
 echo    ^> Dang kiem tra tinh hop le cua cau hinh...
 python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
 if errorlevel 1 (
     echo.
     echo ❌ CAU HINH CHUA HOP LE!
     echo 🔧 Chay 'config.bat' de sua cau hinh
+    echo 🔧 Hoac chay 'run_config.bat' de quan ly tham so dau vao
     echo.
     pause
     exit /b 1
