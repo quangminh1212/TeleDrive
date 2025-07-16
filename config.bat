@@ -33,7 +33,7 @@ if "%choice%"=="1" (
         goto MENU
     )
 
-    python config_manager.py
+    python -c "from config import interactive_config_manager; interactive_config_manager()"
     echo.
     echo Nhan phim bat ky de quay lai menu...
     pause >nul

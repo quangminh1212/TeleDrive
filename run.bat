@@ -89,7 +89,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 3/6] Dong bo va kiem tra cau hinh chi tiet...
 echo    ^> Dang dong bo tu .env sang config.json...
-python -c "from config_manager import ConfigManager; cm = ConfigManager(); cm.sync_env_to_config(); print('✅ Dong bo thanh cong')" 2>nul
+python -c "from config import config_manager; config_manager.update_from_env(); print('✅ Dong bo thanh cong')" 2>nul
 if errorlevel 1 (
     echo ❌ Loi dong bo cau hinh
     pause
@@ -97,7 +97,7 @@ if errorlevel 1 (
 )
 
 echo    ^> Dang kiem tra tinh hop le cua cau hinh...
-python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
+python -c "from config import config_manager; result = config_manager.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
 if errorlevel 1 (
     echo.
     echo ❌ CAU HINH CHUA HOP LE!
