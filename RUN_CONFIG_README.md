@@ -1,43 +1,43 @@
-# Run Config - Hệ thống cấu hình tham số đầu vào
+# Telegram File Scanner - Hướng dẫn sử dụng
 
 ## Tổng quan
 
-Hệ thống Run Config cho phép bạn cấu hình các tham số đầu vào cho `run.bat` một cách dễ dàng và linh hoạt. Thay vì phải chỉnh sửa file `config.json` phức tạp, bạn có thể sử dụng file `run_config.json` đơn giản hơn.
-
-## Các file liên quan
-
-- **`run_config.json`** - File cấu hình chính chứa các tham số đầu vào
-- **`run_config_manager.py`** - Script Python để quản lý cấu hình
-- **`run_config.bat`** - Giao diện batch để cấu hình dễ dàng
-- **`run.bat`** - Đã được cập nhật để sử dụng run_config.json
+Telegram File Scanner đã được tối ưu hóa để chạy đơn giản chỉ với một lệnh duy nhất. Tất cả cấu hình được quản lý tự động thông qua file `run_config.json`.
 
 ## Cách sử dụng
 
-### 1. Sử dụng giao diện batch (Khuyến nghị)
+### 1. Chạy scanner (Cách chính)
 
 ```batch
-run_config.bat
+run.bat
 ```
 
-Giao diện menu cho phép bạn:
+Scanner sẽ tự động:
+- Tạo cấu hình mặc định nếu chưa có
+- Áp dụng cấu hình từ `run_config.json`
+- Chạy quét file mà không cần input
+
+### 2. Cấu hình nhanh
+
+```batch
+run.bat config
+```
+
+Mở menu cấu hình cho phép:
 - Xem cấu hình hiện tại
-- Áp dụng cấu hình vào config.json
-- Chỉnh sửa cấu hình nhanh
-- Reset về cấu hình mặc định
+- Thay đổi channel
+- Thay đổi số tin nhắn tối đa
+- Chọn loại file cần quét
+- Chọn định dạng đầu ra
+- Reset về mặc định
 
-### 2. Sử dụng script Python trực tiếp
+### 3. Cài đặt ban đầu (chỉ lần đầu)
 
-```bash
-# Xem cấu hình hiện tại
-python run_config_manager.py show
-
-# Áp dụng cấu hình vào config.json
-python run_config_manager.py apply
+```batch
+setup.bat
 ```
 
-### 3. Chỉnh sửa file JSON trực tiếp
-
-Mở file `run_config.json` và chỉnh sửa các giá trị theo nhu cầu.
+Cài đặt dependencies và tạo file cấu hình cơ bản.
 
 ## Cấu trúc file run_config.json (Tối giản)
 
@@ -77,16 +77,17 @@ File `run_config.json` được thiết kế tối giản với chỉ những th
 ## Quy trình hoạt động
 
 1. **Khi chạy `run.bat`:**
+   - Tự động tạo `run_config.json` nếu chưa có
    - Kiểm tra file `.env`
    - Đồng bộ từ `.env` sang `config.json`
-   - **Áp dụng `run_config.json` vào `config.json`** (MỚI)
-   - Kiểm tra tính hợp lệ của cấu hình
-   - Chạy scanner với cấu hình đã được áp dụng
+   - Áp dụng `run_config.json` vào `config.json`
+   - Chạy scanner tự động mà không cần input
 
-2. **Khi sử dụng `run_config.bat`:**
-   - Quản lý file `run_config.json`
-   - Áp dụng thay đổi vào `config.json`
-   - Không cần restart để thay đổi có hiệu lực
+2. **Khi chạy `run.bat config`:**
+   - Mở menu cấu hình trực quan
+   - Cho phép thay đổi các tham số nhanh chóng
+   - Lưu thay đổi vào `run_config.json`
+   - Có thể chạy scanner ngay từ menu
 
 ## Ví dụ sử dụng
 

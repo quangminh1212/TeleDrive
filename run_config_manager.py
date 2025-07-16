@@ -120,6 +120,21 @@ class RunConfigManager:
             if language:
                 main_config['display']['language'] = language
 
+            # Đảm bảo có các section cần thiết
+            if 'download' not in main_config:
+                main_config['download'] = {
+                    "generate_links": True,
+                    "auto_download": False,
+                    "download_directory": "downloads"
+                }
+
+            if 'filters' not in main_config:
+                main_config['filters'] = {
+                    "min_file_size": 0,
+                    "max_file_size": None,
+                    "exclude_extensions": [".exe", ".bat", ".cmd", ".scr"]
+                }
+
             # Lưu config.json đã cập nhật
             with open('config.json', 'w', encoding='utf-8') as f:
                 json.dump(main_config, f, indent=2, ensure_ascii=False)

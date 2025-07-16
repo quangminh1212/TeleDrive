@@ -5,12 +5,10 @@
     "phone_number": "+84936374950",
     "session_name": "telegram_scanner_session"
   },
-  
   "channels": {
     "use_default_channel": true,
     "default_channel": "@duongtinhchat92"
   },
-  
   "output": {
     "directory": "output",
     "formats": {
@@ -28,7 +26,6 @@
       }
     }
   },
-  
   "scanning": {
     "max_messages": 1000,
     "batch_size": 50,
@@ -39,12 +36,25 @@
       "audio": true
     }
   },
-  
   "display": {
     "show_progress": true,
     "language": "vi"
   },
-  
+  "download": {
+    "generate_links": true,
+    "auto_download": false,
+    "download_directory": "downloads"
+  },
+  "filters": {
+    "min_file_size": 0,
+    "max_file_size": null,
+    "exclude_extensions": [
+      ".exe",
+      ".bat",
+      ".cmd",
+      ".scr"
+    ]
+  },
   "logging": {
     "enabled": true,
     "level": "INFO",
