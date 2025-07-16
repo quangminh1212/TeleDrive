@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 telethon>=1.34.0
 pandas>=2.0.0
 tqdm>=4.65.0
@@ -6,3 +7,10 @@ aiofiles>=23.0.0
 openpyxl>=3.1.0
 flask>=2.3.0
 flask-cors>=4.0.0
+=======
+# TeleDrive - Main requirements file
+# For development, use: pip install -r requirements/dev.txt
+# For production, use: pip install -r requirements/prod.txt
+
+-r requirements/base.txt
+>>>>>>> 5cd311c28ab0746a2cc2ce9f78e7bad7d2103098

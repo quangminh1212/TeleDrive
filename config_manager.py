@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """
-Config Manager cho Telegram File Scanner
-Quản lý cấu hình trong config.json với validation
+TeleDrive Config Manager
+Quản lý cấu hình toàn diện cho TeleDrive với validation và auto-sync
 """
 
 import json
 import os
 import re
-from datetime import datetime
+import shutil
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, List, Any, Optional, Union
 from dotenv import load_dotenv
 
 
@@ -123,18 +127,60 @@ class ConfigManager:
     def __init__(self, config_file='config.json'):
         self.config_file = config_file
         self.config = self.load_config()
-    
+        self.ensure_directories()
+
     def load_config(self):
         """Load configuration from JSON file"""
         try:
             with open(self.config_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                config = json.load(f)
+                # Auto-migrate old config format
+                if config.get('_schema_version', '1.0') < '2.0':
+                    config = self.migrate_config(config)
+                return config
         except FileNotFoundError:
             print(f"Không tìm thấy {self.config_file}")
             return self.get_default_config()
         except json.JSONDecodeError as e:
             print(f"Lỗi đọc {self.config_file}: {e}")
             return self.get_default_config()
+
+    def ensure_directories(self):
+        """Ensure all required directories exist"""
+        directories = [
+            self.config.get('output', {}).get('directory', 'output'),
+            self.config.get('download', {}).get('download_directory', 'downloads'),
+            'logs',
+            'data',
+            'data/backups',
+            'plugins'
+        ]
+
+        for directory in directories:
+            os.makedirs(directory, exist_ok=True)
+
+    def migrate_config(self, old_config):
+        """Migrate old config format to new format"""
+        print("🔄 Đang migrate config từ v1.0 lên v2.0...")
+
+        # Create new config structure
+        new_config = self.get_default_config()
+
+        # Migrate telegram settings
+        if 'telegram' in old_config:
+            new_config['telegram'].update(old_config['telegram'])
+
+        # Migrate other sections
+        for section in ['output', 'scanning', 'download', 'display', 'filters', 'security', 'logging']:
+            if section in old_config:
+                new_config[section].update(old_config[section])
+
+        # Update schema version
+        new_config['_schema_version'] = '2.0'
+        new_config['_last_updated'] = datetime.now().strftime('%Y-%m-%d')
+
+        print("✅ Migration hoàn tất!")
+        return new_config
     
     def save_config(self):
         """Save configuration to JSON file with validation"""
@@ -165,42 +211,211 @@ class ConfigManager:
             return False
     
     def get_default_config(self):
-        """Get default configuration"""
+        """Get default configuration with full structure"""
         return {
+            "_schema_version": "2.0",
+            "_description": "TeleDrive - Telegram File Scanner Complete Configuration",
+            "_last_updated": datetime.now().strftime('%Y-%m-%d'),
+            "_author": "TeleDrive Team",
+
+            "project": {
+                "name": "TeleDrive",
+                "version": "2.0.0",
+                "description": "Advanced Telegram File Scanner with UI",
+                "debug_mode": False,
+                "auto_update": True,
+                "telemetry_enabled": False
+            },
+
             "telegram": {
                 "api_id": "",
                 "api_hash": "",
                 "phone_number": "",
-                "session_name": "telegram_scanner_session"
+                "session_name": "telegram_scanner_session",
+                "connection_timeout": 30,
+                "request_timeout": 60,
+                "retry_attempts": 3,
+                "retry_delay": 5,
+                "auto_login": True,
+                "save_session": True,
+                "two_factor_auth": {
+                    "enabled": False,
+                    "password": "",
+                    "hint": ""
+                }
             },
+
+            "channels": {
+                "global_settings": {
+                    "auto_join_private": True,
+                    "skip_existing_files": True,
+                    "parallel_scan": False,
+                    "max_concurrent_channels": 3,
+                    "delay_between_channels": 2,
+                    "create_separate_folders": True,
+                    "backup_results": True,
+                    "continue_on_error": True,
+                    "detailed_logging": True
+                },
+                "list": [],
+                "templates": {
+                    "document_only": {
+                        "file_types": {
+                            "documents": True,
+                            "photos": False,
+                            "videos": False,
+                            "audio": False,
+                            "voice": False,
+                            "stickers": False,
+                            "animations": False,
+                            "video_notes": False
+                        }
+                    },
+                    "media_only": {
+                        "file_types": {
+                            "documents": False,
+                            "photos": True,
+                            "videos": True,
+                            "audio": True,
+                            "voice": True,
+                            "stickers": False,
+                            "animations": True,
+                            "video_notes": True
+                        }
+                    }
+                }
+            },
+
             "output": {
                 "directory": "output",
+                "create_subdirs": True,
+                "timestamp_folders": False,
+                "backup_existing": True,
                 "formats": {
                     "csv": {"enabled": True, "filename": "telegram_files.csv"},
                     "json": {"enabled": True, "filename": "telegram_files.json"},
-                    "excel": {"enabled": True, "filename": "telegram_files.xlsx"}
+                    "excel": {"enabled": True, "filename": "telegram_files.xlsx"},
+                    "simple_json": {"enabled": False, "filename": "simple_files.json"}
                 }
             },
+
             "scanning": {
                 "max_messages": None,
                 "batch_size": 100,
+                "scan_direction": "newest_first",
+                "include_deleted": False,
+                "skip_duplicates": True,
                 "file_types": {
                     "documents": True, "photos": True, "videos": True,
-                    "audio": True, "voice": True, "stickers": True, "animations": True
+                    "audio": True, "voice": True, "stickers": True,
+                    "animations": True, "video_notes": True
+                },
+                "performance": {
+                    "concurrent_downloads": 3,
+                    "sleep_between_batches": 1,
+                    "memory_limit_mb": 512,
+                    "cache_size": 1000
                 }
             },
+
             "download": {
-                "generate_links": True, "include_preview": False,
-                "auto_download": False, "download_directory": "downloads"
+                "generate_links": True,
+                "include_preview": False,
+                "auto_download": False,
+                "download_directory": "downloads",
+                "create_date_folders": True,
+                "preserve_filename": True,
+                "max_file_size_mb": 100,
+                "download_timeout": 300,
+                "verify_downloads": True
             },
+
             "display": {
-                "show_progress": True, "show_file_details": True,
-                "language": "vi", "date_format": "DD/MM/YYYY HH:mm:ss"
+                "show_progress": True,
+                "show_file_details": True,
+                "show_statistics": True,
+                "language": "vi",
+                "date_format": "DD/MM/YYYY HH:mm:ss",
+                "file_size_format": "auto",
+                "log_level": "INFO"
             },
+
             "filters": {
-                "min_file_size": 0, "max_file_size": None,
-                "file_extensions": [], "exclude_extensions": [],
-                "date_from": None, "date_to": None
+                "min_file_size": 0,
+                "max_file_size": None,
+                "file_extensions": [],
+                "exclude_extensions": [],
+                "date_from": None,
+                "date_to": None,
+                "filename_patterns": [],
+                "exclude_patterns": []
+            },
+
+            "security": {
+                "mask_phone_numbers": True,
+                "mask_user_ids": False,
+                "exclude_personal_info": True,
+                "secure_session": True,
+                "auto_logout": False
+            },
+
+            "logging": {
+                "enabled": True,
+                "level": "INFO",
+                "file": "logs/scanner.log",
+                "max_size_mb": 10,
+                "backup_count": 5,
+                "console_output": True,
+                "detailed_steps": True
+            },
+
+            "database": {
+                "enabled": True,
+                "type": "sqlite",
+                "connection": {
+                    "sqlite": {
+                        "file": "data/teledrive.db",
+                        "timeout": 30
+                    }
+                }
+            },
+
+            "ui": {
+                "enabled": True,
+                "server": {
+                    "host": "127.0.0.1",
+                    "port": 8080,
+                    "debug": False
+                },
+                "theme": {
+                    "default": "telegram",
+                    "dark_mode": True
+                }
+            },
+
+            "api": {
+                "enabled": True,
+                "version": "v1",
+                "base_path": "/api"
+            },
+
+            "notifications": {
+                "enabled": True,
+                "channels": {
+                    "desktop": {"enabled": True, "sound": True}
+                },
+                "events": {
+                    "scan_completed": True,
+                    "scan_error": True,
+                    "new_files_found": True
+                }
+            },
+
+            "advanced": {
+                "use_ipv6": False,
+                "proxy": {"enabled": False},
+                "rate_limiting": {"enabled": True, "requests_per_second": 10},
+                "experimental": {"parallel_scanning": False, "smart_retry": True}
             }
         }
 
@@ -381,6 +596,188 @@ class ConfigManager:
         if section:
             return self.config.get(section, {})
         return self.config
+
+    # ==================== CHANNEL MANAGEMENT ====================
+
+    def add_channel(self, channel_data):
+        """Add new channel to configuration"""
+        if 'channels' not in self.config:
+            self.config['channels'] = {'global_settings': {}, 'list': [], 'templates': {}}
+
+        # Validate required fields
+        required_fields = ['id', 'name', 'type', 'identifier']
+        for field in required_fields:
+            if field not in channel_data:
+                raise ValueError(f"Thiếu trường bắt buộc: {field}")
+
+        # Check for duplicate ID
+        existing_ids = [ch['id'] for ch in self.config['channels']['list']]
+        if channel_data['id'] in existing_ids:
+            raise ValueError(f"Channel ID '{channel_data['id']}' đã tồn tại")
+
+        # Set default values
+        default_channel = {
+            'enabled': True,
+            'priority': len(self.config['channels']['list']) + 1,
+            'auto_join': False,
+            'invite_link': '',
+            'access_hash': '',
+            'last_scan': None,
+            'total_files': 0,
+            'settings': self.get_default_channel_settings()
+        }
+
+        # Merge with provided data
+        channel = {**default_channel, **channel_data}
+        self.config['channels']['list'].append(channel)
+
+        return self.save_config()
+
+    def remove_channel(self, channel_id):
+        """Remove channel from configuration"""
+        if 'channels' not in self.config:
+            return False
+
+        channels = self.config['channels']['list']
+        original_count = len(channels)
+        self.config['channels']['list'] = [ch for ch in channels if ch['id'] != channel_id]
+
+        if len(self.config['channels']['list']) < original_count:
+            return self.save_config()
+        return False
+
+    def update_channel(self, channel_id, updates):
+        """Update channel configuration"""
+        if 'channels' not in self.config:
+            return False
+
+        for channel in self.config['channels']['list']:
+            if channel['id'] == channel_id:
+                channel.update(updates)
+                return self.save_config()
+        return False
+
+    def get_enabled_channels(self):
+        """Get list of enabled channels"""
+        if 'channels' not in self.config:
+            return []
+
+        enabled = [ch for ch in self.config['channels']['list'] if ch.get('enabled', False)]
+        return sorted(enabled, key=lambda x: x.get('priority', 999))
+
+    def get_channel_by_id(self, channel_id):
+        """Get channel by ID"""
+        if 'channels' not in self.config:
+            return None
+
+        for channel in self.config['channels']['list']:
+            if channel['id'] == channel_id:
+                return channel
+        return None
+
+    def get_default_channel_settings(self):
+        """Get default settings for new channel"""
+        return {
+            'max_messages': None,
+            'scan_direction': 'newest_first',
+            'include_deleted': False,
+            'skip_duplicates': True,
+            'scan_replies': True,
+            'scan_forwards': True,
+            'file_types': {
+                'documents': True,
+                'photos': True,
+                'videos': True,
+                'audio': True,
+                'voice': True,
+                'stickers': False,
+                'animations': True,
+                'video_notes': True
+            },
+            'filters': {
+                'min_file_size': 0,
+                'max_file_size': None,
+                'file_extensions': [],
+                'exclude_extensions': [],
+                'date_from': None,
+                'date_to': None,
+                'filename_patterns': [],
+                'exclude_patterns': [],
+                'sender_filter': [],
+                'exclude_senders': []
+            },
+            'output': {
+                'prefix': '',
+                'separate_folder': True,
+                'folder_name': '',
+                'formats': {
+                    'json': True,
+                    'csv': True,
+                    'excel': True,
+                    'simple_json': False
+                }
+            }
+        }
+
+    # ==================== UI CONFIGURATION ====================
+
+    def update_ui_config(self, section, updates):
+        """Update UI configuration section"""
+        if 'ui' not in self.config:
+            self.config['ui'] = {}
+
+        if section not in self.config['ui']:
+            self.config['ui'][section] = {}
+
+        self.config['ui'][section].update(updates)
+        return self.save_config()
+
+    def get_ui_config(self, section=None):
+        """Get UI configuration"""
+        ui_config = self.config.get('ui', {})
+        if section:
+            return ui_config.get(section, {})
+        return ui_config
+
+    # ==================== DATABASE CONFIGURATION ====================
+
+    def update_database_config(self, db_type=None, connection_params=None):
+        """Update database configuration"""
+        if 'database' not in self.config:
+            self.config['database'] = {}
+
+        if db_type:
+            self.config['database']['type'] = db_type
+
+        if connection_params:
+            if 'connection' not in self.config['database']:
+                self.config['database']['connection'] = {}
+
+            if db_type in self.config['database']['connection']:
+                self.config['database']['connection'][db_type].update(connection_params)
+
+        return self.save_config()
+
+    def get_database_config(self):
+        """Get database configuration"""
+        return self.config.get('database', {})
+
+    # ==================== NOTIFICATION CONFIGURATION ====================
+
+    def update_notification_config(self, channel, settings):
+        """Update notification configuration for specific channel"""
+        if 'notifications' not in self.config:
+            self.config['notifications'] = {'enabled': True, 'channels': {}, 'events': {}}
+
+        if 'channels' not in self.config['notifications']:
+            self.config['notifications']['channels'] = {}
+
+        self.config['notifications']['channels'][channel] = settings
+        return self.save_config()
+
+    def get_notification_config(self):
+        """Get notification configuration"""
+        return self.config.get('notifications', {})
     
     def print_config(self):
         """Print current configuration"""

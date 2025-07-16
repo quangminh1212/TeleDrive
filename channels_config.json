@@ -1,0 +1,218 @@
+{
+  "_schema_version": "1.0",
+  "_description": "Cấu hình danh sách kênh/group Telegram cần quét",
+  "_last_updated": "2025-01-16",
+  "_usage": "Thêm các kênh/group vào danh sách 'channels' để quét tự động",
+  
+  "global_settings": {
+    "_description": "Cài đặt chung cho tất cả kênh",
+    "auto_join_private": true,
+    "skip_existing_files": true,
+    "parallel_scan": false,
+    "max_concurrent_channels": 3,
+    "delay_between_channels": 2,
+    "create_separate_folders": true,
+    "backup_results": true,
+    "continue_on_error": true,
+    "detailed_logging": true
+  },
+  
+  "channels": [
+    {
+      "_example": "Ví dụ cho public channel",
+      "id": "example_public",
+      "name": "Kênh Public Ví Dụ",
+      "description": "Mô tả kênh này",
+      "type": "public",
+      "identifier": "@channelname",
+      "enabled": false,
+      "priority": 1,
+      "settings": {
+        "max_messages": null,
+        "scan_direction": "newest_first",
+        "include_deleted": false,
+        "skip_duplicates": true,
+        "file_types": {
+          "documents": true,
+          "photos": true,
+          "videos": true,
+          "audio": true,
+          "voice": true,
+          "stickers": false,
+          "animations": true,
+          "video_notes": true
+        },
+        "filters": {
+          "min_file_size": 0,
+          "max_file_size": null,
+          "file_extensions": [],
+          "exclude_extensions": [".tmp", ".log"],
+          "date_from": null,
+          "date_to": null,
+          "filename_patterns": [],
+          "exclude_patterns": ["temp_", "cache_"]
+        },
+        "output": {
+          "prefix": "public_channel_",
+          "separate_folder": true,
+          "folder_name": "public_channel_files",
+          "formats": {
+            "json": true,
+            "csv": true,
+            "excel": true
+          }
+        }
+      }
+    },
+    {
+      "_example": "Ví dụ cho private channel với invite link",
+      "id": "example_private",
+      "name": "Kênh Private Ví Dụ",
+      "description": "Kênh private cần invite link",
+      "type": "private",
+      "identifier": "@privatechannel",
+      "invite_link": "https://t.me/joinchat/XXXXXXXXXXXXXXXXXX",
+      "enabled": false,
+      "priority": 2,
+      "auto_join": true,
+      "settings": {
+        "max_messages": 5000,
+        "scan_direction": "oldest_first",
+        "include_deleted": false,
+        "skip_duplicates": true,
+        "file_types": {
+          "documents": true,
+          "photos": false,
+          "videos": true,
+          "audio": true,
+          "voice": false,
+          "stickers": false,
+          "animations": false,
+          "video_notes": false
+        },
+        "filters": {
+          "min_file_size": 1048576,
+          "max_file_size": 104857600,
+          "file_extensions": [".pdf", ".doc", ".docx", ".zip", ".rar"],
+          "exclude_extensions": [".exe", ".bat", ".cmd"],
+          "date_from": "2024-01-01",
+          "date_to": null,
+          "filename_patterns": ["*.pdf", "document_*"],
+          "exclude_patterns": ["temp_", "backup_"]
+        },
+        "output": {
+          "prefix": "private_docs_",
+          "separate_folder": true,
+          "folder_name": "private_channel_documents",
+          "formats": {
+            "json": true,
+            "csv": false,
+            "excel": true
+          }
+        }
+      }
+    },
+    {
+      "_example": "Ví dụ cho group",
+      "id": "example_group",
+      "name": "Group Ví Dụ",
+      "description": "Group chat với nhiều file",
+      "type": "group",
+      "identifier": "https://t.me/+YYYYYYYYYYYYYYYY",
+      "enabled": false,
+      "priority": 3,
+      "auto_join": true,
+      "settings": {
+        "max_messages": 10000,
+        "scan_direction": "newest_first",
+        "include_deleted": false,
+        "skip_duplicates": true,
+        "scan_replies": true,
+        "scan_forwards": true,
+        "file_types": {
+          "documents": true,
+          "photos": true,
+          "videos": true,
+          "audio": true,
+          "voice": true,
+          "stickers": true,
+          "animations": true,
+          "video_notes": true
+        },
+        "filters": {
+          "min_file_size": 0,
+          "max_file_size": null,
+          "file_extensions": [],
+          "exclude_extensions": [],
+          "date_from": null,
+          "date_to": null,
+          "filename_patterns": [],
+          "exclude_patterns": [],
+          "sender_filter": [],
+          "exclude_senders": []
+        },
+        "output": {
+          "prefix": "group_",
+          "separate_folder": true,
+          "folder_name": "group_files",
+          "formats": {
+            "json": true,
+            "csv": true,
+            "excel": true
+          }
+        }
+      }
+    }
+  ],
+  
+  "templates": {
+    "_description": "Template cài đặt có thể tái sử dụng",
+    "document_only": {
+      "file_types": {
+        "documents": true,
+        "photos": false,
+        "videos": false,
+        "audio": false,
+        "voice": false,
+        "stickers": false,
+        "animations": false,
+        "video_notes": false
+      },
+      "filters": {
+        "file_extensions": [".pdf", ".doc", ".docx", ".txt", ".zip", ".rar"]
+      }
+    },
+    "media_only": {
+      "file_types": {
+        "documents": false,
+        "photos": true,
+        "videos": true,
+        "audio": true,
+        "voice": true,
+        "stickers": false,
+        "animations": true,
+        "video_notes": true
+      },
+      "filters": {
+        "file_extensions": [".jpg", ".png", ".mp4", ".mp3", ".wav"]
+      }
+    },
+    "large_files_only": {
+      "filters": {
+        "min_file_size": 10485760,
+        "max_file_size": null
+      }
+    }
+  },
+  
+  "validation": {
+    "_description": "Quy tắc validation cho config",
+    "required_fields": ["id", "name", "type", "identifier", "enabled"],
+    "valid_types": ["public", "private", "group"],
+    "valid_identifiers": {
+      "public": ["@username", "https://t.me/username"],
+      "private": ["@username", "https://t.me/joinchat/", "https://t.me/+"],
+      "group": ["@groupname", "https://t.me/joinchat/", "https://t.me/+"]
+    }
+  }
+}
