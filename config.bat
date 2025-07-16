@@ -25,7 +25,7 @@ if "%choice%"=="1" (
     echo.
 
     REM Kiem tra Python
-    python --version >nul 2>&1
+    py --version >nul 2>&1
     if errorlevel 1 (
         echo KHONG TIM THAY PYTHON!
         echo Tai Python tu: https://python.org/downloads/
@@ -33,7 +33,7 @@ if "%choice%"=="1" (
         goto MENU
     )
 
-    python -c "from config import interactive_config_manager; interactive_config_manager()"
+    py -c "from config import interactive_config_manager; interactive_config_manager()"
     echo.
     echo Nhan phim bat ky de quay lai menu...
     pause >nul
