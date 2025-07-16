@@ -1,17 +1,35 @@
 #!/usr/bin/env python3
 """
-Advanced Logging System cho Telegram File Scanner
-Hỗ trợ logging chi tiết cho từng bước và module
+Legacy logging module for backward compatibility
+
+This module provides backward compatibility with existing code
+while using the new enhanced logging system.
+
+For new code, use: from src.teledrive.utils.logger import get_logger
 """
 
-import logging
-import logging.handlers
-import os
-import sys
-from datetime import datetime
-from pathlib import Path
-from typing import Optional, Dict, Any
-import json
+import warnings
+
+# Issue deprecation warning
+warnings.warn(
+    "logger.py is deprecated. Use 'from src.teledrive.utils.logger import get_logger' for new code.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# Import all legacy compatibility items
+try:
+    from src.teledrive.utils.logger import *
+except ImportError:
+    # Fallback if new structure not available yet
+    import logging
+    import logging.handlers
+    import os
+    import sys
+    from datetime import datetime
+    from pathlib import Path
+    from typing import Optional, Dict, Any
+    import json
 
 
 class DetailedLogger:
