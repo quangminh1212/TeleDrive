@@ -1,158 +1,53 @@
-# TeleDrive
+# Telegram File Scanner
 
-[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+Quet va lay thong tin tat ca file trong private channel Telegram.
 
-**Advanced Telegram Channel File Scanner with Private Channel Support**
+## Cai dat nhanh
 
-TeleDrive is a powerful, modern Python application for scanning Telegram channels and extracting comprehensive file information. It features special support for private channels, multiple output formats, and a rich command-line interface.
+1. **Chay setup**: Nhap doi `setup.bat`
+2. **Cau hinh**: Nhap doi `config.bat` (chon option 2 de cau hinh so dien thoai)
+3. **Chay scanner**: Nhap doi `run.bat`
 
-## ✨ Features
+## Cai dat thu cong
 
-- 🔐 **Private Channel Support** - Scan private channels with invite links
-- 📊 **Multiple Output Formats** - JSON, CSV, Excel with customizable fields
-- 🎯 **Advanced Filtering** - Filter by file type, size, date, patterns
-- 🚀 **High Performance** - Async processing with configurable batch sizes
-- 🎨 **Rich CLI Interface** - Beautiful command-line interface with progress bars
-- ⚙️ **Flexible Configuration** - Pydantic-based config with validation
-- 📝 **Comprehensive Logging** - Detailed logging with file rotation
-- 🔧 **Developer Friendly** - Modern Python packaging with full tooling support
+1. **Chay setup**: Nhap doi `setup.bat`
+2. **Chinh sua .env**: Thay `+84xxxxxxxxx` bang so dien thoai that
+3. **Chinh sua config.json**: Tuy chinh cau hinh (tuy chon)
+4. **Chay scanner**: Nhap doi `run.bat`
 
-## 🚀 Quick Start
+## Quan ly cau hinh
 
-### Option 1: Automated Setup (Recommended)
-```bash
-# Run the setup script
-scripts\setup.bat
-
-# Configure your credentials
-# Edit config.json with your Telegram API credentials
-
-# Start scanning
-scripts\run.bat
+### File .env (API Credentials)
+```
+TELEGRAM_API_ID=21272067
+TELEGRAM_API_HASH=b7690dc86952dbc9b16717b101164af3
+TELEGRAM_PHONE=+84936374950
 ```
 
-### Option 2: Manual Installation
-```bash
-# Create virtual environment
-python -m venv venv
-venv\Scripts\activate
+### File config.json (Cau hinh chi tiet)
+- **Telegram**: API credentials, session name, connection settings
+- **Output**: Thu muc, format file (CSV, JSON, Excel, Simple JSON)
+- **Scanning**: Gioi han message, batch size, loai file, performance
+- **Download**: Tao link download, auto download, file size limits
+- **Display**: Hien thi progress, ngon ngu, format ngay, colors
+- **Filters**: Loc theo kich thuoc, phan mo rong, ngay thang, patterns
+- **Logging**: Chi tiet log cho tung buoc, API calls, file operations
+- **Security**: Session management, timeout, privacy settings
 
-# Install dependencies
-pip install -r requirements/dev.txt
+### Config Manager
+Chay `config.bat` de quan ly cau hinh qua giao dien:
+- Xem cau hinh hien tai
+- Thay doi cau hinh Telegram API
+- Cau hinh so dien thoai
+- Tuy chinh output format
+- Cau hinh scanning options
+- Dat filter cho file
+- Dong bo tu .env sang config.json
+- Kiem tra validation cau hinh
 
-# Install in development mode
-pip install -e .
+## Su dung
 
-# Run the application
-python -m teledrive.cli.main scan
-```
-
-## 📋 Prerequisites
-
-- Python 3.8 or higher
-- Telegram API credentials (get from [my.telegram.org/apps](https://my.telegram.org/apps))
-- Windows (scripts provided for Windows, but works on Linux/Mac too)
-
-## ⚙️ Configuration
-
-### 1. Telegram API Setup
-
-1. Visit [my.telegram.org/apps](https://my.telegram.org/apps)
-2. Create a new application
-3. Note down your `api_id` and `api_hash`
-
-### 2. Configuration File
-
-Edit `config.json` with your credentials:
-
-```json
-{
-  "telegram": {
-    "api_id": "YOUR_API_ID",
-    "api_hash": "YOUR_API_HASH",
-    "phone_number": "+1234567890"
-  },
-  "output": {
-    "directory": "output",
-    "formats": {
-      "json": {"enabled": true},
-      "csv": {"enabled": true},
-      "excel": {"enabled": true}
-    }
-  },
-  "scanning": {
-    "max_messages": null,
-    "batch_size": 100,
-    "file_types": {
-      "documents": true,
-      "photos": true,
-      "videos": true,
-      "audio": true
-    }
-  }
-}
-```
-
-### 3. Environment Variables (Optional)
-
-You can also use environment variables:
-
-```bash
-set TELEDRIVE_API_ID=your_api_id
-set TELEDRIVE_API_HASH=your_api_hash
-set TELEDRIVE_PHONE_NUMBER=+1234567890
-```
-
-## 🎯 Usage
-
-### Command Line Interface
-
-```bash
-# Scan a public channel
-teledrive scan --channel @channelname
-
-# Scan a private channel with invite link
-teledrive scan --private --channel https://t.me/joinchat/xxxxx
-
-# Scan with specific output format
-teledrive scan --channel @channelname --format json
-
-# Limit number of messages
-teledrive scan --channel @channelname --max-messages 1000
-
-# Interactive mode
-teledrive scan
-```
-
-### Script Usage
-
-```bash
-# Quick start
-scripts\run.bat
-
-# Development workflow
-scripts\dev.bat test      # Run tests
-scripts\dev.bat format    # Format code
-scripts\dev.bat lint      # Run linting
-scripts\dev.bat build     # Build package
-```
-
-### Configuration Management
-
-```bash
-# Show current configuration
-teledrive config --show
-
-# Validate configuration
-teledrive config --validate
-
-# Set configuration values
-teledrive config --set telegram.api_id 12345
-teledrive config --set output.directory ./my_output
-```
+- **Private channel**: `https://t.me/joinchat/xxxxx` hoac `https://t.me/+xxxxx`
 - **Neu da join**: `@channelname`
 - **Ket qua**: Luu trong thu muc `output/`
 
@@ -217,94 +112,9 @@ TeleDrive/
 - **"Could not find entity"**: Sai ten channel hoac chua join
 - **"Python not found"**: Chua cai Python
 
-## 📊 Output Formats
+## Output format
 
-TeleDrive supports multiple output formats:
-
-### JSON Format
-```json
-{
-  "files": [
-    {
-      "name": "document.pdf",
-      "size": 1048576,
-      "type": "document",
-      "date": "2025-01-15T10:30:00Z",
-      "download_link": "https://t.me/c/123456/789",
-      "sender": "username",
-      "message_id": 789
-    }
-  ],
-  "summary": {
-    "total_files": 1,
-    "total_size": 1048576,
-    "scan_date": "2025-01-15T12:00:00Z"
-  }
-}
-```
-
-### CSV Format
-Comma-separated values with columns: Name, Size, Type, Date, Download Link, Sender, Message ID
-
-### Excel Format
-Formatted Excel file with auto-filtering and frozen headers
-
-## 🛠️ Development
-
-### Modern Project Structure
-```
-teledrive/
-├── src/teledrive/          # Main package
-│   ├── cli/               # Command line interface
-│   ├── config/            # Configuration management
-│   ├── core/              # Core business logic
-│   └── utils/             # Utility functions
-├── tests/                 # Test suite
-├── scripts/               # Automation scripts
-├── requirements/          # Dependency files
-└── docs/                  # Documentation
-```
-
-### Development Workflow
-```bash
-# Setup development environment
-scripts\setup.bat
-
-# Run tests
-scripts\test.bat
-
-# Format code
-scripts\format.bat
-
-# Run all quality checks
-scripts\dev.bat check
-```
-
-## 🚀 Advanced Features
-
-- ✅ **Private channel support** - Scan private channels/groups
-- ✅ **Rich CLI interface** - Beautiful command-line with progress bars
-- ✅ **Pydantic configuration** - Type-safe config with validation
-- ✅ **Async processing** - High-performance async scanning
-- ✅ **Advanced filtering** - Filter by size, type, date, patterns
-- ✅ **Comprehensive logging** - Detailed logging with file rotation
-- ✅ **Modern packaging** - Following Python packaging standards
-- ✅ **Developer tools** - Pre-commit hooks, testing, linting
-- ✅ **Cross-platform** - Works on Windows, Linux, macOS
-
-## 📝 License
-
-This project is licensed under the MIT License.
-
-## 🙏 Acknowledgments
-
-- [Telethon](https://github.com/LonamiWebs/Telethon) - Telegram client library
-- [Click](https://github.com/pallets/click) - Command line interface framework
-- [Rich](https://github.com/Textualize/rich) - Rich text and beautiful formatting
-- [Pydantic](https://github.com/pydantic/pydantic) - Data validation library
-
----
-
-<p align="center">
-  Made with ❤️ by the TeleDrive Team
-</p>
+- CSV: Du lieu bang
+- Excel: Format dep
+- JSON: Du lieu chi tiet
+- Simple JSON: Chi ten file + link

@@ -1,6 +1,0 @@
-# Production dependencies
--r base.txt
-
-# Production-specific packages
-gunicorn>=20.1.0  # If web interface is added later
-uvloop>=0.17.0    # Better async performance on Unix

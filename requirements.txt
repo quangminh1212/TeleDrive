@@ -1,5 +1,6 @@
-# TeleDrive - Main requirements file
-# For development, use: pip install -r requirements/dev.txt
-# For production, use: pip install -r requirements/prod.txt
-
--r requirements/base.txt
+telethon>=1.34.0
+pandas>=2.0.0
+tqdm>=4.65.0
+python-dotenv>=1.0.0
+aiofiles>=23.0.0
+openpyxl>=3.1.0
