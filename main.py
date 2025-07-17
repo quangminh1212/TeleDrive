@@ -18,6 +18,232 @@ except ImportError:
     import logging
     logger = logging.getLogger(__name__)
 
+<<<<<<< HEAD
+=======
+class PrivateChannelScanner(TelegramFileScanner):
+    """Scanner chuyên dụng cho private channel"""
+    
+    async def join_private_channel(self, invite_link: str):
+        """Join private channel từ invite link"""
+        try:
+            print(f"🔗 Đang join private channel từ link: {invite_link}")
+
+            # Lấy hash từ link
+            if 'joinchat' in invite_link:
+                hash_part = invite_link.split('joinchat/')[-1]
+            elif '+' in invite_link:
+                hash_part = invite_link.split('+')[-1]
+            else:
+                print("❌ Link không hợp lệ")
+                return False
+
+            # Import functions
+            from telethon import functions
+
+            # Join channel
+            await self.client(functions.messages.ImportChatInviteRequest(
+                hash=hash_part
+            ))
+
+            print("✅ Đã join private channel thành công!")
+            return True
+
+        except Exception as e:
+            print(f"❌ Không thể join private channel: {e}")
+            print("💡 Có thể bạn đã là thành viên hoặc link đã hết hạn")
+            return False
+    
+    async def scan_private_channel_auto(self):
+        """Quét private channel tự động từ config"""
+        print("\n🔧 Đang khởi tạo kết nối Telegram...")
+        await self.initialize()
+        print("✅ Kết nối Telegram đã sẵn sàng")
+
+        # Lấy channel từ config.json
+        try:
+            import json
+            with open('config.json', 'r', encoding='utf-8') as f:
+                config = json.load(f)
+
+            if config.get('channels', {}).get('use_default_channel', False):
+                channel_input = config.get('channels', {}).get('default_channel', '')
+                if not channel_input or channel_input == '@your_channel_here':
+                    print("❌ Chưa cấu hình channel trong config.json!")
+                    print("💡 Chạy: run.bat config để cấu hình")
+                    return
+
+                print(f"📺 Sử dụng channel từ config: {channel_input}")
+            else:
+                print("❌ Chưa bật chế độ sử dụng channel mặc định!")
+                return
+
+        except Exception as e:
+            print(f"❌ Lỗi đọc config: {e}")
+            return
+
+        # Xử lý channel tự động
+        print(f"🔍 Đang tìm channel: {channel_input}")
+
+        # Kiểm tra nếu là invite link thì join trước
+        if 'joinchat' in channel_input or ('+' in channel_input and 't.me' in channel_input):
+            print("🔗 Phát hiện invite link, đang join channel...")
+            success = await self.join_private_channel(channel_input)
+            if not success:
+                print("⚠️ Không thể join channel, thử truy cập trực tiếp...")
+
+        entity = await self.get_channel_entity(channel_input)
+
+        if not entity:
+            print("❌ Không thể lấy thông tin channel")
+            return
+
+        print("✅ Đã lấy thông tin channel thành công")
+
+        # Kiểm tra quyền truy cập chi tiết
+        print("\n🔐 Đang kiểm tra quyền truy cập...")
+        await self.check_channel_permissions(entity)
+
+        # Quét channel
+        print("\n🔍 Bắt đầu quét channel...")
+        await self.scan_channel_by_entity(entity)
+
+        if self.files_data:
+            print(f"\n💾 Đang lưu kết quả ({len(self.files_data)} file)...")
+            await self.save_results()
+            print(f"🎉 Hoàn thành! Đã tìm thấy và lưu {len(self.files_data)} file")
+            print("📁 Kết quả được lưu trong thư mục 'output/'")
+        else:
+            print("\n⚠️ Không tìm thấy file nào trong channel này")
+
+    async def scan_private_channel_interactive(self):
+        """Quét private channel với giao diện tương tác"""
+        print("\n🔧 Đang khởi tạo kết nối Telegram...")
+        await self.initialize()
+        print("✅ Kết nối Telegram đã sẵn sàng")
+
+        print("\n📋 Chọn cách truy cập private channel:")
+        print("   1. Tôi đã là thành viên (nhập username hoặc link)")
+        print("   2. Join từ invite link")
+
+        choice = input("\n👉 Lựa chọn (1/2): ").strip()
+        print(f"📝 Bạn đã chọn: {choice}")
+
+        if choice == "2":
+            print("\n🔗 Chế độ: Join từ invite link")
+            invite_link = input("👉 Nhập invite link (https://t.me/joinchat/xxx hoặc https://t.me/+xxx): ").strip()
+            if not invite_link:
+                print("❌ Link không hợp lệ!")
+                return
+
+            print(f"🔗 Đang xử lý link: {invite_link}")
+            success = await self.join_private_channel(invite_link)
+            if not success:
+                print("❌ Không thể join channel")
+                return
+
+            print("🔍 Đang lấy thông tin channel sau khi join...")
+            # Sau khi join, lấy entity
+            entity = await self.get_channel_entity(invite_link)
+
+        else:
+            print("\n👤 Chế độ: Đã là thành viên")
+            channel_input = input("👉 Nhập username hoặc link channel: ").strip()
+            if not channel_input:
+                print("❌ Vui lòng nhập thông tin channel!")
+                return
+
+            print(f"🔍 Đang tìm channel: {channel_input}")
+            entity = await self.get_channel_entity(channel_input)
+
+        if not entity:
+            print("❌ Không thể lấy thông tin channel")
+            return
+
+        print("✅ Đã lấy thông tin channel thành công")
+
+        # Kiểm tra quyền truy cập chi tiết
+        print("\n🔐 Đang kiểm tra quyền truy cập...")
+        await self.check_channel_permissions(entity)
+
+        # Quét channel
+        print("\n🔍 Bắt đầu quét channel...")
+        await self.scan_channel_by_entity(entity)
+
+        if self.files_data:
+            print(f"\n💾 Đang lưu kết quả ({len(self.files_data)} file)...")
+            await self.save_results()
+            print(f"🎉 Hoàn thành! Đã tìm thấy và lưu {len(self.files_data)} file")
+            print("📁 Kết quả được lưu trong thư mục 'output/'")
+        else:
+            print("\n⚠️ Không tìm thấy file nào trong channel này")
+    
+    async def check_channel_permissions(self, entity):
+        """Kiểm tra quyền truy cập chi tiết"""
+        try:
+            # Lấy thông tin channel
+            full_channel = await self.client.get_entity(entity)
+            print(f"📊 Channel: {getattr(full_channel, 'title', 'Unknown')}")
+            
+            # Kiểm tra quyền đọc tin nhắn
+            await self.client.get_messages(entity, limit=1)
+            print("✅ Có quyền đọc tin nhắn")
+            
+            # Kiểm tra số lượng tin nhắn
+            total = 0
+            async for _ in self.client.iter_messages(entity, limit=10):
+                total += 1
+                
+            if total > 0:
+                print(f"✅ Có thể truy cập tin nhắn (test: {total}/10)")
+            else:
+                print("⚠️ Không tìm thấy tin nhắn nào")
+                
+        except Exception as e:
+            print(f"⚠️ Lỗi kiểm tra quyền: {e}")
+    
+    async def scan_channel_by_entity(self, entity):
+        """Quét channel bằng entity đã có"""
+        print(f"📡 Bắt đầu quét channel: {getattr(entity, 'title', 'Unknown')}")
+        print(f"📊 Đang đếm tổng số tin nhắn...")
+        
+        # Đếm tổng số tin nhắn
+        total_messages = 0
+        try:
+            async for _ in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
+                total_messages += 1
+        except Exception as e:
+            print(f"⚠️ Lỗi khi đếm tin nhắn: {e}")
+            return
+            
+        print(f"📝 Tổng số tin nhắn: {total_messages:,}")
+        
+        if total_messages == 0:
+            print("❌ Không có tin nhắn nào để quét")
+            return
+            
+        print(f"🔍 Bắt đầu quét file...")
+        
+        # Quét các tin nhắn và tìm file
+        from tqdm.asyncio import tqdm
+        progress_bar = tqdm(total=total_messages, desc="Đang quét")
+        
+        try:
+            async for message in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
+                file_info = self.extract_file_info(message)
+                
+                if file_info and self.should_include_file_type(file_info['file_type']):
+                    self.files_data.append(file_info)
+                    
+                progress_bar.update(1)
+                
+        except Exception as e:
+            print(f"\n⚠️ Lỗi trong quá trình quét: {e}")
+        finally:
+            progress_bar.close()
+            
+        print(f"✅ Hoàn thành! Tìm thấy {len(self.files_data)} file")
+
+>>>>>>> 6813688dd5cdbf7f847154ba4d7fa4252bf6f245
 async def main():
     """Main function cho Telegram File Scanner"""
     print("📡 TELEGRAM FILE SCANNER")
@@ -32,6 +258,7 @@ async def main():
     try:
         print("✅ Scanner đã sẵn sàng")
 
+<<<<<<< HEAD
         # Hiển thị menu lựa chọn
         print("\n📋 Chọn chế độ quét:")
         print("   1. Quét public channel/group")
@@ -57,6 +284,9 @@ async def main():
             await scanner.initialize()
             await scanner.scan_channel(channel_input)
             await scanner.save_results()
+=======
+        await scanner.scan_private_channel_auto()
+>>>>>>> 6813688dd5cdbf7f847154ba4d7fa4252bf6f245
 
         print("\n🎉 Quá trình quét hoàn thành!")
         if DETAILED_LOGGING_AVAILABLE:
