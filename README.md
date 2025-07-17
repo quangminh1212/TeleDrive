@@ -16,7 +16,9 @@ run.bat
 
 ### Khởi động Web Interface:
 ```batch
-run_web.bat
+start.bat          # Khởi động đầy đủ với kiểm tra
+web.bat           # Khởi động nhanh
+run.bat web       # Từ menu chính
 ```
 
 ### Cấu hình nhanh:
@@ -121,10 +123,35 @@ Sau khi chạy scanner, bạn có thể sử dụng giao diện web để quản
    - **Main:** File grid với toolbar và pagination
    - **Modal:** Chi tiết file với thông tin đầy đủ
 
+## 🎮 Các file batch
+
+### `setup.bat` - Cài đặt ban đầu
+- Cài đặt Python packages
+- Tạo file .env từ template
+- Tạo thư mục output
+
+### `run.bat` - Script chính (đã tích hợp web)
+- `run.bat` - Chạy scanner
+- `run.bat config` - Menu cấu hình
+- `run.bat web` - Khởi động web interface
+- `run.bat web-setup` - Cài đặt web dependencies
+
+### `start.bat` - Khởi động web interface (đầy đủ)
+- Kiểm tra Python và virtual environment
+- Tự động cài đặt Flask dependencies
+- Kiểm tra dữ liệu scan
+- Khởi động web server với thông báo chi tiết
+
+### `web.bat` - Khởi động web nhanh
+- Khởi động web interface đơn giản
+- Tự động tạo venv và cài Flask
+- Ít thông báo, khởi động nhanh
+
 ## 🛠️ Troubleshooting
 
 - **Lỗi API:** Kiểm tra `.env`
 - **Lỗi config:** Chạy `run.bat config`
 - **Thiếu dependencies:** Chạy `setup.bat`
-- **Web interface không khởi động:** Kiểm tra Flask đã cài đặt chưa
+- **Web interface không khởi động:** Chạy `start.bat` hoặc `web.bat`
+- **Lỗi config.json.tmp:** Đã được khắc phục trong phiên bản mới
 - **Không có dữ liệu:** Chạy scanner trước khi mở web interface
