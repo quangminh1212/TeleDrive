@@ -1,5 +1,4 @@
 @echo off
-setlocal enabledelayedexpansion
 title TeleDrive Web Interface Launcher
 color 0B
 
@@ -10,7 +9,7 @@ echo ================================================================
 echo.
 
 REM Check Python
-echo [1/5] Checking Python installation...
+echo [1/4] Checking Python installation...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo ❌ Python not found!
@@ -22,34 +21,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/5] Checking virtual environment...
-if not exist "venv\" (
-    echo ⚠️ Virtual environment not found!
-    echo 🔧 Creating virtual environment...
-    python -m venv venv
-    if errorlevel 1 (
-        echo ❌ Failed to create virtual environment!
-        pause
-        exit /b 1
-    )
-    echo ✅ Virtual environment created
-) else (
-    echo ✅ Virtual environment found
-)
-
-echo.
-echo [3/5] Activating virtual environment...
-call venv\Scripts\activate.bat
-if errorlevel 1 (
-    echo ❌ Failed to activate virtual environment!
-    pause
-    exit /b 1
-) else (
-    echo ✅ Virtual environment activated
-)
-
-echo.
-echo [4/5] Installing/checking Flask dependencies...
+echo [2/4] Installing/checking Flask dependencies...
 python -c "import flask, flask_cors" 2>nul
 if errorlevel 1 (
     echo 📦 Installing Flask and Flask-CORS...
@@ -66,28 +38,18 @@ if errorlevel 1 (
 )
 
 echo.
-echo [5/5] Checking scan data...
+echo [3/4] Checking scan data...
 if not exist "output\" (
     echo ⚠️ Output directory not found!
     echo 💡 Run the scanner first to generate data
     mkdir output
     echo ✅ Created output directory
 ) else (
-    set count=0
-    for %%f in (output\*_telegram_files.json) do set /a count+=1
-    
-    if !count!==0 (
-        echo ⚠️ No scan data found in output directory!
-        echo 💡 The web interface will be empty until you run a scan
-        echo.
-        echo You can still start the web interface to see the UI
-        echo.
-    ) else (
-        echo ✅ Found !count! scan session(s) in output directory
-    )
+    echo ✅ Output directory found
 )
 
 echo.
+echo [4/4] Starting web interface...
 echo ================================================================
 echo 🚀 STARTING WEB INTERFACE...
 echo ================================================================

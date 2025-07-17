@@ -469,10 +469,9 @@ if not exist "output\" (
     echo 💡 Chay scanner truoc de tao du lieu
     echo.
 ) else (
-    set count=0
-    for %%f in (output\*_telegram_files.json) do set /a count+=1
-
-    if !count!==0 (
+    REM Check if any JSON files exist
+    dir /b output\*_telegram_files.json >nul 2>&1
+    if errorlevel 1 (
         echo ⚠️ Khong tim thay du lieu scan trong thu muc output!
         echo 💡 Chay scanner truoc de tao du lieu
         echo.
@@ -485,7 +484,7 @@ if not exist "output\" (
             exit /b 0
         )
     ) else (
-        echo ✅ Tim thay !count! session scan trong thu muc output
+        echo ✅ Tim thay du lieu scan trong thu muc output
     )
 )
 
