@@ -1,9 +1,12 @@
 @echo off
+setlocal enabledelayedexpansion
 title Telegram File Scanner
 color 0D
 
 REM Kiem tra tham so dau vao
 if "%1"=="config" goto CONFIG_MENU
+if "%1"=="web" goto WEB_MODE
+if "%1"=="web-setup" goto WEB_SETUP
 
 echo.
 echo ================================================================
@@ -205,11 +208,12 @@ echo 4. Thay doi loai file
 echo 5. Thay doi dinh dang dau ra
 echo 6. Reset ve mac dinh
 echo 7. Chay scanner
-echo 8. Thoat
+echo 8. Khoi dong web interface
+echo 9. Thoat
 echo.
 echo ================================================================
 
-set /p choice="Nhap lua chon (1-8): "
+set /p choice="Nhap lua chon (1-9): "
 
 if "%choice%"=="1" (
     echo.
@@ -361,6 +365,13 @@ if "%choice%"=="7" (
 
 if "%choice%"=="8" (
     echo.
+    echo Dang khoi dong web interface...
+    timeout /t 2 >nul
+    goto WEB_MODE
+)
+
+if "%choice%"=="9" (
+    echo.
     echo Cam on ban da su dung!
     timeout /t 2 >nul
     goto END
@@ -369,5 +380,135 @@ if "%choice%"=="8" (
 echo Lua chon khong hop le!
 timeout /t 2 >nul
 goto CONFIG_MENU
+
+:WEB_SETUP
+cls
+echo.
+echo ================================================================
+echo                    WEB INTERFACE SETUP
+echo ================================================================
+echo.
+echo [1/2] Kiem tra virtual environment...
+if not exist "venv\" (
+    echo ❌ Virtual environment khong ton tai!
+    echo 💡 Chay setup.bat truoc de tao virtual environment
+    pause
+    exit /b 1
+) else (
+    echo ✅ Virtual environment da san sang
+)
+
+echo.
+echo [2/2] Cai dat Flask dependencies...
+call venv\Scripts\activate.bat
+python -c "import flask" 2>nul
+if errorlevel 1 (
+    echo    ^> Dang cai dat Flask va Flask-CORS...
+    pip install flask flask-cors
+    if errorlevel 1 (
+        echo ❌ Khong the cai dat Flask dependencies!
+        pause
+        exit /b 1
+    )
+    echo ✅ Da cai dat Flask dependencies thanh cong
+) else (
+    echo ✅ Flask dependencies da san sang
+)
+
+echo.
+echo ================================================================
+echo 🎉 WEB INTERFACE SETUP HOAN TAT!
+echo ================================================================
+echo.
+echo Ban co the chay web interface bang cach:
+echo - run.bat web
+echo - Hoac chon tuy chon 8 trong menu cau hinh
+echo.
+pause
+goto END
+
+:WEB_MODE
+cls
+echo.
+echo ================================================================
+echo                 TELEDRIVE WEB INTERFACE
+echo ================================================================
+echo.
+
+echo [1/4] Kiem tra virtual environment...
+if not exist "venv\" (
+    echo ❌ Virtual environment khong ton tai!
+    echo 💡 Chay: run.bat web-setup de cai dat
+    pause
+    exit /b 1
+) else (
+    echo ✅ Virtual environment da san sang
+)
+
+echo.
+echo [2/4] Kich hoat virtual environment...
+call venv\Scripts\activate.bat
+echo ✅ Da kich hoat virtual environment
+
+echo.
+echo [3/4] Kiem tra Flask dependencies...
+python -c "import flask" 2>nul
+if errorlevel 1 (
+    echo ❌ Flask chua duoc cai dat!
+    echo 💡 Chay: run.bat web-setup de cai dat dependencies
+    pause
+    exit /b 1
+) else (
+    echo ✅ Flask dependencies da san sang
+)
+
+echo.
+echo [4/4] Kiem tra du lieu scan...
+if not exist "output\" (
+    echo ⚠️ Thu muc output khong ton tai!
+    echo 💡 Chay scanner truoc de tao du lieu
+    echo.
+) else (
+    set count=0
+    for %%f in (output\*_telegram_files.json) do set /a count+=1
+
+    if !count!==0 (
+        echo ⚠️ Khong tim thay du lieu scan trong thu muc output!
+        echo 💡 Chay scanner truoc de tao du lieu
+        echo.
+        echo Ban van co the khoi dong web interface, nhung se trong
+        echo.
+        set /p web_choice="Ban co muon tiep tuc? (y/n): "
+        if /i not "!web_choice!"=="y" (
+            echo Huy bo khoi dong web interface
+            pause
+            exit /b 0
+        )
+    ) else (
+        echo ✅ Tim thay !count! session scan trong thu muc output
+    )
+)
+
+echo.
+echo ================================================================
+echo 🚀 DANG KHOI DONG WEB INTERFACE...
+echo ================================================================
+echo.
+echo 🌐 Web interface se chay tai: http://localhost:5000
+echo 🛑 Nhan Ctrl+C de dung server
+echo 📁 Du lieu hien thi tu thu muc: output/
+echo.
+echo 💡 Luu y: Giu cua so nay mo de server tiep tuc chay
+echo.
+
+python app.py
+
+echo.
+echo ================================================================
+echo 🛑 WEB INTERFACE DA DUNG
+echo ================================================================
+echo.
+pause
+goto END
 
 :END
