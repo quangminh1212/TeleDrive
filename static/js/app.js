@@ -19,6 +19,7 @@ class TeleDriveApp {
         this.bindEvents();
         this.loadSessions();
         this.setupMobileMenu();
+        this.setupAuthentication();
     }
     
     bindEvents() {
@@ -120,10 +121,21 @@ class TeleDriveApp {
     async loadSessions() {
         try {
             const response = await fetch('/api/scans');
+
+            // Handle authentication errors
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const sessions = await response.json();
-            
+
             this.displaySessions(sessions);
-            
+
             // Auto-select first session
             if (sessions.length > 0) {
                 this.selectSession(sessions[0].id);
@@ -185,15 +197,26 @@ class TeleDriveApp {
         try {
             // Load files
             const response = await fetch(`/api/files/${sessionId}`);
+
+            // Handle authentication errors
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
-            
+
             this.files = data.files || [];
             this.displaySessionInfo(data.scan_info);
             this.filterAndDisplayFiles();
-            
+
             // Load stats
             this.loadSessionStats(sessionId);
-            
+
         } catch (error) {
             console.error('Error loading session:', error);
             this.showError('Không thể tải dữ liệu session');
@@ -220,8 +243,19 @@ class TeleDriveApp {
     async loadSessionStats(sessionId) {
         try {
             const response = await fetch(`/api/stats/${sessionId}`);
+
+            // Handle authentication errors
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const stats = await response.json();
-            
+
             this.updateGlobalStats(stats);
             this.updateSessionStats(stats);
         } catch (error) {
@@ -640,6 +674,62 @@ class TeleDriveApp {
 
         sidebar.classList.remove('open');
         overlay.classList.remove('show');
+    }
+
+    // Authentication methods
+    setupAuthentication() {
+        // Setup user dropdown menu
+        const userMenuToggle = document.getElementById('userMenuToggle');
+        const userDropdown = document.getElementById('userDropdown');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        if (userMenuToggle && userDropdown) {
+            // Toggle dropdown
+            userMenuToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('show');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!userMenuToggle.contains(e.target) && !userDropdown.contains(e.target)) {
+                    userDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        // Setup logout functionality
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                this.logout();
+            });
+        }
+    }
+
+    async logout() {
+        try {
+            const response = await fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Redirect to login page
+                window.location.href = '/login';
+            } else {
+                console.error('Logout failed:', data.message);
+                // Force redirect anyway
+                window.location.href = '/login';
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Force redirect on error
+            window.location.href = '/login';
+        }
     }
 }
 

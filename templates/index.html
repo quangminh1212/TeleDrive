@@ -41,6 +41,33 @@
                         <span class="stat-label">Total</span>
                     </div>
                 </div>
+
+                <!-- User Menu -->
+                <div class="user-menu">
+                    <div class="user-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="username">{{ user.username }}</span>
+                        {% if user.is_admin %}
+                            <span class="admin-badge">Admin</span>
+                        {% endif %}
+                    </div>
+                    <div class="user-dropdown">
+                        <button class="dropdown-toggle" id="userMenuToggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu" id="userDropdown">
+                            <div class="dropdown-item user-details">
+                                <div class="user-name">{{ user.username }}</div>
+                                <div class="user-email">{{ user.email }}</div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item" id="logoutBtn">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Đăng xuất
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>

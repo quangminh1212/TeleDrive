@@ -42,6 +42,9 @@ run.bat config
 - ✅ **Chi tiết file** - Xem thông tin đầy đủ
 - ✅ **Download links** - Tải file trực tiếp
 - ✅ **Multiple sessions** - Quản lý nhiều lần scan
+- ✅ **Authentication System** - Đăng nhập/đăng xuất bảo mật
+- ✅ **User Management** - Quản lý người dùng
+- ✅ **Route Protection** - Bảo vệ tất cả endpoints
 
 ## 📁 Cấu hình
 
@@ -102,22 +105,31 @@ Sau khi chạy scanner, bạn có thể sử dụng giao diện web để quản
 
 1. **Khởi động web interface:**
    ```batch
-   run_web.bat
+   web.bat
    ```
 
-2. **Truy cập:** http://localhost:5000
+2. **Lần đầu sử dụng:**
+   - Truy cập: http://localhost:5000/setup
+   - Tạo tài khoản admin đầu tiên
+   - Đăng nhập tại: http://localhost:5000/login
 
-3. **Tính năng:**
-   - Xem danh sách file theo dạng grid/list
-   - Tìm kiếm file theo tên
-   - Lọc theo loại file (document, photo, video, audio...)
-   - Sắp xếp theo tên, kích thước, ngày
-   - Xem chi tiết file trong modal
-   - Download file trực tiếp
-   - Responsive design cho mobile
+3. **Truy cập hàng ngày:**
+   - URL: http://localhost:5000
+   - Đăng nhập nếu chưa đăng nhập
+   - Sử dụng như bình thường
 
-4. **Giao diện:**
-   - **Header:** Logo, search bar, thống kê tổng quan
+4. **Tính năng:**
+   - **🔐 Authentication:** Đăng nhập/đăng xuất bảo mật
+   - **👤 User Management:** Quản lý người dùng
+   - **🛡️ Route Protection:** Bảo vệ tất cả endpoints
+   - **📁 File Manager:** Xem danh sách file theo dạng grid/list
+   - **🔍 Search & Filter:** Tìm kiếm và lọc file
+   - **📊 Statistics:** Thống kê chi tiết
+   - **📱 Responsive:** Tương thích mobile
+   - **⬇️ Download:** Tải file trực tiếp
+
+5. **Giao diện:**
+   - **Header:** Logo, search bar, user menu, thống kê
    - **Sidebar:** Danh sách các scan sessions
    - **Main:** File grid với toolbar và pagination
    - **Modal:** Chi tiết file với thông tin đầy đủ
@@ -137,8 +149,48 @@ Sau khi chạy scanner, bạn có thể sử dụng giao diện web để quản
 
 ### `web.bat` - Khởi động web interface
 - Khởi động web interface đơn giản và nhanh
-- Tự động tạo venv và cài Flask
+- Tự động tạo venv và cài Flask + Authentication packages
 - Khởi động Flask server tại http://localhost:5000
+
+### `start_auth_test.bat` - Test authentication system
+- Khởi động server với authentication
+- Cài đặt tự động các dependencies cần thiết
+- Hướng dẫn setup admin user đầu tiên
+
+## 🔐 Authentication System
+
+TeleDrive hiện có hệ thống xác thực bảo mật:
+
+### Lần đầu sử dụng:
+1. **Khởi động server:**
+   ```batch
+   start_auth_test.bat
+   ```
+
+2. **Thiết lập admin:**
+   - Truy cập: http://localhost:5000/setup
+   - Tạo tài khoản admin đầu tiên
+   - Username, email, password
+
+3. **Đăng nhập:**
+   - Truy cập: http://localhost:5000/login
+   - Sử dụng thông tin vừa tạo
+
+### Tính năng bảo mật:
+- ✅ **Mã hóa mật khẩu** với Werkzeug
+- ✅ **Session management** với Flask-Login
+- ✅ **Route protection** cho tất cả endpoints
+- ✅ **User management** cơ bản
+- ✅ **Responsive login UI** theo phong cách Telegram
+- ✅ **Auto logout** khi session hết hạn
+
+### Chi tiết:
+Xem file `AUTHENTICATION.md` để biết thêm chi tiết về:
+- Cách sử dụng
+- API endpoints
+- User management
+- Troubleshooting
+- Testing
 
 ## 🛠️ Troubleshooting
 

@@ -10,11 +10,19 @@ import json
 import glob
 from datetime import datetime
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, send_from_directory
+from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for, flash, session
 from flask_cors import CORS
+from flask_login import login_user, logout_user, login_required, current_user
+from functools import wraps
+
+# Import authentication system
+from auth import auth_manager, User, validate_username, validate_email, validate_password
 
 app = Flask(__name__)
 CORS(app)
+
+# Khởi tạo authentication system
+auth_manager.init_app(app)
 
 # Cấu hình
 OUTPUT_DIR = Path("output")
@@ -190,19 +198,147 @@ class TeleDriveWebAPI:
 # Khởi tạo API
 api = TeleDriveWebAPI()
 
-# Routes
+# Authentication decorator
+def auth_required(f):
+    """Decorator để yêu cầu xác thực cho API routes"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Authentication required', 'message': 'Vui lòng đăng nhập'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Authentication Routes
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Trang đăng nhập"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        data = request.get_json() if request.is_json else request.form
+        username_or_email = data.get('username', '').strip()
+        password = data.get('password', '')
+        remember = data.get('remember', False)
+
+        if not username_or_email or not password:
+            error_msg = 'Vui lòng nhập đầy đủ thông tin'
+            if request.is_json:
+                return jsonify({'success': False, 'message': error_msg}), 400
+            flash(error_msg, 'error')
+            return render_template('login.html')
+
+        # Xác thực người dùng
+        user = auth_manager.authenticate_user(username_or_email, password)
+        if user:
+            login_user(user, remember=remember)
+            next_page = request.args.get('next')
+
+            if request.is_json:
+                return jsonify({
+                    'success': True,
+                    'message': 'Đăng nhập thành công',
+                    'redirect': next_page or url_for('index')
+                })
+
+            return redirect(next_page) if next_page else redirect(url_for('index'))
+        else:
+            error_msg = 'Tên đăng nhập hoặc mật khẩu không đúng'
+            if request.is_json:
+                return jsonify({'success': False, 'message': error_msg}), 401
+            flash(error_msg, 'error')
+
+    return render_template('login.html')
+
+@app.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    """Đăng xuất"""
+    logout_user()
+    if request.is_json:
+        return jsonify({'success': True, 'message': 'Đã đăng xuất thành công'})
+    flash('Đã đăng xuất thành công', 'success')
+    return redirect(url_for('login'))
+
+@app.route('/setup', methods=['GET', 'POST'])
+def setup():
+    """Tạo tài khoản admin đầu tiên"""
+    # Chỉ cho phép setup nếu chưa có admin user
+    if auth_manager.has_admin_user():
+        flash('Hệ thống đã được thiết lập', 'info')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        data = request.get_json() if request.is_json else request.form
+        username = data.get('username', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        confirm_password = data.get('confirm_password', '')
+
+        # Validate input
+        errors = []
+
+        if not username:
+            errors.append('Vui lòng nhập tên đăng nhập')
+        else:
+            valid, msg = validate_username(username)
+            if not valid:
+                errors.append(msg)
+
+        if not email:
+            errors.append('Vui lòng nhập email')
+        else:
+            valid, msg = validate_email(email)
+            if not valid:
+                errors.append(msg)
+
+        if not password:
+            errors.append('Vui lòng nhập mật khẩu')
+        else:
+            valid, msg = validate_password(password)
+            if not valid:
+                errors.append(msg)
+
+        if password != confirm_password:
+            errors.append('Mật khẩu xác nhận không khớp')
+
+        if errors:
+            if request.is_json:
+                return jsonify({'success': False, 'errors': errors}), 400
+            for error in errors:
+                flash(error, 'error')
+            return render_template('setup.html')
+
+        # Tạo admin user
+        success, message = auth_manager.create_user(username, email, password, is_admin=True)
+        if success:
+            if request.is_json:
+                return jsonify({'success': True, 'message': message, 'redirect': url_for('login')})
+            flash(message, 'success')
+            return redirect(url_for('login'))
+        else:
+            if request.is_json:
+                return jsonify({'success': False, 'message': message}), 400
+            flash(message, 'error')
+
+    return render_template('setup.html')
+
+# Main Routes
 @app.route('/')
+@login_required
 def index():
     """Trang chính"""
-    return render_template('index.html')
+    return render_template('index.html', user=current_user)
 
 @app.route('/api/scans')
+@auth_required
 def get_scans():
     """API lấy danh sách scan sessions"""
     sessions = api.get_scan_sessions()
     return jsonify(sessions)
 
 @app.route('/api/files/<session_id>')
+@auth_required
 def get_files(session_id):
     """API lấy danh sách file từ session"""
     page = request.args.get('page', 1, type=int)
@@ -232,6 +368,7 @@ def get_files(session_id):
     })
 
 @app.route('/api/files/<session_id>/search')
+@auth_required
 def search_files(session_id):
     """API tìm kiếm file"""
     query = request.args.get('q', '')
@@ -242,6 +379,7 @@ def search_files(session_id):
     return jsonify(files)
 
 @app.route('/api/files/<session_id>/filter')
+@auth_required
 def filter_files(session_id):
     """API lọc file theo loại"""
     file_type = request.args.get('type', 'all')
@@ -249,10 +387,17 @@ def filter_files(session_id):
     return jsonify(files)
 
 @app.route('/api/stats/<session_id>')
+@auth_required
 def get_stats(session_id):
     """API lấy thống kê session"""
     stats = api.get_stats(session_id)
     return jsonify(stats)
+
+@app.route('/api/user/info')
+@auth_required
+def get_user_info():
+    """API lấy thông tin người dùng hiện tại"""
+    return jsonify(current_user.to_dict())
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
