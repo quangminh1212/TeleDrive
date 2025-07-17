@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive File Manager</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fab fa-telegram-plane"></i>
+                    <span>TeleDrive</span>
+                </div>
+                <div class="header-title">File Manager</div>
+            </div>
+            
+            <div class="header-center">
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="globalSearch" placeholder="Tìm kiếm file...">
+                    <button id="clearSearch" class="clear-btn" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="stats-summary" id="globalStats">
+                    <div class="stat-item">
+                        <span class="stat-value">0</span>
+                        <span class="stat-label">Files</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">0 B</span>
+                        <span class="stat-label">Total</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Scan Sessions</h3>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <div class="sessions-list" id="sessionsList">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Đang tải...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="view-options">
+                        <button class="view-btn active" data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-btn" data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="filter-options">
+                        <select id="fileTypeFilter">
+                            <option value="all">Tất cả file</option>
+                            <option value="document">Documents</option>
+                            <option value="photo">Photos</option>
+                            <option value="video">Videos</option>
+                            <option value="audio">Audio</option>
+                            <option value="voice">Voice</option>
+                            <option value="sticker">Stickers</option>
+                            <option value="animation">Animations</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="toolbar-right">
+                    <div class="sort-options">
+                        <select id="sortBy">
+                            <option value="name">Tên file</option>
+                            <option value="size">Kích thước</option>
+                            <option value="date">Ngày upload</option>
+                            <option value="type">Loại file</option>
+                        </select>
+                        <button id="sortOrder" class="sort-btn" data-order="asc">
+                            <i class="fas fa-sort-alpha-down"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-content">
+                        <i class="fab fa-telegram-plane welcome-icon"></i>
+                        <h2>Chào mừng đến với TeleDrive</h2>
+                        <p>Chọn một scan session từ sidebar để xem các file đã quét được</p>
+                    </div>
+                </div>
+
+                <!-- Files Grid -->
+                <div class="files-container" id="filesContainer" style="display: none;">
+                    <div class="session-info" id="sessionInfo">
+                        <h2 id="sessionTitle">Session</h2>
+                        <div class="session-stats" id="sessionStats"></div>
+                    </div>
+                    
+                    <div class="files-grid" id="filesGrid">
+                        <!-- Files will be loaded here -->
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="pagination" id="pagination" style="display: none;">
+                        <button id="prevPage" class="page-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="pageInfo">Trang 1 / 1</span>
+                        <button id="nextPage" class="page-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div class="loading-screen" id="loadingScreen" style="display: none;">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Đang tải file...</span>
+                    </div>
+                </div>
+
+                <!-- No Results -->
+                <div class="no-results" id="noResults" style="display: none;">
+                    <i class="fas fa-search"></i>
+                    <h3>Không tìm thấy file nào</h3>
+                    <p>Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- File Detail Modal -->
+    <div class="modal" id="fileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Chi tiết file</h3>
+                <button class="modal-close" id="modalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body" id="modalBody">
+                <!-- File details will be loaded here -->
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="modalCloseBtn">Đóng</button>
+                <button class="btn btn-primary" id="downloadBtn">
+                    <i class="fas fa-download"></i>
+                    Tải xuống
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

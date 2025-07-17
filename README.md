@@ -1,6 +1,6 @@
-# Telegram File Scanner
+# TeleDrive - Telegram File Manager
 
-Công cụ quét và tải file từ các kênh Telegram private một cách tự động.
+Công cụ quét và quản lý file từ các kênh Telegram với giao diện web hiện đại theo phong cách Telegram.
 
 ## 🚀 Sử dụng đơn giản
 
@@ -14,6 +14,11 @@ setup.bat
 run.bat
 ```
 
+### Khởi động Web Interface:
+```batch
+run_web.bat
+```
+
 ### Cấu hình nhanh:
 ```batch
 run.bat config
@@ -21,11 +26,21 @@ run.bat config
 
 ## ✨ Tính năng
 
+### Scanner
 - ✅ **Tự động hoàn toàn** - Không cần input
-- ✅ **Menu cấu hình** - Thay đổi setting dễ dàng  
+- ✅ **Menu cấu hình** - Thay đổi setting dễ dàng
 - ✅ **Đa định dạng** - CSV, JSON, Excel
 - ✅ **Tiếng Việt** - Giao diện tiếng Việt
 - ✅ **Logging chi tiết** - Theo dõi quá trình
+
+### Web Interface 🌐
+- ✅ **Giao diện Telegram-style** - Thiết kế theo phong cách Telegram
+- ✅ **File Manager** - Quản lý file trực quan
+- ✅ **Tìm kiếm & Lọc** - Tìm file nhanh chóng
+- ✅ **Responsive** - Tương thích mobile
+- ✅ **Chi tiết file** - Xem thông tin đầy đủ
+- ✅ **Download links** - Tải file trực tiếp
+- ✅ **Multiple sessions** - Quản lý nhiều lần scan
 
 ## 📁 Cấu hình
 
@@ -77,11 +92,39 @@ TELEGRAM_PHONE=+84xxxxxxxxx
 
 File lưu trong `output/`:
 - `telegram_files.csv`
-- `telegram_files.json`  
+- `telegram_files.json`
 - `telegram_files.xlsx`
+
+## 🌐 Web Interface
+
+Sau khi chạy scanner, bạn có thể sử dụng giao diện web để quản lý file:
+
+1. **Khởi động web interface:**
+   ```batch
+   run_web.bat
+   ```
+
+2. **Truy cập:** http://localhost:5000
+
+3. **Tính năng:**
+   - Xem danh sách file theo dạng grid/list
+   - Tìm kiếm file theo tên
+   - Lọc theo loại file (document, photo, video, audio...)
+   - Sắp xếp theo tên, kích thước, ngày
+   - Xem chi tiết file trong modal
+   - Download file trực tiếp
+   - Responsive design cho mobile
+
+4. **Giao diện:**
+   - **Header:** Logo, search bar, thống kê tổng quan
+   - **Sidebar:** Danh sách các scan sessions
+   - **Main:** File grid với toolbar và pagination
+   - **Modal:** Chi tiết file với thông tin đầy đủ
 
 ## 🛠️ Troubleshooting
 
 - **Lỗi API:** Kiểm tra `.env`
 - **Lỗi config:** Chạy `run.bat config`
 - **Thiếu dependencies:** Chạy `setup.bat`
+- **Web interface không khởi động:** Kiểm tra Flask đã cài đặt chưa
+- **Không có dữ liệu:** Chạy scanner trước khi mở web interface
