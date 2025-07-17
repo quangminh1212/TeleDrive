@@ -105,7 +105,7 @@ if not exist config.json (
 )
 
 echo    ^> Dang dong bo tu .env sang config.json...
-python -c "from config_manager import ConfigManager; cm = ConfigManager(); cm.sync_env_to_config(); print('✅ Dong bo thanh cong')" 2>nul
+python sync_config.py 2>nul
 if errorlevel 1 (
     echo ❌ Loi dong bo cau hinh
     echo 💡 Goi y: Chay 'run.bat config' de cau hinh
@@ -116,7 +116,7 @@ if errorlevel 1 (
 echo    ^> Config.json da san sang
 
 echo    ^> Dang kiem tra channel...
-python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); channel=config.get('channels',{}).get('default_channel',''); exit(0 if channel and channel != '@your_channel_here' else 1)" 2>nul
+python check_channel.py 2>nul
 if errorlevel 1 (
     echo.
     echo ❌ CHUA CAU HINH CHANNEL!
