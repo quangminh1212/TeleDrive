@@ -80,14 +80,14 @@ if "%ENV_CONFIGURED%"=="0" (
 
 echo.
 echo [BUOC 2/6] Kiem tra Python...
-py --version >nul 2>&1
+python --version >nul 2>&1
 if errorlevel 1 (
     echo ❌ KHONG TIM THAY PYTHON!
     echo 📥 Tai Python tu: https://python.org/downloads/
     pause
     exit /b 1
 ) else (
-    for /f "tokens=*" %%i in ('py --version 2^>^&1') do echo ✅ %%i da san sang
+    for /f "tokens=*" %%i in ('python --version 2^>^&1') do echo ✅ %%i da san sang
 )
 
 echo.
@@ -102,7 +102,7 @@ if not exist config.json (
 )
 
 echo    ^> Dang dong bo tu .env sang config.json...
-py -c "from config import config_manager; config_manager.update_from_env(); print('✅ Dong bo thanh cong')" 2>nul
+python -c "from config_manager import ConfigManager; cm = ConfigManager(); cm.sync_env_to_config(); print('✅ Dong bo thanh cong')" 2>nul
 if errorlevel 1 (
     echo ❌ Loi dong bo cau hinh
     echo 💡 Goi y: Chay 'run.bat config' de cau hinh
@@ -125,7 +125,7 @@ if errorlevel 1 (
 )
 
 echo    ^> Dang kiem tra tinh hop le cua cau hinh...
-py -c "from config import config_manager; result = config_manager.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
+python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
 if errorlevel 1 (
     echo.
     echo ❌ CAU HINH CHUA HOP LE!
@@ -138,7 +138,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 4/6] Kiem tra dependencies...
 echo    ^> Dang kiem tra cac thu vien Python...
-py -c "import telethon, pandas, tqdm, aiofiles; print('✅ Tat ca dependencies da san sang')" 2>nul
+python -c "import telethon, pandas, tqdm, aiofiles; print('✅ Tat ca dependencies da san sang')" 2>nul
 if errorlevel 1 (
     echo ❌ Thieu dependencies! Dang tu dong cai dat...
     echo    ^> Chay pip install...
@@ -157,7 +157,7 @@ echo [BUOC 5/6] Khoi tao he thong logging...
 echo    ^> Tao thu muc logs neu chua co...
 if not exist logs mkdir logs
 echo    ^> Kiem tra cau hinh logging...
-py -c "from logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ He thong logging da san sang')" 2>nul
+python -c "from logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ He thong logging da san sang')" 2>nul
 if errorlevel 1 (
     echo ⚠️ Khong the khoi tao logging (se chay khong co log chi tiet)
 )
@@ -178,7 +178,7 @@ echo 💡 Luu y: Scanner se chay tu dong ma khong can nhap gi them
 echo    Neu muon thay doi channel, chay: run.bat config
 echo.
 
-py main.py
+python main.py
 
 echo.
 echo ================================================================

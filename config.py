@@ -5,9 +5,7 @@ Hỗ trợ đầy đủ validation và error handling với logging chi tiết
 import os
 import json
 import logging
-import re
 from typing import Any, Dict, Optional, Union
-from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -22,114 +20,6 @@ except ImportError:
     logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-
-class ConfigValidator:
-    """Validator cho config.json và .env"""
-
-    def __init__(self):
-        self.errors = []
-        self.warnings = []
-
-    def validate_env_file(self, env_path: str = '.env') -> bool:
-        """Validate .env file"""
-        self.errors.clear()
-        self.warnings.clear()
-
-        if not os.path.exists(env_path):
-            self.errors.append(f"File {env_path} không tồn tại")
-            return False
-
-        try:
-            with open(env_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-        except Exception as e:
-            self.errors.append(f"Không thể đọc file {env_path}: {e}")
-            return False
-
-        # Parse environment variables
-        env_vars = {}
-        for line in content.split('\n'):
-            line = line.strip()
-            if line and not line.startswith('#') and '=' in line:
-                key, value = line.split('=', 1)
-                env_vars[key.strip()] = value.strip()
-
-        # Validate required fields
-        required_fields = ['TELEGRAM_API_ID', 'TELEGRAM_API_HASH', 'TELEGRAM_PHONE']
-        for field in required_fields:
-            if field not in env_vars or not env_vars[field]:
-                self.errors.append(f"Thiếu hoặc trống {field}")
-            elif env_vars[field] in ['your_api_id_here', 'your_api_hash_here', '+84xxxxxxxxx']:
-                self.errors.append(f"{field} chưa được cấu hình (vẫn là giá trị mặc định)")
-
-        # Validate API_ID
-        if 'TELEGRAM_API_ID' in env_vars:
-            try:
-                api_id = int(env_vars['TELEGRAM_API_ID'])
-                if api_id <= 0:
-                    self.errors.append("TELEGRAM_API_ID phải là số nguyên dương")
-            except ValueError:
-                self.errors.append("TELEGRAM_API_ID phải là số nguyên")
-
-        # Validate API_HASH
-        if 'TELEGRAM_API_HASH' in env_vars:
-            api_hash = env_vars['TELEGRAM_API_HASH']
-            if not re.match(r'^[a-fA-F0-9]{32}$', api_hash):
-                self.errors.append("TELEGRAM_API_HASH phải là chuỗi 32 ký tự hex")
-
-        # Validate PHONE
-        if 'TELEGRAM_PHONE' in env_vars:
-            phone = env_vars['TELEGRAM_PHONE']
-            if not re.match(r'^\+\d{10,15}$', phone):
-                self.errors.append("TELEGRAM_PHONE phải có format +[mã quốc gia][số điện thoại] (10-15 chữ số)")
-
-        return len(self.errors) == 0
-
-    def validate_config_json(self, config_path: str = 'config.json') -> bool:
-        """Validate config.json file"""
-        self.errors.clear()
-        self.warnings.clear()
-
-        if not os.path.exists(config_path):
-            self.errors.append(f"File {config_path} không tồn tại")
-            return False
-
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-        except json.JSONDecodeError as e:
-            self.errors.append(f"Lỗi JSON trong {config_path}: {e}")
-            return False
-        except Exception as e:
-            self.errors.append(f"Không thể đọc file {config_path}: {e}")
-            return False
-
-        # Validate required sections
-        required_sections = ['telegram', 'output', 'scanning', 'download', 'display', 'filters']
-        for section in required_sections:
-            if section not in config:
-                self.errors.append(f"Thiếu section '{section}'")
-
-        return len(self.errors) == 0
-
-    def get_validation_report(self) -> str:
-        """Get validation report"""
-        report = []
-
-        if self.errors:
-            report.append("❌ LỖI:")
-            for error in self.errors:
-                report.append(f"  - {error}")
-
-        if self.warnings:
-            report.append("⚠️ CẢNH BÁO:")
-            for warning in self.warnings:
-                report.append(f"  - {warning}")
-
-        if not self.errors and not self.warnings:
-            report.append("✅ Cấu hình hợp lệ!")
-
-        return "\n".join(report)
 
 class ConfigManager:
     """Quản lý cấu hình với validation và error handling"""
@@ -186,29 +76,12 @@ class ConfigManager:
                 log_step("CONFIG ERROR", f"Lỗi không xác định: {e}", "ERROR")
 
     def _save_config(self):
-        """Save configuration to config.json with validation"""
+        """Save configuration to config.json"""
         try:
-            # Validate before saving
-            validator = ConfigValidator()
-            temp_file = self.config_file + '.tmp'
-
-            # Save to temp file first
-            with open(temp_file, 'w', encoding='utf-8') as f:
+            with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self._config, f, indent=2, ensure_ascii=False)
-
-            # Validate temp file
-            if validator.validate_config_json(temp_file):
-                # Move temp file to actual file
-                os.rename(temp_file, self.config_file)
-                logger.info(f"Đã lưu và validate cấu hình vào {self.config_file}")
-                return True
-            else:
-                # Remove temp file and show errors
-                os.remove(temp_file)
-                logger.error("Cấu hình không hợp lệ:")
-                logger.error(validator.get_validation_report())
-                return False
-
+            logger.info(f"Đã lưu config vào {self.config_file}")
+            return True
         except Exception as e:
             logger.error(f"Lỗi lưu {self.config_file}: {e}")
             return False
@@ -372,116 +245,9 @@ class ConfigManager:
 
         # Update last_updated timestamp if any changes were made
         if updated:
+            from datetime import datetime
             self.set('_last_updated', datetime.now().strftime('%Y-%m-%d'))
             logger.info("Đã đồng bộ cấu hình từ .env vào config.json")
-
-    def validate_configuration(self):
-        """Validate current configuration"""
-        validator = ConfigValidator()
-
-        # Validate .env
-        env_valid = validator.validate_env_file()
-        if not env_valid:
-            logger.error("❌ .env có lỗi:")
-            logger.error(validator.get_validation_report())
-
-        # Validate config.json
-        config_valid = validator.validate_config_json()
-        if not config_valid:
-            logger.error("❌ config.json có lỗi:")
-            logger.error(validator.get_validation_report())
-
-        # Overall result
-        if env_valid and config_valid:
-            logger.info("🎉 TẤT CẢ CẤU HÌNH HỢP LỆ!")
-            return True
-        else:
-            logger.warning("⚠️ CÓ LỖI TRONG CẤU HÌNH!")
-            return False
-
-    def update_telegram_config(self, api_id=None, api_hash=None, phone_number=None):
-        """Update Telegram configuration"""
-        if api_id:
-            self.set('telegram.api_id', str(api_id))
-        if api_hash:
-            self.set('telegram.api_hash', str(api_hash))
-        if phone_number:
-            self.set('telegram.phone_number', str(phone_number))
-        return self._save_config()
-
-    def update_output_config(self, directory=None, csv_enabled=None, json_enabled=None, excel_enabled=None):
-        """Update output configuration"""
-        if directory:
-            self.set('output.directory', directory)
-        if csv_enabled is not None:
-            self.set('output.formats.csv.enabled', csv_enabled)
-        if json_enabled is not None:
-            self.set('output.formats.json.enabled', json_enabled)
-        if excel_enabled is not None:
-            self.set('output.formats.excel.enabled', excel_enabled)
-        return self._save_config()
-
-    def update_scanning_config(self, max_messages=None, batch_size=None, file_types=None):
-        """Update scanning configuration"""
-        if max_messages is not None:
-            self.set('scanning.max_messages', max_messages)
-        if batch_size:
-            self.set('scanning.batch_size', batch_size)
-        if file_types:
-            for file_type, enabled in file_types.items():
-                self.set(f'scanning.file_types.{file_type}', enabled)
-        return self._save_config()
-
-    def update_filter_config(self, min_size=None, max_size=None, extensions=None, exclude_ext=None):
-        """Update filter configuration"""
-        if min_size is not None:
-            self.set('filters.min_file_size', min_size)
-        if max_size is not None:
-            self.set('filters.max_file_size', max_size)
-        if extensions is not None:
-            self.set('filters.file_extensions', extensions)
-        if exclude_ext is not None:
-            self.set('filters.exclude_extensions', exclude_ext)
-        return self._save_config()
-
-    def print_config_summary(self):
-        """Print current configuration summary"""
-        print("\n" + "="*60)
-        print("           CẤU HÌNH TELEGRAM FILE SCANNER")
-        print("="*60)
-
-        # Telegram settings
-        print(f"\n📱 TELEGRAM:")
-        print(f"   API ID: {self.get('telegram.api_id', 'Chưa cấu hình')}")
-        api_hash = self.get('telegram.api_hash', '')
-        print(f"   API Hash: {'*' * len(api_hash) if api_hash else 'Chưa cấu hình'}")
-        print(f"   Số điện thoại: {self.get('telegram.phone_number', 'Chưa cấu hình')}")
-
-        # Output settings
-        print(f"\n📁 OUTPUT:")
-        print(f"   Thư mục: {self.get('output.directory', 'output')}")
-        print(f"   CSV: {'✓' if self.get('output.formats.csv.enabled') else '✗'}")
-        print(f"   JSON: {'✓' if self.get('output.formats.json.enabled') else '✗'}")
-        print(f"   Excel: {'✓' if self.get('output.formats.excel.enabled') else '✗'}")
-
-        # Scanning settings
-        print(f"\n🔍 SCANNING:")
-        print(f"   Max messages: {self.get('scanning.max_messages', 'Không giới hạn')}")
-        print(f"   Batch size: {self.get('scanning.batch_size', 100)}")
-
-        # File types
-        file_types = self.get('scanning.file_types', {})
-        enabled_types = [k for k, v in file_types.items() if v]
-        print(f"   File types: {', '.join(enabled_types) if enabled_types else 'Không có'}")
-
-        # Filter settings
-        print(f"\n🔧 FILTERS:")
-        print(f"   Min size: {self.get('filters.min_file_size', 0)} bytes")
-        print(f"   Max size: {self.get('filters.max_file_size', 'Không giới hạn')}")
-        extensions = self.get('filters.file_extensions', [])
-        print(f"   Extensions: {extensions if extensions else 'Tất cả'}")
-
-        print("="*60)
 
 # Initialize global config manager
 config_manager = ConfigManager()
@@ -745,125 +511,3 @@ def print_config_summary():
     print(f"Max messages: {summary['max_messages'] or 'Không giới hạn'}")
     print(f"Formats: CSV={summary['formats_enabled']['csv']}, JSON={summary['formats_enabled']['json']}, Excel={summary['formats_enabled']['excel']}")
     print("="*60)
-
-# ================================================================
-# INTERACTIVE CONFIGURATION FUNCTIONS
-# ================================================================
-
-def interactive_config_manager():
-    """Interactive config manager"""
-    while True:
-        print("\n" + "="*50)
-        print("        QUẢN LÝ CẤU HÌNH")
-        print("="*50)
-        print("1. Xem cấu hình hiện tại")
-        print("2. Cấu hình Telegram API")
-        print("3. Cấu hình Output")
-        print("4. Cấu hình Scanning")
-        print("5. Cấu hình Filters")
-        print("6. Đồng bộ từ .env sang config.json")
-        print("7. Kiểm tra validation")
-        print("8. Reset về mặc định")
-        print("0. Thoát")
-        print("-"*50)
-
-        choice = input("Chọn (0-8): ").strip()
-
-        if choice == '0':
-            break
-        elif choice == '1':
-            config_manager.print_config_summary()
-        elif choice == '2':
-            configure_telegram_interactive()
-        elif choice == '3':
-            configure_output_interactive()
-        elif choice == '4':
-            configure_scanning_interactive()
-        elif choice == '5':
-            configure_filters_interactive()
-        elif choice == '6':
-            config_manager.update_from_env()
-            input("\nNhấn Enter để tiếp tục...")
-        elif choice == '7':
-            config_manager.validate_configuration()
-            input("\nNhấn Enter để tiếp tục...")
-        elif choice == '8':
-            config_manager._config = config_manager._get_default_config()
-            config_manager._save_config()
-            print("Đã reset về cấu hình mặc định!")
-        else:
-            print("Lựa chọn không hợp lệ!")
-
-def configure_telegram_interactive():
-    """Configure Telegram settings interactively"""
-    print("\n📱 CẤU HÌNH TELEGRAM API")
-    print("-"*30)
-
-    api_id = input("API ID (Enter để bỏ qua): ").strip()
-    api_hash = input("API Hash (Enter để bỏ qua): ").strip()
-    phone = input("Số điện thoại (+84xxxxxxxxx) (Enter để bỏ qua): ").strip()
-
-    config_manager.update_telegram_config(
-        api_id=api_id if api_id else None,
-        api_hash=api_hash if api_hash else None,
-        phone_number=phone if phone else None
-    )
-
-def configure_output_interactive():
-    """Configure output settings interactively"""
-    print("\n📁 CẤU HÌNH OUTPUT")
-    print("-"*25)
-
-    directory = input("Thư mục output (Enter để bỏ qua): ").strip()
-
-    csv_input = input("Xuất CSV? (y/n/Enter để bỏ qua): ").strip().lower()
-    csv_enabled = True if csv_input == 'y' else False if csv_input == 'n' else None
-
-    json_input = input("Xuất JSON? (y/n/Enter để bỏ qua): ").strip().lower()
-    json_enabled = True if json_input == 'y' else False if json_input == 'n' else None
-
-    excel_input = input("Xuất Excel? (y/n/Enter để bỏ qua): ").strip().lower()
-    excel_enabled = True if excel_input == 'y' else False if excel_input == 'n' else None
-
-    config_manager.update_output_config(
-        directory=directory if directory else None,
-        csv_enabled=csv_enabled,
-        json_enabled=json_enabled,
-        excel_enabled=excel_enabled
-    )
-
-def configure_scanning_interactive():
-    """Configure scanning settings interactively"""
-    print("\n🔍 CẤU HÌNH SCANNING")
-    print("-"*28)
-
-    max_msg = input("Số message tối đa (Enter = không giới hạn): ").strip()
-    max_messages = int(max_msg) if max_msg.isdigit() else None
-
-    batch = input("Batch size (Enter để bỏ qua): ").strip()
-    batch_size = int(batch) if batch.isdigit() else None
-
-    config_manager.update_scanning_config(
-        max_messages=max_messages,
-        batch_size=batch_size
-    )
-
-def configure_filters_interactive():
-    """Configure filter settings interactively"""
-    print("\n🔧 CẤU HÌNH FILTERS")
-    print("-"*26)
-
-    min_size = input("Kích thước file tối thiểu (bytes, Enter để bỏ qua): ").strip()
-    min_file_size = int(min_size) if min_size.isdigit() else None
-
-    max_size = input("Kích thước file tối đa (bytes, Enter để bỏ qua): ").strip()
-    max_file_size = int(max_size) if max_size.isdigit() else None
-
-    extensions = input("Phần mở rộng cho phép (cách nhau bởi dấu phẩy, Enter để bỏ qua): ").strip()
-    file_extensions = [ext.strip() for ext in extensions.split(',')] if extensions else None
-
-    config_manager.update_filter_config(
-        min_size=min_file_size,
-        max_size=max_file_size,
-        extensions=file_extensions
-    )

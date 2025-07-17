@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Telegram File Scanner - Entry Point
-Hỗ trợ cả public và private channel/group Telegram
+Private Channel Scanner với logging chi tiết
+Chuyên dụng cho việc quét file trong private channel/group Telegram
 """
 
 import asyncio
@@ -18,8 +18,6 @@ except ImportError:
     import logging
     logger = logging.getLogger(__name__)
 
-<<<<<<< HEAD
-=======
 class PrivateChannelScanner(TelegramFileScanner):
     """Scanner chuyên dụng cho private channel"""
     
@@ -243,50 +241,23 @@ class PrivateChannelScanner(TelegramFileScanner):
             
         print(f"✅ Hoàn thành! Tìm thấy {len(self.files_data)} file")
 
->>>>>>> 6813688dd5cdbf7f847154ba4d7fa4252bf6f245
 async def main():
-    """Main function cho Telegram File Scanner"""
-    print("📡 TELEGRAM FILE SCANNER")
+    """Main function cho private channel scanner"""
+    print("🔐 PRIVATE CHANNEL SCANNER")
     print("=" * 50)
 
     if DETAILED_LOGGING_AVAILABLE:
-        log_step("KHỞI ĐỘNG ỨNG DỤNG", "Bắt đầu Telegram File Scanner")
+        log_step("KHỞI ĐỘNG ỨNG DỤNG", "Bắt đầu Private Channel Scanner")
 
     print("🔧 Đang khởi tạo scanner...")
-    scanner = TelegramFileScanner()
+    scanner = PrivateChannelScanner()
 
     try:
         print("✅ Scanner đã sẵn sàng")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("BẮT ĐẦU QUÉT", "Khởi động quá trình quét interactive")
 
-<<<<<<< HEAD
-        # Hiển thị menu lựa chọn
-        print("\n📋 Chọn chế độ quét:")
-        print("   1. Quét public channel/group")
-        print("   2. Quét private channel/group (interactive)")
-
-        choice = input("\n👉 Lựa chọn (1/2): ").strip()
-
-        if choice == "2":
-            # Chế độ private channel interactive
-            if DETAILED_LOGGING_AVAILABLE:
-                log_step("BẮT ĐẦU QUÉT", "Khởi động quá trình quét private channel interactive")
-            await scanner.scan_private_channel_interactive()
-        else:
-            # Chế độ public channel thông thường
-            if DETAILED_LOGGING_AVAILABLE:
-                log_step("BẮT ĐẦU QUÉT", "Khởi động quá trình quét public channel")
-
-            channel_input = input("\n👉 Nhập username kênh (ví dụ: @channelname) hoặc link: ").strip()
-            if not channel_input:
-                print("❌ Vui lòng nhập username hoặc link kênh")
-                return
-
-            await scanner.initialize()
-            await scanner.scan_channel(channel_input)
-            await scanner.save_results()
-=======
         await scanner.scan_private_channel_auto()
->>>>>>> 6813688dd5cdbf7f847154ba4d7fa4252bf6f245
 
         print("\n🎉 Quá trình quét hoàn thành!")
         if DETAILED_LOGGING_AVAILABLE:
