@@ -7,7 +7,7 @@
   },
   "channels": {
     "use_default_channel": true,
-    "default_channel": "@your_channel_here"
+    "default_channel": "https://t.me/+mDSKNZmnHrM0YTN"
   },
   "output": {
     "directory": "output",
