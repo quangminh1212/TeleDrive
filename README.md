@@ -36,28 +36,42 @@ TELEGRAM_API_HASH=your_api_hash
 TELEGRAM_PHONE=+84xxxxxxxxx
 ```
 
-### File `run_config.json` (Tham số)
+### File `config.json` (Cấu hình chính)
 ```json
 {
-  "channel": "@your_channel_here",
-  "max_messages": 1000,
-  "file_types": {
-    "documents": true,
-    "photos": true,
-    "videos": true,
-    "audio": true
+  "telegram": {
+    "api_id": "your_api_id",
+    "api_hash": "your_api_hash",
+    "phone_number": "+84xxxxxxxxx"
   },
-  "output_formats": {
-    "csv": true,
-    "json": true,
-    "excel": true
+  "channels": {
+    "use_default_channel": true,
+    "default_channel": "@your_channel_here"
+  },
+  "scanning": {
+    "max_messages": 1000,
+    "batch_size": 50,
+    "file_types": {
+      "documents": true,
+      "photos": true,
+      "videos": true,
+      "audio": true
+    }
+  },
+  "output": {
+    "formats": {
+      "csv": {"enabled": true},
+      "json": {"enabled": true},
+      "excel": {"enabled": true}
+    }
   }
 }
 ```
 
-**⚠️ Quan trọng:** Thay `@your_channel_here` bằng channel thực tế:
+**⚠️ Quan trọng:**
+- Thay `@your_channel_here` bằng channel thực tế
 - **Public channel:** `@channelname`
-- **Private channel:** `https://t.me/+xxxxx` hoặc `https://t.me/joinchat/xxxxx`
+- **Private channel:** `https://t.me/+xxxxx`
 
 ## 📊 Kết quả
 

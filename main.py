@@ -57,7 +57,7 @@ class PrivateChannelScanner(TelegramFileScanner):
         await self.initialize()
         print("✅ Kết nối Telegram đã sẵn sàng")
 
-        # Lấy channel từ config
+        # Lấy channel từ config.json
         try:
             import json
             with open('config.json', 'r', encoding='utf-8') as f:
@@ -65,13 +65,14 @@ class PrivateChannelScanner(TelegramFileScanner):
 
             if config.get('channels', {}).get('use_default_channel', False):
                 channel_input = config.get('channels', {}).get('default_channel', '')
-                if not channel_input:
-                    print("❌ Không tìm thấy channel trong config!")
+                if not channel_input or channel_input == '@your_channel_here':
+                    print("❌ Chưa cấu hình channel trong config.json!")
+                    print("💡 Chạy: run.bat config để cấu hình")
                     return
 
                 print(f"📺 Sử dụng channel từ config: {channel_input}")
             else:
-                print("❌ Chưa cấu hình channel mặc định!")
+                print("❌ Chưa bật chế độ sử dụng channel mặc định!")
                 return
 
         except Exception as e:
