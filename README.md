@@ -39,7 +39,7 @@ TELEGRAM_PHONE=+84xxxxxxxxx
 ### File `run_config.json` (Tham số)
 ```json
 {
-  "channel": "@duongtinhchat92",
+  "channel": "@your_channel_here",
   "max_messages": 1000,
   "file_types": {
     "documents": true,
@@ -54,6 +54,10 @@ TELEGRAM_PHONE=+84xxxxxxxxx
   }
 }
 ```
+
+**⚠️ Quan trọng:** Thay `@your_channel_here` bằng channel thực tế:
+- **Public channel:** `@channelname`
+- **Private channel:** `https://t.me/+xxxxx` hoặc `https://t.me/joinchat/xxxxx`
 
 ## 📊 Kết quả
 

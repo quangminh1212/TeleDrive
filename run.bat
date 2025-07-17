@@ -95,7 +95,7 @@ echo [BUOC 3/6] Kiem tra va tao cau hinh...
 echo    ^> Kiem tra run_config.json...
 if not exist run_config.json (
     echo    ^> Tao run_config.json mac dinh...
-    python -c "import json; config={'channel': '@duongtinhchat92', 'max_messages': 1000, 'batch_size': 50, 'file_types': {'documents': True, 'photos': True, 'videos': True, 'audio': True}, 'output_formats': {'csv': True, 'json': True, 'excel': True}, 'show_progress': True, 'language': 'vi'}; json.dump(config, open('run_config.json', 'w', encoding='utf-8'), indent=2, ensure_ascii=False)" 2>nul
+    python -c "import json; config={'channel': '@your_channel_here', 'max_messages': 1000, 'batch_size': 50, 'file_types': {'documents': True, 'photos': True, 'videos': True, 'audio': True}, 'output_formats': {'csv': True, 'json': True, 'excel': True}, 'show_progress': True, 'language': 'vi'}; json.dump(config, open('run_config.json', 'w', encoding='utf-8'), indent=2, ensure_ascii=False)" 2>nul
     if errorlevel 1 (
         echo ❌ Khong the tao run_config.json
         pause
@@ -121,6 +121,18 @@ if errorlevel 1 (
     echo ⚠️ Khong the ap dung run_config.json (se dung cau hinh mac dinh^)
 ) else (
     echo ✅ Da ap dung cau hinh tu run_config.json
+)
+
+echo    ^> Dang kiem tra channel...
+python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); channel=config.get('channels',{}).get('default_channel',''); exit(0 if channel and channel != '@your_channel_here' else 1)" 2>nul
+if errorlevel 1 (
+    echo.
+    echo ❌ CHUA CAU HINH CHANNEL!
+    echo 💡 Chay: run.bat config de cau hinh channel
+    echo 📋 Hoac chinh sua file run_config.json
+    echo.
+    pause
+    exit /b 1
 )
 
 echo    ^> Dang kiem tra tinh hop le cua cau hinh...
@@ -164,16 +176,17 @@ if errorlevel 1 (
 echo.
 echo [BUOC 6/6] Khoi dong Private Channel Scanner...
 echo ================================================================
-echo 🚀 DANG KHOI DONG SCANNER...
+echo 🚀 DANG KHOI DONG SCANNER TU DONG...
 echo ================================================================
 echo.
-echo 📋 Ho tro cac format channel:
-echo    • https://t.me/joinchat/xxxxx  (invite link cu)
-echo    • https://t.me/+xxxxx          (invite link moi)
-echo    • @privatechannel              (neu da join)
+echo 📺 Su dung channel tu config:
+python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); print('   ', config.get('channels',{}).get('default_channel','Chua cau hinh'))" 2>nul
 echo.
 echo 📁 Ket qua se duoc luu trong thu muc 'output/'
 echo 📊 Log chi tiet se duoc luu trong thu muc 'logs/'
+echo.
+echo 💡 Luu y: Scanner se chay tu dong ma khong can nhap gi them
+echo    Neu muon thay doi channel, chay: run.bat config
 echo.
 
 python main.py
@@ -339,7 +352,7 @@ if "%choice%"=="6" (
 
     if /i "!confirm!"=="y" (
         echo Dang reset...
-        python -c "import json; config={'channel': '@duongtinhchat92', 'max_messages': 1000, 'batch_size': 50, 'file_types': {'documents': True, 'photos': True, 'videos': True, 'audio': True}, 'output_formats': {'csv': True, 'json': True, 'excel': True}, 'show_progress': True, 'language': 'vi'}; json.dump(config, open('run_config.json', 'w', encoding='utf-8'), indent=2, ensure_ascii=False)" 2>nul
+        python -c "import json; config={'channel': '@your_channel_here', 'max_messages': 1000, 'batch_size': 50, 'file_types': {'documents': True, 'photos': True, 'videos': True, 'audio': True}, 'output_formats': {'csv': True, 'json': True, 'excel': True}, 'show_progress': True, 'language': 'vi'}; json.dump(config, open('run_config.json', 'w', encoding='utf-8'), indent=2, ensure_ascii=False)" 2>nul
         echo ✅ Da reset ve cau hinh mac dinh
     ) else (
         echo Huy bo reset
