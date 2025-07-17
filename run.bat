@@ -1,6 +1,12 @@
 @echo off
+setlocal enabledelayedexpansion
 title Telegram File Scanner
 color 0D
+
+REM Kiem tra tham so dau vao
+if "%1"=="config" goto CONFIG_MENU
+if "%1"=="web" goto WEB_MODE
+if "%1"=="web-setup" goto WEB_SETUP
 
 echo.
 echo ================================================================
@@ -8,6 +14,7 @@ echo                 TELEGRAM FILE SCANNER
 echo ================================================================
 echo.
 
+:MAIN_START
 echo [BUOC 1/6] Kiem tra file cau hinh .env...
 REM Kiem tra file .env
 set "ENV_CONFIGURED=0"
@@ -76,32 +83,56 @@ if "%ENV_CONFIGURED%"=="0" (
 
 echo.
 echo [BUOC 2/6] Kiem tra Python...
-py --version >nul 2>&1
+python --version >nul 2>&1
 if errorlevel 1 (
     echo ❌ KHONG TIM THAY PYTHON!
     echo 📥 Tai Python tu: https://python.org/downloads/
     pause
     exit /b 1
 ) else (
-    for /f "tokens=*" %%i in ('py --version 2^>^&1') do echo ✅ %%i da san sang
+    for /f "tokens=*" %%i in ('python --version 2^>^&1') do echo ✅ %%i da san sang
 )
 
 echo.
-echo [BUOC 3/6] Dong bo va kiem tra cau hinh chi tiet...
+echo [BUOC 3/6] Kiem tra va tao cau hinh...
+echo    ^> Kiem tra config.json...
+if not exist config.json (
+    echo ❌ File config.json khong ton tai!
+    pause
+    exit /b 1
+) else (
+    echo ✅ Tim thay config.json
+)
+
 echo    ^> Dang dong bo tu .env sang config.json...
-py -c "from config import config_manager; config_manager.update_from_env(); print('✅ Dong bo thanh cong')" 2>nul
+python -c "from config_manager import ConfigManager; cm = ConfigManager(); cm.sync_env_to_config(); print('✅ Dong bo thanh cong')" 2>nul
 if errorlevel 1 (
     echo ❌ Loi dong bo cau hinh
+    echo 💡 Goi y: Chay 'run.bat config' de cau hinh
+    pause
+    exit /b 1
+)
+
+echo    ^> Config.json da san sang
+
+echo    ^> Dang kiem tra channel...
+python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); channel=config.get('channels',{}).get('default_channel',''); exit(0 if channel and channel != '@your_channel_here' else 1)" 2>nul
+if errorlevel 1 (
+    echo.
+    echo ❌ CHUA CAU HINH CHANNEL!
+    echo 💡 Chay: run.bat config de cau hinh channel
+    echo 📋 Hoac chinh sua file run_config.json
+    echo.
     pause
     exit /b 1
 )
 
 echo    ^> Dang kiem tra tinh hop le cua cau hinh...
-py -c "from config import config_manager; result = config_manager.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
+python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
 if errorlevel 1 (
     echo.
     echo ❌ CAU HINH CHUA HOP LE!
-    echo 🔧 Chay 'config.bat' de sua cau hinh
+    echo 💡 Chay: run.bat config
     echo.
     pause
     exit /b 1
@@ -110,7 +141,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 4/6] Kiem tra dependencies...
 echo    ^> Dang kiem tra cac thu vien Python...
-py -c "import telethon, pandas, tqdm, aiofiles; print('✅ Tat ca dependencies da san sang')" 2>nul
+python -c "import telethon, pandas, tqdm, aiofiles; print('✅ Tat ca dependencies da san sang')" 2>nul
 if errorlevel 1 (
     echo ❌ Thieu dependencies! Dang tu dong cai dat...
     echo    ^> Chay pip install...
@@ -129,7 +160,7 @@ echo [BUOC 5/6] Khoi tao he thong logging...
 echo    ^> Tao thu muc logs neu chua co...
 if not exist logs mkdir logs
 echo    ^> Kiem tra cau hinh logging...
-py -c "from logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ He thong logging da san sang')" 2>nul
+python -c "from logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ He thong logging da san sang')" 2>nul
 if errorlevel 1 (
     echo ⚠️ Khong the khoi tao logging (se chay khong co log chi tiet)
 )
@@ -137,19 +168,20 @@ if errorlevel 1 (
 echo.
 echo [BUOC 6/6] Khoi dong Private Channel Scanner...
 echo ================================================================
-echo 🚀 DANG KHOI DONG SCANNER...
+echo 🚀 DANG KHOI DONG SCANNER TU DONG...
 echo ================================================================
 echo.
-echo 📋 Ho tro cac format channel:
-echo    • https://t.me/joinchat/xxxxx  (invite link cu)
-echo    • https://t.me/+xxxxx          (invite link moi)
-echo    • @privatechannel              (neu da join)
+echo 📺 Su dung channel tu config:
+python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); print('   ', config.get('channels',{}).get('default_channel','Chua cau hinh'))" 2>nul
 echo.
 echo 📁 Ket qua se duoc luu trong thu muc 'output/'
 echo 📊 Log chi tiet se duoc luu trong thu muc 'logs/'
 echo.
+echo 💡 Luu y: Scanner se chay tu dong ma khong can nhap gi them
+echo    Neu muon thay doi channel, chay: run.bat config
+echo.
 
-py main.py
+python main.py
 
 echo.
 echo ================================================================
@@ -160,3 +192,323 @@ echo 📊 Log chi tiet trong thu muc 'logs/'
 echo.
 echo Nhan phim bat ky de thoat...
 pause >nul
+goto END
+
+:CONFIG_MENU
+cls
+echo.
+echo ================================================================
+echo                    CAU HINH NHANH
+echo ================================================================
+echo.
+echo 1. Xem cau hinh hien tai
+echo 2. Thay doi channel
+echo 3. Thay doi so tin nhan toi da
+echo 4. Thay doi loai file
+echo 5. Thay doi dinh dang dau ra
+echo 6. Reset ve mac dinh
+echo 7. Chay scanner
+echo 8. Khoi dong web interface
+echo 9. Thoat
+echo.
+echo ================================================================
+
+set /p choice="Nhap lua chon (1-9): "
+
+if "%choice%"=="1" (
+    echo.
+    echo Cau hinh hien tai:
+    echo ================================================================
+    python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); print('📺 Channel:', config.get('channels',{}).get('default_channel','Chua cau hinh')); print('📊 Max messages:', config.get('scanning',{}).get('max_messages','Khong gioi han')); print('📁 Batch size:', config.get('scanning',{}).get('batch_size',50)); file_types=config.get('scanning',{}).get('file_types',{}); enabled=[k for k,v in file_types.items() if v]; print('📄 File types:', ', '.join(enabled) if enabled else 'Tat ca'); output_formats=config.get('output',{}).get('formats',{}); enabled_formats=[k for k,v in output_formats.items() if v.get('enabled',False)]; print('💾 Output formats:', ', '.join(enabled_formats) if enabled_formats else 'Khong co')" 2>nul
+    echo.
+    echo Nhan phim bat ky de quay lai menu...
+    pause >nul
+    goto CONFIG_MENU
+)
+
+if "%choice%"=="2" (
+    echo.
+    echo Nhap channel moi:
+    echo Vi du: @duongtinhchat92 hoac https://t.me/+xxxxx
+    echo.
+    set /p new_channel="Channel: "
+
+    if not "!new_channel!"=="" (
+        echo Dang cap nhat channel...
+        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['channels']['default_channel']='!new_channel!'; config['channels']['use_default_channel']=True; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        if errorlevel 1 (
+            echo ❌ Loi cap nhat channel
+        ) else (
+            echo ✅ Da cap nhat channel: !new_channel!
+        )
+    )
+    echo.
+    echo Nhan phim bat ky de quay lai menu...
+    pause >nul
+    goto CONFIG_MENU
+)
+
+if "%choice%"=="3" (
+    echo.
+    echo Nhap so tin nhan toi da:
+    echo Vi du: 1000 (hoac 0 cho khong gioi han^)
+    echo.
+    set /p max_msg="So tin nhan: "
+
+    if not "!max_msg!"=="" (
+        echo Dang cap nhat so tin nhan...
+        if "!max_msg!"=="0" (
+            python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['max_messages']=None; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        ) else (
+            python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['max_messages']=int('!max_msg!'); json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        )
+        if errorlevel 1 (
+            echo ❌ Loi cap nhat so tin nhan
+        ) else (
+            echo ✅ Da cap nhat: !max_msg! tin nhan
+        )
+    )
+    echo.
+    echo Nhan phim bat ky de quay lai menu...
+    pause >nul
+    goto CONFIG_MENU
+)
+
+if "%choice%"=="4" (
+    echo.
+    echo Chon loai file can quet:
+    echo 1. Tat ca (documents, photos, videos, audio^)
+    echo 2. Chi documents
+    echo 3. Chi photos va videos
+    echo 4. Chi audio
+    echo.
+    set /p file_choice="Lua chon (1-4): "
+
+    if "!file_choice!"=="1" (
+        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':True,'photos':True,'videos':True,'audio':True}; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        echo ✅ Da chon tat ca loai file
+    )
+    if "!file_choice!"=="2" (
+        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':True,'photos':False,'videos':False,'audio':False}; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        echo ✅ Da chon chi documents
+    )
+    if "!file_choice!"=="3" (
+        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':False,'photos':True,'videos':True,'audio':False}; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        echo ✅ Da chon photos va videos
+    )
+    if "!file_choice!"=="4" (
+        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':False,'photos':False,'videos':False,'audio':True}; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        echo ✅ Da chon chi audio
+    )
+    echo.
+    echo Nhan phim bat ky de quay lai menu...
+    pause >nul
+    goto CONFIG_MENU
+)
+
+if "%choice%"=="5" (
+    echo.
+    echo Chon dinh dang dau ra:
+    echo 1. Tat ca (CSV, JSON, Excel^)
+    echo 2. Chi CSV
+    echo 3. Chi JSON
+    echo 4. Chi Excel
+    echo.
+    set /p format_choice="Lua chon (1-4): "
+
+    if "!format_choice!"=="1" (
+        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=True; config['output']['formats']['json']['enabled']=True; config['output']['formats']['excel']['enabled']=True; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        echo ✅ Da chon tat ca dinh dang
+    )
+    if "!format_choice!"=="2" (
+        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=True; config['output']['formats']['json']['enabled']=False; config['output']['formats']['excel']['enabled']=False; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        echo ✅ Da chon chi CSV
+    )
+    if "!format_choice!"=="3" (
+        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=False; config['output']['formats']['json']['enabled']=True; config['output']['formats']['excel']['enabled']=False; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        echo ✅ Da chon chi JSON
+    )
+    if "!format_choice!"=="4" (
+        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=False; config['output']['formats']['json']['enabled']=False; config['output']['formats']['excel']['enabled']=True; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        echo ✅ Da chon chi Excel
+    )
+    echo.
+    echo Nhan phim bat ky de quay lai menu...
+    pause >nul
+    goto CONFIG_MENU
+)
+
+if "%choice%"=="6" (
+    echo.
+    echo CANH BAO: Reset ve cau hinh mac dinh?
+    set /p confirm="Xac nhan (y/n): "
+
+    if /i "!confirm!"=="y" (
+        echo Dang reset...
+        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['channels']['default_channel']='@your_channel_here'; config['channels']['use_default_channel']=True; config['scanning']['max_messages']=1000; config['scanning']['batch_size']=50; config['scanning']['file_types']={'documents':True,'photos':True,'videos':True,'audio':True}; config['output']['formats']['csv']['enabled']=True; config['output']['formats']['json']['enabled']=True; config['output']['formats']['excel']['enabled']=True; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        echo ✅ Da reset ve cau hinh mac dinh
+    ) else (
+        echo Huy bo reset
+    )
+    echo.
+    echo Nhan phim bat ky de quay lai menu...
+    pause >nul
+    goto CONFIG_MENU
+)
+
+if "%choice%"=="7" (
+    echo.
+    echo Dang khoi dong scanner...
+    timeout /t 2 >nul
+    goto MAIN_START
+)
+
+if "%choice%"=="8" (
+    echo.
+    echo Dang khoi dong web interface...
+    timeout /t 2 >nul
+    goto WEB_MODE
+)
+
+if "%choice%"=="9" (
+    echo.
+    echo Cam on ban da su dung!
+    timeout /t 2 >nul
+    goto END
+)
+
+echo Lua chon khong hop le!
+timeout /t 2 >nul
+goto CONFIG_MENU
+
+:WEB_SETUP
+cls
+echo.
+echo ================================================================
+echo                    WEB INTERFACE SETUP
+echo ================================================================
+echo.
+echo [1/2] Kiem tra virtual environment...
+if not exist "venv\" (
+    echo ❌ Virtual environment khong ton tai!
+    echo 💡 Chay setup.bat truoc de tao virtual environment
+    pause
+    exit /b 1
+) else (
+    echo ✅ Virtual environment da san sang
+)
+
+echo.
+echo [2/2] Cai dat Flask dependencies...
+call venv\Scripts\activate.bat
+python -c "import flask" 2>nul
+if errorlevel 1 (
+    echo    ^> Dang cai dat Flask va Flask-CORS...
+    pip install flask flask-cors
+    if errorlevel 1 (
+        echo ❌ Khong the cai dat Flask dependencies!
+        pause
+        exit /b 1
+    )
+    echo ✅ Da cai dat Flask dependencies thanh cong
+) else (
+    echo ✅ Flask dependencies da san sang
+)
+
+echo.
+echo ================================================================
+echo 🎉 WEB INTERFACE SETUP HOAN TAT!
+echo ================================================================
+echo.
+echo Ban co the chay web interface bang cach:
+echo - run.bat web
+echo - Hoac chon tuy chon 8 trong menu cau hinh
+echo.
+pause
+goto END
+
+:WEB_MODE
+cls
+echo.
+echo ================================================================
+echo                 TELEDRIVE WEB INTERFACE
+echo ================================================================
+echo.
+
+echo [1/4] Kiem tra virtual environment...
+if not exist "venv\" (
+    echo ❌ Virtual environment khong ton tai!
+    echo 💡 Chay: run.bat web-setup de cai dat
+    pause
+    exit /b 1
+) else (
+    echo ✅ Virtual environment da san sang
+)
+
+echo.
+echo [2/4] Kich hoat virtual environment...
+call venv\Scripts\activate.bat
+echo ✅ Da kich hoat virtual environment
+
+echo.
+echo [3/4] Kiem tra Flask dependencies...
+python -c "import flask" 2>nul
+if errorlevel 1 (
+    echo ❌ Flask chua duoc cai dat!
+    echo 💡 Chay: run.bat web-setup de cai dat dependencies
+    pause
+    exit /b 1
+) else (
+    echo ✅ Flask dependencies da san sang
+)
+
+echo.
+echo [4/4] Kiem tra du lieu scan...
+if not exist "output\" (
+    echo ⚠️ Thu muc output khong ton tai!
+    echo 💡 Chay scanner truoc de tao du lieu
+    echo.
+) else (
+    set count=0
+    for %%f in (output\*_telegram_files.json) do set /a count+=1
+
+    if !count!==0 (
+        echo ⚠️ Khong tim thay du lieu scan trong thu muc output!
+        echo 💡 Chay scanner truoc de tao du lieu
+        echo.
+        echo Ban van co the khoi dong web interface, nhung se trong
+        echo.
+        set /p web_choice="Ban co muon tiep tuc? (y/n): "
+        if /i not "!web_choice!"=="y" (
+            echo Huy bo khoi dong web interface
+            pause
+            exit /b 0
+        )
+    ) else (
+        echo ✅ Tim thay !count! session scan trong thu muc output
+    )
+)
+
+echo.
+echo ================================================================
+echo 🚀 DANG KHOI DONG WEB INTERFACE...
+echo ================================================================
+echo.
+echo 🌐 Web interface se chay tai: http://localhost:5000
+echo 🛑 Nhan Ctrl+C de dung server
+echo 📁 Du lieu hien thi tu thu muc: output/
+echo.
+echo 💡 Luu y: Giu cua so nay mo de server tiep tuc chay
+echo.
+
+python app.py
+
+echo.
+echo ================================================================
+echo 🛑 WEB INTERFACE DA DUNG
+echo ================================================================
+echo.
+pause
+goto END
+
+:END

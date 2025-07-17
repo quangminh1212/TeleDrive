@@ -1,120 +1,130 @@
-# Telegram File Scanner
+# TeleDrive - Telegram File Manager
 
-Quet va lay thong tin tat ca file trong private channel Telegram.
+Công cụ quét và quản lý file từ các kênh Telegram với giao diện web hiện đại theo phong cách Telegram.
 
-## Cai dat nhanh
+## 🚀 Sử dụng đơn giản
 
-1. **Chay setup**: Nhap doi `setup.bat`
-2. **Cau hinh**: Nhap doi `config.bat` (chon option 2 de cau hinh so dien thoai)
-3. **Chay scanner**: Nhap doi `run.bat`
-
-## Cai dat thu cong
-
-1. **Chay setup**: Nhap doi `setup.bat`
-2. **Chinh sua .env**: Thay `+84xxxxxxxxx` bang so dien thoai that
-3. **Chinh sua config.json**: Tuy chinh cau hinh (tuy chon)
-4. **Chay scanner**: Nhap doi `run.bat`
-
-## Quan ly cau hinh
-
-### File .env (API Credentials)
-```
-TELEGRAM_API_ID=21272067
-TELEGRAM_API_HASH=b7690dc86952dbc9b16717b101164af3
-TELEGRAM_PHONE=+84936374950
+### Lần đầu:
+```batch
+setup.bat
 ```
 
-### File config.json (Cau hinh chi tiet)
-- **Telegram**: API credentials, session name, connection settings
-- **Output**: Thu muc, format file (CSV, JSON, Excel, Simple JSON)
-- **Scanning**: Gioi han message, batch size, loai file, performance
-- **Download**: Tao link download, auto download, file size limits
-- **Display**: Hien thi progress, ngon ngu, format ngay, colors
-- **Filters**: Loc theo kich thuoc, phan mo rong, ngay thang, patterns
-- **Logging**: Chi tiet log cho tung buoc, API calls, file operations
-- **Security**: Session management, timeout, privacy settings
+### Chạy scanner:
+```batch
+run.bat
+```
 
-### Config Manager
-Chay `config.bat` de quan ly cau hinh qua giao dien:
-- Xem cau hinh hien tai
-- Thay doi cau hinh Telegram API
-- Cau hinh so dien thoai
-- Tuy chinh output format
-- Cau hinh scanning options
-- Dat filter cho file
-- Dong bo tu .env sang config.json
-- Kiem tra validation cau hinh
+### Khởi động Web Interface:
+```batch
+run_web.bat
+```
 
-## Su dung
+### Cấu hình nhanh:
+```batch
+run.bat config
+```
 
-- **Private channel**: `https://t.me/joinchat/xxxxx` hoac `https://t.me/+xxxxx`
-- **Neu da join**: `@channelname`
-- **Ket qua**: Luu trong thu muc `output/`
+## ✨ Tính năng
 
-## Logging System
+### Scanner
+- ✅ **Tự động hoàn toàn** - Không cần input
+- ✅ **Menu cấu hình** - Thay đổi setting dễ dàng
+- ✅ **Đa định dạng** - CSV, JSON, Excel
+- ✅ **Tiếng Việt** - Giao diện tiếng Việt
+- ✅ **Logging chi tiết** - Theo dõi quá trình
 
-Du an co he thong logging chi tiet de theo doi tung buoc:
+### Web Interface 🌐
+- ✅ **Giao diện Telegram-style** - Thiết kế theo phong cách Telegram
+- ✅ **File Manager** - Quản lý file trực quan
+- ✅ **Tìm kiếm & Lọc** - Tìm file nhanh chóng
+- ✅ **Responsive** - Tương thích mobile
+- ✅ **Chi tiết file** - Xem thông tin đầy đủ
+- ✅ **Download links** - Tải file trực tiếp
+- ✅ **Multiple sessions** - Quản lý nhiều lần scan
 
-### Cac loai log:
-- **scanner.log**: Log chinh cho toan bo qua trinh
-- **config.log**: Log thay doi cau hinh
-- **api.log**: Log cac API call den Telegram
-- **files.log**: Log cac thao tac file (doc/ghi)
-- **errors.log**: Log chi tiet cac loi xay ra
+## 📁 Cấu hình
 
-### Cau hinh logging trong config.json:
+### File `.env` (API)
+```env
+TELEGRAM_API_ID=your_api_id
+TELEGRAM_API_HASH=your_api_hash  
+TELEGRAM_PHONE=+84xxxxxxxxx
+```
+
+### File `config.json` (Cấu hình chính)
 ```json
 {
-  "logging": {
-    "enabled": true,
-    "level": "DEBUG",
-    "detailed_steps": true,
-    "log_api_calls": true,
-    "log_file_operations": true,
-    "separate_files": {
-      "enabled": true
+  "telegram": {
+    "api_id": "your_api_id",
+    "api_hash": "your_api_hash",
+    "phone_number": "+84xxxxxxxxx"
+  },
+  "channels": {
+    "use_default_channel": true,
+    "default_channel": "@your_channel_here"
+  },
+  "scanning": {
+    "max_messages": 1000,
+    "batch_size": 50,
+    "file_types": {
+      "documents": true,
+      "photos": true,
+      "videos": true,
+      "audio": true
+    }
+  },
+  "output": {
+    "formats": {
+      "csv": {"enabled": true},
+      "json": {"enabled": true},
+      "excel": {"enabled": true}
     }
   }
 }
 ```
 
-### Xem log:
-- **Tat ca log**: Thu muc `logs/`
-- **Log realtime**: Hien thi tren console
-- **Log rotation**: Tu dong backup khi file qua lon
+**⚠️ Quan trọng:**
+- Thay `@your_channel_here` bằng channel thực tế
+- **Public channel:** `@channelname`
+- **Private channel:** `https://t.me/+xxxxx`
 
-## File structure
+## 📊 Kết quả
 
-```
-TeleDrive/
-├── setup.bat         # Cai dat dependencies
-├── config.bat        # Quan ly cau hinh (bao gom phone + chi tiet)
-├── run.bat           # Chay scanner
-├── main.py           # Script chinh voi logging chi tiet
-├── engine.py         # Core engine voi logging chi tiet
-├── config.py         # Load cau hinh voi logging
-├── config_manager.py # Quan ly cau hinh tich hop (sync + validation)
-├── logger.py         # He thong logging chi tiet
-├── config.json       # Cau hinh chi tiet (bao gom logging)
+File lưu trong `output/`:
+- `telegram_files.csv`
+- `telegram_files.json`
+- `telegram_files.xlsx`
 
-├── logs/             # Thu muc chua tat ca log files
-│   ├── scanner.log   # Log chinh
-│   ├── config.log    # Log cau hinh
-│   ├── api.log       # Log API calls
-│   ├── files.log     # Log file operations
-│   └── errors.log    # Log loi chi tiet
-└── output/           # Ket qua scan
-```
+## 🌐 Web Interface
 
-## Loi thuong gap
+Sau khi chạy scanner, bạn có thể sử dụng giao diện web để quản lý file:
 
-- **"invalid literal for int()"**: Chua cau hinh .env
-- **"Could not find entity"**: Sai ten channel hoac chua join
-- **"Python not found"**: Chua cai Python
+1. **Khởi động web interface:**
+   ```batch
+   run_web.bat
+   ```
 
-## Output format
+2. **Truy cập:** http://localhost:5000
 
-- CSV: Du lieu bang
-- Excel: Format dep
-- JSON: Du lieu chi tiet
-- Simple JSON: Chi ten file + link
+3. **Tính năng:**
+   - Xem danh sách file theo dạng grid/list
+   - Tìm kiếm file theo tên
+   - Lọc theo loại file (document, photo, video, audio...)
+   - Sắp xếp theo tên, kích thước, ngày
+   - Xem chi tiết file trong modal
+   - Download file trực tiếp
+   - Responsive design cho mobile
+
+4. **Giao diện:**
+   - **Header:** Logo, search bar, thống kê tổng quan
+   - **Sidebar:** Danh sách các scan sessions
+   - **Main:** File grid với toolbar và pagination
+   - **Modal:** Chi tiết file với thông tin đầy đủ
+
+## 🛠️ Troubleshooting
+
+- **Lỗi API:** Kiểm tra `.env`
+- **Lỗi config:** Chạy `run.bat config`
+- **Thiếu dependencies:** Chạy `setup.bat`
+- **Web interface không khởi động:** Kiểm tra Flask đã cài đặt chưa
+- **Không có dữ liệu:** Chạy scanner trước khi mở web interface
