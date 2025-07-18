@@ -23,7 +23,7 @@ from src.models import OTPManager, format_phone_number, validate_phone_number
 from src.services import send_otp_sync
 from src.config import config, validate_environment
 from src.security import init_security_middleware
-from src.logging import init_production_logging, get_logger
+from src.log_system import init_production_logging, get_logger
 from src.monitoring import init_health_monitoring
 
 # Validate environment variables
