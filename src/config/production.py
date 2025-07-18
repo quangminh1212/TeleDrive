@@ -11,6 +11,10 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 @dataclass
 class DatabaseConfig:
