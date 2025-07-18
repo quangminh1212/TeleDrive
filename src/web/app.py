@@ -25,6 +25,7 @@ from src.database import init_database
 from src.auth import auth_manager
 from src.models import OTPManager, format_phone_number, validate_phone_number
 from src.services import send_otp_sync
+from src.services.filesystem import FileSystemManager
 from src.config import config, validate_environment
 from src.security import init_security_middleware
 from src.log_system import init_production_logging, get_logger
@@ -257,6 +258,9 @@ class TeleDriveWebAPI:
 # Khởi tạo API
 api = TeleDriveWebAPI()
 
+# Khởi tạo File System Manager
+fs_manager = FileSystemManager()
+
 # Authentication decorator
 def auth_required(f):
     """Decorator để yêu cầu xác thực cho API routes"""
@@ -478,6 +482,180 @@ def get_session_stats(session_id):
     except Exception as e:
         logger.error(f"Error getting session stats: {str(e)}", exc_info=True)
         return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
+
+# File Management API Routes
+@app.route('/api/drives')
+@auth_required
+def get_drives():
+    """Get list of available drives"""
+    try:
+        result = fs_manager.get_drives()
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error getting drives: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/browse')
+@auth_required
+def browse_directory():
+    """Browse directory contents"""
+    try:
+        path = request.args.get('path', 'C:\\')
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 50))
+        sort_by = request.args.get('sort_by', 'name')
+        sort_order = request.args.get('sort_order', 'asc')
+
+        result = fs_manager.browse_directory(path, page, per_page, sort_by, sort_order)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error browsing directory: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/file/create', methods=['POST'])
+@auth_required
+def create_file():
+    """Create a new file"""
+    try:
+        data = request.get_json()
+        parent_path = data.get('parent_path')
+        file_name = data.get('file_name')
+        content = data.get('content', '')
+
+        if not parent_path or not file_name:
+            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+
+        result = fs_manager.create_file(parent_path, file_name, content)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error creating file: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/folder/create', methods=['POST'])
+@auth_required
+def create_folder():
+    """Create a new folder"""
+    try:
+        data = request.get_json()
+        parent_path = data.get('parent_path')
+        folder_name = data.get('folder_name')
+
+        if not parent_path or not folder_name:
+            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+
+        result = fs_manager.create_folder(parent_path, folder_name)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error creating folder: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/item/rename', methods=['POST'])
+@auth_required
+def rename_item():
+    """Rename a file or folder"""
+    try:
+        data = request.get_json()
+        item_path = data.get('item_path')
+        new_name = data.get('new_name')
+
+        if not item_path or not new_name:
+            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+
+        result = fs_manager.rename_item(item_path, new_name)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error renaming item: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/item/delete', methods=['POST'])
+@auth_required
+def delete_item():
+    """Delete a file or folder"""
+    try:
+        data = request.get_json()
+        item_path = data.get('item_path')
+
+        if not item_path:
+            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+
+        result = fs_manager.delete_item(item_path)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error deleting item: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/item/copy', methods=['POST'])
+@auth_required
+def copy_item():
+    """Copy a file or folder"""
+    try:
+        data = request.get_json()
+        source_path = data.get('source_path')
+        destination_path = data.get('destination_path')
+        new_name = data.get('new_name')
+
+        if not source_path or not destination_path:
+            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+
+        result = fs_manager.copy_item(source_path, destination_path, new_name)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error copying item: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/item/move', methods=['POST'])
+@auth_required
+def move_item():
+    """Move a file or folder"""
+    try:
+        data = request.get_json()
+        source_path = data.get('source_path')
+        destination_path = data.get('destination_path')
+        new_name = data.get('new_name')
+
+        if not source_path or not destination_path:
+            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+
+        result = fs_manager.move_item(source_path, destination_path, new_name)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error moving item: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/search')
+@auth_required
+def search_files():
+    """Search for files in directory"""
+    try:
+        path = request.args.get('path', 'C:\\')
+        query = request.args.get('query', '')
+        file_types = request.args.getlist('file_types')
+        max_results = int(request.args.get('max_results', 100))
+
+        if not query:
+            return jsonify({'success': False, 'error': 'Search query is required'}), 400
+
+        result = fs_manager.search_files(path, query, file_types, max_results)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error searching files: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/file/preview')
+@auth_required
+def get_file_preview():
+    """Get file preview information"""
+    try:
+        file_path = request.args.get('path')
+
+        if not file_path:
+            return jsonify({'success': False, 'error': 'File path is required'}), 400
+
+        result = fs_manager.get_file_preview(file_path)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error getting file preview: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/favicon.ico')
 def favicon():
