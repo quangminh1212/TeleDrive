@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-TeleDrive Web Interface - Restructured
+TeleDrive Web Interface - Production Ready
 Giao diện web với phong cách Telegram để hiển thị các file đã quét được
 """
 
 import json
+import os
+import sys
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
 from flask_cors import CORS
@@ -13,34 +15,56 @@ from flask_login import login_user, login_required, current_user
 from functools import wraps
 
 # Import từ cấu trúc mới
-import sys
-import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.database import init_database
 from src.auth import auth_manager
 from src.models import OTPManager, format_phone_number, validate_phone_number
 from src.services import send_otp_sync
+from src.config import config, validate_environment
+from src.security import init_security_middleware
+from src.logging import init_production_logging, get_logger
+from src.monitoring import init_health_monitoring
+
+# Validate environment variables
+try:
+    validate_environment()
+except ValueError as e:
+    print(f"❌ Configuration error: {e}")
+    sys.exit(1)
 
 # Cấu hình đường dẫn templates và static
 basedir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 template_dir = os.path.join(basedir, 'templates')
 static_dir = os.path.join(basedir, 'static')
 
+# Tạo Flask app với production config
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
-CORS(app)
 
-# Cấu hình database
-instance_dir = os.path.join(basedir, 'instance')
-os.makedirs(instance_dir, exist_ok=True)
-db_path = os.path.join(instance_dir, 'teledrive.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'teledrive-secret-key-change-in-production'
+# Apply production configuration
+app.config.update(config.get_flask_config())
+
+# Initialize CORS with production settings
+if config.is_production():
+    # Restrictive CORS for production
+    CORS(app, origins=['https://yourdomain.com'], supports_credentials=True)
+else:
+    # Permissive CORS for development
+    CORS(app)
+
+# Initialize security middleware
+init_security_middleware(app)
+
+# Initialize production logging
+logger_instance = init_production_logging(app, config)
+logger = get_logger('app')
 
 # Khởi tạo database và authentication system
 init_database(app)
 auth_manager.init_app(app)
+
+# Initialize health monitoring
+init_health_monitoring(app)
 
 class TeleDriveWebAPI:
     """API class để xử lý các request từ web interface"""
@@ -427,4 +451,24 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Log application startup
+    logger.info("Starting TeleDrive application", extra={
+        'extra_fields': {
+            'environment': config.environment,
+            'debug': config.debug,
+            'host': config.server.host,
+            'port': config.server.port
+        }
+    })
+
+    # Run with production or development settings
+    if config.is_production():
+        # Production should use WSGI server (Gunicorn)
+        logger.warning("Running with Flask development server in production. Use Gunicorn instead!")
+
+    app.run(
+        debug=config.debug,
+        host=config.server.host,
+        port=config.server.port,
+        threaded=True
+    )
