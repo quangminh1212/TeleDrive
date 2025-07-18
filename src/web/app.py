@@ -22,12 +22,15 @@ from src.auth import auth_manager
 from src.models import OTPManager, format_phone_number, validate_phone_number
 from src.services import send_otp_sync
 
-app = Flask(__name__)
+# Cấu hình đường dẫn templates và static
+basedir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+template_dir = os.path.join(basedir, 'templates')
+static_dir = os.path.join(basedir, 'static')
+
+app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 CORS(app)
 
 # Cấu hình database
-import os
-basedir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 instance_dir = os.path.join(basedir, 'instance')
 os.makedirs(instance_dir, exist_ok=True)
 db_path = os.path.join(instance_dir, 'teledrive.db')
@@ -233,6 +236,13 @@ def auth_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Main Routes
+@app.route('/')
+@login_required
+def index():
+    """Trang chính - Dashboard"""
+    return render_template('index.html')
+
 # Authentication Routes
 @app.route('/login', methods=['GET'])
 def login():
@@ -307,6 +317,32 @@ def verify_otp():
             
     except Exception as e:
         return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500
+
+# API Routes
+@app.route('/api/scans')
+@auth_required
+def get_scans():
+    """Lấy danh sách scan sessions"""
+    sessions = api.get_scan_sessions()
+    return jsonify(sessions)
+
+@app.route('/api/files/<session_id>')
+@auth_required
+def get_session_files(session_id):
+    """Lấy files trong một session"""
+    data = api.get_session_files(session_id)
+    if data:
+        return jsonify(data)
+    else:
+        return jsonify({'error': 'Session not found'}), 404
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Đăng xuất"""
+    from flask_login import logout_user
+    logout_user()
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
