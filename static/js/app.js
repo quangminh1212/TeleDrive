@@ -631,7 +631,7 @@ class LocalFileManager {
             const result = await response.json();
 
             if (result.success) {
-                this.showFilePreview(result.preview);
+                this.showFilePreview(result.preview, fileData);
             } else {
                 this.showError('Không thể xem trước file: ' + result.error);
             }
@@ -639,6 +639,209 @@ class LocalFileManager {
             console.error('Error previewing file:', error);
             this.showError('Không thể xem trước file');
         }
+    }
+
+    showFilePreview(previewData, fileData) {
+        const modal = document.getElementById('previewModal');
+        const title = document.getElementById('previewTitle');
+        const content = document.getElementById('previewContent');
+        const info = document.getElementById('previewInfo');
+        const downloadBtn = document.getElementById('previewDownloadBtn');
+
+        if (!modal || !title || !content || !info) return;
+
+        // Set title
+        title.textContent = previewData.name;
+
+        // Clear previous content
+        content.innerHTML = '';
+
+        // Generate preview content based on file type
+        this.generatePreviewContent(previewData, content);
+
+        // Generate file info
+        this.generatePreviewInfo(previewData, info);
+
+        // Setup download button
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                // Create download link
+                const link = document.createElement('a');
+                link.href = `/api/file/serve?path=${encodeURIComponent(previewData.path)}`;
+                link.download = previewData.name;
+                link.click();
+            };
+        }
+
+        // Show modal
+        modal.classList.add('show');
+
+        // Setup close handlers
+        const closeBtn = document.getElementById('previewClose');
+        if (closeBtn) {
+            closeBtn.onclick = () => this.closePreviewModal();
+        }
+
+        // Close on backdrop click
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                this.closePreviewModal();
+            }
+        };
+
+        // Close on ESC key
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.closePreviewModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    generatePreviewContent(previewData, container) {
+        const fileType = previewData.file_type;
+
+        const fileUrl = `/api/file/serve?path=${encodeURIComponent(previewData.path)}`;
+
+        switch (fileType) {
+            case 'image':
+                container.innerHTML = `
+                    <img src="${fileUrl}"
+                         alt="${previewData.name}"
+                         class="preview-image"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div class="preview-unsupported" style="display: none;">
+                        <i class="fas fa-image"></i>
+                        <h3>Không thể hiển thị hình ảnh</h3>
+                        <p>Định dạng hình ảnh không được hỗ trợ hoặc file bị lỗi</p>
+                    </div>
+                `;
+                break;
+
+            case 'video':
+                container.innerHTML = `
+                    <video controls class="preview-video">
+                        <source src="${fileUrl}" type="${previewData.mime_type}">
+                        <div class="preview-unsupported">
+                            <i class="fas fa-video"></i>
+                            <h3>Không thể phát video</h3>
+                            <p>Trình duyệt không hỗ trợ định dạng video này</p>
+                        </div>
+                    </video>
+                `;
+                break;
+
+            case 'audio':
+                container.innerHTML = `
+                    <audio controls class="preview-audio">
+                        <source src="${fileUrl}" type="${previewData.mime_type}">
+                        <div class="preview-unsupported">
+                            <i class="fas fa-music"></i>
+                            <h3>Không thể phát âm thanh</h3>
+                            <p>Trình duyệt không hỗ trợ định dạng âm thanh này</p>
+                        </div>
+                    </audio>
+                `;
+                break;
+
+            case 'document':
+                if (previewData.is_text && previewData.preview_data) {
+                    container.innerHTML = `
+                        <div class="preview-text">${this.escapeHtml(previewData.preview_data)}</div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="preview-unsupported">
+                            <i class="fas fa-file-alt"></i>
+                            <h3>Xem trước không khả dụng</h3>
+                            <p>Loại tài liệu này không hỗ trợ xem trước</p>
+                        </div>
+                    `;
+                }
+                break;
+
+            default:
+                container.innerHTML = `
+                    <div class="preview-unsupported">
+                        <i class="fas fa-file"></i>
+                        <h3>Xem trước không khả dụng</h3>
+                        <p>Loại file này không hỗ trợ xem trước</p>
+                    </div>
+                `;
+        }
+    }
+
+    generatePreviewInfo(previewData, container) {
+        const formatBytes = (bytes) => {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
+
+        const formatDate = (dateString) => {
+            return new Date(dateString).toLocaleString('vi-VN');
+        };
+
+        let infoHTML = `
+            <h4>Thông tin file</h4>
+            <div class="preview-info-item">
+                <span class="preview-info-label">Tên file:</span>
+                <span class="preview-info-value">${previewData.name}</span>
+            </div>
+            <div class="preview-info-item">
+                <span class="preview-info-label">Loại file:</span>
+                <span class="preview-info-value">${previewData.file_type}</span>
+            </div>
+            <div class="preview-info-item">
+                <span class="preview-info-label">Kích thước:</span>
+                <span class="preview-info-value">${formatBytes(previewData.size)}</span>
+            </div>
+            <div class="preview-info-item">
+                <span class="preview-info-label">Sửa đổi lần cuối:</span>
+                <span class="preview-info-value">${formatDate(previewData.modified)}</span>
+            </div>
+            <div class="preview-info-item">
+                <span class="preview-info-label">Đường dẫn:</span>
+                <span class="preview-info-value">${previewData.path}</span>
+            </div>
+        `;
+
+        // Add specific info for images
+        if (previewData.file_type === 'image' && previewData.dimensions) {
+            infoHTML += `
+                <div class="preview-info-item">
+                    <span class="preview-info-label">Kích thước ảnh:</span>
+                    <span class="preview-info-value">${previewData.dimensions.width} × ${previewData.dimensions.height}</span>
+                </div>
+            `;
+
+            if (previewData.format) {
+                infoHTML += `
+                    <div class="preview-info-item">
+                        <span class="preview-info-label">Định dạng:</span>
+                        <span class="preview-info-value">${previewData.format}</span>
+                    </div>
+                `;
+            }
+        }
+
+        container.innerHTML = infoHTML;
+    }
+
+    closePreviewModal() {
+        const modal = document.getElementById('previewModal');
+        if (modal) {
+            modal.classList.remove('show');
+        }
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     async renameFile(fileData) {

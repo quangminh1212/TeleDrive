@@ -9,7 +9,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, send_file
 from flask_cors import CORS
 from flask_login import login_user, login_required, current_user
 from functools import wraps
@@ -655,6 +655,29 @@ def get_file_preview():
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error getting file preview: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/file/serve')
+@auth_required
+def serve_file():
+    """Serve file content for preview"""
+    try:
+        file_path = request.args.get('path')
+
+        if not file_path:
+            return jsonify({'success': False, 'error': 'File path is required'}), 400
+
+        # Validate path
+        validated_path = fs_manager._validate_path(file_path)
+
+        if not validated_path.exists() or validated_path.is_dir():
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+
+        # Serve file
+        return send_file(str(validated_path), as_attachment=False)
+
+    except Exception as e:
+        logger.error(f"Error serving file: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/favicon.ico')

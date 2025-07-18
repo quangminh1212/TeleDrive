@@ -245,6 +245,32 @@
         </div>
     </div>
 
+    <!-- File Preview Modal -->
+    <div id="previewModal" class="modal preview-modal">
+        <div class="modal-content preview-content">
+            <div class="modal-header">
+                <h3 id="previewTitle">Xem trước file</h3>
+                <div class="preview-actions">
+                    <button id="previewDownloadBtn" class="btn btn-primary">
+                        <i class="fas fa-download"></i>
+                        Tải xuống
+                    </button>
+                    <button class="modal-close" id="previewClose">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body preview-body">
+                <div id="previewContent" class="preview-content-area">
+                    <!-- Preview content will be populated by JavaScript -->
+                </div>
+                <div id="previewInfo" class="preview-info">
+                    <!-- File info will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Mobile Menu Overlay -->
     <div class="mobile-overlay" id="mobileOverlay"></div>
 
