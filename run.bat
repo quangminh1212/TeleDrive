@@ -27,7 +27,7 @@ echo    ^> Kiem tra config.json...
 python check_config.py >nul
 if %errorlevel% neq 0 (
     echo.
-    echo ❌ CHUA CAU HINH API TELEGRAM!
+    echo [ERROR] CHUA CAU HINH API TELEGRAM!
     echo.
     echo 📝 Huong dan cau hinh:
     echo    1. Chinh sua file config.json
@@ -37,7 +37,7 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 ) else (
-    echo ✅ Cau hinh Telegram API hop le
+    echo [OK] Cau hinh Telegram API hop le
 )
 
 echo.
