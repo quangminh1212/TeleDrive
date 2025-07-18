@@ -6,12 +6,10 @@ Giao diện web với phong cách Telegram để hiển thị các file đã qu�
 """
 
 import json
-import glob
-from datetime import datetime
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for, flash
+from flask import Flask, render_template, jsonify, request, redirect, url_for
 from flask_cors import CORS
-from flask_login import login_user, logout_user, login_required, current_user
+from flask_login import login_user, login_required, current_user
 from functools import wraps
 
 # Import từ cấu trúc mới
@@ -19,8 +17,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.database import db, init_database
-from src.auth import auth_manager, User, validate_username, validate_email
+from src.database import init_database
+from src.auth import auth_manager
 from src.models import OTPManager, format_phone_number, validate_phone_number
 from src.services import send_otp_sync
 
