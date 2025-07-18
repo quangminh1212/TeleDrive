@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 @dataclass
 class DatabaseConfig:
     """Database configuration"""
-    uri: str = field(default_factory=lambda: os.getenv('DATABASE_URL', 'sqlite:///instance/teledrive.db'))
+    uri: str = field(default_factory=lambda: os.getenv('DATABASE_URL', f'sqlite:///{os.path.abspath("instance/teledrive.db")}'))
     pool_size: int = field(default_factory=lambda: int(os.getenv('DB_POOL_SIZE', '10')))
     pool_timeout: int = field(default_factory=lambda: int(os.getenv('DB_POOL_TIMEOUT', '30')))
     pool_recycle: int = field(default_factory=lambda: int(os.getenv('DB_POOL_RECYCLE', '3600')))
