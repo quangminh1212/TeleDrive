@@ -203,31 +203,34 @@ class TeleDriveWebAPI:
             
             stats = {
                 'total_files': len(files),
-                'total_size': sum(file.get('size_bytes', 0) for file in files),
+                'total_size': sum(file.get('file_info', {}).get('size', 0) for file in files),
                 'file_types': {},
                 'largest_file': None,
                 'oldest_file': None,
                 'newest_file': None
             }
-            
+
             # Thống kê theo loại file
             for file in files:
-                file_type = file.get('type', 'unknown')
+                file_info = file.get('file_info', {})
+                file_type = file_info.get('type', 'unknown')
+                file_size = file_info.get('size', 0)
+
                 if file_type not in stats['file_types']:
                     stats['file_types'][file_type] = {'count': 0, 'size': 0}
-                
+
                 stats['file_types'][file_type]['count'] += 1
-                stats['file_types'][file_type]['size'] += file.get('size_bytes', 0)
+                stats['file_types'][file_type]['size'] += file_size
             
             # Tìm file lớn nhất
             if files:
-                stats['largest_file'] = max(files, key=lambda x: x.get('size_bytes', 0))
-                
+                stats['largest_file'] = max(files, key=lambda x: x.get('file_info', {}).get('size', 0))
+
                 # Tìm file cũ nhất và mới nhất
-                files_with_date = [f for f in files if f.get('date')]
+                files_with_date = [f for f in files if f.get('file_info', {}).get('upload_date')]
                 if files_with_date:
-                    stats['oldest_file'] = min(files_with_date, key=lambda x: x.get('date'))
-                    stats['newest_file'] = max(files_with_date, key=lambda x: x.get('date'))
+                    stats['oldest_file'] = min(files_with_date, key=lambda x: x.get('file_info', {}).get('upload_date'))
+                    stats['newest_file'] = max(files_with_date, key=lambda x: x.get('file_info', {}).get('upload_date'))
 
             # Format tổng kích thước
             stats['total_size_formatted'] = self.format_file_size(stats['total_size'])
@@ -459,6 +462,16 @@ def get_session_files(session_id):
     data = api.get_session_files(session_id)
     if data:
         return jsonify(data)
+    else:
+        return jsonify({'error': 'Session not found'}), 404
+
+@app.route('/api/stats/<session_id>')
+@auth_required
+def get_session_stats(session_id):
+    """Lấy thống kê cho một session"""
+    stats = api.get_session_stats(session_id)
+    if stats:
+        return jsonify(stats)
     else:
         return jsonify({'error': 'Session not found'}), 404
 
