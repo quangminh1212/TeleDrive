@@ -77,7 +77,7 @@ if errorlevel 1 (
 echo    ^> Config.json da san sang
 
 echo    ^> Dang kiem tra tinh hop le cua cau hinh...
-python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
+python -c "import sys; import os; sys.path.insert(0, 'src'); from utils.config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
 if errorlevel 1 (
     echo.
     echo ❌ CAU HINH CHUA HOP LE!
@@ -109,7 +109,7 @@ echo [BUOC 5/5] Khoi tao he thong logging...
 echo    ^> Tao thu muc logs neu chua co...
 if not exist logs mkdir logs
 echo    ^> Kiem tra cau hinh logging...
-python -c "from logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ He thong logging da san sang')" 2>nul
+python -c "import sys; import os; sys.path.insert(0, 'src'); from utils.logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ He thong logging da san sang')" 2>nul
 if errorlevel 1 (
     echo ⚠️ Khong the khoi tao logging (se chay khong co log chi tiet)
 )
@@ -130,7 +130,7 @@ echo    - Lan dau su dung: truy cap /setup de tao admin
 echo    - Neu muon chay scanner CLI: run.bat scanner
 echo.
 
-python app.py
+python run_app.py
 
 echo.
 echo ================================================================
@@ -451,7 +451,7 @@ echo.
 echo 💡 Luu y: Giu cua so nay mo de server tiep tuc chay
 echo.
 
-python app.py
+python run_app.py
 
 echo.
 echo ================================================================
@@ -479,7 +479,7 @@ echo.
 echo 💡 Luu y: Scanner se chay tu dong ma khong can nhap gi them
 echo.
 
-python main.py
+python src/core/main.py
 
 echo.
 echo ================================================================

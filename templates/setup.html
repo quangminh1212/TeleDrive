@@ -237,24 +237,18 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" name="email" class="form-input" required 
-                           placeholder="Nhập địa chỉ email">
-                </div>
-                
-                <div class="form-group">
-                    <label for="password" class="form-label">Mật khẩu</label>
-                    <input type="password" id="password" name="password" class="form-input" required 
-                           placeholder="Nhập mật khẩu">
+                    <label for="phone_number" class="form-label">Số điện thoại</label>
+                    <input type="tel" id="phone_number" name="phone_number" class="form-input" required
+                           placeholder="Nhập số điện thoại (VD: 0936374950)">
                     <div class="password-requirements">
-                        Mật khẩu phải có ít nhất 6 ký tự
+                        Số điện thoại sẽ được sử dụng để đăng nhập qua Telegram OTP
                     </div>
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="confirm_password" class="form-label">Xác nhận mật khẩu</label>
-                    <input type="password" id="confirm_password" name="confirm_password" class="form-input" required 
-                           placeholder="Nhập lại mật khẩu">
+                    <label for="email" class="form-label">Email (tùy chọn)</label>
+                    <input type="email" id="email" name="email" class="form-input"
+                           placeholder="Nhập địa chỉ email (không bắt buộc)">
                 </div>
                 
                 <button type="submit" class="setup-button" id="setup-btn">
@@ -319,9 +313,8 @@
                 const formData = new FormData(form);
                 const data = {
                     username: formData.get('username'),
-                    email: formData.get('email'),
-                    password: formData.get('password'),
-                    confirm_password: formData.get('confirm_password')
+                    phone_number: formData.get('phone_number'),
+                    email: formData.get('email')
                 };
                 
                 fetch('/setup', {
@@ -361,20 +354,19 @@
                 input.addEventListener('input', hideMessages);
             });
             
-            // Password confirmation validation
-            const password = document.getElementById('password');
-            const confirmPassword = document.getElementById('confirm_password');
-            
-            function validatePasswordMatch() {
-                if (confirmPassword.value && password.value !== confirmPassword.value) {
-                    confirmPassword.setCustomValidity('Mật khẩu xác nhận không khớp');
-                } else {
-                    confirmPassword.setCustomValidity('');
+            // Phone number formatting
+            const phoneInput = document.getElementById('phone_number');
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                if (value.startsWith('84')) {
+                    value = '+' + value;
+                } else if (value.startsWith('0')) {
+                    value = '+84' + value.substring(1);
+                } else if (value.length > 0 && !value.startsWith('+')) {
+                    value = '+84' + value;
                 }
-            }
-            
-            password.addEventListener('input', validatePasswordMatch);
-            confirmPassword.addEventListener('input', validatePasswordMatch);
+                e.target.value = value;
+            });
         });
     </script>
 </body>

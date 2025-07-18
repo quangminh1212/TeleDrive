@@ -5,62 +5,12 @@ TeleDrive Authentication System
 Hệ thống xác thực người dùng cho TeleDrive Web Interface
 """
 
-import os
 import secrets
-from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin, LoginManager
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager
 
-# Khởi tạo database
-db = SQLAlchemy()
-
-class User(UserMixin, db.Model):
-    """User model cho hệ thống xác thực"""
-    __tablename__ = 'users'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
-    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime)
-    is_active = db.Column(db.Boolean, default=True)
-    is_admin = db.Column(db.Boolean, default=False)
-    
-    def __init__(self, username, email, password, is_admin=False):
-        self.username = username
-        self.email = email
-        self.set_password(password)
-        self.is_admin = is_admin
-    
-    def set_password(self, password):
-        """Mã hóa và lưu mật khẩu"""
-        self.password_hash = generate_password_hash(password)
-    
-    def check_password(self, password):
-        """Kiểm tra mật khẩu"""
-        return check_password_hash(self.password_hash, password)
-    
-    def update_last_login(self):
-        """Cập nhật thời gian đăng nhập cuối"""
-        self.last_login = datetime.utcnow()
-        db.session.commit()
-    
-    def to_dict(self):
-        """Chuyển đổi user thành dictionary"""
-        return {
-            'id': self.id,
-            'username': self.username,
-            'email': self.email,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_login': self.last_login.isoformat() if self.last_login else None,
-            'is_active': self.is_active,
-            'is_admin': self.is_admin
-        }
-    
-    def __repr__(self):
-        return f'<User {self.username}>'
+# Import database chung và User model
+from ..database import db
+from .models import User
 
 class AuthManager:
     """Quản lý xác thực và người dùng"""
@@ -81,63 +31,69 @@ class AuthManager:
         # Cấu hình database
         if not app.config.get('SECRET_KEY'):
             app.config['SECRET_KEY'] = secrets.token_hex(32)
-        
+
         if not app.config.get('SQLALCHEMY_DATABASE_URI'):
-            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teledrive.db'
-        
+            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/teledrive.db'
+
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-        
-        # Khởi tạo database
-        db.init_app(app)
+
+        # Database đã được init từ init_database(), không cần init lại
         
         # User loader cho Flask-Login
         @self.login_manager.user_loader
         def load_user(user_id):
             return User.query.get(int(user_id))
         
-        # Tạo bảng database nếu chưa có
-        with app.app_context():
-            db.create_all()
+        # Database tables đã được tạo từ init_database()
     
-    def create_user(self, username, email, password, is_admin=False):
+    def create_user(self, username, phone_number, email=None, is_admin=False):
         """Tạo người dùng mới"""
         try:
             # Kiểm tra username đã tồn tại
             if User.query.filter_by(username=username).first():
                 return False, "Tên đăng nhập đã tồn tại"
-            
-            # Kiểm tra email đã tồn tại
-            if User.query.filter_by(email=email).first():
+
+            # Kiểm tra phone_number đã tồn tại
+            if User.query.filter_by(phone_number=phone_number).first():
+                return False, "Số điện thoại đã được sử dụng"
+
+            # Kiểm tra email đã tồn tại (nếu có)
+            if email and User.query.filter_by(email=email).first():
                 return False, "Email đã được sử dụng"
-            
+
             # Tạo user mới
-            user = User(username=username, email=email, password=password, is_admin=is_admin)
+            user = User(username=username, phone_number=phone_number, email=email, is_admin=is_admin)
             db.session.add(user)
             db.session.commit()
-            
+
             return True, "Tạo người dùng thành công"
-            
+
         except Exception as e:
             db.session.rollback()
             return False, f"Lỗi tạo người dùng: {str(e)}"
     
-    def authenticate_user(self, username_or_email, password):
-        """Xác thực người dùng"""
+    def authenticate_user_by_phone(self, phone_number):
+        """Xác thực người dùng bằng số điện thoại (sau khi verify OTP)"""
         try:
-            # Tìm user theo username hoặc email
-            user = User.query.filter(
-                (User.username == username_or_email) | 
-                (User.email == username_or_email)
-            ).first()
-            
-            if user and user.is_active and user.check_password(password):
+            # Tìm user theo phone_number
+            user = User.query.filter_by(phone_number=phone_number).first()
+
+            if user and user.is_active:
                 user.update_last_login()
                 return user
-            
+
             return None
-            
+
         except Exception as e:
             print(f"Lỗi xác thực: {e}")
+            return None
+
+    def find_user_by_phone(self, phone_number):
+        """Tìm user theo số điện thoại"""
+        try:
+            return User.query.filter_by(phone_number=phone_number).first()
+        except Exception as e:
+            print(f"Lỗi tìm user: {e}")
             return None
     
     def get_user_count(self):
@@ -178,15 +134,10 @@ class AuthManager:
             db.session.rollback()
             return False, f"Lỗi: {str(e)}"
 
-def validate_password(password):
-    """Kiểm tra độ mạnh của mật khẩu"""
-    if len(password) < 6:
-        return False, "Mật khẩu phải có ít nhất 6 ký tự"
-    
-    if len(password) > 128:
-        return False, "Mật khẩu không được quá 128 ký tự"
-    
-    return True, "Mật khẩu hợp lệ"
+def validate_phone_number_auth(phone_number):
+    """Kiểm tra tính hợp lệ của số điện thoại cho authentication"""
+    from otp_manager import validate_phone_number
+    return validate_phone_number(phone_number)
 
 def validate_username(username):
     """Kiểm tra tính hợp lệ của username"""

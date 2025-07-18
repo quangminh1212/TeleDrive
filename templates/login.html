@@ -71,6 +71,14 @@
             color: var(--telegram-text);
             margin-bottom: 8px;
         }
+
+        .form-help {
+            display: block;
+            font-size: 12px;
+            color: var(--telegram-text-secondary);
+            margin-top: 4px;
+            font-style: italic;
+        }
         
         .form-input {
             width: 100%;
@@ -240,26 +248,42 @@
             <div id="error-message" class="alert alert-error" style="display: none;"></div>
             <div id="success-message" class="alert alert-success" style="display: none;"></div>
             
-            <form id="login-form" method="POST">
+            <!-- Step 1: Phone Number Input -->
+            <form id="phone-form" method="POST" style="display: block;">
                 <div class="form-group">
-                    <label for="username" class="form-label">Tên đăng nhập hoặc Email</label>
-                    <input type="text" id="username" name="username" class="form-input" required 
-                           placeholder="Nhập tên đăng nhập hoặc email">
+                    <label for="phone_number" class="form-label">Số điện thoại</label>
+                    <input type="tel" id="phone_number" name="phone_number" class="form-input" required
+                           placeholder="Nhập số điện thoại (VD: 0936374950)">
+                    <small class="form-help">Mã OTP sẽ được gửi đến Telegram của bạn</small>
                 </div>
-                
+
+                <button type="submit" class="login-button" id="send-otp-btn">
+                    <span class="btn-text">Gửi mã OTP</span>
+                </button>
+            </form>
+
+            <!-- Step 2: OTP Verification -->
+            <form id="otp-form" method="POST" style="display: none;">
                 <div class="form-group">
-                    <label for="password" class="form-label">Mật khẩu</label>
-                    <input type="password" id="password" name="password" class="form-input" required 
-                           placeholder="Nhập mật khẩu">
+                    <label for="otp_code" class="form-label">Mã OTP</label>
+                    <input type="text" id="otp_code" name="otp_code" class="form-input" required
+                           placeholder="Nhập mã OTP từ Telegram" maxlength="6" pattern="[0-9]{6}">
+                    <small class="form-help">Kiểm tra tin nhắn OTP trong Telegram của bạn</small>
                 </div>
-                
+
+                <input type="hidden" id="verified_phone" name="phone_number" value="">
+
                 <div class="form-checkbox">
                     <input type="checkbox" id="remember" name="remember" value="true">
                     <label for="remember">Ghi nhớ đăng nhập</label>
                 </div>
-                
-                <button type="submit" class="login-button" id="login-btn">
-                    <span class="btn-text">Đăng nhập</span>
+
+                <button type="submit" class="login-button" id="verify-otp-btn">
+                    <span class="btn-text">Xác thực & Đăng nhập</span>
+                </button>
+
+                <button type="button" class="login-button secondary" id="back-btn" style="margin-top: 10px; background: var(--telegram-text-secondary);">
+                    <span class="btn-text">Quay lại</span>
                 </button>
             </form>
             
@@ -271,9 +295,11 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('login-form');
-            const loginBtn = document.getElementById('login-btn');
-            const btnText = loginBtn.querySelector('.btn-text');
+            const phoneForm = document.getElementById('phone-form');
+            const otpForm = document.getElementById('otp-form');
+            const sendOtpBtn = document.getElementById('send-otp-btn');
+            const verifyOtpBtn = document.getElementById('verify-otp-btn');
+            const backBtn = document.getElementById('back-btn');
             const errorDiv = document.getElementById('error-message');
             const successDiv = document.getElementById('success-message');
             
@@ -294,31 +320,82 @@
                 successDiv.style.display = 'none';
             }
             
-            function setLoading(loading) {
+            function setLoading(button, loading, originalText, loadingText) {
+                const btnText = button.querySelector('.btn-text');
                 if (loading) {
-                    loginBtn.classList.add('loading');
-                    loginBtn.disabled = true;
-                    btnText.innerHTML = '<span class="spinner"></span> Đang đăng nhập...';
+                    button.classList.add('loading');
+                    button.disabled = true;
+                    btnText.innerHTML = `<span class="spinner"></span> ${loadingText}`;
                 } else {
-                    loginBtn.classList.remove('loading');
-                    loginBtn.disabled = false;
-                    btnText.textContent = 'Đăng nhập';
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                    btnText.textContent = originalText;
                 }
             }
+
+            function showOtpForm(phoneNumber) {
+                phoneForm.style.display = 'none';
+                otpForm.style.display = 'block';
+                document.getElementById('verified_phone').value = phoneNumber;
+                document.getElementById('otp_code').focus();
+            }
+
+            function showPhoneForm() {
+                otpForm.style.display = 'none';
+                phoneForm.style.display = 'block';
+                document.getElementById('phone_number').focus();
+            }
             
-            form.addEventListener('submit', function(e) {
+            // Handle phone form submission
+            phoneForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 hideMessages();
-                setLoading(true);
-                
-                const formData = new FormData(form);
+                setLoading(sendOtpBtn, true, 'Gửi mã OTP', 'Đang gửi...');
+
+                const formData = new FormData(phoneForm);
+                const phoneNumber = formData.get('phone_number');
+
+                fetch('/send-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ phone_number: phoneNumber })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    setLoading(sendOtpBtn, false, 'Gửi mã OTP', 'Đang gửi...');
+
+                    if (data.success) {
+                        showSuccess(data.message);
+                        setTimeout(() => {
+                            showOtpForm(phoneNumber);
+                        }, 1000);
+                    } else {
+                        showError(data.message);
+                    }
+                })
+                .catch(error => {
+                    setLoading(sendOtpBtn, false, 'Gửi mã OTP', 'Đang gửi...');
+                    showError('Có lỗi xảy ra. Vui lòng thử lại.');
+                    console.error('Send OTP error:', error);
+                });
+            });
+
+            // Handle OTP form submission
+            otpForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                hideMessages();
+                setLoading(verifyOtpBtn, true, 'Xác thực & Đăng nhập', 'Đang xác thực...');
+
+                const formData = new FormData(otpForm);
                 const data = {
-                    username: formData.get('username'),
-                    password: formData.get('password'),
+                    phone_number: formData.get('phone_number'),
+                    otp_code: formData.get('otp_code'),
                     remember: formData.get('remember') === 'true'
                 };
-                
-                fetch('/login', {
+
+                fetch('/verify-otp', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -327,8 +404,8 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    setLoading(false);
-                    
+                    setLoading(verifyOtpBtn, false, 'Xác thực & Đăng nhập', 'Đang xác thực...');
+
                     if (data.success) {
                         showSuccess(data.message);
                         setTimeout(() => {
@@ -339,16 +416,36 @@
                     }
                 })
                 .catch(error => {
-                    setLoading(false);
+                    setLoading(verifyOtpBtn, false, 'Xác thực & Đăng nhập', 'Đang xác thực...');
                     showError('Có lỗi xảy ra. Vui lòng thử lại.');
-                    console.error('Login error:', error);
+                    console.error('Verify OTP error:', error);
                 });
+            });
+
+            // Handle back button
+            backBtn.addEventListener('click', function() {
+                hideMessages();
+                showPhoneForm();
             });
             
             // Clear error messages when user starts typing
-            const inputs = form.querySelectorAll('.form-input');
+            const inputs = document.querySelectorAll('.form-input');
             inputs.forEach(input => {
                 input.addEventListener('input', hideMessages);
+            });
+
+            // Auto-format phone number
+            const phoneInput = document.getElementById('phone_number');
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                if (value.startsWith('84')) {
+                    value = '+' + value;
+                } else if (value.startsWith('0')) {
+                    value = '+84' + value.substring(1);
+                } else if (value.length > 0 && !value.startsWith('+')) {
+                    value = '+84' + value;
+                }
+                e.target.value = value;
             });
         });
     </script>
