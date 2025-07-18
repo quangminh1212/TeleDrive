@@ -15,7 +15,7 @@ from telethon.errors import (
     NotFoundError,
     PeerIdInvalidError
 )
-from src.utils import config
+from src.config import config
 from src.models.otp import OTPManager, format_phone_number, validate_phone_number
 
 # Setup logging
@@ -35,12 +35,12 @@ class TelegramOTPService:
             
         try:
             self.client = TelegramClient(
-                config.SESSION_NAME,
-                config.API_ID,
-                config.API_HASH
+                config.telegram.session_name,
+                config.telegram.api_id,
+                config.telegram.api_hash
             )
 
-            await self.client.start(phone=config.PHONE_NUMBER)
+            await self.client.start(phone=config.telegram.phone_number)
             self._initialized = True
             logger.info("Telegram OTP Service đã được khởi tạo")
             return True

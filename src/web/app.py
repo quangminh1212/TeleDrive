@@ -364,28 +364,44 @@ def send_otp():
         if not user:
             return jsonify({'success': False, 'message': 'Số điện thoại chưa được đăng ký'}), 404
         
-        # Gửi OTP - Tạm thời mock để test
+        # Gửi OTP qua Telegram
         try:
-            # Mock OTP cho development
-            from src.models.otp import OTPManager
-            otp_code = OTPManager.create_otp(formatted_phone)
-            print(f"🔐 Mock OTP cho {formatted_phone}: {otp_code}")
-
-            return jsonify({
-                'success': True,
-                'message': f'Mã OTP đã được tạo: {otp_code} (Development mode)'
-            })
-
-            # TODO: Uncomment khi Telegram client hoạt động
-            # success, message = send_otp_sync(formatted_phone)
-            # if success:
-            #     return jsonify({'success': True, 'message': message})
-            # else:
-            #     return jsonify({'success': False, 'message': message}), 500
+            # Kiểm tra environment để quyết định cách gửi OTP
+            if config.is_development():
+                # Development: Hiển thị OTP và cố gắng gửi qua Telegram
+                try:
+                    success, message = send_otp_sync(formatted_phone)
+                    if success:
+                        return jsonify({'success': True, 'message': message})
+                    else:
+                        # Fallback: Tạo mock OTP nếu không gửi được qua Telegram
+                        from src.models.otp import OTPManager
+                        otp_code = OTPManager.create_otp(formatted_phone)
+                        print(f"🔐 Fallback OTP cho {formatted_phone}: {otp_code}")
+                        return jsonify({
+                            'success': True,
+                            'message': f'Không thể gửi qua Telegram. Mã OTP: {otp_code} (Development fallback)'
+                        })
+                except Exception as e:
+                    # Fallback: Tạo mock OTP nếu có lỗi
+                    from src.models.otp import OTPManager
+                    otp_code = OTPManager.create_otp(formatted_phone)
+                    print(f"🔐 Error fallback OTP cho {formatted_phone}: {otp_code}")
+                    return jsonify({
+                        'success': True,
+                        'message': f'Lỗi gửi Telegram: {str(e)}. Mã OTP: {otp_code} (Development fallback)'
+                    })
+            else:
+                # Production: Chỉ gửi qua Telegram, không hiển thị OTP
+                success, message = send_otp_sync(formatted_phone)
+                if success:
+                    return jsonify({'success': True, 'message': message})
+                else:
+                    return jsonify({'success': False, 'message': message}), 500
 
         except Exception as e:
-            print(f"Lỗi tạo OTP: {e}")
-            return jsonify({'success': False, 'message': f'Lỗi tạo OTP: {str(e)}'}), 500
+            print(f"Lỗi gửi OTP: {e}")
+            return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500
             
     except Exception as e:
         return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500
