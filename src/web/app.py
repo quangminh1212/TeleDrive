@@ -27,6 +27,16 @@ from src.services import send_otp_sync
 app = Flask(__name__)
 CORS(app)
 
+# Cấu hình database
+import os
+basedir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+instance_dir = os.path.join(basedir, 'instance')
+os.makedirs(instance_dir, exist_ok=True)
+db_path = os.path.join(instance_dir, 'teledrive.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'teledrive-secret-key-change-in-production'
+
 # Khởi tạo database và authentication system
 init_database(app)
 auth_manager.init_app(app)

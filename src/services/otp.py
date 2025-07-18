@@ -10,9 +10,9 @@ import logging
 from typing import Optional, Tuple
 from telethon import TelegramClient
 from telethon.errors import (
-    PhoneNumberInvalidError, 
+    PhoneNumberInvalidError,
     FloodWaitError,
-    UserNotFoundError,
+    NotFoundError,
     PeerIdInvalidError
 )
 from src.utils import config
@@ -89,7 +89,7 @@ class TelegramOTPService:
             # Tìm user theo số điện thoại
             try:
                 user = await self.client.get_entity(phone_number)
-            except (UserNotFoundError, PeerIdInvalidError, ValueError):
+            except (NotFoundError, PeerIdInvalidError, ValueError):
                 # Thử tìm bằng cách khác
                 try:
                     # Tìm trong danh bạ

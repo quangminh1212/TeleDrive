@@ -136,7 +136,7 @@ class AuthManager:
 
 def validate_phone_number_auth(phone_number):
     """Kiểm tra tính hợp lệ của số điện thoại cho authentication"""
-    from otp_manager import validate_phone_number
+    from ..models.otp import validate_phone_number
     return validate_phone_number(phone_number)
 
 def validate_username(username):
