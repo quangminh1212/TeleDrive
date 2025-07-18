@@ -96,6 +96,13 @@ class LocalFileManager {
         if (forwardBtn) forwardBtn.addEventListener('click', () => this.navigateForward());
         if (upBtn) upBtn.addEventListener('click', () => this.navigateUp());
         if (refreshBtn) refreshBtn.addEventListener('click', () => this.refreshCurrentDirectory());
+
+        // Action buttons
+        const newFolderBtn = document.getElementById('newFolderBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        if (newFolderBtn) newFolderBtn.addEventListener('click', () => this.createNewFolder());
+        if (uploadBtn) uploadBtn.addEventListener('click', () => this.triggerFileUpload());
         
         // Filter
         document.getElementById('fileTypeFilter').addEventListener('change', (e) => {
@@ -870,6 +877,40 @@ class LocalFileManager {
     }
 
     setupMobileMenu() {
+        const mobileMenuBtn = document.querySelector('.sidebar-toggle');
+        const sidebar = document.querySelector('.sidebar');
+
+        if (mobileMenuBtn && sidebar) {
+            mobileMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sidebar.classList.toggle('open');
+            });
+
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 &&
+                    !sidebar.contains(e.target) &&
+                    !mobileMenuBtn.contains(e.target) &&
+                    sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                }
+            });
+
+            // Close sidebar on window resize
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('open');
+                }
+            });
+
+            // Close sidebar when navigating on mobile
+            sidebar.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && e.target.closest('.drive-item')) {
+                    setTimeout(() => sidebar.classList.remove('open'), 300);
+                }
+            });
+        }
+
         // Mobile responsive handling
         this.checkMobile();
         window.addEventListener('resize', () => this.checkMobile());
@@ -1115,15 +1156,298 @@ class LocalFileManager {
     }
 
     setupContextMenu() {
-        // Context menu implementation will be added later
+        // Create context menu element
+        const contextMenu = document.createElement('div');
+        contextMenu.id = 'contextMenu';
+        contextMenu.className = 'context-menu';
+        contextMenu.innerHTML = `
+            <div class="context-menu-item" data-action="open">
+                <i class="fas fa-folder-open"></i>
+                <span>Mở</span>
+            </div>
+            <div class="context-menu-item" data-action="rename">
+                <i class="fas fa-edit"></i>
+                <span>Đổi tên</span>
+            </div>
+            <div class="context-menu-item" data-action="copy">
+                <i class="fas fa-copy"></i>
+                <span>Sao chép</span>
+            </div>
+            <div class="context-menu-item" data-action="cut">
+                <i class="fas fa-cut"></i>
+                <span>Cắt</span>
+            </div>
+            <div class="context-menu-separator"></div>
+            <div class="context-menu-item" data-action="delete">
+                <i class="fas fa-trash"></i>
+                <span>Xóa</span>
+            </div>
+            <div class="context-menu-separator"></div>
+            <div class="context-menu-item" data-action="properties">
+                <i class="fas fa-info-circle"></i>
+                <span>Thuộc tính</span>
+            </div>
+        `;
+        document.body.appendChild(contextMenu);
+
+        // Context menu event handlers
+        let currentContextFile = null;
+
+        // Right-click on file cards
+        document.addEventListener('contextmenu', (e) => {
+            const fileCard = e.target.closest('.file-card');
+            if (fileCard) {
+                e.preventDefault();
+                currentContextFile = JSON.parse(fileCard.dataset.file);
+                this.showContextMenu(e.clientX, e.clientY, currentContextFile);
+            } else if (e.target.closest('.files-grid')) {
+                e.preventDefault();
+                currentContextFile = null;
+                this.showContextMenu(e.clientX, e.clientY, null);
+            }
+        });
+
+        // Context menu item clicks
+        contextMenu.addEventListener('click', (e) => {
+            const item = e.target.closest('.context-menu-item');
+            if (item && currentContextFile) {
+                const action = item.dataset.action;
+                this.handleContextAction(action, currentContextFile);
+            }
+            this.hideContextMenu();
+        });
+
+        // Hide context menu on click outside
+        document.addEventListener('click', () => {
+            this.hideContextMenu();
+        });
+
+        // Hide context menu on scroll
+        document.addEventListener('scroll', () => {
+            this.hideContextMenu();
+        });
+    }
+
+    showContextMenu(x, y, fileData) {
+        const contextMenu = document.getElementById('contextMenu');
+
+        // Update menu items based on file type
+        if (fileData) {
+            const openItem = contextMenu.querySelector('[data-action="open"]');
+            if (fileData.is_directory) {
+                openItem.innerHTML = '<i class="fas fa-folder-open"></i><span>Mở thư mục</span>';
+            } else {
+                openItem.innerHTML = '<i class="fas fa-external-link-alt"></i><span>Mở file</span>';
+            }
+        }
+
+        // Position and show menu
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
+        contextMenu.style.display = 'block';
+
+        // Adjust position if menu goes off screen
+        const rect = contextMenu.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+            contextMenu.style.left = (x - rect.width) + 'px';
+        }
+        if (rect.bottom > window.innerHeight) {
+            contextMenu.style.top = (y - rect.height) + 'px';
+        }
+    }
+
+    hideContextMenu() {
+        const contextMenu = document.getElementById('contextMenu');
+        contextMenu.style.display = 'none';
+    }
+
+    handleContextAction(action, fileData) {
+        switch (action) {
+            case 'open':
+                this.openFile(fileData);
+                break;
+            case 'rename':
+                this.renameFile(fileData);
+                break;
+            case 'copy':
+                this.copyFile(fileData);
+                break;
+            case 'cut':
+                this.cutFile(fileData);
+                break;
+            case 'delete':
+                this.deleteFile(fileData);
+                break;
+            case 'properties':
+                this.showFileDetails(fileData);
+                break;
+        }
     }
 
     setupDragAndDrop() {
-        // Drag and drop implementation will be added later
+        let draggedFiles = [];
+
+        // Make file cards draggable
+        document.addEventListener('mousedown', (e) => {
+            const fileCard = e.target.closest('.file-card');
+            if (fileCard && !e.target.closest('.file-actions')) {
+                fileCard.draggable = true;
+            }
+        });
+
+        // Drag start
+        document.addEventListener('dragstart', (e) => {
+            const fileCard = e.target.closest('.file-card');
+            if (fileCard) {
+                const fileData = JSON.parse(fileCard.dataset.file);
+                draggedFiles = [fileData];
+
+                // Add visual feedback
+                fileCard.classList.add('dragging');
+
+                // Set drag data
+                e.dataTransfer.setData('text/plain', JSON.stringify(draggedFiles));
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        });
+
+        // Drag end
+        document.addEventListener('dragend', (e) => {
+            const fileCard = e.target.closest('.file-card');
+            if (fileCard) {
+                fileCard.classList.remove('dragging');
+                fileCard.draggable = false;
+            }
+            draggedFiles = [];
+        });
+
+        // Drag over
+        document.addEventListener('dragover', (e) => {
+            const fileCard = e.target.closest('.file-card');
+            if (fileCard) {
+                const fileData = JSON.parse(fileCard.dataset.file);
+                if (fileData.is_directory) {
+                    e.preventDefault();
+                    fileCard.classList.add('drag-over');
+                }
+            }
+        });
+
+        // Drag leave
+        document.addEventListener('dragleave', (e) => {
+            const fileCard = e.target.closest('.file-card');
+            if (fileCard) {
+                fileCard.classList.remove('drag-over');
+            }
+        });
+
+        // Drop
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+
+            const fileCard = e.target.closest('.file-card');
+            if (fileCard) {
+                fileCard.classList.remove('drag-over');
+
+                const targetFileData = JSON.parse(fileCard.dataset.file);
+                if (targetFileData.is_directory && draggedFiles.length > 0) {
+                    this.moveFiles(draggedFiles, targetFileData.path);
+                }
+            }
+        });
+
+        // File upload drag and drop
+        const filesGrid = document.getElementById('filesGrid');
+        if (filesGrid) {
+            filesGrid.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                filesGrid.classList.add('drag-over-upload');
+            });
+
+            filesGrid.addEventListener('dragleave', (e) => {
+                if (!filesGrid.contains(e.relatedTarget)) {
+                    filesGrid.classList.remove('drag-over-upload');
+                }
+            });
+
+            filesGrid.addEventListener('drop', (e) => {
+                e.preventDefault();
+                filesGrid.classList.remove('drag-over-upload');
+
+                const files = Array.from(e.dataTransfer.files);
+                if (files.length > 0) {
+                    this.uploadFiles(files);
+                }
+            });
+        }
+    }
+
+    async moveFiles(files, targetPath) {
+        try {
+            this.showProgressIndicator('Đang di chuyển file...');
+
+            for (const file of files) {
+                const response = await fetch('/api/item/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        source_path: file.path,
+                        destination_path: targetPath
+                    })
+                });
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+            }
+
+            this.refreshCurrentDirectory();
+            this.showSuccess('Di chuyển file thành công');
+        } catch (error) {
+            console.error('Error moving files:', error);
+            this.showError('Không thể di chuyển file: ' + error.message);
+        } finally {
+            this.hideProgressIndicator();
+        }
+    }
+
+    async uploadFiles(files) {
+        try {
+            this.showProgressIndicator('Đang tải lên file...');
+
+            const formData = new FormData();
+            files.forEach(file => {
+                formData.append('files', file);
+            });
+            formData.append('destination', this.currentPath);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                this.refreshCurrentDirectory();
+                this.showSuccess('Tải lên file thành công');
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error('Error uploading files:', error);
+            this.showError('Không thể tải lên file: ' + error.message);
+        } finally {
+            this.hideProgressIndicator();
+        }
     }
 
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
+            // Skip if typing in input fields
+            if (e.target.matches('input, textarea, select')) return;
+
             // Ctrl+R or F5 - Refresh
             if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
                 e.preventDefault();
@@ -1131,7 +1455,7 @@ class LocalFileManager {
             }
 
             // Backspace - Go up
-            if (e.key === 'Backspace' && !e.target.matches('input, textarea')) {
+            if (e.key === 'Backspace') {
                 e.preventDefault();
                 this.navigateUp();
             }
@@ -1139,9 +1463,180 @@ class LocalFileManager {
             // Escape - Clear selection
             if (e.key === 'Escape') {
                 this.clearSelection();
+                this.hideContextMenu();
+            }
+
+            // Ctrl+C - Copy
+            if (e.ctrlKey && e.key === 'c') {
+                e.preventDefault();
+                this.copySelectedFiles();
+            }
+
+            // Ctrl+X - Cut
+            if (e.ctrlKey && e.key === 'x') {
+                e.preventDefault();
+                this.cutSelectedFiles();
+            }
+
+            // Ctrl+V - Paste
+            if (e.ctrlKey && e.key === 'v') {
+                e.preventDefault();
+                this.pasteFiles();
+            }
+
+            // Delete - Delete selected files
+            if (e.key === 'Delete') {
+                e.preventDefault();
+                this.deleteSelectedFiles();
+            }
+
+            // F2 - Rename
+            if (e.key === 'F2') {
+                e.preventDefault();
+                this.renameSelectedFile();
+            }
+
+            // Ctrl+A - Select all
+            if (e.ctrlKey && e.key === 'a') {
+                e.preventDefault();
+                this.selectAllFiles();
+            }
+
+            // Enter - Open selected file/folder
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.openSelectedFile();
             }
         });
     }
+
+    copySelectedFiles() {
+        const selectedFiles = this.getSelectedFiles();
+        if (selectedFiles.length === 0) {
+            this.showError('Không có file nào được chọn');
+            return;
+        }
+
+        this.clipboard = {
+            operation: 'copy',
+            files: selectedFiles
+        };
+        this.showSuccess(`Đã sao chép ${selectedFiles.length} file`);
+    }
+
+    cutSelectedFiles() {
+        const selectedFiles = this.getSelectedFiles();
+        if (selectedFiles.length === 0) {
+            this.showError('Không có file nào được chọn');
+            return;
+        }
+
+        this.clipboard = {
+            operation: 'cut',
+            files: selectedFiles
+        };
+        this.showSuccess(`Đã cắt ${selectedFiles.length} file`);
+    }
+
+    deleteSelectedFiles() {
+        const selectedFiles = this.getSelectedFiles();
+        if (selectedFiles.length === 0) {
+            this.showError('Không có file nào được chọn');
+            return;
+        }
+
+        const confirmMessage = selectedFiles.length === 1
+            ? `Bạn có chắc muốn xóa "${selectedFiles[0].name}"?`
+            : `Bạn có chắc muốn xóa ${selectedFiles.length} file đã chọn?`;
+
+        if (confirm(confirmMessage)) {
+            selectedFiles.forEach(file => this.deleteFile(file));
+        }
+    }
+
+    renameSelectedFile() {
+        const selectedFiles = this.getSelectedFiles();
+        if (selectedFiles.length !== 1) {
+            this.showError('Vui lòng chọn một file để đổi tên');
+            return;
+        }
+
+        this.renameFile(selectedFiles[0]);
+    }
+
+    selectAllFiles() {
+        document.querySelectorAll('.file-card').forEach(card => {
+            card.classList.add('selected');
+            this.selectedItems.add(card.dataset.path);
+        });
+    }
+
+    openSelectedFile() {
+        const selectedFiles = this.getSelectedFiles();
+        if (selectedFiles.length !== 1) {
+            return;
+        }
+
+        this.openFile(selectedFiles[0]);
+    }
+
+    getSelectedFiles() {
+        const selectedCards = document.querySelectorAll('.file-card.selected');
+        return Array.from(selectedCards).map(card => JSON.parse(card.dataset.file));
+    }
+
+    async createNewFolder() {
+        const folderName = prompt('Nhập tên thư mục mới:');
+        if (!folderName || folderName.trim() === '') return;
+
+        try {
+            this.showProgressIndicator('Đang tạo thư mục...');
+
+            const response = await fetch('/api/folder/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    parent_path: this.currentPath,
+                    folder_name: folderName.trim()
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                this.refreshCurrentDirectory();
+                this.showSuccess('Tạo thư mục thành công');
+            } else {
+                this.showError('Không thể tạo thư mục: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error creating folder:', error);
+            this.showError('Không thể tạo thư mục');
+        } finally {
+            this.hideProgressIndicator();
+        }
+    }
+
+    triggerFileUpload() {
+        // Create hidden file input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.multiple = true;
+        fileInput.style.display = 'none';
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                this.uploadFiles(files);
+            }
+        });
+
+        document.body.appendChild(fileInput);
+        fileInput.click();
+        document.body.removeChild(fileInput);
+    }
+
+    // Initialize clipboard
+    clipboard = null;
 
     // Navigation methods
     navigateUp() {
@@ -1284,15 +1779,130 @@ class LocalFileManager {
     }
 
     showError(message) {
-        const container = document.getElementById('filesContainer');
-        if (container) {
-            container.innerHTML = `
-                <div class="error-screen">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Có lỗi xảy ra</h3>
-                    <p>${message}</p>
+        this.showNotification(message, 'error');
+    }
+
+    showSuccess(message) {
+        this.showNotification(message, 'success');
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas ${type === 'error' ? 'fa-exclamation-circle' : type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+            <button class="notification-close">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Show notification
+        setTimeout(() => notification.classList.add('show'), 100);
+
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+
+        // Close button
+        notification.querySelector('.notification-close').addEventListener('click', () => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        });
+    }
+
+    showProgressIndicator(message) {
+        // Create progress indicator
+        const progress = document.createElement('div');
+        progress.id = 'progressIndicator';
+        progress.className = 'progress-indicator';
+        progress.innerHTML = `
+            <div class="progress-content">
+                <div class="progress-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
                 </div>
-            `;
+                <div class="progress-message">${message}</div>
+            </div>
+        `;
+
+        document.body.appendChild(progress);
+        setTimeout(() => progress.classList.add('show'), 100);
+    }
+
+    hideProgressIndicator() {
+        const progress = document.getElementById('progressIndicator');
+        if (progress) {
+            progress.classList.remove('show');
+            setTimeout(() => progress.remove(), 300);
+        }
+    }
+
+    // Additional utility methods
+    copyFile(fileData) {
+        // Store in clipboard for paste operation
+        this.clipboard = {
+            operation: 'copy',
+            files: [fileData]
+        };
+        this.showSuccess('File đã được sao chép');
+    }
+
+    cutFile(fileData) {
+        // Store in clipboard for paste operation
+        this.clipboard = {
+            operation: 'cut',
+            files: [fileData]
+        };
+        this.showSuccess('File đã được cắt');
+    }
+
+    async pasteFiles() {
+        if (!this.clipboard || !this.clipboard.files.length) {
+            this.showError('Không có file nào để dán');
+            return;
+        }
+
+        try {
+            this.showProgressIndicator('Đang dán file...');
+
+            for (const file of this.clipboard.files) {
+                const endpoint = this.clipboard.operation === 'copy' ? '/api/item/copy' : '/api/item/move';
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        source_path: file.path,
+                        destination_path: this.currentPath
+                    })
+                });
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+            }
+
+            // Clear clipboard if it was a cut operation
+            if (this.clipboard.operation === 'cut') {
+                this.clipboard = null;
+            }
+
+            this.refreshCurrentDirectory();
+            this.showSuccess('Dán file thành công');
+        } catch (error) {
+            console.error('Error pasting files:', error);
+            this.showError('Không thể dán file: ' + error.message);
+        } finally {
+            this.hideProgressIndicator();
         }
     }
 }
