@@ -1,8 +1,8 @@
-// TeleDrive JavaScript - Telegram Style File Manager
+// TeleDrive JavaScript - Google Drive Style Local File Manager
 
-class TeleDriveApp {
+class LocalFileManager {
     constructor() {
-        this.currentSession = null;
+        this.currentPath = 'C:\\';
         this.currentPage = 1;
         this.currentView = 'grid';
         this.currentFilter = 'all';
@@ -11,35 +11,45 @@ class TeleDriveApp {
         this.searchQuery = '';
         this.files = [];
         this.filteredFiles = [];
-        
+        this.drives = [];
+        this.breadcrumbs = [];
+        this.selectedItems = new Set();
+
         this.init();
     }
     
     init() {
         this.bindEvents();
-        this.loadSessions();
+        this.loadDrives();
         this.setupMobileMenu();
         this.setupAuthentication();
+        this.setupContextMenu();
+        this.setupDragAndDrop();
+        this.setupKeyboardShortcuts();
     }
     
     bindEvents() {
         // Search
         const globalSearch = document.getElementById('globalSearch');
         const clearSearch = document.getElementById('clearSearch');
-        
-        globalSearch.addEventListener('input', (e) => {
-            this.searchQuery = e.target.value;
-            this.showClearButton(this.searchQuery.length > 0);
-            this.debounce(() => this.filterAndDisplayFiles(), 300)();
-        });
-        
-        clearSearch.addEventListener('click', () => {
-            globalSearch.value = '';
-            this.searchQuery = '';
-            this.showClearButton(false);
-            this.filterAndDisplayFiles();
-        });
-        
+
+        if (globalSearch) {
+            globalSearch.addEventListener('input', (e) => {
+                this.searchQuery = e.target.value;
+                this.showClearButton(this.searchQuery.length > 0);
+                this.debounce(() => this.performSearch(), 300)();
+            });
+        }
+
+        if (clearSearch) {
+            clearSearch.addEventListener('click', () => {
+                globalSearch.value = '';
+                this.searchQuery = '';
+                this.showClearButton(false);
+                this.browseDirectory(this.currentPath);
+            });
+        }
+
         // View toggle
         document.querySelectorAll('.view-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -48,6 +58,44 @@ class TeleDriveApp {
                 this.displayFiles();
             });
         });
+
+        // Sort and filter controls
+        const sortBy = document.getElementById('sortBy');
+        const sortOrder = document.getElementById('sortOrder');
+        const fileTypeFilter = document.getElementById('fileTypeFilter');
+
+        if (sortBy) {
+            sortBy.addEventListener('change', (e) => {
+                this.currentSort = e.target.value;
+                this.browseDirectory(this.currentPath);
+            });
+        }
+
+        if (sortOrder) {
+            sortOrder.addEventListener('click', () => {
+                this.currentSortOrder = this.currentSortOrder === 'asc' ? 'desc' : 'asc';
+                this.updateSortOrderButton();
+                this.browseDirectory(this.currentPath);
+            });
+        }
+
+        if (fileTypeFilter) {
+            fileTypeFilter.addEventListener('change', (e) => {
+                this.currentFilter = e.target.value;
+                this.filterAndDisplayFiles();
+            });
+        }
+
+        // Navigation buttons
+        const backBtn = document.getElementById('backBtn');
+        const forwardBtn = document.getElementById('forwardBtn');
+        const upBtn = document.getElementById('upBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        if (backBtn) backBtn.addEventListener('click', () => this.navigateBack());
+        if (forwardBtn) forwardBtn.addEventListener('click', () => this.navigateForward());
+        if (upBtn) upBtn.addEventListener('click', () => this.navigateUp());
+        if (refreshBtn) refreshBtn.addEventListener('click', () => this.refreshCurrentDirectory());
         
         // Filter
         document.getElementById('fileTypeFilter').addEventListener('change', (e) => {
@@ -413,37 +461,49 @@ class TeleDriveApp {
         const isListView = this.currentView === 'list';
         const cardClass = isListView ? 'file-card list-view' : 'file-card';
 
-        // Truy cập đúng cấu trúc dữ liệu từ JSON
-        const fileInfo = file.file_info || {};
-        const fileType = fileInfo.type || 'unknown';
-        const sizeFormatted = fileInfo.size_formatted || 'N/A';
-
-        const uploadDate = fileInfo.upload_date ?
-            new Date(fileInfo.upload_date).toLocaleDateString('vi-VN') : 'N/A';
+        // Local file structure
+        const fileName = file.name || 'Unknown';
+        const fileType = file.file_type || 'unknown';
+        const sizeFormatted = file.size_formatted || '—';
+        const modifiedDate = file.modified_formatted || 'N/A';
+        const isDirectory = file.is_directory || false;
 
         return `
-            <div class="${cardClass}" data-file='${JSON.stringify(file)}'>
+            <div class="${cardClass}" data-file='${JSON.stringify(file)}' data-path="${file.path}">
                 <div class="file-icon ${fileType}">
-                    <i class="${this.getFileIcon(fileType)}"></i>
+                    <i class="${file.icon || this.getFileIcon(fileType, isDirectory)}"></i>
                 </div>
                 <div class="file-info">
-                    <div class="file-name" title="${file.file_name}">${file.file_name}</div>
+                    <div class="file-name" title="${fileName}">${fileName}</div>
                     <div class="file-meta">
                         <span class="file-size">${sizeFormatted}</span>
-                        <span class="file-date">${uploadDate}</span>
+                        <span class="file-date">${modifiedDate}</span>
                     </div>
                 </div>
                 <div class="file-actions">
-                    <button class="file-btn view-details">
-                        <i class="fas fa-info-circle"></i>
-                        Chi tiết
+                    ${isDirectory ? `
+                        <button class="file-btn primary" data-action="open">
+                            <i class="fas fa-folder-open"></i>
+                            Mở
+                        </button>
+                    ` : `
+                        <button class="file-btn view-details" data-action="details">
+                            <i class="fas fa-info-circle"></i>
+                            Chi tiết
+                        </button>
+                        <button class="file-btn" data-action="preview">
+                            <i class="fas fa-eye"></i>
+                            Xem
+                        </button>
+                    `}
+                    <button class="file-btn" data-action="rename">
+                        <i class="fas fa-edit"></i>
+                        Đổi tên
                     </button>
-                    ${file.download_link ? `
-                        <a href="${file.download_link}" class="file-btn primary" target="_blank">
-                            <i class="fas fa-download"></i>
-                            Tải
-                        </a>
-                    ` : ''}
+                    <button class="file-btn" data-action="delete">
+                        <i class="fas fa-trash"></i>
+                        Xóa
+                    </button>
                 </div>
             </div>
         `;
@@ -464,24 +524,168 @@ class TeleDriveApp {
     }
 
     bindFileEvents() {
-        // View details buttons
-        document.querySelectorAll('.view-details').forEach(btn => {
+        // File action buttons
+        document.querySelectorAll('.file-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const fileCard = e.target.closest('.file-card');
                 const fileData = JSON.parse(fileCard.dataset.file);
-                this.showFileDetails(fileData);
+                const action = e.target.closest('.file-btn').dataset.action;
+
+                this.handleFileAction(action, fileData);
             });
         });
 
-        // File card click
+        // File card click (double-click to open)
         document.querySelectorAll('.file-card').forEach(card => {
+            let clickCount = 0;
             card.addEventListener('click', (e) => {
                 if (e.target.closest('.file-actions')) return;
-                const fileData = JSON.parse(card.dataset.file);
-                this.showFileDetails(fileData);
+
+                clickCount++;
+                setTimeout(() => {
+                    if (clickCount === 1) {
+                        // Single click - select
+                        this.selectFile(card);
+                    } else if (clickCount === 2) {
+                        // Double click - open
+                        const fileData = JSON.parse(card.dataset.file);
+                        if (fileData.is_directory) {
+                            this.browseDirectory(fileData.path);
+                        } else {
+                            this.openFile(fileData);
+                        }
+                    }
+                    clickCount = 0;
+                }, 300);
             });
         });
+    }
+
+    handleFileAction(action, fileData) {
+        switch (action) {
+            case 'open':
+                if (fileData.is_directory) {
+                    this.browseDirectory(fileData.path);
+                } else {
+                    this.openFile(fileData);
+                }
+                break;
+            case 'details':
+                this.showFileDetails(fileData);
+                break;
+            case 'preview':
+                this.previewFile(fileData);
+                break;
+            case 'rename':
+                this.renameFile(fileData);
+                break;
+            case 'delete':
+                this.deleteFile(fileData);
+                break;
+            default:
+                console.log('Unknown action:', action);
+        }
+    }
+
+    selectFile(card) {
+        const isSelected = card.classList.contains('selected');
+
+        // Clear other selections if not holding Ctrl
+        if (!event.ctrlKey) {
+            document.querySelectorAll('.file-card.selected').forEach(c => {
+                c.classList.remove('selected');
+            });
+            this.selectedItems.clear();
+        }
+
+        // Toggle selection
+        if (isSelected) {
+            card.classList.remove('selected');
+            this.selectedItems.delete(card.dataset.path);
+        } else {
+            card.classList.add('selected');
+            this.selectedItems.add(card.dataset.path);
+        }
+    }
+
+    openFile(fileData) {
+        if (fileData.is_directory) {
+            this.browseDirectory(fileData.path);
+        } else {
+            // Try to open file with system default application
+            window.open(`file:///${fileData.path}`, '_blank');
+        }
+    }
+
+    async previewFile(fileData) {
+        try {
+            const response = await fetch(`/api/file/preview?path=${encodeURIComponent(fileData.path)}`);
+            const result = await response.json();
+
+            if (result.success) {
+                this.showFilePreview(result.preview);
+            } else {
+                this.showError('Không thể xem trước file: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error previewing file:', error);
+            this.showError('Không thể xem trước file');
+        }
+    }
+
+    async renameFile(fileData) {
+        const newName = prompt('Nhập tên mới:', fileData.name);
+        if (!newName || newName === fileData.name) return;
+
+        try {
+            const response = await fetch('/api/item/rename', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    item_path: fileData.path,
+                    new_name: newName
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                this.refreshCurrentDirectory();
+            } else {
+                this.showError('Không thể đổi tên: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error renaming file:', error);
+            this.showError('Không thể đổi tên file');
+        }
+    }
+
+    async deleteFile(fileData) {
+        const confirmMessage = fileData.is_directory
+            ? `Bạn có chắc muốn xóa thư mục "${fileData.name}" và tất cả nội dung bên trong?`
+            : `Bạn có chắc muốn xóa file "${fileData.name}"?`;
+
+        if (!confirm(confirmMessage)) return;
+
+        try {
+            const response = await fetch('/api/item/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    item_path: fileData.path
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                this.refreshCurrentDirectory();
+            } else {
+                this.showError('Không thể xóa: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            this.showError('Không thể xóa file');
+        }
     }
 
     showFileDetails(file) {
@@ -755,9 +959,347 @@ class TeleDriveApp {
     }
 }
 
+    // New methods for local file management
+    async loadDrives() {
+        try {
+            const response = await fetch('/api/drives');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                this.drives = result.drives;
+                this.displayDrives();
+                // Load default drive
+                if (this.drives.length > 0) {
+                    this.browseDirectory(this.drives[0].path);
+                }
+            } else {
+                this.showError('Không thể tải danh sách ổ đĩa: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error loading drives:', error);
+            this.showError('Không thể tải danh sách ổ đĩa');
+        }
+    }
+
+    displayDrives() {
+        const container = document.getElementById('sessionsList');
+        if (!container) return;
+
+        if (this.drives.length === 0) {
+            container.innerHTML = `
+                <div class="no-drives">
+                    <i class="fas fa-hdd"></i>
+                    <p>Không tìm thấy ổ đĩa nào</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = this.drives.map(drive => `
+            <div class="drive-item" data-path="${drive.path}">
+                <div class="drive-info">
+                    <div class="drive-label">
+                        <i class="fas fa-hdd"></i>
+                        ${drive.label}
+                    </div>
+                    <div class="drive-stats">
+                        ${drive.free_formatted} trống / ${drive.total_formatted}
+                    </div>
+                </div>
+                <div class="drive-usage">
+                    <div class="usage-bar">
+                        <div class="usage-fill" style="width: ${drive.usage_percent}%"></div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // Bind click events
+        container.querySelectorAll('.drive-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const path = e.currentTarget.dataset.path;
+                this.browseDirectory(path);
+            });
+        });
+    }
+
+    async browseDirectory(path, page = 1) {
+        try {
+            this.showLoading();
+
+            const params = new URLSearchParams({
+                path: path,
+                page: page.toString(),
+                per_page: '50',
+                sort_by: this.currentSort,
+                sort_order: this.currentSortOrder
+            });
+
+            const response = await fetch(`/api/browse?${params}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                this.currentPath = result.current_path;
+                this.files = result.items;
+                this.currentPage = page;
+
+                this.updateBreadcrumbs();
+                this.updateNavigationButtons();
+                this.filterAndDisplayFiles();
+                this.updateDirectoryStats(result.stats);
+
+                // Update active drive
+                this.updateActiveDrive();
+
+            } else {
+                this.showError('Không thể truy cập thư mục: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error browsing directory:', error);
+            this.showError('Không thể truy cập thư mục');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    updateBreadcrumbs() {
+        const breadcrumbContainer = document.getElementById('breadcrumbs');
+        if (!breadcrumbContainer) return;
+
+        const pathParts = this.currentPath.split('\\').filter(part => part);
+        const breadcrumbs = [];
+
+        // Add root
+        breadcrumbs.push({
+            name: 'Máy tính',
+            path: '',
+            isRoot: true
+        });
+
+        // Add path parts
+        let currentPath = '';
+        pathParts.forEach((part, index) => {
+            currentPath += part + '\\';
+            breadcrumbs.push({
+                name: part === pathParts[0] ? part : part,
+                path: currentPath,
+                isLast: index === pathParts.length - 1
+            });
+        });
+
+        breadcrumbContainer.innerHTML = breadcrumbs.map(crumb => `
+            <span class="breadcrumb-item ${crumb.isLast ? 'active' : ''}"
+                  ${!crumb.isLast ? `data-path="${crumb.path}"` : ''}>
+                ${crumb.isRoot ? '<i class="fas fa-home"></i>' : ''}
+                ${crumb.name}
+            </span>
+        `).join('<i class="fas fa-chevron-right breadcrumb-separator"></i>');
+
+        // Bind click events
+        breadcrumbContainer.querySelectorAll('.breadcrumb-item:not(.active)').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const path = e.currentTarget.dataset.path;
+                if (path) {
+                    this.browseDirectory(path);
+                } else {
+                    this.showDriveSelection();
+                }
+            });
+        });
+    }
+
+    setupContextMenu() {
+        // Context menu implementation will be added later
+    }
+
+    setupDragAndDrop() {
+        // Drag and drop implementation will be added later
+    }
+
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+R or F5 - Refresh
+            if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
+                e.preventDefault();
+                this.refreshCurrentDirectory();
+            }
+
+            // Backspace - Go up
+            if (e.key === 'Backspace' && !e.target.matches('input, textarea')) {
+                e.preventDefault();
+                this.navigateUp();
+            }
+
+            // Escape - Clear selection
+            if (e.key === 'Escape') {
+                this.clearSelection();
+            }
+        });
+    }
+
+    // Navigation methods
+    navigateUp() {
+        if (this.currentPath && this.currentPath !== '') {
+            const parentPath = this.currentPath.split('\\').slice(0, -1).join('\\');
+            if (parentPath) {
+                this.browseDirectory(parentPath + '\\');
+            } else {
+                this.showDriveSelection();
+            }
+        }
+    }
+
+    navigateBack() {
+        // Implementation for back navigation
+        console.log('Navigate back');
+    }
+
+    navigateForward() {
+        // Implementation for forward navigation
+        console.log('Navigate forward');
+    }
+
+    refreshCurrentDirectory() {
+        if (this.currentPath) {
+            this.browseDirectory(this.currentPath);
+        }
+    }
+
+    showDriveSelection() {
+        this.currentPath = '';
+        this.files = [];
+        this.displayDrives();
+        this.updateBreadcrumbs();
+    }
+
+    updateNavigationButtons() {
+        const backBtn = document.getElementById('backBtn');
+        const forwardBtn = document.getElementById('forwardBtn');
+        const upBtn = document.getElementById('upBtn');
+
+        // For now, just enable/disable up button
+        if (upBtn) {
+            upBtn.disabled = !this.currentPath || this.currentPath === '';
+        }
+    }
+
+    updateActiveDrive() {
+        const driveItems = document.querySelectorAll('.drive-item');
+        driveItems.forEach(item => {
+            const drivePath = item.dataset.path;
+            if (this.currentPath && this.currentPath.startsWith(drivePath)) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    updateDirectoryStats(stats) {
+        // Update directory statistics display
+        const statsContainer = document.getElementById('directoryStats');
+        if (statsContainer && stats) {
+            statsContainer.innerHTML = `
+                <span>${stats.total_items} mục</span>
+                <span>${stats.directories} thư mục</span>
+                <span>${stats.files} file</span>
+            `;
+        }
+    }
+
+    clearSelection() {
+        this.selectedItems.clear();
+        document.querySelectorAll('.file-card.selected').forEach(card => {
+            card.classList.remove('selected');
+        });
+    }
+
+    updateSortOrderButton() {
+        const sortOrderBtn = document.getElementById('sortOrder');
+        if (sortOrderBtn) {
+            const icon = sortOrderBtn.querySelector('i');
+            if (this.currentSortOrder === 'asc') {
+                icon.className = 'fas fa-sort-alpha-down';
+            } else {
+                icon.className = 'fas fa-sort-alpha-up';
+            }
+        }
+    }
+
+    async performSearch() {
+        if (!this.searchQuery || this.searchQuery.trim() === '') {
+            this.browseDirectory(this.currentPath);
+            return;
+        }
+
+        try {
+            this.showLoading();
+
+            const params = new URLSearchParams({
+                path: this.currentPath,
+                query: this.searchQuery.trim(),
+                max_results: '100'
+            });
+
+            const response = await fetch(`/api/search?${params}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                this.files = result.results;
+                this.filterAndDisplayFiles();
+            } else {
+                this.showError('Lỗi tìm kiếm: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error searching:', error);
+            this.showError('Không thể thực hiện tìm kiếm');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    showLoading() {
+        const container = document.getElementById('filesContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="loading-screen">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Đang tải...</p>
+                </div>
+            `;
+        }
+    }
+
+    hideLoading() {
+        // Loading will be hidden when files are displayed
+    }
+
+    showError(message) {
+        const container = document.getElementById('filesContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="error-screen">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Có lỗi xảy ra</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+    }
+}
+
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new TeleDriveApp();
+    new LocalFileManager();
 });
 
 // Add CSS for file detail modal

@@ -93,6 +93,41 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Navigation Bar -->
+            <div class="navigation-bar">
+                <div class="nav-controls">
+                    <button id="backBtn" class="nav-btn" title="Quay lại">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button id="forwardBtn" class="nav-btn" title="Tiến tới">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button id="upBtn" class="nav-btn" title="Lên thư mục cha">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button id="refreshBtn" class="nav-btn" title="Làm mới">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+
+                <div class="breadcrumb-container">
+                    <div id="breadcrumbs" class="breadcrumbs">
+                        <!-- Breadcrumbs will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="nav-actions">
+                    <button id="newFolderBtn" class="action-btn" title="Tạo thư mục mới">
+                        <i class="fas fa-folder-plus"></i>
+                        <span>Thư mục mới</span>
+                    </button>
+                    <button id="uploadBtn" class="action-btn primary" title="Tải lên file">
+                        <i class="fas fa-upload"></i>
+                        <span>Tải lên</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Toolbar -->
             <div class="toolbar">
                 <div class="toolbar-left">
@@ -104,28 +139,28 @@
                             <i class="fas fa-list"></i>
                         </button>
                     </div>
-                    
+
                     <div class="filter-options">
                         <select id="fileTypeFilter">
                             <option value="all">Tất cả file</option>
-                            <option value="document">Documents</option>
-                            <option value="photo">Photos</option>
-                            <option value="video">Videos</option>
-                            <option value="audio">Audio</option>
-                            <option value="voice">Voice</option>
-                            <option value="sticker">Stickers</option>
-                            <option value="animation">Animations</option>
+                            <option value="folder">Thư mục</option>
+                            <option value="document">Tài liệu</option>
+                            <option value="image">Hình ảnh</option>
+                            <option value="video">Video</option>
+                            <option value="audio">Âm thanh</option>
+                            <option value="archive">Nén</option>
+                            <option value="code">Code</option>
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="toolbar-right">
                     <div class="sort-options">
                         <select id="sortBy">
-                            <option value="name">Tên file</option>
+                            <option value="name">Tên</option>
                             <option value="size">Kích thước</option>
-                            <option value="date">Ngày upload</option>
-                            <option value="type">Loại file</option>
+                            <option value="modified">Ngày sửa đổi</option>
+                            <option value="type">Loại</option>
                         </select>
                         <button id="sortOrder" class="sort-btn" data-order="asc">
                             <i class="fas fa-sort-alpha-down"></i>
