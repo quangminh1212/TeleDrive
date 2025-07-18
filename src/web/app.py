@@ -469,11 +469,15 @@ def get_session_files(session_id):
 @auth_required
 def get_session_stats(session_id):
     """Lấy thống kê cho một session"""
-    stats = api.get_session_stats(session_id)
-    if stats:
-        return jsonify(stats)
-    else:
-        return jsonify({'error': 'Session not found'}), 404
+    try:
+        stats = api.get_session_stats(session_id)
+        if stats:
+            return jsonify(stats)
+        else:
+            return jsonify({'error': 'Session not found'}), 404
+    except Exception as e:
+        logger.error(f"Error getting session stats: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
 
 @app.route('/logout')
 @login_required
