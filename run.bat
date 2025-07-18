@@ -130,7 +130,7 @@ echo    - Lan dau su dung: truy cap /setup de tao admin
 echo    - Neu muon chay scanner CLI: run.bat scanner
 echo.
 
-python run_app.py
+python main.py
 
 echo.
 echo ================================================================
@@ -451,7 +451,7 @@ echo.
 echo 💡 Luu y: Giu cua so nay mo de server tiep tuc chay
 echo.
 
-python run_app.py
+python main.py
 
 echo.
 echo ================================================================
