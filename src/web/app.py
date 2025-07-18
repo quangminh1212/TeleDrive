@@ -479,6 +479,11 @@ def get_session_stats(session_id):
         logger.error(f"Error getting session stats: {str(e)}", exc_info=True)
         return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
 
+@app.route('/test-endpoint')
+def test_endpoint():
+    """Test endpoint để kiểm tra server có load code mới không"""
+    return jsonify({'message': 'Server đã load code mới!', 'timestamp': '2025-07-18T20:30:00Z'})
+
 @app.route('/logout')
 @login_required
 def logout():
