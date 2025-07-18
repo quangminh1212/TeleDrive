@@ -7,6 +7,7 @@ Quản lý cấu hình trong config.json với validation
 import json
 import os
 import re
+import shutil
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -143,25 +144,37 @@ class ConfigManager:
             validator = ConfigValidator()
             temp_file = self.config_file + '.tmp'
 
+            # Remove temp file if it exists
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+
             # Save to temp file first
             with open(temp_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=2, ensure_ascii=False)
 
             # Validate temp file
             if validator.validate_config_json(temp_file):
-                # Move temp file to actual file
-                os.rename(temp_file, self.config_file)
+                # Use shutil.move for better cross-platform compatibility
+                shutil.move(temp_file, self.config_file)
                 print(f"✅ Đã lưu và validate cấu hình vào {self.config_file}")
                 return True
             else:
                 # Remove temp file and show errors
-                os.remove(temp_file)
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
                 print("❌ Cấu hình không hợp lệ:")
                 print(validator.get_validation_report())
                 return False
 
         except Exception as e:
             print(f"Lỗi lưu {self.config_file}: {e}")
+            # Clean up temp file if it exists
+            temp_file = self.config_file + '.tmp'
+            if os.path.exists(temp_file):
+                try:
+                    os.remove(temp_file)
+                except:
+                    pass
             return False
     
     def get_default_config(self):
