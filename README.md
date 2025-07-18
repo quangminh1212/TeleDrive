@@ -1,38 +1,57 @@
 # TeleDrive - Telegram File Manager
 
-Công cụ quét và quản lý file từ các kênh Telegram với giao diện web hiện đại.
+Công cụ quét và quản lý file từ các kênh Telegram với giao diện web hiện đại theo phong cách Telegram.
 
-## 🚀 Sử dụng nhanh
+## 🚀 Sử dụng đơn giản
 
-### Khởi động Web Interface (mặc định):
+### Lần đầu:
+```batch
+setup.bat
+```
+
+### Chạy scanner:
 ```batch
 run.bat
 ```
-Truy cập: http://localhost:5000
 
-### Chạy Scanner CLI:
+### Khởi động Web Interface:
 ```batch
-run.bat scanner
+run_web.bat
 ```
 
-### Cấu hình:
+### Cấu hình nhanh:
 ```batch
 run.bat config
 ```
 
 ## ✨ Tính năng
 
-- 🌐 **Web Interface** - Giao diện web hiện đại
-- 🔐 **Authentication** - Đăng nhập bảo mật
-- 📊 **Dashboard** - Xem và quản lý file
-- 🔍 **Search & Filter** - Tìm kiếm và lọc file
-- 📁 **Multi-format** - CSV, JSON, Excel
-- 🇻🇳 **Tiếng Việt** - Giao diện tiếng Việt
+### Scanner
+- ✅ **Tự động hoàn toàn** - Không cần input
+- ✅ **Menu cấu hình** - Thay đổi setting dễ dàng
+- ✅ **Đa định dạng** - CSV, JSON, Excel
+- ✅ **Tiếng Việt** - Giao diện tiếng Việt
+- ✅ **Logging chi tiết** - Theo dõi quá trình
 
+### Web Interface 🌐
+- ✅ **Giao diện Telegram-style** - Thiết kế theo phong cách Telegram
+- ✅ **File Manager** - Quản lý file trực quan
+- ✅ **Tìm kiếm & Lọc** - Tìm file nhanh chóng
+- ✅ **Responsive** - Tương thích mobile
+- ✅ **Chi tiết file** - Xem thông tin đầy đủ
+- ✅ **Download links** - Tải file trực tiếp
+- ✅ **Multiple sessions** - Quản lý nhiều lần scan
 
 ## 📁 Cấu hình
 
-Chỉnh sửa file `config.json`:
+### File `.env` (API)
+```env
+TELEGRAM_API_ID=your_api_id
+TELEGRAM_API_HASH=your_api_hash  
+TELEGRAM_PHONE=+84xxxxxxxxx
+```
+
+### File `config.json` (Cấu hình chính)
 ```json
 {
   "telegram": {
@@ -64,26 +83,48 @@ Chỉnh sửa file `config.json`:
 }
 ```
 
+**⚠️ Quan trọng:**
+- Thay `@your_channel_here` bằng channel thực tế
+- **Public channel:** `@channelname`
+- **Private channel:** `https://t.me/+xxxxx`
+
 ## 📊 Kết quả
 
-File lưu trong `output/`: CSV, JSON, Excel
+File lưu trong `output/`:
+- `telegram_files.csv`
+- `telegram_files.json`
+- `telegram_files.xlsx`
 
 ## 🌐 Web Interface
 
-**Lần đầu sử dụng:**
-1. Truy cập: http://localhost:5000/setup
-2. Tạo tài khoản admin
-3. Đăng nhập và sử dụng
+Sau khi chạy scanner, bạn có thể sử dụng giao diện web để quản lý file:
 
-**Tính năng:**
-- 🔐 Authentication & User Management
-- 📁 File Manager với Search & Filter
-- 📊 Statistics & Download links
-- 📱 Responsive design
+1. **Khởi động web interface:**
+   ```batch
+   run_web.bat
+   ```
 
-## 🛠️ Yêu cầu
+2. **Truy cập:** http://localhost:5000
 
-- Python 3.7+
-- Telegram API credentials
-- Windows (batch files)
+3. **Tính năng:**
+   - Xem danh sách file theo dạng grid/list
+   - Tìm kiếm file theo tên
+   - Lọc theo loại file (document, photo, video, audio...)
+   - Sắp xếp theo tên, kích thước, ngày
+   - Xem chi tiết file trong modal
+   - Download file trực tiếp
+   - Responsive design cho mobile
 
+4. **Giao diện:**
+   - **Header:** Logo, search bar, thống kê tổng quan
+   - **Sidebar:** Danh sách các scan sessions
+   - **Main:** File grid với toolbar và pagination
+   - **Modal:** Chi tiết file với thông tin đầy đủ
+
+## 🛠️ Troubleshooting
+
+- **Lỗi API:** Kiểm tra `.env`
+- **Lỗi config:** Chạy `run.bat config`
+- **Thiếu dependencies:** Chạy `setup.bat`
+- **Web interface không khởi động:** Kiểm tra Flask đã cài đặt chưa
+- **Không có dữ liệu:** Chạy scanner trước khi mở web interface

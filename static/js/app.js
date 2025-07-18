@@ -19,7 +19,6 @@ class TeleDriveApp {
         this.bindEvents();
         this.loadSessions();
         this.setupMobileMenu();
-        this.setupAuthentication();
     }
     
     bindEvents() {
@@ -121,24 +120,13 @@ class TeleDriveApp {
     async loadSessions() {
         try {
             const response = await fetch('/api/scans');
-
-            // Handle authentication errors
-            if (response.status === 401) {
-                window.location.href = '/login';
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
             const sessions = await response.json();
-
+            
             this.displaySessions(sessions);
-
+            
             // Auto-select first session
             if (sessions.length > 0) {
-                this.selectSession(sessions[0].session_id);
+                this.selectSession(sessions[0].id);
             }
         } catch (error) {
             console.error('Error loading sessions:', error);
@@ -159,23 +147,12 @@ class TeleDriveApp {
             return;
         }
         
-        container.innerHTML = sessions.map(session => {
-            // Format timestamp từ 20250717_203145 thành readable format
-            const timestamp = session.timestamp;
-            const year = timestamp.substring(0, 4);
-            const month = timestamp.substring(4, 6);
-            const day = timestamp.substring(6, 8);
-            const hour = timestamp.substring(9, 11);
-            const minute = timestamp.substring(11, 13);
-            const formattedDate = `${day}/${month}/${year} ${hour}:${minute}`;
-
-            return `
-                <div class="session-item" data-session-id="${session.session_id}">
-                    <div class="session-date">${formattedDate}</div>
-                    <div class="session-stats">${session.file_count} files</div>
-                </div>
-            `;
-        }).join('');
+        container.innerHTML = sessions.map(session => `
+            <div class="session-item" data-session-id="${session.id}">
+                <div class="session-date">${session.formatted_date}</div>
+                <div class="session-stats">${session.total_files} files</div>
+            </div>
+        `).join('');
         
         // Bind click events
         container.querySelectorAll('.session-item').forEach(item => {
@@ -208,26 +185,15 @@ class TeleDriveApp {
         try {
             // Load files
             const response = await fetch(`/api/files/${sessionId}`);
-
-            // Handle authentication errors
-            if (response.status === 401) {
-                window.location.href = '/login';
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
             const data = await response.json();
-
+            
             this.files = data.files || [];
             this.displaySessionInfo(data.scan_info);
             this.filterAndDisplayFiles();
-
-            // Load stats (temporarily disabled due to server issues)
-            // this.loadSessionStats(sessionId);
-
+            
+            // Load stats
+            this.loadSessionStats(sessionId);
+            
         } catch (error) {
             console.error('Error loading session:', error);
             this.showError('Không thể tải dữ liệu session');
@@ -254,19 +220,8 @@ class TeleDriveApp {
     async loadSessionStats(sessionId) {
         try {
             const response = await fetch(`/api/stats/${sessionId}`);
-
-            // Handle authentication errors
-            if (response.status === 401) {
-                window.location.href = '/login';
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
             const stats = await response.json();
-
+            
             this.updateGlobalStats(stats);
             this.updateSessionStats(stats);
         } catch (error) {
@@ -412,24 +367,19 @@ class TeleDriveApp {
     renderFileCard(file) {
         const isListView = this.currentView === 'list';
         const cardClass = isListView ? 'file-card list-view' : 'file-card';
-
-        // Truy cập đúng cấu trúc dữ liệu từ JSON
-        const fileInfo = file.file_info || {};
-        const fileType = fileInfo.type || 'unknown';
-        const sizeFormatted = fileInfo.size_formatted || 'N/A';
-
-        const uploadDate = fileInfo.upload_date ?
-            new Date(fileInfo.upload_date).toLocaleDateString('vi-VN') : 'N/A';
-
+        
+        const uploadDate = file.upload_date ? 
+            new Date(file.upload_date).toLocaleDateString('vi-VN') : 'N/A';
+        
         return `
             <div class="${cardClass}" data-file='${JSON.stringify(file)}'>
-                <div class="file-icon ${fileType}">
-                    <i class="${this.getFileIcon(fileType)}"></i>
+                <div class="file-icon ${file.file_type}">
+                    <i class="${this.getFileIcon(file.file_type)}"></i>
                 </div>
                 <div class="file-info">
                     <div class="file-name" title="${file.file_name}">${file.file_name}</div>
                     <div class="file-meta">
-                        <span class="file-size">${sizeFormatted}</span>
+                        <span class="file-size">${file.size_formatted}</span>
                         <span class="file-date">${uploadDate}</span>
                     </div>
                 </div>
@@ -492,20 +442,14 @@ class TeleDriveApp {
 
         modalTitle.textContent = file.file_name;
 
-        // Truy cập đúng cấu trúc dữ liệu
-        const fileInfo = file.file_info || {};
-        const fileType = fileInfo.type || 'unknown';
-        const sizeFormatted = fileInfo.size_formatted || 'N/A';
-        const mimeType = fileInfo.mime_type;
-
-        const uploadDate = fileInfo.upload_date ?
-            new Date(fileInfo.upload_date).toLocaleString('vi-VN') : 'N/A';
+        const uploadDate = file.upload_date ?
+            new Date(file.upload_date).toLocaleString('vi-VN') : 'N/A';
 
         modalBody.innerHTML = `
             <div class="file-detail">
                 <div class="file-detail-icon">
-                    <div class="file-icon ${fileType} large">
-                        <i class="${this.getFileIcon(fileType)}"></i>
+                    <div class="file-icon ${file.file_type} large">
+                        <i class="${this.getFileIcon(file.file_type)}"></i>
                     </div>
                 </div>
 
@@ -517,20 +461,20 @@ class TeleDriveApp {
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Loại file:</span>
-                        <span class="detail-value">${this.capitalizeFirst(fileType)}</span>
+                        <span class="detail-value">${this.capitalizeFirst(file.file_type)}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Kích thước:</span>
-                        <span class="detail-value">${sizeFormatted}</span>
+                        <span class="detail-value">${file.size_formatted}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Ngày upload:</span>
                         <span class="detail-value">${uploadDate}</span>
                     </div>
-                    ${mimeType ? `
+                    ${file.mime_type ? `
                         <div class="detail-row">
                             <span class="detail-label">MIME type:</span>
-                            <span class="detail-value">${mimeType}</span>
+                            <span class="detail-value">${file.mime_type}</span>
                         </div>
                     ` : ''}
                     ${file.file_info && file.file_info.dimensions ? `
@@ -551,7 +495,7 @@ class TeleDriveApp {
                     <h4>Thông tin tin nhắn</h4>
                     <div class="detail-row">
                         <span class="detail-label">Message ID:</span>
-                        <span class="detail-value">${file.message_info ? file.message_info.message_id : 'N/A'}</span>
+                        <span class="detail-value">${file.message_id}</span>
                     </div>
                     ${file.message_info && file.message_info.message_text ? `
                         <div class="detail-row">
@@ -696,62 +640,6 @@ class TeleDriveApp {
 
         sidebar.classList.remove('open');
         overlay.classList.remove('show');
-    }
-
-    // Authentication methods
-    setupAuthentication() {
-        // Setup user dropdown menu
-        const userMenuToggle = document.getElementById('userMenuToggle');
-        const userDropdown = document.getElementById('userDropdown');
-        const logoutBtn = document.getElementById('logoutBtn');
-
-        if (userMenuToggle && userDropdown) {
-            // Toggle dropdown
-            userMenuToggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                userDropdown.classList.toggle('show');
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!userMenuToggle.contains(e.target) && !userDropdown.contains(e.target)) {
-                    userDropdown.classList.remove('show');
-                }
-            });
-        }
-
-        // Setup logout functionality
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                this.logout();
-            });
-        }
-    }
-
-    async logout() {
-        try {
-            const response = await fetch('/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                // Redirect to login page
-                window.location.href = '/login';
-            } else {
-                console.error('Logout failed:', data.message);
-                // Force redirect anyway
-                window.location.href = '/login';
-            }
-        } catch (error) {
-            console.error('Logout error:', error);
-            // Force redirect on error
-            window.location.href = '/login';
-        }
     }
 }
 
