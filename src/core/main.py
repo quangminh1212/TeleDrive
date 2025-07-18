@@ -11,7 +11,7 @@ import os
 # Thêm thư mục gốc vào Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.services.telegram_scanner import TelegramFileScanner
+from src.services.scanner import TelegramFileScanner
 
 # Import detailed logging
 try:
