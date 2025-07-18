@@ -250,17 +250,18 @@ class RequestLoggingMiddleware:
             
             return response
         
-        @self.app.errorhandler(Exception)
-        def handle_exception(e):
-            """Log unhandled exceptions"""
-            logger = self.logger.get_logger('app')
-            logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
-            
-            # Return generic error response
-            return {
-                'error': 'Internal server error',
-                'message': 'An unexpected error occurred'
-            }, 500
+        # Temporarily disabled to debug issues
+        # @self.app.errorhandler(Exception)
+        # def handle_exception(e):
+        #     """Log unhandled exceptions"""
+        #     logger = self.logger.get_logger('app')
+        #     logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
+        #
+        #     # Return generic error response
+        #     return {
+        #         'error': 'Internal server error',
+        #         'message': 'An unexpected error occurred'
+        #     }, 500
 
 # Global logger instance
 production_logger = None
