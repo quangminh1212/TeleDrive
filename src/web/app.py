@@ -479,6 +479,11 @@ def get_session_stats(session_id):
         logger.error(f"Error getting session stats: {str(e)}", exc_info=True)
         return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
 
+@app.route('/favicon.ico')
+def favicon():
+    """Serve favicon to prevent 404 errors"""
+    return '', 204  # No Content
+
 @app.route('/test-endpoint')
 def test_endpoint():
     """Test endpoint để kiểm tra server có load code mới không"""

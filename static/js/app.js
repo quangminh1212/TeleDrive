@@ -225,8 +225,8 @@ class TeleDriveApp {
             this.displaySessionInfo(data.scan_info);
             this.filterAndDisplayFiles();
 
-            // Load stats
-            this.loadSessionStats(sessionId);
+            // Load stats (temporarily disabled due to server issues)
+            // this.loadSessionStats(sessionId);
 
         } catch (error) {
             console.error('Error loading session:', error);

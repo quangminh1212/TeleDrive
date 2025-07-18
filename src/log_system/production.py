@@ -250,18 +250,32 @@ class RequestLoggingMiddleware:
             
             return response
         
-        # Temporarily disabled to debug issues
-        # @self.app.errorhandler(Exception)
-        # def handle_exception(e):
-        #     """Log unhandled exceptions"""
-        #     logger = self.logger.get_logger('app')
-        #     logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
-        #
-        #     # Return generic error response
-        #     return {
-        #         'error': 'Internal server error',
-        #         'message': 'An unexpected error occurred'
-        #     }, 500
+        @self.app.errorhandler(404)
+        def handle_404(e):
+            """Handle 404 errors more gracefully"""
+            logger = self.logger.get_logger('app')
+            logger.warning(f"404 Not Found: {request.path}")
+
+            # Return JSON for API endpoints, HTML for others
+            if request.path.startswith('/api/'):
+                return {
+                    'error': 'Not Found',
+                    'message': f'API endpoint {request.path} not found'
+                }, 404
+            else:
+                return '', 404  # Silent 404 for non-API requests like favicon
+
+        @self.app.errorhandler(Exception)
+        def handle_exception(e):
+            """Log unhandled exceptions"""
+            logger = self.logger.get_logger('app')
+            logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
+
+            # Return generic error response
+            return {
+                'error': 'Internal server error',
+                'message': 'An unexpected error occurred'
+            }, 500
 
 # Global logger instance
 production_logger = None
