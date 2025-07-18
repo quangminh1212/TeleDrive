@@ -3,7 +3,11 @@
     "api_id": "21272067",
     "api_hash": "b7690dc86952dbc9b16717b101164af3",
     "phone_number": "+84936374950",
-    "session_name": "telegram_scanner_session"
+    "session_name": "telegram_scanner_session",
+    "connection_timeout": 30,
+    "request_timeout": 60,
+    "retry_attempts": 3,
+    "retry_delay": 5
   },
   "channels": {
     "use_default_channel": true,
@@ -59,5 +63,6 @@
     "enabled": true,
     "level": "INFO",
     "file": "logs/scanner.log"
-  }
+  },
+  "_last_updated": "2025-07-17"
 }

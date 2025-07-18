@@ -21,11 +21,11 @@ from telethon.tl.types import (
 from tqdm.asyncio import tqdm
 import aiofiles
 
-import config
+from ..utils import config
 
 # Import detailed logging
 try:
-    from logger import log_step, log_api_call, log_file_operation, log_progress, log_error, get_logger
+    from ..utils.logger import log_step, log_api_call, log_file_operation, log_progress, log_error, get_logger
     DETAILED_LOGGING_AVAILABLE = True
     logger = get_logger('engine')
 except ImportError:
