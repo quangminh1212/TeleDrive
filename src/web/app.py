@@ -7,7 +7,7 @@ Giao diện web với phong cách Telegram để hiển thị các file đã qu�
 
 import json
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, redirect, url_for
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
 from flask_cors import CORS
 from flask_login import login_user, login_required, current_user
 from functools import wraps
@@ -238,9 +238,16 @@ def auth_required(f):
 
 # Main Routes
 @app.route('/')
-@login_required
 def index():
     """Trang chính - Dashboard"""
+    # Kiểm tra có admin user nào chưa
+    if not auth_manager.has_admin_user():
+        return redirect(url_for('setup'))
+
+    # Yêu cầu đăng nhập
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
     return render_template('index.html')
 
 # Authentication Routes
@@ -249,7 +256,67 @@ def login():
     """Trang đăng nhập"""
     if current_user.is_authenticated:
         return redirect(url_for('index'))
+
+    # Kiểm tra có admin user nào chưa, nếu chưa thì redirect đến setup
+    if not auth_manager.has_admin_user():
+        return redirect(url_for('setup'))
+
     return render_template('login.html')
+
+@app.route('/setup', methods=['GET', 'POST'])
+def setup():
+    """Trang thiết lập admin user đầu tiên"""
+    # Nếu đã có admin user thì redirect về login
+    if auth_manager.has_admin_user():
+        return redirect(url_for('login'))
+
+    if request.method == 'GET':
+        return render_template('setup.html')
+
+    # Xử lý POST request
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        phone_number = data.get('phone_number', '').strip()
+        email = data.get('email', '').strip() or None
+
+        # Validate input
+        errors = []
+        if not username or len(username) < 3:
+            errors.append('Tên đăng nhập phải có ít nhất 3 ký tự')
+
+        if not phone_number:
+            errors.append('Vui lòng nhập số điện thoại')
+        else:
+            # Validate số điện thoại
+            is_valid, result = validate_phone_number(phone_number)
+            if not is_valid:
+                errors.append(result)
+            else:
+                phone_number = result  # Sử dụng số đã được format
+
+        if errors:
+            return jsonify({'success': False, 'errors': errors}), 400
+
+        # Tạo admin user
+        success, message = auth_manager.create_user(
+            username=username,
+            phone_number=phone_number,
+            email=email,
+            is_admin=True
+        )
+
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Tạo tài khoản admin thành công! Bạn có thể đăng nhập ngay.',
+                'redirect': url_for('login')
+            })
+        else:
+            return jsonify({'success': False, 'message': message}), 400
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500
 
 @app.route('/send-otp', methods=['POST'])
 def send_otp():
