@@ -138,7 +138,7 @@ class TeleDriveApp {
 
             // Auto-select first session
             if (sessions.length > 0) {
-                this.selectSession(sessions[0].id);
+                this.selectSession(sessions[0].session_id);
             }
         } catch (error) {
             console.error('Error loading sessions:', error);
@@ -159,12 +159,23 @@ class TeleDriveApp {
             return;
         }
         
-        container.innerHTML = sessions.map(session => `
-            <div class="session-item" data-session-id="${session.id}">
-                <div class="session-date">${session.formatted_date}</div>
-                <div class="session-stats">${session.total_files} files</div>
-            </div>
-        `).join('');
+        container.innerHTML = sessions.map(session => {
+            // Format timestamp từ 20250717_203145 thành readable format
+            const timestamp = session.timestamp;
+            const year = timestamp.substring(0, 4);
+            const month = timestamp.substring(4, 6);
+            const day = timestamp.substring(6, 8);
+            const hour = timestamp.substring(9, 11);
+            const minute = timestamp.substring(11, 13);
+            const formattedDate = `${day}/${month}/${year} ${hour}:${minute}`;
+
+            return `
+                <div class="session-item" data-session-id="${session.session_id}">
+                    <div class="session-date">${formattedDate}</div>
+                    <div class="session-stats">${session.file_count} files</div>
+                </div>
+            `;
+        }).join('');
         
         // Bind click events
         container.querySelectorAll('.session-item').forEach(item => {
