@@ -13,6 +13,10 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for, f
 from flask_cors import CORS
 from flask_login import login_user, login_required, current_user
 from functools import wraps
+from dotenv import load_dotenv
+
+# Load environment variables first
+load_dotenv()
 
 # Import từ cấu trúc mới
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
