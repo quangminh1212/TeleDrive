@@ -13,18 +13,36 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional, Union
 import stat
-import win32api
-import win32con
-import win32security
-from PIL import Image
-import magic
+
+# Optional imports with fallbacks
+try:
+    import win32api
+    import win32con
+    import win32security
+    HAS_WIN32 = True
+except ImportError:
+    HAS_WIN32 = False
+
+try:
+    from PIL import Image
+    HAS_PIL = True
+except ImportError:
+    HAS_PIL = False
+
+try:
+    import magic
+    HAS_MAGIC = True
+except ImportError:
+    HAS_MAGIC = False
 
 class FileSystemManager:
     """Manages Windows file system operations with security and error handling"""
-    
+
     def __init__(self, base_path: str = None):
         """Initialize with optional base path restriction"""
         self.base_path = Path(base_path) if base_path else None
+        self._cache = {}
+        self._cache_timeout = 30  # seconds
         self.allowed_extensions = {
             'image': {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico'},
             'document': {'.pdf', '.doc', '.docx', '.txt', '.rtf', '.odt', '.xls', '.xlsx', '.ppt', '.pptx'},
@@ -72,6 +90,21 @@ class FileSystemManager:
             'unknown': 'fas fa-file'
         }
         return icons.get(file_type, icons['unknown'])
+
+    def _clear_cache(self, path: str = None):
+        """Clear cache for specific path or all cache"""
+        if path:
+            # Clear cache for specific path and its parent
+            path_obj = Path(path)
+            keys_to_remove = []
+            for key in self._cache.keys():
+                if key.startswith(str(path_obj)) or key.startswith(str(path_obj.parent)):
+                    keys_to_remove.append(key)
+            for key in keys_to_remove:
+                del self._cache[key]
+        else:
+            # Clear all cache
+            self._cache.clear()
     
     def _format_file_size(self, size_bytes: int) -> str:
         """Format file size in human readable format"""
@@ -98,11 +131,45 @@ class FileSystemManager:
         except Exception:
             return {'read': False, 'write': False, 'execute': False}
     
-    def browse_directory(self, directory_path: str, page: int = 1, per_page: int = 50, 
-                        sort_by: str = 'name', sort_order: str = 'asc') -> Dict:
+    def browse_directory(self, directory_path: str, page: int = 1, per_page: int = 50,
+                        sort_by: str = 'name', sort_order: str = 'asc',
+                        use_cache: bool = True) -> Dict:
         """Browse directory contents with pagination and sorting"""
         try:
             dir_path = self._validate_path(directory_path)
+
+            # Check cache first
+            cache_key = f"{str(dir_path)}_{sort_by}_{sort_order}"
+            if use_cache and cache_key in self._cache:
+                cached_data, timestamp = self._cache[cache_key]
+                if (datetime.now() - timestamp).seconds < self._cache_timeout:
+                    # Use cached data for pagination
+                    items = cached_data
+                    total_items = len(items)
+                    start_idx = (page - 1) * per_page
+                    end_idx = start_idx + per_page
+                    paginated_items = items[start_idx:end_idx]
+
+                    return {
+                        'success': True,
+                        'current_path': str(dir_path),
+                        'parent_path': str(dir_path.parent) if dir_path.parent != dir_path else None,
+                        'items': paginated_items,
+                        'pagination': {
+                            'page': page,
+                            'per_page': per_page,
+                            'total_items': total_items,
+                            'total_pages': (total_items + per_page - 1) // per_page,
+                            'has_next': end_idx < total_items,
+                            'has_prev': page > 1
+                        },
+                        'stats': {
+                            'total_items': total_items,
+                            'directories': sum(1 for item in items if item['is_directory']),
+                            'files': sum(1 for item in items if not item['is_directory']),
+                            'total_size': sum(item['size'] for item in items if not item['is_directory'])
+                        }
+                    }
             
             if not dir_path.exists():
                 raise FileNotFoundError(f"Directory not found: {directory_path}")
@@ -159,17 +226,21 @@ class FileSystemManager:
             elif sort_by == 'type':
                 items.sort(key=lambda x: (not x['is_directory'], x['file_type'], x['name'].lower()), reverse=reverse)
             
+            # Cache the sorted items
+            if use_cache:
+                self._cache[cache_key] = (items, datetime.now())
+
             # Pagination
             total_items = len(items)
             start_idx = (page - 1) * per_page
             end_idx = start_idx + per_page
             paginated_items = items[start_idx:end_idx]
-            
+
             # Get parent directory info
             parent_path = None
             if dir_path.parent != dir_path:  # Not root
                 parent_path = str(dir_path.parent)
-            
+
             return {
                 'success': True,
                 'current_path': str(dir_path),
@@ -221,7 +292,10 @@ class FileSystemManager:
                 raise FileExistsError(f"Folder already exists: {folder_name}")
             
             new_folder_path.mkdir()
-            
+
+            # Clear cache for parent directory
+            self._clear_cache(str(parent_dir))
+
             return {
                 'success': True,
                 'message': f"Folder '{folder_name}' created successfully",
@@ -546,7 +620,7 @@ class FileSystemManager:
             }
 
             # Handle different file types for preview
-            if file_type == 'image':
+            if file_type == 'image' and HAS_PIL:
                 try:
                     with Image.open(file) as img:
                         preview_info.update({
@@ -598,7 +672,10 @@ class FileSystemManager:
 
                         # Try to get drive label
                         try:
-                            label = win32api.GetVolumeInformation(drive_path)[0]
+                            if HAS_WIN32:
+                                label = win32api.GetVolumeInformation(drive_path)[0]
+                            else:
+                                label = f"Local Disk ({letter}:)"
                         except:
                             label = f"Local Disk ({letter}:)"
 
