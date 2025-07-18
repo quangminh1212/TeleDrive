@@ -24,7 +24,7 @@ echo.
 :MAIN_START
 echo [BUOC 1/5] Kiem tra cau hinh Telegram API...
 echo    ^> Kiem tra config.json...
-python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); api_id=config.get('telegram',{}).get('api_id',''); api_hash=config.get('telegram',{}).get('api_hash',''); phone=config.get('telegram',{}).get('phone_number',''); exit(0 if api_id and api_hash and phone and phone != '+84xxxxxxxxx' else 1)" 2>nul
+python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); api_id=str(config.get('telegram',{}).get('api_id','')); api_hash=config.get('telegram',{}).get('api_hash',''); phone=config.get('telegram',{}).get('phone_number',''); exit(0 if api_id and api_id != '' and api_hash and phone and phone != '+84xxxxxxxxx' else 1)" 2>nul
 if errorlevel 1 (
     echo.
     echo ❌ CHUA CAU HINH API TELEGRAM!
