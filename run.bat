@@ -7,11 +7,18 @@ REM Kiem tra tham so dau vao
 if "%1"=="config" goto CONFIG_MENU
 if "%1"=="web" goto WEB_MODE
 if "%1"=="web-setup" goto WEB_SETUP
+if "%1"=="scanner" goto SCANNER_MODE
 
 echo.
 echo ================================================================
-echo                 TELEGRAM FILE SCANNER
+echo                    TELEDRIVE WEB INTERFACE
 echo ================================================================
+echo.
+echo 💡 Mac dinh: Chay web interface tai http://localhost:5000
+echo 🔧 Tuy chon:
+echo    run.bat          - Chay web interface (mac dinh)
+echo    run.bat scanner  - Chay scanner CLI
+echo    run.bat config   - Menu cau hinh
 echo.
 
 :MAIN_START
@@ -166,29 +173,31 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 6/6] Khoi dong Private Channel Scanner...
+echo [BUOC 6/6] Khoi dong TeleDrive Web Interface...
 echo ================================================================
-echo 🚀 DANG KHOI DONG SCANNER TU DONG...
+echo 🚀 DANG KHOI DONG WEB INTERFACE TU DONG...
 echo ================================================================
 echo.
-echo 📺 Su dung channel tu config:
-python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); print('   ', config.get('channels',{}).get('default_channel','Chua cau hinh'))" 2>nul
+echo 🌐 Web interface se chay tai: http://localhost:5000
+echo 🛑 Nhan Ctrl+C de dung server
+echo 📁 Du lieu hien thi tu thu muc: output/
 echo.
-echo 📁 Ket qua se duoc luu trong thu muc 'output/'
-echo 📊 Log chi tiet se duoc luu trong thu muc 'logs/'
-echo.
-echo 💡 Luu y: Scanner se chay tu dong ma khong can nhap gi them
-echo    Neu muon thay doi channel, chay: run.bat config
+echo 💡 Luu y:
+echo    - Giu cua so nay mo de server tiep tuc chay
+echo    - Lan dau su dung: truy cap /setup de tao admin
+echo    - Neu muon chay scanner CLI: run.bat scanner
 echo.
 
-python main.py
+python app.py
 
 echo.
 echo ================================================================
-echo 🎉 HOAN THANH!
+echo 🛑 WEB INTERFACE DA DUNG
 echo ================================================================
-echo 📁 Ket qua duoc luu trong thu muc 'output/'
-echo 📊 Log chi tiet trong thu muc 'logs/'
+echo.
+echo 💡 Neu muon chay lai: run.bat
+echo 📁 Du lieu trong thu muc: output/
+echo 📊 Log chi tiet trong thu muc: logs/
 echo.
 echo Nhan phim bat ky de thoat...
 pause >nul
@@ -207,8 +216,8 @@ echo 3. Thay doi so tin nhan toi da
 echo 4. Thay doi loai file
 echo 5. Thay doi dinh dang dau ra
 echo 6. Reset ve mac dinh
-echo 7. Chay scanner
-echo 8. Khoi dong web interface
+echo 7. Chay scanner CLI
+echo 8. Khoi dong web interface (mac dinh)
 echo 9. Thoat
 echo.
 echo ================================================================
@@ -358,9 +367,9 @@ if "%choice%"=="6" (
 
 if "%choice%"=="7" (
     echo.
-    echo Dang khoi dong scanner...
+    echo Dang khoi dong scanner CLI...
     timeout /t 2 >nul
-    goto MAIN_START
+    goto SCANNER_MODE
 )
 
 if "%choice%"=="8" (
@@ -508,6 +517,37 @@ echo 🛑 WEB INTERFACE DA DUNG
 echo ================================================================
 echo.
 pause
+goto END
+
+:SCANNER_MODE
+cls
+echo.
+echo ================================================================
+echo                 TELEGRAM FILE SCANNER (CLI MODE)
+echo ================================================================
+echo.
+echo 🔄 CHAY SCANNER COMMAND LINE...
+echo.
+echo 📺 Su dung channel tu config:
+python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); print('   ', config.get('channels',{}).get('default_channel','Chua cau hinh'))" 2>nul
+echo.
+echo 📁 Ket qua se duoc luu trong thu muc 'output/'
+echo 📊 Log chi tiet se duoc luu trong thu muc 'logs/'
+echo.
+echo 💡 Luu y: Scanner se chay tu dong ma khong can nhap gi them
+echo.
+
+python main.py
+
+echo.
+echo ================================================================
+echo 🎉 SCANNER HOAN THANH!
+echo ================================================================
+echo 📁 Ket qua duoc luu trong thu muc 'output/'
+echo 📊 Log chi tiet trong thu muc 'logs/'
+echo.
+echo Nhan phim bat ky de thoat...
+pause >nul
 goto END
 
 :END
