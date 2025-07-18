@@ -13,6 +13,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 # Import và chạy web app
 from web.app import app
+from src.config import config
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Sử dụng cấu hình từ config thay vì hardcode
+    app.run(
+        debug=config.debug,
+        host=config.server.host,
+        port=config.server.port,
+        threaded=True
+    )

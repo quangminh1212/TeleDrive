@@ -8,6 +8,7 @@ if "%1"=="config" goto CONFIG_MENU
 if "%1"=="web" goto WEB_MODE
 if "%1"=="web-setup" goto WEB_SETUP
 if "%1"=="scanner" goto SCANNER_MODE
+if "%1"=="production" goto PRODUCTION_MODE
 
 echo.
 echo ================================================================
@@ -16,9 +17,10 @@ echo ================================================================
 echo.
 echo [INFO] Mac dinh: Chay web interface tai http://localhost:5000
 echo [INFO] Tuy chon:
-echo    run.bat          - Chay web interface (mac dinh)
-echo    run.bat scanner  - Chay scanner CLI
-echo    run.bat config   - Menu cau hinh
+echo    run.bat            - Chay web interface (mac dinh)
+echo    run.bat production - Chay production server
+echo    run.bat scanner    - Chay scanner CLI
+echo    run.bat config     - Menu cau hinh
 echo.
 
 :MAIN_START
@@ -487,6 +489,82 @@ echo [INFO] SCANNER HOAN THANH!
 echo ================================================================
 echo [INFO] Ket qua duoc luu trong thu muc 'output/'
 echo [INFO] Log chi tiet trong thu muc 'logs/'
+echo.
+echo Nhan phim bat ky de thoat...
+pause >nul
+goto END
+
+:PRODUCTION_MODE
+echo.
+echo ================================================================
+echo                 TELEDRIVE PRODUCTION SERVER
+echo ================================================================
+echo.
+echo [INFO] Chay production server voi Gunicorn
+echo [INFO] Phu hop cho production deployment
+echo.
+
+echo [BUOC 1/5] Kiem tra cau hinh Telegram API...
+python check_config.py >nul
+if %errorlevel% neq 0 (
+    echo [ERROR] CHUA CAU HINH API TELEGRAM!
+    echo Vui long chay: run.bat config
+    pause
+    goto END
+)
+echo [OK] Cau hinh Telegram API hop le
+
+echo.
+echo [BUOC 2/5] Kiem tra Python...
+python --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] Python khong duoc cai dat hoac khong co trong PATH
+    pause
+    goto END
+)
+for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
+echo [OK] Python !PYTHON_VERSION! da san sang
+
+echo.
+echo [BUOC 3/5] Kiem tra dependencies...
+python -c "import flask, telethon, pandas, openpyxl" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] Thieu dependencies. Dang cai dat...
+    pip install -r requirements.txt
+    if %errorlevel% neq 0 (
+        echo [ERROR] Khong the cai dat dependencies
+        pause
+        goto END
+    )
+)
+echo [OK] Tat ca dependencies da san sang
+
+echo.
+echo [BUOC 4/5] Khoi tao he thong logging...
+if not exist logs mkdir logs
+echo [OK] He thong logging da san sang
+
+echo.
+echo [BUOC 5/5] Khoi dong Production Server...
+echo ================================================================
+echo [INFO] DANG KHOI DONG PRODUCTION SERVER...
+echo ================================================================
+echo.
+echo [INFO] Production server se chay tai: http://localhost:5000
+echo [INFO] Nhan Ctrl+C de dung server
+echo [INFO] Access logs: logs/access.log
+echo [INFO] Error logs: logs/error.log
+echo.
+
+python run_production.py
+
+echo.
+echo ================================================================
+echo [INFO] PRODUCTION SERVER DA DUNG
+echo ================================================================
+echo.
+echo [INFO] Neu muon chay lai: run.bat production
+echo [INFO] Logs trong thu muc: logs/
 echo.
 echo Nhan phim bat ky de thoat...
 pause >nul
