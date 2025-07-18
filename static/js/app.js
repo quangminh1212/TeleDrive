@@ -412,19 +412,24 @@ class TeleDriveApp {
     renderFileCard(file) {
         const isListView = this.currentView === 'list';
         const cardClass = isListView ? 'file-card list-view' : 'file-card';
-        
-        const uploadDate = file.upload_date ? 
-            new Date(file.upload_date).toLocaleDateString('vi-VN') : 'N/A';
-        
+
+        // Truy cập đúng cấu trúc dữ liệu từ JSON
+        const fileInfo = file.file_info || {};
+        const fileType = fileInfo.type || 'unknown';
+        const sizeFormatted = fileInfo.size_formatted || 'N/A';
+
+        const uploadDate = fileInfo.upload_date ?
+            new Date(fileInfo.upload_date).toLocaleDateString('vi-VN') : 'N/A';
+
         return `
             <div class="${cardClass}" data-file='${JSON.stringify(file)}'>
-                <div class="file-icon ${file.file_type}">
-                    <i class="${this.getFileIcon(file.file_type)}"></i>
+                <div class="file-icon ${fileType}">
+                    <i class="${this.getFileIcon(fileType)}"></i>
                 </div>
                 <div class="file-info">
                     <div class="file-name" title="${file.file_name}">${file.file_name}</div>
                     <div class="file-meta">
-                        <span class="file-size">${file.size_formatted}</span>
+                        <span class="file-size">${sizeFormatted}</span>
                         <span class="file-date">${uploadDate}</span>
                     </div>
                 </div>
@@ -487,14 +492,20 @@ class TeleDriveApp {
 
         modalTitle.textContent = file.file_name;
 
-        const uploadDate = file.upload_date ?
-            new Date(file.upload_date).toLocaleString('vi-VN') : 'N/A';
+        // Truy cập đúng cấu trúc dữ liệu
+        const fileInfo = file.file_info || {};
+        const fileType = fileInfo.type || 'unknown';
+        const sizeFormatted = fileInfo.size_formatted || 'N/A';
+        const mimeType = fileInfo.mime_type;
+
+        const uploadDate = fileInfo.upload_date ?
+            new Date(fileInfo.upload_date).toLocaleString('vi-VN') : 'N/A';
 
         modalBody.innerHTML = `
             <div class="file-detail">
                 <div class="file-detail-icon">
-                    <div class="file-icon ${file.file_type} large">
-                        <i class="${this.getFileIcon(file.file_type)}"></i>
+                    <div class="file-icon ${fileType} large">
+                        <i class="${this.getFileIcon(fileType)}"></i>
                     </div>
                 </div>
 
@@ -506,20 +517,20 @@ class TeleDriveApp {
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Loại file:</span>
-                        <span class="detail-value">${this.capitalizeFirst(file.file_type)}</span>
+                        <span class="detail-value">${this.capitalizeFirst(fileType)}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Kích thước:</span>
-                        <span class="detail-value">${file.size_formatted}</span>
+                        <span class="detail-value">${sizeFormatted}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Ngày upload:</span>
                         <span class="detail-value">${uploadDate}</span>
                     </div>
-                    ${file.mime_type ? `
+                    ${mimeType ? `
                         <div class="detail-row">
                             <span class="detail-label">MIME type:</span>
-                            <span class="detail-value">${file.mime_type}</span>
+                            <span class="detail-value">${mimeType}</span>
                         </div>
                     ` : ''}
                     ${file.file_info && file.file_info.dimensions ? `
@@ -540,7 +551,7 @@ class TeleDriveApp {
                     <h4>Thông tin tin nhắn</h4>
                     <div class="detail-row">
                         <span class="detail-label">Message ID:</span>
-                        <span class="detail-value">${file.message_id}</span>
+                        <span class="detail-value">${file.message_info ? file.message_info.message_id : 'N/A'}</span>
                     </div>
                     ${file.message_info && file.message_info.message_text ? `
                         <div class="detail-row">
