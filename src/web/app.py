@@ -248,7 +248,7 @@ def index():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
 
-    return render_template('index.html')
+    return render_template('index.html', user=current_user)
 
 # Authentication Routes
 @app.route('/login', methods=['GET'])
@@ -340,13 +340,28 @@ def send_otp():
         if not user:
             return jsonify({'success': False, 'message': 'Số điện thoại chưa được đăng ký'}), 404
         
-        # Gửi OTP
-        success, message = send_otp_sync(formatted_phone)
-        
-        if success:
-            return jsonify({'success': True, 'message': message})
-        else:
-            return jsonify({'success': False, 'message': message}), 500
+        # Gửi OTP - Tạm thời mock để test
+        try:
+            # Mock OTP cho development
+            from src.models.otp import OTPManager
+            otp_code = OTPManager.create_otp(formatted_phone)
+            print(f"🔐 Mock OTP cho {formatted_phone}: {otp_code}")
+
+            return jsonify({
+                'success': True,
+                'message': f'Mã OTP đã được tạo: {otp_code} (Development mode)'
+            })
+
+            # TODO: Uncomment khi Telegram client hoạt động
+            # success, message = send_otp_sync(formatted_phone)
+            # if success:
+            #     return jsonify({'success': True, 'message': message})
+            # else:
+            #     return jsonify({'success': False, 'message': message}), 500
+
+        except Exception as e:
+            print(f"Lỗi tạo OTP: {e}")
+            return jsonify({'success': False, 'message': f'Lỗi tạo OTP: {str(e)}'}), 500
             
     except Exception as e:
         return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500

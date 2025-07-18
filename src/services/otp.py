@@ -35,11 +35,11 @@ class TelegramOTPService:
             
         try:
             self.client = TelegramClient(
-                config.TELEGRAM_SESSION_NAME,
-                config.TELEGRAM_API_ID,
-                config.TELEGRAM_API_HASH
+                config.SESSION_NAME,
+                config.API_ID,
+                config.API_HASH
             )
-            
+
             await self.client.start(phone=config.PHONE_NUMBER)
             self._initialized = True
             logger.info("Telegram OTP Service đã được khởi tạo")
