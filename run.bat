@@ -22,74 +22,26 @@ echo    run.bat config   - Menu cau hinh
 echo.
 
 :MAIN_START
-echo [BUOC 1/6] Kiem tra file cau hinh .env...
-REM Kiem tra file .env
-set "ENV_CONFIGURED=0"
-if exist .env (
-    echo    ^> Tim thay file .env
-    REM Kiem tra xem .env co cau hinh dung chua
-    findstr /C:"your_api_id_here" .env >nul
-    if not errorlevel 1 (
-        echo    ^> Phat hien placeholder API_ID - chua cau hinh
-        set "ENV_CONFIGURED=0"
-    )
-
-    findstr /C:"your_api_hash_here" .env >nul
-    if not errorlevel 1 (
-        echo    ^> Phat hien placeholder API_HASH - chua cau hinh
-        set "ENV_CONFIGURED=0"
-    )
-
-    findstr /C:"+84xxxxxxxxx" .env >nul
-    if not errorlevel 1 (
-        echo    ^> Phat hien placeholder PHONE - chua cau hinh
-        set "ENV_CONFIGURED=0"
-    )
-
-    REM Kiem tra xem co API_ID va API_HASH thuc su chua
-    findstr /C:"TELEGRAM_API_ID=" .env | findstr /V /C:"your_api_id_here" >nul
-    if not errorlevel 1 (
-        echo    ^> Tim thay API_ID hop le
-        findstr /C:"TELEGRAM_API_HASH=" .env | findstr /V /C:"your_api_hash_here" >nul
-        if not errorlevel 1 (
-            echo    ^> Tim thay API_HASH hop le
-            findstr /C:"TELEGRAM_PHONE=" .env | findstr /V /C:"+84xxxxxxxxx" >nul
-            if not errorlevel 1 (
-                echo    ^> Tim thay PHONE hop le
-                set "ENV_CONFIGURED=1"
-            )
-        )
-    )
-) else (
-    echo    ^> KHONG tim thay file .env
-)
-
-if "%ENV_CONFIGURED%"=="0" (
+echo [BUOC 1/5] Kiem tra cau hinh Telegram API...
+echo    ^> Kiem tra config.json...
+python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); api_id=config.get('telegram',{}).get('api_id',''); api_hash=config.get('telegram',{}).get('api_hash',''); phone=config.get('telegram',{}).get('phone_number',''); exit(0 if api_id and api_hash and phone and phone != '+84xxxxxxxxx' else 1)" 2>nul
+if errorlevel 1 (
     echo.
-    echo ❌ CHUA CAU HINH API HOAC CAU HINH SAI!
+    echo ❌ CHUA CAU HINH API TELEGRAM!
     echo.
     echo 📝 Huong dan cau hinh:
-    echo    1. Tao file .env moi tu .env.example
+    echo    1. Chinh sua file config.json
     echo    2. Dien API_ID, API_HASH va so dien thoai
+    echo    3. Lay API tu: https://my.telegram.org/apps
     echo.
-    if exist .env.example (
-        copy .env.example .env >nul
-        echo ✅ Da tao file .env moi. Vui long chinh sua thong tin API!
-        echo.
-        echo 🔗 Huong dan:
-        echo    - Lay API_ID va API_HASH tu: https://my.telegram.org/apps
-        echo    - Dien so dien thoai dang: +84xxxxxxxxx
-    ) else (
-        echo ❌ KHONG TIM THAY FILE .env.example!
-    )
     pause
     exit /b 1
 ) else (
-    echo ✅ File .env da duoc cau hinh hop le
+    echo ✅ Cau hinh Telegram API hop le
 )
 
 echo.
-echo [BUOC 2/6] Kiem tra Python...
+echo [BUOC 2/5] Kiem tra Python...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo ❌ KHONG TIM THAY PYTHON!
@@ -101,7 +53,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 3/6] Kiem tra va tao cau hinh...
+echo [BUOC 3/5] Kiem tra va tao cau hinh...
 echo    ^> Kiem tra config.json...
 if not exist config.json (
     echo ❌ File config.json khong ton tai!
@@ -111,28 +63,18 @@ if not exist config.json (
     echo ✅ Tim thay config.json
 )
 
-echo    ^> Dang dong bo tu .env sang config.json...
-python sync_config.py 2>nul
+echo    ^> Kiem tra config.json...
+python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); channel=config.get('channels',{}).get('default_channel',''); exit(0 if channel and channel not in ['', '@your_channel_here'] else 1)" 2>nul
 if errorlevel 1 (
-    echo ❌ Loi dong bo cau hinh
-    echo 💡 Goi y: Chay 'run.bat config' de cau hinh
+    echo.
+    echo ❌ CHUA CAU HINH CHANNEL!
+    echo 💡 Chay: run.bat config de cau hinh channel
+    echo.
     pause
     exit /b 1
 )
 
 echo    ^> Config.json da san sang
-
-echo    ^> Dang kiem tra channel...
-python check_channel.py 2>nul
-if errorlevel 1 (
-    echo.
-    echo ❌ CHUA CAU HINH CHANNEL!
-    echo 💡 Chay: run.bat config de cau hinh channel
-    echo 📋 Hoac chinh sua file run_config.json
-    echo.
-    pause
-    exit /b 1
-)
 
 echo    ^> Dang kiem tra tinh hop le cua cau hinh...
 python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '❌ Cau hinh khong hop le'); exit(0 if result else 1)" 2>nul
@@ -146,7 +88,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 4/6] Kiem tra dependencies...
+echo [BUOC 4/5] Kiem tra dependencies...
 echo    ^> Dang kiem tra cac thu vien Python...
 python -c "import telethon, pandas, tqdm, aiofiles; print('✅ Tat ca dependencies da san sang')" 2>nul
 if errorlevel 1 (
@@ -163,7 +105,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 5/6] Khoi tao he thong logging...
+echo [BUOC 5/5] Khoi tao he thong logging...
 echo    ^> Tao thu muc logs neu chua co...
 if not exist logs mkdir logs
 echo    ^> Kiem tra cau hinh logging...
