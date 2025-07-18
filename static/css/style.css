@@ -77,6 +77,12 @@ body {
     font-size: 24px;
 }
 
+.logo-image {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
 .header-title {
     font-size: 18px;
     font-weight: 500;

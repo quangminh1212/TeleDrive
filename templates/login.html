@@ -39,6 +39,12 @@
             font-size: 32px;
             color: var(--telegram-blue);
         }
+
+        .login-logo .logo-image {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+        }
         
         .login-logo span {
             font-size: 28px;
@@ -226,7 +232,7 @@
     <div class="login-container">
         <div class="login-card">
             <div class="login-logo">
-                <i class="fab fa-telegram-plane"></i>
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive Logo" class="logo-image">
                 <span>TeleDrive</span>
             </div>
             
