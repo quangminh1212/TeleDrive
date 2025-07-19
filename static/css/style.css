@@ -1,5 +1,28 @@
 /* TeleDrive CSS - Google Drive Style */
 
+/* Font Awesome Optimization */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+/* Ensure icons render properly */
+.fa, .fas, .far, .fal, .fab {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands" !important;
+    font-weight: 900;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.far {
+    font-weight: 400 !important;
+}
+
+.fal {
+    font-weight: 300 !important;
+}
+
 :root {
     /* Google Drive Color Palette */
     --primary-blue: #1a73e8;
@@ -678,8 +701,15 @@ body {
 
 .welcome-icon {
     font-size: 64px;
-    color: var(--telegram-blue);
+    color: var(--primary-blue);
     margin-bottom: 20px;
+    text-shadow: 0 2px 4px rgba(26, 115, 232, 0.2);
+    animation: welcomeIconFloat 3s ease-in-out infinite;
+}
+
+@keyframes welcomeIconFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
 }
 
 .welcome-content h2 {
@@ -898,6 +928,10 @@ body {
     color: white;
     margin-bottom: var(--spacing-md);
     flex-shrink: 0;
+    font-weight: 400;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .file-card.list-view .file-icon {
@@ -908,15 +942,66 @@ body {
 }
 
 /* Google Drive inspired file type colors */
-.file-icon.document { background: #4285f4; }
-.file-icon.image { background: #34a853; }
-.file-icon.photo { background: #34a853; }
-.file-icon.video { background: #ea4335; }
-.file-icon.audio { background: #ff6d01; }
-.file-icon.archive { background: #9aa0a6; }
-.file-icon.code { background: #673ab7; }
-.file-icon.folder { background: #5f6368; color: #fff; }
-.file-icon.unknown { background: #9aa0a6; }
+.file-icon.document {
+    background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+    box-shadow: 0 2px 4px rgba(66, 133, 244, 0.3);
+}
+.file-icon.image, .file-icon.photo {
+    background: linear-gradient(135deg, #34a853 0%, #137333 100%);
+    box-shadow: 0 2px 4px rgba(52, 168, 83, 0.3);
+}
+.file-icon.video {
+    background: linear-gradient(135deg, #ea4335 0%, #d33b2c 100%);
+    box-shadow: 0 2px 4px rgba(234, 67, 53, 0.3);
+}
+.file-icon.audio {
+    background: linear-gradient(135deg, #ff6d01 0%, #e8710a 100%);
+    box-shadow: 0 2px 4px rgba(255, 109, 1, 0.3);
+}
+.file-icon.voice {
+    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    box-shadow: 0 2px 4px rgba(156, 39, 176, 0.3);
+}
+.file-icon.archive {
+    background: linear-gradient(135deg, #9aa0a6 0%, #80868b 100%);
+    box-shadow: 0 2px 4px rgba(154, 160, 166, 0.3);
+}
+.file-icon.code {
+    background: linear-gradient(135deg, #673ab7 0%, #512da8 100%);
+    box-shadow: 0 2px 4px rgba(103, 58, 183, 0.3);
+}
+.file-icon.folder {
+    background: linear-gradient(135deg, #5f6368 0%, #3c4043 100%);
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(95, 99, 104, 0.3);
+}
+.file-icon.sticker {
+    background: linear-gradient(135deg, #fbbc04 0%, #f9ab00 100%);
+    box-shadow: 0 2px 4px rgba(251, 188, 4, 0.3);
+}
+.file-icon.animation {
+    background: linear-gradient(135deg, #ff5722 0%, #d84315 100%);
+    box-shadow: 0 2px 4px rgba(255, 87, 34, 0.3);
+}
+.file-icon.unknown {
+    background: linear-gradient(135deg, #9aa0a6 0%, #80868b 100%);
+    box-shadow: 0 2px 4px rgba(154, 160, 166, 0.3);
+}
+
+/* Icon hover effects */
+.file-card:hover .file-icon {
+    transform: scale(1.05);
+    transition: var(--transition);
+}
+
+/* Large icon variant for details modal */
+.file-icon.large {
+    width: 80px;
+    height: 80px;
+    font-size: 40px;
+    margin: 0 auto;
+    border-radius: var(--border-radius);
+}
 
 .file-info {
     flex: 1;

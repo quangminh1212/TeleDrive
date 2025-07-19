@@ -207,7 +207,7 @@ class LocalFileManager {
         if (sessions.length === 0) {
             container.innerHTML = `
                 <div class="no-sessions">
-                    <i class="fas fa-folder-open"></i>
+                    <i class="far fa-folder-open"></i>
                     <p>Chưa có scan session nào</p>
                 </div>
             `;
@@ -490,25 +490,25 @@ class LocalFileManager {
                 <div class="file-actions">
                     ${isDirectory ? `
                         <button class="file-btn primary" data-action="open">
-                            <i class="fas fa-folder-open"></i>
+                            <i class="far fa-folder-open"></i>
                             Mở
                         </button>
                     ` : `
                         <button class="file-btn view-details" data-action="details">
-                            <i class="fas fa-info-circle"></i>
+                            <i class="far fa-info-circle"></i>
                             Chi tiết
                         </button>
                         <button class="file-btn" data-action="preview">
-                            <i class="fas fa-eye"></i>
+                            <i class="far fa-eye"></i>
                             Xem
                         </button>
                     `}
                     <button class="file-btn" data-action="rename">
-                        <i class="fas fa-edit"></i>
+                        <i class="far fa-edit"></i>
                         Đổi tên
                     </button>
                     <button class="file-btn" data-action="delete">
-                        <i class="fas fa-trash"></i>
+                        <i class="far fa-trash-alt"></i>
                         Xóa
                     </button>
                 </div>
@@ -516,16 +516,28 @@ class LocalFileManager {
         `;
     }
 
-    getFileIcon(fileType) {
+    getFileIcon(fileType, isDirectory = false) {
+        if (isDirectory) {
+            return 'fas fa-folder';
+        }
+
         const icons = {
-            document: 'fas fa-file-alt',
-            photo: 'fas fa-image',
-            video: 'fas fa-video',
-            audio: 'fas fa-music',
-            voice: 'fas fa-microphone',
-            sticker: 'fas fa-smile',
-            animation: 'fas fa-play-circle',
-            unknown: 'fas fa-file'
+            document: 'far fa-file-alt',
+            photo: 'far fa-image',
+            image: 'far fa-image',
+            video: 'far fa-play-circle',
+            audio: 'far fa-file-audio',
+            voice: 'fas fa-microphone-alt',
+            sticker: 'far fa-smile',
+            animation: 'far fa-play-circle',
+            archive: 'far fa-file-archive',
+            code: 'far fa-file-code',
+            pdf: 'far fa-file-pdf',
+            word: 'far fa-file-word',
+            excel: 'far fa-file-excel',
+            powerpoint: 'far fa-file-powerpoint',
+            text: 'far fa-file-alt',
+            unknown: 'far fa-file'
         };
         return icons[fileType] || icons.unknown;
     }
@@ -712,7 +724,7 @@ class LocalFileManager {
                          class="preview-image"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <div class="preview-unsupported" style="display: none;">
-                        <i class="fas fa-image"></i>
+                        <i class="far fa-image"></i>
                         <h3>Không thể hiển thị hình ảnh</h3>
                         <p>Định dạng hình ảnh không được hỗ trợ hoặc file bị lỗi</p>
                     </div>
@@ -724,7 +736,7 @@ class LocalFileManager {
                     <video controls class="preview-video">
                         <source src="${fileUrl}" type="${previewData.mime_type}">
                         <div class="preview-unsupported">
-                            <i class="fas fa-video"></i>
+                            <i class="far fa-play-circle"></i>
                             <h3>Không thể phát video</h3>
                             <p>Trình duyệt không hỗ trợ định dạng video này</p>
                         </div>
@@ -737,7 +749,7 @@ class LocalFileManager {
                     <audio controls class="preview-audio">
                         <source src="${fileUrl}" type="${previewData.mime_type}">
                         <div class="preview-unsupported">
-                            <i class="fas fa-music"></i>
+                            <i class="far fa-file-audio"></i>
                             <h3>Không thể phát âm thanh</h3>
                             <p>Trình duyệt không hỗ trợ định dạng âm thanh này</p>
                         </div>
@@ -753,7 +765,7 @@ class LocalFileManager {
                 } else {
                     container.innerHTML = `
                         <div class="preview-unsupported">
-                            <i class="fas fa-file-alt"></i>
+                            <i class="far fa-file-alt"></i>
                             <h3>Xem trước không khả dụng</h3>
                             <p>Loại tài liệu này không hỗ trợ xem trước</p>
                         </div>
@@ -764,7 +776,7 @@ class LocalFileManager {
             default:
                 container.innerHTML = `
                     <div class="preview-unsupported">
-                        <i class="fas fa-file"></i>
+                        <i class="far fa-file"></i>
                         <h3>Xem trước không khả dụng</h3>
                         <p>Loại file này không hỗ trợ xem trước</p>
                     </div>
@@ -1235,7 +1247,7 @@ class LocalFileManager {
         if (this.drives.length === 0) {
             container.innerHTML = `
                 <div class="no-drives">
-                    <i class="fas fa-hdd"></i>
+                    <i class="far fa-hdd"></i>
                     <p>Không tìm thấy ổ đĩa nào</p>
                 </div>
             `;
@@ -1246,7 +1258,7 @@ class LocalFileManager {
             <div class="drive-item" data-path="${drive.path}">
                 <div class="drive-info">
                     <div class="drive-label">
-                        <i class="fas fa-hdd"></i>
+                        <i class="far fa-hdd"></i>
                         ${drive.label}
                     </div>
                     <div class="drive-stats">
@@ -1365,15 +1377,15 @@ class LocalFileManager {
         contextMenu.className = 'context-menu';
         contextMenu.innerHTML = `
             <div class="context-menu-item" data-action="open">
-                <i class="fas fa-folder-open"></i>
+                <i class="far fa-folder-open"></i>
                 <span>Mở</span>
             </div>
             <div class="context-menu-item" data-action="rename">
-                <i class="fas fa-edit"></i>
+                <i class="far fa-edit"></i>
                 <span>Đổi tên</span>
             </div>
             <div class="context-menu-item" data-action="copy">
-                <i class="fas fa-copy"></i>
+                <i class="far fa-copy"></i>
                 <span>Sao chép</span>
             </div>
             <div class="context-menu-item" data-action="cut">
@@ -1382,12 +1394,12 @@ class LocalFileManager {
             </div>
             <div class="context-menu-separator"></div>
             <div class="context-menu-item" data-action="delete">
-                <i class="fas fa-trash"></i>
+                <i class="far fa-trash-alt"></i>
                 <span>Xóa</span>
             </div>
             <div class="context-menu-separator"></div>
             <div class="context-menu-item" data-action="properties">
-                <i class="fas fa-info-circle"></i>
+                <i class="far fa-info-circle"></i>
                 <span>Thuộc tính</span>
             </div>
         `;
@@ -1438,7 +1450,7 @@ class LocalFileManager {
         if (fileData) {
             const openItem = contextMenu.querySelector('[data-action="open"]');
             if (fileData.is_directory) {
-                openItem.innerHTML = '<i class="fas fa-folder-open"></i><span>Mở thư mục</span>';
+                openItem.innerHTML = '<i class="far fa-folder-open"></i><span>Mở thư mục</span>';
             } else {
                 openItem.innerHTML = '<i class="fas fa-external-link-alt"></i><span>Mở file</span>';
             }

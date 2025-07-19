@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TeleDrive File Manager</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <!-- Header -->
@@ -22,7 +24,7 @@
             
             <div class="header-center">
                 <div class="search-container">
-                    <i class="fas fa-search"></i>
+                    <i class="far fa-search"></i>
                     <input type="text" id="globalSearch" placeholder="Tìm kiếm file...">
                     <button id="clearSearch" class="clear-btn" style="display: none;">
                         <i class="fas fa-times"></i>
@@ -118,7 +120,7 @@
 
                 <div class="nav-actions">
                     <button id="newFolderBtn" class="action-btn" title="Tạo thư mục mới">
-                        <i class="fas fa-folder-plus"></i>
+                        <i class="far fa-folder-plus"></i>
                         <span>Thư mục mới</span>
                     </button>
                     <button id="uploadBtn" class="action-btn primary" title="Tải lên file">
@@ -174,7 +176,7 @@
                 <!-- Welcome Screen -->
                 <div class="welcome-screen" id="welcomeScreen">
                     <div class="welcome-content">
-                        <i class="fab fa-telegram-plane welcome-icon"></i>
+                        <i class="fas fa-cloud welcome-icon"></i>
                         <h2>Chào mừng đến với TeleDrive</h2>
                         <p>Chọn một scan session từ sidebar để xem các file đã quét được</p>
                     </div>
