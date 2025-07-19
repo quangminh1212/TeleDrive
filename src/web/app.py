@@ -92,15 +92,27 @@ class TeleDriveWebAPI:
                     # Extract session info từ filename
                     filename = json_file.stem
                     session_id = filename.replace('_telegram_files', '')
-                    
-                    files = data.get('files', [])
-                    scan_info = data.get('scan_info', {})
 
-                    # Calculate total size from file_info.size
+                    # Handle different JSON structures
+                    if isinstance(data, list):
+                        # Direct array of files (old format)
+                        files = data
+                        scan_info = {}
+                    else:
+                        # Object with files and scan_info (new format)
+                        files = data.get('files', [])
+                        scan_info = data.get('scan_info', {})
+
+                    # Calculate total size (handle different file structures)
                     total_size = 0
                     for file in files:
-                        file_info = file.get('file_info', {})
-                        size = file_info.get('size', 0)
+                        if isinstance(data, list):
+                            # Old format: file_size directly in file object
+                            size = file.get('file_size', 0)
+                        else:
+                            # New format: size in file_info
+                            file_info = file.get('file_info', {})
+                            size = file_info.get('size', 0)
                         total_size += size
 
                     session_info = {
