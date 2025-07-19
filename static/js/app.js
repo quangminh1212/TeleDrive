@@ -17,15 +17,12 @@ class LocalFileManager {
 
         this.init();
     }
-    
+
     init() {
         this.bindEvents();
-        this.loadDrives();
+        this.loadSessions();
         this.setupMobileMenu();
         this.setupAuthentication();
-        this.setupContextMenu();
-        this.setupDragAndDrop();
-        this.setupKeyboardShortcuts();
     }
     
     bindEvents() {
@@ -1215,32 +1212,13 @@ class LocalFileManager {
     }
 }
 
-    // New methods for local file management
-    async loadDrives() {
-        try {
-            const response = await fetch('/api/drives');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+// Initialize app when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.teleDrive = new TeleDrive();
+});
 
-            const result = await response.json();
-            if (result.success) {
-                this.drives = result.drives;
-                this.displayDrives();
-                // Load default drive
-                if (this.drives.length > 0) {
-                    this.browseDirectory(this.drives[0].path);
-                }
-            } else {
-                this.showError('Không thể tải danh sách ổ đĩa: ' + result.error);
-            }
-        } catch (error) {
-            console.error('Error loading drives:', error);
-            this.showError('Không thể tải danh sách ổ đĩa');
-        }
-    }
-
-    displayDrives() {
+// Additional CSS for better styling
+const additionalCSS = `
         const container = document.getElementById('sessionsList');
         if (!container) return;
 
