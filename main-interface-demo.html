@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive File Manager - Demo</title>
+    <style>
+        /* Custom Icon System using Unicode */
+        .icon {
+            display: inline-block;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            line-height: 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", "EmojiSymbols", sans-serif;
+        }
+
+        /* Icon definitions */
+        .icon-cloud::before { content: "☁"; color: #4285f4; }
+        .icon-search::before { content: "🔍"; }
+        .icon-user::before { content: "👤"; }
+        .icon-chevron-down::before { content: "▼"; font-size: 0.8em; color: #5f6368; }
+        .icon-bars::before { content: "☰"; color: #5f6368; }
+        .icon-spinner::before { content: "⟳"; animation: spin 1s linear infinite; color: #4285f4; }
+        .icon-arrow-left::before { content: "←"; color: #5f6368; }
+        .icon-arrow-right::before { content: "→"; color: #5f6368; }
+        .icon-arrow-up::before { content: "↑"; color: #5f6368; }
+        .icon-sync::before { content: "🔄"; }
+        .icon-folder-plus::before { content: "📁"; }
+        .icon-upload::before { content: "⬆"; color: #34a853; font-weight: bold; }
+        .icon-th::before { content: "⊞"; color: #5f6368; }
+        .icon-list::before { content: "☰"; color: #5f6368; }
+        .icon-sort-alpha-down::before { content: "↓"; color: #5f6368; }
+        .icon-chevron-left::before { content: "◀"; font-size: 0.8em; color: #5f6368; }
+        .icon-chevron-right::before { content: "▶"; font-size: 0.8em; color: #5f6368; }
+        .icon-folder::before { content: "📁"; }
+        .icon-file-alt::before { content: "📃"; }
+        .icon-image::before { content: "🖼"; }
+        .icon-video::before { content: "🎬"; }
+        .icon-audio::before { content: "🎵"; }
+        .icon-folder-open::before { content: "📂"; }
+        .icon-info::before { content: "ℹ"; color: #4285f4; }
+        .icon-eye::before { content: "👁"; }
+        .icon-edit::before { content: "✏"; }
+        .icon-trash::before { content: "🗑"; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .welcome-icon {
+            font-size: 64px;
+            color: #4285f4;
+            margin-bottom: 20px;
+            animation: welcomeIconFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes welcomeIconFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Basic styling */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; }
+        
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #dadce0;
+            padding: 0 20px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(60, 64, 67, 0.1);
+        }
+        
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .logo { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #202124; }
+        .search-container { position: relative; }
+        .search-container input { 
+            padding: 8px 12px 8px 36px; 
+            border: 1px solid #dadce0; 
+            border-radius: 24px; 
+            width: 300px;
+            font-size: 14px;
+        }
+        .search-container .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+        
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        .user-info { display: flex; align-items: center; gap: 8px; color: #5f6368; }
+        
+        .main-container { display: flex; height: calc(100vh - 64px); }
+        
+        .sidebar {
+            width: 280px;
+            background: #fff;
+            border-right: 1px solid #dadce0;
+            padding: 20px;
+        }
+        
+        .sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .sidebar-header h3 { color: #202124; font-size: 16px; }
+        
+        .sessions-list { display: flex; flex-direction: column; gap: 8px; }
+        .session-item {
+            padding: 12px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .session-item:hover { border-color: #4285f4; background: #f8f9ff; }
+        
+        .content-area { flex: 1; display: flex; flex-direction: column; }
+        
+        .navigation-bar {
+            background: #fff;
+            border-bottom: 1px solid #dadce0;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .nav-controls { display: flex; gap: 8px; }
+        .nav-btn {
+            padding: 8px;
+            border: 1px solid #dadce0;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .nav-btn:hover { border-color: #4285f4; background: #f8f9ff; }
+        
+        .breadcrumb { display: flex; align-items: center; gap: 8px; color: #5f6368; }
+        
+        .nav-actions { display: flex; gap: 12px; }
+        .action-btn {
+            padding: 8px 16px;
+            border: 1px solid #dadce0;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .action-btn.primary { background: #4285f4; color: #fff; border-color: #4285f4; }
+        .action-btn:hover { border-color: #4285f4; background: #f8f9ff; }
+        .action-btn.primary:hover { background: #1a73e8; }
+        
+        .toolbar {
+            background: #fff;
+            border-bottom: 1px solid #dadce0;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .view-options { display: flex; gap: 4px; }
+        .view-btn {
+            padding: 8px;
+            border: 1px solid #dadce0;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .view-btn.active { background: #4285f4; color: #fff; border-color: #4285f4; }
+        
+        .sort-controls { display: flex; align-items: center; gap: 8px; }
+        .sort-controls select { padding: 6px 8px; border: 1px solid #dadce0; border-radius: 4px; }
+        
+        .main-content { flex: 1; padding: 20px; }
+        
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: #5f6368;
+        }
+        
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        
+        .file-card {
+            background: #fff;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .file-card:hover { border-color: #4285f4; box-shadow: 0 2px 8px rgba(66, 133, 244, 0.15); }
+        
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+        }
+        
+        .file-info { margin-bottom: 12px; }
+        .file-name { font-weight: 500; color: #202124; margin-bottom: 4px; }
+        .file-meta { font-size: 12px; color: #5f6368; }
+        
+        .file-actions { display: flex; gap: 8px; }
+        .file-btn {
+            padding: 6px 12px;
+            border: 1px solid #dadce0;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .file-btn:hover { border-color: #4285f4; background: #f8f9ff; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <span>TeleDrive</span>
+            </div>
+            <div class="search-container">
+                <i class="icon icon-search"></i>
+                <input type="text" placeholder="Tìm kiếm file...">
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="user-info">
+                <i class="icon icon-user"></i>
+                <span>admin</span>
+                <i class="icon icon-chevron-down"></i>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Scan Sessions</h3>
+                <button class="nav-btn">
+                    <i class="icon icon-bars"></i>
+                </button>
+            </div>
+            <div class="sessions-list">
+                <div class="session-item">
+                    <div style="font-weight: 500; margin-bottom: 4px;">20250717_203145</div>
+                    <div style="font-size: 12px; color: #5f6368;">1,234 files</div>
+                </div>
+                <div class="session-item">
+                    <div style="font-weight: 500; margin-bottom: 4px;">20250718_223558</div>
+                    <div style="font-size: 12px; color: #5f6368;">856 files</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Navigation Bar -->
+            <div class="navigation-bar">
+                <div class="nav-controls">
+                    <button class="nav-btn"><i class="icon icon-arrow-left"></i></button>
+                    <button class="nav-btn"><i class="icon icon-arrow-right"></i></button>
+                    <button class="nav-btn"><i class="icon icon-arrow-up"></i></button>
+                    <button class="nav-btn"><i class="icon icon-sync"></i></button>
+                </div>
+                <div class="breadcrumb">
+                    <span>Tất cả file</span>
+                </div>
+                <div class="nav-actions">
+                    <button class="action-btn">
+                        <i class="icon icon-folder-plus"></i>
+                        <span>Thư mục mới</span>
+                    </button>
+                    <button class="action-btn primary">
+                        <i class="icon icon-upload"></i>
+                        <span>Tải lên</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="view-options">
+                    <button class="view-btn active"><i class="icon icon-th"></i></button>
+                    <button class="view-btn"><i class="icon icon-list"></i></button>
+                </div>
+                <div class="sort-controls">
+                    <select>
+                        <option>Tên</option>
+                        <option>Kích thước</option>
+                        <option>Ngày</option>
+                    </select>
+                    <button class="nav-btn"><i class="icon icon-sort-alpha-down"></i></button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen">
+                    <i class="icon icon-cloud welcome-icon"></i>
+                    <h2>Chào mừng đến với TeleDrive</h2>
+                    <p>Chọn một scan session từ sidebar để xem các file đã quét được</p>
+                </div>
+
+                <!-- Files Grid (Hidden by default) -->
+                <div class="files-grid" style="display: none;">
+                    <div class="file-card">
+                        <div class="file-icon document">
+                            <i class="icon icon-file-alt"></i>
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">Document.pdf</div>
+                            <div class="file-meta">2.5 MB • 2 ngày trước</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="file-btn">
+                                <i class="icon icon-info"></i>
+                                Chi tiết
+                            </button>
+                            <button class="file-btn">
+                                <i class="icon icon-eye"></i>
+                                Xem
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
