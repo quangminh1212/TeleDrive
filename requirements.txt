@@ -4,10 +4,12 @@ tqdm>=4.65.0
 python-dotenv>=1.0.0
 aiofiles>=23.0.0
 openpyxl>=3.1.0
-flask>=2.3.0
+flask==2.3.3
 flask-cors>=4.0.0
-flask-login>=0.6.0
-flask-sqlalchemy>=3.0.0
+flask-login==0.6.3
+flask-sqlalchemy==3.0.5
+sqlalchemy==1.4.53
 pillow>=10.0.0
 python-magic>=0.4.27
 pywin32>=306
+redis>=4.0.0

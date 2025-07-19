@@ -131,18 +131,24 @@ class ProductionConfig:
     
     def get_flask_config(self) -> Dict[str, Any]:
         """Get Flask configuration dictionary"""
+        # Prepare engine options based on database type
+        engine_options = {'echo': self.database.echo}
+
+        # Only add pool options for non-SQLite databases
+        if not self.database.uri.startswith('sqlite'):
+            engine_options.update({
+                'pool_size': self.database.pool_size,
+                'pool_timeout': self.database.pool_timeout,
+                'pool_recycle': self.database.pool_recycle,
+            })
+
         return {
             'DEBUG': self.debug,
             'TESTING': self.testing,
             'SECRET_KEY': self.security.secret_key,
             'SQLALCHEMY_DATABASE_URI': self.database.uri,
             'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-            'SQLALCHEMY_ENGINE_OPTIONS': {
-                'pool_size': self.database.pool_size,
-                'pool_timeout': self.database.pool_timeout,
-                'pool_recycle': self.database.pool_recycle,
-                'echo': self.database.echo,
-            },
+            'SQLALCHEMY_ENGINE_OPTIONS': engine_options,
             'PERMANENT_SESSION_LIFETIME': self.security.session_timeout,
             'WTF_CSRF_ENABLED': self.security.csrf_enabled,
             'RATELIMIT_ENABLED': self.security.rate_limit_enabled,
