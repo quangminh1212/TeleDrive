@@ -12,201 +12,231 @@
     font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", "EmojiSymbols", sans-serif;
 }
 
-/* Icon definitions using Unicode symbols and geometric shapes */
+/* Icon definitions using simple geometric shapes and symbols */
 .icon-cloud::before {
     content: "☁";
-    color: #4285f4;
-    text-shadow: 0 1px 2px rgba(66, 133, 244, 0.3);
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-folder::before {
-    content: "📁";
-    filter: hue-rotate(200deg) brightness(1.1);
+    content: "◉";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-folder-open::before {
-    content: "📂";
-    filter: hue-rotate(200deg) brightness(1.1);
+    content: "◎";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-file::before {
-    content: "📄";
-    filter: brightness(1.1);
+    content: "◻";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-file-alt::before {
-    content: "📃";
-    filter: brightness(1.1);
+    content: "▢";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-image::before {
-    content: "🖼";
-    filter: brightness(1.1);
+    content: "▣";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-video::before {
-    content: "🎬";
-    filter: brightness(1.1);
+    content: "▶";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-audio::before {
-    content: "🎵";
-    filter: brightness(1.1);
+    content: "♪";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-music::before {
-    content: "🎶";
-    filter: brightness(1.1);
+    content: "♫";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-microphone::before {
-    content: "🎤";
-    filter: brightness(1.1);
+    content: "●";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-smile::before {
-    content: "😊";
-    filter: brightness(1.1);
+    content: "◐";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-archive::before {
-    content: "📦";
-    filter: brightness(1.1);
+    content: "▦";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-code::before {
-    content: "💻";
-    filter: brightness(1.1);
+    content: "◈";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-search::before {
-    content: "🔍";
-    filter: brightness(1.1);
+    content: "○";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-times::before {
-    content: "✖";
-    color: #ea4335;
-    font-weight: bold;
+    content: "×";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-user::before {
-    content: "👤";
-    filter: brightness(1.1);
+    content: "◯";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-chevron-down::before {
-    content: "▼";
-    font-size: 0.8em;
+    content: "▾";
+    font-size: 0.9em;
     color: #5f6368;
+    font-weight: normal;
 }
 .icon-chevron-up::before {
-    content: "▲";
-    font-size: 0.8em;
+    content: "▴";
+    font-size: 0.9em;
     color: #5f6368;
+    font-weight: normal;
 }
 .icon-chevron-left::before {
-    content: "◀";
-    font-size: 0.8em;
+    content: "◂";
+    font-size: 0.9em;
     color: #5f6368;
+    font-weight: normal;
 }
 .icon-chevron-right::before {
-    content: "▶";
-    font-size: 0.8em;
+    content: "▸";
+    font-size: 0.9em;
     color: #5f6368;
+    font-weight: normal;
 }
 .icon-arrow-left::before {
     content: "←";
-    font-weight: bold;
     color: #5f6368;
+    font-weight: normal;
 }
 .icon-arrow-right::before {
     content: "→";
-    font-weight: bold;
     color: #5f6368;
+    font-weight: normal;
 }
 .icon-arrow-up::before {
     content: "↑";
-    font-weight: bold;
     color: #5f6368;
+    font-weight: normal;
 }
 .icon-sync::before {
-    content: "🔄";
-    filter: brightness(1.1);
+    content: "↻";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-upload::before {
-    content: "⬆";
-    color: #34a853;
-    font-weight: bold;
+    content: "↑";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-download::before {
-    content: "⬇";
-    color: #4285f4;
-    font-weight: bold;
+    content: "↓";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-edit::before {
-    content: "✏";
-    filter: brightness(1.1);
+    content: "◐";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-trash::before {
-    content: "🗑";
-    filter: brightness(1.1);
+    content: "◌";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-info::before {
-    content: "ℹ";
-    color: #4285f4;
-    font-weight: bold;
+    content: "◯";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-eye::before {
-    content: "👁";
-    filter: brightness(1.1);
+    content: "◉";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-copy::before {
-    content: "📋";
-    filter: brightness(1.1);
+    content: "▢";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-cut::before {
-    content: "✂";
-    filter: brightness(1.1);
+    content: "◈";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-home::before {
-    content: "🏠";
-    filter: brightness(1.1);
+    content: "◆";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-hdd::before {
-    content: "💾";
-    filter: brightness(1.1);
+    content: "▣";
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-spinner::before {
-    content: "⟳";
+    content: "○";
     animation: spin 1s linear infinite;
-    color: #4285f4;
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-bars::before {
-    content: "☰";
+    content: "≡";
     color: #5f6368;
+    font-weight: normal;
 }
 .icon-th::before {
-    content: "⊞";
+    content: "▦";
     color: #5f6368;
+    font-weight: normal;
 }
 .icon-list::before {
-    content: "☰";
+    content: "≡";
     color: #5f6368;
+    font-weight: normal;
 }
 .icon-sort-asc::before {
     content: "↑";
     color: #5f6368;
-    font-weight: bold;
+    font-weight: normal;
 }
 .icon-sort-desc::before {
     content: "↓";
     color: #5f6368;
-    font-weight: bold;
+    font-weight: normal;
 }
 .icon-plus::before {
     content: "+";
-    color: #34a853;
-    font-weight: bold;
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-check::before {
     content: "✓";
-    color: #34a853;
-    font-weight: bold;
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-exclamation::before {
     content: "!";
-    color: #ea4335;
-    font-weight: bold;
+    color: #5f6368;
+    font-weight: normal;
 }
 .icon-external-link::before {
     content: "↗";
-    color: #4285f4;
-    font-weight: bold;
+    color: #5f6368;
+    font-weight: normal;
 }
 
 @keyframes spin {
@@ -892,11 +922,10 @@ body {
 
 .welcome-icon {
     font-size: 64px;
-    color: var(--primary-blue);
+    color: #5f6368;
     margin-bottom: 20px;
-    text-shadow: 0 2px 4px rgba(26, 115, 232, 0.2);
     animation: welcomeIconFloat 3s ease-in-out infinite;
-    filter: drop-shadow(0 2px 4px rgba(26, 115, 232, 0.3));
+    font-weight: normal;
 }
 
 @keyframes welcomeIconFloat {
@@ -1147,51 +1176,61 @@ body {
     font-size: var(--font-size-lg);
 }
 
-/* Google Drive inspired file type colors */
+/* Simple file type colors */
 .file-icon.document {
-    background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
-    box-shadow: 0 2px 4px rgba(66, 133, 244, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 .file-icon.image, .file-icon.photo {
-    background: linear-gradient(135deg, #34a853 0%, #137333 100%);
-    box-shadow: 0 2px 4px rgba(52, 168, 83, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 .file-icon.video {
-    background: linear-gradient(135deg, #ea4335 0%, #d33b2c 100%);
-    box-shadow: 0 2px 4px rgba(234, 67, 53, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 .file-icon.audio {
-    background: linear-gradient(135deg, #ff6d01 0%, #e8710a 100%);
-    box-shadow: 0 2px 4px rgba(255, 109, 1, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 .file-icon.voice {
-    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
-    box-shadow: 0 2px 4px rgba(156, 39, 176, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 .file-icon.archive {
-    background: linear-gradient(135deg, #9aa0a6 0%, #80868b 100%);
-    box-shadow: 0 2px 4px rgba(154, 160, 166, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 .file-icon.code {
-    background: linear-gradient(135deg, #673ab7 0%, #512da8 100%);
-    box-shadow: 0 2px 4px rgba(103, 58, 183, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 .file-icon.folder {
-    background: linear-gradient(135deg, #5f6368 0%, #3c4043 100%);
-    color: #fff;
-    box-shadow: 0 2px 4px rgba(95, 99, 104, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 .file-icon.sticker {
-    background: linear-gradient(135deg, #fbbc04 0%, #f9ab00 100%);
-    box-shadow: 0 2px 4px rgba(251, 188, 4, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 .file-icon.animation {
-    background: linear-gradient(135deg, #ff5722 0%, #d84315 100%);
-    box-shadow: 0 2px 4px rgba(255, 87, 34, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 .file-icon.unknown {
-    background: linear-gradient(135deg, #9aa0a6 0%, #80868b 100%);
-    box-shadow: 0 2px 4px rgba(154, 160, 166, 0.3);
+    background: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid #dadce0;
 }
 
 /* Icon hover effects */

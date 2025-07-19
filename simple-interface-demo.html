@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive - Simple Interface</title>
+    <style>
+        /* Simple Icon System */
+        .icon {
+            display: inline-block;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            line-height: 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-family: "Segoe UI", "Arial", sans-serif;
+        }
+
+        /* Icon definitions */
+        .icon-cloud::before { content: "☁"; color: #5f6368; }
+        .icon-search::before { content: "○"; color: #5f6368; }
+        .icon-user::before { content: "◯"; color: #5f6368; }
+        .icon-chevron-down::before { content: "▾"; color: #5f6368; font-size: 0.9em; }
+        .icon-bars::before { content: "≡"; color: #5f6368; }
+        .icon-spinner::before { content: "○"; color: #5f6368; animation: spin 1s linear infinite; }
+        .icon-arrow-left::before { content: "←"; color: #5f6368; }
+        .icon-arrow-right::before { content: "→"; color: #5f6368; }
+        .icon-arrow-up::before { content: "↑"; color: #5f6368; }
+        .icon-sync::before { content: "↻"; color: #5f6368; }
+        .icon-upload::before { content: "↑"; color: #5f6368; }
+        .icon-th::before { content: "▦"; color: #5f6368; }
+        .icon-list::before { content: "≡"; color: #5f6368; }
+        .icon-folder::before { content: "◉"; color: #5f6368; }
+        .icon-file-alt::before { content: "▢"; color: #5f6368; }
+        .icon-image::before { content: "▣"; color: #5f6368; }
+        .icon-video::before { content: "▶"; color: #5f6368; }
+        .icon-audio::before { content: "♪"; color: #5f6368; }
+        .icon-info::before { content: "◯"; color: #5f6368; }
+        .icon-eye::before { content: "◉"; color: #5f6368; }
+        .icon-edit::before { content: "◐"; color: #5f6368; }
+        .icon-trash::before { content: "◌"; color: #5f6368; }
+        .icon-plus::before { content: "+"; color: #5f6368; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .welcome-icon {
+            font-size: 48px;
+            color: #5f6368;
+            margin-bottom: 16px;
+            animation: welcomeIconFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes welcomeIconFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* Basic styling */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: #f8f9fa; 
+            color: #202124;
+        }
+        
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #dadce0;
+            padding: 0 16px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .logo { font-weight: 500; color: #202124; font-size: 18px; }
+        .search-container { position: relative; }
+        .search-container input { 
+            padding: 6px 10px 6px 28px; 
+            border: 1px solid #dadce0; 
+            border-radius: 20px; 
+            width: 280px;
+            font-size: 14px;
+            background: #f8f9fa;
+        }
+        .search-container .icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); }
+        
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .user-info { display: flex; align-items: center; gap: 6px; color: #5f6368; font-size: 14px; }
+        
+        .main-container { display: flex; height: calc(100vh - 56px); }
+        
+        .sidebar {
+            width: 240px;
+            background: #fff;
+            border-right: 1px solid #dadce0;
+            padding: 16px;
+        }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 16px; 
+        }
+        .sidebar-header h3 { color: #202124; font-size: 14px; font-weight: 500; }
+        
+        .sessions-list { display: flex; flex-direction: column; gap: 6px; }
+        .session-item {
+            padding: 10px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+        }
+        .session-item:hover { border-color: #4285f4; background: #f8f9ff; }
+        
+        .content-area { flex: 1; display: flex; flex-direction: column; }
+        
+        .navigation-bar {
+            background: #fff;
+            border-bottom: 1px solid #dadce0;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .nav-controls { display: flex; gap: 4px; }
+        .nav-btn {
+            padding: 6px;
+            border: 1px solid #dadce0;
+            background: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+        .nav-btn:hover { border-color: #4285f4; background: #f8f9ff; }
+        
+        .breadcrumb { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            color: #5f6368; 
+            font-size: 13px;
+        }
+        
+        .nav-actions { display: flex; gap: 8px; }
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid #dadce0;
+            background: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            font-size: 13px;
+        }
+        .action-btn.primary { background: #4285f4; color: #fff; border-color: #4285f4; }
+        .action-btn:hover { border-color: #4285f4; background: #f8f9ff; }
+        .action-btn.primary:hover { background: #1a73e8; }
+        
+        .toolbar {
+            background: #fff;
+            border-bottom: 1px solid #dadce0;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .view-options { display: flex; gap: 2px; }
+        .view-btn {
+            padding: 6px;
+            border: 1px solid #dadce0;
+            background: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .view-btn.active { background: #4285f4; color: #fff; border-color: #4285f4; }
+        
+        .sort-controls { display: flex; align-items: center; gap: 6px; }
+        .sort-controls select { 
+            padding: 4px 6px; 
+            border: 1px solid #dadce0; 
+            border-radius: 3px; 
+            font-size: 13px;
+        }
+        
+        .main-content { flex: 1; padding: 16px; }
+        
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: #5f6368;
+        }
+        
+        .welcome-screen h2 {
+            color: #202124;
+            font-weight: 400;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        
+        .welcome-screen p {
+            font-size: 14px;
+            color: #5f6368;
+        }
+        
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        
+        .file-card {
+            background: #fff;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .file-card:hover { border-color: #4285f4; box-shadow: 0 1px 3px rgba(66, 133, 244, 0.1); }
+        
+        .file-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin-bottom: 8px;
+            background: #f1f3f4;
+            color: #5f6368;
+            border: 1px solid #dadce0;
+        }
+        
+        .file-info { margin-bottom: 8px; }
+        .file-name { font-weight: 400; color: #202124; margin-bottom: 2px; font-size: 13px; }
+        .file-meta { font-size: 11px; color: #5f6368; }
+        
+        .file-actions { display: flex; gap: 4px; }
+        .file-btn {
+            padding: 4px 8px;
+            border: 1px solid #dadce0;
+            background: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .file-btn:hover { border-color: #4285f4; background: #f8f9ff; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">TeleDrive</div>
+            <div class="search-container">
+                <i class="icon icon-search"></i>
+                <input type="text" placeholder="Tìm kiếm file...">
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="user-info">
+                <i class="icon icon-user"></i>
+                <span>admin</span>
+                <i class="icon icon-chevron-down"></i>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Scan Sessions</h3>
+                <button class="nav-btn">
+                    <i class="icon icon-bars"></i>
+                </button>
+            </div>
+            <div class="sessions-list">
+                <div class="session-item">
+                    <div style="font-weight: 400; margin-bottom: 2px;">20250717_203145</div>
+                    <div style="font-size: 11px; color: #5f6368;">1,234 files</div>
+                </div>
+                <div class="session-item">
+                    <div style="font-weight: 400; margin-bottom: 2px;">20250718_223558</div>
+                    <div style="font-size: 11px; color: #5f6368;">856 files</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Navigation Bar -->
+            <div class="navigation-bar">
+                <div class="nav-controls">
+                    <button class="nav-btn"><i class="icon icon-arrow-left"></i></button>
+                    <button class="nav-btn"><i class="icon icon-arrow-right"></i></button>
+                    <button class="nav-btn"><i class="icon icon-arrow-up"></i></button>
+                    <button class="nav-btn"><i class="icon icon-sync"></i></button>
+                </div>
+                <div class="breadcrumb">
+                    <span>Tất cả file</span>
+                </div>
+                <div class="nav-actions">
+                    <button class="action-btn">
+                        <i class="icon icon-plus"></i>
+                        <span>Thư mục</span>
+                    </button>
+                    <button class="action-btn primary">
+                        <i class="icon icon-upload"></i>
+                        <span>Tải lên</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="view-options">
+                    <button class="view-btn active"><i class="icon icon-th"></i></button>
+                    <button class="view-btn"><i class="icon icon-list"></i></button>
+                </div>
+                <div class="sort-controls">
+                    <select>
+                        <option>Tên</option>
+                        <option>Kích thước</option>
+                        <option>Ngày</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen">
+                    <i class="icon icon-cloud welcome-icon"></i>
+                    <h2>Chào mừng đến với TeleDrive</h2>
+                    <p>Chọn một scan session từ sidebar để xem các file đã quét được</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
