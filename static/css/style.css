@@ -26,6 +26,10 @@
     content: "📂";
     font-weight: normal;
 }
+.icon-folder-plus::before {
+    content: "📁";
+    font-weight: normal;
+}
 .icon-file::before {
     content: "📄";
     font-weight: normal;
@@ -48,6 +52,124 @@
 }
 .icon-word::before {
     content: "📘";
+}
+
+/* Navigation Icons */
+.icon-arrow-left::before {
+    content: "←";
+    font-weight: bold;
+}
+.icon-arrow-right::before {
+    content: "→";
+    font-weight: bold;
+}
+.icon-arrow-up::before {
+    content: "↑";
+    font-weight: bold;
+}
+.icon-chevron-right::before {
+    content: "›";
+    font-weight: bold;
+}
+.icon-chevron-down::before {
+    content: "⌄";
+    font-weight: bold;
+}
+
+/* System Icons */
+.icon-computer::before {
+    content: "💻";
+    font-weight: normal;
+}
+.icon-drive::before {
+    content: "💾";
+    font-weight: normal;
+}
+.icon-search::before {
+    content: "🔍";
+    font-weight: normal;
+}
+.icon-times::before {
+    content: "✕";
+    font-weight: bold;
+}
+.icon-refresh::before {
+    content: "🔄";
+    font-weight: normal;
+}
+.icon-upload::before {
+    content: "⬆";
+    font-weight: bold;
+}
+
+/* View Icons */
+.icon-view-grid::before {
+    content: "⊞";
+    font-weight: bold;
+}
+.icon-view-list::before {
+    content: "☰";
+    font-weight: bold;
+}
+.icon-sort::before {
+    content: "⇅";
+    font-weight: bold;
+}
+.icon-more::before {
+    content: "⋯";
+    font-weight: bold;
+}
+
+/* Selection Icons */
+.icon-check::before {
+    content: "✓";
+    font-weight: bold;
+    color: #0078d4;
+}
+.icon-check-square::before {
+    content: "☑";
+    font-weight: normal;
+}
+.icon-square::before {
+    content: "☐";
+    font-weight: normal;
+}
+.icon-info::before {
+    content: "ℹ";
+    font-weight: bold;
+    color: #0078d4;
+}
+
+/* File Type Icons */
+.icon-excel::before {
+    content: "📊";
+    font-weight: normal;
+}
+.icon-powerpoint::before {
+    content: "📽️";
+    font-weight: normal;
+}
+.icon-archive::before {
+    content: "📦";
+    font-weight: normal;
+}
+.icon-code::before {
+    content: "💻";
+    font-weight: normal;
+}
+.icon-audio::before {
+    content: "🎵";
+    font-weight: normal;
+}
+.icon-text::before {
+    content: "📝";
+    font-weight: normal;
+}
+.icon-unknown::before {
+    content: "📄";
+    font-weight: normal;
+    color: #8a8886;
+}
     font-weight: normal;
 }
 .icon-excel::before {
@@ -2489,4 +2611,791 @@ body {
     .admin-badge {
         display: none;
     }
+}
+
+/* ===== WINDOWS EXPLORER STYLES ===== */
+
+/* Explorer Navigation */
+.explorer-navigation {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--surface-bg);
+    border-bottom: 1px solid var(--border-light);
+    min-height: 48px;
+}
+
+.nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-small);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    font-size: 14px;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: var(--hover-overlay);
+    border-color: var(--border-medium);
+}
+
+.nav-btn:active:not(:disabled) {
+    background: var(--active-overlay);
+}
+
+.nav-btn:disabled {
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+}
+
+/* Address Bar */
+.address-bar {
+    flex: 1;
+    max-width: 600px;
+    margin: 0 var(--spacing-md);
+}
+
+.breadcrumb-path {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--tertiary-bg);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-small);
+    min-height: 32px;
+    cursor: text;
+    transition: var(--transition-fast);
+}
+
+.breadcrumb-path:hover {
+    border-color: var(--border-medium);
+}
+
+.breadcrumb-path:focus-within {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 1px var(--primary-blue);
+}
+
+.path-segment {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.path-segment:hover {
+    background: var(--hover-overlay);
+}
+
+.path-segment .icon {
+    font-size: 12px;
+}
+
+.path-separator {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    margin: 0 2px;
+}
+
+.address-input {
+    width: 100%;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-small);
+    font-size: var(--font-size-sm);
+    background: var(--surface-bg);
+    color: var(--text-primary);
+}
+
+.address-input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 1px var(--primary-blue);
+}
+
+/* Search Box */
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--tertiary-bg);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-small);
+    min-width: 200px;
+    transition: var(--transition-fast);
+}
+
+.search-box:focus-within {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 1px var(--primary-blue);
+}
+
+.search-box .icon {
+    color: var(--text-tertiary);
+    font-size: 14px;
+}
+
+.search-box input {
+    flex: 1;
+    border: none;
+    background: none;
+    outline: none;
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+}
+
+.search-box input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.clear-search-btn {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: var(--border-radius-small);
+    transition: var(--transition-fast);
+}
+
+.clear-search-btn:hover {
+    background: var(--hover-overlay);
+    color: var(--text-primary);
+}
+
+/* Explorer Toolbar */
+.explorer-toolbar {
+    background: var(--surface-bg);
+    border-bottom: 1px solid var(--border-light);
+    padding: var(--spacing-sm) var(--spacing-lg);
+}
+
+.toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-small);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.toolbar-btn:hover {
+    background: var(--hover-overlay);
+    border-color: var(--border-medium);
+}
+
+.toolbar-btn:active {
+    background: var(--active-overlay);
+}
+
+.toolbar-btn .icon {
+    font-size: 14px;
+}
+
+.toolbar-separator {
+    width: 1px;
+    height: 24px;
+    background: var(--border-light);
+    margin: 0 var(--spacing-xs);
+}
+
+/* Dropdown Container */
+.dropdown-container {
+    position: relative;
+}
+
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--surface-bg);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-medium);
+    min-width: 180px;
+    z-index: 1000;
+    display: none;
+    padding: var(--spacing-xs) 0;
+}
+
+.dropdown-menu.show {
+    display: block;
+    animation: fadeInDown 0.15s ease-out;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-md);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    font-size: var(--font-size-sm);
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.dropdown-item:hover {
+    background: var(--hover-overlay);
+}
+
+.dropdown-item .icon {
+    font-size: 14px;
+    width: 16px;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border-light);
+    margin: var(--spacing-xs) 0;
+}
+
+/* List Header */
+.list-header {
+    display: grid;
+    grid-template-columns: 1fr 150px 100px 80px;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--tertiary-bg);
+    border-bottom: 1px solid var(--border-light);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.header-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.header-cell:hover {
+    color: var(--text-primary);
+}
+
+.sort-indicator {
+    font-size: 12px;
+    opacity: 0.5;
+    transition: var(--transition-fast);
+}
+
+.header-cell.active .sort-indicator {
+    opacity: 1;
+    color: var(--primary-blue);
+}
+
+/* Files Display */
+.files-display {
+    min-height: 400px;
+    background: var(--surface-bg);
+}
+
+/* Icon View */
+.files-display.icon-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+}
+
+/* List View */
+.files-display.list-view {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-item {
+    display: grid;
+    grid-template-columns: 1fr 150px 100px 80px;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    align-items: center;
+}
+
+.file-item:hover {
+    background: var(--hover-overlay);
+}
+
+.file-item.selected {
+    background: var(--selection-bg);
+}
+
+.file-name-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    min-width: 0;
+}
+
+.file-name-cell .icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.file-name {
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-meta {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Icon View File Cards */
+.file-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    text-align: center;
+    background: var(--surface-bg);
+}
+
+.file-card:hover {
+    background: var(--hover-overlay);
+}
+
+.file-card.selected {
+    background: var(--selection-bg);
+    border: 1px solid var(--primary-blue);
+}
+
+.file-icon {
+    font-size: 48px;
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
+}
+
+.file-info {
+    width: 100%;
+}
+
+.file-name {
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    margin-bottom: 2px;
+    word-wrap: break-word;
+    line-height: 1.3;
+    max-height: 2.6em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.file-meta {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+/* Explorer Status Bar */
+.explorer-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-xs) var(--spacing-lg);
+    background: var(--surface-bg);
+    border-top: 1px solid var(--border-light);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    min-height: 32px;
+}
+
+.status-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.status-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.status-separator {
+    color: var(--text-tertiary);
+    margin: 0 var(--spacing-xs);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .explorer-navigation {
+        padding: var(--spacing-xs) var(--spacing-md);
+        gap: var(--spacing-sm);
+    }
+
+    .address-bar {
+        max-width: none;
+        margin: 0 var(--spacing-sm);
+    }
+
+    .search-box {
+        min-width: 150px;
+    }
+
+    .explorer-toolbar {
+        padding: var(--spacing-xs) var(--spacing-md);
+    }
+
+    .toolbar-btn span {
+        display: none;
+    }
+
+    .list-header {
+        grid-template-columns: 1fr 100px 80px;
+        padding: var(--spacing-xs) var(--spacing-md);
+    }
+
+    .file-item {
+        grid-template-columns: 1fr 100px 80px;
+        padding: var(--spacing-xs) var(--spacing-md);
+    }
+
+    .header-cell.type-header,
+    .file-item .file-type {
+        display: none;
+    }
+
+    .files-display.icon-view {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: var(--spacing-sm);
+        padding: var(--spacing-md);
+    }
+
+    .explorer-status-bar {
+        padding: var(--spacing-xs) var(--spacing-md);
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-controls {
+        gap: 1px;
+    }
+
+    .nav-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .search-box {
+        min-width: 120px;
+    }
+
+    .toolbar-group {
+        gap: 2px;
+    }
+
+    .files-display.icon-view {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+
+    .file-icon {
+        font-size: 36px;
+    }
+
+    .list-header {
+        grid-template-columns: 1fr 80px;
+    }
+
+    .file-item {
+        grid-template-columns: 1fr 80px;
+    }
+
+    .header-cell.date-header,
+    .file-item .file-date {
+        display: none;
+    }
+}
+
+/* Additional Windows Explorer Styling */
+
+/* Focus and Selection States */
+.file-item:focus,
+.file-card:focus {
+    outline: 2px solid var(--primary-blue);
+    outline-offset: -2px;
+}
+
+/* Context Menu Styling */
+.context-menu {
+    position: fixed;
+    background: var(--surface-bg);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-heavy);
+    padding: var(--spacing-xs) 0;
+    min-width: 180px;
+    z-index: 2000;
+    display: none;
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-md);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    font-size: var(--font-size-sm);
+}
+
+.context-menu-item:hover {
+    background: var(--hover-overlay);
+}
+
+.context-menu-item.disabled {
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+}
+
+.context-menu-item.disabled:hover {
+    background: none;
+}
+
+.context-menu-separator {
+    height: 1px;
+    background: var(--border-light);
+    margin: var(--spacing-xs) 0;
+}
+
+/* Loading States */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-light);
+    border-top: 3px solid var(--primary-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Drag and Drop Styling */
+.drag-over {
+    background: var(--selection-bg);
+    border: 2px dashed var(--primary-blue);
+}
+
+.dragging {
+    opacity: 0.5;
+}
+
+/* Selection Rectangle */
+.selection-rectangle {
+    position: absolute;
+    border: 1px solid var(--primary-blue);
+    background: rgba(0, 120, 212, 0.1);
+    pointer-events: none;
+    z-index: 50;
+}
+
+/* Improved File Icons */
+.file-icon.folder {
+    color: #FFB900;
+}
+
+.file-icon.pdf {
+    color: #D13438;
+}
+
+.file-icon.word {
+    color: #2B579A;
+}
+
+.file-icon.excel {
+    color: #217346;
+}
+
+.file-icon.powerpoint {
+    color: #D24726;
+}
+
+.file-icon.image {
+    color: #8764B8;
+}
+
+.file-icon.video {
+    color: #E3008C;
+}
+
+.file-icon.audio {
+    color: #00BCF2;
+}
+
+.file-icon.archive {
+    color: #8A8886;
+}
+
+.file-icon.code {
+    color: #0078D4;
+}
+
+/* Smooth Transitions */
+.files-display {
+    transition: all 0.2s ease-out;
+}
+
+.file-item,
+.file-card {
+    transition: all 0.15s ease-out;
+}
+
+/* Hover Effects */
+.nav-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.toolbar-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Windows Explorer Specific Adjustments */
+.main-content {
+    background: var(--surface-bg);
+}
+
+.files-container {
+    background: var(--surface-bg);
+    border-radius: 0;
+    margin: 0;
+}
+
+/* Status Bar Improvements */
+.explorer-status-bar {
+    background: var(--tertiary-bg);
+    border-top: 1px solid var(--border-medium);
+}
+
+/* Breadcrumb Improvements */
+.breadcrumb-path {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.path-segment:active {
+    background: var(--active-overlay);
+}
+
+/* Toolbar Improvements */
+.explorer-toolbar {
+    background: var(--tertiary-bg);
+    border-bottom: 1px solid var(--border-medium);
+}
+
+.toolbar-btn:active {
+    transform: translateY(1px);
+}
+
+/* List View Improvements */
+.list-header {
+    background: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-medium);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.file-item:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.file-item:hover {
+    background: var(--hover-overlay) !important;
+}
+
+/* Icon View Improvements */
+.files-display.icon-view {
+    background: var(--surface-bg);
+}
+
+.file-card {
+    border: 1px solid transparent;
+}
+
+.file-card:hover {
+    border-color: var(--border-light);
+    box-shadow: var(--shadow-light);
+}
+
+.file-card.selected {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 1px var(--primary-blue);
 }
