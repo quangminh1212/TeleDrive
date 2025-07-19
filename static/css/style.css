@@ -1,12 +1,8 @@
 /* TeleDrive CSS - Google Drive Style */
 
-/* Font Awesome Optimization */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-
-/* Ensure icons render properly */
-.fa, .fas, .far, .fal, .fab {
-    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands" !important;
-    font-weight: 900;
+/* Custom Icon System using Unicode */
+.icon {
+    display: inline-block;
     font-style: normal;
     font-variant: normal;
     text-rendering: auto;
@@ -15,12 +11,206 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-.far {
-    font-weight: 400 !important;
+/* Icon definitions using Unicode symbols and geometric shapes */
+.icon-cloud::before {
+    content: "☁";
+    color: #4285f4;
+    text-shadow: 0 1px 2px rgba(66, 133, 244, 0.3);
+}
+.icon-folder::before {
+    content: "📁";
+    filter: hue-rotate(200deg) brightness(1.1);
+}
+.icon-folder-open::before {
+    content: "📂";
+    filter: hue-rotate(200deg) brightness(1.1);
+}
+.icon-file::before {
+    content: "📄";
+    filter: brightness(1.1);
+}
+.icon-file-alt::before {
+    content: "📃";
+    filter: brightness(1.1);
+}
+.icon-image::before {
+    content: "🖼";
+    filter: brightness(1.1);
+}
+.icon-video::before {
+    content: "🎬";
+    filter: brightness(1.1);
+}
+.icon-audio::before {
+    content: "🎵";
+    filter: brightness(1.1);
+}
+.icon-music::before {
+    content: "🎶";
+    filter: brightness(1.1);
+}
+.icon-microphone::before {
+    content: "🎤";
+    filter: brightness(1.1);
+}
+.icon-smile::before {
+    content: "😊";
+    filter: brightness(1.1);
+}
+.icon-archive::before {
+    content: "📦";
+    filter: brightness(1.1);
+}
+.icon-code::before {
+    content: "💻";
+    filter: brightness(1.1);
+}
+.icon-search::before {
+    content: "🔍";
+    filter: brightness(1.1);
+}
+.icon-times::before {
+    content: "✖";
+    color: #ea4335;
+    font-weight: bold;
+}
+.icon-user::before {
+    content: "👤";
+    filter: brightness(1.1);
+}
+.icon-chevron-down::before {
+    content: "▼";
+    font-size: 0.8em;
+    color: #5f6368;
+}
+.icon-chevron-up::before {
+    content: "▲";
+    font-size: 0.8em;
+    color: #5f6368;
+}
+.icon-chevron-left::before {
+    content: "◀";
+    font-size: 0.8em;
+    color: #5f6368;
+}
+.icon-chevron-right::before {
+    content: "▶";
+    font-size: 0.8em;
+    color: #5f6368;
+}
+.icon-arrow-left::before {
+    content: "←";
+    font-weight: bold;
+    color: #5f6368;
+}
+.icon-arrow-right::before {
+    content: "→";
+    font-weight: bold;
+    color: #5f6368;
+}
+.icon-arrow-up::before {
+    content: "↑";
+    font-weight: bold;
+    color: #5f6368;
+}
+.icon-sync::before {
+    content: "🔄";
+    filter: brightness(1.1);
+}
+.icon-upload::before {
+    content: "⬆";
+    color: #34a853;
+    font-weight: bold;
+}
+.icon-download::before {
+    content: "⬇";
+    color: #4285f4;
+    font-weight: bold;
+}
+.icon-edit::before {
+    content: "✏";
+    filter: brightness(1.1);
+}
+.icon-trash::before {
+    content: "🗑";
+    filter: brightness(1.1);
+}
+.icon-info::before {
+    content: "ℹ";
+    color: #4285f4;
+    font-weight: bold;
+}
+.icon-eye::before {
+    content: "👁";
+    filter: brightness(1.1);
+}
+.icon-copy::before {
+    content: "📋";
+    filter: brightness(1.1);
+}
+.icon-cut::before {
+    content: "✂";
+    filter: brightness(1.1);
+}
+.icon-home::before {
+    content: "🏠";
+    filter: brightness(1.1);
+}
+.icon-hdd::before {
+    content: "💾";
+    filter: brightness(1.1);
+}
+.icon-spinner::before {
+    content: "⟳";
+    animation: spin 1s linear infinite;
+    color: #4285f4;
+}
+.icon-bars::before {
+    content: "☰";
+    color: #5f6368;
+}
+.icon-th::before {
+    content: "⊞";
+    color: #5f6368;
+}
+.icon-list::before {
+    content: "☰";
+    color: #5f6368;
+}
+.icon-sort-asc::before {
+    content: "↑";
+    color: #5f6368;
+    font-weight: bold;
+}
+.icon-sort-desc::before {
+    content: "↓";
+    color: #5f6368;
+    font-weight: bold;
+}
+.icon-plus::before {
+    content: "+";
+    color: #34a853;
+    font-weight: bold;
+}
+.icon-check::before {
+    content: "✓";
+    color: #34a853;
+    font-weight: bold;
+}
+.icon-exclamation::before {
+    content: "!";
+    color: #ea4335;
+    font-weight: bold;
+}
+.icon-external-link::before {
+    content: "↗";
+    color: #4285f4;
+    font-weight: bold;
 }
 
-.fal {
-    font-weight: 300 !important;
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 :root {
@@ -705,12 +895,27 @@ body {
     margin-bottom: 20px;
     text-shadow: 0 2px 4px rgba(26, 115, 232, 0.2);
     animation: welcomeIconFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 2px 4px rgba(26, 115, 232, 0.3));
 }
 
 @keyframes welcomeIconFloat {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-10px); }
 }
+
+/* Enhanced icon styling */
+.icon {
+    font-size: inherit;
+    color: inherit;
+    transition: var(--transition);
+}
+
+/* Icon size variants */
+.icon.small { font-size: 14px; }
+.icon.medium { font-size: 18px; }
+.icon.large { font-size: 24px; }
+.icon.xl { font-size: 32px; }
+.icon.xxl { font-size: 48px; }
 
 .welcome-content h2 {
     font-size: 24px;

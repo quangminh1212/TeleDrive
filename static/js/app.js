@@ -207,7 +207,7 @@ class LocalFileManager {
         if (sessions.length === 0) {
             container.innerHTML = `
                 <div class="no-sessions">
-                    <i class="far fa-folder-open"></i>
+                    <i class="icon icon-folder-open"></i>
                     <p>Chưa có scan session nào</p>
                 </div>
             `;
@@ -490,25 +490,25 @@ class LocalFileManager {
                 <div class="file-actions">
                     ${isDirectory ? `
                         <button class="file-btn primary" data-action="open">
-                            <i class="far fa-folder-open"></i>
+                            <i class="icon icon-folder-open"></i>
                             Mở
                         </button>
                     ` : `
                         <button class="file-btn view-details" data-action="details">
-                            <i class="far fa-info-circle"></i>
+                            <i class="icon icon-info"></i>
                             Chi tiết
                         </button>
                         <button class="file-btn" data-action="preview">
-                            <i class="far fa-eye"></i>
+                            <i class="icon icon-eye"></i>
                             Xem
                         </button>
                     `}
                     <button class="file-btn" data-action="rename">
-                        <i class="far fa-edit"></i>
+                        <i class="icon icon-edit"></i>
                         Đổi tên
                     </button>
                     <button class="file-btn" data-action="delete">
-                        <i class="far fa-trash-alt"></i>
+                        <i class="icon icon-trash"></i>
                         Xóa
                     </button>
                 </div>
@@ -518,26 +518,26 @@ class LocalFileManager {
 
     getFileIcon(fileType, isDirectory = false) {
         if (isDirectory) {
-            return 'fas fa-folder';
+            return 'icon icon-folder';
         }
 
         const icons = {
-            document: 'far fa-file-alt',
-            photo: 'far fa-image',
-            image: 'far fa-image',
-            video: 'far fa-play-circle',
-            audio: 'far fa-file-audio',
-            voice: 'fas fa-microphone-alt',
-            sticker: 'far fa-smile',
-            animation: 'far fa-play-circle',
-            archive: 'far fa-file-archive',
-            code: 'far fa-file-code',
-            pdf: 'far fa-file-pdf',
-            word: 'far fa-file-word',
-            excel: 'far fa-file-excel',
-            powerpoint: 'far fa-file-powerpoint',
-            text: 'far fa-file-alt',
-            unknown: 'far fa-file'
+            document: 'icon icon-file-alt',
+            photo: 'icon icon-image',
+            image: 'icon icon-image',
+            video: 'icon icon-video',
+            audio: 'icon icon-audio',
+            voice: 'icon icon-microphone',
+            sticker: 'icon icon-smile',
+            animation: 'icon icon-video',
+            archive: 'icon icon-archive',
+            code: 'icon icon-code',
+            pdf: 'icon icon-file-alt',
+            word: 'icon icon-file-alt',
+            excel: 'icon icon-file-alt',
+            powerpoint: 'icon icon-file-alt',
+            text: 'icon icon-file-alt',
+            unknown: 'icon icon-file'
         };
         return icons[fileType] || icons.unknown;
     }
