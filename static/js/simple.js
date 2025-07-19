@@ -159,6 +159,7 @@ function displayFiles(files) {
     // Set the HTML directly to filesContainer
     filesContainer.innerHTML = html;
     bindFileEvents();
+    updateStatusBar();
 }
 
 // Create HTML for file card
@@ -166,7 +167,7 @@ function createFileCard(file) {
     var fileSize = formatFileSize(file.file_info ? file.file_info.size : 0);
     var fileDate = formatDate(file.file_info ? file.file_info.upload_date : new Date().toISOString());
     var fileType = file.file_info ? file.file_info.type : 'document';
-    var fileIcon = getFileIcon(fileType);
+    var fileIcon = getFileIcon(fileType, file.file_name);
     var messageId = file.message_info ? file.message_info.message_id : 0;
 
     return '<div class="file-card" data-file-id="' + messageId + '">' +
@@ -191,17 +192,65 @@ function createFileCard(file) {
 }
 
 // Get icon for file type
-function getFileIcon(fileType) {
+function getFileIcon(fileType, fileName) {
+    // Check file extension for more specific icons
+    if (fileName) {
+        var ext = fileName.toLowerCase().split('.').pop();
+        var extIcons = {
+            'pdf': 'icon-pdf',
+            'doc': 'icon-word',
+            'docx': 'icon-word',
+            'xls': 'icon-excel',
+            'xlsx': 'icon-excel',
+            'ppt': 'icon-powerpoint',
+            'pptx': 'icon-powerpoint',
+            'zip': 'icon-archive',
+            'rar': 'icon-archive',
+            '7z': 'icon-archive',
+            'tar': 'icon-archive',
+            'gz': 'icon-archive',
+            'js': 'icon-code',
+            'html': 'icon-code',
+            'css': 'icon-code',
+            'py': 'icon-code',
+            'java': 'icon-code',
+            'cpp': 'icon-code',
+            'c': 'icon-code',
+            'php': 'icon-code',
+            'txt': 'icon-text',
+            'exe': 'icon-executable',
+            'msi': 'icon-executable',
+            'mp3': 'icon-audio',
+            'wav': 'icon-audio',
+            'flac': 'icon-audio',
+            'mp4': 'icon-video',
+            'avi': 'icon-video',
+            'mkv': 'icon-video',
+            'mov': 'icon-video',
+            'jpg': 'icon-image',
+            'jpeg': 'icon-image',
+            'png': 'icon-image',
+            'gif': 'icon-image',
+            'bmp': 'icon-image',
+            'svg': 'icon-image'
+        };
+
+        if (extIcons[ext]) {
+            return extIcons[ext];
+        }
+    }
+
+    // Fallback to file type
     var icons = {
         'document': 'icon-file-alt',
         'photo': 'icon-image',
         'image': 'icon-image',
         'video': 'icon-video',
         'audio': 'icon-audio',
-        'voice': 'icon-microphone',
+        'voice': 'icon-audio',
         'archive': 'icon-archive',
         'code': 'icon-code',
-        'sticker': 'icon-smile'
+        'sticker': 'icon-image'
     };
     return icons[fileType] || 'icon-file';
 }
@@ -244,6 +293,32 @@ function bindEvents() {
             loadSessions();
         });
     }
+
+    // New Scan button
+    var newScanBtn = document.getElementById('newScanBtn');
+    if (newScanBtn) {
+        newScanBtn.addEventListener('click', function() {
+            startNewScan();
+        });
+    }
+
+    // Refresh files button
+    var refreshFilesBtn = document.getElementById('refreshFiles');
+    if (refreshFilesBtn) {
+        refreshFilesBtn.addEventListener('click', function() {
+            if (teleDrive.currentSession) {
+                loadFiles(teleDrive.currentSession);
+            }
+        });
+    }
+
+    // View toggle buttons
+    var viewBtns = document.querySelectorAll('[data-view]');
+    for (var i = 0; i < viewBtns.length; i++) {
+        viewBtns[i].addEventListener('click', function() {
+            toggleView(this.dataset.view);
+        });
+    }
 }
 
 // Bind file events
@@ -266,13 +341,97 @@ function handleFileAction(action, fileId) {
     // Implementation for file actions
 }
 
+// Start new scan
+function startNewScan() {
+    if (confirm('Bạn có muốn tạo phiên quét mới không? Điều này sẽ quét lại toàn bộ Telegram của bạn.')) {
+        showLoading();
+        fetch('/api/scan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(result) {
+            if (result.success) {
+                showSuccess('Đã bắt đầu quét mới! Vui lòng đợi...');
+                setTimeout(function() {
+                    loadSessions();
+                }, 2000);
+            } else {
+                showError('Không thể bắt đầu quét: ' + (result.error || 'Unknown error'));
+            }
+        })
+        .catch(function(error) {
+            console.error('Error starting scan:', error);
+            showError('Không thể bắt đầu quét mới');
+        })
+        .finally(function() {
+            hideLoading();
+        });
+    }
+}
+
+// Toggle view mode
+function toggleView(viewMode) {
+    var viewBtns = document.querySelectorAll('[data-view]');
+    for (var i = 0; i < viewBtns.length; i++) {
+        viewBtns[i].classList.remove('active');
+    }
+
+    var activeBtn = document.querySelector('[data-view="' + viewMode + '"]');
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+
+    var filesGrid = document.querySelector('.files-grid');
+    if (filesGrid) {
+        if (viewMode === 'list') {
+            filesGrid.classList.add('list-view');
+        } else {
+            filesGrid.classList.remove('list-view');
+        }
+    }
+}
+
+// Update status bar
+function updateStatusBar() {
+    var itemCount = document.getElementById('itemCount');
+    var selectedCount = document.getElementById('selectedCount');
+    var totalSize = document.getElementById('totalSize');
+    var sessionInfo = document.getElementById('sessionInfo');
+
+    if (itemCount) {
+        itemCount.textContent = teleDrive.files.length + ' mục';
+    }
+
+    if (selectedCount) {
+        var selected = document.querySelectorAll('.file-card.selected').length;
+        selectedCount.textContent = selected + ' đã chọn';
+    }
+
+    if (totalSize && teleDrive.files.length > 0) {
+        var total = 0;
+        for (var i = 0; i < teleDrive.files.length; i++) {
+            total += teleDrive.files[i].file_size || 0;
+        }
+        totalSize.textContent = formatFileSize(total);
+    }
+
+    if (sessionInfo && teleDrive.currentSession) {
+        sessionInfo.textContent = 'Phiên: ' + teleDrive.currentSession;
+    }
+}
+
 // Search files
 function searchFiles(query) {
     if (!query.trim()) {
         displayFiles(teleDrive.files);
         return;
     }
-    
+
     var filteredFiles = [];
     for (var i = 0; i < teleDrive.files.length; i++) {
         var file = teleDrive.files[i];

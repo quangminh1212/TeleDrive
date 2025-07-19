@@ -118,6 +118,11 @@
                 </div>
 
                 <div class="nav-actions">
+                    <button id="newScanBtn" class="action-btn scan-btn" title="Tạo phiên quét mới">
+                        <i class="fas fa-search"></i>
+                        <span>Quét mới</span>
+                    </button>
+                    <div class="toolbar-separator"></div>
                     <button id="newFolderBtn" class="action-btn" title="Tạo thư mục mới">
                         <i class="far fa-folder-plus"></i>
                         <span>Thư mục mới</span>
@@ -133,40 +138,51 @@
             <div class="toolbar">
                 <div class="toolbar-left">
                     <div class="view-options">
-                        <button class="view-btn active" data-view="grid">
+                        <button class="toolbar-btn active" data-view="grid" title="Xem dạng lưới">
                             <i class="fas fa-th"></i>
+                            <span>Lưới</span>
                         </button>
-                        <button class="view-btn" data-view="list">
+                        <button class="toolbar-btn" data-view="list" title="Xem dạng danh sách">
                             <i class="fas fa-list"></i>
+                            <span>Danh sách</span>
                         </button>
                     </div>
 
+                    <div class="toolbar-separator"></div>
+
                     <div class="filter-options">
-                        <select id="fileTypeFilter">
+                        <select id="fileTypeFilter" class="toolbar-select">
                             <option value="all">Tất cả file</option>
-                            <option value="folder">Thư mục</option>
-                            <option value="document">Tài liệu</option>
-                            <option value="image">Hình ảnh</option>
-                            <option value="video">Video</option>
-                            <option value="audio">Âm thanh</option>
-                            <option value="archive">Nén</option>
-                            <option value="code">Code</option>
+                            <option value="folder">📁 Thư mục</option>
+                            <option value="document">📄 Tài liệu</option>
+                            <option value="image">🖼️ Hình ảnh</option>
+                            <option value="video">🎬 Video</option>
+                            <option value="audio">🎵 Âm thanh</option>
+                            <option value="archive">📦 Nén</option>
+                            <option value="code">💻 Code</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="toolbar-right">
                     <div class="sort-options">
-                        <select id="sortBy">
-                            <option value="name">Tên</option>
-                            <option value="size">Kích thước</option>
-                            <option value="modified">Ngày sửa đổi</option>
-                            <option value="type">Loại</option>
+                        <select id="sortBy" class="toolbar-select">
+                            <option value="name">📝 Tên</option>
+                            <option value="size">📏 Kích thước</option>
+                            <option value="modified">📅 Ngày sửa đổi</option>
+                            <option value="type">📋 Loại</option>
                         </select>
-                        <button id="sortOrder" class="sort-btn" data-order="asc">
+                        <button id="sortOrder" class="toolbar-btn" data-order="asc" title="Thay đổi thứ tự sắp xếp">
                             <i class="fas fa-sort-alpha-down"></i>
                         </button>
                     </div>
+
+                    <div class="toolbar-separator"></div>
+
+                    <button id="refreshFiles" class="toolbar-btn" title="Làm mới danh sách file">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Làm mới</span>
+                    </button>
                 </div>
             </div>
 
@@ -269,6 +285,20 @@
                     <!-- File info will be populated by JavaScript -->
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-left">
+            <span id="itemCount">0 mục</span>
+            <span class="status-separator">|</span>
+            <span id="selectedCount">0 đã chọn</span>
+        </div>
+        <div class="status-right">
+            <span id="totalSize">0 bytes</span>
+            <span class="status-separator">|</span>
+            <span id="sessionInfo">Chưa có phiên quét</span>
         </div>
     </div>
 

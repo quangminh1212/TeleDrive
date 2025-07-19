@@ -1,4 +1,4 @@
-/* TeleDrive CSS - Google Drive Style */
+/* TeleDrive CSS - Windows File Explorer Style */
 
 /* Custom Icon System using Unicode */
 .icon {
@@ -12,40 +12,80 @@
     font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", "EmojiSymbols", sans-serif;
 }
 
-/* Icon definitions using simple geometric shapes and symbols */
+/* Icon definitions using Windows-style symbols */
 .icon-cloud::before {
     content: "☁";
-    color: #5f6368;
+    color: #0078d4;
     font-weight: normal;
 }
 .icon-folder::before {
-    content: "◉";
-    color: #5f6368;
+    content: "📁";
     font-weight: normal;
 }
 .icon-folder-open::before {
-    content: "◎";
-    color: #5f6368;
+    content: "📂";
     font-weight: normal;
 }
 .icon-file::before {
-    content: "◻";
-    color: #5f6368;
+    content: "📄";
     font-weight: normal;
 }
 .icon-file-alt::before {
-    content: "▢";
-    color: #5f6368;
+    content: "📃";
     font-weight: normal;
 }
 .icon-image::before {
-    content: "▣";
-    color: #5f6368;
+    content: "🖼️";
     font-weight: normal;
 }
 .icon-video::before {
-    content: "▶";
-    color: #5f6368;
+    content: "🎬";
+    font-weight: normal;
+}
+.icon-pdf::before {
+    content: "📕";
+    font-weight: normal;
+}
+.icon-word::before {
+    content: "📘";
+    font-weight: normal;
+}
+.icon-excel::before {
+    content: "📗";
+    font-weight: normal;
+}
+.icon-powerpoint::before {
+    content: "📙";
+    font-weight: normal;
+}
+.icon-archive::before {
+    content: "📦";
+    font-weight: normal;
+}
+.icon-code::before {
+    content: "💻";
+    font-weight: normal;
+}
+.icon-audio::before {
+    content: "🎵";
+    font-weight: normal;
+}
+.icon-text::before {
+    content: "📝";
+    font-weight: normal;
+}
+.icon-executable::before {
+    content: "⚙️";
+    font-weight: normal;
+}
+.icon-scan::before {
+    content: "🔍";
+    color: #0078d4;
+    font-weight: normal;
+}
+.icon-refresh::before {
+    content: "🔄";
+    color: #0078d4;
     font-weight: normal;
 }
 .icon-audio::before {
@@ -677,17 +717,18 @@ body {
     min-height: calc(100vh - var(--header-height));
 }
 
-/* Navigation Bar */
+/* Navigation Bar - Windows File Explorer Style */
 .navigation-bar {
     display: flex;
     align-items: center;
-    gap: var(--spacing-lg);
-    padding: var(--spacing-md) var(--spacing-lg);
-    background: var(--surface-bg);
-    border: 1px solid var(--border-light);
-    border-radius: var(--border-radius);
-    margin-bottom: var(--spacing-lg);
-    box-shadow: 0 1px 3px var(--shadow-light);
+    gap: 12px;
+    padding: 8px 16px;
+    background: #faf9f8;
+    border: 1px solid #e1dfdd;
+    border-radius: 0;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    min-height: 44px;
 }
 
 .nav-controls {
@@ -696,24 +737,30 @@ body {
 }
 
 .nav-btn {
-    padding: var(--spacing-sm);
-    background: none;
-    border: 1px solid var(--border-light);
-    border-radius: var(--border-radius);
+    padding: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
     cursor: pointer;
-    transition: var(--transition-fast);
-    color: var(--text-secondary);
+    transition: all 0.15s ease;
+    color: #323130;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 32px;
     height: 32px;
+    font-size: 14px;
 }
 
 .nav-btn:hover:not(:disabled) {
-    background: var(--hover-overlay);
-    border-color: var(--primary-blue);
-    color: var(--primary-blue);
+    background: #e1dfdd;
+    border-color: #c7c6c4;
+    color: #323130;
+}
+
+.nav-btn:active:not(:disabled) {
+    background: #d2d0ce;
+    border-color: #8a8886;
 }
 
 .nav-btn:disabled {
@@ -771,56 +818,182 @@ body {
 }
 
 .action-btn {
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--surface-bg);
-    border: 1px solid var(--border-light);
-    border-radius: var(--border-radius);
+    padding: 6px 12px;
+    background: #faf9f8;
+    border: 1px solid #e1dfdd;
+    border-radius: 3px;
     cursor: pointer;
-    transition: var(--transition-fast);
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
+    transition: all 0.15s ease;
+    color: #323130;
+    font-size: 13px;
     font-family: var(--font-family);
     display: flex;
     align-items: center;
-    gap: var(--spacing-xs);
+    gap: 6px;
     font-weight: 400;
+    min-height: 28px;
 }
 
 .action-btn:hover {
-    background: var(--hover-overlay);
-    border-color: var(--primary-blue);
-    color: var(--primary-blue);
+    background: #e1dfdd;
+    border-color: #c7c6c4;
+    color: #323130;
+}
+
+.action-btn:active {
+    background: #d2d0ce;
+    border-color: #8a8886;
 }
 
 .action-btn.primary {
-    background: var(--primary-blue);
+    background: #0078d4;
     color: white;
-    border-color: var(--primary-blue);
+    border-color: #106ebe;
 }
 
 .action-btn.primary:hover {
-    background: var(--primary-blue-dark);
-    border-color: var(--primary-blue-dark);
+    background: #106ebe;
+    border-color: #005a9e;
 }
 
-/* Toolbar */
+/* Toolbar - Windows File Explorer Style */
 .toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-lg) var(--spacing-2xl);
-    background: var(--surface-bg);
-    border: 1px solid var(--border-light);
-    border-radius: var(--border-radius);
-    margin-bottom: var(--spacing-2xl);
-    box-shadow: 0 1px 3px var(--shadow-light);
+    padding: 8px 16px;
+    background: #f3f2f1;
+    border: 1px solid #e1dfdd;
+    border-radius: 0;
+    margin-bottom: var(--spacing-lg);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    min-height: 40px;
 }
 
 .toolbar-left,
 .toolbar-right {
     display: flex;
     align-items: center;
-    gap: var(--spacing-lg);
+    gap: 8px;
+}
+
+/* Windows-style toolbar buttons */
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: #323130;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-height: 28px;
+}
+
+.toolbar-btn:hover {
+    background: #e1dfdd;
+    border-color: #c7c6c4;
+}
+
+.toolbar-btn:active {
+    background: #d2d0ce;
+    border-color: #8a8886;
+}
+
+.toolbar-btn.primary {
+    background: #0078d4;
+    color: white;
+    border-color: #106ebe;
+}
+
+.toolbar-btn.primary:hover {
+    background: #106ebe;
+    border-color: #005a9e;
+}
+
+.toolbar-btn.scan-btn {
+    background: #107c10;
+    color: white;
+    border-color: #0e6e0e;
+    font-weight: 500;
+}
+
+.toolbar-btn.scan-btn:hover {
+    background: #0e6e0e;
+    border-color: #0c5d0c;
+}
+
+.toolbar-btn i {
+    font-size: 14px;
+}
+
+.toolbar-separator {
+    width: 1px;
+    height: 24px;
+    background: #d2d0ce;
+    margin: 0 4px;
+}
+
+.toolbar-select {
+    padding: 4px 8px;
+    background: #faf9f8;
+    border: 1px solid #e1dfdd;
+    border-radius: 3px;
+    color: #323130;
+    font-size: 13px;
+    font-family: var(--font-family);
+    cursor: pointer;
+    min-width: 120px;
+}
+
+.toolbar-select:hover {
+    background: #f3f2f1;
+    border-color: #c7c6c4;
+}
+
+.toolbar-select:focus {
+    outline: none;
+    border-color: #0078d4;
+    box-shadow: 0 0 0 1px #0078d4;
+}
+
+/* Status Bar - Windows File Explorer Style */
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background: #f3f2f1;
+    border-top: 1px solid #e1dfdd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    font-size: 12px;
+    color: #323130;
+    z-index: 100;
+}
+
+.status-left,
+.status-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-separator {
+    color: #8a8886;
+    font-weight: normal;
+}
+
+/* Adjust main content to account for status bar */
+.main-content {
+    padding-bottom: 32px;
 }
 
 .view-options {
@@ -1098,13 +1271,15 @@ body {
     }
 }
 
-/* Files Grid */
+/* Files Grid - Windows File Explorer Style */
 .files-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: var(--spacing-lg);
-    margin-bottom: var(--spacing-3xl);
-    padding: var(--spacing-sm);
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 40px;
+    padding: 16px;
+    background: #ffffff;
+    border-radius: 0;
 }
 
 .files-grid.list-view {
@@ -1116,21 +1291,30 @@ body {
 }
 
 .file-card {
-    background: var(--surface-bg);
-    border: 1px solid var(--border-light);
-    border-radius: var(--border-radius);
-    padding: var(--spacing-lg);
-    transition: var(--transition);
+    background: #ffffff;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 12px;
+    transition: all 0.15s ease;
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 1px 3px var(--shadow-light);
+    box-shadow: none;
 }
 
 .file-card:hover {
-    border-color: var(--primary-blue);
-    box-shadow: 0 2px 8px var(--shadow-medium);
-    transform: translateY(-1px);
+    background: #f3f2f1;
+    border-color: #e1dfdd;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.file-card:active {
+    background: #e1dfdd;
+}
+
+.file-card.selected {
+    background: #deecf9;
+    border-color: #0078d4;
 }
 
 .file-card.list-view {
