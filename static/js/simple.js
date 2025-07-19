@@ -31,11 +31,15 @@ function loadSessions() {
         })
         .then(function(result) {
             console.log('Sessions loaded:', result);
-            if (result.success) {
+            // API returns array directly, not {success: true, sessions: [...]}
+            if (Array.isArray(result)) {
+                teleDrive.sessions = result;
+                displaySessions();
+            } else if (result.success) {
                 teleDrive.sessions = result.sessions;
                 displaySessions();
             } else {
-                showError('Không thể tải danh sách sessions: ' + result.error);
+                showError('Không thể tải danh sách sessions: ' + (result.error || 'Unknown error'));
             }
         })
         .catch(function(error) {
@@ -92,7 +96,7 @@ function loadSession(sessionId) {
     console.log('Loading session:', sessionId);
     showLoading();
     teleDrive.currentSession = sessionId;
-    
+
     // Update active session
     var sessionItems = document.querySelectorAll('.session-item');
     for (var i = 0; i < sessionItems.length; i++) {
@@ -102,30 +106,25 @@ function loadSession(sessionId) {
     if (activeSession) {
         activeSession.classList.add('active');
     }
-    
-    fetch('/api/scans/' + sessionId + '/files')
-        .then(function(response) {
-            if (!response.ok) {
-                throw new Error('HTTP error! status: ' + response.status);
-            }
-            return response.json();
-        })
-        .then(function(result) {
-            console.log('Session files loaded:', result);
-            if (result.success) {
-                teleDrive.files = result.files;
-                displayFiles(result.files);
-            } else {
-                showError('Không thể tải files: ' + result.error);
-            }
-        })
-        .catch(function(error) {
-            console.error('Error loading session:', error);
-            showError('Không thể tải session');
-        })
-        .finally(function() {
-            hideLoading();
-        });
+
+    // Find the session data (files are already included in the session)
+    var session = null;
+    for (var i = 0; i < teleDrive.sessions.length; i++) {
+        if (teleDrive.sessions[i].session_id === sessionId) {
+            session = teleDrive.sessions[i];
+            break;
+        }
+    }
+
+    if (session && session.files) {
+        console.log('Session files loaded from cache:', session.files.length, 'files');
+        teleDrive.files = session.files;
+        displayFiles(session.files);
+        hideLoading();
+    } else {
+        showError('Không thể tìm thấy session hoặc files');
+        hideLoading();
+    }
 }
 
 // Display files in main area
@@ -160,12 +159,13 @@ function displayFiles(files) {
 // Create HTML for file card
 function createFileCard(file) {
     var fileSize = formatFileSize(file.file_info ? file.file_info.size : 0);
-    var fileDate = formatDate(file.date);
-    var fileIcon = getFileIcon(file.file_type);
-    
-    return 
-        '<div class="file-card" data-file-id="' + file.message_id + '">' +
-            '<div class="file-icon ' + file.file_type + '">' +
+    var fileDate = formatDate(file.file_info ? file.file_info.upload_date : new Date().toISOString());
+    var fileType = file.file_info ? file.file_info.type : 'document';
+    var fileIcon = getFileIcon(fileType);
+    var messageId = file.message_info ? file.message_info.message_id : 0;
+
+    return '<div class="file-card" data-file-id="' + messageId + '">' +
+            '<div class="file-icon ' + fileType + '">' +
                 '<i class="icon ' + fileIcon + '"></i>' +
             '</div>' +
             '<div class="file-info">' +
@@ -189,6 +189,7 @@ function createFileCard(file) {
 function getFileIcon(fileType) {
     var icons = {
         'document': 'icon-file-alt',
+        'photo': 'icon-image',
         'image': 'icon-image',
         'video': 'icon-video',
         'audio': 'icon-audio',
