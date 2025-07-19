@@ -19,9 +19,9 @@ if __name__ == '__main__':
     # Sử dụng production server (Waitress) thay vì Flask dev server
     try:
         from waitress import serve
-        print("🚀 Khởi động TeleDrive với Waitress Production Server...")
-        print(f"🌐 Server đang chạy tại http://{config.server.host}:{config.server.port}")
-        print("📝 Nhấn Ctrl+C để dừng server")
+        print("[START] Khoi dong TeleDrive voi Waitress Production Server...")
+        print(f"[INFO] Server dang chay tai http://{config.server.host}:{config.server.port}")
+        print("[INFO] Nhan Ctrl+C de dung server")
 
         serve(
             app,
@@ -33,16 +33,16 @@ if __name__ == '__main__':
             channel_timeout=120
         )
     except ImportError:
-        print("⚠️  Waitress chưa được cài đặt. Đang cài đặt...")
+        print("[WARNING] Waitress chua duoc cai dat. Dang cai dat...")
         import subprocess
         import sys
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'waitress'])
 
         # Retry with Waitress
         from waitress import serve
-        print("🚀 Khởi động TeleDrive với Waitress Production Server...")
-        print(f"🌐 Server đang chạy tại http://{config.server.host}:{config.server.port}")
-        print("📝 Nhấn Ctrl+C để dừng server")
+        print("[START] Khoi dong TeleDrive voi Waitress Production Server...")
+        print(f"[INFO] Server dang chay tai http://{config.server.host}:{config.server.port}")
+        print("[INFO] Nhan Ctrl+C de dung server")
 
         serve(
             app,
@@ -54,10 +54,10 @@ if __name__ == '__main__':
             channel_timeout=120
         )
     except KeyboardInterrupt:
-        print("\n🛑 Đang dừng server...")
+        print("\n[STOP] Dang dung server...")
     except Exception as e:
-        print(f"❌ Lỗi khởi động server: {e}")
-        print("🔄 Fallback to Flask development server...")
+        print(f"[ERROR] Loi khoi dong server: {e}")
+        print("[FALLBACK] Fallback to Flask development server...")
         app.run(
             debug=config.debug,
             host=config.server.host,

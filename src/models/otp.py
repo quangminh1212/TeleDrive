@@ -147,16 +147,34 @@ class OTPManager:
 
 def format_phone_number(phone: str) -> str:
     """Chuẩn hóa số điện thoại"""
-    # Loại bỏ khoảng trắng và ký tự đặc biệt
-    phone = ''.join(filter(str.isdigit, phone.replace('+', '')))
+    # Loại bỏ khoảng trắng và ký tự đặc biệt, giữ lại dấu +
+    phone = phone.strip()
     
-    # Thêm mã quốc gia nếu chưa có
-    if phone.startswith('0'):
-        phone = '84' + phone[1:]
-    elif not phone.startswith('84'):
-        phone = '84' + phone
-    
-    return '+' + phone
+    # Nếu đã có dấu + ở đầu, kiểm tra xem đã đúng format chưa
+    if phone.startswith('+'):
+        # Loại bỏ + và chỉ giữ lại số
+        digits_only = ''.join(filter(str.isdigit, phone[1:]))
+        
+        # Nếu đã có mã vùng 84, trả về luôn
+        if digits_only.startswith('84'):
+            return '+' + digits_only
+        # Nếu bắt đầu bằng 0, thay thế bằng 84
+        elif digits_only.startswith('0'):
+            return '+84' + digits_only[1:]
+        # Nếu không có mã vùng, thêm 84
+        else:
+            return '+84' + digits_only
+    else:
+        # Loại bỏ tất cả ký tự không phải số
+        digits_only = ''.join(filter(str.isdigit, phone))
+        
+        # Thêm mã quốc gia nếu chưa có
+        if digits_only.startswith('0'):
+            digits_only = '84' + digits_only[1:]
+        elif not digits_only.startswith('84'):
+            digits_only = '84' + digits_only
+        
+        return '+' + digits_only
 
 def validate_phone_number(phone: str) -> Tuple[bool, str]:
     """Kiểm tra tính hợp lệ của số điện thoại"""

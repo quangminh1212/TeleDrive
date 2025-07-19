@@ -324,9 +324,9 @@
                             <option value="+54" data-country="AR">🇦🇷 +54</option>
                         </select>
                         <input type="tel" id="phone_number" name="phone_number" class="phone-input" required
-                               placeholder="Nhập số điện thoại (VD: 936374950)">
+                               placeholder="VD: 0936374950 hoặc 936374950">
                     </div>
-                    <small class="form-help">Mã OTP sẽ được gửi đến Telegram của bạn</small>
+                    <small class="form-help">Nhập số đầy đủ (0936374950) hoặc không có số 0 (936374950). Mã OTP sẽ gửi qua Telegram.</small>
                 </div>
 
                 <button type="submit" class="login-button" id="send-otp-btn">
@@ -425,7 +425,16 @@
                 setLoading(sendOtpBtn, true, 'Gửi mã OTP', 'Đang gửi...');
 
                 const formData = new FormData(phoneForm);
-                const phoneNumber = formData.get('phone_number');
+                const countryCode = document.getElementById('country_code').value;
+                const phoneInput = formData.get('phone_number');
+                
+                // Kết hợp country code với phone number nếu phone number chưa có country code
+                let phoneNumber;
+                if (phoneInput.startsWith('+')) {
+                    phoneNumber = phoneInput; // Đã có country code
+                } else {
+                    phoneNumber = countryCode + phoneInput; // Thêm country code
+                }
 
                 fetch('/send-otp', {
                     method: 'POST',
