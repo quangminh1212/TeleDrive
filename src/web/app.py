@@ -93,13 +93,23 @@ class TeleDriveWebAPI:
                     filename = json_file.stem
                     session_id = filename.replace('_telegram_files', '')
                     
+                    files = data.get('files', [])
+                    scan_info = data.get('scan_info', {})
+
+                    # Calculate total size from file_info.size
+                    total_size = 0
+                    for file in files:
+                        file_info = file.get('file_info', {})
+                        size = file_info.get('size', 0)
+                        total_size += size
+
                     session_info = {
                         'session_id': session_id,
                         'timestamp': session_id,
-                        'file_count': len(data.get('files', [])),
-                        'total_size': sum(file.get('size_bytes', 0) for file in data.get('files', [])),
-                        'scan_info': data.get('scan_info', {}),
-                        'files': data.get('files', [])
+                        'file_count': len(files),
+                        'total_size': total_size,
+                        'scan_info': scan_info,
+                        'files': files
                     }
                     
                     sessions.append(session_info)
