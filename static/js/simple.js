@@ -131,10 +131,9 @@ function loadSession(sessionId) {
 function displayFiles(files) {
     var welcomeScreen = document.getElementById('welcomeScreen');
     var filesContainer = document.getElementById('filesContainer');
-    var filesGrid = document.getElementById('filesGrid');
 
-    if (!filesContainer || !filesGrid) {
-        console.error('Files container or grid not found');
+    if (!filesContainer) {
+        console.error('Files container not found');
         return;
     }
 
@@ -150,13 +149,15 @@ function displayFiles(files) {
     filesContainer.style.display = 'block';
 
     // Generate files HTML
-    var html = '';
+    var html = '<div class="files-grid">';
     for (var i = 0; i < files.length; i++) {
         var file = files[i];
         html += createFileCard(file);
     }
+    html += '</div>';
 
-    filesGrid.innerHTML = html;
+    // Set the HTML directly to filesContainer
+    filesContainer.innerHTML = html;
     bindFileEvents();
 }
 
