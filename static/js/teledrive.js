@@ -144,17 +144,17 @@ TeleDrive.prototype.displaySessions = function() {
             });
             document.querySelector(`[data-session-id="${sessionId}"]`).classList.add('active');
             
-            const response = await fetch(`/api/scans/${sessionId}/files`);
+            const response = await fetch(`/api/files/${sessionId}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const result = await response.json();
-            if (result.success) {
+            if (result.files) {
                 this.files = result.files;
                 this.filterAndDisplayFiles();
             } else {
-                this.showError('Không thể tải files: ' + result.error);
+                this.showError('Không thể tải files: ' + (result.error || 'Unknown error'));
             }
         } catch (error) {
             console.error('Error loading session:', error);

@@ -129,30 +129,34 @@ function loadSession(sessionId) {
 
 // Display files in main area
 function displayFiles(files) {
-    var container = document.getElementById('filesContainer');
-    if (!container) {
-        console.error('Files container not found');
+    var welcomeScreen = document.getElementById('welcomeScreen');
+    var filesContainer = document.getElementById('filesContainer');
+    var filesGrid = document.getElementById('filesGrid');
+
+    if (!filesContainer || !filesGrid) {
+        console.error('Files container or grid not found');
         return;
     }
-    
+
     if (!files || files.length === 0) {
-        container.innerHTML = 
-            '<div class="welcome-screen">' +
-                '<i class="icon icon-cloud welcome-icon"></i>' +
-                '<h2>Chào mừng đến với TeleDrive</h2>' +
-                '<p>Chọn một scan session từ sidebar để xem các file đã quét được</p>' +
-            '</div>';
+        // Show welcome screen, hide files container
+        if (welcomeScreen) welcomeScreen.style.display = 'block';
+        filesContainer.style.display = 'none';
         return;
     }
-    
-    var html = '<div class="files-grid">';
+
+    // Hide welcome screen, show files container
+    if (welcomeScreen) welcomeScreen.style.display = 'none';
+    filesContainer.style.display = 'block';
+
+    // Generate files HTML
+    var html = '';
     for (var i = 0; i < files.length; i++) {
         var file = files[i];
         html += createFileCard(file);
     }
-    html += '</div>';
-    
-    container.innerHTML = html;
+
+    filesGrid.innerHTML = html;
     bindFileEvents();
 }
 
