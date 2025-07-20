@@ -563,29 +563,64 @@ class Windows11Explorer {
         this.updateBreadcrumbs();
         this.showLoadingState();
 
-        // Simulate loading session files
-        setTimeout(() => {
-            this.hideLoadingState();
-            this.renderSessionFiles(sessionId);
-        }, 800);
+        // Load real session files from API
+        fetch(`/api/files/${sessionId}`)
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                this.hideLoadingState();
+                this.renderSessionFiles(sessionId, data);
+            })
+            .catch(error => {
+                console.error('Error loading session files:', error);
+                this.hideLoadingState();
+                this.showError('Không thể tải files: ' + error.message);
+            });
     }
 
-    renderSessionFiles(sessionId) {
+    renderSessionFiles(sessionId, data) {
         const contentArea = document.querySelector('.content-area');
 
-        // Mock session files
-        const sessionFiles = [
-            { name: 'Chat Photos', type: 'folder', icon: 'folder', size: '', date: 'Today', count: '156 files' },
-            { name: 'Documents', type: 'folder', icon: 'folder', size: '', date: 'Today', count: '23 files' },
-            { name: 'Voice Messages', type: 'folder', icon: 'folder', size: '', date: 'Yesterday', count: '45 files' },
-            { name: 'shared_file.pdf', type: 'file', icon: 'pdf', size: '3.2 MB', date: '2 hours ago' },
-            { name: 'image_2024.jpg', type: 'file', icon: 'image', size: '1.8 MB', date: '5 hours ago' }
-        ];
+        // Convert API data to display format
+        let sessionFiles = [];
+        if (data && data.files) {
+            sessionFiles = data.files.map(file => {
+                const fileSize = this.formatFileSize(file.file_info?.size || 0);
+                const fileDate = this.formatDate(file.file_info?.upload_date || new Date().toISOString());
+                const fileType = file.file_info?.type || 'document';
+                const fileIcon = this.getFileIcon(fileType, file.file_name);
+
+                return {
+                    name: file.file_name,
+                    type: 'file',
+                    icon: fileIcon,
+                    size: fileSize,
+                    date: fileDate,
+                    messageId: file.message_info?.message_id,
+                    downloadLink: file.download_link,
+                    fileInfo: file.file_info
+                };
+            });
+        }
+
+        const totalFiles = data?.scan_info?.total_files || sessionFiles.length;
+        const scanDate = data?.scan_info?.scan_date ? this.formatDate(data.scan_info.scan_date) : 'Unknown';
 
         contentArea.innerHTML = `
             <div class="files-container">
                 <div class="section-header">
-                    <h2>Session Files</h2>
+                    <h2>Session Files (${totalFiles} files)</h2>
+                    <div class="section-info">
+                        <span class="scan-date">Scanned: ${scanDate}</span>
+                    </div>
                     <div class="section-actions">
                         <button class="action-btn" id="scanSession">
                             <i class="icon icon-refresh"></i>
@@ -598,7 +633,10 @@ class Windows11Explorer {
                     </div>
                 </div>
                 <div class="files-display ${this.currentView}-view" id="filesDisplay">
-                    ${sessionFiles.map(file => this.renderFileItem(file)).join('')}
+                    ${sessionFiles.length > 0 ?
+                        sessionFiles.map(file => this.renderFileItem(file)).join('') :
+                        '<div class="empty-state"><i class="icon icon-folder-open"></i><p>Không có files trong session này</p></div>'
+                    }
                 </div>
             </div>
         `;
@@ -1414,6 +1452,79 @@ class Windows11Explorer {
                 <div class="multiple-selection">
                     <h4>Multiple Items Selected</h4>
                     <p>${this.selectedItems.size} items selected</p>
+                </div>
+            `;
+        }
+    }
+
+    // Helper methods for file handling
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    formatDate(dateString) {
+        try {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1) return 'Today';
+            if (diffDays === 2) return 'Yesterday';
+            if (diffDays <= 7) return `${diffDays - 1} days ago`;
+
+            return date.toLocaleDateString();
+        } catch (e) {
+            return 'Unknown';
+        }
+    }
+
+    getFileIcon(fileType, fileName) {
+        // Check file extension for more specific icons
+        if (fileName) {
+            const ext = fileName.toLowerCase().split('.').pop();
+            const extIcons = {
+                'pdf': 'icon-pdf',
+                'doc': 'icon-word', 'docx': 'icon-word',
+                'xls': 'icon-excel', 'xlsx': 'icon-excel',
+                'ppt': 'icon-powerpoint', 'pptx': 'icon-powerpoint',
+                'zip': 'icon-archive', 'rar': 'icon-archive', '7z': 'icon-archive',
+                'js': 'icon-code', 'html': 'icon-code', 'css': 'icon-code', 'py': 'icon-code',
+                'txt': 'icon-text',
+                'exe': 'icon-executable', 'msi': 'icon-executable',
+                'mp3': 'icon-audio', 'wav': 'icon-audio', 'flac': 'icon-audio',
+                'mp4': 'icon-video', 'avi': 'icon-video', 'mkv': 'icon-video',
+                'jpg': 'icon-image', 'jpeg': 'icon-image', 'png': 'icon-image', 'gif': 'icon-image'
+            };
+
+            if (extIcons[ext]) return extIcons[ext];
+        }
+
+        // Fallback to file type
+        const typeIcons = {
+            'photo': 'icon-image',
+            'document': 'icon-file',
+            'video': 'icon-video',
+            'audio': 'icon-audio',
+            'voice': 'icon-audio'
+        };
+
+        return typeIcons[fileType] || 'icon-file';
+    }
+
+    showError(message) {
+        const contentArea = document.querySelector('.content-area');
+        if (contentArea) {
+            contentArea.innerHTML = `
+                <div class="error-state">
+                    <i class="icon icon-alert"></i>
+                    <h3>Lỗi</h3>
+                    <p>${message}</p>
+                    <button class="btn btn-primary" onclick="location.reload()">Thử lại</button>
                 </div>
             `;
         }

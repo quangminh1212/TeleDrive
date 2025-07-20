@@ -107,24 +107,38 @@ function loadSession(sessionId) {
         activeSession.classList.add('active');
     }
 
-    // Find the session data (files are already included in the session)
-    var session = null;
-    for (var i = 0; i < teleDrive.sessions.length; i++) {
-        if (teleDrive.sessions[i].session_id === sessionId) {
-            session = teleDrive.sessions[i];
-            break;
-        }
-    }
+    // Load files from API instead of cache
+    fetch('/api/files/' + sessionId)
+        .then(function(response) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            if (!response.ok) {
+                throw new Error('HTTP error! status: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            if (data && data.files) {
+                console.log('Session files loaded from API:', data.files.length, 'files');
+                teleDrive.files = data.files;
+                displayFiles(data.files);
 
-    if (session && session.files) {
-        console.log('Session files loaded from cache:', session.files.length, 'files');
-        teleDrive.files = session.files;
-        displayFiles(session.files);
-        hideLoading();
-    } else {
-        showError('Không thể tìm thấy session hoặc files');
-        hideLoading();
-    }
+                // Update session info if available
+                if (data.scan_info) {
+                    updateSessionInfo(data.scan_info);
+                }
+            } else {
+                showError('Không có files trong session này');
+            }
+            hideLoading();
+        })
+        .catch(function(error) {
+            console.error('Error loading session files:', error);
+            showError('Không thể tải files: ' + error.message);
+            hideLoading();
+        });
 }
 
 // Display files in main area
@@ -422,6 +436,27 @@ function updateStatusBar() {
 
     if (sessionInfo && teleDrive.currentSession) {
         sessionInfo.textContent = 'Phiên: ' + teleDrive.currentSession;
+    }
+}
+
+// Update session info display
+function updateSessionInfo(scanInfo) {
+    if (!scanInfo) return;
+
+    // Update session info in UI if there's a dedicated area
+    var sessionInfo = document.getElementById('sessionInfo');
+    if (sessionInfo) {
+        sessionInfo.innerHTML =
+            '<div class="session-stats">' +
+                '<span class="stat-item">Tổng files: ' + scanInfo.total_files + '</span>' +
+                '<span class="stat-item">Scan date: ' + formatDate(scanInfo.scan_date) + '</span>' +
+            '</div>';
+    }
+
+    // Update page title or header
+    var pageTitle = document.querySelector('.content-header h2');
+    if (pageTitle) {
+        pageTitle.textContent = 'Session Files (' + scanInfo.total_files + ' files)';
     }
 }
 
