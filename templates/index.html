@@ -25,6 +25,10 @@
                 {% if user.is_admin %}
                     <span class="admin-badge">Admin</span>
                 {% endif %}
+                <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
+                    <i class="icon icon-sign-out"></i>
+                    <span>Đăng xuất</span>
+                </button>
             </div>
             <div class="window-controls">
                 <button class="window-control minimize" title="Minimize">
@@ -33,7 +37,7 @@
                 <button class="window-control maximize" title="Maximize">
                     <i class="icon icon-square"></i>
                 </button>
-                <button class="window-control close" id="logoutBtn" title="Sign out">
+                <button class="window-control close" title="Close">
                     <i class="icon icon-times"></i>
                 </button>
             </div>

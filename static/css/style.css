@@ -3989,6 +3989,35 @@ body {
     font-weight: 500;
 }
 
+.logout-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: var(--spacing-sm);
+}
+
+.logout-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.logout-btn i {
+    font-size: var(--font-size-sm);
+}
+
+.logout-btn span {
+    font-weight: 500;
+}
+
 .window-controls {
     display: flex;
 }
