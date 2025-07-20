@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Menu Debug</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0f0;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .title-bar-simulation {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .debug-log {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>Admin Menu Debug Test</h2>
+        <p>Đây là test để debug admin menu dropdown. Mở Developer Tools (F12) để xem console logs.</p>
+        
+        <div class="title-bar-simulation">
+            <div>
+                <span>TeleDrive - File Manager</span>
+            </div>
+            <div class="user-info">
+                <i class="icon icon-user"></i>
+                <span class="username">admin</span>
+                <div class="admin-menu-container">
+                    <button class="admin-badge-btn" id="adminMenuToggle" title="Cài đặt Admin">
+                        <span class="admin-badge">ADMIN</span>
+                        <i class="icon icon-chevron-down"></i>
+                    </button>
+                    <div class="admin-dropdown-menu" id="adminDropdownMenu">
+                        <div class="admin-menu-header">
+                            <i class="icon icon-settings"></i>
+                            <span>Quản lý hệ thống</span>
+                        </div>
+                        <div class="admin-menu-divider"></div>
+                        <button class="admin-menu-item" id="userManagementBtn">
+                            <i class="icon icon-user"></i>
+                            <span>Quản lý người dùng</span>
+                        </button>
+                        <button class="admin-menu-item" id="systemSettingsBtn">
+                            <i class="icon icon-settings"></i>
+                            <span>Cài đặt hệ thống</span>
+                        </button>
+                        <button class="admin-menu-item" id="scanSettingsBtn">
+                            <i class="icon icon-scan"></i>
+                            <span>Cài đặt Telegram</span>
+                        </button>
+                        <button class="admin-menu-item" id="logsViewBtn">
+                            <i class="icon icon-file-text"></i>
+                            <span>Xem logs</span>
+                        </button>
+                        <div class="admin-menu-divider"></div>
+                        <button class="admin-menu-item" id="profileSettingsBtn">
+                            <i class="icon icon-user"></i>
+                            <span>Thông tin tài khoản</span>
+                        </button>
+                    </div>
+                </div>
+                <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
+                    <i class="icon icon-sign-out"></i>
+                    <span>Đăng xuất</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="debug-info">
+            <h4>Debug Information:</h4>
+            <div id="debugOutput">Chưa có thông tin debug...</div>
+            <div class="debug-log" id="debugLog"></div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button onclick="testAdminMenu()">Test Admin Menu Manually</button>
+            <button onclick="clearDebugLog()">Clear Debug Log</button>
+        </div>
+    </div>
+
+    <script>
+        // Debug logging function
+        function debugLog(message) {
+            const log = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearDebugLog() {
+            document.getElementById('debugLog').innerHTML = '';
+        }
+        
+        function testAdminMenu() {
+            debugLog('Manual test: Clicking admin menu button...');
+            const btn = document.getElementById('adminMenuToggle');
+            if (btn) {
+                btn.click();
+            } else {
+                debugLog('ERROR: Admin menu button not found!');
+            }
+        }
+        
+        // Setup admin menu when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('DOM loaded, setting up admin menu...');
+            
+            const adminMenuToggle = document.getElementById('adminMenuToggle');
+            const adminDropdownMenu = document.getElementById('adminDropdownMenu');
+            
+            debugLog(`adminMenuToggle found: ${!!adminMenuToggle}`);
+            debugLog(`adminDropdownMenu found: ${!!adminDropdownMenu}`);
+            
+            if (adminMenuToggle && adminDropdownMenu) {
+                debugLog('Both elements found, adding event listeners...');
+                
+                // Toggle dropdown
+                adminMenuToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    debugLog('Admin button clicked!');
+                    
+                    const wasVisible = adminDropdownMenu.classList.contains('show');
+                    adminDropdownMenu.classList.toggle('show');
+                    adminMenuToggle.classList.toggle('active');
+                    
+                    const isVisible = adminDropdownMenu.classList.contains('show');
+                    debugLog(`Menu visibility changed: ${wasVisible} -> ${isVisible}`);
+                    debugLog(`Menu display style: ${window.getComputedStyle(adminDropdownMenu).display}`);
+                    debugLog(`Menu classes: ${adminDropdownMenu.className}`);
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!adminMenuToggle.contains(e.target) && !adminDropdownMenu.contains(e.target)) {
+                        if (adminDropdownMenu.classList.contains('show')) {
+                            adminDropdownMenu.classList.remove('show');
+                            adminMenuToggle.classList.remove('active');
+                            debugLog('Admin menu closed by outside click');
+                        }
+                    }
+                });
+
+                // Setup menu item handlers
+                document.querySelectorAll('.admin-menu-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const text = item.textContent.trim();
+                        debugLog(`Menu item clicked: ${text}`);
+                        alert(`Clicked: ${text}`);
+                    });
+                });
+                
+                debugLog('Event listeners added successfully');
+                
+                // Update debug output
+                document.getElementById('debugOutput').innerHTML = `
+                    Admin Menu Toggle: ${adminMenuToggle ? 'Found' : 'Not Found'}<br>
+                    Admin Dropdown Menu: ${adminDropdownMenu ? 'Found' : 'Not Found'}<br>
+                    Menu Items Count: ${document.querySelectorAll('.admin-menu-item').length}<br>
+                    Initial Menu Display: ${window.getComputedStyle(adminDropdownMenu).display}<br>
+                    Initial Menu Classes: ${adminDropdownMenu.className}
+                `;
+                
+            } else {
+                debugLog('ERROR: Could not find admin menu elements!');
+                document.getElementById('debugOutput').innerHTML = 'ERROR: Admin menu elements not found!';
+            }
+        });
+    </script>
+</body>
+</html>

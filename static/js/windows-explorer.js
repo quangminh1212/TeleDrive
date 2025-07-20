@@ -3082,4 +3082,39 @@ class Windows11Explorer {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.windowsExplorer = new Windows11Explorer();
+
+    // Fallback admin menu setup in case the main one doesn't work
+    setTimeout(() => {
+        const adminMenuToggle = document.getElementById('adminMenuToggle');
+        const adminDropdownMenu = document.getElementById('adminDropdownMenu');
+
+        if (adminMenuToggle && adminDropdownMenu && !adminMenuToggle.hasAttribute('data-setup')) {
+            console.log('Setting up fallback admin menu...');
+            adminMenuToggle.setAttribute('data-setup', 'true');
+
+            adminMenuToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Fallback admin menu clicked');
+
+                if (adminDropdownMenu.style.display === 'block') {
+                    adminDropdownMenu.style.display = 'none';
+                    adminDropdownMenu.classList.remove('show');
+                } else {
+                    adminDropdownMenu.style.display = 'block';
+                    adminDropdownMenu.classList.add('show');
+                }
+            });
+
+            // Close on outside click
+            document.addEventListener('click', function(e) {
+                if (!adminMenuToggle.contains(e.target) && !adminDropdownMenu.contains(e.target)) {
+                    adminDropdownMenu.style.display = 'none';
+                    adminDropdownMenu.classList.remove('show');
+                }
+            });
+
+            console.log('Fallback admin menu setup completed');
+        }
+    }, 1000);
 });
