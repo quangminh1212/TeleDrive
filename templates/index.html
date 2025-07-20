@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Segoe+UI:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -444,6 +445,137 @@
                     </div>
                 </div>
 
+                <!-- Google Drive Layout Container -->
+                <div class="gdrive-layout" id="gdriveLayout" style="display: none; flex: 1; height: calc(100vh - 120px);">
+                    <div style="display: flex; height: 100%;">
+                        <!-- Google Drive Sidebar -->
+                        <div class="gdrive-sidebar" id="gdriveSidebar" style="width: 256px; background: #fff; border-right: 1px solid #e8eaed; flex-shrink: 0;">
+                            <div style="padding: 16px;">
+                                <button class="gdrive-btn-primary" id="sidebarNewBtn" style="width: 100%; justify-content: flex-start; border-radius: 24px; padding: 12px 24px; font-weight: 500; box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3);">
+                                    <i class="icon icon-plus" style="margin-right: 12px;"></i>
+                                    New
+                                </button>
+                            </div>
+
+                            <div style="padding: 0 8px;">
+                                <div class="gdrive-sidebar-item active" style="display: flex; align-items: center; padding: 8px 16px; border-radius: 0 24px 24px 0; background: #e8f0fe; color: #1a73e8; margin-bottom: 4px; cursor: pointer;">
+                                    <i class="icon icon-folder" style="margin-right: 12px; font-size: 20px;"></i>
+                                    <span>My Drive</span>
+                                </div>
+
+                                <div class="gdrive-sidebar-item" style="display: flex; align-items: center; padding: 8px 16px; border-radius: 0 24px 24px 0; color: #5f6368; margin-bottom: 4px; cursor: pointer;">
+                                    <i class="icon icon-users" style="margin-right: 12px; font-size: 20px;"></i>
+                                    <span>Shared with me</span>
+                                </div>
+
+                                <div class="gdrive-sidebar-item" style="display: flex; align-items: center; padding: 8px 16px; border-radius: 0 24px 24px 0; color: #5f6368; margin-bottom: 4px; cursor: pointer;">
+                                    <i class="icon icon-clock" style="margin-right: 12px; font-size: 20px;"></i>
+                                    <span>Recent</span>
+                                </div>
+
+                                <div class="gdrive-sidebar-item" style="display: flex; align-items: center; padding: 8px 16px; border-radius: 0 24px 24px 0; color: #5f6368; margin-bottom: 4px; cursor: pointer;">
+                                    <i class="icon icon-star" style="margin-right: 12px; font-size: 20px;"></i>
+                                    <span>Starred</span>
+                                </div>
+
+                                <div class="gdrive-sidebar-item" style="display: flex; align-items: center; padding: 8px 16px; border-radius: 0 24px 24px 0; color: #5f6368; margin-bottom: 4px; cursor: pointer;">
+                                    <i class="icon icon-trash" style="margin-right: 12px; font-size: 20px;"></i>
+                                    <span>Trash</span>
+                                </div>
+                            </div>
+
+                            <div style="padding: 16px; border-top: 1px solid #e8eaed; margin-top: 16px;">
+                                <div style="font-size: 12px; color: #5f6368; margin-bottom: 8px;">Storage</div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="flex: 1; height: 4px; background: #e8eaed; border-radius: 2px; overflow: hidden;">
+                                        <div style="width: 30%; height: 100%; background: #1a73e8;"></div>
+                                    </div>
+                                </div>
+                                <div style="font-size: 12px; color: #5f6368; margin-top: 4px;">3.2 GB of 15 GB used</div>
+                            </div>
+                        </div>
+
+                        <!-- Main Content Area -->
+                        <div style="flex: 1; display: flex; flex-direction: column;">
+                            <!-- Google Drive Style Toolbar -->
+                <div class="gdrive-toolbar" id="gdriveToolbar" style="display: none;">
+                    <div class="gdrive-toolbar-left">
+                        <button class="gdrive-btn-primary" id="newBtn" style="border-radius: 24px; padding: 12px 24px; font-weight: 500;">
+                            <i class="icon icon-plus"></i>
+                            New
+                        </button>
+                    </div>
+                    <div class="gdrive-toolbar-right">
+                        <div class="gdrive-search-box">
+                            <i class="icon icon-search gdrive-search-icon" style="color: #5f6368; font-size: 20px;"></i>
+                            <input type="text" class="gdrive-search-input" placeholder="Search in Drive" id="gdriveSearchInput">
+                            <button class="gdrive-search-filter-btn" id="searchFilterBtn" title="Search options">
+                                <i class="icon icon-tune" style="font-size: 20px;"></i>
+                            </button>
+                        </div>
+                        <div class="gdrive-view-toggle" style="background: transparent; padding: 0; gap: 4px;">
+                            <button class="gdrive-view-btn active" data-view="grid" title="Grid view" style="width: 40px; height: 40px; border-radius: 50%; background: transparent; border: none; display: flex; align-items: center; justify-content: center;">
+                                <i class="icon icon-grid" style="font-size: 20px;"></i>
+                            </button>
+                            <button class="gdrive-view-btn" data-view="list" title="List view" style="width: 40px; height: 40px; border-radius: 50%; background: transparent; border: none; display: flex; align-items: center; justify-content: center;">
+                                <i class="icon icon-list" style="font-size: 20px;"></i>
+                            </button>
+                        </div>
+                        <button class="gdrive-btn-ghost" id="settingsBtn" style="width: 40px; height: 40px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;">
+                            <i class="icon icon-settings" style="font-size: 20px;"></i>
+                        </button>
+                        <button class="gdrive-btn-ghost" id="toggleInterfaceBtn" title="Switch to Classic View" style="width: 40px; height: 40px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;">
+                            <i class="icon icon-layout" style="font-size: 20px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Google Drive Breadcrumb -->
+                <div class="gdrive-breadcrumb" id="gdriveBreadcrumb" style="display: none; padding: 12px 24px; background: #fff; border-bottom: 1px solid #e8eaed;">
+                    <div class="gdrive-breadcrumb-item current" style="color: #202124; font-size: 22px; font-weight: 400; display: flex; align-items: center; gap: 8px;">
+                        <i class="icon icon-folder" style="font-size: 24px; color: #1a73e8;"></i>
+                        <span>My Drive</span>
+                    </div>
+                </div>
+
+                <!-- Selection Info and Bulk Operations -->
+                <div class="gdrive-bulk-toolbar" id="gdriveBulkToolbar" style="display: none;">
+                    <div class="gdrive-bulk-info">
+                        <span class="selection-count">0 items selected</span>
+                    </div>
+                    <div class="gdrive-bulk-actions">
+                        <button class="gdrive-btn-ghost" id="bulkDownloadBtn">
+                            <i class="icon icon-download"></i>
+                            Download
+                        </button>
+                        <button class="gdrive-btn-ghost" id="bulkShareBtn">
+                            <i class="icon icon-share"></i>
+                            Share
+                        </button>
+                        <button class="gdrive-btn-ghost" id="bulkStarBtn">
+                            <i class="icon icon-star"></i>
+                            Star
+                        </button>
+                        <button class="gdrive-btn-ghost" id="bulkMoveBtn">
+                            <i class="icon icon-move"></i>
+                            Move
+                        </button>
+                        <button class="gdrive-btn-ghost" id="bulkDeleteBtn">
+                            <i class="icon icon-trash"></i>
+                            Delete
+                        </button>
+                        <button class="gdrive-btn-ghost" id="clearSelectionBtn">
+                            <i class="icon icon-times"></i>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                            <!-- Google Drive Files Display -->
+                            <div class="gdrive-files-display gdrive-grid-view" id="gdriveFilesDisplay" style="flex: 1; overflow-y: auto;">
+                                <!-- Files will be loaded here -->
+                            </div>
+
                 <!-- Files Container -->
                 <div class="files-container" id="filesContainer" style="display: none;">
                     <!-- List View Header (only visible in list/details view) -->
@@ -483,13 +615,16 @@
                     </div>
                 </div>
 
-                <!-- Loading -->
-                <div class="loading-screen" id="loadingScreen" style="display: none;">
-                    <div class="loading">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <span>Đang tải file...</span>
-                    </div>
-                </div>
+                            <!-- Loading -->
+                            <div class="loading-screen" id="loadingScreen" style="display: none;">
+                                <div class="loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span>Đang tải file...</span>
+                                </div>
+                            </div>
+                        </div> <!-- End Main Content Area -->
+                    </div> <!-- End Flex Container -->
+                </div> <!-- End Google Drive Layout -->
 
                 <!-- No Results -->
                 <div class="no-results" id="noResults" style="display: none;">
@@ -648,9 +783,114 @@
     <!-- Mobile Menu Overlay -->
     <div class="mobile-overlay" id="mobileOverlay"></div>
 
+    <!-- Google Drive Context Menu -->
+    <div class="gdrive-context-menu" id="gdriveContextMenu">
+        <button class="gdrive-context-item" data-action="open">
+            <i class="icon icon-eye"></i>
+            <span>Open</span>
+        </button>
+        <button class="gdrive-context-item" data-action="download">
+            <i class="icon icon-download"></i>
+            <span>Download</span>
+        </button>
+        <div class="gdrive-context-divider"></div>
+        <button class="gdrive-context-item" data-action="rename">
+            <i class="icon icon-edit"></i>
+            <span>Rename</span>
+        </button>
+        <button class="gdrive-context-item" data-action="copy">
+            <i class="icon icon-copy"></i>
+            <span>Make a copy</span>
+        </button>
+        <button class="gdrive-context-item" data-action="move">
+            <i class="icon icon-move"></i>
+            <span>Move to</span>
+        </button>
+        <div class="gdrive-context-divider"></div>
+        <button class="gdrive-context-item" data-action="share">
+            <i class="icon icon-share"></i>
+            <span>Share</span>
+        </button>
+        <button class="gdrive-context-item" data-action="star">
+            <i class="icon icon-star"></i>
+            <span>Add to starred</span>
+        </button>
+        <div class="gdrive-context-divider"></div>
+        <button class="gdrive-context-item" data-action="delete">
+            <i class="icon icon-trash"></i>
+            <span>Remove</span>
+        </button>
+    </div>
+
+    <!-- Google Drive Modal -->
+    <div class="gdrive-modal" id="gdriveModal">
+        <div class="gdrive-modal-content">
+            <div class="gdrive-modal-header">
+                <h2 class="gdrive-modal-title" id="gdriveModalTitle">Modal Title</h2>
+                <button class="gdrive-modal-close" id="gdriveModalClose">
+                    <i class="icon icon-times"></i>
+                </button>
+            </div>
+            <div class="gdrive-modal-body" id="gdriveModalBody">
+                <!-- Modal content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- File Upload Progress -->
+    <div class="gdrive-upload-progress" id="gdriveUploadProgress" style="display: none;">
+        <h4>Uploading files</h4>
+        <div id="uploadProgressList">
+            <!-- Upload progress items will be added here -->
+        </div>
+    </div>
+
+    <!-- Search Filter Dropdown -->
+    <div class="gdrive-search-filters" id="gdriveSearchFilters" style="display: none;">
+        <div class="gdrive-filter-section">
+            <label class="gdrive-filter-label">File Type</label>
+            <select class="gdrive-filter-select" id="fileTypeFilter">
+                <option value="">All types</option>
+                <option value="image">Images</option>
+                <option value="video">Videos</option>
+                <option value="audio">Audio</option>
+                <option value="document">Documents</option>
+                <option value="archive">Archives</option>
+                <option value="code">Code</option>
+            </select>
+        </div>
+        <div class="gdrive-filter-section">
+            <label class="gdrive-filter-label">Size</label>
+            <select class="gdrive-filter-select" id="sizeFilter">
+                <option value="">Any size</option>
+                <option value="small">Small (< 1 MB)</option>
+                <option value="medium">Medium (1-10 MB)</option>
+                <option value="large">Large (10-100 MB)</option>
+                <option value="huge">Huge (> 100 MB)</option>
+            </select>
+        </div>
+        <div class="gdrive-filter-section">
+            <label class="gdrive-filter-label">Modified</label>
+            <select class="gdrive-filter-select" id="dateFilter">
+                <option value="">Any time</option>
+                <option value="today">Today</option>
+                <option value="week">This week</option>
+                <option value="month">This month</option>
+                <option value="year">This year</option>
+            </select>
+        </div>
+        <div class="gdrive-filter-actions">
+            <button class="gdrive-btn-secondary" id="clearFiltersBtn">Clear</button>
+            <button class="gdrive-btn-primary" id="applyFiltersBtn">Apply</button>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="/static/js/simple.js?v=20250719"></script>
     <script src="/static/js/explorer.js?v=20250719"></script>
     <script src="/static/js/windows-explorer.js?v=20250720"></script>
+    <script src="/static/js/gdrive-manager.js?v=20250720"></script>
+    <script src="/static/js/gdrive-integration.js?v=20250720"></script>
+    <script src="/static/js/test-buttons.js?v=20250720"></script>
 </body>
 </html>

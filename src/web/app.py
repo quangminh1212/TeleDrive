@@ -806,6 +806,317 @@ def preview_telegram_file(session_id, message_id):
         logger.error(f"Error getting file preview: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ===== GOOGLE DRIVE STYLE API ROUTES =====
+
+@app.route('/api/gdrive/files', methods=['GET'])
+@auth_required
+def gdrive_list_files():
+    """List files in Google Drive style format"""
+    try:
+        session_id = request.args.get('session_id')
+        folder_path = request.args.get('path', '/')
+        view_type = request.args.get('view', 'grid')  # grid or list
+        sort_by = request.args.get('sort', 'name')
+        sort_order = request.args.get('order', 'asc')
+        search_query = request.args.get('q', '')
+
+        if session_id:
+            # Get files from specific Telegram session
+            session_data = api.get_session_files(session_id)
+            if not session_data or 'files' not in session_data:
+                return jsonify({'success': False, 'error': 'Session not found'}), 404
+
+            files = []
+            for file in session_data['files']:
+                # Convert to Google Drive format
+                gdrive_file = {
+                    'id': f"{session_id}_{file.get('message_info', {}).get('message_id', 'unknown')}",
+                    'name': file.get('file_name', 'Unknown'),
+                    'type': get_file_type(file.get('file_name', '')),
+                    'size': file.get('file_size', 0),
+                    'modified': file.get('message_info', {}).get('date', ''),
+                    'session_id': session_id,
+                    'message_id': file.get('message_info', {}).get('message_id'),
+                    'download_url': f"/api/file/download/{session_id}/{file.get('message_info', {}).get('message_id', 0)}",
+                    'preview_url': f"/api/file/preview/{session_id}/{file.get('message_info', {}).get('message_id', 0)}",
+                    'thumbnail': get_file_thumbnail(file.get('file_name', '')),
+                    'starred': False,  # TODO: Implement starring system
+                    'shared': False   # TODO: Implement sharing system
+                }
+
+                # Apply search filter
+                if search_query and search_query.lower() not in gdrive_file['name'].lower():
+                    continue
+
+                files.append(gdrive_file)
+
+            # Apply sorting
+            files = sort_files(files, sort_by, sort_order)
+
+            return jsonify({
+                'success': True,
+                'files': files,
+                'total': len(files),
+                'view': view_type,
+                'path': folder_path,
+                'session_info': {
+                    'id': session_id,
+                    'name': session_data.get('session_name', 'Unknown Session'),
+                    'total_files': len(files),
+                    'total_size': sum(f['size'] for f in files if f['size'])
+                }
+            })
+        else:
+            # List all sessions as folders
+            sessions = api.get_sessions()
+            folders = []
+
+            for session in sessions:
+                folder = {
+                    'id': f"session_{session['session_id']}",
+                    'name': session['session_name'],
+                    'type': 'folder',
+                    'size': None,
+                    'modified': session.get('last_scan', ''),
+                    'session_id': session['session_id'],
+                    'file_count': session.get('total_files', 0),
+                    'starred': False,
+                    'shared': False
+                }
+                folders.append(folder)
+
+            return jsonify({
+                'success': True,
+                'files': folders,
+                'total': len(folders),
+                'view': view_type,
+                'path': folder_path
+            })
+
+    except Exception as e:
+        logger.error(f"Error listing files: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/gdrive/file/<file_id>', methods=['GET'])
+@auth_required
+def gdrive_get_file(file_id):
+    """Get detailed file information"""
+    try:
+        # Parse file_id to extract session_id and message_id
+        if file_id.startswith('session_'):
+            # This is a session folder
+            session_id = file_id.replace('session_', '')
+            session_data = api.get_session_files(session_id)
+            if not session_data:
+                return jsonify({'success': False, 'error': 'Session not found'}), 404
+
+            return jsonify({
+                'success': True,
+                'file': {
+                    'id': file_id,
+                    'name': session_data.get('session_name', 'Unknown Session'),
+                    'type': 'folder',
+                    'size': None,
+                    'modified': session_data.get('last_scan', ''),
+                    'session_id': session_id,
+                    'file_count': len(session_data.get('files', [])),
+                    'starred': False,
+                    'shared': False
+                }
+            })
+        else:
+            # This is a regular file
+            parts = file_id.split('_')
+            if len(parts) < 2:
+                return jsonify({'success': False, 'error': 'Invalid file ID'}), 400
+
+            session_id = parts[0]
+            message_id = int(parts[1])
+
+            session_data = api.get_session_files(session_id)
+            if not session_data or 'files' not in session_data:
+                return jsonify({'success': False, 'error': 'Session not found'}), 404
+
+            # Find the specific file
+            target_file = None
+            for file in session_data['files']:
+                if file.get('message_info', {}).get('message_id') == message_id:
+                    target_file = file
+                    break
+
+            if not target_file:
+                return jsonify({'success': False, 'error': 'File not found'}), 404
+
+            gdrive_file = {
+                'id': file_id,
+                'name': target_file.get('file_name', 'Unknown'),
+                'type': get_file_type(target_file.get('file_name', '')),
+                'size': target_file.get('file_size', 0),
+                'modified': target_file.get('message_info', {}).get('date', ''),
+                'session_id': session_id,
+                'message_id': message_id,
+                'download_url': f"/api/file/download/{session_id}/{message_id}",
+                'preview_url': f"/api/file/preview/{session_id}/{message_id}",
+                'thumbnail': get_file_thumbnail(target_file.get('file_name', '')),
+                'starred': False,
+                'shared': False
+            }
+
+            return jsonify({
+                'success': True,
+                'file': gdrive_file
+            })
+
+    except Exception as e:
+        logger.error(f"Error getting file: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/gdrive/search', methods=['GET'])
+@auth_required
+def gdrive_search_files():
+    """Search files across all sessions"""
+    try:
+        query = request.args.get('q', '')
+        file_type = request.args.get('type', '')  # image, video, document, etc.
+        session_id = request.args.get('session_id', '')
+        sort_by = request.args.get('sort', 'name')
+        sort_order = request.args.get('order', 'asc')
+
+        if not query:
+            return jsonify({'success': False, 'error': 'Search query is required'}), 400
+
+        all_files = []
+        sessions = api.get_sessions()
+
+        for session in sessions:
+            if session_id and session['session_id'] != session_id:
+                continue
+
+            session_data = api.get_session_files(session['session_id'])
+            if not session_data or 'files' not in session_data:
+                continue
+
+            for file in session_data['files']:
+                file_name = file.get('file_name', '').lower()
+
+                # Apply search filter
+                if query.lower() not in file_name:
+                    continue
+
+                # Apply type filter
+                file_type_detected = get_file_type(file.get('file_name', ''))
+                if file_type and file_type_detected != file_type:
+                    continue
+
+                gdrive_file = {
+                    'id': f"{session['session_id']}_{file.get('message_info', {}).get('message_id', 'unknown')}",
+                    'name': file.get('file_name', 'Unknown'),
+                    'type': file_type_detected,
+                    'size': file.get('file_size', 0),
+                    'modified': file.get('message_info', {}).get('date', ''),
+                    'session_id': session['session_id'],
+                    'session_name': session['session_name'],
+                    'message_id': file.get('message_info', {}).get('message_id'),
+                    'download_url': f"/api/file/download/{session['session_id']}/{file.get('message_info', {}).get('message_id', 0)}",
+                    'preview_url': f"/api/file/preview/{session['session_id']}/{file.get('message_info', {}).get('message_id', 0)}",
+                    'thumbnail': get_file_thumbnail(file.get('file_name', '')),
+                    'starred': False,
+                    'shared': False
+                }
+                all_files.append(gdrive_file)
+
+        # Apply sorting
+        all_files = sort_files(all_files, sort_by, sort_order)
+
+        return jsonify({
+            'success': True,
+            'files': all_files,
+            'total': len(all_files),
+            'query': query,
+            'type_filter': file_type
+        })
+
+    except Exception as e:
+        logger.error(f"Error searching files: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ===== HELPER FUNCTIONS FOR GOOGLE DRIVE API =====
+
+def get_file_type(filename):
+    """Determine file type based on extension"""
+    if not filename:
+        return 'unknown'
+
+    ext = filename.lower().split('.')[-1] if '.' in filename else ''
+
+    image_exts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico']
+    video_exts = ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'm4v']
+    audio_exts = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a']
+    document_exts = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt']
+    spreadsheet_exts = ['xls', 'xlsx', 'csv', 'ods']
+    presentation_exts = ['ppt', 'pptx', 'odp']
+    archive_exts = ['zip', 'rar', '7z', 'tar', 'gz', 'bz2']
+    code_exts = ['py', 'js', 'html', 'css', 'java', 'cpp', 'c', 'php', 'rb', 'go']
+
+    if ext in image_exts:
+        return 'image'
+    elif ext in video_exts:
+        return 'video'
+    elif ext in audio_exts:
+        return 'audio'
+    elif ext in document_exts:
+        return 'document'
+    elif ext in spreadsheet_exts:
+        return 'spreadsheet'
+    elif ext in presentation_exts:
+        return 'presentation'
+    elif ext in archive_exts:
+        return 'archive'
+    elif ext in code_exts:
+        return 'code'
+    else:
+        return 'file'
+
+def get_file_thumbnail(filename):
+    """Get thumbnail URL for file based on type"""
+    file_type = get_file_type(filename)
+
+    # Return emoji-based thumbnails for now
+    # In a real implementation, you might generate actual thumbnails
+    thumbnail_map = {
+        'image': '🖼️',
+        'video': '🎥',
+        'audio': '🎵',
+        'document': '📄',
+        'spreadsheet': '📊',
+        'presentation': '📽️',
+        'archive': '📦',
+        'code': '💻',
+        'folder': '📁',
+        'file': '📄'
+    }
+
+    return thumbnail_map.get(file_type, '📄')
+
+def sort_files(files, sort_by='name', sort_order='asc'):
+    """Sort files based on criteria"""
+    reverse = sort_order == 'desc'
+
+    if sort_by == 'name':
+        files.sort(key=lambda x: x['name'].lower(), reverse=reverse)
+    elif sort_by == 'size':
+        files.sort(key=lambda x: x['size'] or 0, reverse=reverse)
+    elif sort_by == 'modified':
+        files.sort(key=lambda x: x['modified'] or '', reverse=reverse)
+    elif sort_by == 'type':
+        files.sort(key=lambda x: x['type'], reverse=reverse)
+
+    # Always put folders first
+    folders = [f for f in files if f['type'] == 'folder']
+    other_files = [f for f in files if f['type'] != 'folder']
+
+    return folders + other_files
+
 @app.route('/favicon.ico')
 def favicon():
     """Serve favicon to prevent 404 errors"""
