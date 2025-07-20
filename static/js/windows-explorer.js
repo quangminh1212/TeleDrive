@@ -34,6 +34,7 @@ class Windows11Explorer {
         this.setupSearch();
         this.setupWelcomeScreen();
         this.setupLogout();
+        this.setupAdminMenu();
 
         // Initialize view
         this.updateNavigationButtons();
@@ -2961,6 +2962,103 @@ class Windows11Explorer {
             // Redirect to logout endpoint
             window.location.href = '/logout';
         }
+    }
+
+    setupAdminMenu() {
+        const adminMenuToggle = document.getElementById('adminMenuToggle');
+        const adminDropdownMenu = document.getElementById('adminDropdownMenu');
+
+        if (adminMenuToggle && adminDropdownMenu) {
+            // Toggle dropdown
+            adminMenuToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                adminDropdownMenu.classList.toggle('show');
+                adminMenuToggle.classList.toggle('active');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!adminMenuToggle.contains(e.target) && !adminDropdownMenu.contains(e.target)) {
+                    adminDropdownMenu.classList.remove('show');
+                    adminMenuToggle.classList.remove('active');
+                }
+            });
+
+            // Setup menu item handlers
+            this.setupAdminMenuItems();
+        }
+    }
+
+    setupAdminMenuItems() {
+        // User Management
+        const userManagementBtn = document.getElementById('userManagementBtn');
+        if (userManagementBtn) {
+            userManagementBtn.addEventListener('click', () => {
+                this.openUserManagement();
+            });
+        }
+
+        // System Settings
+        const systemSettingsBtn = document.getElementById('systemSettingsBtn');
+        if (systemSettingsBtn) {
+            systemSettingsBtn.addEventListener('click', () => {
+                this.openSystemSettings();
+            });
+        }
+
+        // Scan Settings
+        const scanSettingsBtn = document.getElementById('scanSettingsBtn');
+        if (scanSettingsBtn) {
+            scanSettingsBtn.addEventListener('click', () => {
+                this.openScanSettings();
+            });
+        }
+
+        // Logs View
+        const logsViewBtn = document.getElementById('logsViewBtn');
+        if (logsViewBtn) {
+            logsViewBtn.addEventListener('click', () => {
+                this.openLogsView();
+            });
+        }
+
+        // Profile Settings
+        const profileSettingsBtn = document.getElementById('profileSettingsBtn');
+        if (profileSettingsBtn) {
+            profileSettingsBtn.addEventListener('click', () => {
+                this.openProfileSettings();
+            });
+        }
+    }
+
+    openUserManagement() {
+        this.showNotification('Đang mở quản lý người dùng...', 'info');
+        // TODO: Implement user management modal
+        console.log('Opening user management...');
+    }
+
+    openSystemSettings() {
+        this.showNotification('Đang mở cài đặt hệ thống...', 'info');
+        // TODO: Implement system settings modal
+        console.log('Opening system settings...');
+    }
+
+    openScanSettings() {
+        this.showNotification('Đang mở cài đặt Telegram...', 'info');
+        // TODO: Implement scan settings modal
+        console.log('Opening scan settings...');
+    }
+
+    openLogsView() {
+        this.showNotification('Đang mở logs...', 'info');
+        // TODO: Implement logs viewer modal
+        console.log('Opening logs view...');
+    }
+
+    openProfileSettings() {
+        this.showNotification('Đang mở thông tin tài khoản...', 'info');
+        // TODO: Implement profile settings modal
+        console.log('Opening profile settings...');
     }
 }
 
