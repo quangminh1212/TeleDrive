@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Menu - TeleDrive</title>
+    <link rel="stylesheet" href="http://localhost:5000/static/css/style.css">
+    <link rel="stylesheet" href="http://localhost:5000/static/css/icons.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <div class="title-bar-left">
+                <div class="app-icon">
+                    <img src="http://localhost:5000/static/images/logo.png" alt="TeleDrive" class="app-icon-img">
+                </div>
+                <span class="window-title">TeleDrive - File Manager</span>
+            </div>
+            <div class="title-bar-right">
+                <div class="user-info">
+                    <i class="icon icon-user"></i>
+                    <span class="username">admin</span>
+                    <div class="admin-menu-container">
+                        <button class="admin-badge-btn" id="adminMenuToggle" title="Cài đặt Admin">
+                            <span class="admin-badge">Admin</span>
+                            <i class="icon icon-chevron-down"></i>
+                        </button>
+                        <div class="admin-dropdown-menu" id="adminDropdownMenu">
+                            <div class="admin-menu-header">
+                                <i class="icon icon-settings"></i>
+                                <span>Quản lý hệ thống</span>
+                            </div>
+                            <div class="admin-menu-divider"></div>
+                            <button class="admin-menu-item" id="userManagementBtn">
+                                <i class="icon icon-user"></i>
+                                <span>Quản lý người dùng</span>
+                            </button>
+                            <button class="admin-menu-item" id="systemSettingsBtn">
+                                <i class="icon icon-settings"></i>
+                                <span>Cài đặt hệ thống</span>
+                            </button>
+                            <button class="admin-menu-item" id="scanSettingsBtn">
+                                <i class="icon icon-scan"></i>
+                                <span>Cài đặt Telegram</span>
+                            </button>
+                            <button class="admin-menu-item" id="logsViewBtn">
+                                <i class="icon icon-file-text"></i>
+                                <span>Xem logs</span>
+                            </button>
+                            <div class="admin-menu-divider"></div>
+                            <button class="admin-menu-item" id="profileSettingsBtn">
+                                <i class="icon icon-user"></i>
+                                <span>Thông tin tài khoản</span>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
+                        <i class="icon icon-logout"></i>
+                        <span>Đăng xuất</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Test Admin Menu</h1>
+            <p>Click vào nút "Admin" ở góc trên bên phải để test admin menu.</p>
+            <div id="test-results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Test admin menu functionality
+        console.log('Setting up admin menu test...');
+        
+        const adminMenuToggle = document.getElementById('adminMenuToggle');
+        const adminDropdownMenu = document.getElementById('adminDropdownMenu');
+        const testResults = document.getElementById('test-results');
+
+        function logTest(message) {
+            console.log(message);
+            testResults.innerHTML += '<p>' + message + '</p>';
+        }
+
+        logTest('Admin menu elements found: ' + (adminMenuToggle && adminDropdownMenu ? 'YES' : 'NO'));
+
+        if (adminMenuToggle && adminDropdownMenu) {
+            logTest('Setting up event listeners...');
+
+            // Toggle dropdown
+            adminMenuToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                logTest('Admin menu button clicked!');
+                adminDropdownMenu.classList.toggle('show');
+                adminMenuToggle.classList.toggle('active');
+                logTest('Menu show class: ' + adminDropdownMenu.classList.contains('show'));
+                logTest('Menu display: ' + window.getComputedStyle(adminDropdownMenu).display);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!adminMenuToggle.contains(e.target) && !adminDropdownMenu.contains(e.target)) {
+                    adminDropdownMenu.classList.remove('show');
+                    adminMenuToggle.classList.remove('active');
+                    logTest('Admin menu closed');
+                }
+            });
+
+            // Setup menu item handlers
+            const menuItems = ['userManagementBtn', 'systemSettingsBtn', 'scanSettingsBtn', 'logsViewBtn', 'profileSettingsBtn'];
+            
+            menuItems.forEach(itemId => {
+                const item = document.getElementById(itemId);
+                if (item) {
+                    item.addEventListener('click', () => {
+                        logTest('Menu item clicked: ' + itemId);
+                        // Close menu
+                        adminDropdownMenu.classList.remove('show');
+                        adminMenuToggle.classList.remove('active');
+                    });
+                    logTest('Event listener added for: ' + itemId);
+                } else {
+                    logTest('Menu item not found: ' + itemId);
+                }
+            });
+
+            logTest('Admin menu setup completed successfully');
+        } else {
+            logTest('Admin menu elements not found!');
+        }
+    </script>
+</body>
+</html>
