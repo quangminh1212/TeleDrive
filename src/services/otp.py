@@ -171,6 +171,12 @@ def send_otp_sync(phone_number: str) -> Tuple[bool, str]:
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)
                 try:
+                    # Set encoding cho thread
+                    import sys
+                    if hasattr(sys.stdout, 'reconfigure'):
+                        sys.stdout.reconfigure(encoding='utf-8')
+                    if hasattr(sys.stderr, 'reconfigure'):
+                        sys.stderr.reconfigure(encoding='utf-8')
                     return new_loop.run_until_complete(send_otp_async(phone_number))
                 finally:
                     new_loop.close()
@@ -189,8 +195,15 @@ def send_otp_sync(phone_number: str) -> Tuple[bool, str]:
                 loop.close()
 
     except Exception as e:
-        logger.error(f"Lỗi gửi OTP sync: {e}")
-        return False, f"Lỗi hệ thống: {str(e)}"
+        error_msg = str(e)
+        # Xử lý encoding error
+        try:
+            logger.error(f"Lỗi gửi OTP sync: {error_msg}")
+        except UnicodeEncodeError:
+            logger.error(f"Error sending OTP sync: {error_msg}")
+
+        # Trả về message tiếng Anh để tránh encoding error
+        return False, f"System error: {error_msg}"
 
 # Alternative: Sử dụng bot thay vì client (nếu cần)
 class TelegramBotOTPService:
