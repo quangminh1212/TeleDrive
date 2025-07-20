@@ -272,7 +272,7 @@ class Windows11Explorer {
     // Navigation Pane
     setupNavigationPane() {
         const sectionToggles = document.querySelectorAll('.section-toggle');
-        
+
         sectionToggles.forEach(toggle => {
             toggle.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -285,10 +285,276 @@ class Windows11Explorer {
         navItems.forEach(item => {
             item.addEventListener('click', () => {
                 if (item.dataset.path) {
-                    this.navigateToPath(item.dataset.path);
+                    this.navigateToSection(item.dataset.path);
+                    this.setActiveNavItem(item);
                 }
             });
         });
+
+        // Load sessions
+        this.loadTelegramSessions();
+    }
+
+    navigateToSection(sectionPath) {
+        this.currentPath = sectionPath;
+        this.updateBreadcrumbs();
+        this.updateNavigationButtons();
+        this.loadSectionContent(sectionPath);
+    }
+
+    setActiveNavItem(activeItem) {
+        // Remove active class from all nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Add active class to clicked item
+        activeItem.classList.add('active');
+    }
+
+    loadSectionContent(sectionPath) {
+        const contentArea = document.querySelector('.content-area');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+
+        // Hide welcome screen
+        if (welcomeScreen) {
+            welcomeScreen.style.display = 'none';
+        }
+
+        // Show loading state
+        this.showLoadingState();
+
+        // Simulate loading different content based on section
+        setTimeout(() => {
+            this.hideLoadingState();
+            this.renderSectionFiles(sectionPath);
+        }, 500);
+    }
+
+    showLoadingState() {
+        const contentArea = document.querySelector('.content-area');
+        contentArea.innerHTML = `
+            <div class="loading-screen">
+                <div class="loading">
+                    <i class="icon icon-spinner"></i>
+                    <span>Loading...</span>
+                </div>
+            </div>
+        `;
+    }
+
+    hideLoadingState() {
+        // Loading state will be replaced by content
+    }
+
+    renderSectionFiles(sectionPath) {
+        const contentArea = document.querySelector('.content-area');
+
+        // Mock data for different sections
+        const mockData = {
+            'home': {
+                title: 'TeleDrive Home',
+                files: [
+                    { name: 'Recent Downloads', type: 'folder', icon: 'folder', size: '', date: 'Today' },
+                    { name: 'Shared Files', type: 'folder', icon: 'folder', size: '', date: 'Yesterday' },
+                    { name: 'document.pdf', type: 'file', icon: 'pdf', size: '2.5 MB', date: '2 days ago' },
+                    { name: 'presentation.pptx', type: 'file', icon: 'file', size: '5.1 MB', date: '3 days ago' }
+                ]
+            },
+            'recent': {
+                title: 'Recent Files',
+                files: [
+                    { name: 'photo.jpg', type: 'file', icon: 'image', size: '1.2 MB', date: '1 hour ago' },
+                    { name: 'video.mp4', type: 'file', icon: 'video', size: '25.3 MB', date: '2 hours ago' },
+                    { name: 'archive.zip', type: 'file', icon: 'archive', size: '8.7 MB', date: '5 hours ago' }
+                ]
+            },
+            'documents': {
+                title: 'Documents',
+                files: [
+                    { name: 'report.docx', type: 'file', icon: 'word', size: '1.8 MB', date: 'Today' },
+                    { name: 'spreadsheet.xlsx', type: 'file', icon: 'file', size: '945 KB', date: 'Yesterday' },
+                    { name: 'notes.txt', type: 'file', icon: 'file-text', size: '12 KB', date: '2 days ago' }
+                ]
+            },
+            'images': {
+                title: 'Images',
+                files: [
+                    { name: 'vacation.jpg', type: 'file', icon: 'image', size: '2.1 MB', date: 'Today' },
+                    { name: 'screenshot.png', type: 'file', icon: 'image', size: '856 KB', date: 'Today' },
+                    { name: 'profile.jpg', type: 'file', icon: 'image', size: '1.5 MB', date: 'Yesterday' }
+                ]
+            }
+        };
+
+        const data = mockData[sectionPath] || mockData['home'];
+
+        contentArea.innerHTML = `
+            <div class="files-container">
+                <div class="section-header">
+                    <h2>${data.title}</h2>
+                    <div class="section-actions">
+                        <button class="action-btn" id="refreshSection">
+                            <i class="icon icon-refresh"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="files-display ${this.currentView}-view" id="filesDisplay">
+                    ${data.files.map(file => this.renderFileItem(file)).join('')}
+                </div>
+            </div>
+        `;
+
+        // Update status bar
+        this.updateStatusBar(data.files.length);
+
+        // Setup file interactions
+        this.setupFileInteractions();
+    }
+
+    renderFileItem(file) {
+        return `
+            <div class="file-item" data-id="${file.name}" data-type="${file.type}">
+                <div class="file-icon">
+                    <i class="icon icon-${file.icon}"></i>
+                </div>
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    ${this.currentView === 'details' ? `
+                        <div class="file-details">
+                            <span class="file-size">${file.size}</span>
+                            <span class="file-date">${file.date}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    setupFileInteractions() {
+        const fileItems = document.querySelectorAll('.file-item');
+
+        fileItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                this.handleFileItemClick(item, e);
+            });
+
+            item.addEventListener('dblclick', () => {
+                this.handleFileItemDoubleClick(item);
+            });
+        });
+    }
+
+    updateStatusBar(itemCount = 0) {
+        const itemCountEl = document.getElementById('itemCount');
+        const selectedCountEl = document.getElementById('selectedCount');
+
+        if (itemCountEl) {
+            itemCountEl.textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
+        }
+
+        if (selectedCountEl) {
+            const selectedCount = this.selectedItems.size;
+            if (selectedCount > 0) {
+                selectedCountEl.textContent = ` • ${selectedCount} item${selectedCount !== 1 ? 's' : ''} selected`;
+                selectedCountEl.style.display = 'inline';
+            } else {
+                selectedCountEl.style.display = 'none';
+            }
+        }
+    }
+
+    async loadTelegramSessions() {
+        const sessionsList = document.getElementById('sessionsList');
+
+        try {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Mock session data
+            const sessions = [
+                { id: 1, name: 'Personal Account', phone: '+1234567890', status: 'active' },
+                { id: 2, name: 'Work Account', phone: '+0987654321', status: 'active' },
+                { id: 3, name: 'Bot Account', phone: 'bot_token', status: 'inactive' }
+            ];
+
+            sessionsList.innerHTML = sessions.map(session => `
+                <div class="nav-item session-item ${session.status}" data-session-id="${session.id}">
+                    <i class="icon icon-user"></i>
+                    <div class="session-info">
+                        <div class="session-name">${session.name}</div>
+                        <div class="session-phone">${session.phone}</div>
+                    </div>
+                    <div class="session-status ${session.status}"></div>
+                </div>
+            `).join('');
+
+            // Add click handlers for sessions
+            sessionsList.querySelectorAll('.session-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    this.loadSessionFiles(item.dataset.sessionId);
+                    this.setActiveNavItem(item);
+                });
+            });
+
+        } catch (error) {
+            sessionsList.innerHTML = `
+                <div class="error-state">
+                    <i class="icon icon-alert"></i>
+                    <span>Failed to load sessions</span>
+                </div>
+            `;
+        }
+    }
+
+    loadSessionFiles(sessionId) {
+        this.currentPath = `session-${sessionId}`;
+        this.updateBreadcrumbs();
+        this.showLoadingState();
+
+        // Simulate loading session files
+        setTimeout(() => {
+            this.hideLoadingState();
+            this.renderSessionFiles(sessionId);
+        }, 800);
+    }
+
+    renderSessionFiles(sessionId) {
+        const contentArea = document.querySelector('.content-area');
+
+        // Mock session files
+        const sessionFiles = [
+            { name: 'Chat Photos', type: 'folder', icon: 'folder', size: '', date: 'Today', count: '156 files' },
+            { name: 'Documents', type: 'folder', icon: 'folder', size: '', date: 'Today', count: '23 files' },
+            { name: 'Voice Messages', type: 'folder', icon: 'folder', size: '', date: 'Yesterday', count: '45 files' },
+            { name: 'shared_file.pdf', type: 'file', icon: 'pdf', size: '3.2 MB', date: '2 hours ago' },
+            { name: 'image_2024.jpg', type: 'file', icon: 'image', size: '1.8 MB', date: '5 hours ago' }
+        ];
+
+        contentArea.innerHTML = `
+            <div class="files-container">
+                <div class="section-header">
+                    <h2>Session Files</h2>
+                    <div class="section-actions">
+                        <button class="action-btn" id="scanSession">
+                            <i class="icon icon-refresh"></i>
+                            Scan Session
+                        </button>
+                        <button class="action-btn" id="downloadAll">
+                            <i class="icon icon-download"></i>
+                            Download All
+                        </button>
+                    </div>
+                </div>
+                <div class="files-display ${this.currentView}-view" id="filesDisplay">
+                    ${sessionFiles.map(file => this.renderFileItem(file)).join('')}
+                </div>
+            </div>
+        `;
+
+        this.updateStatusBar(sessionFiles.length);
+        this.setupFileInteractions();
     }
 
     toggleSection(sectionName) {
