@@ -5735,7 +5735,7 @@ body {
 
 .files-display.content-view .file-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
     border-radius: var(--border-radius);
