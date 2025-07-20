@@ -519,26 +519,45 @@ class Windows11Explorer {
         const sessionsList = document.getElementById('sessionsList');
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Load real sessions from API
+            const response = await fetch('/api/scans');
 
-            // Mock session data
-            const sessions = [
-                { id: 1, name: 'Personal Account', phone: '+1234567890', status: 'active' },
-                { id: 2, name: 'Work Account', phone: '+0987654321', status: 'active' },
-                { id: 3, name: 'Bot Account', phone: 'bot_token', status: 'inactive' }
-            ];
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
 
-            sessionsList.innerHTML = sessions.map(session => `
-                <div class="nav-item session-item ${session.status}" data-session-id="${session.id}">
-                    <i class="icon icon-user"></i>
-                    <div class="session-info">
-                        <div class="session-name">${session.name}</div>
-                        <div class="session-phone">${session.phone}</div>
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const sessions = await response.json();
+
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="icon icon-folder-open"></i>
+                        <p>Chưa có session nào được scan</p>
                     </div>
-                    <div class="session-status ${session.status}"></div>
-                </div>
-            `).join('');
+                `;
+                return;
+            }
+
+            sessionsList.innerHTML = sessions.map(session => {
+                const scanDate = this.formatDate(session.scan_info?.scan_date || new Date().toISOString());
+                const fileCount = session.file_count || 0;
+
+                return `
+                    <div class="nav-item session-item active" data-session-id="${session.session_id}">
+                        <i class="icon icon-folder"></i>
+                        <div class="session-info">
+                            <div class="session-name">Session ${session.timestamp}</div>
+                            <div class="session-phone">${fileCount} files • ${scanDate}</div>
+                        </div>
+                        <div class="session-status active"></div>
+                    </div>
+                `;
+            }).join('');
 
             // Add click handlers for sessions
             sessionsList.querySelectorAll('.session-item').forEach(item => {
@@ -549,10 +568,11 @@ class Windows11Explorer {
             });
 
         } catch (error) {
+            console.error('Error loading sessions:', error);
             sessionsList.innerHTML = `
                 <div class="error-state">
                     <i class="icon icon-alert"></i>
-                    <span>Failed to load sessions</span>
+                    <span>Failed to load sessions: ${error.message}</span>
                 </div>
             `;
         }
