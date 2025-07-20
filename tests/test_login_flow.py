@@ -26,10 +26,10 @@ def test_login_flow():
             print("✅ Đã có admin user, redirect đến login")
         else:
             print(f"❌ Lỗi setup: {response.status_code}")
-            return False
+            assert False, f"Setup page error: {response.status_code}"
     except Exception as e:
         print(f"❌ Không thể kết nối server: {e}")
-        return False
+        assert False, f"Cannot connect to server: {e}"
     
     # Test 2: Kiểm tra trang login
     print("\n2️⃣ Kiểm tra trang login...")
@@ -39,10 +39,10 @@ def test_login_flow():
             print("✅ Trang login accessible")
         else:
             print(f"❌ Lỗi login page: {response.status_code}")
-            return False
+            assert False, f"Login page error: {response.status_code}"
     except Exception as e:
         print(f"❌ Lỗi kết nối login: {e}")
-        return False
+        assert False, f"Login connection error: {e}"
     
     # Test 3: Gửi OTP
     print("\n3️⃣ Test gửi OTP...")
@@ -100,32 +100,32 @@ def test_login_flow():
                             if dashboard_response.status_code == 200:
                                 if "TeleDrive File Manager" in dashboard_response.text:
                                     print("✅ Dashboard accessible và hiển thị đúng")
-                                    return True
+                                    assert True, "Dashboard accessible và hiển thị đúng"
                                 else:
                                     print("❌ Dashboard không hiển thị đúng content")
-                                    return False
+                                    assert False, "Dashboard không hiển thị đúng content"
                             else:
                                 print(f"❌ Lỗi truy cập dashboard: {dashboard_response.status_code}")
-                                return False
+                                assert False, f"Dashboard access error: {dashboard_response.status_code}"
                         else:
                             print(f"❌ Verify OTP thất bại: {verify_data.get('message')}")
-                            return False
+                            assert False, f"Verify OTP failed: {verify_data.get('message')}"
                     else:
                         print(f"❌ Lỗi verify OTP: {verify_response.status_code}")
-                        return False
+                        assert False, f"Verify OTP error: {verify_response.status_code}"
                 else:
                     print("❌ Không thể extract OTP code từ response")
-                    return False
+                    assert False, "Cannot extract OTP code from response"
             else:
                 print(f"❌ Gửi OTP thất bại: {data.get('message')}")
-                return False
+                assert False, f"Send OTP failed: {data.get('message')}"
         else:
             print(f"❌ Lỗi gửi OTP: {response.status_code}")
-            return False
-            
+            assert False, f"Send OTP error: {response.status_code}"
+
     except Exception as e:
         print(f"❌ Lỗi test OTP: {e}")
-        return False
+        assert False, f"OTP test error: {e}"
 
 def test_invalid_scenarios():
     """Test các trường hợp lỗi"""

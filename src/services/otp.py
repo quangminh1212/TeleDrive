@@ -159,13 +159,35 @@ async def send_otp_async(phone_number: str) -> Tuple[bool, str]:
 def send_otp_sync(phone_number: str) -> Tuple[bool, str]:
     """Helper function để gửi OTP (sync)"""
     try:
-        # Chạy async function trong event loop mới
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        # Kiểm tra xem có event loop đang chạy không
         try:
-            return loop.run_until_complete(send_otp_async(phone_number))
-        finally:
-            loop.close()
+            loop = asyncio.get_running_loop()
+            # Nếu có event loop đang chạy, sử dụng thread pool
+            import concurrent.futures
+            import threading
+
+            def run_in_thread():
+                # Tạo event loop mới trong thread riêng
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(send_otp_async(phone_number))
+                finally:
+                    new_loop.close()
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_in_thread)
+                return future.result(timeout=30)  # 30 second timeout
+
+        except RuntimeError:
+            # Không có event loop đang chạy, tạo mới
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(send_otp_async(phone_number))
+            finally:
+                loop.close()
+
     except Exception as e:
         logger.error(f"Lỗi gửi OTP sync: {e}")
         return False, f"Lỗi hệ thống: {str(e)}"

@@ -59,9 +59,9 @@ def test_config():
         
     except Exception as e:
         print(f"❌ Lỗi cấu hình production: {e}")
-        return False
-    
-    return True
+        assert False, f"Lỗi cấu hình production: {e}"
+
+    assert True, "Cấu hình hoạt động tốt"
 
 if __name__ == '__main__':
     success = test_config()

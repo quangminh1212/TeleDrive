@@ -30,7 +30,7 @@ def test_basic_functionality():
             print(f"   {drive['label']} ({drive['letter']}:) - {drive['free_formatted']} free")
     else:
         print(f"❌ Failed to get drives: {drives_result['error']}")
-        return False
+        assert False, f"Failed to get drives: {drives_result['error']}"
     
     # Test 2: Browse C:\ directory
     print("\n📂 Testing directory browsing...")
@@ -46,7 +46,7 @@ def test_basic_functionality():
             print(f"   {icon} {item['name']} ({item['size_formatted']})")
     else:
         print(f"❌ Failed to browse directory: {browse_result['error']}")
-        return False
+        assert False, f"Failed to browse directory: {browse_result['error']}"
     
     # Test 3: Test caching
     print("\n⚡ Testing caching...")
@@ -93,7 +93,7 @@ def test_basic_functionality():
         print("ℹ️  No text files found for preview test")
     
     print("\n🎉 All tests completed!")
-    return True
+    assert True, "All tests completed successfully"
 
 def test_error_handling():
     """Test error handling"""
