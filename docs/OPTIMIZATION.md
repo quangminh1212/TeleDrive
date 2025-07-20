@@ -62,7 +62,6 @@ python cleanup.py
 
 ### Trước khi commit:
 ```bash
-python src/utils/test.py  # Chạy test
 python optimize.py        # Kiểm tra code quality
 python cleanup.py         # Dọn dẹp
 ```
@@ -80,8 +79,7 @@ TeleDrive/
 │   │   └── scanner.py      # (đã đổi từ telegram_scanner.py)
 │   ├── utils/
 │   │   ├── manager.py      # (đã đổi từ config_manager.py)
-│   │   ├── migrate.py      # (đã đổi từ migrate_db.py)
-│   │   └── test.py         # (đã đổi từ test_structure.py)
+│   │   └── migrate.py      # (đã đổi từ migrate_db.py)
 │   └── web/
 │       └── app.py          # (đã tối ưu imports)
 ├── main.py                 # (đã đổi từ run_app.py)
