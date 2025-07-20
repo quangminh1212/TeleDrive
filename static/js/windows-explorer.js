@@ -2661,21 +2661,41 @@ class Windows11Explorer {
     }
 
     loadRecentScan() {
-        // For demo purposes, always show mock data
-        // TODO: Replace with real API call when backend is ready
-        const mockScan = {
-            session_id: 'session-001',
-            session_name: 'Telegram Files Scan',
-            created_at: '2025-01-20T10:30:00Z',
-            total_files: 1247,
-            total_size: 2847392857,
-            total_chats: 15
-        };
-
-        // Simulate loading delay
-        setTimeout(() => {
-            this.displayRecentScan(mockScan);
-        }, 500);
+        // Load real scan data from API
+        fetch('/api/scans')
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(sessions => {
+                if (sessions && sessions.length > 0) {
+                    // Get the most recent scan (first in array, sorted by timestamp)
+                    const recentScan = sessions[0];
+                    const scanData = {
+                        session_id: recentScan.session_id || recentScan.timestamp,
+                        session_name: `Scan ${recentScan.timestamp}`,
+                        created_at: recentScan.timestamp,
+                        total_files: recentScan.file_count || 0,
+                        total_size: recentScan.total_size || 0,
+                        total_chats: this.countUniqueChats(recentScan.files || []),
+                        files: recentScan.files || []
+                    };
+                    this.displayRecentScan(scanData);
+                    this.displayRecentFiles(scanData.files.slice(0, 20)); // Show first 20 files
+                } else {
+                    this.showNoScansMessage();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading recent scan:', error);
+                this.showNoScansMessage();
+            });
     }
 
     displayRecentScan(scan) {
@@ -2815,6 +2835,111 @@ class Windows11Explorer {
             this.loadSessionFiles(sessionId);
             this.showNotification(`Đang tải session ${sessionId}...`, 'info');
         }
+    }
+
+    countUniqueChats(files) {
+        const uniqueChats = new Set();
+        files.forEach(file => {
+            if (file.chat_id) {
+                uniqueChats.add(file.chat_id);
+            }
+        });
+        return uniqueChats.size;
+    }
+
+    displayRecentFiles(files) {
+        const recentFilesContainer = document.getElementById('recentFilesContainer');
+        if (!recentFilesContainer) {
+            // Create container if it doesn't exist
+            this.createRecentFilesContainer();
+            return this.displayRecentFiles(files);
+        }
+
+        if (!files || files.length === 0) {
+            recentFilesContainer.innerHTML = '<p class="no-files-message">Không có file nào được tìm thấy.</p>';
+            return;
+        }
+
+        const filesHtml = files.map(file => this.createRecentFileCard(file)).join('');
+        recentFilesContainer.innerHTML = `
+            <div class="recent-files-header">
+                <h4>📁 Files gần nhất (${files.length} files)</h4>
+                <button class="btn btn-link view-all-btn" id="viewAllFilesBtn">
+                    Xem tất cả →
+                </button>
+            </div>
+            <div class="recent-files-grid">
+                ${filesHtml}
+            </div>
+        `;
+
+        // Bind view all button
+        const viewAllBtn = document.getElementById('viewAllFilesBtn');
+        if (viewAllBtn) {
+            viewAllBtn.addEventListener('click', () => {
+                this.viewRecentScan();
+            });
+        }
+    }
+
+    createRecentFileCard(file) {
+        const fileIcon = this.getFileIcon(file.file_type || 'unknown');
+        const fileSize = this.formatFileSize(file.file_size || 0);
+        const fileName = file.file_name || 'Unknown file';
+        const chatTitle = file.chat_title || 'Unknown chat';
+
+        return `
+            <div class="recent-file-card" data-file-id="${file.message_id}">
+                <div class="file-icon">
+                    <i class="icon icon-${fileIcon}"></i>
+                </div>
+                <div class="file-info">
+                    <div class="file-name" title="${fileName}">${fileName}</div>
+                    <div class="file-details">
+                        <span class="file-size">${fileSize}</span>
+                        <span class="file-chat" title="${chatTitle}">📱 ${chatTitle}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    createRecentFilesContainer() {
+        const welcomeContent = document.querySelector('.welcome-content');
+        if (!welcomeContent) return;
+
+        const recentFilesSection = document.createElement('div');
+        recentFilesSection.className = 'recent-files-section';
+        recentFilesSection.id = 'recentFilesContainer';
+
+        // Insert after recent scan section
+        const recentScanSection = document.getElementById('recentScanSection');
+        if (recentScanSection) {
+            recentScanSection.insertAdjacentElement('afterend', recentFilesSection);
+        } else {
+            // Insert before action buttons
+            const welcomeActions = document.querySelector('.welcome-actions');
+            if (welcomeActions) {
+                welcomeActions.insertAdjacentElement('beforebegin', recentFilesSection);
+            }
+        }
+    }
+
+    getFileIcon(fileType) {
+        const iconMap = {
+            'image': 'image',
+            'video': 'video',
+            'audio': 'music',
+            'document': 'file-text',
+            'archive': 'archive',
+            'code': 'code',
+            'pdf': 'file-pdf',
+            'text': 'file-text',
+            'spreadsheet': 'file-excel',
+            'presentation': 'file-powerpoint',
+            'unknown': 'file'
+        };
+        return iconMap[fileType] || 'file';
     }
 }
 

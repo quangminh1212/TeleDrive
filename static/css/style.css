@@ -6606,3 +6606,126 @@ mark {
     display: flex;
     gap: var(--spacing-lg);
 }
+
+/* Recent Files Section */
+.recent-files-section {
+    background: var(--surface-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.recent-files-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.recent-files-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+.view-all-btn {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 500;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    transition: all 0.2s ease;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.view-all-btn:hover {
+    background: var(--accent-color-light);
+    color: var(--accent-color-dark);
+}
+
+.recent-files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.recent-file-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.recent-file-card:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-color);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.recent-file-card .file-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-color-light);
+    border-radius: var(--border-radius);
+    color: var(--accent-color);
+}
+
+.recent-file-card .file-icon i {
+    font-size: 1.5em;
+}
+
+.recent-file-card .file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.recent-file-card .file-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recent-file-card .file-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.recent-file-card .file-size {
+    font-weight: 500;
+}
+
+.recent-file-card .file-chat {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.no-files-message {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
+    font-style: italic;
+}
