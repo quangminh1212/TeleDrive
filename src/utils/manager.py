@@ -74,7 +74,7 @@ class ConfigValidator:
 
         return len(self.errors) == 0
 
-    def validate_config_json(self, config_path: str = 'config.json') -> bool:
+    def validate_config_json(self, config_path: str = 'config/config.json') -> bool:
         """Validate config.json file"""
         self.errors.clear()
         self.warnings.clear()
@@ -121,7 +121,7 @@ class ConfigValidator:
         return "\n".join(report)
 
 class ConfigManager:
-    def __init__(self, config_file='config.json'):
+    def __init__(self, config_file='config/config.json'):
         self.config_file = config_file
         self.config = self.load_config()
     

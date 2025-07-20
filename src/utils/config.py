@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class ConfigManager:
     """Quản lý cấu hình với validation và error handling"""
 
-    def __init__(self, config_file='config.json'):
+    def __init__(self, config_file='config/config.json'):
         self.config_file = config_file
         self._config = None
         self._detailed_logger = None
