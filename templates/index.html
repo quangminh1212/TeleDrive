@@ -10,238 +10,321 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-left">
-                <div class="logo">
-                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive Logo" class="logo-image">
-                    <span>TeleDrive</span>
-                </div>
-                <div class="header-title">File Manager</div>
+    <!-- Windows Explorer Style Title Bar -->
+    <div class="explorer-title-bar">
+        <div class="title-bar-left">
+            <div class="app-icon">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive" class="app-icon-img">
             </div>
-            
-            <div class="header-center">
-                <div class="search-container">
-                    <i class="icon icon-search"></i>
-                    <input type="text" id="globalSearch" placeholder="Tìm kiếm file...">
-                    <button id="clearSearch" class="clear-btn" style="display: none;">
-                        <i class="icon icon-times"></i>
-                    </button>
-                </div>
+            <span class="window-title">TeleDrive - File Manager</span>
+        </div>
+        <div class="title-bar-right">
+            <div class="user-info">
+                <i class="icon icon-user"></i>
+                <span class="username">{{ user.username }}</span>
+                {% if user.is_admin %}
+                    <span class="admin-badge">Admin</span>
+                {% endif %}
             </div>
-            
-            <div class="header-right">
-                <div class="stats-summary" id="globalStats">
-                    <div class="stat-item">
-                        <span class="stat-value">0</span>
-                        <span class="stat-label">Files</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">0 B</span>
-                        <span class="stat-label">Total</span>
-                    </div>
-                </div>
+            <div class="window-controls">
+                <button class="window-control minimize" title="Minimize">
+                    <i class="icon icon-minus"></i>
+                </button>
+                <button class="window-control maximize" title="Maximize">
+                    <i class="icon icon-square"></i>
+                </button>
+                <button class="window-control close" id="logoutBtn" title="Sign out">
+                    <i class="icon icon-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
-                <!-- User Menu -->
-                <div class="user-menu">
-                    <div class="user-info">
-                        <i class="icon icon-user"></i>
-                        <span class="username">{{ user.username }}</span>
-                        {% if user.is_admin %}
-                            <span class="admin-badge">Admin</span>
-                        {% endif %}
-                    </div>
-                    <div class="user-dropdown">
-                        <button class="dropdown-toggle" id="userMenuToggle">
-                            <i class="icon icon-chevron-down"></i>
+    <!-- Windows Explorer Style Ribbon Toolbar -->
+    <div class="explorer-ribbon">
+        <div class="ribbon-tabs">
+            <button class="ribbon-tab active" data-tab="home">Home</button>
+            <button class="ribbon-tab" data-tab="share">Share</button>
+            <button class="ribbon-tab" data-tab="view">View</button>
+        </div>
+
+        <div class="ribbon-content">
+            <!-- Home Tab -->
+            <div class="ribbon-panel active" id="homePanel">
+                <div class="ribbon-group">
+                    <div class="ribbon-group-header">Clipboard</div>
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn large" id="pasteBtn" title="Paste" disabled>
+                            <i class="icon icon-paste"></i>
+                            <span>Paste</span>
                         </button>
-                        <div class="dropdown-menu" id="userDropdown">
-                            <div class="dropdown-item user-details">
-                                <div class="user-name">{{ user.username }}</div>
-                                <div class="user-email">{{ user.email }}</div>
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <button class="dropdown-item" id="logoutBtn">
-                                <i class="fas fa-sign-out-alt"></i>
-                                Đăng xuất
+                        <div class="ribbon-btn-group">
+                            <button class="ribbon-btn" id="cutBtn" title="Cut" disabled>
+                                <i class="icon icon-cut"></i>
+                                <span>Cut</span>
+                            </button>
+                            <button class="ribbon-btn" id="copyBtn" title="Copy" disabled>
+                                <i class="icon icon-copy"></i>
+                                <span>Copy</span>
                             </button>
                         </div>
                     </div>
                 </div>
+
+                <div class="ribbon-group">
+                    <div class="ribbon-group-header">Organize</div>
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn large" id="moveBtn" title="Move to" disabled>
+                            <i class="icon icon-move"></i>
+                            <span>Move to</span>
+                        </button>
+                        <button class="ribbon-btn large" id="copyToBtn" title="Copy to" disabled>
+                            <i class="icon icon-copy-to"></i>
+                            <span>Copy to</span>
+                        </button>
+                        <button class="ribbon-btn large" id="deleteBtn" title="Delete" disabled>
+                            <i class="icon icon-trash"></i>
+                            <span>Delete</span>
+                        </button>
+                        <button class="ribbon-btn large" id="renameBtn" title="Rename" disabled>
+                            <i class="icon icon-edit"></i>
+                            <span>Rename</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ribbon-group">
+                    <div class="ribbon-group-header">New</div>
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn large" id="newFolderBtn" title="New folder">
+                            <i class="icon icon-folder-plus"></i>
+                            <span>New folder</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ribbon-group">
+                    <div class="ribbon-group-header">Open</div>
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn large" id="propertiesBtn" title="Properties" disabled>
+                            <i class="icon icon-info"></i>
+                            <span>Properties</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Share Tab -->
+            <div class="ribbon-panel" id="sharePanel">
+                <div class="ribbon-group">
+                    <div class="ribbon-group-header">Send</div>
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn large" id="shareBtn" title="Share" disabled>
+                            <i class="icon icon-share"></i>
+                            <span>Share</span>
+                        </button>
+                        <button class="ribbon-btn large" id="emailBtn" title="Email" disabled>
+                            <i class="icon icon-email"></i>
+                            <span>Email</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Tab -->
+            <div class="ribbon-panel" id="viewPanel">
+                <div class="ribbon-group">
+                    <div class="ribbon-group-header">Layout</div>
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn view-btn active" data-view="icons" title="Large icons">
+                            <i class="icon icon-view-grid"></i>
+                            <span>Large icons</span>
+                        </button>
+                        <button class="ribbon-btn view-btn" data-view="list" title="List">
+                            <i class="icon icon-view-list"></i>
+                            <span>List</span>
+                        </button>
+                        <button class="ribbon-btn view-btn" data-view="details" title="Details">
+                            <i class="icon icon-view-details"></i>
+                            <span>Details</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ribbon-group">
+                    <div class="ribbon-group-header">Current view</div>
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn" id="sortBtn" title="Sort by">
+                            <i class="icon icon-sort"></i>
+                            <span>Sort by</span>
+                        </button>
+                        <button class="ribbon-btn" id="groupBtn" title="Group by">
+                            <i class="icon icon-group"></i>
+                            <span>Group by</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ribbon-group">
+                    <div class="ribbon-group-header">Show/hide</div>
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn" id="detailsPaneBtn" title="Details pane">
+                            <i class="icon icon-panel-right"></i>
+                            <span>Details pane</span>
+                        </button>
+                        <button class="ribbon-btn" id="previewPaneBtn" title="Preview pane">
+                            <i class="icon icon-preview"></i>
+                            <span>Preview pane</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-    </header>
+    </div>
 
     <!-- Main Container -->
     <div class="main-container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h3>Scan Sessions</h3>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
+        <!-- Windows Explorer Style Navigation Pane -->
+        <aside class="navigation-pane" id="navigationPane">
+            <!-- Quick Access Section -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <button class="section-toggle expanded" data-section="quick-access">
+                        <i class="icon icon-chevron-down"></i>
+                    </button>
+                    <span class="section-title">Quick access</span>
+                </div>
+                <div class="nav-section-content" id="quickAccessContent">
+                    <div class="nav-item" data-path="Desktop">
+                        <i class="icon icon-desktop"></i>
+                        <span>Desktop</span>
+                    </div>
+                    <div class="nav-item" data-path="Downloads">
+                        <i class="icon icon-download"></i>
+                        <span>Downloads</span>
+                    </div>
+                    <div class="nav-item" data-path="Documents">
+                        <i class="icon icon-file-text"></i>
+                        <span>Documents</span>
+                    </div>
+                    <div class="nav-item" data-path="Pictures">
+                        <i class="icon icon-image"></i>
+                        <span>Pictures</span>
+                    </div>
+                </div>
             </div>
-            
-            <div class="sessions-list" id="sessionsList">
-                <div class="loading">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <span>Đang tải...</span>
+
+            <!-- This PC Section -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <button class="section-toggle expanded" data-section="this-pc">
+                        <i class="icon icon-chevron-down"></i>
+                    </button>
+                    <span class="section-title">This PC</span>
+                </div>
+                <div class="nav-section-content" id="thisPcContent">
+                    <div class="nav-item" data-path="C:">
+                        <i class="icon icon-drive"></i>
+                        <span>Local Disk (C:)</span>
+                    </div>
+                    <div class="nav-item" data-path="D:">
+                        <i class="icon icon-drive"></i>
+                        <span>Data (D:)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TeleDrive Sessions Section -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <button class="section-toggle expanded" data-section="teledrive">
+                        <i class="icon icon-chevron-down"></i>
+                    </button>
+                    <span class="section-title">TeleDrive Sessions</span>
+                </div>
+                <div class="nav-section-content" id="sessionsList">
+                    <div class="loading">
+                        <i class="icon icon-spinner"></i>
+                        <span>Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Section -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <button class="section-toggle collapsed" data-section="network">
+                        <i class="icon icon-chevron-right"></i>
+                    </button>
+                    <span class="section-title">Network</span>
+                </div>
+                <div class="nav-section-content" id="networkContent" style="display: none;">
+                    <div class="nav-item" data-path="Network">
+                        <i class="icon icon-network"></i>
+                        <span>Network locations</span>
+                    </div>
                 </div>
             </div>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Windows Explorer Style Navigation -->
-            <div class="explorer-navigation">
+            <!-- Windows Explorer Style Navigation Bar -->
+            <div class="explorer-navigation-bar">
                 <!-- Navigation Controls -->
                 <div class="nav-controls">
-                    <button id="backBtn" class="nav-btn" title="Quay lại" disabled>
+                    <button id="backBtn" class="nav-btn" title="Back" disabled>
                         <i class="icon icon-arrow-left"></i>
                     </button>
-                    <button id="forwardBtn" class="nav-btn" title="Tiến tới" disabled>
+                    <button id="forwardBtn" class="nav-btn" title="Forward" disabled>
                         <i class="icon icon-arrow-right"></i>
                     </button>
-                    <button id="upBtn" class="nav-btn" title="Lên thư mục cha">
+                    <button id="upBtn" class="nav-btn" title="Up">
                         <i class="icon icon-arrow-up"></i>
                     </button>
                 </div>
 
-                <!-- Address Bar -->
-                <div class="address-bar">
-                    <div class="breadcrumb-path" id="breadcrumbPath">
-                        <span class="path-segment" data-path="">
-                            <i class="icon icon-computer"></i>
-                            <span>PC này</span>
-                        </span>
-                        <i class="icon icon-chevron-right path-separator"></i>
-                        <span class="path-segment" data-path="C:">
-                            <i class="icon icon-drive"></i>
-                            <span>C: (C:)</span>
-                        </span>
+                <!-- Address Bar Container -->
+                <div class="address-bar-container">
+                    <div class="address-bar" id="addressBar">
+                        <!-- Breadcrumb Navigation -->
+                        <div class="breadcrumb-navigation" id="breadcrumbNav">
+                            <button class="breadcrumb-item" data-path="C:">
+                                <i class="icon icon-computer"></i>
+                                <span>This PC</span>
+                            </button>
+                            <i class="icon icon-chevron-right breadcrumb-separator"></i>
+                            <button class="breadcrumb-item" data-path="C:\VF">
+                                <i class="icon icon-drive"></i>
+                                <span>VF (C:)</span>
+                            </button>
+                            <i class="icon icon-chevron-right breadcrumb-separator"></i>
+                            <button class="breadcrumb-item active" data-path="C:\VF\TeleDrive">
+                                <i class="icon icon-folder"></i>
+                                <span>TeleDrive</span>
+                            </button>
+                        </div>
+                        <!-- Editable Address Input -->
+                        <input type="text" id="addressInput" class="address-input" style="display: none;" placeholder="Type a path">
                     </div>
-                    <input type="text" id="addressInput" class="address-input" style="display: none;" placeholder="Nhập đường dẫn...">
+                    <button class="address-dropdown-btn" id="addressDropdownBtn" title="Recent locations">
+                        <i class="icon icon-chevron-down"></i>
+                    </button>
                 </div>
 
                 <!-- Search Box -->
-                <div class="search-box">
-                    <i class="icon icon-search"></i>
-                    <input type="text" id="explorerSearch" placeholder="Tìm kiếm trong VF">
-                    <button id="clearExplorerSearch" class="clear-search-btn" style="display: none;">
-                        <i class="icon icon-times"></i>
-                    </button>
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="icon icon-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search TeleDrive">
+                        <button id="clearSearch" class="clear-search-btn" style="display: none;">
+                            <i class="icon icon-times"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Windows Explorer Style Toolbar -->
-            <div class="explorer-toolbar">
-                <div class="toolbar-section">
-                    <!-- File Operations -->
-                    <div class="toolbar-group">
-                        <button class="toolbar-btn" id="newFolderBtn" title="Thư mục mới">
-                            <i class="icon icon-folder-plus"></i>
-                            <span>Thư mục mới</span>
-                        </button>
-                        <button class="toolbar-btn" id="uploadBtn" title="Tải lên">
-                            <i class="icon icon-upload"></i>
-                            <span>Tải lên</span>
-                        </button>
-                    </div>
 
-                    <div class="toolbar-separator"></div>
-
-                    <!-- View Options -->
-                    <div class="toolbar-group">
-                        <div class="dropdown-container">
-                            <button class="toolbar-btn dropdown-toggle" id="sortDropdown" title="Sắp xếp">
-                                <i class="icon icon-sort"></i>
-                                <span>Sắp xếp</span>
-                                <i class="icon icon-chevron-down"></i>
-                            </button>
-                            <div class="dropdown-menu" id="sortMenu">
-                                <div class="dropdown-item" data-sort="name">
-                                    <i class="icon icon-check" style="visibility: hidden;"></i>
-                                    <span>Tên</span>
-                                </div>
-                                <div class="dropdown-item" data-sort="modified">
-                                    <i class="icon icon-check" style="visibility: hidden;"></i>
-                                    <span>Ngày sửa đổi</span>
-                                </div>
-                                <div class="dropdown-item" data-sort="type">
-                                    <i class="icon icon-check" style="visibility: hidden;"></i>
-                                    <span>Loại</span>
-                                </div>
-                                <div class="dropdown-item" data-sort="size">
-                                    <i class="icon icon-check" style="visibility: hidden;"></i>
-                                    <span>Kích cỡ</span>
-                                </div>
-                                <div class="dropdown-divider"></div>
-                                <div class="dropdown-item" data-sort="asc">
-                                    <i class="icon icon-check" style="visibility: hidden;"></i>
-                                    <span>Tăng dần</span>
-                                </div>
-                                <div class="dropdown-item" data-sort="desc">
-                                    <i class="icon icon-check" style="visibility: hidden;"></i>
-                                    <span>Giảm dần</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="dropdown-container">
-                            <button class="toolbar-btn dropdown-toggle" id="viewDropdown" title="Chế độ xem">
-                                <i class="icon icon-view-grid"></i>
-                                <span>Chế độ xem</span>
-                                <i class="icon icon-chevron-down"></i>
-                            </button>
-                            <div class="dropdown-menu" id="viewMenu">
-                                <div class="dropdown-item" data-view="icons">
-                                    <i class="icon icon-check"></i>
-                                    <span>Biểu tượng lớn</span>
-                                </div>
-                                <div class="dropdown-item" data-view="list">
-                                    <i class="icon icon-check" style="visibility: hidden;"></i>
-                                    <span>Danh sách</span>
-                                </div>
-                                <div class="dropdown-item" data-view="details">
-                                    <i class="icon icon-check" style="visibility: hidden;"></i>
-                                    <span>Chi tiết</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="toolbar-separator"></div>
-
-                    <!-- More Options -->
-                    <div class="toolbar-group">
-                        <button class="toolbar-btn" id="refreshBtn" title="Làm mới">
-                            <i class="icon icon-refresh"></i>
-                        </button>
-                        <div class="dropdown-container">
-                            <button class="toolbar-btn dropdown-toggle" id="moreOptions" title="Thêm tùy chọn">
-                                <i class="icon icon-more"></i>
-                            </button>
-                            <div class="dropdown-menu" id="moreMenu">
-                                <div class="dropdown-item" id="selectAllBtn">
-                                    <i class="icon icon-check-square"></i>
-                                    <span>Chọn tất cả</span>
-                                </div>
-                                <div class="dropdown-item" id="selectNoneBtn">
-                                    <i class="icon icon-square"></i>
-                                    <span>Bỏ chọn tất cả</span>
-                                </div>
-                                <div class="dropdown-divider"></div>
-                                <div class="dropdown-item" id="propertiesBtn">
-                                    <i class="icon icon-info"></i>
-                                    <span>Thuộc tính</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Content Area -->
             <div class="content-area">
@@ -309,6 +392,23 @@
                 </div>
             </div>
         </main>
+
+        <!-- Windows Explorer Style Details Pane -->
+        <aside class="details-pane" id="detailsPane" style="display: none;">
+            <div class="details-header">
+                <h3>Details</h3>
+                <button class="details-close" id="detailsPaneClose" title="Close details pane">
+                    <i class="icon icon-times"></i>
+                </button>
+            </div>
+
+            <div class="details-content" id="detailsContent">
+                <div class="no-selection">
+                    <i class="icon icon-info"></i>
+                    <p>Select an item to view its details</p>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <!-- File Detail Modal -->
@@ -364,13 +464,40 @@
     <!-- Windows Explorer Style Status Bar -->
     <div class="explorer-status-bar">
         <div class="status-left">
-            <span id="itemCount">0 mục</span>
-            <span id="selectedCount" style="display: none;">0 mục đã chọn</span>
+            <span id="itemCount">0 items</span>
+            <span id="selectedCount" style="display: none;"> • 0 items selected</span>
+        </div>
+        <div class="status-center">
+            <div class="status-progress" id="statusProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <span class="progress-text" id="progressText">Loading...</span>
+            </div>
         </div>
         <div class="status-right">
-            <span id="currentPath">VF</span>
-            <span class="status-separator">•</span>
-            <span id="totalSize">0 bytes</span>
+            <div class="view-controls">
+                <button class="view-control-btn" id="zoomOutBtn" title="Zoom out">
+                    <i class="icon icon-minus"></i>
+                </button>
+                <div class="zoom-slider-container">
+                    <input type="range" class="zoom-slider" id="zoomSlider" min="0" max="4" value="2" step="1">
+                </div>
+                <button class="view-control-btn" id="zoomInBtn" title="Zoom in">
+                    <i class="icon icon-plus"></i>
+                </button>
+                <div class="view-mode-controls">
+                    <button class="view-mode-btn active" data-view="icons" title="Large icons">
+                        <i class="icon icon-view-grid"></i>
+                    </button>
+                    <button class="view-mode-btn" data-view="list" title="List">
+                        <i class="icon icon-view-list"></i>
+                    </button>
+                    <button class="view-mode-btn" data-view="details" title="Details">
+                        <i class="icon icon-view-details"></i>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -380,5 +507,6 @@
     <!-- Scripts -->
     <script src="/static/js/simple.js?v=20250719"></script>
     <script src="/static/js/explorer.js?v=20250719"></script>
+    <script src="/static/js/windows-explorer.js?v=20250720"></script>
 </body>
 </html>
