@@ -31,6 +31,7 @@ class Windows11Explorer {
         this.setupKeyboardShortcuts();
         this.setupContextMenu();
         this.setupFileSelection();
+        this.setupSearch();
 
         // Initialize view
         this.updateNavigationButtons();
@@ -896,28 +897,121 @@ class Windows11Explorer {
 
     cutSelected() {
         if (this.selectedItems.size > 0) {
+            // Get file data for selected items
+            const fileData = this.getSelectedFilesData();
+
             this.clipboard = {
                 items: Array.from(this.selectedItems),
-                operation: 'cut'
+                operation: 'cut',
+                fileData: fileData,
+                sourceSession: this.currentPath.replace('session-', '')
             };
+
+            // Visual feedback - make cut items appear dimmed
+            this.applyClipboardVisualFeedback();
             this.updateClipboardButtons();
+
+            this.showNotification(`Đã cắt ${this.selectedItems.size} file(s)`, 'info');
         }
     }
 
     copySelected() {
         if (this.selectedItems.size > 0) {
+            // Get file data for selected items
+            const fileData = this.getSelectedFilesData();
+
             this.clipboard = {
                 items: Array.from(this.selectedItems),
-                operation: 'copy'
+                operation: 'copy',
+                fileData: fileData,
+                sourceSession: this.currentPath.replace('session-', '')
             };
+
             this.updateClipboardButtons();
+            this.showNotification(`Đã sao chép ${this.selectedItems.size} file(s)`, 'info');
         }
     }
 
     paste() {
         if (this.clipboard.items.length > 0) {
-            console.log(`${this.clipboard.operation}ing items:`, this.clipboard.items);
-            // Implement paste functionality
+            const operation = this.clipboard.operation;
+            const count = this.clipboard.items.length;
+            const targetSession = this.currentPath.replace('session-', '');
+
+            // Show confirmation for paste operation
+            this.showPasteConfirmation(operation, count, () => {
+                this.executePasteOperation();
+            });
+        }
+    }
+
+    getSelectedFilesData() {
+        const fileData = [];
+        this.selectedItems.forEach(itemId => {
+            const fileItem = document.querySelector(`[data-id="${itemId}"]`);
+            if (fileItem) {
+                fileData.push({
+                    name: fileItem.dataset.id,
+                    type: fileItem.dataset.type,
+                    messageId: fileItem.dataset.messageId,
+                    downloadLink: fileItem.dataset.downloadLink
+                });
+            }
+        });
+        return fileData;
+    }
+
+    applyClipboardVisualFeedback() {
+        // Remove previous feedback
+        document.querySelectorAll('.file-item.cut').forEach(item => {
+            item.classList.remove('cut');
+        });
+
+        // Apply cut visual feedback
+        if (this.clipboard.operation === 'cut') {
+            this.clipboard.items.forEach(itemId => {
+                const fileItem = document.querySelector(`[data-id="${itemId}"]`);
+                if (fileItem) {
+                    fileItem.classList.add('cut');
+                }
+            });
+        }
+    }
+
+    showPasteConfirmation(operation, count, callback) {
+        const actionText = operation === 'cut' ? 'di chuyển' : 'sao chép';
+        const message = `Bạn có muốn ${actionText} ${count} file(s) vào session này không?`;
+
+        if (confirm(message)) {
+            callback();
+        }
+    }
+
+    executePasteOperation() {
+        const operation = this.clipboard.operation;
+        const fileData = this.clipboard.fileData;
+        const sourceSession = this.clipboard.sourceSession;
+        const targetSession = this.currentPath.replace('session-', '');
+
+        // For now, show notification about the operation
+        // TODO: Implement actual file operations with backend
+        if (operation === 'cut') {
+            this.showNotification(`Đã di chuyển ${fileData.length} file(s) từ session ${sourceSession} đến ${targetSession}`, 'success');
+
+            // Remove cut visual feedback
+            document.querySelectorAll('.file-item.cut').forEach(item => {
+                item.classList.remove('cut');
+            });
+
+            // Clear clipboard after cut operation
+            this.clipboard = { items: [], operation: null, fileData: [], sourceSession: null };
+        } else {
+            this.showNotification(`Đã sao chép ${fileData.length} file(s) từ session ${sourceSession} đến ${targetSession}`, 'success');
+        }
+
+        this.updateClipboardButtons();
+        this.clearSelection();
+    }
             this.clipboard = { items: [], operation: null };
             this.updateClipboardButtons();
         }
@@ -926,18 +1020,467 @@ class Windows11Explorer {
     deleteSelected() {
         if (this.selectedItems.size > 0) {
             const items = Array.from(this.selectedItems);
-            if (confirm(`Are you sure you want to delete ${items.length} item(s)?`)) {
-                console.log('Deleting items:', items);
-                // Implement delete functionality
-            }
+            const fileData = this.getSelectedFilesData();
+
+            this.showDeleteConfirmation(items, fileData, () => {
+                this.executeDeleteOperation(items, fileData);
+            });
         }
+    }
+
+    showDeleteConfirmation(items, fileData, callback) {
+        const count = items.length;
+        const fileNames = fileData.map(f => f.name).join(', ');
+        const shortNames = fileNames.length > 100 ? fileNames.substring(0, 100) + '...' : fileNames;
+
+        // Create custom confirmation dialog
+        const confirmDialog = document.createElement('div');
+        confirmDialog.className = 'delete-confirmation-modal';
+        confirmDialog.innerHTML = `
+            <div class="delete-confirmation-content">
+                <div class="delete-confirmation-header">
+                    <i class="icon icon-trash"></i>
+                    <h3>Xác nhận xóa</h3>
+                </div>
+                <div class="delete-confirmation-body">
+                    <p><strong>Bạn có chắc chắn muốn xóa ${count} file(s) này không?</strong></p>
+                    <div class="files-to-delete">
+                        <p><strong>Files sẽ bị xóa:</strong></p>
+                        <div class="file-list">${shortNames}</div>
+                    </div>
+                    <div class="warning-message">
+                        <i class="icon icon-alert"></i>
+                        <span>⚠️ Hành động này không thể hoàn tác. Files sẽ bị xóa khỏi danh sách hiển thị.</span>
+                    </div>
+                </div>
+                <div class="delete-confirmation-footer">
+                    <button class="btn btn-secondary cancel-delete">Hủy</button>
+                    <button class="btn btn-danger confirm-delete">
+                        <i class="icon icon-trash"></i>
+                        Xóa ${count} file(s)
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(confirmDialog);
+
+        // Show dialog
+        setTimeout(() => confirmDialog.classList.add('show'), 100);
+
+        // Event handlers
+        const cancelBtn = confirmDialog.querySelector('.cancel-delete');
+        const confirmBtn = confirmDialog.querySelector('.confirm-delete');
+
+        const closeDialog = () => {
+            confirmDialog.classList.remove('show');
+            setTimeout(() => document.body.removeChild(confirmDialog), 300);
+        };
+
+        cancelBtn.onclick = closeDialog;
+        confirmBtn.onclick = () => {
+            closeDialog();
+            callback();
+        };
+
+        // Close on backdrop click
+        confirmDialog.onclick = (e) => {
+            if (e.target === confirmDialog) {
+                closeDialog();
+            }
+        };
+
+        // Close on ESC key
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                closeDialog();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    executeDeleteOperation(items, fileData) {
+        // Show loading state
+        this.showNotification('Đang xóa files...', 'info');
+
+        // Simulate delete operation
+        setTimeout(() => {
+            // Remove items from UI
+            items.forEach(itemId => {
+                const fileItem = document.querySelector(`[data-id="${itemId}"]`);
+                if (fileItem) {
+                    fileItem.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    fileItem.style.opacity = '0';
+                    fileItem.style.transform = 'scale(0.8)';
+
+                    setTimeout(() => {
+                        if (fileItem.parentNode) {
+                            fileItem.parentNode.removeChild(fileItem);
+                        }
+                    }, 300);
+                }
+            });
+
+            // Clear selection
+            this.clearSelection();
+
+            // Update status bar
+            setTimeout(() => {
+                this.updateStatusBar();
+                this.showNotification(`Đã xóa ${items.length} file(s) thành công`, 'success');
+            }, 300);
+
+            // TODO: Call backend API to actually delete files from session data
+            // this.callDeleteAPI(fileData);
+
+        }, 1000);
     }
 
     renameSelected() {
         if (this.selectedItems.size === 1) {
-            const item = Array.from(this.selectedItems)[0];
-            console.log('Renaming item:', item);
-            // Implement rename functionality
+            const itemId = Array.from(this.selectedItems)[0];
+            const fileItem = document.querySelector(`[data-id="${itemId}"]`);
+
+            if (fileItem) {
+                this.startInlineRename(fileItem);
+            }
+        }
+    }
+
+    startInlineRename(fileItem) {
+        const fileName = fileItem.dataset.id;
+        const fileNameElement = fileItem.querySelector('.file-name');
+
+        if (!fileNameElement || fileItem.classList.contains('renaming')) {
+            return; // Already renaming or no name element found
+        }
+
+        // Mark as renaming
+        fileItem.classList.add('renaming');
+
+        // Get current name without extension for editing
+        const nameParts = fileName.split('.');
+        const nameWithoutExt = nameParts.length > 1 ? nameParts.slice(0, -1).join('.') : fileName;
+        const extension = nameParts.length > 1 ? '.' + nameParts[nameParts.length - 1] : '';
+
+        // Create input element
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'rename-input';
+        input.value = nameWithoutExt;
+        input.style.width = '100%';
+        input.style.padding = '2px 4px';
+        input.style.border = '1px solid var(--border-color)';
+        input.style.borderRadius = 'var(--border-radius-small)';
+        input.style.background = 'var(--surface-bg)';
+        input.style.color = 'var(--text-primary)';
+        input.style.fontSize = 'inherit';
+        input.style.fontFamily = 'inherit';
+
+        // Replace file name with input
+        const originalContent = fileNameElement.innerHTML;
+        fileNameElement.innerHTML = '';
+        fileNameElement.appendChild(input);
+
+        // Focus and select text
+        input.focus();
+        input.select();
+
+        // Handle rename completion
+        const completeRename = (save = false) => {
+            if (!save || input.value.trim() === '') {
+                // Cancel rename
+                fileNameElement.innerHTML = originalContent;
+                fileItem.classList.remove('renaming');
+                return;
+            }
+
+            const newName = input.value.trim() + extension;
+
+            // Validate new name
+            if (this.validateFileName(newName)) {
+                this.executeRename(fileItem, fileName, newName);
+            } else {
+                this.showNotification('Tên file không hợp lệ', 'error');
+                // Keep input focused for correction
+                input.focus();
+                input.select();
+                return;
+            }
+        };
+
+        // Event handlers
+        input.addEventListener('blur', () => completeRename(true));
+        input.addEventListener('keydown', (e) => {
+            e.stopPropagation(); // Prevent global keyboard shortcuts
+
+            switch (e.key) {
+                case 'Enter':
+                    e.preventDefault();
+                    completeRename(true);
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    completeRename(false);
+                    break;
+            }
+        });
+
+        // Prevent context menu on input
+        input.addEventListener('contextmenu', (e) => {
+            e.stopPropagation();
+        });
+    }
+
+    validateFileName(fileName) {
+        // Check for invalid characters
+        const invalidChars = /[<>:"/\\|?*]/;
+        if (invalidChars.test(fileName)) {
+            return false;
+        }
+
+        // Check for reserved names (Windows)
+        const reservedNames = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
+        const nameWithoutExt = fileName.split('.')[0].toUpperCase();
+        if (reservedNames.includes(nameWithoutExt)) {
+            return false;
+        }
+
+        // Check length
+        if (fileName.length > 255) {
+            return false;
+        }
+
+        return true;
+    }
+
+    executeRename(fileItem, oldName, newName) {
+        // Show loading state
+        fileItem.classList.add('renaming-loading');
+
+        // Simulate rename operation
+        setTimeout(() => {
+            // Update UI
+            const fileNameElement = fileItem.querySelector('.file-name');
+            if (fileNameElement) {
+                fileNameElement.textContent = newName;
+                fileNameElement.title = newName;
+            }
+
+            // Update data attributes
+            fileItem.dataset.id = newName;
+
+            // Update selection if this item was selected
+            if (this.selectedItems.has(oldName)) {
+                this.selectedItems.delete(oldName);
+                this.selectedItems.add(newName);
+            }
+
+            // Remove loading and renaming states
+            fileItem.classList.remove('renaming', 'renaming-loading');
+
+            this.showNotification(`Đã đổi tên "${oldName}" thành "${newName}"`, 'success');
+
+            // TODO: Call backend API to update file name in session data
+            // this.callRenameAPI(oldName, newName);
+
+        }, 800);
+    }
+
+    // Search & Filter functionality
+    setupSearch() {
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearch');
+
+        if (!searchInput) return;
+
+        // Store original files for filtering
+        this.originalFiles = [];
+        this.currentSearchTerm = '';
+
+        // Search input handler
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.trim();
+            this.currentSearchTerm = searchTerm;
+
+            // Show/hide clear button
+            if (clearSearchBtn) {
+                clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
+            }
+
+            // Debounce search
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.performSearch(searchTerm);
+            }, 300);
+        });
+
+        // Clear search handler
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                this.currentSearchTerm = '';
+                clearSearchBtn.style.display = 'none';
+                this.clearSearch();
+            });
+        }
+
+        // Search on Enter key
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.performSearch(searchInput.value.trim());
+            }
+        });
+    }
+
+    performSearch(searchTerm) {
+        if (!searchTerm) {
+            this.clearSearch();
+            return;
+        }
+
+        // Get current files if not stored
+        if (this.originalFiles.length === 0) {
+            this.storeOriginalFiles();
+        }
+
+        // Filter files based on search term
+        const filteredFiles = this.originalFiles.filter(file => {
+            return this.matchesSearchTerm(file, searchTerm);
+        });
+
+        // Update display
+        this.displayFilteredFiles(filteredFiles, searchTerm);
+
+        // Update status
+        this.updateSearchStatus(filteredFiles.length, this.originalFiles.length, searchTerm);
+    }
+
+    storeOriginalFiles() {
+        const filesDisplay = document.getElementById('filesDisplay');
+        if (!filesDisplay) return;
+
+        const fileItems = filesDisplay.querySelectorAll('.file-item');
+        this.originalFiles = Array.from(fileItems).map(item => ({
+            element: item.cloneNode(true),
+            name: item.dataset.id,
+            type: item.dataset.type,
+            messageId: item.dataset.messageId,
+            downloadLink: item.dataset.downloadLink
+        }));
+    }
+
+    matchesSearchTerm(file, searchTerm) {
+        const term = searchTerm.toLowerCase();
+        const fileName = file.name.toLowerCase();
+
+        // Basic name matching
+        if (fileName.includes(term)) {
+            return true;
+        }
+
+        // File extension matching
+        const extension = fileName.split('.').pop();
+        if (extension && extension.includes(term)) {
+            return true;
+        }
+
+        // File type matching
+        if (file.type && file.type.toLowerCase().includes(term)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    displayFilteredFiles(filteredFiles, searchTerm) {
+        const filesDisplay = document.getElementById('filesDisplay');
+        const noResults = document.getElementById('noResults');
+
+        if (!filesDisplay) return;
+
+        if (filteredFiles.length === 0) {
+            // Show no results
+            filesDisplay.innerHTML = '';
+            if (noResults) {
+                noResults.style.display = 'block';
+                const noResultsText = noResults.querySelector('p');
+                if (noResultsText) {
+                    noResultsText.textContent = `Không tìm thấy file nào với từ khóa "${searchTerm}"`;
+                }
+            }
+        } else {
+            // Show filtered results
+            if (noResults) {
+                noResults.style.display = 'none';
+            }
+
+            // Clear current display
+            filesDisplay.innerHTML = '';
+
+            // Add filtered files with highlighting
+            filteredFiles.forEach(file => {
+                const fileElement = file.element.cloneNode(true);
+                this.highlightSearchTerm(fileElement, searchTerm);
+                filesDisplay.appendChild(fileElement);
+            });
+
+            // Re-setup file interactions
+            this.setupFileInteractions();
+        }
+    }
+
+    clearSearch() {
+        const filesDisplay = document.getElementById('filesDisplay');
+        const noResults = document.getElementById('noResults');
+
+        if (!filesDisplay) return;
+
+        // Hide no results
+        if (noResults) {
+            noResults.style.display = 'none';
+        }
+
+        // Restore original files
+        if (this.originalFiles.length > 0) {
+            filesDisplay.innerHTML = '';
+            this.originalFiles.forEach(file => {
+                const fileElement = file.element.cloneNode(true);
+                filesDisplay.appendChild(fileElement);
+            });
+
+            // Re-setup file interactions
+            this.setupFileInteractions();
+
+            // Update status
+            this.updateSearchStatus(this.originalFiles.length, this.originalFiles.length, '');
+        }
+    }
+
+    highlightSearchTerm(fileElement, searchTerm) {
+        const fileNameElement = fileElement.querySelector('.file-name');
+        if (!fileNameElement || !searchTerm) return;
+
+        const fileName = fileNameElement.textContent;
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        const highlightedName = fileName.replace(regex, '<mark>$1</mark>');
+        fileNameElement.innerHTML = highlightedName;
+    }
+
+    updateSearchStatus(filteredCount, totalCount, searchTerm) {
+        // Update status bar with search results
+        const statusLeft = document.querySelector('.status-left');
+        if (statusLeft) {
+            const itemCount = statusLeft.querySelector('#itemCount');
+            if (itemCount) {
+                if (searchTerm) {
+                    itemCount.textContent = `${filteredCount} of ${totalCount} items (filtered)`;
+                } else {
+                    itemCount.textContent = `${totalCount} items`;
+                }
+            }
         }
     }
 
@@ -1236,6 +1779,11 @@ class Windows11Explorer {
     // Keyboard Shortcuts
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
+            // Skip if user is typing in an input field
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+                return;
+            }
+
             if (e.ctrlKey) {
                 switch (e.key) {
                     case 'a':
@@ -1253,6 +1801,14 @@ class Windows11Explorer {
                     case 'v':
                         e.preventDefault();
                         this.paste();
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        this.focusSearch();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        this.refresh();
                         break;
                 }
             } else {
@@ -1272,6 +1828,23 @@ class Windows11Explorer {
                 }
             }
         });
+    }
+
+    focusSearch() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    }
+
+    refresh() {
+        // Refresh current session
+        if (this.currentPath && this.currentPath.startsWith('session-')) {
+            const sessionId = this.currentPath.replace('session-', '');
+            this.loadSessionFiles(sessionId);
+            this.showNotification('Đã làm mới danh sách files', 'info');
+        }
     }
 
     selectAll() {
