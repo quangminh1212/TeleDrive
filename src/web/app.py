@@ -9,7 +9,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, jsonify, request, redirect, url_for, send_file
 from flask_cors import CORS
 from flask_login import login_user, login_required, current_user
 from functools import wraps
@@ -23,7 +23,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.database import init_database
 from src.auth import auth_manager
-from src.models import OTPManager, format_phone_number, validate_phone_number
+from src.models import OTPManager, validate_phone_number
 from src.services import send_otp_sync
 from src.services.filesystem import FileSystemManager
 from src.config import config, validate_environment
@@ -307,39 +307,7 @@ def index():
 
     return render_template('index.html', user=current_user)
 
-@app.route('/demo')
-def demo():
-    """Demo page for testing UI"""
-    # Create a mock user for demo
-    class MockUser:
-        username = "admin"
-        email = "admin@teledrive.com"
-        is_admin = True
-        is_authenticated = True
 
-    return render_template('index.html', user=MockUser())
-
-@app.route('/setup-demo')
-def setup_demo():
-    """Demo setup page for testing"""
-    return render_template('setup.html')
-
-@app.route('/debug/routes')
-def debug_routes():
-    """Debug route to show all registered routes"""
-    routes = []
-    for rule in app.url_map.iter_rules():
-        routes.append({
-            'endpoint': rule.endpoint,
-            'methods': list(rule.methods),
-            'rule': rule.rule
-        })
-    return jsonify(routes)
-
-@app.route('/test')
-def test_route():
-    """Test route"""
-    return jsonify({'message': 'Test route works!'})
 
 # Authentication Routes
 @app.route('/login', methods=['GET'])
@@ -433,38 +401,11 @@ def send_otp():
         
         # Gửi OTP qua Telegram
         try:
-            # Kiểm tra environment để quyết định cách gửi OTP
-            if config.is_development():
-                # Development: Hiển thị OTP và cố gắng gửi qua Telegram
-                try:
-                    success, message = send_otp_sync(formatted_phone)
-                    if success:
-                        return jsonify({'success': True, 'message': message})
-                    else:
-                        # Fallback: Tạo mock OTP nếu không gửi được qua Telegram
-                        from src.models.otp import OTPManager
-                        otp_code = OTPManager.create_otp(formatted_phone)
-                        print(f"🔐 Fallback OTP cho {formatted_phone}: {otp_code}")
-                        return jsonify({
-                            'success': True,
-                            'message': f'Không thể gửi qua Telegram. Mã OTP: {otp_code} (Development fallback)'
-                        })
-                except Exception as e:
-                    # Fallback: Tạo mock OTP nếu có lỗi
-                    from src.models.otp import OTPManager
-                    otp_code = OTPManager.create_otp(formatted_phone)
-                    print(f"🔐 Error fallback OTP cho {formatted_phone}: {otp_code}")
-                    return jsonify({
-                        'success': True,
-                        'message': f'Lỗi gửi Telegram: {str(e)}. Mã OTP: {otp_code} (Development fallback)'
-                    })
+            success, message = send_otp_sync(formatted_phone)
+            if success:
+                return jsonify({'success': True, 'message': message})
             else:
-                # Production: Chỉ gửi qua Telegram, không hiển thị OTP
-                success, message = send_otp_sync(formatted_phone)
-                if success:
-                    return jsonify({'success': True, 'message': message})
-                else:
-                    return jsonify({'success': False, 'message': message}), 500
+                return jsonify({'success': False, 'message': message}), 500
 
         except Exception as e:
             print(f"Lỗi gửi OTP: {e}")
@@ -515,49 +456,7 @@ def get_scans():
     sessions = api.get_scan_sessions()
     return jsonify(sessions)
 
-@app.route('/api/demo/scans')
-def get_demo_scans():
-    """Demo API - Lấy danh sách scan sessions (không yêu cầu auth)"""
-    return jsonify([
-        {
-            'session_id': 'demo_session_001',
-            'session_name': 'Demo Telegram Scan',
-            'created_at': '2025-01-20T10:30:00Z',
-            'total_files': 1247,
-            'total_size': 2847392857,
-            'total_chats': 15,
-            'file_count': 1247,
-            'timestamp': '2025-01-20T10:30:00Z'
-        },
-        {
-            'session_id': 'demo_session_002',
-            'session_name': 'Demo Media Files',
-            'created_at': '2025-01-19T15:45:00Z',
-            'total_files': 856,
-            'total_size': 1923847562,
-            'total_chats': 8,
-            'file_count': 856,
-            'timestamp': '2025-01-19T15:45:00Z'
-        }
-    ])
 
-@app.route('/api/test-scan-history')
-def test_scan_history():
-    """Test endpoint for scan history"""
-    return jsonify({
-        'success': True,
-        'message': 'Test endpoint working',
-        'scans': [
-            {
-                'session_id': 'session-001',
-                'session_name': 'Telegram Files Scan',
-                'created_at': '2025-01-20T10:30:00Z',
-                'total_files': 1247,
-                'total_size': 2847392857,
-                'total_chats': 15
-            }
-        ]
-    })
 
 @app.route('/api/files/<session_id>')
 @auth_required
@@ -569,64 +468,7 @@ def get_session_files(session_id):
     else:
         return jsonify({'error': 'Session not found'}), 404
 
-@app.route('/api/demo/files/<session_id>')
-def get_demo_session_files(session_id):
-    """Demo API - Lấy files trong một session (không yêu cầu auth)"""
-    return jsonify({
-        'success': True,
-        'files': [
-            {
-                'message_id': 1001,
-                'file_name': 'demo_document.pdf',
-                'file_size': 2048576,
-                'file_info': {
-                    'size': 2048576,
-                    'type': 'document',
-                    'upload_date': '2025-01-20T10:30:00Z'
-                },
-                'message_info': {
-                    'message_id': 1001,
-                    'date': '2025-01-20T10:30:00Z'
-                },
-                'download_url': '/api/demo/download/1001'
-            },
-            {
-                'message_id': 1002,
-                'file_name': 'demo_image.jpg',
-                'file_size': 1024768,
-                'file_info': {
-                    'size': 1024768,
-                    'type': 'photo',
-                    'upload_date': '2025-01-20T09:15:00Z'
-                },
-                'message_info': {
-                    'message_id': 1002,
-                    'date': '2025-01-20T09:15:00Z'
-                },
-                'download_url': '/api/demo/download/1002'
-            },
-            {
-                'message_id': 1003,
-                'file_name': 'demo_video.mp4',
-                'file_size': 15728640,
-                'file_info': {
-                    'size': 15728640,
-                    'type': 'video',
-                    'upload_date': '2025-01-19T16:45:00Z'
-                },
-                'message_info': {
-                    'message_id': 1003,
-                    'date': '2025-01-19T16:45:00Z'
-                },
-                'download_url': '/api/demo/download/1003'
-            }
-        ],
-        'scan_info': {
-            'session_id': session_id,
-            'total_files': 3,
-            'scan_date': '2025-01-20T10:30:00Z'
-        }
-    })
+
 
 @app.route('/api/stats/<session_id>')
 @auth_required
@@ -1229,261 +1071,15 @@ def favicon():
     """Serve favicon to prevent 404 errors"""
     return '', 204  # No Content
 
-@app.route('/test-endpoint')
-def test_endpoint():
-    """Test endpoint để kiểm tra server có load code mới không"""
-    return jsonify({'message': 'Server đã load code mới!', 'timestamp': '2025-07-18T20:30:00Z'})
 
-@app.route('/test-icons')
-def test_icons():
-    """Test page for debugging icons"""
-    return '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Test Icons</title>
-        <link rel="stylesheet" href="/static/css/style.css">
-    </head>
-    <body style="padding: 20px; background: #f5f5f5;">
-        <h1>Icon Test Page</h1>
 
-        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
-                <div class="file-icon" style="margin: 10px auto;">
-                    <i class="icon icon-pdf"></i>
-                </div>
-                <p>PDF Icon</p>
-            </div>
 
-            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
-                <div class="file-icon" style="margin: 10px auto;">
-                    <i class="icon icon-image"></i>
-                </div>
-                <p>Image Icon</p>
-            </div>
 
-            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
-                <div class="file-icon" style="margin: 10px auto;">
-                    <i class="icon icon-word"></i>
-                </div>
-                <p>Word Icon</p>
-            </div>
 
-            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
-                <div class="file-icon" style="margin: 10px auto;">
-                    <i class="icon icon-excel"></i>
-                </div>
-                <p>Excel Icon</p>
-            </div>
 
-            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
-                <div class="file-icon" style="margin: 10px auto;">
-                    <i class="icon icon-video"></i>
-                </div>
-                <p>Video Icon</p>
-            </div>
 
-            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
-                <div class="file-icon" style="margin: 10px auto;">
-                    <i class="icon icon-audio"></i>
-                </div>
-                <p>Audio Icon</p>
-            </div>
-        </div>
 
-        <h2>File Items Test</h2>
-        <div class="files-display content-view" style="background: white; padding: 20px; border-radius: 8px;">
-            <div class="file-item" data-id="test.pdf" data-type="file">
-                <div class="file-icon"><i class="icon icon-pdf"></i></div>
-                <div class="file-info">
-                    <div class="file-name">test.pdf</div>
-                    <div class="file-description">PDF Document</div>
-                </div>
-            </div>
 
-            <div class="file-item" data-id="photo.jpg" data-type="file">
-                <div class="file-icon"><i class="icon icon-image"></i></div>
-                <div class="file-info">
-                    <div class="file-name">photo.jpg</div>
-                    <div class="file-description">Image File</div>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    '''
-
-@app.route('/test-dashboard')
-def test_dashboard():
-    """Test dashboard with mock file data"""
-    return render_template('index.html')
-
-@app.route('/test-welcome')
-def test_welcome():
-    """Test welcome screen without authentication"""
-    # Mock user object for testing
-    class MockUser:
-        def __init__(self):
-            self.username = 'test_user'
-            self.is_admin = True
-            self.id = 1
-
-    mock_user = MockUser()
-    return render_template('index.html', user=mock_user)
-
-@app.route('/debug-user')
-def debug_user():
-    """Debug current user info"""
-    if current_user.is_authenticated:
-        return jsonify({
-            'authenticated': True,
-            'username': getattr(current_user, 'username', 'No username'),
-            'is_admin': getattr(current_user, 'is_admin', False),
-            'id': getattr(current_user, 'id', 'No ID'),
-            'user_object': str(current_user)
-        })
-    else:
-        return jsonify({
-            'authenticated': False,
-            'message': 'User not authenticated'
-        })
-
-@app.route('/test-logout')
-def test_logout():
-    """Test logout functionality"""
-    return f"""
-    <html>
-    <head><title>Test Logout</title></head>
-    <body>
-        <h2>Test Logout Functionality</h2>
-        <p>Current user: {current_user.is_authenticated}</p>
-        <p>User info: {getattr(current_user, 'username', 'No username') if current_user.is_authenticated else 'Not logged in'}</p>
-
-        <button onclick="testLogout()">Test Logout (POST)</button>
-        <a href="/logout">Test Logout (GET)</a>
-
-        <div id="result"></div>
-
-        <script>
-        async function testLogout() {{
-            try {{
-                const response = await fetch('/logout', {{
-                    method: 'POST',
-                    headers: {{
-                        'Content-Type': 'application/json',
-                    }}
-                }});
-
-                const data = await response.json();
-                document.getElementById('result').innerHTML =
-                    '<h3>Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
-
-                if (data.success) {{
-                    setTimeout(() => {{
-                        window.location.href = data.redirect;
-                    }}, 2000);
-                }}
-            }} catch (error) {{
-                document.getElementById('result').innerHTML =
-                    '<h3>Error:</h3><pre>' + error.message + '</pre>';
-            }}
-        }}
-        </script>
-    </body>
-    </html>
-    """
-
-@app.route('/api/scan-history')
-def get_scan_history():
-    """Get scan history with statistics"""
-    return jsonify({'test': 'API endpoint working'})
-
-@app.route('/api/scan-history-full')
-def get_scan_history_full():
-    """Get scan history with statistics - full version"""
-    try:
-        limit = request.args.get('limit', 10, type=int)
-        sort = request.args.get('sort', 'created_at')
-        order = request.args.get('order', 'desc')
-
-        # Mock data for now - replace with actual database queries
-        mock_scans = [
-            {
-                'session_id': 'session-001',
-                'session_name': 'Telegram Files Scan',
-                'created_at': '2025-01-20T10:30:00Z',
-                'total_files': 1247,
-                'total_size': 2847392857,  # ~2.65 GB
-                'total_chats': 15,
-                'file_types': {
-                    'images': 456,
-                    'documents': 234,
-                    'videos': 123,
-                    'audio': 89,
-                    'others': 345
-                },
-                'status': 'completed'
-            },
-            {
-                'session_id': 'session-002',
-                'session_name': 'Work Files Scan',
-                'created_at': '2025-01-19T15:45:00Z',
-                'total_files': 892,
-                'total_size': 1456789123,  # ~1.36 GB
-                'total_chats': 8,
-                'file_types': {
-                    'documents': 456,
-                    'images': 234,
-                    'videos': 67,
-                    'audio': 45,
-                    'others': 90
-                },
-                'status': 'completed'
-            },
-            {
-                'session_id': 'session-003',
-                'session_name': 'Personal Chat Scan',
-                'created_at': '2025-01-18T09:15:00Z',
-                'total_files': 567,
-                'total_size': 987654321,  # ~918 MB
-                'total_chats': 12,
-                'file_types': {
-                    'images': 345,
-                    'videos': 123,
-                    'documents': 67,
-                    'audio': 23,
-                    'others': 9
-                },
-                'status': 'completed'
-            }
-        ]
-
-        # Apply sorting
-        if sort == 'created_at':
-            reverse = (order == 'desc')
-            mock_scans.sort(key=lambda x: x['created_at'], reverse=reverse)
-        elif sort == 'total_files':
-            reverse = (order == 'desc')
-            mock_scans.sort(key=lambda x: x['total_files'], reverse=reverse)
-        elif sort == 'total_size':
-            reverse = (order == 'desc')
-            mock_scans.sort(key=lambda x: x['total_size'], reverse=reverse)
-
-        # Apply limit
-        limited_scans = mock_scans[:limit]
-
-        return jsonify({
-            'success': True,
-            'scans': limited_scans,
-            'total': len(mock_scans),
-            'limit': limit,
-            'sort': sort,
-            'order': order
-        })
-
-    except Exception as e:
-        logger.error(f"Error getting scans: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required

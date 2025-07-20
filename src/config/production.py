@@ -7,7 +7,7 @@ Cấu hình production với environment variables và security
 
 import os
 import secrets
-from pathlib import Path
+
 from typing import Optional, Dict, Any
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
@@ -106,9 +106,9 @@ class ProductionConfig:
     """Main production configuration class"""
     
     def __init__(self):
-        self.environment = os.getenv('ENVIRONMENT', 'development')
+        self.environment = os.getenv('ENVIRONMENT', 'production')
         self.debug = os.getenv('DEBUG', 'false').lower() == 'true'
-        self.testing = os.getenv('TESTING', 'false').lower() == 'true'
+
         
         # Initialize configuration sections
         self.database = DatabaseConfig()
@@ -144,7 +144,6 @@ class ProductionConfig:
 
         return {
             'DEBUG': self.debug,
-            'TESTING': self.testing,
             'SECRET_KEY': self.security.secret_key,
             'SQLALCHEMY_DATABASE_URI': self.database.uri,
             'SQLALCHEMY_TRACK_MODIFICATIONS': False,
@@ -159,9 +158,7 @@ class ProductionConfig:
         """Check if running in production environment"""
         return self.environment == 'production'
     
-    def is_development(self) -> bool:
-        """Check if running in development environment"""
-        return self.environment == 'development'
+
 
 # Global configuration instance
 config = ProductionConfig()
@@ -190,14 +187,4 @@ def validate_environment():
         if missing_prod_vars:
             raise ValueError(f"Missing required production environment variables: {', '.join(missing_prod_vars)}")
 
-if __name__ == '__main__':
-    # Test configuration loading
-    try:
-        validate_environment()
-        print("✅ Configuration loaded successfully")
-        print(f"Environment: {config.environment}")
-        print(f"Debug: {config.debug}")
-        print(f"Database: {config.database.uri}")
-        print(f"Redis enabled: {config.redis.enabled}")
-    except Exception as e:
-        print(f"❌ Configuration error: {e}")
+

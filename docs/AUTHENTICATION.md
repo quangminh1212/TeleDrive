@@ -108,18 +108,13 @@ CREATE TABLE users (
 - `GET /api/stats/<session_id>` - Thống kê session
 - `GET /api/user/info` - Thông tin user hiện tại
 
-## 🧪 Testing
+## 🔧 Manual Verification
 
-### Automated Testing
-```bash
-python test_auth.py
-```
-
-### Manual Testing
-1. **Test đăng nhập**:
-   - Thử đăng nhập với thông tin đúng/sai
-   - Kiểm tra redirect sau login
-   - Test "Remember me" functionality
+### Login Verification
+1. **Verify login functionality**:
+   - Try login with correct/incorrect credentials
+   - Check redirect after login
+   - Verify "Remember me" functionality
 
 2. **Test route protection**:
    - Truy cập `/` mà không đăng nhập → redirect to login
@@ -228,6 +223,5 @@ del teledrive.db
 
 Nếu gặp vấn đề:
 1. Kiểm tra console logs
-2. Chạy `python test_auth.py`
-3. Xem file `AUTHENTICATION.md` này
-4. Reset database nếu cần thiết
+2. Xem file `AUTHENTICATION.md` này
+3. Reset database nếu cần thiết

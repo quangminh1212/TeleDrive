@@ -39,7 +39,6 @@ TeleDrive/
 ├── 📁 src/              # Source code
 ├── 📁 static/           # Static assets
 ├── 📁 templates/        # HTML templates
-├── 📁 tests/            # Test suite
 ├── main.py              # Application entry point
 └── requirements.txt     # Dependencies
 ```

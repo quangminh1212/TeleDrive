@@ -44,7 +44,7 @@ python optimize.py
 - ✅ Xóa các import không sử dụng
 - ✅ Dọn dẹp file dư thừa
 - ✅ Tối ưu cấu trúc code
-- ✅ Tất cả test vẫn pass
+
 - ✅ Giảm kích thước dự án
 
 ## 🔧 Bảo Trì Định Kỳ

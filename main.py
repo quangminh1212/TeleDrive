@@ -16,7 +16,7 @@ from web.app import app
 from src.config import config
 
 if __name__ == '__main__':
-    # Sử dụng production server (Waitress) thay vì Flask dev server
+    # Sử dụng production server (Waitress)
     try:
         from waitress import serve
         print("[START] Khoi dong TeleDrive voi Waitress Production Server...")
@@ -57,10 +57,4 @@ if __name__ == '__main__':
         print("\n[STOP] Dang dung server...")
     except Exception as e:
         print(f"[ERROR] Loi khoi dong server: {e}")
-        print("[FALLBACK] Fallback to Flask development server...")
-        app.run(
-            debug=config.debug,
-            host=config.server.host,
-            port=config.server.port,
-            threaded=True
-        )
+        sys.exit(1)

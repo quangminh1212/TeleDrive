@@ -93,34 +93,16 @@ def pre_exec(server):
     """Called just before a new master process is forked."""
     server.log.info("Forked child, re-executing.")
 
-def pre_request(worker, req):
-    """Called just before a worker processes the request."""
-    worker.log.debug("%s %s", req.method, req.uri)
 
-def post_request(worker, req, environ, resp):
-    """Called after a worker processes the request."""
-    worker.log.debug("%s %s - %s", req.method, req.uri, resp.status_code)
 
 # Create logs directory
 logs_dir = Path('logs')
 logs_dir.mkdir(exist_ok=True)
 
-# Environment-specific settings
-environment = os.getenv('ENVIRONMENT', 'development')
-
-if environment == 'production':
-    # Production settings
-    workers = max(2, multiprocessing.cpu_count())
-    worker_class = 'sync'
-    timeout = 60
-    keepalive = 5
-    max_requests = 2000
-    preload_app = True
-    
-elif environment == 'development':
-    # Development settings
-    workers = 1
-    worker_class = 'sync'
-    timeout = 30
-    reload = True
-    preload_app = False
+# Production settings
+workers = max(2, multiprocessing.cpu_count())
+worker_class = 'sync'
+timeout = 60
+keepalive = 5
+max_requests = 2000
+preload_app = True

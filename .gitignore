@@ -110,8 +110,6 @@ ENV/
 env.bak/
 venv.bak/
 .env.local
-.env.development.local
-.env.test.local
 .env.production.local
 
 # Spyder project settings
@@ -146,7 +144,6 @@ output/*
 uploads/
 downloads/
 static/uploads/
-static/test-*.html
 
 # Database backups
 instance/*_backup_*.db

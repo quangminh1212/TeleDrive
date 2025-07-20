@@ -84,17 +84,12 @@ A sophisticated Google Drive-like file management interface for local Windows fi
    pip install pywin32>=306
    ```
 
-4. **Test the file system manager**
-   ```bash
-   python test_filesystem.py
-   ```
-
-5. **Start the application**
+4. **Start the application**
    ```bash
    python src/web/app.py
    ```
 
-6. **Open your browser**
+5. **Open your browser**
    Navigate to `http://localhost:5000`
 
 ## 🎯 Usage Guide

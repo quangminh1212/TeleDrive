@@ -5,7 +5,7 @@ Hỗ trợ đầy đủ validation và error handling với logging chi tiết
 import os
 import json
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -13,7 +13,7 @@ load_dotenv()
 
 # Import detailed logging
 try:
-    from logger import setup_detailed_logging, log_step, log_config_change, get_logger
+    from logger import setup_detailed_logging, log_step, log_config_change
     DETAILED_LOGGING_AVAILABLE = True
 except ImportError:
     DETAILED_LOGGING_AVAILABLE = False
@@ -475,39 +475,4 @@ def validate_config():
 if __name__ != "__main__":
     validate_config()
 
-# ================================================================
-# UTILITY FUNCTIONS
-# ================================================================
 
-def get_config_summary():
-    """Get configuration summary for debugging"""
-    return {
-        "api_configured": bool(API_ID and API_HASH and PHONE_NUMBER),
-        "output_dir": OUTPUT_DIR,
-        "batch_size": BATCH_SIZE,
-        "max_messages": MAX_MESSAGES,
-        "formats_enabled": {
-            "csv": CSV_ENABLED,
-            "json": JSON_ENABLED,
-            "excel": EXCEL_ENABLED
-        },
-        "file_types": {
-            "documents": SCAN_DOCUMENTS,
-            "photos": SCAN_PHOTOS,
-            "videos": SCAN_VIDEOS,
-            "audio": SCAN_AUDIO
-        }
-    }
-
-def print_config_summary():
-    """Print configuration summary"""
-    summary = get_config_summary()
-    print("\n" + "="*60)
-    print("           CẤU HÌNH HIỆN TẠI")
-    print("="*60)
-    print(f"API đã cấu hình: {'✓' if summary['api_configured'] else '✗'}")
-    print(f"Thư mục output: {summary['output_dir']}")
-    print(f"Batch size: {summary['batch_size']}")
-    print(f"Max messages: {summary['max_messages'] or 'Không giới hạn'}")
-    print(f"Formats: CSV={summary['formats_enabled']['csv']}, JSON={summary['formats_enabled']['json']}, Excel={summary['formats_enabled']['excel']}")
-    print("="*60)
