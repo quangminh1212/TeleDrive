@@ -33,6 +33,7 @@ class Windows11Explorer {
         this.setupFileSelection();
         this.setupSearch();
         this.setupWelcomeScreen();
+        this.setupLogout();
 
         // Initialize view
         this.updateNavigationButtons();
@@ -2940,6 +2941,26 @@ class Windows11Explorer {
             'unknown': 'file'
         };
         return iconMap[fileType] || 'file';
+    }
+
+    setupLogout() {
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                this.handleLogout();
+            });
+        }
+    }
+
+    handleLogout() {
+        // Show confirmation dialog
+        if (confirm('Bạn có chắc chắn muốn đăng xuất không?')) {
+            // Show loading state
+            this.showNotification('Đang đăng xuất...', 'info');
+
+            // Redirect to logout endpoint
+            window.location.href = '/logout';
+        }
     }
 }
 

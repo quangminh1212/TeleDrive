@@ -4018,6 +4018,31 @@ body {
     font-weight: 500;
 }
 
+/* Responsive logout button */
+@media (max-width: 768px) {
+    .logout-btn span {
+        display: none;
+    }
+
+    .logout-btn {
+        padding: var(--spacing-xs);
+        margin-left: var(--spacing-xs);
+    }
+}
+
+@media (max-width: 480px) {
+    .logout-btn {
+        border: none;
+        background: none;
+        padding: var(--spacing-xs);
+        margin-left: 0;
+    }
+
+    .logout-btn:hover {
+        background: var(--surface-hover);
+    }
+}
+
 .window-controls {
     display: flex;
 }
