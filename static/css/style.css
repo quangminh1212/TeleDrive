@@ -13,6 +13,58 @@
     font-size: 14px;
 }
 
+/* Ensure all icon pseudo-elements have proper background settings */
+.icon::before {
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+}
+
+/* File icon specific sizing */
+.file-icon .icon::before {
+    width: 48px !important;
+    height: 48px !important;
+}
+
+/* Override for different view modes */
+.files-display.content-view .file-icon .icon::before {
+    width: 64px !important;
+    height: 64px !important;
+}
+
+.files-display.large-icons-view .file-icon .icon::before {
+    width: 64px !important;
+    height: 64px !important;
+}
+
+.files-display.icons-view .file-icon .icon::before {
+    width: 48px !important;
+    height: 48px !important;
+}
+
+.files-display.list-view .file-icon .icon::before {
+    width: 16px !important;
+    height: 16px !important;
+}
+
+/* Force SVG icons to override Unicode characters */
+.icon-pdf::before,
+.icon-image::before,
+.icon-video::before,
+.icon-word::before,
+.icon-excel::before,
+.icon-powerpoint::before,
+.icon-archive::before,
+.icon-code::before,
+.icon-audio::before,
+.icon-text::before,
+.icon-executable::before {
+    content: "" !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+}
+
 /* Icon size variations */
 .icon.icon-sm::before {
     width: 12px;
@@ -106,13 +158,13 @@
 }
 
 .icon-image::before {
-    content: "";
+    content: "" !important;
     display: inline-block;
     width: 16px;
     height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%2300d4ff' d='M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2z'/%3E%3Cpath fill='%23ffffff' d='M3 3h10v10H3V3z'/%3E%3Cpath fill='%2300d4ff' d='M3 11l3-3 2 2 3-4 2 2v3H3v-1z'/%3E%3Ccircle fill='%23ffeb3b' cx='5.5' cy='5.5' r='1'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%2300d4ff' d='M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2z'/%3E%3Cpath fill='%23ffffff' d='M3 3h10v10H3V3z'/%3E%3Cpath fill='%2300d4ff' d='M3 11l3-3 2 2 3-4 2 2v3H3v-1z'/%3E%3Ccircle fill='%23ffeb3b' cx='5.5' cy='5.5' r='1'/%3E%3C/svg%3E") !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
 }
 
 .icon-video::before {
@@ -126,23 +178,23 @@
 }
 
 .icon-pdf::before {
-    content: "";
+    content: "" !important;
     display: inline-block;
     width: 16px;
     height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23ff4757' d='M2 2a2 2 0 0 1 2-2h6l4 4v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2z'/%3E%3Cpath fill='%23ff6b7a' d='M10 0v4h4l-4-4z'/%3E%3Cpath fill='%23ffffff' d='M4 6h8v1H4V6zm0 2h8v1H4V8zm0 2h6v1H4v-1z'/%3E%3Ctext fill='%23ffffff' x='8' y='14' text-anchor='middle' font-size='2.5' font-family='Arial, sans-serif' font-weight='bold'>PDF%3C/text%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23ff4757' d='M2 2a2 2 0 0 1 2-2h6l4 4v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2z'/%3E%3Cpath fill='%23ff6b7a' d='M10 0v4h4l-4-4z'/%3E%3Cpath fill='%23ffffff' d='M4 6h8v1H4V6zm0 2h8v1H4V8zm0 2h6v1H4v-1z'/%3E%3Ctext fill='%23ffffff' x='8' y='14' text-anchor='middle' font-size='2.5' font-family='Arial, sans-serif' font-weight='bold'>PDF%3C/text%3E%3C/svg%3E") !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
 }
 
 .icon-word::before {
-    content: "";
+    content: "" !important;
     display: inline-block;
     width: 16px;
     height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%232b579a' d='M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2z'/%3E%3Cpath fill='%23ffffff' d='M4 4h8v1H4V4zm0 2h8v1H4V6zm0 2h6v1H4V8zm0 2h8v1H4v-1z'/%3E%3Ctext fill='%23ffffff' x='8' y='13' text-anchor='middle' font-size='2.5' font-family='Arial'>W%3C/text%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%232b579a' d='M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2z'/%3E%3Cpath fill='%23ffffff' d='M4 4h8v1H4V4zm0 2h8v1H4V6zm0 2h6v1H4V8zm0 2h8v1H4v-1z'/%3E%3Ctext fill='%23ffffff' x='8' y='13' text-anchor='middle' font-size='2.5' font-family='Arial'>W%3C/text%3E%3C/svg%3E") !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
 }
 
 /* Windows Explorer Icons */
@@ -4813,6 +4865,9 @@ body {
 .files-display.icons-view .file-icon .icon::before {
     width: 48px;
     height: 48px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .files-display.icons-view .file-name {
@@ -4860,6 +4915,9 @@ body {
 .files-display.list-view .file-icon .icon::before {
     width: 16px;
     height: 16px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .files-display.list-view .file-name {
@@ -4958,6 +5016,9 @@ body {
 .files-display.large-icons-view .file-icon .icon::before {
     width: 64px;
     height: 64px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .files-display.large-icons-view .file-name {
@@ -5759,6 +5820,9 @@ body {
 .files-display.content-view .file-icon .icon::before {
     width: 64px;
     height: 64px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 /* Notification Styles */

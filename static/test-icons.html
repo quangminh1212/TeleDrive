@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Icons</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            padding: 20px;
+            background: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .icon-test-grid {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        .icon-test-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 120px;
+        }
+        .icon-test-item .file-icon {
+            margin: 10px auto 15px auto;
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .icon-test-item .file-icon .icon {
+            font-size: 48px;
+        }
+        .icon-test-item p {
+            margin: 0;
+            font-weight: 500;
+            color: #333;
+        }
+        .file-items-test {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .debug-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Icon Debug Test Page</h1>
+    
+    <div class="debug-info">
+        <strong>Debug Info:</strong><br>
+        - CSS loaded from: /static/css/style.css<br>
+        - Testing icon classes: icon-pdf, icon-image, icon-word, etc.<br>
+        - Expected: SVG icons with colors<br>
+        - If showing white boxes: CSS not loading or SVG data missing
+    </div>
+    
+    <h2>📁 Individual Icon Tests</h2>
+    <div class="icon-test-grid">
+        <div class="icon-test-item">
+            <div class="file-icon">
+                <i class="icon icon-pdf"></i>
+            </div>
+            <p>PDF Icon</p>
+        </div>
+        
+        <div class="icon-test-item">
+            <div class="file-icon">
+                <i class="icon icon-image"></i>
+            </div>
+            <p>Image Icon</p>
+        </div>
+        
+        <div class="icon-test-item">
+            <div class="file-icon">
+                <i class="icon icon-word"></i>
+            </div>
+            <p>Word Icon</p>
+        </div>
+        
+        <div class="icon-test-item">
+            <div class="file-icon">
+                <i class="icon icon-excel"></i>
+            </div>
+            <p>Excel Icon</p>
+        </div>
+        
+        <div class="icon-test-item">
+            <div class="file-icon">
+                <i class="icon icon-video"></i>
+            </div>
+            <p>Video Icon</p>
+        </div>
+        
+        <div class="icon-test-item">
+            <div class="file-icon">
+                <i class="icon icon-audio"></i>
+            </div>
+            <p>Audio Icon</p>
+        </div>
+        
+        <div class="icon-test-item">
+            <div class="file-icon">
+                <i class="icon icon-archive"></i>
+            </div>
+            <p>Archive Icon</p>
+        </div>
+        
+        <div class="icon-test-item">
+            <div class="file-icon">
+                <i class="icon icon-code"></i>
+            </div>
+            <p>Code Icon</p>
+        </div>
+    </div>
+    
+    <h2>📋 File Items Test (Content View)</h2>
+    <div class="file-items-test">
+        <div class="files-display content-view">
+            <div class="file-item" data-id="document.pdf" data-type="file">
+                <div class="file-icon"><i class="icon icon-pdf"></i></div>
+                <div class="file-info">
+                    <div class="file-name">document.pdf</div>
+                    <div class="file-description">PDF Document</div>
+                    <div class="file-details">
+                        <span class="file-size">2.5 MB</span>
+                        <span class="file-date">Today</span>
+                        <span class="file-type">File</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="file-item" data-id="photo.jpg" data-type="file">
+                <div class="file-icon"><i class="icon icon-image"></i></div>
+                <div class="file-info">
+                    <div class="file-name">photo.jpg</div>
+                    <div class="file-description">Image File</div>
+                    <div class="file-details">
+                        <span class="file-size">1.2 MB</span>
+                        <span class="file-date">Yesterday</span>
+                        <span class="file-type">File</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="file-item" data-id="presentation.pptx" data-type="file">
+                <div class="file-icon"><i class="icon icon-powerpoint"></i></div>
+                <div class="file-info">
+                    <div class="file-name">presentation.pptx</div>
+                    <div class="file-description">PowerPoint Presentation</div>
+                    <div class="file-details">
+                        <span class="file-size">5.8 MB</span>
+                        <span class="file-date">2 days ago</span>
+                        <span class="file-type">File</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Debug script to check CSS loading
+        console.log('🔍 Icon Debug Test Page loaded');
+        
+        // Check if CSS is loaded
+        const stylesheets = document.styleSheets;
+        console.log('📄 Loaded stylesheets:', stylesheets.length);
+        
+        // Check computed styles for an icon
+        const testIcon = document.querySelector('.icon-pdf');
+        if (testIcon) {
+            const styles = window.getComputedStyle(testIcon, '::before');
+            console.log('🎨 PDF Icon ::before styles:');
+            console.log('- background-image:', styles.backgroundImage);
+            console.log('- width:', styles.width);
+            console.log('- height:', styles.height);
+            console.log('- display:', styles.display);
+        }
+    </script>
+</body>
+</html>

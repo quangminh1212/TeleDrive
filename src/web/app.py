@@ -798,6 +798,85 @@ def test_endpoint():
     """Test endpoint để kiểm tra server có load code mới không"""
     return jsonify({'message': 'Server đã load code mới!', 'timestamp': '2025-07-18T20:30:00Z'})
 
+@app.route('/test-icons')
+def test_icons():
+    """Test page for debugging icons"""
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Test Icons</title>
+        <link rel="stylesheet" href="/static/css/style.css">
+    </head>
+    <body style="padding: 20px; background: #f5f5f5;">
+        <h1>Icon Test Page</h1>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                <div class="file-icon" style="margin: 10px auto;">
+                    <i class="icon icon-pdf"></i>
+                </div>
+                <p>PDF Icon</p>
+            </div>
+
+            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                <div class="file-icon" style="margin: 10px auto;">
+                    <i class="icon icon-image"></i>
+                </div>
+                <p>Image Icon</p>
+            </div>
+
+            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                <div class="file-icon" style="margin: 10px auto;">
+                    <i class="icon icon-word"></i>
+                </div>
+                <p>Word Icon</p>
+            </div>
+
+            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                <div class="file-icon" style="margin: 10px auto;">
+                    <i class="icon icon-excel"></i>
+                </div>
+                <p>Excel Icon</p>
+            </div>
+
+            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                <div class="file-icon" style="margin: 10px auto;">
+                    <i class="icon icon-video"></i>
+                </div>
+                <p>Video Icon</p>
+            </div>
+
+            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                <div class="file-icon" style="margin: 10px auto;">
+                    <i class="icon icon-audio"></i>
+                </div>
+                <p>Audio Icon</p>
+            </div>
+        </div>
+
+        <h2>File Items Test</h2>
+        <div class="files-display content-view" style="background: white; padding: 20px; border-radius: 8px;">
+            <div class="file-item" data-id="test.pdf" data-type="file">
+                <div class="file-icon"><i class="icon icon-pdf"></i></div>
+                <div class="file-info">
+                    <div class="file-name">test.pdf</div>
+                    <div class="file-description">PDF Document</div>
+                </div>
+            </div>
+
+            <div class="file-item" data-id="photo.jpg" data-type="file">
+                <div class="file-icon"><i class="icon icon-image"></i></div>
+                <div class="file-info">
+                    <div class="file-name">photo.jpg</div>
+                    <div class="file-description">Image File</div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    '''
+
 @app.route('/logout')
 @login_required
 def logout():
