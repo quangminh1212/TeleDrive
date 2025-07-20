@@ -26,7 +26,7 @@ echo.
 :MAIN_START
 echo [BUOC 1/5] Kiem tra cau hinh Telegram API...
 echo    ^> Kiem tra config.json...
-python check_config.py >nul
+python scripts/check_config.py >nul
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] CHUA CAU HINH API TELEGRAM!
@@ -57,7 +57,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 3/5] Kiem tra va tao cau hinh...
 echo    ^> Kiem tra config.json...
-if not exist config.json (
+if not exist config\config.json (
     echo [ERROR] File config.json khong ton tai!
     pause
     exit /b 1
@@ -66,7 +66,7 @@ if not exist config.json (
 )
 
 echo    ^> Kiem tra config.json...
-python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); channel=config.get('channels',{}).get('default_channel',''); exit(0 if channel and channel not in ['', '@your_channel_here'] else 1)" 2>nul
+python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); channel=config.get('channels',{}).get('default_channel',''); exit(0 if channel and channel not in ['', '@your_channel_here'] else 1)" 2>nul
 if errorlevel 1 (
     echo.
     echo [ERROR] CHUA CAU HINH CHANNEL!
@@ -79,7 +79,7 @@ if errorlevel 1 (
 echo    ^> Config.json da san sang
 
 echo    ^> Dang kiem tra tinh hop le cua cau hinh...
-python check_config.py >nul
+python scripts/check_config.py >nul
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] CAU HINH CHUA HOP LE!
@@ -111,7 +111,7 @@ echo [BUOC 5/5] Khoi tao he thong logging...
 echo    ^> Tao thu muc logs neu chua co...
 if not exist logs mkdir logs
 echo    ^> Kiem tra cau hinh logging...
-python -c "import sys; import os; sys.path.insert(0, 'src'); from utils.logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('[OK] He thong logging da san sang')" 2>nul
+python -c "import sys; import os; sys.path.insert(0, 'src'); from utils.logger import setup_detailed_logging; import json; config = json.load(open('config/config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('[OK] He thong logging da san sang')" 2>nul
 if errorlevel 1 (
     echo [WARNING] Khong the khoi tao logging (se chay khong co log chi tiet)
 )
@@ -172,7 +172,7 @@ if "%choice%"=="1" (
     echo.
     echo Cau hinh hien tai:
     echo ================================================================
-    python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); print('Channel:', config.get('channels',{}).get('default_channel','Chua cau hinh')); print('Max messages:', config.get('scanning',{}).get('max_messages','Khong gioi han')); print('Batch size:', config.get('scanning',{}).get('batch_size',50)); file_types=config.get('scanning',{}).get('file_types',{}); enabled=[k for k,v in file_types.items() if v]; print('File types:', ', '.join(enabled) if enabled else 'Tat ca'); output_formats=config.get('output',{}).get('formats',{}); enabled_formats=[k for k,v in output_formats.items() if v.get('enabled',False)]; print('Output formats:', ', '.join(enabled_formats) if enabled_formats else 'Khong co')" 2>nul
+    python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); print('Channel:', config.get('channels',{}).get('default_channel','Chua cau hinh')); print('Max messages:', config.get('scanning',{}).get('max_messages','Khong gioi han')); print('Batch size:', config.get('scanning',{}).get('batch_size',50)); file_types=config.get('scanning',{}).get('file_types',{}); enabled=[k for k,v in file_types.items() if v]; print('File types:', ', '.join(enabled) if enabled else 'Tat ca'); output_formats=config.get('output',{}).get('formats',{}); enabled_formats=[k for k,v in output_formats.items() if v.get('enabled',False)]; print('Output formats:', ', '.join(enabled_formats) if enabled_formats else 'Khong co')" 2>nul
     echo.
     echo Nhan phim bat ky de quay lai menu...
     pause >nul
@@ -188,7 +188,7 @@ if "%choice%"=="2" (
 
     if not "!new_channel!"=="" (
         echo Dang cap nhat channel...
-        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['channels']['default_channel']='!new_channel!'; config['channels']['use_default_channel']=True; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['channels']['default_channel']='!new_channel!'; config['channels']['use_default_channel']=True; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         if errorlevel 1 (
             echo [ERROR] Loi cap nhat channel
         ) else (
@@ -211,9 +211,9 @@ if "%choice%"=="3" (
     if not "!max_msg!"=="" (
         echo Dang cap nhat so tin nhan...
         if "!max_msg!"=="0" (
-            python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['max_messages']=None; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+            python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['scanning']['max_messages']=None; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         ) else (
-            python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['max_messages']=int('!max_msg!'); json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+            python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['scanning']['max_messages']=int('!max_msg!'); json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         )
         if errorlevel 1 (
             echo [ERROR] Loi cap nhat so tin nhan
@@ -238,19 +238,19 @@ if "%choice%"=="4" (
     set /p file_choice="Lua chon (1-4): "
 
     if "!file_choice!"=="1" (
-        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':True,'photos':True,'videos':True,'audio':True}; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':True,'photos':True,'videos':True,'audio':True}; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         echo [OK] Da chon tat ca loai file
     )
     if "!file_choice!"=="2" (
-        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':True,'photos':False,'videos':False,'audio':False}; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':True,'photos':False,'videos':False,'audio':False}; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         echo [OK] Da chon chi documents
     )
     if "!file_choice!"=="3" (
-        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':False,'photos':True,'videos':True,'audio':False}; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':False,'photos':True,'videos':True,'audio':False}; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         echo [OK] Da chon photos va videos
     )
     if "!file_choice!"=="4" (
-        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':False,'photos':False,'videos':False,'audio':True}; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['scanning']['file_types']={'documents':False,'photos':False,'videos':False,'audio':True}; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         echo [OK] Da chon chi audio
     )
     echo.
@@ -270,19 +270,19 @@ if "%choice%"=="5" (
     set /p format_choice="Lua chon (1-4): "
 
     if "!format_choice!"=="1" (
-        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=True; config['output']['formats']['json']['enabled']=True; config['output']['formats']['excel']['enabled']=True; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=True; config['output']['formats']['json']['enabled']=True; config['output']['formats']['excel']['enabled']=True; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         echo [OK] Da chon tat ca dinh dang
     )
     if "!format_choice!"=="2" (
-        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=True; config['output']['formats']['json']['enabled']=False; config['output']['formats']['excel']['enabled']=False; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=True; config['output']['formats']['json']['enabled']=False; config['output']['formats']['excel']['enabled']=False; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         echo [OK] Da chon chi CSV
     )
     if "!format_choice!"=="3" (
-        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=False; config['output']['formats']['json']['enabled']=True; config['output']['formats']['excel']['enabled']=False; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=False; config['output']['formats']['json']['enabled']=True; config['output']['formats']['excel']['enabled']=False; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         echo [OK] Da chon chi JSON
     )
     if "!format_choice!"=="4" (
-        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=False; config['output']['formats']['json']['enabled']=False; config['output']['formats']['excel']['enabled']=True; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['output']['formats']['csv']['enabled']=False; config['output']['formats']['json']['enabled']=False; config['output']['formats']['excel']['enabled']=True; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         echo [OK] Da chon chi Excel
     )
     echo.
@@ -298,7 +298,7 @@ if "%choice%"=="6" (
 
     if /i "!confirm!"=="y" (
         echo Dang reset...
-        python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); config['channels']['default_channel']='@your_channel_here'; config['channels']['use_default_channel']=True; config['scanning']['max_messages']=1000; config['scanning']['batch_size']=50; config['scanning']['file_types']={'documents':True,'photos':True,'videos':True,'audio':True}; config['output']['formats']['csv']['enabled']=True; config['output']['formats']['json']['enabled']=True; config['output']['formats']['excel']['enabled']=True; json.dump(config,open('config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
+        python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); config['channels']['default_channel']='@your_channel_here'; config['channels']['use_default_channel']=True; config['scanning']['max_messages']=1000; config['scanning']['batch_size']=50; config['scanning']['file_types']={'documents':True,'photos':True,'videos':True,'audio':True}; config['output']['formats']['csv']['enabled']=True; config['output']['formats']['json']['enabled']=True; config['output']['formats']['excel']['enabled']=True; json.dump(config,open('config/config.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)" 2>nul
         echo [OK] Da reset ve cau hinh mac dinh
     ) else (
         echo Huy bo reset
@@ -473,7 +473,7 @@ echo.
 echo [INFO] CHAY SCANNER COMMAND LINE...
 echo.
 echo  Su dung channel tu config:
-python -c "import json; config=json.load(open('config.json','r',encoding='utf-8')); print('   ', config.get('channels',{}).get('default_channel','Chua cau hinh'))" 2>nul
+python -c "import json; config=json.load(open('config/config.json','r',encoding='utf-8')); print('   ', config.get('channels',{}).get('default_channel','Chua cau hinh'))" 2>nul
 echo.
 echo [INFO] Ket qua se duoc luu trong thu muc 'output/'
 echo [INFO] Log chi tiet se duoc luu trong thu muc 'logs/'
@@ -505,7 +505,7 @@ echo [INFO] Phu hop cho production deployment
 echo.
 
 echo [BUOC 1/5] Kiem tra cau hinh Telegram API...
-python check_config.py >nul
+python scripts/check_config.py >nul
 if %errorlevel% neq 0 (
     echo [ERROR] CHUA CAU HINH API TELEGRAM!
     echo Vui long chay: run.bat config
