@@ -526,25 +526,9 @@
     background-repeat: no-repeat;
 }
 
-.icon-star::before {
-    content: "";
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffd43b' stroke='%23ffd43b' stroke-width='1.5'%3E%3Cpolygon points='12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12,2'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-}
 
-.icon-share::before {
-    content: "";
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='1.5'%3E%3Ccircle cx='18' cy='5' r='3'/%3E%3Ccircle cx='6' cy='12' r='3'/%3E%3Ccircle cx='18' cy='19' r='3'/%3E%3Cline x1='8.59' y1='13.51' x2='15.42' y2='17.49'/%3E%3Cline x1='15.41' y1='6.51' x2='8.59' y2='10.49'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-}
+
+
 
 .icon-archive::before {
     content: "";
@@ -556,25 +540,9 @@
     background-repeat: no-repeat;
 }
 
-.icon-settings::before {
-    content: "";
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='1.5'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-}
 
-.icon-trash::before {
-    content: "";
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='1.5'%3E%3Cpolyline points='3,6 5,6 21,6'/%3E%3Cpath d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'/%3E%3Cline x1='10' y1='11' x2='10' y2='17'/%3E%3Cline x1='14' y1='11' x2='14' y2='17'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-}
+
+
 
 .icon-spinner::before {
     content: "";
@@ -586,25 +554,9 @@
     background-repeat: no-repeat;
 }
 
-.icon-user::before {
-    content: "";
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='1.5'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-}
 
-.icon-download::before {
-    content: "";
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='1.5'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='7,10 12,15 17,10'/%3E%3Cline x1='12' y1='15' x2='12' y2='3'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-}
+
+
 
 .icon-alert::before {
     content: "";
@@ -698,10 +650,6 @@
     content: "📙";
     font-weight: normal;
 }
-.icon-archive::before {
-    content: "📦";
-    font-weight: normal;
-}
 .icon-code::before {
     content: "💻";
     font-weight: normal;
@@ -758,21 +706,13 @@
     color: #5f6368;
     font-weight: normal;
 }
-.icon-search::before {
-    content: "○";
-    color: #5f6368;
-    font-weight: normal;
-}
+
 .icon-times::before {
     content: "×";
     color: #5f6368;
     font-weight: normal;
 }
-.icon-user::before {
-    content: "◯";
-    color: #5f6368;
-    font-weight: normal;
-}
+
 .icon-chevron-down::before {
     content: "▾";
     font-size: 0.9em;
@@ -822,21 +762,13 @@
     color: #5f6368;
     font-weight: normal;
 }
-.icon-download::before {
-    content: "↓";
-    color: #5f6368;
-    font-weight: normal;
-}
+
 .icon-edit::before {
     content: "◐";
     color: #5f6368;
     font-weight: normal;
 }
-.icon-trash::before {
-    content: "◌";
-    color: #5f6368;
-    font-weight: normal;
-}
+
 .icon-info::before {
     content: "◯";
     color: #5f6368;
@@ -4773,14 +4705,20 @@ body {
 
 /* Explorer Status Bar */
 .explorer-status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--status-bar-height);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-xs) var(--spacing-lg);
+    padding: 0 var(--spacing-sm);
     background: var(--surface-bg);
     border-top: 1px solid var(--border-light);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--text-secondary);
+    z-index: 997;
     min-height: 32px;
 }
 
@@ -5073,11 +5011,7 @@ body {
     margin: 0;
 }
 
-/* Status Bar Improvements */
-.explorer-status-bar {
-    background: var(--tertiary-bg);
-    border-top: 1px solid var(--border-medium);
-}
+/* Status Bar Improvements - Merged with main definition */
 
 /* Breadcrumb Improvements */
 .breadcrumb-path {
@@ -6000,23 +5934,7 @@ body {
     margin-bottom: var(--spacing-sm);
 }
 
-/* Status Bar */
-.explorer-status-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: var(--status-bar-height);
-    background: var(--surface-bg);
-    border-top: 1px solid var(--border-light);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 var(--spacing-sm);
-    font-size: var(--font-size-xs);
-    color: var(--text-secondary);
-    z-index: 997;
-}
+/* Status Bar - Merged with main definition above */
 
 .status-left {
     display: flex;
