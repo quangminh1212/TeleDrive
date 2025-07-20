@@ -430,13 +430,14 @@ def verify_otp():
         is_valid, message = OTPManager.verify_otp(phone_number, otp_code)
         if not is_valid:
             return jsonify({'success': False, 'message': message}), 400
-        
+
         # Xác thực người dùng
         user = auth_manager.authenticate_user_by_phone(phone_number)
+
         if user:
             login_user(user, remember=remember)
             next_page = request.args.get('next')
-            
+
             return jsonify({
                 'success': True,
                 'message': 'Đăng nhập thành công',
@@ -1070,6 +1071,10 @@ def sort_files(files, sort_by='name', sort_order='asc'):
 def favicon():
     """Serve favicon to prevent 404 errors"""
     return '', 204  # No Content
+
+
+
+
 
 
 
