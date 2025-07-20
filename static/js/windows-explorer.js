@@ -414,22 +414,72 @@ class Windows11Explorer {
     }
 
     renderFileItem(file) {
-        return `
-            <div class="file-item" data-id="${file.name}" data-type="${file.type}">
-                <div class="file-icon">
-                    <i class="icon icon-${file.icon}"></i>
-                </div>
+        const viewMode = this.currentView;
+
+        // Generate file description for content view
+        const getFileDescription = (file) => {
+            const descriptions = {
+                'folder': 'Folder containing files and subfolders',
+                'pdf': 'Portable Document Format file',
+                'image': 'Image file that can be viewed and edited',
+                'video': 'Video file that can be played',
+                'word': 'Microsoft Word document',
+                'file': 'File that can be opened with appropriate application'
+            };
+            return descriptions[file.icon] || 'File';
+        };
+
+        // Basic file structure
+        let fileHtml = `<div class="file-item" data-id="${file.name}" data-type="${file.type}">`;
+
+        // Icon
+        fileHtml += `<div class="file-icon"><i class="icon icon-${file.icon}"></i></div>`;
+
+        // File info based on view mode
+        if (viewMode === 'content') {
+            fileHtml += `
                 <div class="file-info">
                     <div class="file-name">${file.name}</div>
-                    ${this.currentView === 'details' ? `
-                        <div class="file-details">
-                            <span class="file-size">${file.size}</span>
-                            <span class="file-date">${file.date}</span>
-                        </div>
-                    ` : ''}
+                    <div class="file-description">${getFileDescription(file)}</div>
+                    <div class="file-details">
+                        <span class="file-size">${file.size || 'Unknown size'}</span>
+                        <span class="file-date">${file.date || 'Unknown date'}</span>
+                        <span class="file-type">${file.type === 'folder' ? 'Folder' : 'File'}</span>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else if (viewMode === 'tiles') {
+            fileHtml += `
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-details">
+                        <span class="file-size">${file.size || ''}</span>
+                        <span class="file-date">${file.date || ''}</span>
+                    </div>
+                </div>
+            `;
+        } else if (viewMode === 'details') {
+            fileHtml += `
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-details">
+                        <span class="file-size">${file.size || ''}</span>
+                        <span class="file-date">${file.date || ''}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            // For all icon views (extra-large, large, medium, small)
+            fileHtml += `
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                </div>
+            `;
+        }
+
+        fileHtml += `</div>`;
+
+        return fileHtml;
     }
 
     setupFileInteractions() {
@@ -580,6 +630,33 @@ class Windows11Explorer {
 
     // View Controls
     setupViewControls() {
+        // View dropdown toggle
+        const viewModeBtn = document.getElementById('viewModeBtn');
+        const viewDropdownMenu = document.getElementById('viewDropdownMenu');
+
+        if (viewModeBtn && viewDropdownMenu) {
+            viewModeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleViewDropdown();
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!viewModeBtn.contains(e.target) && !viewDropdownMenu.contains(e.target)) {
+                    this.closeViewDropdown();
+                }
+            });
+        }
+
+        // View option buttons
+        const viewOptions = document.querySelectorAll('.view-option');
+        viewOptions.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.setView(btn.dataset.view);
+                this.closeViewDropdown();
+            });
+        });
+
         // Ribbon view buttons
         const viewBtns = document.querySelectorAll('.view-btn');
         viewBtns.forEach(btn => {
@@ -588,8 +665,8 @@ class Windows11Explorer {
             });
         });
 
-        // Status bar view mode buttons
-        const viewModeBtns = document.querySelectorAll('.view-mode-btn');
+        // Status bar view mode buttons (legacy)
+        const viewModeBtns = document.querySelectorAll('.view-mode-btn:not(.dropdown-toggle)');
         viewModeBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 this.setView(btn.dataset.view);
@@ -606,7 +683,7 @@ class Windows11Explorer {
 
         const zoomInBtn = document.getElementById('zoomInBtn');
         const zoomOutBtn = document.getElementById('zoomOutBtn');
-        
+
         if (zoomInBtn) {
             zoomInBtn.addEventListener('click', () => this.zoomIn());
         }
@@ -615,13 +692,63 @@ class Windows11Explorer {
         }
     }
 
+    toggleViewDropdown() {
+        const viewDropdownMenu = document.getElementById('viewDropdownMenu');
+        const viewModeBtn = document.getElementById('viewModeBtn');
+
+        if (viewDropdownMenu && viewModeBtn) {
+            const isOpen = viewDropdownMenu.classList.contains('show');
+
+            if (isOpen) {
+                this.closeViewDropdown();
+            } else {
+                viewDropdownMenu.classList.add('show');
+                viewModeBtn.classList.add('open');
+            }
+        }
+    }
+
+    closeViewDropdown() {
+        const viewDropdownMenu = document.getElementById('viewDropdownMenu');
+        const viewModeBtn = document.getElementById('viewModeBtn');
+
+        if (viewDropdownMenu && viewModeBtn) {
+            viewDropdownMenu.classList.remove('show');
+            viewModeBtn.classList.remove('open');
+        }
+    }
+
     setView(viewMode) {
         this.currentView = viewMode;
-        
-        // Update active states
-        document.querySelectorAll('.view-btn, .view-mode-btn').forEach(btn => {
+
+        // Update active states for all view controls
+        document.querySelectorAll('.view-btn, .view-mode-btn, .view-option').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.view === viewMode);
         });
+
+        // Update dropdown toggle button icon and view
+        const viewModeBtn = document.getElementById('viewModeBtn');
+        if (viewModeBtn) {
+            const iconMap = {
+                'extra-large-icons': 'icon-grid-xl',
+                'large-icons': 'icon-grid-lg',
+                'medium-icons': 'icon-view-grid',
+                'small-icons': 'icon-grid-sm',
+                'icons': 'icon-view-grid',
+                'list': 'icon-view-list',
+                'details': 'icon-view-details',
+                'tiles': 'icon-tiles',
+                'content': 'icon-content'
+            };
+
+            const iconClass = iconMap[viewMode] || 'icon-view-grid';
+            const iconElement = viewModeBtn.querySelector('.icon:not(.icon-chevron-down)');
+            if (iconElement) {
+                iconElement.className = `icon ${iconClass}`;
+            }
+
+            viewModeBtn.dataset.view = viewMode;
+        }
 
         // Apply view to files display
         this.applyViewMode();
@@ -630,22 +757,42 @@ class Windows11Explorer {
     applyViewMode() {
         const filesDisplay = document.getElementById('filesDisplay');
         const listHeader = document.getElementById('listHeader');
-        
+
         if (!filesDisplay) return;
 
         // Remove all view classes
         filesDisplay.className = 'files-display';
-        
-        // Add current view class
-        filesDisplay.classList.add(`${this.currentView}-view`);
+
+        // Map view modes to CSS classes
+        const viewClassMap = {
+            'extra-large-icons': 'extra-large-icons-view',
+            'large-icons': 'large-icons-view',
+            'medium-icons': 'medium-icons-view',
+            'small-icons': 'small-icons-view',
+            'icons': 'medium-icons-view', // Default icons view
+            'list': 'list-view',
+            'details': 'details-view',
+            'tiles': 'tiles-view',
+            'content': 'content-view'
+        };
+
+        const viewClass = viewClassMap[this.currentView] || 'medium-icons-view';
+        filesDisplay.classList.add(viewClass);
 
         // Show/hide list header
         if (listHeader) {
             listHeader.style.display = this.currentView === 'details' ? 'flex' : 'none';
         }
 
-        // Re-render files with new view
-        this.renderFiles();
+        // Re-render current content with new view
+        if (this.currentPath) {
+            if (this.currentPath.startsWith('session-')) {
+                const sessionId = this.currentPath.replace('session-', '');
+                this.renderSessionFiles(sessionId);
+            } else {
+                this.loadSectionContent(this.currentPath);
+            }
+        }
     }
 
     setZoomLevel(level) {

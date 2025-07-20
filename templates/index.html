@@ -498,15 +498,52 @@
                     <i class="icon icon-plus"></i>
                 </button>
                 <div class="view-mode-controls">
-                    <button class="view-mode-btn active" data-view="icons" title="Large icons">
-                        <i class="icon icon-view-grid"></i>
-                    </button>
-                    <button class="view-mode-btn" data-view="list" title="List">
-                        <i class="icon icon-view-list"></i>
-                    </button>
-                    <button class="view-mode-btn" data-view="details" title="Details">
-                        <i class="icon icon-view-details"></i>
-                    </button>
+                    <div class="view-dropdown">
+                        <button class="view-mode-btn dropdown-toggle active" id="viewModeBtn" data-view="icons" title="View options">
+                            <i class="icon icon-view-grid"></i>
+                            <i class="icon icon-chevron-down"></i>
+                        </button>
+                        <div class="view-dropdown-menu" id="viewDropdownMenu">
+                            <div class="view-section">
+                                <div class="view-section-title">Biểu tượng</div>
+                                <button class="view-option" data-view="extra-large-icons">
+                                    <i class="icon icon-grid-xl"></i>
+                                    <span>Biểu tượng Rất lớn</span>
+                                </button>
+                                <button class="view-option" data-view="large-icons">
+                                    <i class="icon icon-grid-lg"></i>
+                                    <span>Biểu tượng Lớn</span>
+                                </button>
+                                <button class="view-option active" data-view="medium-icons">
+                                    <i class="icon icon-view-grid"></i>
+                                    <span>Biểu tượng Trung bình</span>
+                                </button>
+                                <button class="view-option" data-view="small-icons">
+                                    <i class="icon icon-grid-sm"></i>
+                                    <span>Biểu tượng Nhỏ</span>
+                                </button>
+                            </div>
+                            <div class="view-section">
+                                <div class="view-section-title">Danh sách</div>
+                                <button class="view-option" data-view="list">
+                                    <i class="icon icon-view-list"></i>
+                                    <span>Danh sách</span>
+                                </button>
+                                <button class="view-option" data-view="details">
+                                    <i class="icon icon-view-details"></i>
+                                    <span>Chi tiết</span>
+                                </button>
+                                <button class="view-option" data-view="tiles">
+                                    <i class="icon icon-tiles"></i>
+                                    <span>Lát</span>
+                                </button>
+                                <button class="view-option" data-view="content">
+                                    <i class="icon icon-content"></i>
+                                    <span>Nội dung</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
