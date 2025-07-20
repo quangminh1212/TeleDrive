@@ -3,6 +3,9 @@ setlocal enabledelayedexpansion
 title Telegram File Scanner
 color 0D
 
+REM Chuyen ve thu muc goc cua project
+cd /d "%~dp0\.."
+
 REM Kiem tra tham so dau vao
 if "%1"=="config" goto CONFIG_MENU
 if "%1"=="web" goto WEB_MODE
