@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Menu</title>
+    <style>
+        /* Admin Menu Container */
+        .admin-menu-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .admin-badge-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .admin-badge-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .admin-badge {
+            background: #0078d4;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .admin-badge-btn .icon {
+            font-size: 8px;
+            color: #0078d4;
+            transition: transform 0.2s ease;
+        }
+
+        .admin-badge-btn.active .icon {
+            transform: rotate(180deg);
+        }
+
+        /* Admin Dropdown Menu */
+        .admin-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 220px;
+            z-index: 2000;
+            display: none;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .admin-dropdown-menu.show {
+            display: block;
+            animation: fadeInDown 0.15s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .admin-menu-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .admin-menu-divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 4px 0;
+        }
+
+        .admin-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .admin-menu-item:hover {
+            background: #f5f5f5;
+        }
+
+        .admin-menu-item .icon {
+            width: 16px;
+            height: 16px;
+            color: #666;
+        }
+
+        /* Icon styles */
+        .icon {
+            display: inline-block;
+            font-style: normal;
+        }
+
+        .icon-chevron-down::before { content: "▼"; }
+        .icon-settings::before { content: "⚙"; }
+        .icon-user::before { content: "👤"; }
+        .icon-scan::before { content: "📡"; }
+        .icon-file-text::before { content: "📄"; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 50px;
+            background: #f0f0f0;
+        }
+
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>Test Admin Menu</h2>
+        <p>Click vào nút ADMIN để test dropdown menu:</p>
+        
+        <div class="admin-menu-container">
+            <button class="admin-badge-btn" id="adminMenuToggle" title="Cài đặt Admin">
+                <span class="admin-badge">ADMIN</span>
+                <i class="icon icon-chevron-down"></i>
+            </button>
+            <div class="admin-dropdown-menu" id="adminDropdownMenu">
+                <div class="admin-menu-header">
+                    <i class="icon icon-settings"></i>
+                    <span>Quản lý hệ thống</span>
+                </div>
+                <div class="admin-menu-divider"></div>
+                <button class="admin-menu-item" id="userManagementBtn">
+                    <i class="icon icon-user"></i>
+                    <span>Quản lý người dùng</span>
+                </button>
+                <button class="admin-menu-item" id="systemSettingsBtn">
+                    <i class="icon icon-settings"></i>
+                    <span>Cài đặt hệ thống</span>
+                </button>
+                <button class="admin-menu-item" id="scanSettingsBtn">
+                    <i class="icon icon-scan"></i>
+                    <span>Cài đặt Telegram</span>
+                </button>
+                <button class="admin-menu-item" id="logsViewBtn">
+                    <i class="icon icon-file-text"></i>
+                    <span>Xem logs</span>
+                </button>
+                <div class="admin-menu-divider"></div>
+                <button class="admin-menu-item" id="profileSettingsBtn">
+                    <i class="icon icon-user"></i>
+                    <span>Thông tin tài khoản</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up admin menu...');
+
+            // Setup admin menu
+            const adminMenuToggle = document.getElementById('adminMenuToggle');
+            const adminDropdownMenu = document.getElementById('adminDropdownMenu');
+
+            console.log('adminMenuToggle:', adminMenuToggle);
+            console.log('adminDropdownMenu:', adminDropdownMenu);
+
+            if (adminMenuToggle && adminDropdownMenu) {
+                console.log('Both elements found, adding event listeners...');
+
+                // Toggle dropdown
+                adminMenuToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    console.log('Admin button clicked!');
+                    adminDropdownMenu.classList.toggle('show');
+                    adminMenuToggle.classList.toggle('active');
+                    console.log('Admin menu toggled, show class:', adminDropdownMenu.classList.contains('show'));
+                    console.log('Menu display style:', window.getComputedStyle(adminDropdownMenu).display);
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!adminMenuToggle.contains(e.target) && !adminDropdownMenu.contains(e.target)) {
+                        adminDropdownMenu.classList.remove('show');
+                        adminMenuToggle.classList.remove('active');
+                        console.log('Admin menu closed');
+                    }
+                });
+
+                // Setup menu item handlers
+                document.querySelectorAll('.admin-menu-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        console.log('Menu item clicked:', item.textContent.trim());
+                        alert('Clicked: ' + item.textContent.trim());
+                    });
+                });
+
+                console.log('Event listeners added successfully');
+            } else {
+                console.error('Could not find admin menu elements!');
+            }
+
+            console.log('Admin menu setup completed');
+        });
+    </script>
+</body>
+</html>

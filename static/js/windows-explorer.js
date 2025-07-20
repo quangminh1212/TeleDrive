@@ -2965,15 +2965,24 @@ class Windows11Explorer {
     }
 
     setupAdminMenu() {
+        console.log('Setting up admin menu...');
         const adminMenuToggle = document.getElementById('adminMenuToggle');
         const adminDropdownMenu = document.getElementById('adminDropdownMenu');
 
+        console.log('adminMenuToggle:', adminMenuToggle);
+        console.log('adminDropdownMenu:', adminDropdownMenu);
+
         if (adminMenuToggle && adminDropdownMenu) {
+            console.log('Admin menu elements found, adding event listeners...');
+
             // Toggle dropdown
             adminMenuToggle.addEventListener('click', (e) => {
                 e.stopPropagation();
+                console.log('Admin menu button clicked!');
                 adminDropdownMenu.classList.toggle('show');
                 adminMenuToggle.classList.toggle('active');
+                console.log('Menu show class:', adminDropdownMenu.classList.contains('show'));
+                console.log('Menu display:', window.getComputedStyle(adminDropdownMenu).display);
             });
 
             // Close dropdown when clicking outside
@@ -2981,11 +2990,19 @@ class Windows11Explorer {
                 if (!adminMenuToggle.contains(e.target) && !adminDropdownMenu.contains(e.target)) {
                     adminDropdownMenu.classList.remove('show');
                     adminMenuToggle.classList.remove('active');
+                    console.log('Admin menu closed');
                 }
             });
 
             // Setup menu item handlers
             this.setupAdminMenuItems();
+            console.log('Admin menu setup completed successfully');
+        } else {
+            console.error('Admin menu elements not found!');
+            console.log('Available elements with admin in ID:');
+            document.querySelectorAll('[id*="admin"]').forEach(el => {
+                console.log('- Element:', el.id, el);
+            });
         }
     }
 
