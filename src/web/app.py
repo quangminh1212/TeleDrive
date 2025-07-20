@@ -877,6 +877,11 @@ def test_icons():
     </html>
     '''
 
+@app.route('/test-dashboard')
+def test_dashboard():
+    """Test dashboard with mock file data"""
+    return render_template('index.html')
+
 @app.route('/logout')
 @login_required
 def logout():
