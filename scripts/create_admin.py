@@ -8,12 +8,12 @@ import sys
 import os
 
 # Thêm thư mục src vào Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from flask import Flask
 from src.database import init_database
 from src.auth import auth_manager
-from src.models import validate_phone_number
+from src.models.otp import validate_phone_number
 
 def create_admin_user():
     """Tạo admin user mới"""
@@ -23,6 +23,7 @@ def create_admin_user():
     
     # Cấu hình database
     basedir = os.path.abspath(os.path.dirname(__file__))
+    basedir = os.path.dirname(basedir)  # Lên thư mục cha (TeleDrive)
     instance_dir = os.path.join(basedir, 'instance')
     os.makedirs(instance_dir, exist_ok=True)
     db_path = os.path.join(instance_dir, 'teledrive.db')

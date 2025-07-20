@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin & Logout Buttons - TeleDrive</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .test-header {
+            background: #2563eb;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .test-content {
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .mock-title-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .mock-title-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .mock-title-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .app-icon-img {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+        }
+        .window-title {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+        .username {
+            color: rgba(255,255,255,0.9);
+        }
+        .test-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🧪 Test Admin & Logout Buttons</h1>
+            <p>Kiểm tra chức năng các nút Admin và Đăng xuất</p>
+        </div>
+        
+        <div class="test-content">
+            <!-- Mock Title Bar -->
+            <div class="test-section">
+                <h3>📋 Mock Title Bar với Admin & Logout</h3>
+                <div class="mock-title-bar">
+                    <div class="mock-title-bar-left">
+                        <div class="app-icon">
+                            <img src="static/images/logo.png" alt="TeleDrive" class="app-icon-img">
+                        </div>
+                        <span class="window-title">TeleDrive - File Manager</span>
+                    </div>
+                    <div class="mock-title-bar-right">
+                        <div class="user-info">
+                            <i class="icon icon-user"></i>
+                            <span class="username">admin</span>
+                            
+                            <!-- Admin Menu -->
+                            <div class="admin-menu-container">
+                                <button class="admin-badge-btn" id="adminMenuToggle" title="Cài đặt Admin">
+                                    <span class="admin-badge">Admin</span>
+                                    <i class="icon icon-chevron-down"></i>
+                                </button>
+                                <div class="admin-dropdown-menu" id="adminDropdownMenu">
+                                    <div class="admin-menu-header">
+                                        <i class="icon icon-settings"></i>
+                                        <span>Quản lý hệ thống</span>
+                                    </div>
+                                    <div class="admin-menu-divider"></div>
+                                    <button class="admin-menu-item" id="userManagementBtn">
+                                        <i class="icon icon-user"></i>
+                                        <span>Quản lý người dùng</span>
+                                    </button>
+                                    <button class="admin-menu-item" id="systemSettingsBtn">
+                                        <i class="icon icon-settings"></i>
+                                        <span>Cài đặt hệ thống</span>
+                                    </button>
+                                    <button class="admin-menu-item" id="scanSettingsBtn">
+                                        <i class="icon icon-scan"></i>
+                                        <span>Cài đặt Telegram</span>
+                                    </button>
+                                    <button class="admin-menu-item" id="logsViewBtn">
+                                        <i class="icon icon-file-text"></i>
+                                        <span>Xem logs</span>
+                                    </button>
+                                    <div class="admin-menu-divider"></div>
+                                    <button class="admin-menu-item" id="profileSettingsBtn">
+                                        <i class="icon icon-user"></i>
+                                        <span>Thông tin tài khoản</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Logout Button -->
+                            <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
+                                <i class="icon icon-sign-out"></i>
+                                <span>Đăng xuất</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="titleBarResult" class="test-result info">Nhấn các nút để kiểm tra chức năng</div>
+            </div>
+
+            <!-- Test Results -->
+            <div class="test-section">
+                <h3>📊 Kết quả kiểm tra</h3>
+                <div id="testResults">
+                    <p>Chưa có test nào được thực hiện</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the main JavaScript -->
+    <script src="static/js/windows-explorer.js"></script>
+    <script>
+        // Test script
+        document.addEventListener('DOMContentLoaded', function() {
+            const testResults = document.getElementById('testResults');
+            const titleBarResult = document.getElementById('titleBarResult');
+            
+            function addTestResult(test, status, message) {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `test-result ${status}`;
+                resultDiv.innerHTML = `<strong>${test}:</strong> ${message}`;
+                testResults.appendChild(resultDiv);
+            }
+            
+            function updateTitleBarResult(message, status = 'info') {
+                titleBarResult.className = `test-result ${status}`;
+                titleBarResult.textContent = message;
+            }
+            
+            // Test admin menu functionality
+            try {
+                const adminMenuToggle = document.getElementById('adminMenuToggle');
+                const adminDropdownMenu = document.getElementById('adminDropdownMenu');
+                
+                if (adminMenuToggle && adminDropdownMenu) {
+                    addTestResult('Admin Menu Elements', 'success', 'Các phần tử admin menu được tìm thấy');
+                    
+                    // Test admin menu toggle
+                    adminMenuToggle.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        adminDropdownMenu.classList.toggle('show');
+                        adminMenuToggle.classList.toggle('active');
+                        
+                        const isOpen = adminDropdownMenu.classList.contains('show');
+                        updateTitleBarResult(
+                            isOpen ? 'Admin menu đã mở' : 'Admin menu đã đóng',
+                            'success'
+                        );
+                        addTestResult('Admin Menu Toggle', 'success', `Menu ${isOpen ? 'mở' : 'đóng'} thành công`);
+                    });
+                    
+                    // Test admin menu items
+                    const menuItems = document.querySelectorAll('.admin-menu-item');
+                    menuItems.forEach(item => {
+                        item.addEventListener('click', function() {
+                            const itemName = this.querySelector('span').textContent;
+                            updateTitleBarResult(`Đã nhấn: ${itemName}`, 'success');
+                            addTestResult('Admin Menu Item', 'success', `Nhấn "${itemName}" thành công`);
+                        });
+                    });
+                    
+                    // Close menu when clicking outside
+                    document.addEventListener('click', function(e) {
+                        if (!adminMenuToggle.contains(e.target) && !adminDropdownMenu.contains(e.target)) {
+                            adminDropdownMenu.classList.remove('show');
+                            adminMenuToggle.classList.remove('active');
+                        }
+                    });
+                    
+                } else {
+                    addTestResult('Admin Menu Elements', 'error', 'Không tìm thấy các phần tử admin menu');
+                }
+            } catch (error) {
+                addTestResult('Admin Menu Test', 'error', `Lỗi: ${error.message}`);
+            }
+            
+            // Test logout button functionality
+            try {
+                const logoutBtn = document.getElementById('logoutBtn');
+                
+                if (logoutBtn) {
+                    addTestResult('Logout Button Element', 'success', 'Nút đăng xuất được tìm thấy');
+                    
+                    logoutBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        
+                        if (confirm('Bạn có chắc chắn muốn đăng xuất không?')) {
+                            updateTitleBarResult('Đăng xuất thành công (mock)', 'success');
+                            addTestResult('Logout Button', 'success', 'Nút đăng xuất hoạt động đúng');
+                        } else {
+                            updateTitleBarResult('Đã hủy đăng xuất', 'info');
+                            addTestResult('Logout Button', 'info', 'Người dùng đã hủy đăng xuất');
+                        }
+                    });
+                } else {
+                    addTestResult('Logout Button Element', 'error', 'Không tìm thấy nút đăng xuất');
+                }
+            } catch (error) {
+                addTestResult('Logout Button Test', 'error', `Lỗi: ${error.message}`);
+            }
+            
+            // Initial status
+            addTestResult('Test Initialization', 'success', 'Tất cả test đã được khởi tạo');
+        });
+    </script>
+</body>
+</html>

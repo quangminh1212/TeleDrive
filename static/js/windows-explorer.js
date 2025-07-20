@@ -3035,11 +3035,22 @@ class Windows11Explorer {
     }
 
     setupAdminMenuItems() {
+        // Helper function to close admin menu
+        const closeAdminMenu = () => {
+            const adminDropdownMenu = document.getElementById('adminDropdownMenu');
+            const adminMenuToggle = document.getElementById('adminMenuToggle');
+            if (adminDropdownMenu && adminMenuToggle) {
+                adminDropdownMenu.classList.remove('show');
+                adminMenuToggle.classList.remove('active');
+            }
+        };
+
         // User Management
         const userManagementBtn = document.getElementById('userManagementBtn');
         if (userManagementBtn) {
             userManagementBtn.addEventListener('click', () => {
                 this.openUserManagement();
+                closeAdminMenu();
             });
         }
 
@@ -3048,6 +3059,7 @@ class Windows11Explorer {
         if (systemSettingsBtn) {
             systemSettingsBtn.addEventListener('click', () => {
                 this.openSystemSettings();
+                closeAdminMenu();
             });
         }
 
@@ -3056,6 +3068,7 @@ class Windows11Explorer {
         if (scanSettingsBtn) {
             scanSettingsBtn.addEventListener('click', () => {
                 this.openScanSettings();
+                closeAdminMenu();
             });
         }
 
@@ -3064,6 +3077,7 @@ class Windows11Explorer {
         if (logsViewBtn) {
             logsViewBtn.addEventListener('click', () => {
                 this.openLogsView();
+                closeAdminMenu();
             });
         }
 
@@ -3072,6 +3086,7 @@ class Windows11Explorer {
         if (profileSettingsBtn) {
             profileSettingsBtn.addEventListener('click', () => {
                 this.openProfileSettings();
+                closeAdminMenu();
             });
         }
     }
@@ -3111,38 +3126,5 @@ class Windows11Explorer {
 document.addEventListener('DOMContentLoaded', () => {
     window.windowsExplorer = new Windows11Explorer();
 
-    // Fallback admin menu setup in case the main one doesn't work
-    setTimeout(() => {
-        const adminMenuToggle = document.getElementById('adminMenuToggle');
-        const adminDropdownMenu = document.getElementById('adminDropdownMenu');
-
-        if (adminMenuToggle && adminDropdownMenu && !adminMenuToggle.hasAttribute('data-setup')) {
-            console.log('Setting up fallback admin menu...');
-            adminMenuToggle.setAttribute('data-setup', 'true');
-
-            adminMenuToggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Fallback admin menu clicked');
-
-                if (adminDropdownMenu.style.display === 'block') {
-                    adminDropdownMenu.style.display = 'none';
-                    adminDropdownMenu.classList.remove('show');
-                } else {
-                    adminDropdownMenu.style.display = 'block';
-                    adminDropdownMenu.classList.add('show');
-                }
-            });
-
-            // Close on outside click
-            document.addEventListener('click', function(e) {
-                if (!adminMenuToggle.contains(e.target) && !adminDropdownMenu.contains(e.target)) {
-                    adminDropdownMenu.style.display = 'none';
-                    adminDropdownMenu.classList.remove('show');
-                }
-            });
-
-            console.log('Fallback admin menu setup completed');
-        }
-    }, 1000);
+    // Admin menu should be handled by the main Windows11Explorer class
 });
