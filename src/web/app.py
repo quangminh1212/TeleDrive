@@ -930,6 +930,51 @@ def debug_user():
             'message': 'User not authenticated'
         })
 
+@app.route('/test-logout')
+def test_logout():
+    """Test logout functionality"""
+    return f"""
+    <html>
+    <head><title>Test Logout</title></head>
+    <body>
+        <h2>Test Logout Functionality</h2>
+        <p>Current user: {current_user.is_authenticated}</p>
+        <p>User info: {getattr(current_user, 'username', 'No username') if current_user.is_authenticated else 'Not logged in'}</p>
+
+        <button onclick="testLogout()">Test Logout (POST)</button>
+        <a href="/logout">Test Logout (GET)</a>
+
+        <div id="result"></div>
+
+        <script>
+        async function testLogout() {{
+            try {{
+                const response = await fetch('/logout', {{
+                    method: 'POST',
+                    headers: {{
+                        'Content-Type': 'application/json',
+                    }}
+                }});
+
+                const data = await response.json();
+                document.getElementById('result').innerHTML =
+                    '<h3>Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+                if (data.success) {{
+                    setTimeout(() => {{
+                        window.location.href = data.redirect;
+                    }}, 2000);
+                }}
+            }} catch (error) {{
+                document.getElementById('result').innerHTML =
+                    '<h3>Error:</h3><pre>' + error.message + '</pre>';
+            }}
+        }}
+        </script>
+    </body>
+    </html>
+    """
+
 @app.route('/api/scan-history')
 def get_scan_history():
     """Get scan history with statistics"""
