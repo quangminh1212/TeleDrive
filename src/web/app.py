@@ -1022,12 +1022,22 @@ def get_scan_history_full():
         logger.error(f"Error getting scans: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/logout')
+@app.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
     """Đăng xuất"""
     from flask_login import logout_user
     logout_user()
+
+    # Nếu là AJAX request (POST), trả về JSON
+    if request.method == 'POST':
+        return jsonify({
+            'success': True,
+            'message': 'Đăng xuất thành công',
+            'redirect': url_for('login')
+        })
+
+    # Nếu là GET request, redirect trực tiếp
     return redirect(url_for('login'))
 
 if __name__ == '__main__':

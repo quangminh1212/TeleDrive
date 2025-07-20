@@ -1177,11 +1177,14 @@ class LocalFileManager {
             });
         }
 
-        // Setup logout functionality
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
+        // Setup logout functionality (only if not already setup by windows-explorer.js)
+        if (logoutBtn && !logoutBtn.hasAttribute('data-logout-setup')) {
+            logoutBtn.setAttribute('data-logout-setup', 'true');
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 this.logout();
             });
+            console.log('App.js logout setup completed');
         }
     }
 

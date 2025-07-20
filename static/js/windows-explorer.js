@@ -2946,21 +2946,49 @@ class Windows11Explorer {
 
     setupLogout() {
         const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
+        if (logoutBtn && !logoutBtn.hasAttribute('data-logout-setup')) {
+            logoutBtn.setAttribute('data-logout-setup', 'true');
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 this.handleLogout();
             });
+            console.log('Logout button setup completed');
         }
     }
 
-    handleLogout() {
+    async handleLogout() {
         // Show confirmation dialog
         if (confirm('Bạn có chắc chắn muốn đăng xuất không?')) {
-            // Show loading state
-            this.showNotification('Đang đăng xuất...', 'info');
+            try {
+                // Show loading state
+                this.showNotification('Đang đăng xuất...', 'info');
 
-            // Redirect to logout endpoint
-            window.location.href = '/logout';
+                // Send logout request
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.showNotification('Đăng xuất thành công!', 'success');
+                    // Redirect to login page
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '/login';
+                    }, 1000);
+                } else {
+                    console.error('Logout failed:', data.message);
+                    // Force redirect anyway
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Force redirect on error
+                window.location.href = '/login';
+            }
         }
     }
 
