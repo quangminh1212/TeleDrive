@@ -8,23 +8,24 @@ TeleDrive là một ứng dụng web hiện đại để quản lý và tổ ch�
 
 ### ⚡ Quick Start:
 ```batch
-# Windows
-scripts/run.bat
+# Chạy từ thư mục gốc (KHUYẾN NGHỊ)
+run.bat
 
-# Or directly
+# Hoặc chạy trực tiếp
 python main.py
 ```
 Truy cập: http://localhost:5000
 
-### Chạy Scanner CLI:
+### 🔧 Các tùy chọn:
 ```batch
-run.bat scanner
+run.bat            # Web interface (mặc định)
+run.bat production # Production server
+run.bat scanner    # Scanner CLI
+run.bat config     # Menu cấu hình
 ```
 
-### Cấu hình:
-```batch
-run.bat config
-```
+### 📖 Hướng dẫn chi tiết:
+Xem file [QUICK_START.md](QUICK_START.md) để biết hướng dẫn đầy đủ.
 
 ## ✨ Tính năng
 
