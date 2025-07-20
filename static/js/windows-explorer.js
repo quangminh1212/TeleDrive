@@ -430,7 +430,7 @@ class Windows11Explorer {
         };
 
         // Basic file structure
-        let fileHtml = `<div class="file-item" data-id="${file.name}" data-type="${file.type}">`;
+        let fileHtml = `<div class="file-item" data-id="${file.name}" data-type="${file.type}" data-message-id="${file.messageId || ''}" data-download-link="${file.downloadLink || ''}">`;
 
         // Icon
         fileHtml += `<div class="file-icon"><i class="icon icon-${file.icon}"></i></div>`;
@@ -950,10 +950,219 @@ class Windows11Explorer {
     }
 
     showProperties() {
-        if (this.selectedItems.size > 0) {
-            console.log('Showing properties for:', Array.from(this.selectedItems));
-            // Implement properties dialog
+        if (this.selectedItems.size === 1) {
+            const itemId = Array.from(this.selectedItems)[0];
+            const fileItem = document.querySelector(`[data-id="${itemId}"]`);
+            if (fileItem) {
+                this.showFileProperties(fileItem);
+            }
+        } else if (this.selectedItems.size > 1) {
+            this.showMultipleProperties();
         }
+    }
+
+    showFileProperties(fileItem) {
+        const fileName = fileItem.dataset.id;
+        const fileType = fileItem.dataset.type;
+        const messageId = fileItem.dataset.messageId;
+
+        // Find file data from current session
+        const sessionFiles = this.getCurrentSessionFiles();
+        const fileData = sessionFiles.find(f => f.name === fileName);
+
+        if (!fileData) {
+            this.showError('Không tìm thấy thông tin file');
+            return;
+        }
+
+        // Get session ID from current path
+        const sessionId = this.currentPath.replace('session-', '');
+
+        // Load detailed file info
+        fetch(`/api/file/preview/${sessionId}/${messageId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.displayPropertiesModal(data.file);
+                } else {
+                    this.showError('Không thể tải thông tin file: ' + data.error);
+                }
+            })
+            .catch(error => {
+                this.showError('Lỗi kết nối: ' + error.message);
+            });
+    }
+
+    displayPropertiesModal(fileData) {
+        const modal = document.getElementById('fileModal');
+        const title = document.getElementById('modalTitle');
+        const body = document.getElementById('modalBody');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        if (!modal) {
+            this.showError('Properties modal not found');
+            return;
+        }
+
+        // Set title
+        if (title) title.textContent = 'Thuộc tính file';
+
+        // Create properties content
+        if (body) {
+            const uploadDate = this.formatDate(fileData.file_info?.upload_date || new Date().toISOString());
+            const fileSize = this.formatFileSize(fileData.file_info?.size || 0);
+            const mimeType = fileData.file_info?.mime_type || 'Unknown';
+            const fileType = fileData.file_info?.type || 'Unknown';
+
+            body.innerHTML = `
+                <div class="properties-content">
+                    <div class="file-icon-large">
+                        <i class="icon icon-${this.getFileIcon(fileType, fileData.file_name)}"></i>
+                    </div>
+
+                    <div class="properties-details">
+                        <div class="property-group">
+                            <h4>Thông tin cơ bản</h4>
+                            <div class="property-row">
+                                <span class="property-label">Tên file:</span>
+                                <span class="property-value">${fileData.file_name}</span>
+                            </div>
+                            <div class="property-row">
+                                <span class="property-label">Loại file:</span>
+                                <span class="property-value">${fileType}</span>
+                            </div>
+                            <div class="property-row">
+                                <span class="property-label">Kích thước:</span>
+                                <span class="property-value">${fileSize}</span>
+                            </div>
+                            <div class="property-row">
+                                <span class="property-label">MIME type:</span>
+                                <span class="property-value">${mimeType}</span>
+                            </div>
+                        </div>
+
+                        <div class="property-group">
+                            <h4>Thông tin Telegram</h4>
+                            <div class="property-row">
+                                <span class="property-label">Message ID:</span>
+                                <span class="property-value">${fileData.message_info?.message_id}</span>
+                            </div>
+                            <div class="property-row">
+                                <span class="property-label">Sender ID:</span>
+                                <span class="property-value">${fileData.message_info?.sender_id}</span>
+                            </div>
+                            <div class="property-row">
+                                <span class="property-label">Ngày upload:</span>
+                                <span class="property-value">${uploadDate}</span>
+                            </div>
+                            <div class="property-row">
+                                <span class="property-label">Message text:</span>
+                                <span class="property-value">${fileData.message_info?.message_text || 'Không có'}</span>
+                            </div>
+                        </div>
+
+                        ${fileData.file_info?.dimensions ? `
+                        <div class="property-group">
+                            <h4>Kích thước hình ảnh</h4>
+                            <div class="property-row">
+                                <span class="property-label">Chiều rộng:</span>
+                                <span class="property-value">${fileData.file_info.dimensions.width}px</span>
+                            </div>
+                            <div class="property-row">
+                                <span class="property-label">Chiều cao:</span>
+                                <span class="property-value">${fileData.file_info.dimensions.height}px</span>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <div class="property-group">
+                            <h4>Download Link</h4>
+                            <div class="property-row">
+                                <span class="property-label">Link:</span>
+                                <span class="property-value download-link">${fileData.download_link || 'Không có'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Setup download button
+        if (downloadBtn && fileData.download_link) {
+            downloadBtn.style.display = 'inline-flex';
+            downloadBtn.onclick = () => {
+                const sessionId = this.currentPath.replace('session-', '');
+                this.downloadFile(sessionId, fileData.message_info?.message_id);
+            };
+        } else if (downloadBtn) {
+            downloadBtn.style.display = 'none';
+        }
+
+        // Show modal
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+
+        // Setup close handlers
+        this.setupModalCloseHandlers(modal);
+    }
+
+    showMultipleProperties() {
+        const count = this.selectedItems.size;
+        const modal = document.getElementById('fileModal');
+        const title = document.getElementById('modalTitle');
+        const body = document.getElementById('modalBody');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        if (!modal) return;
+
+        // Set title
+        if (title) title.textContent = `Thuộc tính ${count} files`;
+
+        // Create multiple properties content
+        if (body) {
+            body.innerHTML = `
+                <div class="properties-content">
+                    <div class="file-icon-large">
+                        <i class="icon icon-file"></i>
+                    </div>
+
+                    <div class="properties-details">
+                        <div class="property-group">
+                            <h4>Thông tin chung</h4>
+                            <div class="property-row">
+                                <span class="property-label">Số lượng files:</span>
+                                <span class="property-value">${count} files</span>
+                            </div>
+                            <div class="property-row">
+                                <span class="property-label">Loại:</span>
+                                <span class="property-value">Nhiều loại file</span>
+                            </div>
+                        </div>
+
+                        <div class="property-group">
+                            <h4>Danh sách files</h4>
+                            <div class="selected-files-list">
+                                ${Array.from(this.selectedItems).map(itemId => `
+                                    <div class="selected-file-item">${itemId}</div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Hide download button for multiple selection
+        if (downloadBtn) {
+            downloadBtn.style.display = 'none';
+        }
+
+        // Show modal
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+
+        // Setup close handlers
+        this.setupModalCloseHandlers(modal);
     }
 
     updateClipboardButtons() {
@@ -1264,10 +1473,95 @@ class Windows11Explorer {
 
     openSelected() {
         if (this.selectedItems.size === 1) {
-            const item = Array.from(this.selectedItems)[0];
-            console.log('Opening item:', item);
-            // Implement open functionality
+            const itemId = Array.from(this.selectedItems)[0];
+            const fileItem = document.querySelector(`[data-id="${itemId}"]`);
+            if (fileItem) {
+                this.openFile(fileItem);
+            }
         }
+    }
+
+    openFile(fileItem) {
+        const fileName = fileItem.dataset.id;
+        const fileType = fileItem.dataset.type;
+
+        // Find file data from current session
+        const sessionFiles = this.getCurrentSessionFiles();
+        const fileData = sessionFiles.find(f => f.name === fileName);
+
+        if (!fileData) {
+            this.showError('Không tìm thấy thông tin file');
+            return;
+        }
+
+        // Show preview modal
+        this.showFilePreview(fileData);
+    }
+
+    getCurrentSessionFiles() {
+        // Get current session files from the last rendered data
+        const filesDisplay = document.getElementById('filesDisplay');
+        if (!filesDisplay) return [];
+
+        const fileItems = filesDisplay.querySelectorAll('.file-item');
+        return Array.from(fileItems).map(item => ({
+            name: item.dataset.id,
+            type: item.dataset.type,
+            messageId: item.dataset.messageId,
+            downloadLink: item.dataset.downloadLink
+        }));
+    }
+
+    showFilePreview(fileData) {
+        const modal = document.getElementById('previewModal');
+        const title = document.getElementById('previewTitle');
+        const content = document.getElementById('previewContent');
+        const info = document.getElementById('previewInfo');
+        const downloadBtn = document.getElementById('previewDownloadBtn');
+
+        if (!modal) {
+            this.showError('Preview modal not found');
+            return;
+        }
+
+        // Set title
+        if (title) title.textContent = fileData.name;
+
+        // Get session ID from current path
+        const sessionId = this.currentPath.replace('session-', '');
+
+        // Load file preview
+        if (content) {
+            content.innerHTML = '<div class="loading">Đang tải preview...</div>';
+
+            fetch(`/api/file/preview/${sessionId}/${fileData.messageId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.renderFilePreview(content, data.file);
+                        this.renderFileInfo(info, data.file);
+
+                        // Setup download button
+                        if (downloadBtn) {
+                            downloadBtn.onclick = () => {
+                                this.downloadFile(sessionId, fileData.messageId);
+                            };
+                        }
+                    } else {
+                        content.innerHTML = `<div class="error">Lỗi: ${data.error}</div>`;
+                    }
+                })
+                .catch(error => {
+                    content.innerHTML = `<div class="error">Không thể tải preview: ${error.message}</div>`;
+                });
+        }
+
+        // Show modal
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+
+        // Setup close handlers
+        this.setupModalCloseHandlers(modal);
     }
 
     // File Selection
@@ -1534,6 +1828,219 @@ class Windows11Explorer {
         };
 
         return typeIcons[fileType] || 'file';
+    }
+
+    renderFilePreview(container, fileData) {
+        const fileType = fileData.file_info?.type || 'document';
+        const fileName = fileData.file_name;
+        const fileSize = this.formatFileSize(fileData.file_info?.size || 0);
+
+        let previewHtml = '';
+
+        switch (fileType) {
+            case 'photo':
+            case 'image':
+                previewHtml = `
+                    <div class="image-preview">
+                        <div class="image-placeholder">
+                            <i class="icon icon-image"></i>
+                            <p>Hình ảnh: ${fileName}</p>
+                            <p>Kích thước: ${fileSize}</p>
+                            <p class="note">Click "Tải xuống" để xem ảnh đầy đủ</p>
+                        </div>
+                    </div>
+                `;
+                break;
+
+            case 'document':
+                const ext = fileName.toLowerCase().split('.').pop();
+                if (ext === 'pdf') {
+                    previewHtml = `
+                        <div class="document-preview">
+                            <i class="icon icon-pdf"></i>
+                            <h4>PDF Document</h4>
+                            <p>${fileName}</p>
+                            <p>Kích thước: ${fileSize}</p>
+                            <p class="note">Click "Tải xuống" để mở PDF</p>
+                        </div>
+                    `;
+                } else {
+                    previewHtml = `
+                        <div class="document-preview">
+                            <i class="icon icon-file"></i>
+                            <h4>Document</h4>
+                            <p>${fileName}</p>
+                            <p>Kích thước: ${fileSize}</p>
+                            <p class="note">Click "Tải xuống" để mở file</p>
+                        </div>
+                    `;
+                }
+                break;
+
+            case 'video':
+                previewHtml = `
+                    <div class="video-preview">
+                        <i class="icon icon-video"></i>
+                        <h4>Video File</h4>
+                        <p>${fileName}</p>
+                        <p>Kích thước: ${fileSize}</p>
+                        <p class="note">Click "Tải xuống" để xem video</p>
+                    </div>
+                `;
+                break;
+
+            case 'audio':
+            case 'voice':
+                previewHtml = `
+                    <div class="audio-preview">
+                        <i class="icon icon-audio"></i>
+                        <h4>Audio File</h4>
+                        <p>${fileName}</p>
+                        <p>Kích thước: ${fileSize}</p>
+                        <p class="note">Click "Tải xuống" để nghe</p>
+                    </div>
+                `;
+                break;
+
+            default:
+                previewHtml = `
+                    <div class="file-preview">
+                        <i class="icon icon-file"></i>
+                        <h4>File</h4>
+                        <p>${fileName}</p>
+                        <p>Kích thước: ${fileSize}</p>
+                        <p class="note">Click "Tải xuống" để mở file</p>
+                    </div>
+                `;
+        }
+
+        container.innerHTML = previewHtml;
+    }
+
+    renderFileInfo(container, fileData) {
+        if (!container) return;
+
+        const uploadDate = this.formatDate(fileData.file_info?.upload_date || new Date().toISOString());
+        const mimeType = fileData.file_info?.mime_type || 'Unknown';
+
+        container.innerHTML = `
+            <div class="file-info-details">
+                <h4>Thông tin chi tiết</h4>
+                <div class="info-row">
+                    <span class="label">Tên file:</span>
+                    <span class="value">${fileData.file_name}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Kích thước:</span>
+                    <span class="value">${this.formatFileSize(fileData.file_info?.size || 0)}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Loại file:</span>
+                    <span class="value">${fileData.file_info?.type || 'Unknown'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">MIME type:</span>
+                    <span class="value">${mimeType}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Ngày upload:</span>
+                    <span class="value">${uploadDate}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Message ID:</span>
+                    <span class="value">${fileData.message_info?.message_id}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    downloadFile(sessionId, messageId) {
+        // Show loading state
+        const downloadBtn = document.getElementById('previewDownloadBtn');
+        if (downloadBtn) {
+            const originalText = downloadBtn.innerHTML;
+            downloadBtn.innerHTML = '<i class="icon icon-spinner"></i> Đang tải...';
+            downloadBtn.disabled = true;
+
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                downloadBtn.innerHTML = originalText;
+                downloadBtn.disabled = false;
+            }, 3000);
+        }
+
+        // Call download API
+        fetch(`/api/file/download/${sessionId}/${messageId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.action === 'open_telegram') {
+                        // Show message about opening in Telegram
+                        this.showNotification(data.message, 'info');
+                        // Try to open Telegram link
+                        window.open(data.link, '_blank');
+                    } else {
+                        // Handle other download types
+                        this.showNotification('File đang được tải xuống', 'success');
+                    }
+                } else {
+                    this.showNotification('Lỗi tải file: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                this.showNotification('Lỗi kết nối: ' + error.message, 'error');
+            });
+    }
+
+    setupModalCloseHandlers(modal) {
+        // Close button
+        const closeBtn = modal.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.onclick = () => this.closeModal(modal);
+        }
+
+        // Backdrop click
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                this.closeModal(modal);
+            }
+        };
+
+        // ESC key
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.closeModal(modal);
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    closeModal(modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="icon icon-${type === 'error' ? 'alert' : type === 'success' ? 'check' : 'info'}"></i>
+            <span>${message}</span>
+        `;
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Show notification
+        setTimeout(() => notification.classList.add('show'), 100);
+
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => document.body.removeChild(notification), 300);
+        }, 3000);
     }
 
     showError(message) {

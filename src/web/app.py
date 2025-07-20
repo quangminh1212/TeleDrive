@@ -714,6 +714,80 @@ def serve_file():
         logger.error(f"Error serving file: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/file/download/<session_id>/<int:message_id>')
+@auth_required
+def download_telegram_file(session_id, message_id):
+    """Download file from Telegram and serve it"""
+    try:
+        # Get file info from session data
+        session_data = api.get_session_files(session_id)
+        if not session_data or 'files' not in session_data:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+
+        # Find the specific file
+        target_file = None
+        for file in session_data['files']:
+            if file.get('message_info', {}).get('message_id') == message_id:
+                target_file = file
+                break
+
+        if not target_file:
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+
+        # For now, redirect to Telegram download link
+        # TODO: Implement actual file download from Telegram
+        download_link = target_file.get('download_link')
+        if download_link:
+            if download_link.startswith('tg://'):
+                # Handle tg:// links - open in Telegram app
+                return jsonify({
+                    'success': True,
+                    'action': 'open_telegram',
+                    'link': download_link,
+                    'message': 'File sẽ được mở trong ứng dụng Telegram'
+                })
+            else:
+                # HTTP links - redirect
+                return redirect(download_link)
+        else:
+            return jsonify({'success': False, 'error': 'Download link not available'}), 404
+
+    except Exception as e:
+        logger.error(f"Error downloading file: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/file/preview/<session_id>/<int:message_id>')
+@auth_required
+def preview_telegram_file(session_id, message_id):
+    """Get file preview information"""
+    try:
+        # Get file info from session data
+        session_data = api.get_session_files(session_id)
+        if not session_data or 'files' not in session_data:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+
+        # Find the specific file
+        target_file = None
+        for file in session_data['files']:
+            if file.get('message_info', {}).get('message_id') == message_id:
+                target_file = file
+                break
+
+        if not target_file:
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+
+        # Return file info for preview
+        return jsonify({
+            'success': True,
+            'file': target_file,
+            'preview_available': True,
+            'download_url': f'/api/file/download/{session_id}/{message_id}'
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting file preview: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/favicon.ico')
 def favicon():
     """Serve favicon to prevent 404 errors"""
