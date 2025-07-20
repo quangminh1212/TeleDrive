@@ -307,6 +307,18 @@ def index():
 
     return render_template('index.html', user=current_user)
 
+@app.route('/demo')
+def demo():
+    """Demo page for testing UI"""
+    # Create a mock user for demo
+    class MockUser:
+        username = "admin"
+        email = "admin@teledrive.com"
+        is_admin = True
+        is_authenticated = True
+
+    return render_template('index.html', user=MockUser())
+
 # Authentication Routes
 @app.route('/login', methods=['GET'])
 def login():

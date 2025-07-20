@@ -184,7 +184,7 @@
 
     <!-- Main Container -->
     <div class="main-container">
-        <!-- Windows Explorer Style Navigation Pane -->
+        <!-- TeleDrive Navigation Pane -->
         <aside class="navigation-pane" id="navigationPane">
             <!-- Quick Access Section -->
             <div class="nav-section">
@@ -195,73 +195,89 @@
                     <span class="section-title">Quick access</span>
                 </div>
                 <div class="nav-section-content" id="quickAccessContent">
-                    <div class="nav-item" data-path="Desktop">
-                        <i class="icon icon-desktop"></i>
-                        <span>Desktop</span>
+                    <div class="nav-item active" data-path="home">
+                        <i class="icon icon-cloud"></i>
+                        <span>TeleDrive Home</span>
                     </div>
-                    <div class="nav-item" data-path="Downloads">
-                        <i class="icon icon-download"></i>
-                        <span>Downloads</span>
+                    <div class="nav-item" data-path="recent">
+                        <i class="icon icon-refresh"></i>
+                        <span>Recent files</span>
                     </div>
-                    <div class="nav-item" data-path="Documents">
+                    <div class="nav-item" data-path="shared">
+                        <i class="icon icon-share"></i>
+                        <span>Shared with me</span>
+                    </div>
+                    <div class="nav-item" data-path="favorites">
+                        <i class="icon icon-star"></i>
+                        <span>Favorites</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Scans Section -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <button class="section-toggle expanded" data-section="my-scans">
+                        <i class="icon icon-chevron-down"></i>
+                    </button>
+                    <span class="section-title">My Scans</span>
+                </div>
+                <div class="nav-section-content" id="myScansContent">
+                    <div class="nav-item" data-path="all-scans">
+                        <i class="icon icon-folder"></i>
+                        <span>All scans</span>
+                    </div>
+                    <div class="nav-item" data-path="documents">
                         <i class="icon icon-file-text"></i>
                         <span>Documents</span>
                     </div>
-                    <div class="nav-item" data-path="Pictures">
+                    <div class="nav-item" data-path="images">
                         <i class="icon icon-image"></i>
-                        <span>Pictures</span>
+                        <span>Images</span>
+                    </div>
+                    <div class="nav-item" data-path="videos">
+                        <i class="icon icon-video"></i>
+                        <span>Videos</span>
+                    </div>
+                    <div class="nav-item" data-path="archives">
+                        <i class="icon icon-archive"></i>
+                        <span>Archives</span>
                     </div>
                 </div>
             </div>
 
-            <!-- This PC Section -->
+            <!-- Telegram Sessions Section -->
             <div class="nav-section">
                 <div class="nav-section-header">
-                    <button class="section-toggle expanded" data-section="this-pc">
+                    <button class="section-toggle expanded" data-section="sessions">
                         <i class="icon icon-chevron-down"></i>
                     </button>
-                    <span class="section-title">This PC</span>
-                </div>
-                <div class="nav-section-content" id="thisPcContent">
-                    <div class="nav-item" data-path="C:">
-                        <i class="icon icon-drive"></i>
-                        <span>Local Disk (C:)</span>
-                    </div>
-                    <div class="nav-item" data-path="D:">
-                        <i class="icon icon-drive"></i>
-                        <span>Data (D:)</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TeleDrive Sessions Section -->
-            <div class="nav-section">
-                <div class="nav-section-header">
-                    <button class="section-toggle expanded" data-section="teledrive">
-                        <i class="icon icon-chevron-down"></i>
-                    </button>
-                    <span class="section-title">TeleDrive Sessions</span>
+                    <span class="section-title">Telegram Sessions</span>
                 </div>
                 <div class="nav-section-content" id="sessionsList">
                     <div class="loading">
                         <i class="icon icon-spinner"></i>
-                        <span>Loading...</span>
+                        <span>Loading sessions...</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Network Section -->
+            <!-- Storage Section -->
             <div class="nav-section">
                 <div class="nav-section-header">
-                    <button class="section-toggle collapsed" data-section="network">
+                    <button class="section-toggle collapsed" data-section="storage">
                         <i class="icon icon-chevron-right"></i>
                     </button>
-                    <span class="section-title">Network</span>
+                    <span class="section-title">Storage</span>
                 </div>
-                <div class="nav-section-content" id="networkContent" style="display: none;">
-                    <div class="nav-item" data-path="Network">
-                        <i class="icon icon-network"></i>
-                        <span>Network locations</span>
+                <div class="nav-section-content" id="storageContent" style="display: none;">
+                    <div class="nav-item" data-path="trash">
+                        <i class="icon icon-trash"></i>
+                        <span>Trash</span>
+                    </div>
+                    <div class="nav-item" data-path="settings">
+                        <i class="icon icon-settings"></i>
+                        <span>Settings</span>
                     </div>
                 </div>
             </div>
@@ -289,19 +305,14 @@
                     <div class="address-bar" id="addressBar">
                         <!-- Breadcrumb Navigation -->
                         <div class="breadcrumb-navigation" id="breadcrumbNav">
-                            <button class="breadcrumb-item" data-path="C:">
-                                <i class="icon icon-computer"></i>
-                                <span>This PC</span>
-                            </button>
-                            <i class="icon icon-chevron-right breadcrumb-separator"></i>
-                            <button class="breadcrumb-item" data-path="C:\VF">
-                                <i class="icon icon-drive"></i>
-                                <span>VF (C:)</span>
-                            </button>
-                            <i class="icon icon-chevron-right breadcrumb-separator"></i>
-                            <button class="breadcrumb-item active" data-path="C:\VF\TeleDrive">
-                                <i class="icon icon-folder"></i>
+                            <button class="breadcrumb-item" data-path="home">
+                                <i class="icon icon-cloud"></i>
                                 <span>TeleDrive</span>
+                            </button>
+                            <i class="icon icon-chevron-right breadcrumb-separator"></i>
+                            <button class="breadcrumb-item active" data-path="home">
+                                <i class="icon icon-folder"></i>
+                                <span>Home</span>
                             </button>
                         </div>
                         <!-- Editable Address Input -->
@@ -316,7 +327,7 @@
                 <div class="search-container">
                     <div class="search-box">
                         <i class="icon icon-search"></i>
-                        <input type="text" id="searchInput" placeholder="Search TeleDrive">
+                        <input type="text" id="searchInput" placeholder="Search files and folders">
                         <button id="clearSearch" class="clear-search-btn" style="display: none;">
                             <i class="icon icon-times"></i>
                         </button>
@@ -332,8 +343,8 @@
                 <div class="welcome-screen" id="welcomeScreen">
                     <div class="welcome-content">
                         <i class="icon icon-cloud welcome-icon"></i>
-                        <h2>Chào mừng đến với TeleDrive</h2>
-                        <p>Chọn một scan session từ sidebar để xem các file đã quét được</p>
+                        <h2>Welcome to TeleDrive</h2>
+                        <p>Your cloud storage for Telegram files. Select a session from the sidebar to browse your scanned files, or start a new scan to discover files from your Telegram chats.</p>
                     </div>
                 </div>
 
