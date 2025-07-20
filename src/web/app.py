@@ -1081,35 +1081,6 @@ def favicon():
 
 
 
-@app.route('/create-test-admin')
-def create_test_admin():
-    """Tạo admin user test và đăng nhập"""
-    from flask_login import login_user
-    from src.auth.models import User
-    from src.database import db
-
-    try:
-        # Kiểm tra có admin user nào chưa
-        admin_user = User.query.filter_by(is_admin=True).first()
-
-        if not admin_user:
-            # Tạo admin user mới
-            admin_user = User(
-                username='admin',
-                phone_number='+84936374950',
-                email='admin@teledrive.com',
-                is_admin=True,
-                is_active=True
-            )
-            db.session.add(admin_user)
-            db.session.commit()
-
-        # Đăng nhập admin user
-        login_user(admin_user, remember=True)
-        return redirect(url_for('index'))
-
-    except Exception as e:
-        return f"Error: {str(e)}"
 
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
