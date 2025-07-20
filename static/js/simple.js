@@ -21,7 +21,40 @@ document.addEventListener('DOMContentLoaded', function() {
 function loadSessions() {
     console.log('Loading sessions...');
     showLoading();
-    
+
+    // Check if we're in demo mode
+    var isDemoMode = window.location.pathname === '/demo';
+
+    if (isDemoMode) {
+        // Use mock data for demo mode
+        var mockSessions = [
+            {
+                'session_id': 'demo_session_001',
+                'session_name': 'Demo Telegram Scan',
+                'created_at': '2025-01-20T10:30:00Z',
+                'total_files': 1247,
+                'total_size': 2847392857,
+                'total_chats': 15,
+                'file_count': 1247,
+                'timestamp': '2025-01-20T10:30:00Z'
+            },
+            {
+                'session_id': 'demo_session_002',
+                'session_name': 'Demo Media Files',
+                'created_at': '2025-01-19T15:45:00Z',
+                'total_files': 856,
+                'total_size': 1923847562,
+                'total_chats': 8,
+                'file_count': 856,
+                'timestamp': '2025-01-19T15:45:00Z'
+            }
+        ];
+
+        hideLoading();
+        displaySessions(mockSessions);
+        return;
+    }
+
     fetch('/api/scans')
         .then(function(response) {
             if (!response.ok) {
@@ -108,6 +141,71 @@ function loadSession(sessionId) {
     }
 
     // Load files from API instead of cache
+    var isDemoMode = window.location.pathname === '/demo';
+
+    if (isDemoMode) {
+        // Use mock data for demo mode
+        var mockData = {
+            'success': true,
+            'files': [
+                {
+                    'message_id': 1001,
+                    'file_name': 'demo_document.pdf',
+                    'file_size': 2048576,
+                    'file_info': {
+                        'size': 2048576,
+                        'type': 'document',
+                        'upload_date': '2025-01-20T10:30:00Z'
+                    },
+                    'message_info': {
+                        'message_id': 1001,
+                        'date': '2025-01-20T10:30:00Z'
+                    },
+                    'download_url': '/api/demo/download/1001'
+                },
+                {
+                    'message_id': 1002,
+                    'file_name': 'demo_image.jpg',
+                    'file_size': 1024768,
+                    'file_info': {
+                        'size': 1024768,
+                        'type': 'photo',
+                        'upload_date': '2025-01-20T09:15:00Z'
+                    },
+                    'message_info': {
+                        'message_id': 1002,
+                        'date': '2025-01-20T09:15:00Z'
+                    },
+                    'download_url': '/api/demo/download/1002'
+                },
+                {
+                    'message_id': 1003,
+                    'file_name': 'demo_video.mp4',
+                    'file_size': 15728640,
+                    'file_info': {
+                        'size': 15728640,
+                        'type': 'video',
+                        'upload_date': '2025-01-19T16:45:00Z'
+                    },
+                    'message_info': {
+                        'message_id': 1003,
+                        'date': '2025-01-19T16:45:00Z'
+                    },
+                    'download_url': '/api/demo/download/1003'
+                }
+            ],
+            'scan_info': {
+                'session_id': sessionId,
+                'total_files': 3,
+                'scan_date': '2025-01-20T10:30:00Z'
+            }
+        };
+
+        console.log('Session files loaded from mock data:', mockData.files.length, 'files');
+        displayFiles(mockData.files, mockData.scan_info);
+        return;
+    }
+
     fetch('/api/files/' + sessionId)
         .then(function(response) {
             if (response.status === 401) {

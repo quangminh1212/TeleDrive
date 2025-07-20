@@ -319,6 +319,28 @@ def demo():
 
     return render_template('index.html', user=MockUser())
 
+@app.route('/setup-demo')
+def setup_demo():
+    """Demo setup page for testing"""
+    return render_template('setup.html')
+
+@app.route('/debug/routes')
+def debug_routes():
+    """Debug route to show all registered routes"""
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': list(rule.methods),
+            'rule': rule.rule
+        })
+    return jsonify(routes)
+
+@app.route('/test')
+def test_route():
+    """Test route"""
+    return jsonify({'message': 'Test route works!'})
+
 # Authentication Routes
 @app.route('/login', methods=['GET'])
 def login():
@@ -493,6 +515,32 @@ def get_scans():
     sessions = api.get_scan_sessions()
     return jsonify(sessions)
 
+@app.route('/api/demo/scans')
+def get_demo_scans():
+    """Demo API - Lấy danh sách scan sessions (không yêu cầu auth)"""
+    return jsonify([
+        {
+            'session_id': 'demo_session_001',
+            'session_name': 'Demo Telegram Scan',
+            'created_at': '2025-01-20T10:30:00Z',
+            'total_files': 1247,
+            'total_size': 2847392857,
+            'total_chats': 15,
+            'file_count': 1247,
+            'timestamp': '2025-01-20T10:30:00Z'
+        },
+        {
+            'session_id': 'demo_session_002',
+            'session_name': 'Demo Media Files',
+            'created_at': '2025-01-19T15:45:00Z',
+            'total_files': 856,
+            'total_size': 1923847562,
+            'total_chats': 8,
+            'file_count': 856,
+            'timestamp': '2025-01-19T15:45:00Z'
+        }
+    ])
+
 @app.route('/api/test-scan-history')
 def test_scan_history():
     """Test endpoint for scan history"""
@@ -520,6 +568,65 @@ def get_session_files(session_id):
         return jsonify(data)
     else:
         return jsonify({'error': 'Session not found'}), 404
+
+@app.route('/api/demo/files/<session_id>')
+def get_demo_session_files(session_id):
+    """Demo API - Lấy files trong một session (không yêu cầu auth)"""
+    return jsonify({
+        'success': True,
+        'files': [
+            {
+                'message_id': 1001,
+                'file_name': 'demo_document.pdf',
+                'file_size': 2048576,
+                'file_info': {
+                    'size': 2048576,
+                    'type': 'document',
+                    'upload_date': '2025-01-20T10:30:00Z'
+                },
+                'message_info': {
+                    'message_id': 1001,
+                    'date': '2025-01-20T10:30:00Z'
+                },
+                'download_url': '/api/demo/download/1001'
+            },
+            {
+                'message_id': 1002,
+                'file_name': 'demo_image.jpg',
+                'file_size': 1024768,
+                'file_info': {
+                    'size': 1024768,
+                    'type': 'photo',
+                    'upload_date': '2025-01-20T09:15:00Z'
+                },
+                'message_info': {
+                    'message_id': 1002,
+                    'date': '2025-01-20T09:15:00Z'
+                },
+                'download_url': '/api/demo/download/1002'
+            },
+            {
+                'message_id': 1003,
+                'file_name': 'demo_video.mp4',
+                'file_size': 15728640,
+                'file_info': {
+                    'size': 15728640,
+                    'type': 'video',
+                    'upload_date': '2025-01-19T16:45:00Z'
+                },
+                'message_info': {
+                    'message_id': 1003,
+                    'date': '2025-01-19T16:45:00Z'
+                },
+                'download_url': '/api/demo/download/1003'
+            }
+        ],
+        'scan_info': {
+            'session_id': session_id,
+            'total_files': 3,
+            'scan_date': '2025-01-20T10:30:00Z'
+        }
+    })
 
 @app.route('/api/stats/<session_id>')
 @auth_required
