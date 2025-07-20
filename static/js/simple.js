@@ -211,42 +211,42 @@ function getFileIcon(fileType, fileName) {
     if (fileName) {
         var ext = fileName.toLowerCase().split('.').pop();
         var extIcons = {
-            'pdf': 'icon-pdf',
-            'doc': 'icon-word',
-            'docx': 'icon-word',
-            'xls': 'icon-excel',
-            'xlsx': 'icon-excel',
-            'ppt': 'icon-powerpoint',
-            'pptx': 'icon-powerpoint',
-            'zip': 'icon-archive',
-            'rar': 'icon-archive',
-            '7z': 'icon-archive',
-            'tar': 'icon-archive',
-            'gz': 'icon-archive',
-            'js': 'icon-code',
-            'html': 'icon-code',
-            'css': 'icon-code',
-            'py': 'icon-code',
-            'java': 'icon-code',
-            'cpp': 'icon-code',
-            'c': 'icon-code',
-            'php': 'icon-code',
-            'txt': 'icon-text',
-            'exe': 'icon-executable',
-            'msi': 'icon-executable',
-            'mp3': 'icon-audio',
-            'wav': 'icon-audio',
-            'flac': 'icon-audio',
-            'mp4': 'icon-video',
-            'avi': 'icon-video',
-            'mkv': 'icon-video',
-            'mov': 'icon-video',
-            'jpg': 'icon-image',
-            'jpeg': 'icon-image',
-            'png': 'icon-image',
-            'gif': 'icon-image',
-            'bmp': 'icon-image',
-            'svg': 'icon-image'
+            'pdf': 'pdf',
+            'doc': 'word',
+            'docx': 'word',
+            'xls': 'excel',
+            'xlsx': 'excel',
+            'ppt': 'powerpoint',
+            'pptx': 'powerpoint',
+            'zip': 'archive',
+            'rar': 'archive',
+            '7z': 'archive',
+            'tar': 'archive',
+            'gz': 'archive',
+            'js': 'code',
+            'html': 'code',
+            'css': 'code',
+            'py': 'code',
+            'java': 'code',
+            'cpp': 'code',
+            'c': 'code',
+            'php': 'code',
+            'txt': 'text',
+            'exe': 'executable',
+            'msi': 'executable',
+            'mp3': 'audio',
+            'wav': 'audio',
+            'flac': 'audio',
+            'mp4': 'video',
+            'avi': 'video',
+            'mkv': 'video',
+            'mov': 'video',
+            'jpg': 'image',
+            'jpeg': 'image',
+            'png': 'image',
+            'gif': 'image',
+            'bmp': 'image',
+            'svg': 'image'
         };
 
         if (extIcons[ext]) {
@@ -256,17 +256,17 @@ function getFileIcon(fileType, fileName) {
 
     // Fallback to file type
     var icons = {
-        'document': 'icon-file-alt',
-        'photo': 'icon-image',
-        'image': 'icon-image',
-        'video': 'icon-video',
-        'audio': 'icon-audio',
-        'voice': 'icon-audio',
-        'archive': 'icon-archive',
-        'code': 'icon-code',
-        'sticker': 'icon-image'
+        'document': 'file',
+        'photo': 'image',
+        'image': 'image',
+        'video': 'video',
+        'audio': 'audio',
+        'voice': 'audio',
+        'archive': 'archive',
+        'code': 'code',
+        'sticker': 'image'
     };
-    return icons[fileType] || 'icon-file';
+    return icons[fileType] || 'file';
 }
 
 // Format file size

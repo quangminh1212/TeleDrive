@@ -1508,17 +1508,17 @@ class Windows11Explorer {
         if (fileName) {
             const ext = fileName.toLowerCase().split('.').pop();
             const extIcons = {
-                'pdf': 'icon-pdf',
-                'doc': 'icon-word', 'docx': 'icon-word',
-                'xls': 'icon-excel', 'xlsx': 'icon-excel',
-                'ppt': 'icon-powerpoint', 'pptx': 'icon-powerpoint',
-                'zip': 'icon-archive', 'rar': 'icon-archive', '7z': 'icon-archive',
-                'js': 'icon-code', 'html': 'icon-code', 'css': 'icon-code', 'py': 'icon-code',
-                'txt': 'icon-text',
-                'exe': 'icon-executable', 'msi': 'icon-executable',
-                'mp3': 'icon-audio', 'wav': 'icon-audio', 'flac': 'icon-audio',
-                'mp4': 'icon-video', 'avi': 'icon-video', 'mkv': 'icon-video',
-                'jpg': 'icon-image', 'jpeg': 'icon-image', 'png': 'icon-image', 'gif': 'icon-image'
+                'pdf': 'pdf',
+                'doc': 'word', 'docx': 'word',
+                'xls': 'excel', 'xlsx': 'excel',
+                'ppt': 'powerpoint', 'pptx': 'powerpoint',
+                'zip': 'archive', 'rar': 'archive', '7z': 'archive',
+                'js': 'code', 'html': 'code', 'css': 'code', 'py': 'code',
+                'txt': 'text',
+                'exe': 'executable', 'msi': 'executable',
+                'mp3': 'audio', 'wav': 'audio', 'flac': 'audio',
+                'mp4': 'video', 'avi': 'video', 'mkv': 'video',
+                'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image'
             };
 
             if (extIcons[ext]) return extIcons[ext];
@@ -1526,14 +1526,14 @@ class Windows11Explorer {
 
         // Fallback to file type
         const typeIcons = {
-            'photo': 'icon-image',
-            'document': 'icon-file',
-            'video': 'icon-video',
-            'audio': 'icon-audio',
-            'voice': 'icon-audio'
+            'photo': 'image',
+            'document': 'file',
+            'video': 'video',
+            'audio': 'audio',
+            'voice': 'audio'
         };
 
-        return typeIcons[fileType] || 'icon-file';
+        return typeIcons[fileType] || 'file';
     }
 
     showError(message) {
