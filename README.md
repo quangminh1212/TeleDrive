@@ -1,12 +1,18 @@
-# TeleDrive - Telegram File Manager
+# 🚀 TeleDrive - Modern Telegram File Manager
 
-Công cụ quét và quản lý file từ các kênh Telegram với giao diện web hiện đại.
+> **Professional file management for your Telegram files with Windows Explorer-style interface**
+
+TeleDrive là một ứng dụng web hiện đại để quản lý và tổ chức files từ Telegram. Với giao diện giống Windows Explorer, TeleDrive giúp bạn dễ dàng tìm kiếm, xem trước và tải xuống files từ các cuộc trò chuyện Telegram của mình.
 
 ## 🚀 Sử dụng nhanh
 
-### Khởi động Web Interface (mặc định):
+### ⚡ Quick Start:
 ```batch
-run.bat
+# Windows
+scripts/run.bat
+
+# Or directly
+python main.py
 ```
 Truy cập: http://localhost:5000
 

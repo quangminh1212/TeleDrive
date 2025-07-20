@@ -344,7 +344,56 @@
                     <div class="welcome-content">
                         <i class="icon icon-cloud welcome-icon"></i>
                         <h2>Welcome to TeleDrive</h2>
-                        <p>Your cloud storage for Telegram files. Select a session from the sidebar to browse your scanned files, or start a new scan to discover files from your Telegram chats.</p>
+                        <p>Your cloud storage for Telegram files. Manage your scanned sessions or start a new scan to discover files from your Telegram chats.</p>
+
+                        <!-- Recent Scan Section -->
+                        <div class="recent-scan-section" id="recentScanSection" style="display: none;">
+                            <h3>📊 Lượt scan gần nhất</h3>
+                            <div class="recent-scan-card" id="recentScanCard">
+                                <div class="scan-info">
+                                    <div class="scan-header">
+                                        <span class="scan-name" id="recentScanName">Loading...</span>
+                                        <span class="scan-date" id="recentScanDate">Loading...</span>
+                                    </div>
+                                    <div class="scan-stats">
+                                        <div class="stat-item">
+                                            <i class="icon icon-file"></i>
+                                            <span id="recentScanFiles">0</span> files
+                                        </div>
+                                        <div class="stat-item">
+                                            <i class="icon icon-hdd"></i>
+                                            <span id="recentScanSize">0 MB</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i class="icon icon-user"></i>
+                                            <span id="recentScanChats">0</span> chats
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-secondary view-scan-btn" id="viewRecentScanBtn">
+                                    <i class="icon icon-eye"></i>
+                                    Xem files
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- No Scans Message -->
+                        <div class="no-scans-message" id="noScansMessage">
+                            <i class="icon icon-scan"></i>
+                            <p>Chưa có lượt scan nào. Hãy bắt đầu scan đầu tiên để khám phá files từ Telegram của bạn!</p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="welcome-actions">
+                            <button class="btn btn-primary start-scan-btn" id="startScanBtn">
+                                <i class="icon icon-scan"></i>
+                                Bắt đầu scan mới
+                            </button>
+                            <button class="btn btn-secondary manage-sessions-btn" id="manageSessionsBtn">
+                                <i class="icon icon-settings"></i>
+                                Quản lý sessions
+                            </button>
+                        </div>
                     </div>
                 </div>
 

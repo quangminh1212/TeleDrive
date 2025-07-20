@@ -6251,6 +6251,336 @@ mark {
     transform: scale(0.8);
 }
 
+/* Enhanced Welcome Screen Styles */
+.welcome-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: var(--spacing-xl);
+}
+
+.welcome-content {
+    text-align: center;
+    max-width: 800px;
+    width: 100%;
+}
+
+.welcome-icon {
+    font-size: 64px;
+    color: var(--accent-color);
+    margin-bottom: var(--spacing-lg);
+}
+
+.welcome-content h2 {
+    font-size: 2.5em;
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--text-primary);
+    font-weight: 300;
+}
+
+.welcome-content > p {
+    font-size: 1.1em;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
+}
+
+/* Recent Scan Section */
+.recent-scan-section {
+    background: var(--surface-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    margin: var(--spacing-xl) 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.recent-scan-section h3 {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--text-primary);
+    font-size: 1.3em;
+    font-weight: 500;
+}
+
+.recent-scan-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface-secondary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    border: 1px solid var(--border-light);
+}
+
+.scan-info {
+    flex: 1;
+}
+
+.scan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.scan-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1.1em;
+}
+
+.scan-date {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.scan-stats {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.stat-item .icon {
+    color: var(--accent-color);
+}
+
+.view-scan-btn {
+    margin-left: var(--spacing-lg);
+    white-space: nowrap;
+}
+
+/* No Scans Message */
+.no-scans-message {
+    background: var(--surface-secondary);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-xl);
+    margin: var(--spacing-xl) 0;
+    color: var(--text-secondary);
+}
+
+.no-scans-message .icon {
+    font-size: 48px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-md);
+}
+
+.no-scans-message p {
+    margin: 0;
+    font-size: 1.1em;
+    line-height: 1.5;
+}
+
+/* Welcome Actions */
+.welcome-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    margin-top: var(--spacing-xl);
+}
+
+.start-scan-btn {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--border-radius);
+    font-size: 1.1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.start-scan-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.manage-sessions-btn {
+    background: var(--surface-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--border-radius);
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.manage-sessions-btn:hover {
+    background: var(--surface-secondary);
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .welcome-content {
+        padding: var(--spacing-md);
+    }
+
+    .welcome-content h2 {
+        font-size: 2em;
+    }
+
+    .recent-scan-card {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        text-align: left;
+    }
+
+    .scan-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    .scan-stats {
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+
+    .welcome-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .start-scan-btn,
+    .manage-sessions-btn {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+    }
+}
+
+/* Scan Modal Styles */
+.scan-modal-content {
+    background: var(--surface-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.scan-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-secondary);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.scan-modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.3em;
+}
+
+.scan-modal-header .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--border-radius-small);
+    transition: all 0.2s ease;
+}
+
+.scan-modal-header .modal-close:hover {
+    background: var(--surface-bg);
+    color: var(--text-primary);
+}
+
+.scan-modal-body {
+    padding: var(--spacing-lg);
+}
+
+.scan-options {
+    display: grid;
+    gap: var(--spacing-lg);
+}
+
+.scan-option {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.scan-option:hover {
+    border-color: var(--accent-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.scan-option h4 {
+    margin: 0 0 var(--spacing-sm) 0;
+    color: var(--text-primary);
+    font-size: 1.2em;
+}
+
+.scan-option p {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.scan-telegram-btn,
+.scan-local-btn {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--border-radius);
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    border: none;
+}
+
+.scan-telegram-btn {
+    background: var(--accent-color);
+    color: white;
+}
+
+.scan-telegram-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.scan-local-btn {
+    background: var(--surface-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.scan-local-btn:hover {
+    background: var(--surface-secondary);
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+}
+
 .files-display.content-view .file-info {
     flex: 1;
     min-width: 0;

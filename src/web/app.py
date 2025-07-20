@@ -493,6 +493,24 @@ def get_scans():
     sessions = api.get_scan_sessions()
     return jsonify(sessions)
 
+@app.route('/api/test-scan-history')
+def test_scan_history():
+    """Test endpoint for scan history"""
+    return jsonify({
+        'success': True,
+        'message': 'Test endpoint working',
+        'scans': [
+            {
+                'session_id': 'session-001',
+                'session_name': 'Telegram Files Scan',
+                'created_at': '2025-01-20T10:30:00Z',
+                'total_files': 1247,
+                'total_size': 2847392857,
+                'total_chats': 15
+            }
+        ]
+    })
+
 @app.route('/api/files/<session_id>')
 @auth_required
 def get_session_files(session_id):
@@ -881,6 +899,111 @@ def test_icons():
 def test_dashboard():
     """Test dashboard with mock file data"""
     return render_template('index.html')
+
+@app.route('/test-welcome')
+def test_welcome():
+    """Test welcome screen without authentication"""
+    # Mock user object for testing
+    class MockUser:
+        def __init__(self):
+            self.username = 'test_user'
+            self.is_admin = True
+            self.id = 1
+
+    mock_user = MockUser()
+    return render_template('index.html', user=mock_user)
+
+@app.route('/api/scan-history')
+def get_scan_history():
+    """Get scan history with statistics"""
+    return jsonify({'test': 'API endpoint working'})
+
+@app.route('/api/scan-history-full')
+def get_scan_history_full():
+    """Get scan history with statistics - full version"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        sort = request.args.get('sort', 'created_at')
+        order = request.args.get('order', 'desc')
+
+        # Mock data for now - replace with actual database queries
+        mock_scans = [
+            {
+                'session_id': 'session-001',
+                'session_name': 'Telegram Files Scan',
+                'created_at': '2025-01-20T10:30:00Z',
+                'total_files': 1247,
+                'total_size': 2847392857,  # ~2.65 GB
+                'total_chats': 15,
+                'file_types': {
+                    'images': 456,
+                    'documents': 234,
+                    'videos': 123,
+                    'audio': 89,
+                    'others': 345
+                },
+                'status': 'completed'
+            },
+            {
+                'session_id': 'session-002',
+                'session_name': 'Work Files Scan',
+                'created_at': '2025-01-19T15:45:00Z',
+                'total_files': 892,
+                'total_size': 1456789123,  # ~1.36 GB
+                'total_chats': 8,
+                'file_types': {
+                    'documents': 456,
+                    'images': 234,
+                    'videos': 67,
+                    'audio': 45,
+                    'others': 90
+                },
+                'status': 'completed'
+            },
+            {
+                'session_id': 'session-003',
+                'session_name': 'Personal Chat Scan',
+                'created_at': '2025-01-18T09:15:00Z',
+                'total_files': 567,
+                'total_size': 987654321,  # ~918 MB
+                'total_chats': 12,
+                'file_types': {
+                    'images': 345,
+                    'videos': 123,
+                    'documents': 67,
+                    'audio': 23,
+                    'others': 9
+                },
+                'status': 'completed'
+            }
+        ]
+
+        # Apply sorting
+        if sort == 'created_at':
+            reverse = (order == 'desc')
+            mock_scans.sort(key=lambda x: x['created_at'], reverse=reverse)
+        elif sort == 'total_files':
+            reverse = (order == 'desc')
+            mock_scans.sort(key=lambda x: x['total_files'], reverse=reverse)
+        elif sort == 'total_size':
+            reverse = (order == 'desc')
+            mock_scans.sort(key=lambda x: x['total_size'], reverse=reverse)
+
+        # Apply limit
+        limited_scans = mock_scans[:limit]
+
+        return jsonify({
+            'success': True,
+            'scans': limited_scans,
+            'total': len(mock_scans),
+            'limit': limit,
+            'sort': sort,
+            'order': order
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting scans: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/logout')
 @login_required

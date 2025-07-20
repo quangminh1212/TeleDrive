@@ -32,6 +32,7 @@ class Windows11Explorer {
         this.setupContextMenu();
         this.setupFileSelection();
         this.setupSearch();
+        this.setupWelcomeScreen();
 
         // Initialize view
         this.updateNavigationButtons();
@@ -2627,6 +2628,192 @@ class Windows11Explorer {
                     <button class="btn btn-primary" onclick="location.reload()">Thử lại</button>
                 </div>
             `;
+        }
+    }
+
+    // Welcome Screen functionality
+    setupWelcomeScreen() {
+        // Load recent scan on page load
+        this.loadRecentScan();
+
+        // Setup button handlers
+        const startScanBtn = document.getElementById('startScanBtn');
+        const manageSessionsBtn = document.getElementById('manageSessionsBtn');
+        const viewRecentScanBtn = document.getElementById('viewRecentScanBtn');
+
+        if (startScanBtn) {
+            startScanBtn.addEventListener('click', () => {
+                this.startNewScan();
+            });
+        }
+
+        if (manageSessionsBtn) {
+            manageSessionsBtn.addEventListener('click', () => {
+                this.showSessionManager();
+            });
+        }
+
+        if (viewRecentScanBtn) {
+            viewRecentScanBtn.addEventListener('click', () => {
+                this.viewRecentScan();
+            });
+        }
+    }
+
+    loadRecentScan() {
+        // For demo purposes, always show mock data
+        // TODO: Replace with real API call when backend is ready
+        const mockScan = {
+            session_id: 'session-001',
+            session_name: 'Telegram Files Scan',
+            created_at: '2025-01-20T10:30:00Z',
+            total_files: 1247,
+            total_size: 2847392857,
+            total_chats: 15
+        };
+
+        // Simulate loading delay
+        setTimeout(() => {
+            this.displayRecentScan(mockScan);
+        }, 500);
+    }
+
+    displayRecentScan(scan) {
+        const recentScanSection = document.getElementById('recentScanSection');
+        const noScansMessage = document.getElementById('noScansMessage');
+        const recentScanName = document.getElementById('recentScanName');
+        const recentScanDate = document.getElementById('recentScanDate');
+        const recentScanFiles = document.getElementById('recentScanFiles');
+        const recentScanSize = document.getElementById('recentScanSize');
+        const recentScanChats = document.getElementById('recentScanChats');
+        const viewRecentScanBtn = document.getElementById('viewRecentScanBtn');
+
+        if (recentScanSection) {
+            recentScanSection.style.display = 'block';
+        }
+        if (noScansMessage) {
+            noScansMessage.style.display = 'none';
+        }
+
+        // Update scan info
+        if (recentScanName) {
+            recentScanName.textContent = scan.session_name || `Session ${scan.session_id}`;
+        }
+        if (recentScanDate) {
+            recentScanDate.textContent = this.formatDate(scan.created_at);
+        }
+        if (recentScanFiles) {
+            recentScanFiles.textContent = scan.total_files || 0;
+        }
+        if (recentScanSize) {
+            recentScanSize.textContent = this.formatFileSize(scan.total_size || 0);
+        }
+        if (recentScanChats) {
+            recentScanChats.textContent = scan.total_chats || 0;
+        }
+
+        // Store scan data for view button
+        if (viewRecentScanBtn) {
+            viewRecentScanBtn.dataset.sessionId = scan.session_id;
+        }
+    }
+
+    showNoScansMessage() {
+        const recentScanSection = document.getElementById('recentScanSection');
+        const noScansMessage = document.getElementById('noScansMessage');
+
+        if (recentScanSection) {
+            recentScanSection.style.display = 'none';
+        }
+        if (noScansMessage) {
+            noScansMessage.style.display = 'block';
+        }
+    }
+
+    startNewScan() {
+        // Show scan modal or redirect to scan page
+        this.showNotification('Đang chuẩn bị scan mới...', 'info');
+
+        // TODO: Implement scan modal or redirect
+        // For now, show a placeholder
+        const scanModal = this.createScanModal();
+        document.body.appendChild(scanModal);
+        scanModal.classList.add('show');
+    }
+
+    createScanModal() {
+        const modal = document.createElement('div');
+        modal.className = 'scan-modal';
+        modal.innerHTML = `
+            <div class="scan-modal-content">
+                <div class="scan-modal-header">
+                    <h3>🔍 Bắt đầu scan mới</h3>
+                    <button class="modal-close" onclick="this.closest('.scan-modal').remove()">
+                        <i class="icon icon-times"></i>
+                    </button>
+                </div>
+                <div class="scan-modal-body">
+                    <div class="scan-options">
+                        <div class="scan-option">
+                            <h4>📱 Scan Telegram chats</h4>
+                            <p>Quét tất cả files từ các cuộc trò chuyện Telegram của bạn</p>
+                            <button class="btn btn-primary scan-telegram-btn">
+                                <i class="icon icon-scan"></i>
+                                Scan Telegram
+                            </button>
+                        </div>
+                        <div class="scan-option">
+                            <h4>📁 Scan thư mục local</h4>
+                            <p>Quét files từ thư mục trên máy tính của bạn</p>
+                            <button class="btn btn-secondary scan-local-btn">
+                                <i class="icon icon-folder"></i>
+                                Scan Local
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal styles
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+
+        // Show modal with animation
+        setTimeout(() => {
+            modal.style.opacity = '1';
+        }, 100);
+
+        return modal;
+    }
+
+    showSessionManager() {
+        // Toggle sidebar or show session management interface
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) {
+            sidebar.classList.toggle('expanded');
+        }
+        this.showNotification('Mở panel quản lý sessions', 'info');
+    }
+
+    viewRecentScan() {
+        const viewBtn = document.getElementById('viewRecentScanBtn');
+        if (viewBtn && viewBtn.dataset.sessionId) {
+            const sessionId = viewBtn.dataset.sessionId;
+            this.loadSessionFiles(sessionId);
+            this.showNotification(`Đang tải session ${sessionId}...`, 'info');
         }
     }
 }

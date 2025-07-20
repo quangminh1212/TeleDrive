@@ -132,7 +132,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Telegram session files
+# TeleDrive specific files
+data/
+!data/.gitignore
 *.session
 *.session-journal
 
@@ -144,9 +146,15 @@ output/*
 uploads/
 downloads/
 static/uploads/
+static/test-*.html
 
 # Database backups
 instance/*_backup_*.db
+
+# Temporary files
+bash.exe.stackdump
+*.tmp
+*.temp
 
 # IDE
 .vscode/
