@@ -19,17 +19,28 @@
             <span class="window-title">TeleDrive - File Manager</span>
         </div>
         <div class="title-bar-right">
-            <div class="user-info">
-                <i class="icon icon-user"></i>
-                <span class="username">{{ user.username }}</span>
-                {% if user.is_admin %}
-                    <span class="admin-badge">Admin</span>
-                {% endif %}
-                <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
-                    <i class="icon icon-sign-out"></i>
-                    <span>Đăng xuất</span>
-                </button>
-            </div>
+            <!-- Debug info -->
+            {% if user %}
+                <div class="user-info">
+                    <i class="icon icon-user"></i>
+                    <span class="username">{{ user.username or 'No username' }}</span>
+                    {% if user.is_admin %}
+                        <span class="admin-badge">Admin</span>
+                    {% endif %}
+                    <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
+                        <i class="icon icon-sign-out"></i>
+                        <span>Đăng xuất</span>
+                    </button>
+                </div>
+            {% else %}
+                <div class="user-info">
+                    <span style="color: red;">No user object found</span>
+                    <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
+                        <i class="icon icon-sign-out"></i>
+                        <span>Đăng xuất</span>
+                    </button>
+                </div>
+            {% endif %}
             <div class="window-controls">
                 <button class="window-control minimize" title="Minimize">
                     <i class="icon icon-minus"></i>

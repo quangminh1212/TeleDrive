@@ -913,6 +913,23 @@ def test_welcome():
     mock_user = MockUser()
     return render_template('index.html', user=mock_user)
 
+@app.route('/debug-user')
+def debug_user():
+    """Debug current user info"""
+    if current_user.is_authenticated:
+        return jsonify({
+            'authenticated': True,
+            'username': getattr(current_user, 'username', 'No username'),
+            'is_admin': getattr(current_user, 'is_admin', False),
+            'id': getattr(current_user, 'id', 'No ID'),
+            'user_object': str(current_user)
+        })
+    else:
+        return jsonify({
+            'authenticated': False,
+            'message': 'User not authenticated'
+        })
+
 @app.route('/api/scan-history')
 def get_scan_history():
     """Get scan history with statistics"""

@@ -1168,13 +1168,15 @@ body {
     margin-top: 1px;
 }
 
-/* Main Container */
+/* Main Container - Legacy (commented out to avoid conflict) */
+/*
 .main-container {
     display: flex;
     margin-top: var(--header-height);
     min-height: calc(100vh - var(--header-height));
     background: var(--secondary-bg);
 }
+*/
 
 /* Sidebar */
 .sidebar {
@@ -3940,13 +3942,13 @@ body {
 
 /* Title Bar */
 .explorer-title-bar {
-    height: var(--title-bar-height);
-    background: var(--surface-bg);
-    border-bottom: 1px solid var(--border-light);
+    height: var(--title-bar-height, 32px);
+    background: var(--surface-bg, #ffffff);
+    border-bottom: 1px solid var(--border-light, #e0e0e0);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 var(--spacing-sm);
+    padding: 0 var(--spacing-sm, 8px);
     position: fixed;
     top: 0;
     left: 0;
@@ -4377,12 +4379,9 @@ body {
 /* Main Container Layout */
 .main-container {
     display: flex;
-    position: fixed;
-    top: calc(var(--title-bar-height) + var(--ribbon-height) + var(--navigation-bar-height));
-    left: 0;
-    right: 0;
-    bottom: var(--status-bar-height);
-    background: var(--secondary-bg);
+    margin-top: var(--title-bar-height, 32px);
+    min-height: calc(100vh - var(--title-bar-height, 32px));
+    background: var(--secondary-bg, #f5f5f5);
 }
 
 /* Navigation Pane */
