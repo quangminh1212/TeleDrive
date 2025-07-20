@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive File Manager - Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Segoe+UI:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Basic styles for demo */
+        :root {
+            --title-bar-height: 40px;
+            --surface-bg: #ffffff;
+            --border-light: #e0e0e0;
+            --spacing-sm: 8px;
+            --spacing-xs: 4px;
+            --font-size-sm: 13px;
+            --text-secondary: #666;
+            --primary-blue: #0078d4;
+            --border-radius-small: 4px;
+            --border-color: #d1d1d1;
+            --surface-hover: #f5f5f5;
+            --accent-color: #0078d4;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .explorer-title-bar {
+            height: var(--title-bar-height);
+            background: var(--surface-bg);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-sm);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .title-bar-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .title-bar-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        .admin-badge {
+            background: var(--primary-blue);
+            color: white;
+            padding: 2px 6px;
+            border-radius: var(--border-radius-small);
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: var(--spacing-sm);
+        }
+
+        .logout-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .icon-sign-out::before {
+            content: "⇥";
+            color: #5f6368;
+            font-weight: normal;
+        }
+
+        .icon-user::before {
+            content: "◯";
+            color: #5f6368;
+            font-weight: normal;
+        }
+
+        .main-container {
+            margin-top: var(--title-bar-height);
+            display: flex;
+            height: calc(100vh - var(--title-bar-height));
+        }
+
+        .navigation-pane {
+            width: 250px;
+            background: white;
+            border-right: 1px solid var(--border-light);
+            padding: 16px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .welcome-content {
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Windows Explorer Style Title Bar -->
+    <div class="explorer-title-bar">
+        <div class="title-bar-left">
+            <div class="app-icon">
+                <img src="/static/images/logo.png" alt="TeleDrive" class="app-icon-img">
+            </div>
+            <span class="window-title">TeleDrive - File Manager</span>
+        </div>
+        <div class="title-bar-right">
+            <div class="user-info">
+                <i class="icon icon-user"></i>
+                <span class="username">demo_user</span>
+                <span class="admin-badge">Admin</span>
+                <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
+                    <i class="icon icon-sign-out"></i>
+                    <span>Đăng xuất</span>
+                </button>
+            </div>
+            <div class="window-controls">
+                <button class="window-control minimize" title="Minimize">
+                    <i class="icon icon-minus"></i>
+                </button>
+                <button class="window-control maximize" title="Maximize">
+                    <i class="icon icon-square"></i>
+                </button>
+                <button class="window-control close" title="Close">
+                    <i class="icon icon-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- TeleDrive Navigation Pane -->
+        <aside class="navigation-pane" id="navigationPane">
+            <!-- Quick Access Section -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <button class="section-toggle expanded" data-section="quick-access">
+                        <i class="icon icon-chevron-down"></i>
+                    </button>
+                    <span class="section-title">Quick access</span>
+                </div>
+                <div class="nav-section-content" id="quickAccessContent">
+                    <div class="nav-item active" data-path="home">
+                        <i class="icon icon-cloud"></i>
+                        <span>TeleDrive Home</span>
+                    </div>
+                    <div class="nav-item" data-path="recent">
+                        <i class="icon icon-refresh"></i>
+                        <span>Recent files</span>
+                    </div>
+                    <div class="nav-item" data-path="shared">
+                        <i class="icon icon-share"></i>
+                        <span>Shared files</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-content">
+                        <i class="icon icon-cloud welcome-icon"></i>
+                        <h2>Welcome to TeleDrive</h2>
+                        <p>Demo page để test giao diện nút đăng xuất</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            alert('Nút đăng xuất hoạt động!');
+        });
+    </script>
+</body>
+</html>
