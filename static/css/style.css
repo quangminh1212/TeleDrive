@@ -1402,6 +1402,14 @@ body {
     color: var(--text-secondary);
     white-space: nowrap;
     flex-shrink: 0;
+    max-width: 120px;
+}
+
+.breadcrumb-item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100px;
 }
 
 .breadcrumb-item:hover:not(.active) {
