@@ -21,13 +21,13 @@ load_dotenv()
 # Import từ cấu trúc mới
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.database import init_database, db
-from src.auth import auth_manager, admin_required
-from src.models import OTPManager, validate_phone_number
-from src.services import send_otp_sync
-from src.services.filesystem import FileSystemManager
-from src.config import config, validate_environment
-from src.security import init_security_middleware
+from src.teledrive.database import init_database, db
+from src.teledrive.auth import auth_manager, admin_required
+from src.teledrive.models import OTPManager, validate_phone_number
+from src.teledrive.services import send_otp_sync
+from src.teledrive.services.filesystem import FileSystemManager
+from src.teledrive.config import config, validate_environment
+from src.teledrive.security import init_security_middleware
 # Tắt các import logging để giảm log
 # from src.utils.simple_logger import setup_simple_logging, get_simple_logger
 # from src.monitoring import init_health_monitoring

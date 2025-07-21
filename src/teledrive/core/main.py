@@ -11,11 +11,11 @@ import os
 # Thêm thư mục gốc vào Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.services.scanner import TelegramFileScanner
+from src.teledrive.services.scanner import TelegramFileScanner
 
 # Import detailed logging
 try:
-    from src.utils.logger import log_step, log_error, get_logger
+    from src.teledrive.utils.logger import log_step, log_error, get_logger
     DETAILED_LOGGING_AVAILABLE = True
     logger = get_logger('main')
 except ImportError:

@@ -483,7 +483,7 @@ echo.
 echo [INFO] Luu y: Scanner se chay tu dong ma khong can nhap gi them
 echo.
 
-python src/core/main.py
+python src/teledrive/core/main.py
 
 echo.
 echo ================================================================
