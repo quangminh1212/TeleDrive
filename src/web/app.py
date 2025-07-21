@@ -1222,23 +1222,7 @@ def admin_menu_action():
         logger.error(f"Error handling admin action: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Quick login for admin (development only)
-@app.route('/quick-admin')
-def quick_admin():
-    """Quick login cho admin để test - chỉ dùng development"""
-    from flask_login import login_user
-    from src.auth.models import User
-
-    try:
-        # Tìm admin user
-        admin_user = User.query.filter_by(is_admin=True).first()
-        if admin_user:
-            login_user(admin_user, remember=True)
-            return redirect(url_for('index'))
-        else:
-            return "No admin user found. Please create one first.", 404
-    except Exception as e:
-        return f"Error: {str(e)}", 500
+# Development routes removed for production
 
 if __name__ == '__main__':
     # Log application startup
