@@ -1587,6 +1587,75 @@ def admin_reset_settings():
         logger.error(f"Error resetting settings: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/admin/telegram')
+@login_required
+@admin_required
+def admin_telegram():
+    """Trang cài đặt Telegram"""
+    return render_template('admin/telegram_settings.html', config=config)
+
+# Telegram settings API endpoints
+@app.route('/api/admin/telegram-settings/<category>', methods=['POST'])
+@login_required
+@admin_required
+def admin_save_telegram_settings(category):
+    """API lưu cài đặt Telegram"""
+    try:
+        data = request.get_json()
+
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action=f"save_telegram_settings_{category}",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={'category': category, 'settings': data}
+            )
+
+        return jsonify({
+            'success': True,
+            'message': f'Đã lưu cài đặt Telegram {category} thành công'
+        })
+
+    except Exception as e:
+        logger.error(f"Error saving telegram settings: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/telegram-status')
+@login_required
+@admin_required
+def admin_telegram_status():
+    """API kiểm tra trạng thái kết nối Telegram"""
+    try:
+        # Mock status for now
+        return jsonify({
+            'success': True,
+            'connected': False,
+            'message': 'Chưa cấu hình API Telegram'
+        })
+
+    except Exception as e:
+        logger.error(f"Error checking telegram status: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/telegram-sessions')
+@login_required
+@admin_required
+def admin_telegram_sessions():
+    """API lấy danh sách sessions Telegram"""
+    try:
+        # Mock sessions for now
+        sessions = []
+
+        return jsonify({
+            'success': True,
+            'sessions': sessions
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting telegram sessions: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Quick admin login for testing
 @app.route('/quick-admin')
 def quick_admin():
