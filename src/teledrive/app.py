@@ -50,19 +50,18 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 # Apply production configuration
 app.config.update(config.get_flask_config())
 
-# Tắt tất cả logging để có giao diện sạch sẽ
+# Smart logging - chỉ log những gì cần thiết
 import logging
-logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
-logging.getLogger('urllib3').setLevel(logging.CRITICAL)
-logging.getLogger('requests').setLevel(logging.CRITICAL)
-logging.getLogger('telethon').setLevel(logging.CRITICAL)
-logging.getLogger('asyncio').setLevel(logging.CRITICAL)
-logging.getLogger('flask').setLevel(logging.CRITICAL)
-logging.getLogger('teledrive').setLevel(logging.CRITICAL)
-app.logger.setLevel(logging.CRITICAL)
+from teledrive.smart_logger import (
+    get_smart_logger, setup_smart_logging, log_startup,
+    log_important, log_error_important, log_warning_important
+)
 
-# Tắt tất cả root logger
-logging.getLogger().setLevel(logging.CRITICAL)
+# Setup smart logging
+setup_smart_logging()
+
+# Tạo smart logger
+logger = get_smart_logger('teledrive.app')
 
 # Initialize CORS with production settings
 if config.is_production():
@@ -75,21 +74,8 @@ else:
 # Initialize security middleware
 init_security_middleware(app)
 
-# Tạo logger đơn giản chỉ cho lỗi nghiêm trọng
-class SimpleLogger:
-    def info(self, message, **kwargs):
-        pass  # Không log info
-
-    def error(self, message, **kwargs):
-        pass  # Không log error
-
-    def warning(self, message, **kwargs):
-        pass  # Không log warning
-
-    def debug(self, message, **kwargs):
-        pass  # Không log debug
-
-logger = SimpleLogger()
+# Sử dụng smart logger thay vì SimpleLogger
+# logger = get_smart_logger('teledrive.app')
 
 # Khởi tạo database và authentication system
 init_database(app)
@@ -341,6 +327,7 @@ def index():
 def login():
     """Trang đăng nhập"""
     if current_user.is_authenticated:
+        log_important(f"User already logged in: {current_user.username}")
         return redirect(url_for('index'))
 
     # Kiểm tra có admin user nào chưa, nếu chưa thì redirect đến setup
@@ -428,10 +415,13 @@ def send_otp():
         
         # Gửi OTP qua Telegram
         try:
+            log_important(f"Sending OTP to: {formatted_phone}")
             success, message = send_otp_sync(formatted_phone)
             if success:
+                log_important(f"OTP sent successfully to: {formatted_phone}")
                 return jsonify({'success': True, 'message': message})
             else:
+                log_error_important(f"Failed to send OTP to: {formatted_phone} - {message}")
                 return jsonify({'success': False, 'message': message}), 500
 
         except Exception as e:
@@ -466,8 +456,10 @@ def verify_otp():
                 })
 
         # Validate OTP
+        log_important(f"Verifying OTP for: {phone_number}")
         is_valid, message = OTPManager.verify_otp(phone_number, otp_code)
         if not is_valid:
+            log_warning_important(f"Invalid OTP for: {phone_number}")
             return jsonify({'success': False, 'message': message}), 400
 
         # Xác thực người dùng
@@ -475,6 +467,7 @@ def verify_otp():
 
         if user:
             login_user(user, remember=remember)
+            log_important(f"User logged in successfully: {user.username} ({phone_number})")
             next_page = request.args.get('next')
 
             return jsonify({
@@ -483,6 +476,7 @@ def verify_otp():
                 'redirect': next_page or url_for('index')
             })
         else:
+            log_error_important(f"Login failed for: {phone_number}")
             return jsonify({'success': False, 'message': 'Không thể đăng nhập. Vui lòng thử lại'}), 401
 
     except Exception as e:
