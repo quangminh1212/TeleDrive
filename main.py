@@ -18,8 +18,8 @@ logging.getLogger('urllib3').setLevel(logging.ERROR)
 logging.getLogger('requests').setLevel(logging.ERROR)
 
 # Import và chạy web app
-from web.app import app
-from src.config import config
+from src.teledrive.app import app
+from src.teledrive.config import config
 
 if __name__ == '__main__':
     # Sử dụng Flask development server với log tối giản

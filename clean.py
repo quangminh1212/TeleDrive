@@ -28,7 +28,7 @@ logging.basicConfig(
 )
 
 # Import và chạy web app
-from src.web.app import app
+from src.teledrive.app import app
 
 if __name__ == '__main__':
     # Khởi động với giao diện sạch sẽ
