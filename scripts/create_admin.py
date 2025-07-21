@@ -8,7 +8,7 @@ import sys
 import os
 
 # Thêm thư mục src vào Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from flask import Flask
 from teledrive.database import init_database
