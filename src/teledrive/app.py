@@ -29,8 +29,8 @@ from teledrive.services.filesystem import FileSystemManager
 from teledrive.config import config, validate_environment
 from teledrive.security import init_security_middleware
 # Tắt các import logging để giảm log
-# from src.utils.simple_logger import setup_simple_logging, get_simple_logger
-# from src.monitoring import init_health_monitoring
+# from teledrive.utils.simple_logger import setup_simple_logging, get_simple_logger
+# from teledrive.monitoring import init_health_monitoring
 
 # Validate environment variables
 try:

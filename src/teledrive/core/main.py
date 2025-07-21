@@ -11,11 +11,11 @@ import os
 # Thêm thư mục gốc vào Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.services.scanner import TelegramFileScanner
+from teledrive.services.scanner import TelegramFileScanner
 
 # Import detailed logging
 try:
-    from src.utils.logger import log_step, log_error, get_logger
+    from teledrive.utils.logger import log_step, log_error, get_logger
     DETAILED_LOGGING_AVAILABLE = True
     logger = get_logger('main')
 except ImportError:
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     # Load config
     print("📋 Đang tải cấu hình...")
     try:
-        from src.utils import config
+        from teledrive.utils import config
         print("✅ Đã tải cấu hình thành công")
     except Exception as e:
         print(f"❌ Lỗi tải cấu hình: {e}")
@@ -311,7 +311,7 @@ if __name__ == "__main__":
     print("📊 Đang thiết lập hệ thống logging...")
     if DETAILED_LOGGING_AVAILABLE:
         try:
-            from src.utils.logger import setup_detailed_logging
+            from teledrive.utils.logger import setup_detailed_logging
             logging_config = config.CONFIG.get('logging', {})
             if logging_config.get('enabled', True):
                 setup_detailed_logging(logging_config)

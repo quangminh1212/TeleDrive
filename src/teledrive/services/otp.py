@@ -15,8 +15,8 @@ from telethon.errors import (
     NotFoundError,
     PeerIdInvalidError
 )
-from src.config import config
-from src.models.otp import OTPManager, format_phone_number, validate_phone_number
+from teledrive.config import config
+from teledrive.models.otp import OTPManager, format_phone_number, validate_phone_number
 
 # Setup logging
 logger = logging.getLogger(__name__)
