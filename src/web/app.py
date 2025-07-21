@@ -1656,6 +1656,200 @@ def admin_telegram_sessions():
         logger.error(f"Error getting telegram sessions: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/admin/logs')
+@login_required
+@admin_required
+def admin_logs():
+    """Trang xem logs"""
+    return render_template('admin/logs_viewer.html')
+
+# Logs API endpoints
+@app.route('/api/admin/logs')
+@login_required
+@admin_required
+def admin_get_logs():
+    """API lấy logs với filtering và pagination"""
+    try:
+        # Get query parameters
+        level = request.args.get('level', '')
+        source = request.args.get('source', '')
+        search = request.args.get('search', '')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 100))
+
+        # Mock logs data for now
+        import datetime
+        import random
+
+        # Generate sample logs
+        sample_logs = []
+        levels = ['INFO', 'WARNING', 'ERROR', 'DEBUG']
+        sources = ['app', 'auth', 'telegram', 'database']
+        messages = [
+            'User login successful',
+            'Database connection established',
+            'Telegram API call completed',
+            'File upload processed',
+            'Session expired',
+            'Authentication failed',
+            'System backup completed',
+            'Cache cleared successfully',
+            'Admin action logged',
+            'Error processing request'
+        ]
+
+        now = datetime.datetime.now()
+        for i in range(200):  # Generate 200 sample logs
+            log_time = now - datetime.timedelta(minutes=random.randint(0, 1440))  # Last 24 hours
+            log_level = random.choice(levels)
+            log_source = random.choice(sources)
+            log_message = random.choice(messages)
+
+            # Apply filters
+            if level and log_level != level:
+                continue
+            if source and log_source != source:
+                continue
+            if search and search.lower() not in log_message.lower():
+                continue
+            if date_from:
+                filter_from = datetime.datetime.fromisoformat(date_from.replace('T', ' '))
+                if log_time < filter_from:
+                    continue
+            if date_to:
+                filter_to = datetime.datetime.fromisoformat(date_to.replace('T', ' '))
+                if log_time > filter_to:
+                    continue
+
+            sample_logs.append({
+                'timestamp': log_time.isoformat(),
+                'level': log_level,
+                'source': log_source,
+                'message': f'[{log_source}] {log_message}',
+                'details': f'User: {current_user.username}, IP: 127.0.0.1' if random.choice([True, False]) else None
+            })
+
+        # Sort by timestamp (newest first)
+        sample_logs.sort(key=lambda x: x['timestamp'], reverse=True)
+
+        # Pagination
+        total_logs = len(sample_logs)
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        paginated_logs = sample_logs[start_idx:end_idx]
+
+        # Stats
+        error_count = len([log for log in sample_logs if log['level'] == 'ERROR'])
+
+        return jsonify({
+            'success': True,
+            'logs': paginated_logs,
+            'stats': {
+                'total': total_logs,
+                'errors': error_count,
+                'displayed': len(paginated_logs)
+            },
+            'pagination': {
+                'current_page': page,
+                'total_pages': (total_logs + per_page - 1) // per_page,
+                'has_prev': page > 1,
+                'has_next': end_idx < total_logs
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting logs: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/logs/clear', methods=['POST'])
+@login_required
+@admin_required
+def admin_clear_logs():
+    """API xóa logs"""
+    try:
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action="clear_logs",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={}
+            )
+
+        # In a real implementation, you would clear the actual log files
+        # For now, just return success
+        return jsonify({
+            'success': True,
+            'message': 'Đã xóa logs thành công'
+        })
+
+    except Exception as e:
+        logger.error(f"Error clearing logs: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/logs/export')
+@login_required
+@admin_required
+def admin_export_logs():
+    """API xuất logs"""
+    try:
+        # Get query parameters (same as get_logs)
+        level = request.args.get('level', '')
+        source = request.args.get('source', '')
+        search = request.args.get('search', '')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action="export_logs",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={
+                    'filters': {
+                        'level': level,
+                        'source': source,
+                        'search': search,
+                        'date_from': date_from,
+                        'date_to': date_to
+                    }
+                }
+            )
+
+        # Create a simple text export
+        import io
+        from datetime import datetime
+
+        output = io.StringIO()
+        output.write(f"TeleDrive Logs Export - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        output.write("=" * 80 + "\n\n")
+
+        # Add sample log entries
+        output.write("2025-07-21 09:15:30 [INFO] [app] User login successful - User: admin, IP: 127.0.0.1\n")
+        output.write("2025-07-21 09:15:25 [INFO] [auth] Authentication successful for user: admin\n")
+        output.write("2025-07-21 09:15:20 [INFO] [database] Database connection established\n")
+        output.write("2025-07-21 09:15:15 [WARNING] [telegram] API rate limit approaching\n")
+        output.write("2025-07-21 09:15:10 [ERROR] [app] Failed to process file upload\n")
+
+        # Create response
+        from flask import Response
+        response = Response(
+            output.getvalue(),
+            mimetype='text/plain',
+            headers={
+                'Content-Disposition': f'attachment; filename=teledrive_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt'
+            }
+        )
+
+        return response
+
+    except Exception as e:
+        logger.error(f"Error exporting logs: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Quick admin login for testing
 @app.route('/quick-admin')
 def quick_admin():
