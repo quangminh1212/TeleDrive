@@ -10,6 +10,7 @@ if "%1"=="web-setup" goto WEB_SETUP
 if "%1"=="scanner" goto SCANNER_MODE
 if "%1"=="production" goto PRODUCTION_MODE
 if "%1"=="clean" goto CLEAN_MODE
+if "%1"=="silent" goto SILENT_MODE
 
 echo.
 echo ================================================================
@@ -19,6 +20,7 @@ echo.
 echo [INFO] Mac dinh: Chay web interface tai http://localhost:5000
 echo [INFO] Tuy chon:
 echo    run.bat            - Chay web interface (mac dinh)
+echo    run.bat silent     - Chay khong co log (sach se nhat)
 echo    run.bat clean      - Chay voi log toi gian
 echo    run.bat production - Chay production server
 echo    run.bat scanner    - Chay scanner CLI
@@ -134,7 +136,11 @@ echo    - Lan dau su dung: truy cap /setup de tao admin
 echo    - Neu muon chay scanner CLI: run.bat scanner
 echo.
 
-python main.py
+if "%1"=="silent" (
+    python run_silent.py
+) else (
+    python main.py
+)
 
 echo.
 echo ================================================================
@@ -610,7 +616,48 @@ if errorlevel 1 (
 echo.
 echo [BUOC 3/3] Khoi dong TeleDrive Clean Mode...
 echo.
-python run_clean.py
+python clean.py
+goto END
+
+:SILENT_MODE
+echo.
+echo ================================================================
+echo                    TELEDRIVE - SILENT MODE
+echo ================================================================
+echo.
+echo [INFO] Chay khong co log - giao dien sach se nhat
+echo.
+
+echo [BUOC 1/3] Kiem tra Python...
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] KHONG TIM THAY PYTHON!
+    echo [INFO] Tai Python tu: https://python.org/downloads/
+    pause
+    exit /b 1
+) else (
+    echo [OK] Python da san sang
+)
+
+echo.
+echo [BUOC 2/3] Kiem tra thu vien...
+python -c "import flask" >nul 2>&1
+if errorlevel 1 (
+    echo [INFO] Cai dat thu vien...
+    pip install -r requirements.txt >nul 2>&1
+    if errorlevel 1 (
+        echo [ERROR] Khong the cai dat thu vien!
+        pause
+        exit /b 1
+    )
+) else (
+    echo [OK] Thu vien da san sang
+)
+
+echo.
+echo [BUOC 3/3] Khoi dong TeleDrive Silent Mode...
+echo.
+python run_silent.py
 goto END
 
 :END

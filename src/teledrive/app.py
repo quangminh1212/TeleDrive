@@ -28,8 +28,9 @@ from src.services import send_otp_sync
 from src.services.filesystem import FileSystemManager
 from src.config import config, validate_environment
 from src.security import init_security_middleware
-from src.utils.simple_logger import setup_simple_logging, get_simple_logger
-from src.monitoring import init_health_monitoring
+# Tắt các import logging để giảm log
+# from src.utils.simple_logger import setup_simple_logging, get_simple_logger
+# from src.monitoring import init_health_monitoring
 
 # Validate environment variables
 try:
@@ -49,10 +50,19 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 # Apply production configuration
 app.config.update(config.get_flask_config())
 
-# Tắt Flask logging để giảm log
+# Tắt tất cả logging để có giao diện sạch sẽ
 import logging
-logging.getLogger('werkzeug').setLevel(logging.ERROR)
-app.logger.setLevel(logging.ERROR)
+logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
+logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+logging.getLogger('requests').setLevel(logging.CRITICAL)
+logging.getLogger('telethon').setLevel(logging.CRITICAL)
+logging.getLogger('asyncio').setLevel(logging.CRITICAL)
+logging.getLogger('flask').setLevel(logging.CRITICAL)
+logging.getLogger('teledrive').setLevel(logging.CRITICAL)
+app.logger.setLevel(logging.CRITICAL)
+
+# Tắt tất cả root logger
+logging.getLogger().setLevel(logging.CRITICAL)
 
 # Initialize CORS with production settings
 if config.is_production():
@@ -65,16 +75,28 @@ else:
 # Initialize security middleware
 init_security_middleware(app)
 
-# Initialize simple logging
-setup_simple_logging()
-logger = get_simple_logger('teledrive')
+# Tạo logger đơn giản chỉ cho lỗi nghiêm trọng
+class SimpleLogger:
+    def info(self, message, **kwargs):
+        pass  # Không log info
+
+    def error(self, message, **kwargs):
+        pass  # Không log error
+
+    def warning(self, message, **kwargs):
+        pass  # Không log warning
+
+    def debug(self, message, **kwargs):
+        pass  # Không log debug
+
+logger = SimpleLogger()
 
 # Khởi tạo database và authentication system
 init_database(app)
 auth_manager.init_app(app)
 
-# Initialize health monitoring
-init_health_monitoring(app)
+# Tắt health monitoring để giảm log
+# init_health_monitoring(app)
 
 class TeleDriveWebAPI:
     """API class để xử lý các request từ web interface"""
