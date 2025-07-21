@@ -21,13 +21,13 @@ load_dotenv()
 # Import từ cấu trúc mới
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.database import init_database, db
-from src.auth import auth_manager, admin_required
-from src.models import OTPManager, validate_phone_number
-from src.services import send_otp_sync
-from src.services.filesystem import FileSystemManager
-from src.config import config, validate_environment
-from src.security import init_security_middleware
+from teledrive.database import init_database, db
+from teledrive.auth import auth_manager, admin_required
+from teledrive.models import OTPManager, validate_phone_number
+from teledrive.services import send_otp_sync
+from teledrive.services.filesystem import FileSystemManager
+from teledrive.config import config, validate_environment
+from teledrive.security import init_security_middleware
 # Tắt các import logging để giảm log
 # from src.utils.simple_logger import setup_simple_logging, get_simple_logger
 # from src.monitoring import init_health_monitoring
@@ -1453,7 +1453,7 @@ def admin_create_user():
 def admin_update_user(user_id):
     """API cập nhật người dùng"""
     try:
-        from src.auth.models import User
+        from teledrive.auth.models import User
 
         user = User.query.get(user_id)
         if not user:
@@ -1475,7 +1475,7 @@ def admin_update_user(user_id):
             user.password_hash = generate_password_hash(data['password'])
 
         # Save changes
-        from src.database import db
+        from teledrive.database import db
         db.session.commit()
 
         # Log admin action
@@ -1493,8 +1493,8 @@ def admin_update_user(user_id):
 def admin_delete_user(user_id):
     """API xóa người dùng"""
     try:
-        from src.auth.models import User
-        from src.database import db
+        from teledrive.auth.models import User
+        from teledrive.database import db
 
         user = User.query.get(user_id)
         if not user:
@@ -1897,7 +1897,7 @@ def admin_update_personal():
             current_user.phone_number = data['phone']
 
         # Save changes
-        from src.database import db
+        from teledrive.database import db
         db.session.commit()
 
         # Log admin action
@@ -1934,7 +1934,7 @@ def admin_change_password():
         current_user.password_hash = generate_password_hash(new_password)
 
         # Save changes
-        from src.database import db
+        from teledrive.database import db
         db.session.commit()
 
         # Log admin action
@@ -2029,7 +2029,7 @@ def admin_profile_activity():
 def quick_admin():
     """Quick login cho admin để test"""
     from flask_login import login_user
-    from src.auth.models import User
+    from teledrive.auth.models import User
 
     try:
         admin_user = User.query.filter_by(is_admin=True).first()
