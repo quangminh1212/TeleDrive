@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive - Test Admin Menu (Real Server)</title>
+    <link rel="stylesheet" href="http://localhost:5000/static/css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .test-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 10000;
+            max-width: 300px;
+        }
+        .test-info h3 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+        }
+        .status-log {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 20px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h3>🔧 Test Admin Menu</h3>
+        <p><strong>Server:</strong> localhost:5000</p>
+        <p><strong>CSS:</strong> Loaded from server</p>
+        <p><strong>API:</strong> Real endpoints</p>
+        <p>Click nút Admin để test!</p>
+    </div>
+
+    <!-- Windows Explorer Style Title Bar -->
+    <div class="explorer-title-bar">
+        <div class="title-bar-left">
+            <div class="app-icon">
+                <span>📁</span>
+            </div>
+            <span class="window-title">TeleDrive - Admin Test (Real Server)</span>
+        </div>
+        <div class="title-bar-right">
+            <div class="user-info">
+                <span class="username">Admin User (Test)</span>
+                <div class="admin-menu-container">
+                    <button class="admin-badge-btn" id="adminMenuToggle" title="Cài đặt Admin">
+                        <span class="admin-badge">Admin</span>
+                        <i class="icon icon-chevron-down"></i>
+                    </button>
+                    <div class="admin-dropdown-menu" id="adminDropdownMenu">
+                        <div class="admin-menu-header">
+                            <i class="icon icon-settings"></i>
+                            <span>Quản lý hệ thống</span>
+                        </div>
+                        <div class="admin-menu-divider"></div>
+                        <button class="admin-menu-item" id="userManagementBtn">
+                            <i class="icon icon-user"></i>
+                            <span>Quản lý người dùng</span>
+                        </button>
+                        <button class="admin-menu-item" id="systemSettingsBtn">
+                            <i class="icon icon-settings"></i>
+                            <span>Cài đặt hệ thống</span>
+                        </button>
+                        <button class="admin-menu-item" id="scanSettingsBtn">
+                            <i class="icon icon-scan"></i>
+                            <span>Cài đặt Telegram</span>
+                        </button>
+                        <button class="admin-menu-item" id="logsViewBtn">
+                            <i class="icon icon-file-text"></i>
+                            <span>Xem logs</span>
+                        </button>
+                        <div class="admin-menu-divider"></div>
+                        <button class="admin-menu-item" id="profileSettingsBtn">
+                            <i class="icon icon-user"></i>
+                            <span>Thông tin tài khoản</span>
+                        </button>
+                    </div>
+                </div>
+                <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
+                    <i class="icon icon-sign-out"></i>
+                    <span>Đăng xuất</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Log -->
+    <div class="status-log" id="statusLog">
+        <strong>📝 Test Log:</strong><br>
+        Đang khởi tạo test...
+    </div>
+
+    <!-- Main Content -->
+    <div style="padding: 40px; margin-top: 100px;">
+        <h1>🧪 Test Admin Menu với Real Server</h1>
+        <p>File này sử dụng CSS và API thật từ server TeleDrive đang chạy.</p>
+        
+        <h2>🔧 Test Cases:</h2>
+        <ol>
+            <li><strong>Admin Menu Toggle:</strong> Click nút "Admin" → Menu hiện/ẩn</li>
+            <li><strong>API Calls:</strong> Click menu items → Gọi API thật</li>
+            <li><strong>Logout:</strong> Click "Đăng xuất" → Test logout flow</li>
+            <li><strong>CSS Styling:</strong> Kiểm tra style từ server</li>
+        </ol>
+        
+        <h2>📊 Kết quả:</h2>
+        <div id="testResults">
+            <p>Chưa có test nào được chạy...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusLog = document.getElementById('statusLog');
+            const testResults = document.getElementById('testResults');
+            
+            function log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = `${timestamp}: ${message}<br>`;
+                statusLog.innerHTML += logEntry;
+                statusLog.scrollTop = statusLog.scrollHeight;
+                console.log(message);
+            }
+            
+            function updateResults(message) {
+                testResults.innerHTML += `<p>✅ ${message}</p>`;
+            }
+            
+            log('🚀 Test script loaded');
+            
+            // Test 1: CSS Loading
+            const titleBar = document.querySelector('.explorer-title-bar');
+            if (titleBar) {
+                const styles = window.getComputedStyle(titleBar);
+                if (styles.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+                    log('✅ CSS loaded successfully from server');
+                    updateResults('CSS styling hoạt động');
+                } else {
+                    log('❌ CSS not loaded properly');
+                }
+            }
+            
+            // Admin menu toggle
+            const adminMenuToggle = document.getElementById('adminMenuToggle');
+            const adminDropdownMenu = document.getElementById('adminDropdownMenu');
+            
+            if (adminMenuToggle && adminDropdownMenu) {
+                log('✅ Admin menu elements found');
+                updateResults('Admin menu elements tồn tại');
+                
+                adminMenuToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    log('🔄 Admin menu toggled');
+                    adminDropdownMenu.classList.toggle('show');
+                    adminMenuToggle.classList.toggle('active');
+                    updateResults('Admin menu toggle hoạt động');
+                });
+                
+                // Close when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!adminMenuToggle.contains(e.target) && !adminDropdownMenu.contains(e.target)) {
+                        adminDropdownMenu.classList.remove('show');
+                        adminMenuToggle.classList.remove('active');
+                        log('❌ Admin menu closed (clicked outside)');
+                    }
+                });
+            } else {
+                log('❌ Admin menu elements not found');
+            }
+            
+            // Logout button
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                log('✅ Logout button found');
+                updateResults('Logout button tồn tại');
+                
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    log('🚪 Logout button clicked');
+                    
+                    // Test real logout API
+                    fetch('http://localhost:5000/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'include'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        log('✅ Logout API response: ' + JSON.stringify(data));
+                        updateResults('Logout API hoạt động');
+                        alert('Logout API test thành công!');
+                    })
+                    .catch(error => {
+                        log('❌ Logout API error: ' + error.message);
+                        updateResults('Logout API có lỗi: ' + error.message);
+                    });
+                });
+            } else {
+                log('❌ Logout button not found');
+            }
+            
+            // Admin menu items with real API calls
+            const adminMenuItems = {
+                'userManagementBtn': 'user_management',
+                'systemSettingsBtn': 'system_settings',
+                'scanSettingsBtn': 'scan_settings',
+                'logsViewBtn': 'logs_view',
+                'profileSettingsBtn': 'profile_settings'
+            };
+            
+            Object.keys(adminMenuItems).forEach(function(itemId) {
+                const item = document.getElementById(itemId);
+                if (item) {
+                    log('✅ Found admin menu item: ' + itemId);
+                    
+                    item.addEventListener('click', function() {
+                        const action = adminMenuItems[itemId];
+                        log('🎯 Admin menu item clicked: ' + action);
+                        
+                        // Call real API
+                        fetch('http://localhost:5000/api/admin/menu-action', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({ action: action })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            log('✅ Admin API response: ' + JSON.stringify(data));
+                            updateResults(`Admin action "${action}" API hoạt động`);
+                            alert(`API Response: ${data.message || data.error}`);
+                        })
+                        .catch(error => {
+                            log('❌ Admin API error: ' + error.message);
+                            updateResults(`Admin action "${action}" có lỗi: ${error.message}`);
+                            alert('API Error: ' + error.message);
+                        });
+                        
+                        // Close menu
+                        if (adminDropdownMenu) {
+                            adminDropdownMenu.classList.remove('show');
+                        }
+                        if (adminMenuToggle) {
+                            adminMenuToggle.classList.remove('active');
+                        }
+                    });
+                } else {
+                    log('❌ Admin menu item not found: ' + itemId);
+                }
+            });
+            
+            log('🎉 All tests initialized');
+            updateResults('Tất cả test cases đã được khởi tạo');
+        });
+    </script>
+</body>
+</html>

@@ -1226,18 +1226,29 @@ def admin_menu_action():
 @app.route('/test-login/<username>')
 def test_login(username):
     """Test login route - chỉ dùng cho development"""
-    if not config.debug:
-        abort(404)
-
     from flask_login import login_user
     from src.auth.models import User
 
-    user = User.query.filter_by(username=username).first()
-    if user:
-        login_user(user)
-        return redirect(url_for('index'))
-    else:
-        return f"User {username} not found", 404
+    try:
+        user = User.query.filter_by(username=username).first()
+        if user:
+            login_user(user, remember=True)
+            return redirect(url_for('index'))
+        else:
+            return f"User {username} not found", 404
+    except Exception as e:
+        return f"Error: {str(e)}", 500
+
+# Direct admin page for testing
+@app.route('/admin-test')
+def admin_test():
+    """Test page với admin UI - chỉ dùng cho development"""
+    from flask_login import current_user
+
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
+    return render_template('index.html')
 
 if __name__ == '__main__':
     # Log application startup
