@@ -9,6 +9,7 @@ if "%1"=="web" goto WEB_MODE
 if "%1"=="web-setup" goto WEB_SETUP
 if "%1"=="scanner" goto SCANNER_MODE
 if "%1"=="production" goto PRODUCTION_MODE
+if "%1"=="clean" goto CLEAN_MODE
 
 echo.
 echo ================================================================
@@ -18,6 +19,7 @@ echo.
 echo [INFO] Mac dinh: Chay web interface tai http://localhost:5000
 echo [INFO] Tuy chon:
 echo    run.bat            - Chay web interface (mac dinh)
+echo    run.bat clean      - Chay voi log toi gian
 echo    run.bat production - Chay production server
 echo    run.bat scanner    - Chay scanner CLI
 echo    run.bat config     - Menu cau hinh
@@ -568,6 +570,47 @@ echo [INFO] Logs trong thu muc: logs/
 echo.
 echo Nhan phim bat ky de thoat...
 pause >nul
+goto END
+
+:CLEAN_MODE
+echo.
+echo ================================================================
+echo                    TELEDRIVE - CLEAN MODE
+echo ================================================================
+echo.
+echo [INFO] Chay voi log toi gian - giao dien sach se
+echo.
+
+echo [BUOC 1/3] Kiem tra Python...
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] KHONG TIM THAY PYTHON!
+    echo [INFO] Tai Python tu: https://python.org/downloads/
+    pause
+    exit /b 1
+) else (
+    echo [OK] Python da san sang
+)
+
+echo.
+echo [BUOC 2/3] Kiem tra thu vien...
+python -c "import flask" >nul 2>&1
+if errorlevel 1 (
+    echo [INFO] Cai dat thu vien...
+    pip install -r requirements.txt
+    if errorlevel 1 (
+        echo [ERROR] Khong the cai dat thu vien!
+        pause
+        exit /b 1
+    )
+) else (
+    echo [OK] Thu vien da san sang
+)
+
+echo.
+echo [BUOC 3/3] Khoi dong TeleDrive Clean Mode...
+echo.
+python run_clean.py
 goto END
 
 :END

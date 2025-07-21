@@ -28,7 +28,7 @@ from src.services import send_otp_sync
 from src.services.filesystem import FileSystemManager
 from src.config import config, validate_environment
 from src.security import init_security_middleware
-from src.log_system import init_production_logging, get_logger
+from src.utils.simple_logger import setup_simple_logging, get_simple_logger
 from src.monitoring import init_health_monitoring
 
 # Validate environment variables
@@ -49,6 +49,11 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 # Apply production configuration
 app.config.update(config.get_flask_config())
 
+# Tắt Flask logging để giảm log
+import logging
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+app.logger.setLevel(logging.ERROR)
+
 # Initialize CORS with production settings
 if config.is_production():
     # Restrictive CORS for production
@@ -60,9 +65,9 @@ else:
 # Initialize security middleware
 init_security_middleware(app)
 
-# Initialize production logging
-logger_instance = init_production_logging(app, config)
-logger = get_logger('app')
+# Initialize simple logging
+setup_simple_logging()
+logger = get_simple_logger('teledrive')
 
 # Khởi tạo database và authentication system
 init_database(app)
@@ -1139,12 +1144,7 @@ def logout():
     from flask_login import logout_user, current_user
 
     # Log logout event
-    if logger_instance:
-        logger_instance.log_logout_event(
-            user_id=current_user.id if current_user.is_authenticated else None,
-            username=current_user.username if current_user.is_authenticated else None,
-            method='manual'
-        )
+    logger.info(f"User logout: {current_user.username if current_user.is_authenticated else 'Unknown'}")
 
     logout_user()
 
@@ -1173,13 +1173,7 @@ def admin_menu_action():
             return jsonify({'success': False, 'error': 'Missing action parameter'}), 400
 
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action=action,
-                user_id=current_user.id,
-                username=current_user.username,
-                details={'request_data': data}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         # Handle different admin actions
         if action == 'user_management':
@@ -1306,13 +1300,7 @@ def admin_backup_database():
         shutil.copy2("teledrive.db", f"backups/{backup_filename}")
 
         # Log backup action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action="database_backup",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={'backup_file': backup_filename}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         return jsonify({
             'success': True,
@@ -1329,13 +1317,7 @@ def admin_clear_cache():
     """API clear cache"""
     try:
         # Log cache clear action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action="clear_cache",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         return jsonify({
             'success': True,
@@ -1433,13 +1415,7 @@ def admin_create_user():
 
         if success:
             # Log admin action
-            if logger_instance:
-                logger_instance.log_admin_action(
-                    action="create_user",
-                    user_id=current_user.id,
-                    username=current_user.username,
-                    details={'new_user': username, 'is_admin': is_admin}
-                )
+            logger.info(f"Admin action by {current_user.username}")
 
             return jsonify({'success': True, 'message': 'Tạo người dùng thành công'})
         else:
@@ -1481,13 +1457,7 @@ def admin_update_user(user_id):
         db.session.commit()
 
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action="update_user",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={'updated_user': user.username, 'user_id': user_id}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         return jsonify({'success': True, 'message': 'Cập nhật người dùng thành công'})
 
@@ -1520,13 +1490,7 @@ def admin_delete_user(user_id):
         db.session.commit()
 
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action="delete_user",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={'deleted_user': username, 'user_id': user_id}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         return jsonify({'success': True, 'message': 'Xóa người dùng thành công'})
 
@@ -1572,13 +1536,7 @@ def admin_save_settings(category):
         data = request.get_json()
 
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action=f"save_settings_{category}",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={'category': category, 'settings': data}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         # Here you would normally save to a config file or database
         # For now, just return success
@@ -1598,13 +1556,7 @@ def admin_reset_settings():
     """API khôi phục cài đặt mặc định"""
     try:
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action="reset_settings",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         return jsonify({
             'success': True,
@@ -1652,13 +1604,7 @@ def admin_save_telegram_settings(category):
         data = request.get_json()
 
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action=f"save_telegram_settings_{category}",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={'category': category, 'settings': data}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         return jsonify({
             'success': True,
@@ -1844,13 +1790,7 @@ def admin_clear_logs():
     """API xóa logs"""
     try:
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action="clear_logs",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         # In a real implementation, you would clear the actual log files
         # For now, just return success
@@ -1877,21 +1817,7 @@ def admin_export_logs():
         date_to = request.args.get('date_to', '')
 
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action="export_logs",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={
-                    'filters': {
-                        'level': level,
-                        'source': source,
-                        'search': search,
-                        'date_from': date_from,
-                        'date_to': date_to
-                    }
-                }
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         # Create a simple text export
         import io
@@ -1953,13 +1879,7 @@ def admin_update_personal():
         db.session.commit()
 
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action="update_personal_info",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={'updated_fields': list(data.keys())}
-            )
+        logger.info("Admin action performed")
 
         return jsonify({
             'success': True,
@@ -1996,13 +1916,7 @@ def admin_change_password():
         db.session.commit()
 
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action="change_password",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         return jsonify({
             'success': True,
@@ -2022,13 +1936,7 @@ def admin_update_preferences():
         data = request.get_json()
 
         # Log admin action
-        if logger_instance:
-            logger_instance.log_admin_action(
-                action="update_preferences",
-                user_id=current_user.id,
-                username=current_user.username,
-                details={'preferences': data}
-            )
+        logger.info(f"Admin action by {current_user.username}")
 
         # In a real implementation, you would save preferences to database
         return jsonify({

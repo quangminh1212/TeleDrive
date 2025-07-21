@@ -7,29 +7,37 @@ Entry point cho TeleDrive Web Application
 
 import sys
 import os
+import logging
 
 # Thêm thư mục src vào Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+# Tắt các log không cần thiết
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+logging.getLogger('urllib3').setLevel(logging.ERROR)
+logging.getLogger('requests').setLevel(logging.ERROR)
 
 # Import và chạy web app
 from web.app import app
 from src.config import config
 
 if __name__ == '__main__':
-    # Sử dụng Flask development server để debug
-    print("[START] Khoi dong TeleDrive voi Flask Development Server...")
-    print(f"[INFO] Server dang chay tai http://{config.server.host}:{config.server.port}")
-    print("[INFO] Nhan Ctrl+C de dung server")
+    # Sử dụng Flask development server với log tối giản
+    print("🚀 TeleDrive đang khởi động...")
+    print(f"🌐 Server: http://{config.server.host}:{config.server.port}")
+    print("⏹️  Nhấn Ctrl+C để dừng server")
+    print("-" * 50)
 
     try:
         app.run(
             host=config.server.host,
             port=config.server.port,
-            debug=True,
-            threaded=True
+            debug=False,  # Tắt debug để giảm log
+            threaded=True,
+            use_reloader=False  # Tắt reloader để tránh log duplicate
         )
     except KeyboardInterrupt:
-        print("\n[STOP] Dang dung server...")
+        print("\n⏹️  Server đã dừng.")
     except Exception as e:
-        print(f"[ERROR] Loi khoi dong server: {e}")
+        print(f"❌ Lỗi khởi động server: {e}")
         sys.exit(1)
