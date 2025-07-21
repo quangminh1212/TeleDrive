@@ -21,13 +21,13 @@ load_dotenv()
 # Import từ cấu trúc mới
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.database import init_database, db
-from app.auth import auth_manager, admin_required
-from app.models import OTPManager, validate_phone_number
-from app.services import send_otp_sync
-from app.services.files import FileSystemManager
-from app.config import config, validate_environment
-from app.security import init_security_middleware
+from .database import init_database, db
+from .auth import auth_manager, admin_required
+from .models import OTPManager, validate_phone_number
+from .services import send_otp_sync
+from .services.files import FileSystemManager
+from .config import config, validate_environment
+from .security import init_security_middleware
 # Tắt các import logging để giảm log
 # from app.logger import setup_simple_logging, get_simple_logger
 # from app.monitoring import init_health_monitoring
@@ -52,7 +52,7 @@ app.config.update(config.get_flask_config())
 
 # Smart logging - chỉ log những gì cần thiết
 import logging
-from app.logger import (
+from .logger import (
     get_smart_logger, setup_smart_logging, log_startup,
     log_important, log_error_important, log_warning_important
 )
