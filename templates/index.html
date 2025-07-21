@@ -23,7 +23,7 @@
             {% if user %}
                 <div class="user-info">
                     <i class="icon icon-user"></i>
-                    <span class="username">{{ user.username or 'No username' }}</span>
+                    <!-- Username hidden for cleaner UI -->
                     {% if user.is_admin %}
                         <div class="admin-menu-container">
                             <button class="admin-badge-btn" id="adminMenuToggle" title="Cài đặt Admin">
