@@ -28,26 +28,20 @@ echo    run.bat config     - Menu cau hinh
 echo.
 
 :MAIN_START
-echo [BUOC 1/5] Kiem tra cau hinh Telegram API...
-echo    ^> Kiem tra config.json...
-python scripts/check_config.py >nul
-if %errorlevel% neq 0 (
-    echo.
-    echo [ERROR] CHUA CAU HINH API TELEGRAM!
-    echo.
-    echo [INFO] Huong dan cau hinh:
-    echo    1. Chinh sua file config.json
-    echo    2. Dien API_ID, API_HASH va so dien thoai
-    echo    3. Lay API tu: https://my.telegram.org/apps
-    echo.
-    pause
-    exit /b 1
+echo [BUOC 1/4] Kiem tra cau hinh co ban...
+echo    ^> Kiem tra thu muc config...
+if not exist "config\" (
+    echo [WARNING] Thu muc config khong ton tai, se tao tu dong
+    mkdir config
+)
+if not exist "config\config.json" (
+    echo [WARNING] File config.json khong ton tai, se chay voi cau hinh mac dinh
 ) else (
-    echo [OK] Cau hinh Telegram API hop le
+    echo [OK] Tim thay file config.json
 )
 
 echo.
-echo [BUOC 2/5] Kiem tra Python...
+echo [BUOC 2/4] Kiem tra Python...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] KHONG TIM THAY PYTHON!
@@ -513,7 +507,7 @@ echo [INFO] Phu hop cho production deployment
 echo.
 
 echo [BUOC 1/5] Kiem tra cau hinh Telegram API...
-python scripts/check_config.py >nul
+python scripts/check_simple.py >nul
 if %errorlevel% neq 0 (
     echo [ERROR] CHUA CAU HINH API TELEGRAM!
     echo Vui long chay: run.bat config
@@ -534,7 +528,7 @@ for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
 echo [OK] Python !PYTHON_VERSION! da san sang
 
 echo.
-echo [BUOC 3/5] Kiem tra dependencies...
+echo [BUOC 3/4] Kiem tra dependencies...
 python -c "import flask, telethon, pandas, openpyxl" >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Thieu dependencies. Dang cai dat...
