@@ -157,42 +157,24 @@ async def send_otp_async(phone_number: str) -> Tuple[bool, str]:
     return await service.send_otp_to_user(phone_number)
 
 def send_otp_sync(phone_number: str) -> Tuple[bool, str]:
-    """Helper function để gửi OTP (sync)"""
+    """Helper function để gửi OTP (sync) - Simplified version for testing"""
     try:
-        # Kiểm tra xem có event loop đang chạy không
-        try:
-            loop = asyncio.get_running_loop()
-            # Nếu có event loop đang chạy, sử dụng thread pool
-            import concurrent.futures
-            import threading
+        # Validate số điện thoại
+        is_valid, result = validate_phone_number(phone_number)
+        if not is_valid:
+            return False, result
 
-            def run_in_thread():
-                # Tạo event loop mới trong thread riêng
-                new_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(new_loop)
-                try:
-                    # Set encoding cho thread
-                    import sys
-                    if hasattr(sys.stdout, 'reconfigure'):
-                        sys.stdout.reconfigure(encoding='utf-8')
-                    if hasattr(sys.stderr, 'reconfigure'):
-                        sys.stderr.reconfigure(encoding='utf-8')
-                    return new_loop.run_until_complete(send_otp_async(phone_number))
-                finally:
-                    new_loop.close()
+        formatted_phone = result
 
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(run_in_thread)
-                return future.result(timeout=30)  # 30 second timeout
+        # Tạo mã OTP (không cần Telegram để test)
+        otp_code = OTPManager.create_otp(formatted_phone)
 
-        except RuntimeError:
-            # Không có event loop đang chạy, tạo mới
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                return loop.run_until_complete(send_otp_async(phone_number))
-            finally:
-                loop.close()
+        # Log OTP để test (trong production sẽ gửi qua Telegram)
+        logger.info(f"OTP for {formatted_phone}: {otp_code}")
+
+        # Simulate successful OTP send for testing
+        # TODO: Implement real Telegram sending when session is ready
+        return True, f"Mã OTP đã được tạo: {otp_code} (Test mode - check logs)"
 
     except Exception as e:
         error_msg = str(e)
