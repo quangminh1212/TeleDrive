@@ -23,9 +23,9 @@ from src.config import config
 
 if __name__ == '__main__':
     # Sử dụng Flask development server với log tối giản
-    print("🚀 TeleDrive đang khởi động...")
-    print(f"🌐 Server: http://{config.server.host}:{config.server.port}")
-    print("⏹️  Nhấn Ctrl+C để dừng server")
+    print("TeleDrive dang khoi dong...")
+    print(f"Server: http://{config.server.host}:{config.server.port}")
+    print("Nhan Ctrl+C de dung server")
     print("-" * 50)
 
     try:
@@ -37,7 +37,7 @@ if __name__ == '__main__':
             use_reloader=False  # Tắt reloader để tránh log duplicate
         )
     except KeyboardInterrupt:
-        print("\n⏹️  Server đã dừng.")
+        print("\nServer da dung.")
     except Exception as e:
         print(f"❌ Lỗi khởi động server: {e}")
         sys.exit(1)

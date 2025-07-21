@@ -22,7 +22,7 @@ logging.getLogger('flask').setLevel(logging.CRITICAL)
 
 # Setup logging tối giản
 logging.basicConfig(
-    level=logging.ERROR,
+    level=logging.WARNING,
     format='%(message)s',
     handlers=[logging.StreamHandler()]
 )
@@ -33,12 +33,13 @@ from src.config import config
 
 if __name__ == '__main__':
     # Khởi động với giao diện sạch sẽ
-    print("🚀 TeleDrive")
-    print(f"🌐 http://{config.server.host}:{config.server.port}")
-    print("⏹️  Ctrl+C để dừng")
+    print("TeleDrive")
+    print(f"http://{config.server.host}:{config.server.port}")
+    print("Ctrl+C de dung")
     print()
 
     try:
+        print("Dang khoi dong...")
         app.run(
             host=config.server.host,
             port=config.server.port,
@@ -47,7 +48,7 @@ if __name__ == '__main__':
             use_reloader=False
         )
     except KeyboardInterrupt:
-        print("\n⏹️  Đã dừng.")
+        print("\nDa dung.")
     except Exception as e:
         print(f"❌ Lỗi: {e}")
         sys.exit(1)
