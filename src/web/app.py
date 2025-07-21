@@ -1661,7 +1661,20 @@ def admin_telegram_sessions():
 @admin_required
 def admin_logs():
     """Trang xem logs"""
-    return render_template('admin/logs_viewer.html')
+    return render_template('admin/logs_simple.html')
+
+@app.route('/test-logs')
+def test_logs():
+    """Test route"""
+    return "<h1>Test Logs Route Works!</h1>"
+
+@app.route('/debug-routes')
+def debug_routes():
+    """Debug routes"""
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append(f"{rule.rule} -> {rule.endpoint}")
+    return "<br>".join(routes)
 
 # Logs API endpoints
 @app.route('/api/admin/logs')

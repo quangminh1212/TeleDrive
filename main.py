@@ -16,42 +16,17 @@ from web.app import app
 from src.config import config
 
 if __name__ == '__main__':
-    # Sử dụng production server (Waitress)
+    # Sử dụng Flask development server để debug
+    print("[START] Khoi dong TeleDrive voi Flask Development Server...")
+    print(f"[INFO] Server dang chay tai http://{config.server.host}:{config.server.port}")
+    print("[INFO] Nhan Ctrl+C de dung server")
+
     try:
-        from waitress import serve
-        print("[START] Khoi dong TeleDrive voi Waitress Production Server...")
-        print(f"[INFO] Server dang chay tai http://{config.server.host}:{config.server.port}")
-        print("[INFO] Nhan Ctrl+C de dung server")
-
-        serve(
-            app,
+        app.run(
             host=config.server.host,
             port=config.server.port,
-            threads=config.server.workers * 2,
-            connection_limit=1000,
-            cleanup_interval=30,
-            channel_timeout=120
-        )
-    except ImportError:
-        print("[WARNING] Waitress chua duoc cai dat. Dang cai dat...")
-        import subprocess
-        import sys
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'waitress'])
-
-        # Retry with Waitress
-        from waitress import serve
-        print("[START] Khoi dong TeleDrive voi Waitress Production Server...")
-        print(f"[INFO] Server dang chay tai http://{config.server.host}:{config.server.port}")
-        print("[INFO] Nhan Ctrl+C de dung server")
-
-        serve(
-            app,
-            host=config.server.host,
-            port=config.server.port,
-            threads=config.server.workers * 2,
-            connection_limit=1000,
-            cleanup_interval=30,
-            channel_timeout=120
+            debug=True,
+            threaded=True
         )
     except KeyboardInterrupt:
         print("\n[STOP] Dang dung server...")
