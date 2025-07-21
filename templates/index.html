@@ -921,21 +921,47 @@
                 });
             }
 
-            // Admin menu items
-            const adminMenuItems = [
-                'userManagementBtn',
-                'systemSettingsBtn',
-                'scanSettingsBtn',
-                'logsViewBtn',
-                'profileSettingsBtn'
-            ];
+            // Admin menu items with API calls
+            const adminMenuItems = {
+                'userManagementBtn': 'user_management',
+                'systemSettingsBtn': 'system_settings',
+                'scanSettingsBtn': 'scan_settings',
+                'logsViewBtn': 'logs_view',
+                'profileSettingsBtn': 'profile_settings'
+            };
 
-            adminMenuItems.forEach(function(itemId) {
+            Object.keys(adminMenuItems).forEach(function(itemId) {
                 const item = document.getElementById(itemId);
                 if (item) {
                     item.addEventListener('click', function() {
-                        console.log('Admin menu item clicked:', itemId);
-                        alert('Chức năng ' + itemId + ' đang được phát triển');
+                        const action = adminMenuItems[itemId];
+                        console.log('Admin menu item clicked:', itemId, 'action:', action);
+
+                        // Call API
+                        fetch('/api/admin/menu-action', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ action: action })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert(data.message);
+                                if (data.redirect) {
+                                    console.log('Would redirect to:', data.redirect);
+                                    // window.location.href = data.redirect; // Uncomment when pages are ready
+                                }
+                            } else {
+                                alert('Lỗi: ' + data.error);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Có lỗi xảy ra khi thực hiện hành động');
+                        });
+
                         // Close menu
                         if (adminDropdownMenu) {
                             adminDropdownMenu.classList.remove('show');

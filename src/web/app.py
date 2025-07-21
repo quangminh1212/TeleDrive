@@ -22,7 +22,7 @@ load_dotenv()
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.database import init_database, db
-from src.auth import auth_manager
+from src.auth import auth_manager, admin_required
 from src.models import OTPManager, validate_phone_number
 from src.services import send_otp_sync
 from src.services.filesystem import FileSystemManager
@@ -1136,7 +1136,16 @@ def favicon():
 @login_required
 def logout():
     """Đăng xuất"""
-    from flask_login import logout_user
+    from flask_login import logout_user, current_user
+
+    # Log logout event
+    if logger_instance:
+        logger_instance.log_logout_event(
+            user_id=current_user.id if current_user.is_authenticated else None,
+            username=current_user.username if current_user.is_authenticated else None,
+            method='manual'
+        )
+
     logout_user()
 
     # Nếu là AJAX request (POST), trả về JSON
@@ -1149,6 +1158,69 @@ def logout():
 
     # Nếu là GET request, redirect trực tiếp
     return redirect(url_for('login'))
+
+# Admin routes
+@app.route('/api/admin/menu-action', methods=['POST'])
+@login_required
+@admin_required
+def admin_menu_action():
+    """Handle admin menu actions"""
+    try:
+        data = request.get_json()
+        action = data.get('action')
+
+        if not action:
+            return jsonify({'success': False, 'error': 'Missing action parameter'}), 400
+
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action=action,
+                user_id=current_user.id,
+                username=current_user.username,
+                details={'request_data': data}
+            )
+
+        # Handle different admin actions
+        if action == 'user_management':
+            return jsonify({
+                'success': True,
+                'message': 'Chức năng quản lý người dùng đang được phát triển',
+                'redirect': '/admin/users'
+            })
+        elif action == 'system_settings':
+            return jsonify({
+                'success': True,
+                'message': 'Chức năng cài đặt hệ thống đang được phát triển',
+                'redirect': '/admin/settings'
+            })
+        elif action == 'scan_settings':
+            return jsonify({
+                'success': True,
+                'message': 'Chức năng cài đặt Telegram đang được phát triển',
+                'redirect': '/admin/telegram'
+            })
+        elif action == 'logs_view':
+            return jsonify({
+                'success': True,
+                'message': 'Chức năng xem logs đang được phát triển',
+                'redirect': '/admin/logs'
+            })
+        elif action == 'profile_settings':
+            return jsonify({
+                'success': True,
+                'message': 'Chức năng thông tin tài khoản đang được phát triển',
+                'redirect': '/admin/profile'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Unknown action: {action}'
+            }), 400
+
+    except Exception as e:
+        logger.error(f"Error handling admin action: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Log application startup

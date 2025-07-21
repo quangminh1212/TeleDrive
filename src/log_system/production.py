@@ -138,13 +138,20 @@ class ProductionLogger:
     
     def log_request(self, response_status: int, response_time: float):
         """Log HTTP request"""
+        from flask import request, has_request_context
+
+        # Skip logging for static files and favicon
+        if has_request_context():
+            if (request.endpoint and request.endpoint == 'static') or request.path == '/favicon.ico':
+                return
+
         logger = self.get_logger('api')
-        
+
         log_data = {
             'response_status': response_status,
             'response_time_ms': round(response_time * 1000, 2),
         }
-        
+
         if response_status >= 500:
             logger.error("Server error", extra={'extra_fields': log_data})
         elif response_status >= 400:
@@ -152,8 +159,36 @@ class ProductionLogger:
         else:
             logger.info("Request completed", extra={'extra_fields': log_data})
     
-    def log_auth_event(self, event_type: str, user_id: Optional[int] = None, 
-                      phone_number: Optional[str] = None, success: bool = True, 
+    def log_admin_action(self, action: str, user_id: Optional[int] = None,
+                        username: Optional[str] = None, details: Optional[Dict[str, Any]] = None):
+        """Log admin actions"""
+        logger = self.get_logger('admin')
+
+        log_data = {
+            'action': action,
+            'user_id': user_id,
+            'username': username,
+            'details': details or {}
+        }
+
+        logger.info(f"Admin action: {action}", extra={'extra_fields': log_data})
+
+    def log_logout_event(self, user_id: Optional[int] = None, username: Optional[str] = None,
+                        method: str = 'manual'):
+        """Log logout events"""
+        logger = self.get_logger('auth')
+
+        log_data = {
+            'event_type': 'logout',
+            'user_id': user_id,
+            'username': username,
+            'method': method  # manual, timeout, forced
+        }
+
+        logger.info(f"User logout: {username or user_id}", extra={'extra_fields': log_data})
+
+    def log_auth_event(self, event_type: str, user_id: Optional[int] = None,
+                      phone_number: Optional[str] = None, success: bool = True,
                       details: Optional[Dict[str, Any]] = None):
         """Log authentication events"""
         logger = self.get_logger('auth')
