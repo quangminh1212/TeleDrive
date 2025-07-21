@@ -5650,7 +5650,10 @@ body {
     border-right: 1px solid var(--border-light);
     overflow-y: auto;
     flex-shrink: 0;
-    position: relative;
+    position: fixed;
+    top: calc(var(--title-bar-height) + var(--ribbon-height) + var(--navigation-bar-height));
+    left: 0;
+    bottom: var(--status-bar-height);
     z-index: 950;
 }
 
@@ -5734,6 +5737,7 @@ body {
     flex-direction: column;
     background: var(--surface-bg);
     overflow: hidden;
+    margin-left: var(--navigation-pane-width);
 }
 
 .content-area {
