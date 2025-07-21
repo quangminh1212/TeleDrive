@@ -5,8 +5,8 @@ Test cases for authentication system.
 import pytest
 from unittest.mock import Mock, patch
 
-from teledrive.auth import auth_manager
-from teledrive.models import validate_phone_number
+from app.auth import auth_manager
+from app.models import validate_phone_number
 
 
 class TestAuthManager:
@@ -155,7 +155,7 @@ class TestOTPSystem:
         mock_send_otp.return_value = True
         
         with app.app_context():
-            from teledrive.models import OTPManager
+            from app.models import OTPManager
             
             otp_manager = OTPManager()
             
@@ -168,7 +168,7 @@ class TestOTPSystem:
     def test_otp_verification(self, app):
         """Test OTP verification."""
         with app.app_context():
-            from teledrive.models import OTPManager
+            from app.models import OTPManager
             
             otp_manager = OTPManager()
             phone = '+1234567890'
@@ -185,7 +185,7 @@ class TestOTPSystem:
     def test_otp_expiration(self, app):
         """Test OTP expiration."""
         with app.app_context():
-            from teledrive.models import OTPManager
+            from app.models import OTPManager
             import time
             
             otp_manager = OTPManager()

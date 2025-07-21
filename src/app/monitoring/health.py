@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from flask import Blueprint, jsonify, current_app
 from sqlalchemy import text
-from teledrive.database import db
-from teledrive.config import config
+from app.database import db
+from app.config import config
 import redis
 
 health_bp = Blueprint('health', __name__)

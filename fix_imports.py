@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Fix Import Statements Script
-Automatically fix all 'from src.' imports to 'from teledrive.' in the teledrive package
+Automatically fix all 'from src.' imports to 'from app.' in the teledrive package
 """
 
 import os
@@ -17,11 +17,11 @@ def fix_imports_in_file(file_path):
         
         original_content = content
         
-        # Replace 'from src.' with 'from teledrive.'
-        content = re.sub(r'from src\.', 'from teledrive.', content)
+        # Replace 'from src.' with 'from app.'
+        content = re.sub(r'from src\.', 'from app.', content)
         
-        # Replace 'import src.' with 'import teledrive.'
-        content = re.sub(r'import src\.', 'import teledrive.', content)
+        # Replace 'import src.' with 'import app.'
+        content = re.sub(r'import src\.', 'import app.', content)
         
         # If content changed, write it back
         if content != original_content:

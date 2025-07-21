@@ -13,14 +13,14 @@ import logging
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 # Import smart logger trước
-from teledrive.smart_logger import setup_smart_logging, log_startup, log_error_important
+from app.logger import setup_smart_logging, log_startup, log_error_important
 
 # Setup smart logging ngay từ đầu
 setup_smart_logging()
 
 # Import và chạy web app
 try:
-    from teledrive.app import app
+    from app.app import app
     
     # Enable debug mode nhưng tắt reloader để tránh spam
     app.config['DEBUG'] = True

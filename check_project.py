@@ -100,7 +100,7 @@ class ProjectChecker:
                 # Check for missing imports
                 lines = content.split('\n')
                 for i, line in enumerate(lines, 1):
-                    if 'from teledrive.' in line and 'import' in line:
+                    if 'from app.' in line and 'import' in line:
                         # This is good
                         continue
                         

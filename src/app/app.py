@@ -21,16 +21,16 @@ load_dotenv()
 # Import từ cấu trúc mới
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from teledrive.database import init_database, db
-from teledrive.auth import auth_manager, admin_required
-from teledrive.models import OTPManager, validate_phone_number
-from teledrive.services import send_otp_sync
-from teledrive.services.filesystem import FileSystemManager
-from teledrive.config import config, validate_environment
-from teledrive.security import init_security_middleware
+from app.database import init_database, db
+from app.auth import auth_manager, admin_required
+from app.models import OTPManager, validate_phone_number
+from app.services import send_otp_sync
+from app.services.files import FileSystemManager
+from app.config import config, validate_environment
+from app.security import init_security_middleware
 # Tắt các import logging để giảm log
-# from teledrive.utils.simple_logger import setup_simple_logging, get_simple_logger
-# from teledrive.monitoring import init_health_monitoring
+# from app.logger import setup_simple_logging, get_simple_logger
+# from app.monitoring import init_health_monitoring
 
 # Validate environment variables
 try:
@@ -52,7 +52,7 @@ app.config.update(config.get_flask_config())
 
 # Smart logging - chỉ log những gì cần thiết
 import logging
-from teledrive.smart_logger import (
+from app.logger import (
     get_smart_logger, setup_smart_logging, log_startup,
     log_important, log_error_important, log_warning_important
 )
@@ -1447,7 +1447,7 @@ def admin_create_user():
 def admin_update_user(user_id):
     """API cập nhật người dùng"""
     try:
-        from teledrive.auth.models import User
+        from app.auth.models import User
 
         user = User.query.get(user_id)
         if not user:
@@ -1469,7 +1469,7 @@ def admin_update_user(user_id):
             user.password_hash = generate_password_hash(data['password'])
 
         # Save changes
-        from teledrive.database import db
+        from app.database import db
         db.session.commit()
 
         # Log admin action
@@ -1487,8 +1487,8 @@ def admin_update_user(user_id):
 def admin_delete_user(user_id):
     """API xóa người dùng"""
     try:
-        from teledrive.auth.models import User
-        from teledrive.database import db
+        from app.auth.models import User
+        from app.database import db
 
         user = User.query.get(user_id)
         if not user:
@@ -1891,7 +1891,7 @@ def admin_update_personal():
             current_user.phone_number = data['phone']
 
         # Save changes
-        from teledrive.database import db
+        from app.database import db
         db.session.commit()
 
         # Log admin action
@@ -1928,7 +1928,7 @@ def admin_change_password():
         current_user.password_hash = generate_password_hash(new_password)
 
         # Save changes
-        from teledrive.database import db
+        from app.database import db
         db.session.commit()
 
         # Log admin action
@@ -2023,7 +2023,7 @@ def admin_profile_activity():
 def quick_admin():
     """Quick login cho admin để test"""
     from flask_login import login_user
-    from teledrive.auth.models import User
+    from app.auth.models import User
 
     try:
         admin_user = User.query.filter_by(is_admin=True).first()

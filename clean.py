@@ -25,7 +25,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Import và chạy web app
-from teledrive.app import app
+from app.app import app
 
 if __name__ == '__main__':
     # Khởi động với giao diện sạch sẽ

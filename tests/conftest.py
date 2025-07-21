@@ -12,9 +12,9 @@ from unittest.mock import Mock
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from teledrive.app import app as flask_app
-from teledrive.database import db, init_database
-from teledrive.auth import auth_manager
+from app.app import app as flask_app
+from app.database import db, init_database
+from app.auth import auth_manager
 
 
 @pytest.fixture(scope="session")

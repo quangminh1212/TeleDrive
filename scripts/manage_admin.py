@@ -11,9 +11,9 @@ from flask import Flask
 # Thêm thư mục src vào Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from teledrive.database import init_database
-from teledrive.auth import auth_manager
-from teledrive.auth.models import User
+from app.database import init_database
+from app.auth import auth_manager
+from app.auth.models import User
 
 def setup_app():
     """Khởi tạo Flask app và database"""
@@ -82,7 +82,7 @@ def list_all_users():
 def remove_admin_privilege(user_id):
     """Gỡ quyền admin của user"""
     try:
-        from teledrive.database import db
+        from app.database import db
         
         user = User.query.get(user_id)
         if not user:
@@ -107,7 +107,7 @@ def remove_admin_privilege(user_id):
 def delete_user(user_id):
     """Xóa user khỏi hệ thống"""
     try:
-        from teledrive.database import db
+        from app.database import db
         
         user = User.query.get(user_id)
         if not user:

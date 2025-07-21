@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore")
 
 # Import và chạy web app
 try:
-    from teledrive.app import app
+    from app.app import app
     
     # Tắt Flask logging hoàn toàn
     app.logger.disabled = True
