@@ -36,6 +36,10 @@
                                     <span>Quản lý hệ thống</span>
                                 </div>
                                 <div class="admin-menu-divider"></div>
+                                <button class="admin-menu-item" id="systemManagementBtn">
+                                    <i class="icon icon-server"></i>
+                                    <span>Quản lý hệ thống</span>
+                                </button>
                                 <button class="admin-menu-item" id="userManagementBtn">
                                     <i class="icon icon-user"></i>
                                     <span>Quản lý người dùng</span>
@@ -921,46 +925,29 @@
                 });
             }
 
-            // Admin menu items with API calls
+            // Admin menu items with DIRECT NAVIGATION - FIXED VERSION
             const adminMenuItems = {
-                'userManagementBtn': 'user_management',
-                'systemSettingsBtn': 'system_settings',
-                'scanSettingsBtn': 'scan_settings',
-                'logsViewBtn': 'logs_view',
-                'profileSettingsBtn': 'profile_settings'
+                'systemManagementBtn': '/admin/system',
+                'userManagementBtn': '/admin/users',
+                'systemSettingsBtn': '/admin/settings',
+                'scanSettingsBtn': '/admin/telegram',
+                'logsViewBtn': '#',
+                'profileSettingsBtn': '#'
             };
 
             Object.keys(adminMenuItems).forEach(function(itemId) {
                 const item = document.getElementById(itemId);
                 if (item) {
                     item.addEventListener('click', function() {
-                        const action = adminMenuItems[itemId];
-                        console.log('Admin menu item clicked:', itemId, 'action:', action);
+                        const url = adminMenuItems[itemId];
+                        console.log('Admin menu item clicked:', itemId, 'navigating to:', url);
 
-                        // Call API
-                        fetch('/api/admin/menu-action', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ action: action })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                if (data.redirect) {
-                                    window.location.href = data.redirect;
-                                } else {
-                                    alert(data.message);
-                                }
-                            } else {
-                                alert('Lỗi: ' + data.error);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('Có lỗi xảy ra khi thực hiện hành động');
-                        });
+                        if (url === '#') {
+                            alert('Tính năng này đang được sửa chữa. Vui lòng thử lại sau.');
+                        } else {
+                            // Direct navigation to working admin pages
+                            window.location.href = url;
+                        }
 
                         // Close menu
                         if (adminDropdownMenu) {

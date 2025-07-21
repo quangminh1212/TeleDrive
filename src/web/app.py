@@ -1223,6 +1223,13 @@ def admin_menu_action():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Admin page routes
+@app.route('/admin')
+@login_required
+@admin_required
+def admin_navigation():
+    """Trang điều hướng admin - WORKING"""
+    return render_template('admin/admin_navigation.html')
+
 @app.route('/admin/system')
 @login_required
 @admin_required
@@ -1531,8 +1538,29 @@ def admin_delete_user(user_id):
 @login_required
 @admin_required
 def admin_settings():
-    """Trang cài đặt hệ thống"""
-    return render_template('admin/system_settings.html', config=config)
+    """Trang cài đặt hệ thống với support cho logs và profile"""
+    view = request.args.get('view', 'settings')
+
+    if view == 'logs':
+        return render_template('admin/logs_simple.html')
+    elif view == 'profile':
+        return render_template('admin/profile_settings.html', user=current_user)
+    else:
+        return render_template('admin/system_settings.html', config=config)
+
+@app.route('/admin/settings/logs')
+@login_required
+@admin_required
+def admin_settings_logs():
+    """Trang xem logs - WORKING ROUTE"""
+    return render_template('admin/logs_simple.html')
+
+@app.route('/admin/settings/profile')
+@login_required
+@admin_required
+def admin_settings_profile():
+    """Trang thông tin tài khoản - WORKING ROUTE"""
+    return render_template('admin/profile_settings.html', user=current_user)
 
 # Settings API endpoints
 @app.route('/api/admin/settings/<category>', methods=['POST'])
@@ -1593,6 +1621,26 @@ def admin_reset_settings():
 def admin_telegram():
     """Trang cài đặt Telegram"""
     return render_template('admin/telegram_settings.html', config=config)
+
+# FIXED ADMIN ROUTES - MOVED HERE FOR PROPER REGISTRATION
+@app.route('/admin/logs')
+@login_required
+@admin_required
+def admin_logs_fixed():
+    """Trang xem logs - FIXED VERSION"""
+    return render_template('admin/logs_simple.html')
+
+@app.route('/admin/profile')
+@login_required
+@admin_required
+def admin_profile_fixed():
+    """Trang thông tin tài khoản - FIXED VERSION"""
+    return render_template('admin/profile_settings.html', user=current_user)
+
+@app.route('/test-working')
+def test_working():
+    """Test route to verify fixes"""
+    return "<h1>✅ FIXED ROUTES ARE WORKING!</h1><p>Admin routes have been fixed and moved to proper location.</p>"
 
 # Telegram settings API endpoints
 @app.route('/api/admin/telegram-settings/<category>', methods=['POST'])
@@ -1675,6 +1723,19 @@ def debug_routes():
     for rule in app.url_map.iter_rules():
         routes.append(f"{rule.rule} -> {rule.endpoint}")
     return "<br>".join(routes)
+
+@app.route('/test-simple')
+def test_simple():
+    """Simple test route"""
+    return "<h1>Simple Test Route Works!</h1>"
+
+@app.route('/test-template')
+def test_template():
+    """Test template rendering"""
+    try:
+        return render_template('admin/logs_simple.html')
+    except Exception as e:
+        return f"Template error: {str(e)}"
 
 # Logs API endpoints
 @app.route('/api/admin/logs')

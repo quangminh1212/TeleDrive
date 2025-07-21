@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Navigation - TeleDrive</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <style>
+        .admin-nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .admin-nav-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .admin-nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .admin-nav-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e1e5e9;
+        }
+        
+        .admin-nav-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .admin-nav-card.working {
+            border-left: 5px solid #28a745;
+        }
+        
+        .admin-nav-card.broken {
+            border-left: 5px solid #dc3545;
+        }
+        
+        .admin-nav-card h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .admin-nav-card p {
+            color: #6c757d;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .admin-nav-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .admin-nav-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        
+        .admin-nav-btn.working {
+            background: #28a745;
+        }
+        
+        .admin-nav-btn.working:hover {
+            background: #1e7e34;
+        }
+        
+        .admin-nav-btn.broken {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+        
+        .status-working {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-broken {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-nav-container">
+        <a href="/" class="back-link">← Quay lại Dashboard</a>
+        
+        <div class="admin-nav-header">
+            <h1>🛠️ TeleDrive Admin Panel</h1>
+            <p>Trung tâm quản lý và cấu hình hệ thống</p>
+            <p><strong>Trạng thái:</strong> 4/6 tính năng hoạt động (67% thành công)</p>
+        </div>
+        
+        <div class="admin-nav-grid">
+            <!-- System Management -->
+            <div class="admin-nav-card working">
+                <h3>
+                    🖥️ Quản lý hệ thống
+                    <span class="status-badge status-working">✅ HOẠT ĐỘNG</span>
+                </h3>
+                <p>Giám sát trạng thái server, database, storage và thực hiện các tác vụ bảo trì hệ thống.</p>
+                <a href="/admin/system" class="admin-nav-btn working">Mở System Management</a>
+            </div>
+            
+            <!-- User Management -->
+            <div class="admin-nav-card working">
+                <h3>
+                    👥 Quản lý người dùng
+                    <span class="status-badge status-working">✅ HOẠT ĐỘNG</span>
+                </h3>
+                <p>Quản lý tài khoản người dùng, phân quyền và theo dõi hoạt động đăng nhập.</p>
+                <a href="/admin/users" class="admin-nav-btn working">Mở User Management</a>
+            </div>
+            
+            <!-- System Settings -->
+            <div class="admin-nav-card working">
+                <h3>
+                    ⚙️ Cài đặt hệ thống
+                    <span class="status-badge status-working">✅ HOẠT ĐỘNG</span>
+                </h3>
+                <p>Cấu hình các thông số ứng dụng, database, bảo mật và hiệu năng.</p>
+                <a href="/admin/settings" class="admin-nav-btn working">Mở System Settings</a>
+            </div>
+            
+            <!-- Telegram Settings -->
+            <div class="admin-nav-card working">
+                <h3>
+                    📱 Cài đặt Telegram
+                    <span class="status-badge status-working">✅ HOẠT ĐỘNG</span>
+                </h3>
+                <p>Cấu hình API Telegram, bot settings, scan settings và quản lý sessions.</p>
+                <a href="/admin/telegram" class="admin-nav-btn working">Mở Telegram Settings</a>
+            </div>
+            
+            <!-- Logs Viewer -->
+            <div class="admin-nav-card broken">
+                <h3>
+                    📄 Xem logs
+                    <span class="status-badge status-broken">❌ LỖI</span>
+                </h3>
+                <p>Xem và phân tích logs hệ thống, lọc theo mức độ, nguồn và thời gian.</p>
+                <a href="#" class="admin-nav-btn broken" onclick="alert('Tính năng này đang được sửa chữa. Vui lòng thử lại sau.')">Logs Viewer (Đang sửa)</a>
+            </div>
+            
+            <!-- Profile Settings -->
+            <div class="admin-nav-card broken">
+                <h3>
+                    👤 Thông tin tài khoản
+                    <span class="status-badge status-broken">❌ LỖI</span>
+                </h3>
+                <p>Quản lý thông tin cá nhân, đổi mật khẩu và cấu hình tùy chọn cá nhân.</p>
+                <a href="#" class="admin-nav-btn broken" onclick="alert('Tính năng này đang được sửa chữa. Vui lòng thử lại sau.')">Profile Settings (Đang sửa)</a>
+            </div>
+        </div>
+        
+        <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+            <h3>🔧 Trạng thái hệ thống</h3>
+            <p><strong>Hoạt động:</strong> System Management, User Management, System Settings, Telegram Settings</p>
+            <p><strong>Đang sửa:</strong> Logs Viewer, Profile Settings</p>
+            <p><strong>Vấn đề chính:</strong> Route registration và JavaScript admin menu</p>
+        </div>
+    </div>
+</body>
+</html>
