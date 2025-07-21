@@ -9,7 +9,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, redirect, url_for, send_file
+from flask import Flask, render_template, jsonify, request, redirect, url_for, send_file, abort
 from flask_cors import CORS
 from flask_login import login_user, login_required, current_user
 from functools import wraps
@@ -1221,6 +1221,23 @@ def admin_menu_action():
     except Exception as e:
         logger.error(f"Error handling admin action: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# Test login route (for development only)
+@app.route('/test-login/<username>')
+def test_login(username):
+    """Test login route - chỉ dùng cho development"""
+    if not config.debug:
+        abort(404)
+
+    from flask_login import login_user
+    from src.auth.models import User
+
+    user = User.query.filter_by(username=username).first()
+    if user:
+        login_user(user)
+        return redirect(url_for('index'))
+    else:
+        return f"User {username} not found", 404
 
 if __name__ == '__main__':
     # Log application startup

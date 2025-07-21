@@ -165,5 +165,27 @@ def validate_email(email):
     
     return True, "Email hợp lệ"
 
+# Admin required decorator
+def admin_required(f):
+    """Decorator để yêu cầu quyền admin"""
+    from functools import wraps
+    from flask import jsonify, abort, request
+    from flask_login import current_user, login_required
+
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            # Nếu là AJAX request, trả về JSON
+            if request.is_json or request.headers.get('Content-Type') == 'application/json':
+                return jsonify({
+                    'success': False,
+                    'error': 'Bạn không có quyền truy cập chức năng này'
+                }), 403
+            else:
+                abort(403)
+        return f(*args, **kwargs)
+    return decorated_function
+
 # Khởi tạo auth manager
 auth_manager = AuthManager()
