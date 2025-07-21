@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     last_login = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False)
+    is_verified = db.Column(db.Boolean, default=True)  # Default to True for existing users
     
     def __init__(self, username, phone_number, email=None, is_admin=False):
         self.username = username
@@ -44,7 +45,8 @@ class User(UserMixin, db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login': self.last_login.isoformat() if self.last_login else None,
             'is_active': self.is_active,
-            'is_admin': self.is_admin
+            'is_admin': self.is_admin,
+            'is_verified': self.is_verified
         }
     
     def __repr__(self):

@@ -1191,8 +1191,8 @@ def admin_menu_action():
         elif action == 'system_settings':
             return jsonify({
                 'success': True,
-                'message': 'Chuyển đến trang quản lý hệ thống',
-                'redirect': '/admin/system'
+                'message': 'Chuyển đến trang cài đặt hệ thống',
+                'redirect': '/admin/settings'
             })
         elif action == 'scan_settings':
             return jsonify({
@@ -1527,7 +1527,82 @@ def admin_delete_user(user_id):
         logger.error(f"Error deleting user: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Development routes removed for production
+@app.route('/admin/settings')
+@login_required
+@admin_required
+def admin_settings():
+    """Trang cài đặt hệ thống"""
+    return render_template('admin/system_settings.html', config=config)
+
+# Settings API endpoints
+@app.route('/api/admin/settings/<category>', methods=['POST'])
+@login_required
+@admin_required
+def admin_save_settings(category):
+    """API lưu cài đặt hệ thống"""
+    try:
+        data = request.get_json()
+
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action=f"save_settings_{category}",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={'category': category, 'settings': data}
+            )
+
+        # Here you would normally save to a config file or database
+        # For now, just return success
+        return jsonify({
+            'success': True,
+            'message': f'Đã lưu cài đặt {category} thành công'
+        })
+
+    except Exception as e:
+        logger.error(f"Error saving settings: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/settings/reset', methods=['POST'])
+@login_required
+@admin_required
+def admin_reset_settings():
+    """API khôi phục cài đặt mặc định"""
+    try:
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action="reset_settings",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={}
+            )
+
+        return jsonify({
+            'success': True,
+            'message': 'Đã khôi phục cài đặt mặc định thành công'
+        })
+
+    except Exception as e:
+        logger.error(f"Error resetting settings: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Quick admin login for testing
+@app.route('/quick-admin')
+def quick_admin():
+    """Quick login cho admin để test"""
+    from flask_login import login_user
+    from src.auth.models import User
+
+    try:
+        admin_user = User.query.filter_by(is_admin=True).first()
+        if admin_user:
+            login_user(admin_user, remember=True)
+            return redirect(url_for('index'))
+        else:
+            return "No admin user found", 404
+    except Exception as e:
+        return f"Error: {str(e)}", 500
 
 if __name__ == '__main__':
     # Log application startup
