@@ -948,10 +948,10 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                alert(data.message);
                                 if (data.redirect) {
-                                    console.log('Would redirect to:', data.redirect);
-                                    // window.location.href = data.redirect; // Uncomment when pages are ready
+                                    window.location.href = data.redirect;
+                                } else {
+                                    alert(data.message);
                                 }
                             } else {
                                 alert('Lỗi: ' + data.error);

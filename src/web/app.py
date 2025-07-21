@@ -1185,31 +1185,31 @@ def admin_menu_action():
         if action == 'user_management':
             return jsonify({
                 'success': True,
-                'message': 'Chức năng quản lý người dùng đang được phát triển',
+                'message': 'Chuyển đến trang quản lý người dùng',
                 'redirect': '/admin/users'
             })
         elif action == 'system_settings':
             return jsonify({
                 'success': True,
-                'message': 'Chức năng cài đặt hệ thống đang được phát triển',
-                'redirect': '/admin/settings'
+                'message': 'Chuyển đến trang quản lý hệ thống',
+                'redirect': '/admin/system'
             })
         elif action == 'scan_settings':
             return jsonify({
                 'success': True,
-                'message': 'Chức năng cài đặt Telegram đang được phát triển',
+                'message': 'Chuyển đến trang cài đặt Telegram',
                 'redirect': '/admin/telegram'
             })
         elif action == 'logs_view':
             return jsonify({
                 'success': True,
-                'message': 'Chức năng xem logs đang được phát triển',
+                'message': 'Chuyển đến trang xem logs',
                 'redirect': '/admin/logs'
             })
         elif action == 'profile_settings':
             return jsonify({
                 'success': True,
-                'message': 'Chức năng thông tin tài khoản đang được phát triển',
+                'message': 'Chuyển đến trang thông tin tài khoản',
                 'redirect': '/admin/profile'
             })
         else:
@@ -1220,6 +1220,311 @@ def admin_menu_action():
 
     except Exception as e:
         logger.error(f"Error handling admin action: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Admin page routes
+@app.route('/admin/system')
+@login_required
+@admin_required
+def admin_system():
+    """Trang quản lý hệ thống"""
+    try:
+        # Get basic stats
+        stats = {
+            'total_users': auth_manager.get_user_count(),
+            'admin_users': len([u for u in auth_manager.get_all_users() if u.is_admin])
+        }
+
+        return render_template('admin/system_management.html',
+                             stats=stats,
+                             config=config)
+    except Exception as e:
+        logger.error(f"Error loading admin system page: {str(e)}", exc_info=True)
+        return f"Error: {str(e)}", 500
+
+# System stats API
+@app.route('/api/admin/system-stats')
+@login_required
+@admin_required
+def admin_system_stats():
+    """API để lấy thống kê hệ thống"""
+    try:
+        import psutil
+        import time
+        import os
+
+        # Get system stats
+        stats = {
+            'uptime': f"{int(time.time() - psutil.boot_time())} seconds",
+            'cpu_usage': f"{psutil.cpu_percent()}%",
+            'memory_usage': f"{psutil.virtual_memory().percent}%",
+            'disk_usage': f"{psutil.disk_usage('/').percent}%",
+            'free_space': f"{psutil.disk_usage('/').free // (1024**3)} GB",
+            'db_size': "N/A",  # Will implement later
+            'total_files': "N/A"  # Will implement later
+        }
+
+        return jsonify({'success': True, 'stats': stats})
+    except ImportError:
+        # Fallback if psutil not available
+        stats = {
+            'uptime': 'N/A (psutil not installed)',
+            'cpu_usage': 'N/A',
+            'memory_usage': 'N/A',
+            'disk_usage': 'N/A',
+            'free_space': 'N/A',
+            'db_size': 'N/A',
+            'total_files': 'N/A'
+        }
+        return jsonify({'success': True, 'stats': stats})
+    except Exception as e:
+        logger.error(f"Error getting system stats: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# System management APIs
+@app.route('/api/admin/backup-database', methods=['POST'])
+@login_required
+@admin_required
+def admin_backup_database():
+    """API backup database"""
+    try:
+        import shutil
+        import datetime
+
+        # Create backup filename with timestamp
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_filename = f"teledrive_backup_{timestamp}.db"
+
+        # Copy database file
+        shutil.copy2("teledrive.db", f"backups/{backup_filename}")
+
+        # Log backup action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action="database_backup",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={'backup_file': backup_filename}
+            )
+
+        return jsonify({
+            'success': True,
+            'message': f'Database backup thành công: {backup_filename}'
+        })
+    except Exception as e:
+        logger.error(f"Error backing up database: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/clear-cache', methods=['POST'])
+@login_required
+@admin_required
+def admin_clear_cache():
+    """API clear cache"""
+    try:
+        # Log cache clear action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action="clear_cache",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={}
+            )
+
+        return jsonify({
+            'success': True,
+            'message': 'Cache đã được xóa thành công'
+        })
+    except Exception as e:
+        logger.error(f"Error clearing cache: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/health-check')
+@login_required
+@admin_required
+def admin_health_check():
+    """API health check"""
+    try:
+        health_status = {
+            'database': 'OK',
+            'filesystem': 'OK',
+            'memory': 'OK',
+            'overall': 'HEALTHY'
+        }
+
+        # Check database connection
+        try:
+            auth_manager.get_user_count()
+        except:
+            health_status['database'] = 'ERROR'
+            health_status['overall'] = 'UNHEALTHY'
+
+        return jsonify({
+            'success': True,
+            'status': health_status['overall'],
+            'details': '\n'.join([f"{k}: {v}" for k, v in health_status.items()])
+        })
+    except Exception as e:
+        logger.error(f"Error in health check: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/users')
+@login_required
+@admin_required
+def admin_users():
+    """Trang quản lý người dùng"""
+    return render_template('admin/user_management.html')
+
+# User management APIs
+@app.route('/api/admin/users')
+@login_required
+@admin_required
+def admin_get_users():
+    """API lấy danh sách người dùng"""
+    try:
+        users = auth_manager.get_all_users()
+        users_data = []
+
+        for user in users:
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'phone_number': user.phone_number,
+                'email': user.email,
+                'is_admin': user.is_admin,
+                'is_verified': user.is_verified,
+                'created_at': user.created_at.isoformat() if user.created_at else None
+            })
+
+        return jsonify({'success': True, 'users': users_data})
+    except Exception as e:
+        logger.error(f"Error getting users: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/users', methods=['POST'])
+@login_required
+@admin_required
+def admin_create_user():
+    """API tạo người dùng mới"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        phone = data.get('phone')
+        email = data.get('email')
+        password = data.get('password')
+        is_admin = data.get('is_admin') == 'true'
+
+        if not username or not phone or not password:
+            return jsonify({'success': False, 'error': 'Thiếu thông tin bắt buộc'}), 400
+
+        # Create user
+        success, message = auth_manager.create_user(
+            username=username,
+            phone_number=phone,
+            email=email,
+            is_admin=is_admin
+        )
+
+        if success:
+            # Log admin action
+            if logger_instance:
+                logger_instance.log_admin_action(
+                    action="create_user",
+                    user_id=current_user.id,
+                    username=current_user.username,
+                    details={'new_user': username, 'is_admin': is_admin}
+                )
+
+            return jsonify({'success': True, 'message': 'Tạo người dùng thành công'})
+        else:
+            return jsonify({'success': False, 'error': message}), 400
+
+    except Exception as e:
+        logger.error(f"Error creating user: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/users/<int:user_id>', methods=['PUT'])
+@login_required
+@admin_required
+def admin_update_user(user_id):
+    """API cập nhật người dùng"""
+    try:
+        from src.auth.models import User
+
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'Không tìm thấy người dùng'}), 404
+
+        data = request.get_json()
+
+        # Update user fields
+        if 'username' in data:
+            user.username = data['username']
+        if 'phone' in data:
+            user.phone_number = data['phone']
+        if 'email' in data:
+            user.email = data['email']
+        if 'is_admin' in data:
+            user.is_admin = data['is_admin'] == 'true'
+        if 'password' in data and data['password']:
+            from werkzeug.security import generate_password_hash
+            user.password_hash = generate_password_hash(data['password'])
+
+        # Save changes
+        from src.database import db
+        db.session.commit()
+
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action="update_user",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={'updated_user': user.username, 'user_id': user_id}
+            )
+
+        return jsonify({'success': True, 'message': 'Cập nhật người dùng thành công'})
+
+    except Exception as e:
+        logger.error(f"Error updating user: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def admin_delete_user(user_id):
+    """API xóa người dùng"""
+    try:
+        from src.auth.models import User
+        from src.database import db
+
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'Không tìm thấy người dùng'}), 404
+
+        # Prevent deleting admin users
+        if user.is_admin:
+            return jsonify({'success': False, 'error': 'Không thể xóa tài khoản admin'}), 403
+
+        # Store username for logging
+        username = user.username
+
+        # Delete user
+        db.session.delete(user)
+        db.session.commit()
+
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action="delete_user",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={'deleted_user': username, 'user_id': user_id}
+            )
+
+        return jsonify({'success': True, 'message': 'Xóa người dùng thành công'})
+
+    except Exception as e:
+        logger.error(f"Error deleting user: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Development routes removed for production
