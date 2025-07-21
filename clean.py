@@ -28,21 +28,20 @@ logging.basicConfig(
 )
 
 # Import và chạy web app
-from web.app import app
-from src.config import config
+from src.web.app import app
 
 if __name__ == '__main__':
     # Khởi động với giao diện sạch sẽ
     print("TeleDrive")
-    print(f"http://{config.server.host}:{config.server.port}")
+    print("http://localhost:5000")
     print("Ctrl+C de dung")
     print()
 
     try:
         print("Dang khoi dong...")
         app.run(
-            host=config.server.host,
-            port=config.server.port,
+            host='localhost',
+            port=5000,
             debug=False,
             threaded=True,
             use_reloader=False
