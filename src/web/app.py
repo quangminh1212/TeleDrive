@@ -1222,33 +1222,23 @@ def admin_menu_action():
         logger.error(f"Error handling admin action: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Test login route (for development only)
-@app.route('/test-login/<username>')
-def test_login(username):
-    """Test login route - chỉ dùng cho development"""
+# Quick login for admin (development only)
+@app.route('/quick-admin')
+def quick_admin():
+    """Quick login cho admin để test - chỉ dùng development"""
     from flask_login import login_user
     from src.auth.models import User
 
     try:
-        user = User.query.filter_by(username=username).first()
-        if user:
-            login_user(user, remember=True)
+        # Tìm admin user
+        admin_user = User.query.filter_by(is_admin=True).first()
+        if admin_user:
+            login_user(admin_user, remember=True)
             return redirect(url_for('index'))
         else:
-            return f"User {username} not found", 404
+            return "No admin user found. Please create one first.", 404
     except Exception as e:
         return f"Error: {str(e)}", 500
-
-# Direct admin page for testing
-@app.route('/admin-test')
-def admin_test():
-    """Test page với admin UI - chỉ dùng cho development"""
-    from flask_login import current_user
-
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
-
-    return render_template('index.html')
 
 if __name__ == '__main__':
     # Log application startup
