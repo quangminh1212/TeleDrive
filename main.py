@@ -25,8 +25,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Import và chạy web app
-from src.teledrive.app import app
-from src.teledrive.config import config
+from teledrive.teledrive.app import app
+from teledrive.teledrive.config import config
 
 if __name__ == '__main__':
     # Sử dụng Flask development server với log tối giản

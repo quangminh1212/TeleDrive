@@ -11,9 +11,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from flask import Flask
-from src.database import init_database
-from src.auth import auth_manager
-from src.models.otp import validate_phone_number
+from teledrive.database import init_database
+from teledrive.auth import auth_manager
+from teledrive.models.otp import validate_phone_number
 
 def create_admin_user():
     """Tạo admin user mới"""

@@ -34,7 +34,7 @@ def install_waitress():
 
 def run_production_server():
     """Chạy production server với Waitress"""
-    from src.config import config
+    from teledrive.config import config
 
     # Kiểm tra và cài đặt Waitress nếu cần
     if not check_waitress():
