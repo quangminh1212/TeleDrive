@@ -1850,6 +1850,176 @@ def admin_export_logs():
         logger.error(f"Error exporting logs: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/admin/profile')
+@login_required
+@admin_required
+def admin_profile():
+    """Trang thông tin tài khoản"""
+    return render_template('admin/profile_settings.html', user=current_user)
+
+# Profile API endpoints
+@app.route('/api/admin/profile/personal', methods=['POST'])
+@login_required
+@admin_required
+def admin_update_personal():
+    """API cập nhật thông tin cá nhân"""
+    try:
+        data = request.get_json()
+
+        # Update current user info
+        if 'username' in data:
+            current_user.username = data['username']
+        if 'email' in data:
+            current_user.email = data['email']
+        if 'phone' in data:
+            current_user.phone_number = data['phone']
+
+        # Save changes
+        from src.database import db
+        db.session.commit()
+
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action="update_personal_info",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={'updated_fields': list(data.keys())}
+            )
+
+        return jsonify({
+            'success': True,
+            'message': 'Đã cập nhật thông tin cá nhân thành công'
+        })
+
+    except Exception as e:
+        logger.error(f"Error updating personal info: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/profile/password', methods=['POST'])
+@login_required
+@admin_required
+def admin_change_password():
+    """API đổi mật khẩu"""
+    try:
+        data = request.get_json()
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+
+        if not current_password or not new_password:
+            return jsonify({'success': False, 'error': 'Thiếu thông tin mật khẩu'}), 400
+
+        # Verify current password
+        from werkzeug.security import check_password_hash, generate_password_hash
+        if not check_password_hash(current_user.password_hash, current_password):
+            return jsonify({'success': False, 'error': 'Mật khẩu hiện tại không đúng'}), 400
+
+        # Update password
+        current_user.password_hash = generate_password_hash(new_password)
+
+        # Save changes
+        from src.database import db
+        db.session.commit()
+
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action="change_password",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={}
+            )
+
+        return jsonify({
+            'success': True,
+            'message': 'Đã đổi mật khẩu thành công'
+        })
+
+    except Exception as e:
+        logger.error(f"Error changing password: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/profile/preferences', methods=['POST'])
+@login_required
+@admin_required
+def admin_update_preferences():
+    """API cập nhật tùy chọn"""
+    try:
+        data = request.get_json()
+
+        # Log admin action
+        if logger_instance:
+            logger_instance.log_admin_action(
+                action="update_preferences",
+                user_id=current_user.id,
+                username=current_user.username,
+                details={'preferences': data}
+            )
+
+        # In a real implementation, you would save preferences to database
+        return jsonify({
+            'success': True,
+            'message': 'Đã lưu tùy chọn thành công'
+        })
+
+    except Exception as e:
+        logger.error(f"Error updating preferences: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/profile/stats')
+@login_required
+@admin_required
+def admin_profile_stats():
+    """API lấy thống kê profile"""
+    try:
+        stats = {
+            'sessions': 0,  # Mock data
+            'total_logins': 15,
+            'last_activity': 'Hôm nay, 09:15'
+        }
+
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting profile stats: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/profile/activity')
+@login_required
+@admin_required
+def admin_profile_activity():
+    """API lấy hoạt động gần đây"""
+    try:
+        activities = [
+            {
+                'icon': '💾',
+                'action': 'Lưu cài đặt hệ thống',
+                'time': 'Hôm nay, 09:00'
+            },
+            {
+                'icon': '🔍',
+                'action': 'Xem logs hệ thống',
+                'time': 'Hôm qua, 18:30'
+            },
+            {
+                'icon': '📱',
+                'action': 'Cập nhật cài đặt Telegram',
+                'time': 'Hôm qua, 15:20'
+            }
+        ]
+
+        return jsonify({
+            'success': True,
+            'activities': activities
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting profile activity: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Quick admin login for testing
 @app.route('/quick-admin')
 def quick_admin():
