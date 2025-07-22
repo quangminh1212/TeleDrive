@@ -12,11 +12,18 @@ db = SQLAlchemy()
 
 def init_database(app):
     """Khởi tạo database với Flask app"""
-    # Chỉ init nếu chưa được init
-    if not hasattr(app, 'extensions') or 'sqlalchemy' not in app.extensions:
-        db.init_app(app)
+    try:
+        # Chỉ init nếu chưa được init
+        if not hasattr(app, 'extensions') or 'sqlalchemy' not in app.extensions:
+            db.init_app(app)
 
-    with app.app_context():
-        db.create_all()
+        with app.app_context():
+            # Tạo tables
+            db.create_all()
+
+    except Exception as e:
+        print(f"[ERROR] Database initialization failed: {str(e)}")
+        # Không thử fallback để tránh vòng lặp
+        raise e
 
     return db

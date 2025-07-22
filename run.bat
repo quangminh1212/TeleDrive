@@ -118,7 +118,17 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 6/6] Khoi dong TeleDrive Web Interface...
+echo [BUOC 6/7] Kiem tra va sua database...
+echo    ^> Dang kiem tra database...
+python fix_database.py >nul 2>&1
+if errorlevel 1 (
+    echo [WARNING] Co van de voi database, nhung se tiep tuc chay
+) else (
+    echo [OK] Database da san sang
+)
+
+echo.
+echo [BUOC 7/7] Khoi dong TeleDrive Web Interface...
 echo ================================================================
 echo [INFO] DANG KHOI DONG WEB INTERFACE TU DONG...
 echo ================================================================
@@ -602,12 +612,21 @@ if %errorlevel% neq 0 (
 echo [OK] Tat ca dependencies da san sang
 
 echo.
-echo [BUOC 5/6] Khoi tao he thong logging...
+echo [BUOC 5/7] Khoi tao he thong logging...
 if not exist logs mkdir logs
 echo [OK] He thong logging da san sang
 
 echo.
-echo [BUOC 6/6] Khoi dong Production Server...
+echo [BUOC 6/7] Kiem tra va sua database...
+python fix_database.py >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [OK] Database da san sang
+) else (
+    echo [WARNING] Co van de voi database
+)
+
+echo.
+echo [BUOC 7/7] Khoi dong Production Server...
 echo ================================================================
 echo [INFO] DANG KHOI DONG PRODUCTION SERVER...
 echo ================================================================
@@ -677,7 +696,16 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 4/4] Khoi dong TeleDrive Clean Mode...
+echo [BUOC 4/5] Kiem tra database...
+python fix_database.py >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [OK] Database da san sang
+) else (
+    echo [WARNING] Co van de voi database
+)
+
+echo.
+echo [BUOC 5/5] Khoi dong TeleDrive Clean Mode...
 echo.
 python clean.py
 goto END

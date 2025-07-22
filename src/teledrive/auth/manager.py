@@ -27,13 +27,27 @@ class AuthManager:
         self.login_manager.login_view = 'login'
         self.login_manager.login_message = 'Vui lòng đăng nhập để truy cập trang này.'
         self.login_manager.login_message_category = 'info'
-        
+
         # Cấu hình database
         if not app.config.get('SECRET_KEY'):
             app.config['SECRET_KEY'] = secrets.token_hex(32)
 
         if not app.config.get('SQLALCHEMY_DATABASE_URI'):
-            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/teledrive.db'
+            # Tạo đường dẫn absolute cho database
+            from pathlib import Path
+            import os
+
+            # Lấy thư mục gốc của project (từ src/teledrive/auth/manager.py lên 4 cấp)
+            current_file = Path(__file__).resolve()
+            project_root = current_file.parent.parent.parent.parent
+            instance_dir = project_root / 'instance'
+
+            # Tạo thư mục instance nếu chưa có
+            instance_dir.mkdir(exist_ok=True)
+
+            # Đường dẫn database với absolute path
+            db_path = instance_dir / 'teledrive.db'
+            app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path.resolve()}'
 
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
