@@ -44,4 +44,4 @@ if __name__ == '__main__':
         print("\n✅ Server stopped.")
     except Exception as e:
         print(f"❌ Error: {e}")
-        return False
+        sys.exit(1)
