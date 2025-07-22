@@ -4,20 +4,25 @@
 
 ### Cách bật Dev Mode:
 
-1. **Sao chép file cấu hình dev:**
-   ```bash
-   cp .env.dev .env
-   ```
+**Cách 1: Sử dụng script (Khuyến nghị):**
+```bash
+python dev_mode.py on
+```
 
-2. **Hoặc thêm vào file .env hiện tại:**
-   ```bash
-   echo "DEV_MODE=true" >> .env
-   ```
+**Cách 2: Thủ công:**
+```bash
+cp .env.dev .env
+```
 
-3. **Khởi động lại ứng dụng:**
-   ```bash
-   python -m src.teledrive.app
-   ```
+**Cách 3: Thêm vào .env hiện tại:**
+```bash
+echo "DEV_MODE=true" >> .env
+```
+
+**Khởi động lại ứng dụng:**
+```bash
+python -m src.teledrive.app
+```
 
 ### Tính năng Dev Mode:
 
@@ -36,17 +41,27 @@
 
 ### Tắt Dev Mode:
 
-1. **Sửa file .env:**
-   ```bash
-   DEV_MODE=false
-   ```
+**Cách 1: Sử dụng script (Khuyến nghị):**
+```bash
+python dev_mode.py off
+```
 
-2. **Hoặc xóa dòng DEV_MODE:**
-   ```bash
-   # Xóa hoặc comment dòng DEV_MODE trong .env
-   ```
+**Cách 2: Thủ công - Sửa file .env:**
+```bash
+DEV_MODE=false
+```
 
-3. **Khởi động lại ứng dụng**
+**Cách 3: Xóa dòng DEV_MODE:**
+```bash
+# Xóa hoặc comment dòng DEV_MODE trong .env
+```
+
+**Khởi động lại ứng dụng**
+
+### Kiểm tra trạng thái Dev Mode:
+```bash
+python dev_mode.py status
+```
 
 ### Lưu ý:
 
