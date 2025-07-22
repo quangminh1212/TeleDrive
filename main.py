@@ -74,6 +74,7 @@ if __name__ == '__main__':
         app.config['DEV_MODE'] = True
 
         print("🌐 Server starting at: http://localhost:3000")
+        print("🔧 Port: 3000 (updated from 5000)")
         print("🔧 Dev Mode: Enabled (no login required)")
         print("👤 User: Developer (admin)")
         print("📱 Press Ctrl+C to stop")
