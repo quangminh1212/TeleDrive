@@ -70,9 +70,9 @@ def main():
         print("🔧 TeleDrive Dev Mode Manager")
         print()
         print("Cách sử dụng:")
-        print("  python dev_mode.py on     # Bật dev mode")
-        print("  python dev_mode.py off    # Tắt dev mode")
-        print("  python dev_mode.py status # Kiểm tra trạng thái")
+        print("  python dev.py on     # Bật dev mode")
+        print("  python dev.py off    # Tắt dev mode")
+        print("  python dev.py status # Kiểm tra trạng thái")
         print()
         check_dev_mode()
         return

@@ -27,7 +27,7 @@ echo    run.bat scanner    - Chay scanner CLI
 echo    run.bat config     - Menu cau hinh (co the bat/tat dev mode)
 echo.
 echo [INFO] Dev Mode:
-python dev_mode.py status 2>nul || echo [WARNING] Chua co dev_mode.py
+python dev.py status 2>nul || echo [WARNING] Chua co dev.py
 echo.
 
 :MAIN_START
@@ -120,7 +120,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 6/7] Kiem tra va sua database...
 echo    ^> Dang kiem tra database...
-python fix_database.py >nul 2>&1
+python db.py >nul 2>&1
 if errorlevel 1 (
     echo [WARNING] Co van de voi database, nhung se tiep tuc chay
 ) else (
@@ -144,7 +144,7 @@ echo    - Neu muon chay scanner CLI: run.bat scanner
 echo.
 
 if "%1"=="silent" (
-    python run_silent.py
+    python silent.py
 ) else (
     python main.py
 )
@@ -332,7 +332,7 @@ if "%choice%"=="7" (
     echo ================================================================
     echo.
     echo Trang thai hien tai:
-    python dev_mode.py status 2>nul
+    python dev.py status 2>nul
     echo.
     echo 1. Bat Dev Mode (khong can dang nhap)
     echo 2. Tat Dev Mode (yeu cau dang nhap)
@@ -343,7 +343,7 @@ if "%choice%"=="7" (
     if "!dev_choice!"=="1" (
         echo.
         echo Dang bat Dev Mode...
-        python dev_mode.py on
+        python dev.py on
         echo.
         echo [INFO] Dev Mode da duoc BAT!
         echo [INFO] Khoi dong lai ung dung de ap dung
@@ -355,7 +355,7 @@ if "%choice%"=="7" (
     if "!dev_choice!"=="2" (
         echo.
         echo Dang tat Dev Mode...
-        python dev_mode.py off
+        python dev.py off
         echo.
         echo [INFO] Dev Mode da duoc TAT!
         echo [INFO] Khoi dong lai ung dung de ap dung
@@ -568,11 +568,11 @@ echo [INFO] Phu hop cho production deployment
 echo.
 
 echo [BUOC 1/6] Tat dev mode cho production...
-python dev_mode.py off >nul 2>&1
+python dev.py off >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Da tat dev mode cho production
 ) else (
-    echo [WARNING] Khong the tat dev mode (co the chua co file dev_mode.py)
+    echo [WARNING] Khong the tat dev mode (co the chua co file dev.py)
 )
 
 echo.
@@ -618,7 +618,7 @@ echo [OK] He thong logging da san sang
 
 echo.
 echo [BUOC 6/7] Kiem tra va sua database...
-python fix_database.py >nul 2>&1
+python db.py >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Database da san sang
 ) else (
@@ -661,7 +661,7 @@ echo [INFO] Chay voi log toi gian - giao dien sach se
 echo.
 
 echo [BUOC 1/4] Tat dev mode cho clean mode...
-python dev_mode.py off >nul 2>&1
+python dev.py off >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Da tat dev mode
 ) else (
@@ -697,7 +697,7 @@ if errorlevel 1 (
 
 echo.
 echo [BUOC 4/5] Kiem tra database...
-python fix_database.py >nul 2>&1
+python db.py >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Database da san sang
 ) else (
@@ -748,7 +748,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 3/3] Khoi dong TeleDrive Silent Mode...
 echo.
-python run_silent.py
+python silent.py
 goto END
 
 :END
