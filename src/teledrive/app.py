@@ -427,7 +427,7 @@ def send_otp():
         if not user:
             return jsonify({'success': False, 'message': 'Số điện thoại chưa được đăng ký'}), 404
         
-        # Gửi OTP qua Telegram (Test mode - bypass for now)
+        # Gửi OTP qua Telegram
         try:
             # Tạo OTP code để test
             from src.teledrive.models.otp import OTPManager
@@ -494,39 +494,6 @@ def verify_otp():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500
 
-@app.route('/debug-admin')
-def debug_admin():
-    """Debug admin interface - bypass authentication"""
-    # Create a mock admin user for testing
-    class MockUser:
-        def __init__(self):
-            self.id = 1
-            self.username = 'admin'
-            self.phone_number = '+84936374950'
-            self.email = 'admin@test.com'
-            self.is_admin = True
-            self.is_active = True
-            self.is_authenticated = True
-            self.is_anonymous = False
-
-        def get_id(self):
-            return str(self.id)
-
-    # Render index template with mock admin user
-    return render_template('index.html', user=MockUser())
-
-@app.route('/test-admin-login')
-def test_admin_login():
-    """Test route để đăng nhập admin"""
-    # Tìm admin user
-    existing_user = auth_manager.find_user_by_phone('+84936374950')
-    if not existing_user:
-        return "Admin user not found. Please create one first at /create-test-admin", 404
-
-    # Login user
-    login_user(existing_user)
-    return redirect(url_for('index'))
-
 # API Routes
 
 # Basic API endpoints
@@ -574,6 +541,53 @@ def get_scans():
     """Lấy danh sách scan sessions"""
     sessions = api.get_scan_sessions() if hasattr(api, 'get_scan_sessions') else []
     return jsonify(sessions)
+
+@app.route('/api/scan/telegram', methods=['POST'])
+@auth_required
+def start_telegram_scan():
+    """Bắt đầu scan Telegram"""
+    try:
+        data = request.get_json() or {}
+        scan_type = data.get('scan_type', 'telegram')
+        options = data.get('options', {})
+
+        print(f"🚀 [API] Starting Telegram scan with options: {options}")
+
+        # Log the scan request
+        logger.info(f"User {current_user.username if hasattr(current_user, 'username') else 'test_user'} started Telegram scan")
+
+        # TODO: Implement actual Telegram scanning logic
+        # For now, return a mock response
+
+        # Simulate scan process
+        import time
+        import threading
+
+        def mock_scan():
+            print("📱 [SCAN] Mock Telegram scan started in background")
+            time.sleep(2)  # Simulate scan time
+            print("✅ [SCAN] Mock Telegram scan completed")
+
+        # Start mock scan in background
+        scan_thread = threading.Thread(target=mock_scan)
+        scan_thread.daemon = True
+        scan_thread.start()
+
+        return jsonify({
+            'success': True,
+            'message': 'Telegram scan đã được bắt đầu',
+            'scan_id': f'telegram_scan_{int(time.time())}',
+            'status': 'started'
+        })
+
+    except Exception as e:
+        print(f"❌ [API] Error starting Telegram scan: {str(e)}")
+        logger.error(f"Error starting Telegram scan: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Không thể bắt đầu scan Telegram'
+        }), 500
 
 
 
@@ -1657,10 +1671,7 @@ def admin_profile_fixed():
     """Trang thông tin tài khoản - FIXED VERSION"""
     return render_template('admin/profile_settings.html', user=current_user)
 
-@app.route('/test-working')
-def test_working():
-    """Test route to verify fixes"""
-    return "<h1>✅ FIXED ROUTES ARE WORKING!</h1><p>Admin routes have been fixed and moved to proper location.</p>"
+
 
 # Telegram settings API endpoints
 @app.route('/api/admin/telegram-settings/<category>', methods=['POST'])
@@ -1725,31 +1736,7 @@ def admin_logs():
     """Trang xem logs"""
     return render_template('admin/logs_simple.html')
 
-@app.route('/test-logs')
-def test_logs():
-    """Test route"""
-    return "<h1>Test Logs Route Works!</h1>"
 
-@app.route('/debug-routes')
-def debug_routes():
-    """Debug routes"""
-    routes = []
-    for rule in app.url_map.iter_rules():
-        routes.append(f"{rule.rule} -> {rule.endpoint}")
-    return "<br>".join(routes)
-
-@app.route('/test-simple')
-def test_simple():
-    """Simple test route"""
-    return "<h1>Simple Test Route Works!</h1>"
-
-@app.route('/test-template')
-def test_template():
-    """Test template rendering"""
-    try:
-        return render_template('admin/logs_simple.html')
-    except Exception as e:
-        return f"Template error: {str(e)}"
 
 # Logs API endpoints
 @app.route('/api/admin/logs')
@@ -2070,22 +2057,7 @@ def admin_profile_activity():
         logger.error(f"Error getting profile activity: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Quick admin login for testing
-@app.route('/quick-admin')
-def quick_admin():
-    """Quick login cho admin để test"""
-    from flask_login import login_user
-    from src.auth.models import User
 
-    try:
-        admin_user = User.query.filter_by(is_admin=True).first()
-        if admin_user:
-            login_user(admin_user, remember=True)
-            return redirect(url_for('index'))
-        else:
-            return "No admin user found", 404
-    except Exception as e:
-        return f"Error: {str(e)}", 500
 
 if __name__ == '__main__':
     # Log application startup

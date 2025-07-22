@@ -2753,14 +2753,20 @@ class Windows11Explorer {
     }
 
     startNewScan() {
+        console.log('🚀 [SCAN] Start new scan button clicked');
+
         // Show scan modal or redirect to scan page
         this.showNotification('Đang chuẩn bị scan mới...', 'info');
 
-        // TODO: Implement scan modal or redirect
-        // For now, show a placeholder
+        // Log button click
+        console.log('📝 [LOG] Showing scan modal...');
+
+        // Create and show scan modal
         const scanModal = this.createScanModal();
         document.body.appendChild(scanModal);
         scanModal.classList.add('show');
+
+        console.log('✅ [SCAN] Scan modal displayed successfully');
     }
 
     createScanModal() {
@@ -2779,7 +2785,7 @@ class Windows11Explorer {
                         <div class="scan-option">
                             <h4>📱 Scan Telegram chats</h4>
                             <p>Quét tất cả files từ các cuộc trò chuyện Telegram của bạn</p>
-                            <button class="btn btn-primary scan-telegram-btn">
+                            <button class="btn btn-primary scan-telegram-btn" onclick="teleDriveExplorer.startTelegramScan()">
                                 <i class="icon icon-scan"></i>
                                 Scan Telegram
                             </button>
@@ -2787,7 +2793,7 @@ class Windows11Explorer {
                         <div class="scan-option">
                             <h4>📁 Scan thư mục local</h4>
                             <p>Quét files từ thư mục trên máy tính của bạn</p>
-                            <button class="btn btn-secondary scan-local-btn">
+                            <button class="btn btn-secondary scan-local-btn" onclick="teleDriveExplorer.startLocalScan()">
                                 <i class="icon icon-folder"></i>
                                 Scan Local
                             </button>
@@ -2821,13 +2827,214 @@ class Windows11Explorer {
         return modal;
     }
 
+    showSessionManagementModal() {
+        console.log('📋 [SESSION] Creating session management modal');
+
+        const modal = document.createElement('div');
+        modal.className = 'session-modal';
+        modal.innerHTML = `
+            <div class="session-modal-content">
+                <div class="session-modal-header">
+                    <h3>⚙️ Quản lý Sessions</h3>
+                    <button class="modal-close" onclick="this.closest('.session-modal').remove()">
+                        <i class="icon icon-times"></i>
+                    </button>
+                </div>
+                <div class="session-modal-body">
+                    <div class="session-actions">
+                        <button class="btn btn-primary" onclick="teleDriveExplorer.loadAllSessions()">
+                            <i class="icon icon-refresh"></i>
+                            Tải lại sessions
+                        </button>
+                        <button class="btn btn-secondary" onclick="teleDriveExplorer.clearSessionCache()">
+                            <i class="icon icon-trash"></i>
+                            Xóa cache
+                        </button>
+                        <button class="btn btn-info" onclick="teleDriveExplorer.exportSessions()">
+                            <i class="icon icon-download"></i>
+                            Xuất sessions
+                        </button>
+                    </div>
+                    <div class="session-list" id="sessionListModal">
+                        <p>Đang tải danh sách sessions...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal styles
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+
+        document.body.appendChild(modal);
+
+        // Show modal with animation
+        setTimeout(() => {
+            modal.style.opacity = '1';
+        }, 100);
+
+        // Load sessions in modal
+        this.loadSessionsInModal();
+
+        console.log('✅ [SESSION] Session management modal created');
+    }
+
+    loadSessionsInModal() {
+        console.log('📋 [SESSION] Loading sessions in modal');
+
+        fetch('/api/scans')
+            .then(response => response.json())
+            .then(sessions => {
+                const sessionList = document.getElementById('sessionListModal');
+                if (sessionList) {
+                    if (sessions && sessions.length > 0) {
+                        sessionList.innerHTML = sessions.map(session => `
+                            <div class="session-item-modal">
+                                <div class="session-info">
+                                    <strong>${session.session_name || session.timestamp}</strong>
+                                    <span>${session.file_count || 0} files</span>
+                                </div>
+                                <div class="session-actions">
+                                    <button class="btn btn-sm btn-primary" onclick="teleDriveExplorer.loadSessionFiles('${session.session_id}')">
+                                        Xem
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        sessionList.innerHTML = '<p>Không có sessions nào.</p>';
+                    }
+                }
+                console.log('✅ [SESSION] Sessions loaded in modal:', sessions.length);
+            })
+            .catch(error => {
+                console.error('❌ [SESSION] Error loading sessions:', error);
+                const sessionList = document.getElementById('sessionListModal');
+                if (sessionList) {
+                    sessionList.innerHTML = '<p>Lỗi tải sessions: ' + error.message + '</p>';
+                }
+            });
+    }
+
+    startTelegramScan() {
+        console.log('📱 [SCAN] Starting Telegram scan');
+
+        // Close modal first
+        const modal = document.querySelector('.scan-modal');
+        if (modal) {
+            modal.remove();
+        }
+
+        this.showNotification('Đang bắt đầu scan Telegram...', 'info');
+
+        // Call API to start scan
+        fetch('/api/scan/telegram', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                scan_type: 'telegram',
+                options: {
+                    include_media: true,
+                    include_documents: true
+                }
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            console.log('📱 [SCAN] Telegram scan response:', result);
+            if (result.success) {
+                this.showNotification('✅ Đã bắt đầu scan Telegram! Vui lòng đợi...', 'success');
+                // Reload sessions after a delay
+                setTimeout(() => {
+                    this.loadSessions();
+                }, 3000);
+            } else {
+                this.showNotification('❌ Không thể bắt đầu scan: ' + (result.error || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('❌ [SCAN] Error starting Telegram scan:', error);
+            this.showNotification('❌ Lỗi khi bắt đầu scan: ' + error.message, 'error');
+        });
+    }
+
+    startLocalScan() {
+        console.log('📁 [SCAN] Starting local scan');
+
+        // Close modal first
+        const modal = document.querySelector('.scan-modal');
+        if (modal) {
+            modal.remove();
+        }
+
+        this.showNotification('Chức năng scan local đang được phát triển...', 'info');
+
+        // TODO: Implement local scan functionality
+        console.log('📁 [SCAN] Local scan not implemented yet');
+    }
+
+    loadAllSessions() {
+        console.log('🔄 [SESSION] Reloading all sessions');
+        this.loadSessions();
+        this.showNotification('Đang tải lại sessions...', 'info');
+    }
+
+    clearSessionCache() {
+        console.log('🗑️ [SESSION] Clearing session cache');
+        // Clear any cached data
+        if (window.localStorage) {
+            localStorage.removeItem('teleDrive_sessions');
+            localStorage.removeItem('teleDrive_files');
+        }
+        this.showNotification('Đã xóa cache sessions', 'success');
+    }
+
+    exportSessions() {
+        console.log('📤 [SESSION] Exporting sessions');
+        this.showNotification('Chức năng export đang được phát triển...', 'info');
+
+        // TODO: Implement export functionality
+        console.log('📤 [SESSION] Export not implemented yet');
+    }
+
     showSessionManager() {
+        console.log('⚙️ [SESSION] Manage sessions button clicked');
+
         // Toggle sidebar or show session management interface
         const sidebar = document.querySelector('.sidebar');
+        const navigationPane = document.querySelector('.navigation-pane');
+
+        console.log('📝 [LOG] Checking sidebar elements...');
+        console.log('📝 [LOG] Sidebar found:', !!sidebar);
+        console.log('📝 [LOG] Navigation pane found:', !!navigationPane);
+
         if (sidebar) {
             sidebar.classList.toggle('expanded');
+            console.log('✅ [SESSION] Sidebar toggled');
+        } else if (navigationPane) {
+            navigationPane.classList.toggle('expanded');
+            console.log('✅ [SESSION] Navigation pane toggled');
+        } else {
+            console.log('❌ [SESSION] No sidebar element found, showing session management modal');
+            this.showSessionManagementModal();
         }
+
         this.showNotification('Mở panel quản lý sessions', 'info');
+        console.log('✅ [SESSION] Session manager action completed');
     }
 
     viewRecentScan() {
