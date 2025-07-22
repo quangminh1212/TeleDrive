@@ -67,34 +67,173 @@ if not db_path.exists():
     conn.close()
     print("✅ Database created successfully")
 
-# Import và chạy web app
-try:
-    from src.teledrive.app import app
-    from src.teledrive.config import config
-    print("✅ App imported successfully")
-except Exception as e:
-    print(f"❌ Lỗi import: {e}")
-    import traceback
-    traceback.print_exc()
-    sys.exit(1)
+def create_app():
+    """Tạo Flask app hoạt động"""
+    print("🚀 Creating Flask app...")
+
+    from flask import Flask, render_template, jsonify, request, redirect, url_for
+
+    # Đường dẫn templates và static
+    basedir = Path(__file__).parent
+    template_dir = basedir / 'templates'
+    static_dir = basedir / 'static'
+
+    # Tạo Flask app
+    app = Flask(__name__,
+                template_folder=str(template_dir),
+                static_folder=str(static_dir))
+
+    # Cấu hình
+    app.config.update({
+        'SQLALCHEMY_DATABASE_URI': f'sqlite:///{db_path.resolve()}',
+        'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+        'SECRET_KEY': 'dev_secret_key_teledrive_2024',
+        'DEV_MODE': True
+    })
+
+    # Dev user class
+    class DevUser:
+        def __init__(self):
+            self.id = 'dev_user'
+            self.username = 'Developer'
+            self.phone_number = '+84123456789'
+            self.email = 'dev@teledrive.local'
+            self.is_admin = True
+            self.is_authenticated = True
+            self.is_active = True
+            self.is_anonymous = False
+            self.is_verified = True
+
+    # Routes
+    @app.route('/')
+    def index():
+        """Trang chính - Dashboard"""
+        dev_user = DevUser()
+        return render_template('index.html', user=dev_user)
+
+    @app.route('/hello')
+    def hello():
+        """Test route"""
+        return 'Hello from TeleDrive! 🎉'
+
+    @app.route('/status')
+    def status():
+        """Status API"""
+        return jsonify({
+            'status': 'running',
+            'dev_mode': True,
+            'database': str(db_path),
+            'user': 'Developer'
+        })
+
+    @app.route('/setup')
+    def setup():
+        """Setup page"""
+        return render_template('setup.html')
+
+    @app.route('/login')
+    def login():
+        """Login page - redirect to index in dev mode"""
+        return redirect(url_for('index'))
+
+    @app.route('/admin')
+    def admin():
+        """Admin page"""
+        dev_user = DevUser()
+        return render_template('admin/admin_navigation.html', user=dev_user)
+
+    @app.route('/admin/system')
+    def admin_system():
+        """Admin system management"""
+        dev_user = DevUser()
+
+        # Mock stats data
+        stats = {
+            'cpu_usage': 25.5,
+            'memory_usage': 45.2,
+            'disk_usage': 67.8,
+            'active_sessions': 3,
+            'total_files': 1250,
+            'database_size': '15.2 MB',
+            'uptime': '2 hours 15 minutes'
+        }
+
+        # Mock config data
+        class MockConfig:
+            class Server:
+                host = '0.0.0.0'
+                port = 5000
+            server = Server()
+            environment = 'development'
+            debug = True
+
+        config = MockConfig()
+
+        try:
+            return render_template('admin/system_management.html',
+                                 user=dev_user,
+                                 stats=stats,
+                                 config=config)
+        except Exception as e:
+            return jsonify({'error': 'Template error', 'message': str(e)}), 500
+
+    @app.route('/admin/users')
+    def admin_users():
+        """Admin user management"""
+        dev_user = DevUser()
+        return render_template('admin/user_management.html', user=dev_user)
+
+    @app.route('/admin/settings')
+    def admin_settings():
+        """Admin system settings"""
+        dev_user = DevUser()
+        return render_template('admin/system_settings.html', user=dev_user)
+
+    @app.route('/admin/telegram')
+    def admin_telegram():
+        """Admin telegram settings"""
+        dev_user = DevUser()
+        return render_template('admin/telegram_settings.html', user=dev_user)
+
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({'error': 'Not found', 'message': 'Route không tồn tại'}), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        return jsonify({'error': 'Internal server error', 'message': str(error)}), 500
+
+    print("✅ Flask app created with routes")
+    return app
 
 if __name__ == '__main__':
-    # Sử dụng Flask development server với log tối giản
-    print("TeleDrive dang khoi dong...")
-    print(f"Server: http://{config.server.host}:{config.server.port}")
-    print("Nhan Ctrl+C de dung server")
-    print("-" * 50)
-
     try:
+        print("🎯 Starting TeleDrive...")
+        print("=" * 50)
+
+        # Tạo app
+        app = create_app()
+
+        print("🌐 Server starting at: http://localhost:5000")
+        print("🔧 Dev Mode: Enabled (no login required)")
+        print("👤 User: Developer (admin)")
+        print("📱 Press Ctrl+C to stop")
+        print("=" * 50)
+
+        # Chạy server
         app.run(
-            host=config.server.host,
-            port=config.server.port,
-            debug=False,  # Tắt debug để giảm log
+            host='0.0.0.0',
+            port=5000,
+            debug=False,
             threaded=True,
-            use_reloader=False  # Tắt reloader để tránh log duplicate
+            use_reloader=False
         )
+
     except KeyboardInterrupt:
-        print("\nServer da dung.")
+        print("\n✅ Server stopped by user")
     except Exception as e:
-        print(f"❌ Lỗi khởi động server: {e}")
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
