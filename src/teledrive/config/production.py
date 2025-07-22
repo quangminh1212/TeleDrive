@@ -16,10 +16,26 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+def _get_database_uri():
+    """Get database URI with proper path handling"""
+    from pathlib import Path
+
+    # Lấy đường dẫn từ environment variable hoặc tạo default
+    db_url = os.getenv('DATABASE_URL')
+    if db_url:
+        return db_url
+
+    # Tạo đường dẫn absolute cho database
+    instance_dir = Path('instance')
+    instance_dir.mkdir(exist_ok=True)
+    db_path = instance_dir / 'teledrive.db'
+
+    return f'sqlite:///{db_path.resolve()}'
+
 @dataclass
 class DatabaseConfig:
     """Database configuration"""
-    uri: str = field(default_factory=lambda: os.getenv('DATABASE_URL', f'sqlite:///{os.path.abspath("instance/teledrive.db")}'))
+    uri: str = field(default_factory=lambda: _get_database_uri())
     pool_size: int = field(default_factory=lambda: int(os.getenv('DB_POOL_SIZE', '10')))
     pool_timeout: int = field(default_factory=lambda: int(os.getenv('DB_POOL_TIMEOUT', '30')))
     pool_recycle: int = field(default_factory=lambda: int(os.getenv('DB_POOL_RECYCLE', '3600')))

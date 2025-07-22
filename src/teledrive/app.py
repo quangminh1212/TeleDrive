@@ -1637,7 +1637,7 @@ def admin_create_user():
 def admin_update_user(user_id):
     """API cập nhật người dùng"""
     try:
-        from src.auth.models import User
+        from src.teledrive.auth.models import User
 
         user = User.query.get(user_id)
         if not user:
@@ -1659,7 +1659,7 @@ def admin_update_user(user_id):
             user.password_hash = generate_password_hash(data['password'])
 
         # Save changes
-        from src.database import db
+        from src.teledrive.database import db
         db.session.commit()
 
         # Log admin action
@@ -1677,8 +1677,8 @@ def admin_update_user(user_id):
 def admin_delete_user(user_id):
     """API xóa người dùng"""
     try:
-        from src.auth.models import User
-        from src.database import db
+        from src.teledrive.auth.models import User
+        from src.teledrive.database import db
 
         user = User.query.get(user_id)
         if not user:
@@ -2054,7 +2054,7 @@ def admin_update_personal():
             current_user.phone_number = data['phone']
 
         # Save changes
-        from src.database import db
+        from src.teledrive.database import db
         db.session.commit()
 
         # Log admin action
@@ -2091,7 +2091,7 @@ def admin_change_password():
         current_user.password_hash = generate_password_hash(new_password)
 
         # Save changes
-        from src.database import db
+        from src.teledrive.database import db
         db.session.commit()
 
         # Log admin action
