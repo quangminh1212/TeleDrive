@@ -1,51 +1,47 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Simple config checker - just check if basic files exist
+Simple config checker for production mode
 """
 
-import os
+import json
 import sys
+import os
 
-def check_basic_setup():
-    """Check basic setup without requiring full config"""
+# Set UTF-8 encoding for Windows
+if sys.platform == 'win32':
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+
+def check_config():
+    """Kiểm tra cấu hình cơ bản"""
     try:
-        # Check if config directory exists
-        if not os.path.exists('config'):
-            print("Config directory not found")
+        # Kiểm tra file config
+        config_path = 'config/config.json'
+        if not os.path.exists(config_path):
+            print("[ERROR] File config.json khong ton tai!")
             return False
-        
-        # Check if config.json exists
-        if not os.path.exists('config/config.json'):
-            print("config.json not found")
+
+        # Đọc config
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+
+        # Kiểm tra channel
+        channel = config.get('channels', {}).get('default_channel', '')
+        if not channel or channel in ['', '@your_channel_here']:
+            print("[ERROR] Chua cau hinh channel!")
             return False
-        
-        # Try to load config
-        import json
-        try:
-            with open('config/config.json', 'r', encoding='utf-8') as f:
-                config = json.load(f)
-            
-            # Basic validation - just check if it's valid JSON
-            if isinstance(config, dict):
-                return True
-            else:
-                print("Invalid config format")
-                return False
-                
-        except json.JSONDecodeError:
-            print("Invalid JSON in config file")
-            return False
-        except Exception as e:
-            print(f"Error reading config: {e}")
-            return False
-            
+
+        print("[OK] Cau hinh co ban OK")
+        return True
+
     except Exception as e:
-        print(f"Setup check failed: {e}")
+        print(f"[ERROR] Loi kiem tra config: {e}")
         return False
 
 if __name__ == '__main__':
-    if check_basic_setup():
-        sys.exit(0)  # Success
+    if check_config():
+        sys.exit(0)
     else:
-        sys.exit(1)  # Failure
+        sys.exit(1)

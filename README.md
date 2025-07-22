@@ -172,23 +172,6 @@ TeleDrive/
 - [**Local File Manager**](docs/local-file-manager.md) - File management features
 - [**Troubleshooting**](docs/troubleshooting.md) - Common issues and solutions
 
-## 🧪 Testing
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=teledrive
-
-# Run specific test categories
-pytest -m unit          # Unit tests only
-pytest -m integration   # Integration tests only
-pytest -m "not slow"    # Skip slow tests
-
-# Run tests in parallel
-pytest -n auto
-```
 
 ## 🚀 Deployment
 

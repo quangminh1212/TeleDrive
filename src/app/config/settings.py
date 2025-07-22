@@ -16,10 +16,26 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+def _get_database_uri():
+    """Get database URI with proper path handling"""
+    from pathlib import Path
+
+    # Lấy đường dẫn từ environment variable hoặc tạo default
+    db_url = os.getenv('DATABASE_URL')
+    if db_url:
+        return db_url
+
+    # Tạo đường dẫn absolute cho database
+    instance_dir = Path('instance')
+    instance_dir.mkdir(exist_ok=True)
+    db_path = instance_dir / 'teledrive.db'
+
+    return f'sqlite:///{db_path.resolve()}'
+
 @dataclass
 class DatabaseConfig:
     """Database configuration"""
-    uri: str = field(default_factory=lambda: os.getenv('DATABASE_URL', f'sqlite:///{os.path.abspath("instance/teledrive.db")}'))
+    uri: str = field(default_factory=lambda: _get_database_uri())
     pool_size: int = field(default_factory=lambda: int(os.getenv('DB_POOL_SIZE', '10')))
     pool_timeout: int = field(default_factory=lambda: int(os.getenv('DB_POOL_TIMEOUT', '30')))
     pool_recycle: int = field(default_factory=lambda: int(os.getenv('DB_POOL_RECYCLE', '3600')))
@@ -109,7 +125,9 @@ class ProductionConfig:
         self.environment = os.getenv('ENVIRONMENT', 'production')
         self.debug = os.getenv('DEBUG', 'false').lower() == 'true'
 
-        
+        # TEMPORARY: Support for bypassing authentication during testing
+        self.bypass_auth = os.getenv('BYPASS_AUTH', 'false').lower() == 'true'
+
         # Initialize configuration sections
         self.database = DatabaseConfig()
         self.redis = RedisConfig()
@@ -117,7 +135,7 @@ class ProductionConfig:
         self.logging = LoggingConfig()
         self.telegram = TelegramConfig()
         self.server = ServerConfig()
-        
+
         # Validate configuration
         self._validate_config()
     
@@ -152,6 +170,7 @@ class ProductionConfig:
             'WTF_CSRF_ENABLED': self.security.csrf_enabled,
             'RATELIMIT_ENABLED': self.security.rate_limit_enabled,
             'RATELIMIT_DEFAULT': f"{self.security.rate_limit_per_minute} per minute",
+            'BYPASS_AUTH': self.bypass_auth,  # TEMPORARY: For testing
         }
     
     def is_production(self) -> bool:

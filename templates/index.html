@@ -9,13 +9,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Segoe+UI:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/responsive-improvements.css">
 </head>
 <body>
     <!-- Windows Explorer Style Title Bar -->
     <div class="explorer-title-bar">
         <div class="title-bar-left">
             <div class="app-icon">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive" class="app-icon-img">
+                <img src="/static/images/logo.png" alt="TeleDrive" class="app-icon-img">
             </div>
             <span class="window-title">TeleDrive - File Manager</span>
         </div>
@@ -23,7 +24,7 @@
             {% if user %}
                 <div class="user-info">
                     <i class="icon icon-user"></i>
-                    <span class="username">{{ user.username or 'No username' }}</span>
+                    <!-- Username hidden for cleaner UI -->
                     {% if user.is_admin %}
                         <div class="admin-menu-container">
                             <button class="admin-badge-btn" id="adminMenuToggle" title="Cài đặt Admin">
@@ -71,7 +72,6 @@
                 </div>
             {% else %}
                 <div class="user-info">
-                    <span style="color: red;">No user object found</span>
                     <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
                         <i class="icon icon-sign-out"></i>
                         <span>Đăng xuất</span>
@@ -388,6 +388,12 @@
                         <h2>Welcome to TeleDrive</h2>
                         <p>Your cloud storage for Telegram files. Select a session from the sidebar to browse your scanned files, or start a new scan to discover files from your Telegram chats.</p>
 
+                        <!-- No Scans Message -->
+                        <div class="no-scans-message" id="noScansMessage">
+                            <i class="icon icon-scan"></i>
+                            <p>Chưa có lượt scan nào. Hãy bắt đầu scan đầu tiên để khám phá files từ Telegram của bạn!</p>
+                        </div>
+
                         <!-- Recent Scan Section -->
                         <div class="recent-scan-section" id="recentScanSection" style="display: none;">
                             <h3>📊 Lượt scan gần nhất</h3>
@@ -417,12 +423,6 @@
                                     Xem files
                                 </button>
                             </div>
-                        </div>
-
-                        <!-- No Scans Message -->
-                        <div class="no-scans-message" id="noScansMessage">
-                            <i class="icon icon-scan"></i>
-                            <p>Chưa có lượt scan nào. Hãy bắt đầu scan đầu tiên để khám phá files từ Telegram của bạn!</p>
                         </div>
 
                         <!-- Action Buttons -->
@@ -697,82 +697,7 @@
         </div>
     </div>
 
-    <!-- Windows Explorer Style Status Bar -->
-    <div class="explorer-status-bar">
-        <div class="status-left">
-            <span id="itemCount">0 items</span>
-            <span id="selectedCount" style="display: none;"> • 0 items selected</span>
-        </div>
-        <div class="status-center">
-            <div class="status-progress" id="statusProgress" style="display: none;">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <span class="progress-text" id="progressText">Loading...</span>
-            </div>
-        </div>
-        <div class="status-right">
-            <div class="view-controls">
-                <button class="view-control-btn" id="zoomOutBtn" title="Zoom out">
-                    <i class="icon icon-minus"></i>
-                </button>
-                <div class="zoom-slider-container">
-                    <input type="range" class="zoom-slider" id="zoomSlider" min="0" max="4" value="2" step="1">
-                </div>
-                <button class="view-control-btn" id="zoomInBtn" title="Zoom in">
-                    <i class="icon icon-plus"></i>
-                </button>
-                <div class="view-mode-controls">
-                    <div class="view-dropdown">
-                        <button class="view-mode-btn dropdown-toggle active" id="viewModeBtn" data-view="icons" title="View options">
-                            <i class="icon icon-view-grid"></i>
-                            <i class="icon icon-chevron-down"></i>
-                        </button>
-                        <div class="view-dropdown-menu" id="viewDropdownMenu">
-                            <div class="view-section">
-                                <div class="view-section-title">Biểu tượng</div>
-                                <button class="view-option" data-view="extra-large-icons">
-                                    <i class="icon icon-grid-xl"></i>
-                                    <span>Biểu tượng Rất lớn</span>
-                                </button>
-                                <button class="view-option" data-view="large-icons">
-                                    <i class="icon icon-grid-lg"></i>
-                                    <span>Biểu tượng Lớn</span>
-                                </button>
-                                <button class="view-option active" data-view="medium-icons">
-                                    <i class="icon icon-view-grid"></i>
-                                    <span>Biểu tượng Trung bình</span>
-                                </button>
-                                <button class="view-option" data-view="small-icons">
-                                    <i class="icon icon-grid-sm"></i>
-                                    <span>Biểu tượng Nhỏ</span>
-                                </button>
-                            </div>
-                            <div class="view-section">
-                                <div class="view-section-title">Danh sách</div>
-                                <button class="view-option" data-view="list">
-                                    <i class="icon icon-view-list"></i>
-                                    <span>Danh sách</span>
-                                </button>
-                                <button class="view-option" data-view="details">
-                                    <i class="icon icon-view-details"></i>
-                                    <span>Chi tiết</span>
-                                </button>
-                                <button class="view-option" data-view="tiles">
-                                    <i class="icon icon-tiles"></i>
-                                    <span>Lát</span>
-                                </button>
-                                <button class="view-option" data-view="content">
-                                    <i class="icon icon-content"></i>
-                                    <span>Nội dung</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Mobile Menu Overlay -->
     <div class="mobile-overlay" id="mobileOverlay"></div>
@@ -884,6 +809,7 @@
     <script src="/static/js/windows-explorer.js?v=20250720"></script>
     <script src="/static/js/gdrive-manager.js?v=20250720"></script>
     <script src="/static/js/gdrive-integration.js?v=20250720"></script>
+    <script src="/static/js/mobile-navigation.js?v=20250722"></script>
 
     <!-- Quick fix for admin menu and logout -->
     <script>

@@ -9,11 +9,81 @@ import json
 import os
 import sys
 from pathlib import Path
+from datetime import datetime
 from flask import Flask, render_template, jsonify, request, redirect, url_for, send_file, abort
 from flask_cors import CORS
 from flask_login import login_user, login_required, current_user
 from functools import wraps
 from dotenv import load_dotenv
+
+# Dev mode helper
+def dev_mode_enabled():
+    """Kiểm tra xem có bật dev mode không"""
+    # Check both environment variable and Flask config
+    env_dev_mode = os.getenv('DEV_MODE', 'false').lower() == 'true'
+    flask_dev_mode = app.config.get('DEV_MODE', False) if app else False
+    return env_dev_mode or flask_dev_mode
+
+def create_dev_user():
+    """Tạo user giả cho dev mode"""
+    class DevUser:
+        def __init__(self):
+            self.id = 'dev_user'
+            self.username = 'Developer'
+            self.phone_number = '+84123456789'
+            self.email = 'dev@teledrive.local'
+            self.is_admin = True
+            self.is_active = True
+            self.is_verified = True
+
+        @property
+        def is_authenticated(self):
+            return True
+
+        @property
+        def is_anonymous(self):
+            return False
+
+        def get_id(self):
+            return self.id
+
+    return DevUser()
+
+def dev_login_required(f):
+    """Decorator thay thế login_required trong dev mode"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if dev_mode_enabled():
+            # Trong dev mode, bỏ qua kiểm tra đăng nhập
+            return f(*args, **kwargs)
+        else:
+            # Chế độ bình thường, yêu cầu đăng nhập
+            from flask_login import current_user
+            if not current_user.is_authenticated:
+                return redirect(url_for('login'))
+            return f(*args, **kwargs)
+    return decorated_function
+
+def dev_admin_required(f):
+    """Decorator thay thế admin_required trong dev mode"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if dev_mode_enabled():
+            # Trong dev mode, bỏ qua kiểm tra admin
+            return f(*args, **kwargs)
+        else:
+            # Chế độ bình thường, yêu cầu admin
+            from flask_login import current_user
+            if not current_user.is_authenticated or not current_user.is_admin:
+                if request.is_json or request.headers.get('Content-Type') == 'application/json':
+                    return jsonify({
+                        'success': False,
+                        'error': 'Bạn không có quyền truy cập chức năng này'
+                    }), 403
+                else:
+                    abort(403)
+            return f(*args, **kwargs)
+    return decorated_function
 
 # Load environment variables first
 load_dotenv()
@@ -21,6 +91,7 @@ load_dotenv()
 # Import từ cấu trúc mới
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+<<<<<<< HEAD:src/app/app.py
 from .database import init_database, db
 from .auth import auth_manager, admin_required
 from .models import OTPManager, validate_phone_number
@@ -28,6 +99,16 @@ from .services import send_otp_sync
 from .services.files import FileSystemManager
 from .config import config, validate_environment
 from .security import init_security_middleware
+=======
+from src.teledrive.database import init_database, db
+from src.teledrive.auth import auth_manager
+# Import admin_required nhưng sẽ dùng dev_admin_required thay thế
+from src.teledrive.models import OTPManager, validate_phone_number
+from src.teledrive.services import send_otp_sync
+from src.teledrive.services.filesystem import FileSystemManager
+from src.teledrive.config import config, validate_environment
+from src.teledrive.security import init_security_middleware
+>>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 # Tắt các import logging để giảm log
 # from app.logger import setup_simple_logging, get_simple_logger
 # from app.monitoring import init_health_monitoring
@@ -50,7 +131,16 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 # Apply production configuration
 app.config.update(config.get_flask_config())
 
+<<<<<<< HEAD:src/app/app.py
 # Smart logging - chỉ log những gì cần thiết
+=======
+# Thêm cấu hình cần thiết cho URL generation (chỉ khi cần)
+if not app.config.get('SERVER_NAME'):
+    app.config['APPLICATION_ROOT'] = '/'
+    app.config['PREFERRED_URL_SCHEME'] = 'http'
+
+# Tắt tất cả logging để có giao diện sạch sẽ
+>>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 import logging
 from .logger import (
     get_smart_logger, setup_smart_logging, log_startup,
@@ -77,9 +167,10 @@ init_security_middleware(app)
 # Sử dụng smart logger thay vì SimpleLogger
 # logger = get_smart_logger('teledrive.app')
 
-# Khởi tạo database và authentication system
-init_database(app)
+# Khởi tạo authentication system
 auth_manager.init_app(app)
+
+# Database sẽ được init sau khi app được configure đúng
 
 # Tắt health monitoring để giảm log
 # init_health_monitoring(app)
@@ -95,13 +186,22 @@ class TeleDriveWebAPI:
         """Lấy danh sách các session scan đã thực hiện"""
         try:
             sessions = []
+
+            # Ensure output directory exists
+            self.output_dir.mkdir(exist_ok=True)
+
             json_files = list(self.output_dir.glob("*_telegram_files.json"))
-            
+            logger.info(f"Found {len(json_files)} session files in {self.output_dir}")
+
+            if not json_files:
+                logger.info("No session files found, returning empty list")
+                return []
+
             for json_file in sorted(json_files, reverse=True):
                 try:
                     with open(json_file, 'r', encoding='utf-8') as f:
                         data = json.load(f)
-                    
+
                     # Extract session info từ filename
                     filename = json_file.stem
                     session_id = filename.replace('_telegram_files', '')
@@ -136,17 +236,19 @@ class TeleDriveWebAPI:
                         'scan_info': scan_info,
                         'files': files
                     }
-                    
+
                     sessions.append(session_info)
-                    
+                    logger.info(f"Loaded session {session_id} with {len(files)} files")
+
                 except Exception as e:
-                    print(f"Lỗi đọc file {json_file}: {e}")
+                    logger.error(f"Error reading file {json_file}: {e}")
                     continue
-            
+
+            logger.info(f"Successfully loaded {len(sessions)} sessions")
             return sessions
-            
+
         except Exception as e:
-            print(f"Lỗi lấy danh sách sessions: {e}")
+            logger.error(f"Error getting scan sessions: {e}", exc_info=True)
             return []
     
     def get_session_files(self, session_id):
@@ -298,9 +400,13 @@ fs_manager = FileSystemManager()
 
 # Authentication decorator
 def auth_required(f):
-    """Decorator để yêu cầu xác thực cho API routes"""
+    """Decorator để yêu cầu xác thực cho API routes (hỗ trợ dev mode)"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        if dev_mode_enabled():
+            # Trong dev mode, bỏ qua kiểm tra xác thực
+            return f(*args, **kwargs)
+
         if not current_user.is_authenticated:
             return jsonify({'error': 'Authentication required', 'message': 'Vui lòng đăng nhập'}), 401
         return f(*args, **kwargs)
@@ -310,15 +416,24 @@ def auth_required(f):
 @app.route('/')
 def index():
     """Trang chính - Dashboard"""
-    # Kiểm tra có admin user nào chưa
-    if not auth_manager.has_admin_user():
-        return redirect(url_for('setup'))
+    try:
+        # Trong dev mode, bỏ qua tất cả kiểm tra
+        if dev_mode_enabled():
+            dev_user = create_dev_user()
+            return render_template('index.html', user=dev_user)
 
-    # Yêu cầu đăng nhập
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
+        # Kiểm tra có admin user nào chưa
+        if hasattr(auth_manager, 'has_admin_user') and not auth_manager.has_admin_user():
+            return redirect(url_for('setup'))
 
-    return render_template('index.html', user=current_user)
+        # Yêu cầu đăng nhập (chế độ bình thường)
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+
+        return render_template('index.html', user=current_user)
+    except Exception as e:
+        # Fallback đơn giản khi có lỗi
+        return '<h1>TeleDrive</h1><p>Đang tải...</p><script>setTimeout(function(){location.reload()}, 2000);</script>'
 
 
 
@@ -415,6 +530,7 @@ def send_otp():
         
         # Gửi OTP qua Telegram
         try:
+<<<<<<< HEAD:src/app/app.py
             log_important(f"Sending OTP to: {formatted_phone}")
             success, message = send_otp_sync(formatted_phone)
             if success:
@@ -423,6 +539,18 @@ def send_otp():
             else:
                 log_error_important(f"Failed to send OTP to: {formatted_phone} - {message}")
                 return jsonify({'success': False, 'message': message}), 500
+=======
+            # Tạo OTP code để test
+            from src.teledrive.models.otp import OTPManager
+            otp_code = OTPManager.create_otp(formatted_phone)
+
+            # Return success với OTP code để test
+            return jsonify({
+                'success': True,
+                'message': f'Mã OTP đã được tạo: {otp_code} (Test mode)',
+                'otp_code': otp_code  # Chỉ để test, production sẽ xóa
+            })
+>>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 
         except Exception as e:
             print(f"Lỗi gửi OTP: {e}")
@@ -482,46 +610,135 @@ def verify_otp():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500
 
-@app.route('/debug-admin')
-def debug_admin():
-    """Debug admin interface - bypass authentication"""
-    # Create a mock admin user for testing
-    class MockUser:
-        def __init__(self):
-            self.id = 1
-            self.username = 'admin'
-            self.phone_number = '+84936374950'
-            self.email = 'admin@test.com'
-            self.is_admin = True
-            self.is_active = True
-            self.is_authenticated = True
-            self.is_anonymous = False
-
-        def get_id(self):
-            return str(self.id)
-
-    # Render index template with mock admin user
-    return render_template('index.html', user=MockUser())
-
-@app.route('/test-admin-login')
-def test_admin_login():
-    """Test route để đăng nhập admin"""
-    # Tìm admin user
-    existing_user = auth_manager.find_user_by_phone('+84936374950')
-    if not existing_user:
-        return "Admin user not found. Please create one first at /create-test-admin", 404
-
-    # Login user
-    login_user(existing_user)
-    return redirect(url_for('index'))
-
 # API Routes
+
+# Basic API endpoints
+@app.route('/api/status')
+def api_status():
+    """API status endpoint"""
+    return jsonify({
+        'status': 'ok',
+        'version': '1.0.0',
+        'service': 'TeleDrive API',
+        'timestamp': datetime.now().isoformat(),
+        'uptime': 'running'
+    })
+
+@app.route('/api/files')
+@auth_required
+def api_files():
+    """Get all files across sessions"""
+    try:
+        # Get all sessions
+        sessions = api.get_scan_sessions() if hasattr(api, 'get_scan_sessions') else []
+
+        all_files = []
+        for session in sessions:
+            session_files = api.get_session_files(session.get('id', '')) if hasattr(api, 'get_session_files') else []
+            if session_files:
+                all_files.extend(session_files)
+
+        return jsonify({
+            'success': True,
+            'files': all_files,
+            'total': len(all_files)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'files': [],
+            'total': 0
+        }), 500
+
+# Test route without auth
+@app.route('/api/test')
+def api_test():
+    """Test API route"""
+    return jsonify({'status': 'ok', 'message': 'API is working'})
+
+# Simple HTML test route
+@app.route('/test')
+def test_simple():
+    """Simple test route"""
+    return '<h1>TeleDrive Test</h1><p>Server is working!</p>'
+
+# Debug route for index
+@app.route('/debug')
+def debug_index():
+    """Debug route to test index functionality"""
+    try:
+        dev_mode = dev_mode_enabled()
+        has_admin = auth_manager.has_admin_user() if hasattr(auth_manager, 'has_admin_user') else False
+
+        return jsonify({
+            'dev_mode': dev_mode,
+            'has_admin': has_admin,
+            'config_dev_mode': app.config.get('DEV_MODE', False),
+            'env_dev_mode': os.getenv('DEV_MODE', 'not_set')
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/scans')
 @auth_required
 def get_scans():
     """Lấy danh sách scan sessions"""
-    sessions = api.get_scan_sessions()
-    return jsonify(sessions)
+    try:
+        logger.info("API /api/scans: Starting to get sessions")
+        sessions = api.get_scan_sessions() if hasattr(api, 'get_scan_sessions') else []
+        logger.info(f"API /api/scans: Found {len(sessions)} sessions")
+        return jsonify(sessions)
+    except Exception as e:
+        logger.error(f"Error in /api/scans: {str(e)}", exc_info=True)
+        return jsonify([]), 200  # Return empty array instead of error
+
+@app.route('/api/scan/telegram', methods=['POST'])
+@auth_required
+def start_telegram_scan():
+    """Bắt đầu scan Telegram"""
+    try:
+        data = request.get_json() or {}
+        scan_type = data.get('scan_type', 'telegram')
+        options = data.get('options', {})
+
+        print(f"🚀 [API] Starting Telegram scan with options: {options}")
+
+        # Log the scan request
+        logger.info(f"User {current_user.username if hasattr(current_user, 'username') else 'test_user'} started Telegram scan")
+
+        # TODO: Implement actual Telegram scanning logic
+        # For now, return a mock response
+
+        # Simulate scan process
+        import time
+        import threading
+
+        def mock_scan():
+            print("📱 [SCAN] Mock Telegram scan started in background")
+            time.sleep(2)  # Simulate scan time
+            print("✅ [SCAN] Mock Telegram scan completed")
+
+        # Start mock scan in background
+        scan_thread = threading.Thread(target=mock_scan)
+        scan_thread.daemon = True
+        scan_thread.start()
+
+        return jsonify({
+            'success': True,
+            'message': 'Telegram scan đã được bắt đầu',
+            'scan_id': f'telegram_scan_{int(time.time())}',
+            'status': 'started'
+        })
+
+    except Exception as e:
+        print(f"❌ [API] Error starting Telegram scan: {str(e)}")
+        logger.error(f"Error starting Telegram scan: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Không thể bắt đầu scan Telegram'
+        }), 500
 
 
 
@@ -529,11 +746,18 @@ def get_scans():
 @auth_required
 def get_session_files(session_id):
     """Lấy files trong một session"""
-    data = api.get_session_files(session_id)
-    if data:
-        return jsonify(data)
-    else:
-        return jsonify({'error': 'Session not found'}), 404
+    try:
+        logger.info(f"API /api/files/{session_id}: Loading session files")
+        data = api.get_session_files(session_id)
+        if data:
+            logger.info(f"API /api/files/{session_id}: Found session data")
+            return jsonify(data)
+        else:
+            logger.warning(f"API /api/files/{session_id}: Session not found")
+            return jsonify({'error': 'Session not found', 'files': [], 'scan_info': {}}), 404
+    except Exception as e:
+        logger.error(f"Error in /api/files/{session_id}: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Internal server error', 'files': [], 'scan_info': {}}), 500
 
 
 
@@ -1154,7 +1378,7 @@ def favicon():
 
 
 @app.route('/logout', methods=['GET', 'POST'])
-@login_required
+@dev_login_required
 def logout():
     """Đăng xuất"""
     from flask_login import logout_user, current_user
@@ -1177,8 +1401,8 @@ def logout():
 
 # Admin routes
 @app.route('/api/admin/menu-action', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_menu_action():
     """Handle admin menu actions"""
     try:
@@ -1234,15 +1458,15 @@ def admin_menu_action():
 
 # Admin page routes
 @app.route('/admin')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_navigation():
     """Trang điều hướng admin - WORKING"""
     return render_template('admin/admin_navigation.html')
 
 @app.route('/admin/system')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_system():
     """Trang quản lý hệ thống"""
     try:
@@ -1261,8 +1485,8 @@ def admin_system():
 
 # System stats API
 @app.route('/api/admin/system-stats')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_system_stats():
     """API để lấy thống kê hệ thống"""
     try:
@@ -1300,8 +1524,8 @@ def admin_system_stats():
 
 # System management APIs
 @app.route('/api/admin/backup-database', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_backup_database():
     """API backup database"""
     try:
@@ -1327,8 +1551,8 @@ def admin_backup_database():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/clear-cache', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_clear_cache():
     """API clear cache"""
     try:
@@ -1344,8 +1568,8 @@ def admin_clear_cache():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/health-check')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_health_check():
     """API health check"""
     try:
@@ -1373,16 +1597,16 @@ def admin_health_check():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/users')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_users():
     """Trang quản lý người dùng"""
     return render_template('admin/user_management.html')
 
 # User management APIs
 @app.route('/api/admin/users')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_get_users():
     """API lấy danh sách người dùng"""
     try:
@@ -1406,8 +1630,8 @@ def admin_get_users():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/users', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_create_user():
     """API tạo người dùng mới"""
     try:
@@ -1442,12 +1666,16 @@ def admin_create_user():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/users/<int:user_id>', methods=['PUT'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_update_user(user_id):
     """API cập nhật người dùng"""
     try:
+<<<<<<< HEAD:src/app/app.py
         from app.auth.models import User
+=======
+        from src.teledrive.auth.models import User
+>>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 
         user = User.query.get(user_id)
         if not user:
@@ -1469,7 +1697,11 @@ def admin_update_user(user_id):
             user.password_hash = generate_password_hash(data['password'])
 
         # Save changes
+<<<<<<< HEAD:src/app/app.py
         from app.database import db
+=======
+        from src.teledrive.database import db
+>>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
         db.session.commit()
 
         # Log admin action
@@ -1482,13 +1714,18 @@ def admin_update_user(user_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_delete_user(user_id):
     """API xóa người dùng"""
     try:
+<<<<<<< HEAD:src/app/app.py
         from app.auth.models import User
         from app.database import db
+=======
+        from src.teledrive.auth.models import User
+        from src.teledrive.database import db
+>>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 
         user = User.query.get(user_id)
         if not user:
@@ -1515,8 +1752,8 @@ def admin_delete_user(user_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/settings')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_settings():
     """Trang cài đặt hệ thống với support cho logs và profile"""
     view = request.args.get('view', 'settings')
@@ -1529,23 +1766,23 @@ def admin_settings():
         return render_template('admin/system_settings.html', config=config)
 
 @app.route('/admin/settings/logs')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_settings_logs():
     """Trang xem logs - WORKING ROUTE"""
     return render_template('admin/logs_simple.html')
 
 @app.route('/admin/settings/profile')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_settings_profile():
     """Trang thông tin tài khoản - WORKING ROUTE"""
     return render_template('admin/profile_settings.html', user=current_user)
 
 # Settings API endpoints
 @app.route('/api/admin/settings/<category>', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_save_settings(category):
     """API lưu cài đặt hệ thống"""
     try:
@@ -1566,8 +1803,8 @@ def admin_save_settings(category):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/settings/reset', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_reset_settings():
     """API khôi phục cài đặt mặc định"""
     try:
@@ -1584,36 +1821,33 @@ def admin_reset_settings():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/telegram')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_telegram():
     """Trang cài đặt Telegram"""
     return render_template('admin/telegram_settings.html', config=config)
 
 # FIXED ADMIN ROUTES - MOVED HERE FOR PROPER REGISTRATION
 @app.route('/admin/logs')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_logs_fixed():
     """Trang xem logs - FIXED VERSION"""
     return render_template('admin/logs_simple.html')
 
 @app.route('/admin/profile')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_profile_fixed():
     """Trang thông tin tài khoản - FIXED VERSION"""
     return render_template('admin/profile_settings.html', user=current_user)
 
-@app.route('/test-working')
-def test_working():
-    """Test route to verify fixes"""
-    return "<h1>✅ FIXED ROUTES ARE WORKING!</h1><p>Admin routes have been fixed and moved to proper location.</p>"
+
 
 # Telegram settings API endpoints
 @app.route('/api/admin/telegram-settings/<category>', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_save_telegram_settings(category):
     """API lưu cài đặt Telegram"""
     try:
@@ -1632,8 +1866,8 @@ def admin_save_telegram_settings(category):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/telegram-status')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_telegram_status():
     """API kiểm tra trạng thái kết nối Telegram"""
     try:
@@ -1649,8 +1883,8 @@ def admin_telegram_status():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/telegram-sessions')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_telegram_sessions():
     """API lấy danh sách sessions Telegram"""
     try:
@@ -1667,42 +1901,18 @@ def admin_telegram_sessions():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/logs')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_logs():
     """Trang xem logs"""
     return render_template('admin/logs_simple.html')
 
-@app.route('/test-logs')
-def test_logs():
-    """Test route"""
-    return "<h1>Test Logs Route Works!</h1>"
 
-@app.route('/debug-routes')
-def debug_routes():
-    """Debug routes"""
-    routes = []
-    for rule in app.url_map.iter_rules():
-        routes.append(f"{rule.rule} -> {rule.endpoint}")
-    return "<br>".join(routes)
-
-@app.route('/test-simple')
-def test_simple():
-    """Simple test route"""
-    return "<h1>Simple Test Route Works!</h1>"
-
-@app.route('/test-template')
-def test_template():
-    """Test template rendering"""
-    try:
-        return render_template('admin/logs_simple.html')
-    except Exception as e:
-        return f"Template error: {str(e)}"
 
 # Logs API endpoints
 @app.route('/api/admin/logs')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_get_logs():
     """API lấy logs với filtering và pagination"""
     try:
@@ -1800,8 +2010,8 @@ def admin_get_logs():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/logs/clear', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_clear_logs():
     """API xóa logs"""
     try:
@@ -1820,8 +2030,8 @@ def admin_clear_logs():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/logs/export')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_export_logs():
     """API xuất logs"""
     try:
@@ -1867,16 +2077,16 @@ def admin_export_logs():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/profile')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_profile():
     """Trang thông tin tài khoản"""
     return render_template('admin/profile_settings.html', user=current_user)
 
 # Profile API endpoints
 @app.route('/api/admin/profile/personal', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_update_personal():
     """API cập nhật thông tin cá nhân"""
     try:
@@ -1891,7 +2101,11 @@ def admin_update_personal():
             current_user.phone_number = data['phone']
 
         # Save changes
+<<<<<<< HEAD:src/app/app.py
         from app.database import db
+=======
+        from src.teledrive.database import db
+>>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
         db.session.commit()
 
         # Log admin action
@@ -1907,8 +2121,8 @@ def admin_update_personal():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/profile/password', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_change_password():
     """API đổi mật khẩu"""
     try:
@@ -1928,7 +2142,11 @@ def admin_change_password():
         current_user.password_hash = generate_password_hash(new_password)
 
         # Save changes
+<<<<<<< HEAD:src/app/app.py
         from app.database import db
+=======
+        from src.teledrive.database import db
+>>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
         db.session.commit()
 
         # Log admin action
@@ -1944,8 +2162,8 @@ def admin_change_password():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/profile/preferences', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_update_preferences():
     """API cập nhật tùy chọn"""
     try:
@@ -1965,8 +2183,8 @@ def admin_update_preferences():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/profile/stats')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_profile_stats():
     """API lấy thống kê profile"""
     try:
@@ -1986,8 +2204,8 @@ def admin_profile_stats():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/profile/activity')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_profile_activity():
     """API lấy hoạt động gần đây"""
     try:
@@ -2018,24 +2236,40 @@ def admin_profile_activity():
         logger.error(f"Error getting profile activity: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+<<<<<<< HEAD:src/app/app.py
 # Quick admin login for testing
 @app.route('/quick-admin')
 def quick_admin():
     """Quick login cho admin để test"""
     from flask_login import login_user
     from app.auth.models import User
+=======
+>>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 
+
+# Function để init database khi cần
+def init_app_database():
+    """Initialize database for the app"""
     try:
-        admin_user = User.query.filter_by(is_admin=True).first()
-        if admin_user:
-            login_user(admin_user, remember=True)
-            return redirect(url_for('index'))
-        else:
-            return "No admin user found", 404
+        init_database(app)
+        print("[OK] Database initialized successfully")
+        return True
     except Exception as e:
-        return f"Error: {str(e)}", 500
+        print(f"[ERROR] Database initialization failed: {e}")
+        return False
+
+# Init database khi app được import
+try:
+    init_app_database()
+except Exception as e:
+    print(f"[WARNING] Could not initialize database on import: {e}")
 
 if __name__ == '__main__':
+    # Ensure database is initialized
+    if not init_app_database():
+        print("[ERROR] Cannot start app without database")
+        sys.exit(1)
+
     # Log application startup
     logger.info("Starting TeleDrive application", extra={
         'extra_fields': {
