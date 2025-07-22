@@ -1578,41 +1578,7 @@ body {
     box-shadow: 0 0 0 1px #0078d4;
 }
 
-/* Status Bar - Modern File Manager Style */
-.status-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 28px;
-    background: var(--surface-bg);
-    border-top: 1px solid var(--border-light);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 var(--spacing-lg);
-    font-size: var(--font-size-xs);
-    color: var(--text-secondary);
-    z-index: 100;
-    box-shadow: 0 -1px 2px var(--shadow-light);
-}
 
-.status-left,
-.status-right {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-}
-
-.status-separator {
-    color: var(--text-tertiary);
-    font-weight: normal;
-}
-
-/* Adjust main content to account for status bar */
-.main-content {
-    padding-bottom: 36px;
-}
 
 .view-options {
     display: flex;
@@ -4723,41 +4689,7 @@ body {
     color: var(--text-secondary);
 }
 
-/* Explorer Status Bar */
-.explorer-status-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: var(--status-bar-height);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 var(--spacing-sm);
-    background: var(--surface-bg);
-    border-top: 1px solid var(--border-light);
-    font-size: var(--font-size-xs);
-    color: var(--text-secondary);
-    z-index: 997;
-    min-height: 32px;
-}
 
-.status-left {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-}
-
-.status-right {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-}
-
-.status-separator {
-    color: var(--text-tertiary);
-    margin: 0 var(--spacing-xs);
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {
