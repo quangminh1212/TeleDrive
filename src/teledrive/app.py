@@ -16,6 +16,63 @@ from flask_login import login_user, login_required, current_user
 from functools import wraps
 from dotenv import load_dotenv
 
+# Dev mode helper
+def dev_mode_enabled():
+    """Kiểm tra xem có bật dev mode không"""
+    return os.getenv('DEV_MODE', 'false').lower() == 'true'
+
+def create_dev_user():
+    """Tạo user giả cho dev mode"""
+    from flask_login import AnonymousUserMixin
+    class DevUser(AnonymousUserMixin):
+        def __init__(self):
+            self.id = 'dev_user'
+            self.username = 'Developer'
+            self.phone_number = '+84123456789'
+            self.email = 'dev@teledrive.local'
+            self.is_admin = True
+            self.is_authenticated = True
+            self.is_active = True
+            self.is_anonymous = False
+            self.is_verified = True
+    return DevUser()
+
+def dev_login_required(f):
+    """Decorator thay thế login_required trong dev mode"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if dev_mode_enabled():
+            # Trong dev mode, bỏ qua kiểm tra đăng nhập
+            return f(*args, **kwargs)
+        else:
+            # Chế độ bình thường, yêu cầu đăng nhập
+            from flask_login import current_user
+            if not current_user.is_authenticated:
+                return redirect(url_for('login'))
+            return f(*args, **kwargs)
+    return decorated_function
+
+def dev_admin_required(f):
+    """Decorator thay thế admin_required trong dev mode"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if dev_mode_enabled():
+            # Trong dev mode, bỏ qua kiểm tra admin
+            return f(*args, **kwargs)
+        else:
+            # Chế độ bình thường, yêu cầu admin
+            from flask_login import current_user
+            if not current_user.is_authenticated or not current_user.is_admin:
+                if request.is_json or request.headers.get('Content-Type') == 'application/json':
+                    return jsonify({
+                        'success': False,
+                        'error': 'Bạn không có quyền truy cập chức năng này'
+                    }), 403
+                else:
+                    abort(403)
+            return f(*args, **kwargs)
+    return decorated_function
+
 # Load environment variables first
 load_dotenv()
 
@@ -23,7 +80,8 @@ load_dotenv()
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.teledrive.database import init_database, db
-from src.teledrive.auth import auth_manager, admin_required
+from src.teledrive.auth import auth_manager
+# Import admin_required nhưng sẽ dùng dev_admin_required thay thế
 from src.teledrive.models import OTPManager, validate_phone_number
 from src.teledrive.services import send_otp_sync
 from src.teledrive.services.filesystem import FileSystemManager
@@ -313,9 +371,13 @@ fs_manager = FileSystemManager()
 
 # Authentication decorator
 def auth_required(f):
-    """Decorator để yêu cầu xác thực cho API routes"""
+    """Decorator để yêu cầu xác thực cho API routes (hỗ trợ dev mode)"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        if dev_mode_enabled():
+            # Trong dev mode, bỏ qua kiểm tra xác thực
+            return f(*args, **kwargs)
+
         if not current_user.is_authenticated:
             return jsonify({'error': 'Authentication required', 'message': 'Vui lòng đăng nhập'}), 401
         return f(*args, **kwargs)
@@ -329,7 +391,12 @@ def index():
     if not auth_manager.has_admin_user():
         return redirect(url_for('setup'))
 
-    # Yêu cầu đăng nhập
+    # Kiểm tra chế độ dev (tắt xác thực)
+    if dev_mode_enabled():
+        dev_user = create_dev_user()
+        return render_template('index.html', user=dev_user)
+
+    # Yêu cầu đăng nhập (chế độ bình thường)
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
 
@@ -1220,7 +1287,7 @@ def favicon():
 
 
 @app.route('/logout', methods=['GET', 'POST'])
-@login_required
+@dev_login_required
 def logout():
     """Đăng xuất"""
     from flask_login import logout_user, current_user
@@ -1243,8 +1310,8 @@ def logout():
 
 # Admin routes
 @app.route('/api/admin/menu-action', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_menu_action():
     """Handle admin menu actions"""
     try:
@@ -1300,15 +1367,15 @@ def admin_menu_action():
 
 # Admin page routes
 @app.route('/admin')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_navigation():
     """Trang điều hướng admin - WORKING"""
     return render_template('admin/admin_navigation.html')
 
 @app.route('/admin/system')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_system():
     """Trang quản lý hệ thống"""
     try:
@@ -1327,8 +1394,8 @@ def admin_system():
 
 # System stats API
 @app.route('/api/admin/system-stats')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_system_stats():
     """API để lấy thống kê hệ thống"""
     try:
@@ -1366,8 +1433,8 @@ def admin_system_stats():
 
 # System management APIs
 @app.route('/api/admin/backup-database', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_backup_database():
     """API backup database"""
     try:
@@ -1393,8 +1460,8 @@ def admin_backup_database():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/clear-cache', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_clear_cache():
     """API clear cache"""
     try:
@@ -1410,8 +1477,8 @@ def admin_clear_cache():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/health-check')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_health_check():
     """API health check"""
     try:
@@ -1439,16 +1506,16 @@ def admin_health_check():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/users')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_users():
     """Trang quản lý người dùng"""
     return render_template('admin/user_management.html')
 
 # User management APIs
 @app.route('/api/admin/users')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_get_users():
     """API lấy danh sách người dùng"""
     try:
@@ -1472,8 +1539,8 @@ def admin_get_users():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/users', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_create_user():
     """API tạo người dùng mới"""
     try:
@@ -1508,8 +1575,8 @@ def admin_create_user():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/users/<int:user_id>', methods=['PUT'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_update_user(user_id):
     """API cập nhật người dùng"""
     try:
@@ -1548,8 +1615,8 @@ def admin_update_user(user_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_delete_user(user_id):
     """API xóa người dùng"""
     try:
@@ -1581,8 +1648,8 @@ def admin_delete_user(user_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/settings')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_settings():
     """Trang cài đặt hệ thống với support cho logs và profile"""
     view = request.args.get('view', 'settings')
@@ -1595,23 +1662,23 @@ def admin_settings():
         return render_template('admin/system_settings.html', config=config)
 
 @app.route('/admin/settings/logs')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_settings_logs():
     """Trang xem logs - WORKING ROUTE"""
     return render_template('admin/logs_simple.html')
 
 @app.route('/admin/settings/profile')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_settings_profile():
     """Trang thông tin tài khoản - WORKING ROUTE"""
     return render_template('admin/profile_settings.html', user=current_user)
 
 # Settings API endpoints
 @app.route('/api/admin/settings/<category>', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_save_settings(category):
     """API lưu cài đặt hệ thống"""
     try:
@@ -1632,8 +1699,8 @@ def admin_save_settings(category):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/settings/reset', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_reset_settings():
     """API khôi phục cài đặt mặc định"""
     try:
@@ -1650,23 +1717,23 @@ def admin_reset_settings():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/telegram')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_telegram():
     """Trang cài đặt Telegram"""
     return render_template('admin/telegram_settings.html', config=config)
 
 # FIXED ADMIN ROUTES - MOVED HERE FOR PROPER REGISTRATION
 @app.route('/admin/logs')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_logs_fixed():
     """Trang xem logs - FIXED VERSION"""
     return render_template('admin/logs_simple.html')
 
 @app.route('/admin/profile')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_profile_fixed():
     """Trang thông tin tài khoản - FIXED VERSION"""
     return render_template('admin/profile_settings.html', user=current_user)
@@ -1675,8 +1742,8 @@ def admin_profile_fixed():
 
 # Telegram settings API endpoints
 @app.route('/api/admin/telegram-settings/<category>', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_save_telegram_settings(category):
     """API lưu cài đặt Telegram"""
     try:
@@ -1695,8 +1762,8 @@ def admin_save_telegram_settings(category):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/telegram-status')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_telegram_status():
     """API kiểm tra trạng thái kết nối Telegram"""
     try:
@@ -1712,8 +1779,8 @@ def admin_telegram_status():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/telegram-sessions')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_telegram_sessions():
     """API lấy danh sách sessions Telegram"""
     try:
@@ -1730,8 +1797,8 @@ def admin_telegram_sessions():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/logs')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_logs():
     """Trang xem logs"""
     return render_template('admin/logs_simple.html')
@@ -1740,8 +1807,8 @@ def admin_logs():
 
 # Logs API endpoints
 @app.route('/api/admin/logs')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_get_logs():
     """API lấy logs với filtering và pagination"""
     try:
@@ -1839,8 +1906,8 @@ def admin_get_logs():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/logs/clear', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_clear_logs():
     """API xóa logs"""
     try:
@@ -1859,8 +1926,8 @@ def admin_clear_logs():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/logs/export')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_export_logs():
     """API xuất logs"""
     try:
@@ -1906,16 +1973,16 @@ def admin_export_logs():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/profile')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_profile():
     """Trang thông tin tài khoản"""
     return render_template('admin/profile_settings.html', user=current_user)
 
 # Profile API endpoints
 @app.route('/api/admin/profile/personal', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_update_personal():
     """API cập nhật thông tin cá nhân"""
     try:
@@ -1946,8 +2013,8 @@ def admin_update_personal():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/profile/password', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_change_password():
     """API đổi mật khẩu"""
     try:
@@ -1983,8 +2050,8 @@ def admin_change_password():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/profile/preferences', methods=['POST'])
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_update_preferences():
     """API cập nhật tùy chọn"""
     try:
@@ -2004,8 +2071,8 @@ def admin_update_preferences():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/profile/stats')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_profile_stats():
     """API lấy thống kê profile"""
     try:
@@ -2025,8 +2092,8 @@ def admin_profile_stats():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/profile/activity')
-@login_required
-@admin_required
+@dev_login_required
+@dev_admin_required
 def admin_profile_activity():
     """API lấy hoạt động gần đây"""
     try:
