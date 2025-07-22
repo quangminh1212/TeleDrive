@@ -79,8 +79,16 @@ if errorlevel 1 (
 
 echo    ^> Config.json da san sang
 
-echo    ^> Bo qua kiem tra cau hinh chi tiet (se chay voi cau hinh mac dinh)
-echo [OK] Cau hinh co ban da san sang
+echo    ^> Dang kiem tra tinh hop le cua cau hinh...
+python scripts/check_config.py >nul
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERROR] CAU HINH CHUA HOP LE!
+    echo [INFO] Chay: run.bat config
+    echo.
+    pause
+    exit /b 1
+)
 
 echo.
 echo [BUOC 4/5] Kiem tra dependencies...

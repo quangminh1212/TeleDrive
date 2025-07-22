@@ -4130,7 +4130,16 @@ body {
     }
 }
 
-
+.admin-badge {
+    background: var(--primary-blue);
+    color: white;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    padding: 2px var(--spacing-xs);
+    border-radius: var(--border-radius-large);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
 
 .user-dropdown {
     position: relative;

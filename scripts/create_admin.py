@@ -8,12 +8,12 @@ import sys
 import os
 
 # Thêm thư mục src vào Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from flask import Flask
-from app.database import init_database
-from app.auth import auth_manager
-from app.models.otp import validate_phone_number
+from src.database import init_database
+from src.auth import auth_manager
+from src.models.otp import validate_phone_number
 
 def create_admin_user():
     """Tạo admin user mới"""

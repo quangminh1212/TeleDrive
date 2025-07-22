@@ -91,15 +91,6 @@ load_dotenv()
 # Import từ cấu trúc mới
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-<<<<<<< HEAD:src/app/app.py
-from .database import init_database, db
-from .auth import auth_manager, admin_required
-from .models import OTPManager, validate_phone_number
-from .services import send_otp_sync
-from .services.files import FileSystemManager
-from .config import config, validate_environment
-from .security import init_security_middleware
-=======
 from src.teledrive.database import init_database, db
 from src.teledrive.auth import auth_manager
 # Import admin_required nhưng sẽ dùng dev_admin_required thay thế
@@ -108,10 +99,9 @@ from src.teledrive.services import send_otp_sync
 from src.teledrive.services.filesystem import FileSystemManager
 from src.teledrive.config import config, validate_environment
 from src.teledrive.security import init_security_middleware
->>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 # Tắt các import logging để giảm log
-# from app.logger import setup_simple_logging, get_simple_logger
-# from app.monitoring import init_health_monitoring
+# from src.utils.simple_logger import setup_simple_logging, get_simple_logger
+# from src.monitoring import init_health_monitoring
 
 # Validate environment variables
 try:
@@ -131,27 +121,24 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 # Apply production configuration
 app.config.update(config.get_flask_config())
 
-<<<<<<< HEAD:src/app/app.py
-# Smart logging - chỉ log những gì cần thiết
-=======
 # Thêm cấu hình cần thiết cho URL generation (chỉ khi cần)
 if not app.config.get('SERVER_NAME'):
     app.config['APPLICATION_ROOT'] = '/'
     app.config['PREFERRED_URL_SCHEME'] = 'http'
 
 # Tắt tất cả logging để có giao diện sạch sẽ
->>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 import logging
-from .logger import (
-    get_smart_logger, setup_smart_logging, log_startup,
-    log_important, log_error_important, log_warning_important
-)
+logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
+logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+logging.getLogger('requests').setLevel(logging.CRITICAL)
+logging.getLogger('telethon').setLevel(logging.CRITICAL)
+logging.getLogger('asyncio').setLevel(logging.CRITICAL)
+logging.getLogger('flask').setLevel(logging.CRITICAL)
+logging.getLogger('teledrive').setLevel(logging.CRITICAL)
+app.logger.setLevel(logging.CRITICAL)
 
-# Setup smart logging
-setup_smart_logging()
-
-# Tạo smart logger
-logger = get_smart_logger('teledrive.app')
+# Tắt tất cả root logger
+logging.getLogger().setLevel(logging.CRITICAL)
 
 # Initialize CORS with production settings
 if config.is_production():
@@ -164,8 +151,21 @@ else:
 # Initialize security middleware
 init_security_middleware(app)
 
-# Sử dụng smart logger thay vì SimpleLogger
-# logger = get_smart_logger('teledrive.app')
+# Tạo logger đơn giản chỉ cho lỗi nghiêm trọng
+class SimpleLogger:
+    def info(self, message, **kwargs):
+        pass  # Không log info
+
+    def error(self, message, **kwargs):
+        pass  # Không log error
+
+    def warning(self, message, **kwargs):
+        pass  # Không log warning
+
+    def debug(self, message, **kwargs):
+        pass  # Không log debug
+
+logger = SimpleLogger()
 
 # Khởi tạo authentication system
 auth_manager.init_app(app)
@@ -442,7 +442,6 @@ def index():
 def login():
     """Trang đăng nhập"""
     if current_user.is_authenticated:
-        log_important(f"User already logged in: {current_user.username}")
         return redirect(url_for('index'))
 
     # Kiểm tra có admin user nào chưa, nếu chưa thì redirect đến setup
@@ -530,16 +529,6 @@ def send_otp():
         
         # Gửi OTP qua Telegram
         try:
-<<<<<<< HEAD:src/app/app.py
-            log_important(f"Sending OTP to: {formatted_phone}")
-            success, message = send_otp_sync(formatted_phone)
-            if success:
-                log_important(f"OTP sent successfully to: {formatted_phone}")
-                return jsonify({'success': True, 'message': message})
-            else:
-                log_error_important(f"Failed to send OTP to: {formatted_phone} - {message}")
-                return jsonify({'success': False, 'message': message}), 500
-=======
             # Tạo OTP code để test
             from src.teledrive.models.otp import OTPManager
             otp_code = OTPManager.create_otp(formatted_phone)
@@ -550,7 +539,6 @@ def send_otp():
                 'message': f'Mã OTP đã được tạo: {otp_code} (Test mode)',
                 'otp_code': otp_code  # Chỉ để test, production sẽ xóa
             })
->>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 
         except Exception as e:
             print(f"Lỗi gửi OTP: {e}")
@@ -584,10 +572,8 @@ def verify_otp():
                 })
 
         # Validate OTP
-        log_important(f"Verifying OTP for: {phone_number}")
         is_valid, message = OTPManager.verify_otp(phone_number, otp_code)
         if not is_valid:
-            log_warning_important(f"Invalid OTP for: {phone_number}")
             return jsonify({'success': False, 'message': message}), 400
 
         # Xác thực người dùng
@@ -595,7 +581,6 @@ def verify_otp():
 
         if user:
             login_user(user, remember=remember)
-            log_important(f"User logged in successfully: {user.username} ({phone_number})")
             next_page = request.args.get('next')
 
             return jsonify({
@@ -604,7 +589,6 @@ def verify_otp():
                 'redirect': next_page or url_for('index')
             })
         else:
-            log_error_important(f"Login failed for: {phone_number}")
             return jsonify({'success': False, 'message': 'Không thể đăng nhập. Vui lòng thử lại'}), 401
 
     except Exception as e:
@@ -1671,11 +1655,7 @@ def admin_create_user():
 def admin_update_user(user_id):
     """API cập nhật người dùng"""
     try:
-<<<<<<< HEAD:src/app/app.py
-        from app.auth.models import User
-=======
         from src.teledrive.auth.models import User
->>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 
         user = User.query.get(user_id)
         if not user:
@@ -1697,11 +1677,7 @@ def admin_update_user(user_id):
             user.password_hash = generate_password_hash(data['password'])
 
         # Save changes
-<<<<<<< HEAD:src/app/app.py
-        from app.database import db
-=======
         from src.teledrive.database import db
->>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
         db.session.commit()
 
         # Log admin action
@@ -1719,13 +1695,8 @@ def admin_update_user(user_id):
 def admin_delete_user(user_id):
     """API xóa người dùng"""
     try:
-<<<<<<< HEAD:src/app/app.py
-        from app.auth.models import User
-        from app.database import db
-=======
         from src.teledrive.auth.models import User
         from src.teledrive.database import db
->>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 
         user = User.query.get(user_id)
         if not user:
@@ -2101,11 +2072,7 @@ def admin_update_personal():
             current_user.phone_number = data['phone']
 
         # Save changes
-<<<<<<< HEAD:src/app/app.py
-        from app.database import db
-=======
         from src.teledrive.database import db
->>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
         db.session.commit()
 
         # Log admin action
@@ -2142,11 +2109,7 @@ def admin_change_password():
         current_user.password_hash = generate_password_hash(new_password)
 
         # Save changes
-<<<<<<< HEAD:src/app/app.py
-        from app.database import db
-=======
         from src.teledrive.database import db
->>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
         db.session.commit()
 
         # Log admin action
@@ -2236,15 +2199,6 @@ def admin_profile_activity():
         logger.error(f"Error getting profile activity: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-<<<<<<< HEAD:src/app/app.py
-# Quick admin login for testing
-@app.route('/quick-admin')
-def quick_admin():
-    """Quick login cho admin để test"""
-    from flask_login import login_user
-    from app.auth.models import User
-=======
->>>>>>> f346ae8f5e5d60fe3835ba099966a151645fe771:src/teledrive/app.py
 
 
 # Function để init database khi cần
