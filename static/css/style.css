@@ -5206,6 +5206,42 @@ body {
     color: var(--accent-color);
 }
 
+/* Ẩn phần tử dock/thanh điều hướng dưới cùng */
+img[src*="windows"], 
+img[src*="google"],
+img[src*="drive"],
+img[src*="dock"],
+img[src*="taskbar"],
+.bottom-bar, 
+.dock, 
+.app-dock, 
+.mobile-dock,
+.navbar-bottom,
+.navigation-bottom,
+div[style*="position: fixed"][style*="bottom:"],
+div[style*="position:fixed"][style*="bottom:"],
+div[style*="bottom: 0"],
+div[style*="bottom:0"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Xóa bỏ padding/margin dưới cùng có thể dùng để dành chỗ cho dock */
+html, body {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.main-container,
+.main-content,
+.gdrive-layout,
+.gdrive-files-display {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
 .logout-btn i {
     font-size: var(--font-size-sm);
 }

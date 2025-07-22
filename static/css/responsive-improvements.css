@@ -25,6 +25,59 @@
     --mobile-toolbar-height: 48px;
 }
 
+/* Ẩn bất kỳ menu dock/bottom bar nào ở dưới cùng của màn hình */
+.bottom-bar,
+.app-dock,
+.mobile-dock,
+.dock-container,
+.nav-dock,
+.bottom-nav,
+.gdrive-dock,
+.mobile-nav-bar,
+div[style*="position: fixed"][style*="bottom:"],
+div[style*="position:fixed"][style*="bottom:"],
+div[style*="bottom: 0"],
+div[style*="bottom:0"],
+div[class*="dock"],
+div[class*="Dock"],
+div[class*="bottom-"],
+div[class*="Bottom"],
+img[style*="bottom:"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Đảm bảo không có padding dưới cùng làm tăng khoảng cách cho dock */
+body,
+.main-container,
+.main-content,
+.content-area,
+.files-container {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Nếu phải sử dụng position: fixed và bottom trong định nghĩa CSS để tạo dock bar */
+body::after {
+    content: none !important;
+    display: none !important;
+}
+
+/* Ẩn các bottom menu có thể được thêm vào qua JavaScript */
+[id*="dock"],
+[id*="Dock"],
+[id*="bottom"],
+[id*="Bottom"],
+[id*="navbar"],
+[id*="Navbar"],
+[id*="navigation-bar"] {
+    display: none !important;
+}
+
 /* ===================================
    MOBILE LAYOUT IMPROVEMENTS (320px - 768px)
    ================================== */
