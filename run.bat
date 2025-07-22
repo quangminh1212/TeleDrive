@@ -22,9 +22,12 @@ echo [INFO] Tuy chon:
 echo    run.bat            - Chay web interface (mac dinh)
 echo    run.bat silent     - Chay khong co log (sach se nhat)
 echo    run.bat clean      - Chay voi log toi gian
-echo    run.bat production - Chay production server
+echo    run.bat production - Chay production server (tu dong tat dev mode)
 echo    run.bat scanner    - Chay scanner CLI
-echo    run.bat config     - Menu cau hinh
+echo    run.bat config     - Menu cau hinh (co the bat/tat dev mode)
+echo.
+echo [INFO] Dev Mode:
+python dev_mode.py status 2>nul || echo [WARNING] Chua co dev_mode.py
 echo.
 
 :MAIN_START
@@ -162,13 +165,14 @@ echo 3. Thay doi so tin nhan toi da
 echo 4. Thay doi loai file
 echo 5. Thay doi dinh dang dau ra
 echo 6. Reset ve mac dinh
-echo 7. Chay scanner CLI
-echo 8. Khoi dong web interface (mac dinh)
-echo 9. Thoat
+echo 7. Dev Mode (bat/tat dev mode)
+echo 8. Chay scanner CLI
+echo 9. Khoi dong web interface (mac dinh)
+echo 0. Thoat
 echo.
 echo ================================================================
 
-set /p choice="Nhap lua chon (1-9): "
+set /p choice="Nhap lua chon (0-9): "
 
 if "%choice%"=="1" (
     echo.
@@ -313,19 +317,66 @@ if "%choice%"=="6" (
 
 if "%choice%"=="7" (
     echo.
+    echo ================================================================
+    echo                    DEV MODE MANAGER
+    echo ================================================================
+    echo.
+    echo Trang thai hien tai:
+    python dev_mode.py status 2>nul
+    echo.
+    echo 1. Bat Dev Mode (khong can dang nhap)
+    echo 2. Tat Dev Mode (yeu cau dang nhap)
+    echo 3. Quay lai menu chinh
+    echo.
+    set /p dev_choice="Lua chon (1-3): "
+
+    if "!dev_choice!"=="1" (
+        echo.
+        echo Dang bat Dev Mode...
+        python dev_mode.py on
+        echo.
+        echo [INFO] Dev Mode da duoc BAT!
+        echo [INFO] Khoi dong lai ung dung de ap dung
+        echo.
+        echo Nhan phim bat ky de quay lai menu...
+        pause >nul
+    )
+
+    if "!dev_choice!"=="2" (
+        echo.
+        echo Dang tat Dev Mode...
+        python dev_mode.py off
+        echo.
+        echo [INFO] Dev Mode da duoc TAT!
+        echo [INFO] Khoi dong lai ung dung de ap dung
+        echo.
+        echo Nhan phim bat ky de quay lai menu...
+        pause >nul
+    )
+
+    if "!dev_choice!"=="3" (
+        echo Quay lai menu chinh...
+        timeout /t 1 >nul
+    )
+
+    goto CONFIG_MENU
+)
+
+if "%choice%"=="8" (
+    echo.
     echo Dang khoi dong scanner CLI...
     timeout /t 2 >nul
     goto SCANNER_MODE
 )
 
-if "%choice%"=="8" (
+if "%choice%"=="9" (
     echo.
     echo Dang khoi dong web interface...
     timeout /t 2 >nul
     goto WEB_MODE
 )
 
-if "%choice%"=="9" (
+if "%choice%"=="0" (
     echo.
     echo Cam on ban da su dung!
     timeout /t 2 >nul
@@ -506,7 +557,16 @@ echo [INFO] Chay production server voi Gunicorn
 echo [INFO] Phu hop cho production deployment
 echo.
 
-echo [BUOC 1/5] Kiem tra cau hinh Telegram API...
+echo [BUOC 1/6] Tat dev mode cho production...
+python dev_mode.py off >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [OK] Da tat dev mode cho production
+) else (
+    echo [WARNING] Khong the tat dev mode (co the chua co file dev_mode.py)
+)
+
+echo.
+echo [BUOC 2/6] Kiem tra cau hinh Telegram API...
 python scripts/check_simple.py >nul
 if %errorlevel% neq 0 (
     echo [ERROR] CHUA CAU HINH API TELEGRAM!
@@ -517,7 +577,7 @@ if %errorlevel% neq 0 (
 echo [OK] Cau hinh Telegram API hop le
 
 echo.
-echo [BUOC 2/5] Kiem tra Python...
+echo [BUOC 3/6] Kiem tra Python...
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Python khong duoc cai dat hoac khong co trong PATH
@@ -528,7 +588,7 @@ for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
 echo [OK] Python !PYTHON_VERSION! da san sang
 
 echo.
-echo [BUOC 3/4] Kiem tra dependencies...
+echo [BUOC 4/6] Kiem tra dependencies...
 python -c "import flask, telethon, pandas, openpyxl" >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Thieu dependencies. Dang cai dat...
@@ -542,12 +602,12 @@ if %errorlevel% neq 0 (
 echo [OK] Tat ca dependencies da san sang
 
 echo.
-echo [BUOC 4/5] Khoi tao he thong logging...
+echo [BUOC 5/6] Khoi tao he thong logging...
 if not exist logs mkdir logs
 echo [OK] He thong logging da san sang
 
 echo.
-echo [BUOC 5/5] Khoi dong Production Server...
+echo [BUOC 6/6] Khoi dong Production Server...
 echo ================================================================
 echo [INFO] DANG KHOI DONG PRODUCTION SERVER...
 echo ================================================================
@@ -581,7 +641,16 @@ echo.
 echo [INFO] Chay voi log toi gian - giao dien sach se
 echo.
 
-echo [BUOC 1/3] Kiem tra Python...
+echo [BUOC 1/4] Tat dev mode cho clean mode...
+python dev_mode.py off >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [OK] Da tat dev mode
+) else (
+    echo [WARNING] Khong the tat dev mode
+)
+
+echo.
+echo [BUOC 2/4] Kiem tra Python...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] KHONG TIM THAY PYTHON!
@@ -593,7 +662,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 2/3] Kiem tra thu vien...
+echo [BUOC 3/4] Kiem tra thu vien...
 python -c "import flask" >nul 2>&1
 if errorlevel 1 (
     echo [INFO] Cai dat thu vien...
@@ -608,7 +677,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 3/3] Khoi dong TeleDrive Clean Mode...
+echo [BUOC 4/4] Khoi dong TeleDrive Clean Mode...
 echo.
 python clean.py
 goto END
