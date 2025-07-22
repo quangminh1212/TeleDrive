@@ -26,18 +26,27 @@ def dev_mode_enabled():
 
 def create_dev_user():
     """Tạo user giả cho dev mode"""
-    from flask_login import AnonymousUserMixin
-    class DevUser(AnonymousUserMixin):
+    class DevUser:
         def __init__(self):
             self.id = 'dev_user'
             self.username = 'Developer'
             self.phone_number = '+84123456789'
             self.email = 'dev@teledrive.local'
             self.is_admin = True
-            self.is_authenticated = True
             self.is_active = True
-            self.is_anonymous = False
             self.is_verified = True
+
+        @property
+        def is_authenticated(self):
+            return True
+
+        @property
+        def is_anonymous(self):
+            return False
+
+        def get_id(self):
+            return self.id
+
     return DevUser()
 
 def dev_login_required(f):
@@ -111,6 +120,11 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 # Apply production configuration
 app.config.update(config.get_flask_config())
+
+# Thêm cấu hình cần thiết cho URL generation (chỉ khi cần)
+if not app.config.get('SERVER_NAME'):
+    app.config['APPLICATION_ROOT'] = '/'
+    app.config['PREFERRED_URL_SCHEME'] = 'http'
 
 # Tắt tất cả logging để có giao diện sạch sẽ
 import logging
@@ -418,10 +432,8 @@ def index():
 
         return render_template('index.html', user=current_user)
     except Exception as e:
-        logger.error(f"Error in index route: {str(e)}", exc_info=True)
-        # Fallback: always show dev user in case of error
-        dev_user = create_dev_user()
-        return render_template('index.html', user=dev_user)
+        # Fallback đơn giản khi có lỗi
+        return '<h1>TeleDrive</h1><p>Đang tải...</p><script>setTimeout(function(){location.reload()}, 2000);</script>'
 
 
 
@@ -628,6 +640,12 @@ def api_files():
 def api_test():
     """Test API route"""
     return jsonify({'status': 'ok', 'message': 'API is working'})
+
+# Simple HTML test route
+@app.route('/test')
+def test_simple():
+    """Simple test route"""
+    return '<h1>TeleDrive Test</h1><p>Server is working!</p>'
 
 # Debug route for index
 @app.route('/debug')
