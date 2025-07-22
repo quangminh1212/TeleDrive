@@ -36,7 +36,7 @@ if __name__ == '__main__':
         # Chạy server silent
         app.run(
             host='0.0.0.0',
-            port=5000,
+            port=3000,
             debug=False,
             threaded=True,
             use_reloader=False

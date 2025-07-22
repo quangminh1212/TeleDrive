@@ -17,7 +17,7 @@ echo ================================================================
 echo                    TELEDRIVE WEB INTERFACE
 echo ================================================================
 echo.
-echo [INFO] Mac dinh: Chay web interface tai http://localhost:5000
+echo [INFO] Mac dinh: Chay web interface tai http://localhost:3000
 echo [INFO] Tuy chon:
 echo    run.bat            - Chay web interface (mac dinh)
 echo    run.bat silent     - Chay khong co log (sach se nhat)
@@ -133,7 +133,7 @@ echo ================================================================
 echo [INFO] DANG KHOI DONG WEB INTERFACE TU DONG...
 echo ================================================================
 echo.
-echo [INFO] Web interface se chay tai: http://localhost:5000
+echo [INFO] Web interface se chay tai: http://localhost:3000
 echo [INFO] Nhan Ctrl+C de dung server
 echo [INFO] Du lieu hien thi tu thu muc: output/
 echo.
@@ -509,7 +509,7 @@ echo ================================================================
 echo [INFO] DANG KHOI DONG WEB INTERFACE...
 echo ================================================================
 echo.
-echo [INFO] Web interface se chay tai: http://localhost:5000
+echo [INFO] Web interface se chay tai: http://localhost:3000
 echo [INFO] Nhan Ctrl+C de dung server
 echo [INFO] Du lieu hien thi tu thu muc: output/
 echo.
@@ -631,7 +631,7 @@ echo ================================================================
 echo [INFO] DANG KHOI DONG PRODUCTION SERVER...
 echo ================================================================
 echo.
-echo [INFO] Production server se chay tai: http://localhost:5000
+echo [INFO] Production server se chay tai: http://localhost:3000
 echo [INFO] Nhan Ctrl+C de dung server
 echo [INFO] Access logs: logs/access.log
 echo [INFO] Error logs: logs/error.log

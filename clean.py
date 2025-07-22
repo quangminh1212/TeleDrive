@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore")
 if __name__ == '__main__':
     try:
         print("🚀 TeleDrive Clean Mode")
-        print("🌐 Server: http://localhost:5000")
+        print("🌐 Server: http://localhost:3000")
         print("📱 Press Ctrl+C to stop")
         print("-" * 30)
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
         # Chạy server
         app.run(
             host='0.0.0.0',
-            port=5000,
+            port=3000,
             debug=False,
             threaded=True,
             use_reloader=False

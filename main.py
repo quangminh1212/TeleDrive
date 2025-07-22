@@ -73,7 +73,7 @@ if __name__ == '__main__':
         # Set Flask config
         app.config['DEV_MODE'] = True
 
-        print("🌐 Server starting at: http://localhost:5000")
+        print("🌐 Server starting at: http://localhost:3000")
         print("🔧 Dev Mode: Enabled (no login required)")
         print("👤 User: Developer (admin)")
         print("📱 Press Ctrl+C to stop")
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         # Chạy server
         app.run(
             host='0.0.0.0',
-            port=5000,
+            port=3000,
             debug=False,
             threaded=True,
             use_reloader=False

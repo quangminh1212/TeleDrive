@@ -29,14 +29,14 @@ if __name__ == '__main__':
         app.config['DEV_MODE'] = True
 
         print("✅ App imported successfully")
-        print("🌐 Starting debug server at: http://localhost:5000")
+        print("🌐 Starting debug server at: http://localhost:3000")
         print("📱 Press Ctrl+C to stop")
         print("-" * 50)
 
         # Chạy server với debug
         app.run(
             host='0.0.0.0',
-            port=5000,
+            port=3000,
             debug=True,
             threaded=True,
             use_reloader=False
