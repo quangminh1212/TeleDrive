@@ -150,9 +150,10 @@ class SimpleLogger:
 
 logger = SimpleLogger()
 
-# Khởi tạo database và authentication system
-init_database(app)
+# Khởi tạo authentication system
 auth_manager.init_app(app)
+
+# Database sẽ được init sau khi app được configure đúng
 
 # Tắt health monitoring để giảm log
 # init_health_monitoring(app)
@@ -2126,7 +2127,29 @@ def admin_profile_activity():
 
 
 
+# Function để init database khi cần
+def init_app_database():
+    """Initialize database for the app"""
+    try:
+        init_database(app)
+        print("[OK] Database initialized successfully")
+        return True
+    except Exception as e:
+        print(f"[ERROR] Database initialization failed: {e}")
+        return False
+
+# Init database khi app được import
+try:
+    init_app_database()
+except Exception as e:
+    print(f"[WARNING] Could not initialize database on import: {e}")
+
 if __name__ == '__main__':
+    # Ensure database is initialized
+    if not init_app_database():
+        print("[ERROR] Cannot start app without database")
+        sys.exit(1)
+
     # Log application startup
     logger.info("Starting TeleDrive application", extra={
         'extra_fields': {
