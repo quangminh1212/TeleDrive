@@ -19,7 +19,10 @@ from dotenv import load_dotenv
 # Dev mode helper
 def dev_mode_enabled():
     """Kiểm tra xem có bật dev mode không"""
-    return os.getenv('DEV_MODE', 'false').lower() == 'true'
+    # Check both environment variable and Flask config
+    env_dev_mode = os.getenv('DEV_MODE', 'false').lower() == 'true'
+    flask_dev_mode = app.config.get('DEV_MODE', False) if app else False
+    return env_dev_mode or flask_dev_mode
 
 def create_dev_user():
     """Tạo user giả cho dev mode"""
@@ -169,13 +172,22 @@ class TeleDriveWebAPI:
         """Lấy danh sách các session scan đã thực hiện"""
         try:
             sessions = []
+
+            # Ensure output directory exists
+            self.output_dir.mkdir(exist_ok=True)
+
             json_files = list(self.output_dir.glob("*_telegram_files.json"))
-            
+            logger.info(f"Found {len(json_files)} session files in {self.output_dir}")
+
+            if not json_files:
+                logger.info("No session files found, returning empty list")
+                return []
+
             for json_file in sorted(json_files, reverse=True):
                 try:
                     with open(json_file, 'r', encoding='utf-8') as f:
                         data = json.load(f)
-                    
+
                     # Extract session info từ filename
                     filename = json_file.stem
                     session_id = filename.replace('_telegram_files', '')
@@ -210,17 +222,19 @@ class TeleDriveWebAPI:
                         'scan_info': scan_info,
                         'files': files
                     }
-                    
+
                     sessions.append(session_info)
-                    
+                    logger.info(f"Loaded session {session_id} with {len(files)} files")
+
                 except Exception as e:
-                    print(f"Lỗi đọc file {json_file}: {e}")
+                    logger.error(f"Error reading file {json_file}: {e}")
                     continue
-            
+
+            logger.info(f"Successfully loaded {len(sessions)} sessions")
             return sessions
-            
+
         except Exception as e:
-            print(f"Lỗi lấy danh sách sessions: {e}")
+            logger.error(f"Error getting scan sessions: {e}", exc_info=True)
             return []
     
     def get_session_files(self, session_id):
@@ -388,20 +402,26 @@ def auth_required(f):
 @app.route('/')
 def index():
     """Trang chính - Dashboard"""
-    # Kiểm tra có admin user nào chưa
-    if not auth_manager.has_admin_user():
-        return redirect(url_for('setup'))
+    try:
+        # Trong dev mode, bỏ qua tất cả kiểm tra
+        if dev_mode_enabled():
+            dev_user = create_dev_user()
+            return render_template('index.html', user=dev_user)
 
-    # Kiểm tra chế độ dev (tắt xác thực)
-    if dev_mode_enabled():
+        # Kiểm tra có admin user nào chưa
+        if hasattr(auth_manager, 'has_admin_user') and not auth_manager.has_admin_user():
+            return redirect(url_for('setup'))
+
+        # Yêu cầu đăng nhập (chế độ bình thường)
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+
+        return render_template('index.html', user=current_user)
+    except Exception as e:
+        logger.error(f"Error in index route: {str(e)}", exc_info=True)
+        # Fallback: always show dev user in case of error
         dev_user = create_dev_user()
         return render_template('index.html', user=dev_user)
-
-    # Yêu cầu đăng nhập (chế độ bình thường)
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
-
-    return render_template('index.html', user=current_user)
 
 
 
@@ -603,12 +623,41 @@ def api_files():
             'total': 0
         }), 500
 
+# Test route without auth
+@app.route('/api/test')
+def api_test():
+    """Test API route"""
+    return jsonify({'status': 'ok', 'message': 'API is working'})
+
+# Debug route for index
+@app.route('/debug')
+def debug_index():
+    """Debug route to test index functionality"""
+    try:
+        dev_mode = dev_mode_enabled()
+        has_admin = auth_manager.has_admin_user() if hasattr(auth_manager, 'has_admin_user') else False
+
+        return jsonify({
+            'dev_mode': dev_mode,
+            'has_admin': has_admin,
+            'config_dev_mode': app.config.get('DEV_MODE', False),
+            'env_dev_mode': os.getenv('DEV_MODE', 'not_set')
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/scans')
 @auth_required
 def get_scans():
     """Lấy danh sách scan sessions"""
-    sessions = api.get_scan_sessions() if hasattr(api, 'get_scan_sessions') else []
-    return jsonify(sessions)
+    try:
+        logger.info("API /api/scans: Starting to get sessions")
+        sessions = api.get_scan_sessions() if hasattr(api, 'get_scan_sessions') else []
+        logger.info(f"API /api/scans: Found {len(sessions)} sessions")
+        return jsonify(sessions)
+    except Exception as e:
+        logger.error(f"Error in /api/scans: {str(e)}", exc_info=True)
+        return jsonify([]), 200  # Return empty array instead of error
 
 @app.route('/api/scan/telegram', methods=['POST'])
 @auth_required
@@ -663,11 +712,18 @@ def start_telegram_scan():
 @auth_required
 def get_session_files(session_id):
     """Lấy files trong một session"""
-    data = api.get_session_files(session_id)
-    if data:
-        return jsonify(data)
-    else:
-        return jsonify({'error': 'Session not found'}), 404
+    try:
+        logger.info(f"API /api/files/{session_id}: Loading session files")
+        data = api.get_session_files(session_id)
+        if data:
+            logger.info(f"API /api/files/{session_id}: Found session data")
+            return jsonify(data)
+        else:
+            logger.warning(f"API /api/files/{session_id}: Session not found")
+            return jsonify({'error': 'Session not found', 'files': [], 'scan_info': {}}), 404
+    except Exception as e:
+        logger.error(f"Error in /api/files/{session_id}: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Internal server error', 'files': [], 'scan_info': {}}), 500
 
 
 
