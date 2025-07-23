@@ -46,7 +46,7 @@ class AuthManager:
             instance_dir.mkdir(exist_ok=True)
 
             # Đường dẫn database với absolute path
-            db_path = instance_dir / 'teledrive.db'
+            db_path = instance_dir / 'app.db'
             app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path.resolve()}'
 
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

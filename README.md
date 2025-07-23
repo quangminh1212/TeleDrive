@@ -90,10 +90,10 @@ cp .env.example .env
 # Edit .env with your configuration
 
 # Start services
-docker-compose -f config/docker-compose.yml up -d
+docker-compose -f config/docker.yml up -d
 
 # View logs
-docker-compose -f config/docker-compose.yml logs -f
+docker-compose -f config/docker.yml logs -f
 ```
 
 ### Using Docker
@@ -196,7 +196,7 @@ TeleDrive/
    pip install -e ".[production]"
 
    # Run with Gunicorn
-   gunicorn --config config/gunicorn.conf.py src.teledrive.app:app
+   gunicorn --config config/server.py src.teledrive.app:app
    ```
 
 3. **Using Docker**

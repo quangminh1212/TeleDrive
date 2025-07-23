@@ -44,7 +44,7 @@ def init_database(app):
         if not hasattr(app, 'extensions') or 'sqlalchemy' not in app.extensions:
             # Dam bao SQLALCHEMY_DATABASE_URI duoc cau hinh dung
             if 'SQLALCHEMY_DATABASE_URI' not in app.config:
-                db_path = instance_dir / 'teledrive.db'
+                db_path = instance_dir / 'app.db'
                 
                 # Kiểm tra quyền truy cập file
                 if db_path.exists():
@@ -94,7 +94,7 @@ def init_database(app):
                         except Exception as chmod_error:
                             print(f"[WARNING] Khong the thay doi quyen thu muc: {chmod_error}")
 
-                    db_path = db_dir / 'teledrive.db'
+                    db_path = db_dir / 'app.db'
                     
                     # Kiểm tra nếu file đã tồn tại và không thể ghi
                     if db_path.exists():
@@ -104,13 +104,13 @@ def init_database(app):
                                 pass
                         except Exception:
                             # Nếu không mở được, thử đổi tên
-                            backup_path = db_dir / f'teledrive_backup_{int(time.time())}.db'
+                            backup_path = db_dir / f'app_backup_{int(time.time())}.db'
                             try:
                                 db_path.rename(backup_path)
                                 print(f"[INFO] Da sao luu database cu sang: {backup_path}")
                             except Exception:
                                 # Nếu không đổi tên được, thử tạo tên file mới
-                                db_path = db_dir / f'teledrive_new_{int(time.time())}.db'
+                                db_path = db_dir / f'app_new_{int(time.time())}.db'
                                 print(f"[INFO] Se tao database moi tai: {db_path}")
 
                     # Tao database don gian

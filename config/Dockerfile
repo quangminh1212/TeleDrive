@@ -79,4 +79,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
 # Default command
-CMD ["gunicorn", "--config", "config/gunicorn.conf.py", "src.teledrive.app:app"]
+CMD ["gunicorn", "--config", "config/server.py", "src.teledrive.app:app"]

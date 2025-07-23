@@ -28,7 +28,7 @@ def _get_database_uri():
     # Tạo đường dẫn absolute cho database
     instance_dir = Path('instance')
     instance_dir.mkdir(exist_ok=True)
-    db_path = instance_dir / 'teledrive.db'
+    db_path = instance_dir / 'app.db'
 
     return f'sqlite:///{db_path.resolve()}'
 
