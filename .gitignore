@@ -194,6 +194,13 @@ teledrive_output.log
 nohup.out
 *.pid
 .teledrive_running
+teledrive.log
+
+# Additional logs and temporary files
+*.stdout
+*.stderr
+*_out.txt
+*_err.txt
 
 # Additional editor files
 *.bak

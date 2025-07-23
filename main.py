@@ -8,9 +8,57 @@ Entry point cho TeleDrive Web Application
 import sys
 import os
 import logging
+import argparse
+import subprocess
 
 # Thêm thư mục src vào Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+# Hàm chạy TeleDrive trong tiến trình riêng biệt
+def run_detached():
+    """
+    Khởi động TeleDrive trong một tiến trình riêng để tránh bị treo trong Cursor
+    """
+    print("\n" + "=" * 60)
+    print("    TELEDRIVE - CHẾ ĐỘ CHẠY KHÔNG BỊ TREO")
+    print("=" * 60)
+    
+    print("\n[INFO] Đang khởi động TeleDrive trong tiến trình riêng...")
+    
+    # Lấy đường dẫn script hiện tại
+    current_script = os.path.abspath(__file__)
+    current_dir = os.path.dirname(current_script)
+    
+    # Tạo lệnh để chạy trong tiến trình riêng
+    command = [sys.executable, current_script, "--no-detach"]
+    
+    # Tạo tiến trình với cửa sổ riêng
+    if os.name == 'nt':  # Windows
+        CREATE_NEW_CONSOLE = 0x00000010
+        process = subprocess.Popen(
+            command,
+            creationflags=CREATE_NEW_CONSOLE,
+            cwd=current_dir
+        )
+        print(f"[OK] Đã khởi động TeleDrive với PID: {process.pid}")
+    else:  # Linux/Mac
+        command_str = " ".join(command)
+        os.system(f"nohup {command_str} > teledrive_output.log 2>&1 &")
+        print("[OK] Đã khởi động TeleDrive trong tiến trình nền")
+    
+    print("\n[INFO] TeleDrive đang chạy trong tiến trình riêng")
+    print("[INFO] Bạn có thể tiếp tục làm việc trong Cursor mà không bị treo")
+    print("[INFO] Truy cập web interface tại: http://localhost:3000")
+    
+    # Tạo file đánh dấu để biết rằng TeleDrive đang chạy
+    try:
+        with open(".teledrive_running", "w") as f:
+            f.write(f"TeleDrive running in separate process\n")
+        print("[INFO] Đã tạo file .teledrive_running")
+    except:
+        pass
+    
+    print("\n" + "=" * 60)
 
 # Tắt TẤT CẢ các log hoàn toàn
 logging.disable(logging.CRITICAL)
@@ -23,6 +71,17 @@ for logger_name in ['werkzeug', 'urllib3', 'requests', 'telethon', 'asyncio', 'f
 # Tắt warnings
 import warnings
 warnings.filterwarnings("ignore")
+
+# Xử lý tham số dòng lệnh
+parser = argparse.ArgumentParser(description="TeleDrive Application Runner")
+parser.add_argument("--detached", action="store_true", help="Chạy trong tiến trình riêng (tránh bị treo)")
+parser.add_argument("--no-detach", action="store_true", help="Buộc chạy trong tiến trình hiện tại")
+args = parser.parse_args()
+
+# Nếu được chỉ định chạy detached và không có cờ no-detach
+if args.detached and not args.no_detach:
+    run_detached()
+    sys.exit(0)
 
 # Sửa database trước khi import app
 print("[INFO] Checking database...")
@@ -97,6 +156,14 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
         print("\n[OK] Server stopped by user")
+        
+        # Xóa file đánh dấu khi dừng server
+        if os.path.exists(".teledrive_running"):
+            try:
+                os.remove(".teledrive_running")
+            except:
+                pass
+                
     except Exception as e:
         print(f"[ERROR] Error: {e}")
         import traceback
