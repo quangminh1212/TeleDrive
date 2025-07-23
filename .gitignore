@@ -188,3 +188,14 @@ output/*
 reports/
 audit_report.md
 final_report.md
+
+# Detached process files
+teledrive_output.log
+nohup.out
+*.pid
+.teledrive_running
+
+# Additional editor files
+*.bak
+*.code-workspace
+.history/
