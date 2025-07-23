@@ -49,6 +49,7 @@ if not db_path.exists():
             last_login DATETIME,
             is_active BOOLEAN DEFAULT 1,
             is_admin BOOLEAN DEFAULT 0,
+            is_verified BOOLEAN DEFAULT 1,
             password_hash VARCHAR(255)
         )
     ''')
