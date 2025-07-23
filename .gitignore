@@ -136,9 +136,6 @@ data/
 # Application specific
 logs/
 *.log
-output/*
-!output/.gitkeep
-uploads/
 downloads/
 static/uploads/
 
