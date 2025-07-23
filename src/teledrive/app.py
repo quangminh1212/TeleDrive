@@ -10,7 +10,7 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request, redirect, url_for, send_file, abort
+from flask import Flask, render_template, jsonify, request, redirect, url_for, send_file, abort, make_response
 from flask_cors import CORS
 from flask_login import login_user, login_required, current_user
 from functools import wraps
@@ -150,6 +150,21 @@ else:
 
 # Initialize security middleware
 init_security_middleware(app)
+
+# Add cache headers for static files
+@app.after_request
+def add_cache_headers(response):
+    """Add proper cache headers for static files"""
+    if request.endpoint == 'static':
+        # Force no cache for CSS and JS files to prevent old file issues
+        if request.path.endswith(('.css', '.js')):
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        else:
+            # Cache other static files for 1 hour
+            response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
 
 # Tạo logger đơn giản chỉ cho lỗi nghiêm trọng
 class SimpleLogger:
