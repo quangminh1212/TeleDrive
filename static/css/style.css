@@ -5049,6 +5049,12 @@ body {
     height: 16px;
 }
 
+.app-icon-text {
+    font-size: 16px;
+    line-height: 1;
+    display: inline-block;
+}
+
 .window-title {
     font-size: var(--font-size-sm);
     color: var(--text-primary);

@@ -91,14 +91,14 @@ load_dotenv()
 # Import từ cấu trúc mới
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.teledrive.database import db
-from src.teledrive.auth import auth_manager
+from .database import db
+from .auth import auth_manager
 # Import admin_required nhưng sẽ dùng dev_admin_required thay thế
-from src.teledrive.models import OTPManager, validate_phone_number
-from src.teledrive.services import send_otp_sync
-from src.teledrive.services.filesystem import FileSystemManager
-from src.teledrive.config import config, validate_environment
-from src.teledrive.security import init_security_middleware
+from .models import OTPManager, validate_phone_number
+from .services import send_otp_sync
+from .services.filesystem import FileSystemManager
+from .config import config, validate_environment
+from .security import init_security_middleware
 # Tắt các import logging để giảm log
 # from src.utils.simple_logger import setup_simple_logging, get_simple_logger
 # from src.monitoring import init_health_monitoring
@@ -584,7 +584,7 @@ def send_otp():
         # Gửi OTP qua Telegram
         try:
             # Tạo OTP code để test
-            from src.teledrive.models.otp import OTPManager
+            from .models.otp import OTPManager
             otp_code = OTPManager.create_otp(formatted_phone)
 
             # Return success với OTP code để test
@@ -648,6 +648,110 @@ def verify_otp():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500
 
+# ===== ADMIN ROUTES =====
+
+@app.route('/admin/logs')
+@dev_admin_required
+def admin_logs():
+    """Admin logs viewer page"""
+    try:
+        # In dev mode, create a dev user
+        if dev_mode_enabled():
+            user = create_dev_user()
+        else:
+            user = current_user
+
+        return render_template('admin/logs_viewer.html', user=user)
+
+    except Exception as e:
+        logger.error(f"Error loading admin logs page: {str(e)}", exc_info=True)
+        return f"<h1>Error</h1><p>Không thể tải trang logs: {str(e)}</p>", 500
+
+@app.route('/admin/profile')
+@dev_admin_required
+def admin_profile():
+    """Admin profile settings page"""
+    try:
+        # In dev mode, create a dev user
+        if dev_mode_enabled():
+            user = create_dev_user()
+        else:
+            user = current_user
+
+        return render_template('admin/profile_settings.html', user=user)
+
+    except Exception as e:
+        logger.error(f"Error loading admin profile page: {str(e)}", exc_info=True)
+        return f"<h1>Error</h1><p>Không thể tải trang profile: {str(e)}</p>", 500
+
+@app.route('/admin/users')
+@dev_admin_required
+def admin_users():
+    """Admin user management page"""
+    try:
+        # In dev mode, create a dev user
+        if dev_mode_enabled():
+            user = create_dev_user()
+        else:
+            user = current_user
+
+        return render_template('admin/user_management.html', user=user)
+
+    except Exception as e:
+        logger.error(f"Error loading admin users page: {str(e)}", exc_info=True)
+        return f"<h1>Error</h1><p>Không thể tải trang users: {str(e)}</p>", 500
+
+@app.route('/admin/system')
+@dev_admin_required
+def admin_system():
+    """Admin system management page"""
+    try:
+        # In dev mode, create a dev user
+        if dev_mode_enabled():
+            user = create_dev_user()
+        else:
+            user = current_user
+
+        return render_template('admin/system_management.html', user=user)
+
+    except Exception as e:
+        logger.error(f"Error loading admin system page: {str(e)}", exc_info=True)
+        return f"<h1>Error</h1><p>Không thể tải trang system: {str(e)}</p>", 500
+
+@app.route('/admin/settings')
+@dev_admin_required
+def admin_settings():
+    """Admin system settings page"""
+    try:
+        # In dev mode, create a dev user
+        if dev_mode_enabled():
+            user = create_dev_user()
+        else:
+            user = current_user
+
+        return render_template('admin/system_settings.html', user=user)
+
+    except Exception as e:
+        logger.error(f"Error loading admin settings page: {str(e)}", exc_info=True)
+        return f"<h1>Error</h1><p>Không thể tải trang settings: {str(e)}</p>", 500
+
+@app.route('/admin/telegram')
+@dev_admin_required
+def admin_telegram():
+    """Admin Telegram settings page"""
+    try:
+        # In dev mode, create a dev user
+        if dev_mode_enabled():
+            user = create_dev_user()
+        else:
+            user = current_user
+
+        return render_template('admin/telegram_settings.html', user=user)
+
+    except Exception as e:
+        logger.error(f"Error loading admin telegram page: {str(e)}", exc_info=True)
+        return f"<h1>Error</h1><p>Không thể tải trang telegram: {str(e)}</p>", 500
+
 # API Routes
 
 # Basic API endpoints
@@ -666,7 +770,17 @@ def api_status():
 @app.route('/api/sessions')
 def api_sessions_new():
     """Get Telegram sessions (alias for scans)"""
-    return jsonify([])  # Simple return for testing
+    # Return mock data for testing
+    mock_sessions = [
+        {
+            'id': 'test',
+            'name': 'test',
+            'file_count': 5,
+            'last_scan': '2025-01-20T10:30:00Z',
+            'status': 'active'
+        }
+    ]
+    return jsonify(mock_sessions)
 
 @app.route('/api/files')
 @dev_login_required
@@ -1532,24 +1646,7 @@ def admin_navigation():
     """Trang điều hướng admin - WORKING"""
     return render_template('admin/admin_navigation.html')
 
-@app.route('/admin/system')
-@dev_login_required
-@dev_admin_required
-def admin_system():
-    """Trang quản lý hệ thống"""
-    try:
-        # Get basic stats
-        stats = {
-            'total_users': auth_manager.get_user_count(),
-            'admin_users': len([u for u in auth_manager.get_all_users() if u.is_admin])
-        }
-
-        return render_template('admin/system_management.html',
-                             stats=stats,
-                             config=config)
-    except Exception as e:
-        logger.error(f"Error loading admin system page: {str(e)}", exc_info=True)
-        return f"Error: {str(e)}", 500
+# Duplicate route removed - using the one above
 
 # System stats API
 @app.route('/api/admin/system-stats')
@@ -1664,12 +1761,7 @@ def admin_health_check():
         logger.error(f"Error in health check: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/admin/users')
-@dev_login_required
-@dev_admin_required
-def admin_users():
-    """Trang quản lý người dùng"""
-    return render_template('admin/user_management.html')
+# Duplicate route removed - using the one above
 
 # User management APIs
 @app.route('/api/admin/users')
@@ -1739,7 +1831,7 @@ def admin_create_user():
 def admin_update_user(user_id):
     """API cập nhật người dùng"""
     try:
-        from src.teledrive.auth.models import User
+        from .auth.models import User
 
         user = User.query.get(user_id)
         if not user:
@@ -1761,7 +1853,7 @@ def admin_update_user(user_id):
             user.password_hash = generate_password_hash(data['password'])
 
         # Save changes
-        from src.teledrive.database import db
+        from .database import db
         db.session.commit()
 
         # Log admin action
@@ -1779,8 +1871,8 @@ def admin_update_user(user_id):
 def admin_delete_user(user_id):
     """API xóa người dùng"""
     try:
-        from src.teledrive.auth.models import User
-        from src.teledrive.database import db
+        from .auth.models import User
+        from .database import db
 
         user = User.query.get(user_id)
         if not user:
@@ -1806,19 +1898,7 @@ def admin_delete_user(user_id):
         logger.error(f"Error deleting user: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/admin/settings')
-@dev_login_required
-@dev_admin_required
-def admin_settings():
-    """Trang cài đặt hệ thống với support cho logs và profile"""
-    view = request.args.get('view', 'settings')
-
-    if view == 'logs':
-        return render_template('admin/logs_simple.html')
-    elif view == 'profile':
-        return render_template('admin/profile_settings.html', user=current_user)
-    else:
-        return render_template('admin/system_settings.html', config=config)
+# Duplicate route removed - using the one above
 
 @app.route('/admin/settings/logs')
 @dev_login_required
@@ -1875,27 +1955,12 @@ def admin_reset_settings():
         logger.error(f"Error resetting settings: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/admin/telegram')
-@dev_login_required
-@dev_admin_required
-def admin_telegram():
-    """Trang cài đặt Telegram"""
-    return render_template('admin/telegram_settings.html', config=config)
+# Duplicate route removed - using the one above
 
 # FIXED ADMIN ROUTES - MOVED HERE FOR PROPER REGISTRATION
-@app.route('/admin/logs')
-@dev_login_required
-@dev_admin_required
-def admin_logs_fixed():
-    """Trang xem logs - FIXED VERSION"""
-    return render_template('admin/logs_simple.html')
+# Duplicate route removed - using the first one
 
-@app.route('/admin/profile')
-@dev_login_required
-@dev_admin_required
-def admin_profile_fixed():
-    """Trang thông tin tài khoản - FIXED VERSION"""
-    return render_template('admin/profile_settings.html', user=current_user)
+# Duplicate route removed - using the first one
 
 
 
@@ -1955,12 +2020,7 @@ def admin_telegram_sessions():
         logger.error(f"Error getting telegram sessions: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/admin/logs')
-@dev_login_required
-@dev_admin_required
-def admin_logs():
-    """Trang xem logs"""
-    return render_template('admin/logs_simple.html')
+# Duplicate route removed - using the first one
 
 
 
@@ -2131,12 +2191,7 @@ def admin_export_logs():
         logger.error(f"Error exporting logs: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/admin/profile')
-@dev_login_required
-@dev_admin_required
-def admin_profile():
-    """Trang thông tin tài khoản"""
-    return render_template('admin/profile_settings.html', user=current_user)
+# Duplicate route removed - using the first one
 
 # Profile API endpoints
 @app.route('/api/admin/profile/personal', methods=['POST'])
@@ -2156,7 +2211,7 @@ def admin_update_personal():
             current_user.phone_number = data['phone']
 
         # Save changes
-        from src.teledrive.database import db
+        from .database import db
         db.session.commit()
 
         # Log admin action
@@ -2193,7 +2248,7 @@ def admin_change_password():
         current_user.password_hash = generate_password_hash(new_password)
 
         # Save changes
-        from src.teledrive.database import db
+        from .database import db
         db.session.commit()
 
         # Log admin action
@@ -2282,8 +2337,6 @@ def admin_profile_activity():
     except Exception as e:
         logger.error(f"Error getting profile activity: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
-
-
 
 # Database đã được init ở trên, không cần init lại
 

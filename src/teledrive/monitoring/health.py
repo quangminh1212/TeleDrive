@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from flask import Blueprint, jsonify, current_app
 from sqlalchemy import text
-from src.database import db
-from src.config import config
+from ..database import db
+from ..config import config
 import redis
 
 health_bp = Blueprint('health', __name__)

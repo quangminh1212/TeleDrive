@@ -548,7 +548,7 @@ class Windows11Explorer {
             }
 
             sessionsList.innerHTML = sessions.map(session => {
-                const scanDate = this.formatDate(session.scan_info?.scan_date || new Date().toISOString());
+                const scanDate = this.formatDate((session.scan_info && session.scan_info.scan_date) || new Date().toISOString());
                 const fileCount = session.file_count || 0;
 
                 return `
@@ -617,9 +617,9 @@ class Windows11Explorer {
         let sessionFiles = [];
         if (data && data.files) {
             sessionFiles = data.files.map(file => {
-                const fileSize = this.formatFileSize(file.file_info?.size || 0);
-                const fileDate = this.formatDate(file.file_info?.upload_date || new Date().toISOString());
-                const fileType = file.file_info?.type || 'document';
+                const fileSize = this.formatFileSize((file.file_info && file.file_info.size) || 0);
+                const fileDate = this.formatDate((file.file_info && file.file_info.upload_date) || new Date().toISOString());
+                const fileType = (file.file_info && file.file_info.type) || 'document';
                 const fileIcon = this.getFileIcon(fileType, file.file_name);
 
                 return {
@@ -628,15 +628,15 @@ class Windows11Explorer {
                     icon: fileIcon,
                     size: fileSize,
                     date: fileDate,
-                    messageId: file.message_info?.message_id,
+                    messageId: file.message_info && file.message_info.message_id,
                     downloadLink: file.download_link,
                     fileInfo: file.file_info
                 };
             });
         }
 
-        const totalFiles = data?.scan_info?.total_files || sessionFiles.length;
-        const scanDate = data?.scan_info?.scan_date ? this.formatDate(data.scan_info.scan_date) : 'Unknown';
+        const totalFiles = (data && data.scan_info && data.scan_info.total_files) || sessionFiles.length;
+        const scanDate = (data && data.scan_info && data.scan_info.scan_date) ? this.formatDate(data.scan_info.scan_date) : 'Unknown';
 
         contentArea.innerHTML = `
             <div class="files-container">
@@ -1555,10 +1555,10 @@ class Windows11Explorer {
 
         // Create properties content
         if (body) {
-            const uploadDate = this.formatDate(fileData.file_info?.upload_date || new Date().toISOString());
-            const fileSize = this.formatFileSize(fileData.file_info?.size || 0);
-            const mimeType = fileData.file_info?.mime_type || 'Unknown';
-            const fileType = fileData.file_info?.type || 'Unknown';
+            const uploadDate = this.formatDate((fileData.file_info && fileData.file_info.upload_date) || new Date().toISOString());
+            const fileSize = this.formatFileSize((fileData.file_info && fileData.file_info.size) || 0);
+            const mimeType = (fileData.file_info && fileData.file_info.mime_type) || 'Unknown';
+            const fileType = (fileData.file_info && fileData.file_info.type) || 'Unknown';
 
             body.innerHTML = `
                 <div class="properties-content">
@@ -1591,11 +1591,11 @@ class Windows11Explorer {
                             <h4>Thông tin Telegram</h4>
                             <div class="property-row">
                                 <span class="property-label">Message ID:</span>
-                                <span class="property-value">${fileData.message_info?.message_id}</span>
+                                <span class="property-value">${fileData.message_info && fileData.message_info.message_id}</span>
                             </div>
                             <div class="property-row">
                                 <span class="property-label">Sender ID:</span>
-                                <span class="property-value">${fileData.message_info?.sender_id}</span>
+                                <span class="property-value">${fileData.message_info && fileData.message_info.sender_id}</span>
                             </div>
                             <div class="property-row">
                                 <span class="property-label">Ngày upload:</span>
@@ -1603,11 +1603,11 @@ class Windows11Explorer {
                             </div>
                             <div class="property-row">
                                 <span class="property-label">Message text:</span>
-                                <span class="property-value">${fileData.message_info?.message_text || 'Không có'}</span>
+                                <span class="property-value">${(fileData.message_info && fileData.message_info.message_text) || 'Không có'}</span>
                             </div>
                         </div>
 
-                        ${fileData.file_info?.dimensions ? `
+                        ${(fileData.file_info && fileData.file_info.dimensions) ? `
                         <div class="property-group">
                             <h4>Kích thước hình ảnh</h4>
                             <div class="property-row">
@@ -1638,7 +1638,7 @@ class Windows11Explorer {
             downloadBtn.style.display = 'inline-flex';
             downloadBtn.onclick = () => {
                 const sessionId = this.currentPath.replace('session-', '');
-                this.downloadFile(sessionId, fileData.message_info?.message_id);
+                this.downloadFile(sessionId, fileData.message_info && fileData.message_info.message_id);
             };
         } else if (downloadBtn) {
             downloadBtn.style.display = 'none';
@@ -2407,9 +2407,9 @@ class Windows11Explorer {
     }
 
     renderFilePreview(container, fileData) {
-        const fileType = fileData.file_info?.type || 'document';
+        const fileType = (fileData.file_info && fileData.file_info.type) || 'document';
         const fileName = fileData.file_name;
-        const fileSize = this.formatFileSize(fileData.file_info?.size || 0);
+        const fileSize = this.formatFileSize((fileData.file_info && fileData.file_info.size) || 0);
 
         let previewHtml = '';
 
@@ -2496,8 +2496,8 @@ class Windows11Explorer {
     renderFileInfo(container, fileData) {
         if (!container) return;
 
-        const uploadDate = this.formatDate(fileData.file_info?.upload_date || new Date().toISOString());
-        const mimeType = fileData.file_info?.mime_type || 'Unknown';
+        const uploadDate = this.formatDate((fileData.file_info && fileData.file_info.upload_date) || new Date().toISOString());
+        const mimeType = (fileData.file_info && fileData.file_info.mime_type) || 'Unknown';
 
         container.innerHTML = `
             <div class="file-info-details">
@@ -2508,11 +2508,11 @@ class Windows11Explorer {
                 </div>
                 <div class="info-row">
                     <span class="label">Kích thước:</span>
-                    <span class="value">${this.formatFileSize(fileData.file_info?.size || 0)}</span>
+                    <span class="value">${this.formatFileSize((fileData.file_info && fileData.file_info.size) || 0)}</span>
                 </div>
                 <div class="info-row">
                     <span class="label">Loại file:</span>
-                    <span class="value">${fileData.file_info?.type || 'Unknown'}</span>
+                    <span class="value">${(fileData.file_info && fileData.file_info.type) || 'Unknown'}</span>
                 </div>
                 <div class="info-row">
                     <span class="label">MIME type:</span>
@@ -2524,7 +2524,7 @@ class Windows11Explorer {
                 </div>
                 <div class="info-row">
                     <span class="label">Message ID:</span>
-                    <span class="value">${fileData.message_info?.message_id}</span>
+                    <span class="value">${fileData.message_info && fileData.message_info.message_id}</span>
                 </div>
             </div>
         `;

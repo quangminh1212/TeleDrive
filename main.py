@@ -62,13 +62,18 @@ print("=" * 50)
 
 if __name__ == '__main__':
     try:
+        # Set environment variable for dev mode BEFORE importing
+        os.environ['DEV_MODE'] = 'true'
+
         # Import app từ teledrive module
         print("[INFO] Creating Flask app...")
 
-        # Set environment variable for dev mode
-        os.environ['DEV_MODE'] = 'true'
+        # Import trực tiếp để tránh conflict
+        import sys
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-        from src.teledrive.app import app
+        # Import app một cách cẩn thận
+        from teledrive.app import app
         print("[OK] Flask app created with routes")
 
         # Set Flask config

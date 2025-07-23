@@ -44,6 +44,12 @@
             height: 36px;
             object-fit: contain;
         }
+
+        .login-logo .logo-icon {
+            font-size: 32px;
+            line-height: 1;
+            display: inline-block;
+        }
         
         .login-logo span {
             font-size: 28px;
@@ -269,7 +275,8 @@
     <div class="login-container">
         <div class="login-card">
             <div class="login-logo">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive Logo" class="logo-image">
+                <!-- <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive Logo" class="logo-image"> -->
+                <span class="logo-icon">📁</span>
                 <span>TeleDrive</span>
             </div>
             

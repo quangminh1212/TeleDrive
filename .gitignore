@@ -180,3 +180,11 @@ mcp.json
 .env
 .env.*
 test_write.tmp
+
+# Additional temporary files
+instance/*.db
+output/*
+!output/.gitkeep
+reports/
+audit_report.md
+final_report.md

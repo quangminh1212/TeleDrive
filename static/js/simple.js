@@ -55,7 +55,7 @@ function loadSessions() {
         return;
     }
 
-    fetch('/api/scans')
+    fetch('/api/sessions')
         .then(function(response) {
             if (!response.ok) {
                 throw new Error('HTTP error! status: ' + response.status);
@@ -218,14 +218,28 @@ function loadSession(sessionId) {
             return response.json();
         })
         .then(function(data) {
-            if (data && data.files) {
-                console.log('Session files loaded from API:', data.files.length, 'files');
-                teleDrive.files = data.files;
-                displayFiles(data.files);
+            // Handle both array format and object format
+            var files = null;
+            var scanInfo = null;
+
+            if (Array.isArray(data)) {
+                // Direct array format
+                files = data;
+                console.log('Session files loaded from API (array format):', files.length, 'files');
+            } else if (data && data.files) {
+                // Object format with files property
+                files = data.files;
+                scanInfo = data.scan_info;
+                console.log('Session files loaded from API (object format):', files.length, 'files');
+            }
+
+            if (files && files.length > 0) {
+                teleDrive.files = files;
+                displayFiles(files);
 
                 // Update session info if available
-                if (data.scan_info) {
-                    updateSessionInfo(data.scan_info);
+                if (scanInfo) {
+                    updateSessionInfo(scanInfo);
                 }
             } else {
                 showError('Không có files trong session này');

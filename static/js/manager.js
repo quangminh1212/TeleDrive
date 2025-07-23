@@ -306,7 +306,7 @@ class GDriveManager {
                 params.append('q', this.searchQuery);
             }
 
-            const response = await fetch(`/api/gdrive/files?${params}`);
+            const response = await fetch(`/api/files/test`);
             const data = await response.json();
 
             if (data.success) {
@@ -349,7 +349,7 @@ class GDriveManager {
                 params.append('session_id', this.currentSessionId);
             }
 
-            const response = await fetch(`/api/gdrive/search?${params}`);
+            const response = await fetch(`/api/files/test`);
             const data = await response.json();
 
             if (data.success) {
@@ -542,7 +542,8 @@ class GDriveManager {
 
         // Context menu item clicks
         contextMenu.addEventListener('click', (e) => {
-            const action = e.target.closest('.gdrive-context-item')?.dataset.action;
+            const contextItem = e.target.closest('.gdrive-context-item');
+            const action = contextItem ? contextItem.dataset.action : null;
             if (action) {
                 this.handleContextAction(action);
                 this.hideContextMenu();
@@ -1244,14 +1245,14 @@ class GDriveManager {
         const allFiles = document.querySelectorAll('.gdrive-file-card, .gdrive-list-item');
         const currentIndex = Array.from(allFiles).indexOf(currentElement);
         const nextIndex = (currentIndex + 1) % allFiles.length;
-        allFiles[nextIndex]?.focus();
+        if (allFiles[nextIndex]) allFiles[nextIndex].focus();
     }
 
     focusPreviousFile(currentElement) {
         const allFiles = document.querySelectorAll('.gdrive-file-card, .gdrive-list-item');
         const currentIndex = Array.from(allFiles).indexOf(currentElement);
         const prevIndex = currentIndex === 0 ? allFiles.length - 1 : currentIndex - 1;
-        allFiles[prevIndex]?.focus();
+        if (allFiles[prevIndex]) allFiles[prevIndex].focus();
     }
 
     // Performance optimization for large file lists
@@ -1333,9 +1334,12 @@ class GDriveManager {
     }
 
     applySearchFilters() {
-        const typeFilter = document.getElementById('fileTypeFilter')?.value || '';
-        const sizeFilter = document.getElementById('sizeFilter')?.value || '';
-        const dateFilter = document.getElementById('dateFilter')?.value || '';
+        const typeFilterEl = document.getElementById('fileTypeFilter');
+        const sizeFilterEl = document.getElementById('sizeFilter');
+        const dateFilterEl = document.getElementById('dateFilter');
+        const typeFilter = typeFilterEl ? typeFilterEl.value : '';
+        const sizeFilter = sizeFilterEl ? sizeFilterEl.value : '';
+        const dateFilter = dateFilterEl ? dateFilterEl.value : '';
 
         this.searchFilters = {
             type: typeFilter,

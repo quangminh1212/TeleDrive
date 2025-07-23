@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # Import scanner - simplified for now
 try:
-    from src.teledrive.services.scanner import TelegramFileScanner
+    from ..services.scanner import TelegramFileScanner
 except ImportError:
     # Fallback - create a dummy scanner for testing
     class TelegramFileScanner:
@@ -26,7 +26,7 @@ except ImportError:
 
 # Import detailed logging
 try:
-    from src.teledrive.utils.logger import log_step, log_error, get_logger
+    from ..utils.logger import log_step, log_error, get_logger
     DETAILED_LOGGING_AVAILABLE = True
     logger = get_logger('main')
 except ImportError:
