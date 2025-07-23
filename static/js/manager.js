@@ -35,22 +35,15 @@ class GDriveManager {
         this.setupBulkOperations();
         this.setupNewButtons();
 
-        // Check if we should show Google Drive interface by default
-        const storedPreference = localStorage.getItem('use-gdrive-interface');
-        const useGDrive = storedPreference === null ? true : storedPreference === 'true';
-
-        // Set default to true if not set
-        if (storedPreference === null) {
-            localStorage.setItem('use-gdrive-interface', 'true');
-        }
+        // Luôn sử dụng giao diện Google Drive mặc định
+        localStorage.setItem('use-gdrive-interface', 'true');
 
         // Force show Google Drive interface on initialization
         setTimeout(() => {
-            this.toggleInterface(useGDrive);
-            if (useGDrive) {
-                this.loadFiles();
-            }
-        }, 100);
+            this.showGDriveInterface();
+            this.loadFiles();
+            this.forceRefreshInterface(); // Đảm bảo giao diện được hiển thị đúng
+        }, 200);
     }
 
     setupEventListeners() {
@@ -188,80 +181,236 @@ class GDriveManager {
     }
 
     renderGridView(container) {
-        container.className = 'gdrive-grid-view';
-
-        if (this.files.length === 0) {
+        container.innerHTML = '';
+        container.className = 'gdrive-files-display gdrive-grid-view';
+        
+        if (!this.files || this.files.length === 0) {
             container.innerHTML = this.getEmptyStateHTML();
             return;
         }
-
-        container.innerHTML = this.files.map(file => `
-            <div class="gdrive-file-card" data-file-id="${file.id}" data-file-type="${file.type}" draggable="true" tabindex="0">
+        
+        // Group files by type: folders first, then files
+        const folders = this.files.filter(file => file.type === 'folder');
+        const files = this.files.filter(file => file.type !== 'folder');
+        
+        // Sort folders and files separately
+        const sortedFolders = this.sortFiles(folders);
+        const sortedFiles = this.sortFiles(files);
+        
+        // Combine: folders first, then files
+        const sortedItems = [...sortedFolders, ...sortedFiles];
+        
+        sortedItems.forEach(file => {
+            const isSelected = this.selectedFiles.has(file.id);
+            
+            const fileCard = document.createElement('div');
+            fileCard.className = `gdrive-file-card ${isSelected ? 'selected' : ''}`;
+            fileCard.dataset.fileId = file.id;
+            fileCard.tabIndex = 0;
+            
+            // Enhanced hover effects for Google Drive-like appearance
+            fileCard.innerHTML = `
                 <div class="gdrive-file-icon">
-                    ${this.getFileIcon(file)}
+                    <i class="icon ${this.getFileIcon(file)}"></i>
                 </div>
-                <div class="gdrive-file-name" title="${file.name}">
-                    ${this.escapeHtml(file.name)}
-                </div>
+                <div class="gdrive-file-name">${this.escapeHtml(file.name)}</div>
                 <div class="gdrive-file-meta">
-                    <span class="file-size">${this.formatFileSize(file.size)}</span>
-                    <span class="file-date">${this.formatDate(file.modified)}</span>
+                    <span class="gdrive-file-modified">${this.formatDate(file.modified || file.date)}</span>
+                    ${file.size ? `<span class="gdrive-file-size">${this.formatFileSize(file.size)}</span>` : ''}
                 </div>
-            </div>
-        `).join('');
+                <div class="gdrive-file-actions">
+                    <button class="gdrive-btn-ghost gdrive-action-btn" data-action="share" title="Share">
+                        <i class="icon icon-share"></i>
+                    </button>
+                    <button class="gdrive-btn-ghost gdrive-action-btn" data-action="more" title="More actions">
+                        <i class="icon icon-more"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(fileCard);
+            
+            // Setup file click and context menu
+            fileCard.addEventListener('click', (e) => {
+                if (e.target.closest('.gdrive-action-btn')) return;
+                this.handleFileClick(e);
+            });
+            
+            // Setup right-click for context menu
+            fileCard.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                this.selectFile(file.id, fileCard);
+                this.showContextMenu(e.clientX, e.clientY, file.id);
+            });
+            
+            // Setup double-click to open
+            fileCard.addEventListener('dblclick', () => {
+                this.openFile(file.id);
+            });
+            
+            // Set up hover effects for action buttons
+            const actionButtons = fileCard.querySelectorAll('.gdrive-action-btn');
+            actionButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const action = button.dataset.action;
+                    
+                    if (action === 'share') {
+                        this.shareFiles([file.id]);
+                    } else if (action === 'more') {
+                        this.showContextMenu(e.clientX, e.clientY, file.id);
+                    }
+                });
+            });
+        });
     }
 
     renderListView(container) {
-        container.className = 'gdrive-list-view';
-
-        if (this.files.length === 0) {
+        container.innerHTML = '';
+        container.className = 'gdrive-files-display gdrive-list-view';
+        
+        if (!this.files || this.files.length === 0) {
             container.innerHTML = this.getEmptyStateHTML();
             return;
         }
-
-        container.innerHTML = `
-            <div class="gdrive-list-header">
-                <div>Name</div>
-                <div>Size</div>
-                <div>Type</div>
-                <div>Modified</div>
-                <div></div>
+        
+        // Create header for list view
+        const headerRow = document.createElement('div');
+        headerRow.className = 'gdrive-list-header';
+        headerRow.innerHTML = `
+            <div class="gdrive-list-cell gdrive-list-name-header" data-sort="name">
+                <span>Name</span>
+                <i class="icon icon-sort${this.sortBy === 'name' ? (this.sortOrder === 'asc' ? ' icon-sort-asc' : ' icon-sort-desc') : ''}"></i>
             </div>
-            ${this.files.map(file => `
-                <div class="gdrive-list-item" data-file-id="${file.id}" data-file-type="${file.type}" draggable="true" tabindex="0">
-                    <div class="gdrive-list-name">
-                        <div class="gdrive-list-icon">
-                            ${this.getFileIcon(file)}
-                        </div>
-                        <span title="${file.name}">${this.escapeHtml(file.name)}</span>
-                    </div>
-                    <div class="gdrive-list-size">${this.formatFileSize(file.size)}</div>
-                    <div class="gdrive-list-type">${this.capitalizeFirst(file.type)}</div>
-                    <div class="gdrive-list-date">${this.formatDate(file.modified)}</div>
-                    <div class="gdrive-list-actions">
-                        <button class="gdrive-btn-ghost" onclick="event.stopPropagation(); gdriveManager.showFileMenu('${file.id}', event)" tabindex="-1">
-                            ⋮
-                        </button>
-                    </div>
-                </div>
-            `).join('')}
+            <div class="gdrive-list-cell gdrive-list-owner-header" data-sort="owner">
+                <span>Owner</span>
+                <i class="icon icon-sort${this.sortBy === 'owner' ? (this.sortOrder === 'asc' ? ' icon-sort-asc' : ' icon-sort-desc') : ''}"></i>
+            </div>
+            <div class="gdrive-list-cell gdrive-list-modified-header" data-sort="modified">
+                <span>Last modified</span>
+                <i class="icon icon-sort${this.sortBy === 'modified' ? (this.sortOrder === 'asc' ? ' icon-sort-asc' : ' icon-sort-desc') : ''}"></i>
+            </div>
+            <div class="gdrive-list-cell gdrive-list-size-header" data-sort="size">
+                <span>File size</span>
+                <i class="icon icon-sort${this.sortBy === 'size' ? (this.sortOrder === 'asc' ? ' icon-sort-asc' : ' icon-sort-desc') : ''}"></i>
+            </div>
         `;
+        container.appendChild(headerRow);
+        
+        // Add click handlers for sorting
+        const sortHeaders = headerRow.querySelectorAll('[data-sort]');
+        sortHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const sortField = header.dataset.sort;
+                if (this.sortBy === sortField) {
+                    // Toggle sort order if already sorting by this field
+                    this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+                } else {
+                    // New sort field, default to ascending
+                    this.sortBy = sortField;
+                    this.sortOrder = 'asc';
+                }
+                
+                // Re-render with new sort
+                this.renderFiles();
+            });
+        });
+        
+        // Group files by type: folders first, then files
+        const folders = this.files.filter(file => file.type === 'folder');
+        const files = this.files.filter(file => file.type !== 'folder');
+        
+        // Sort folders and files separately
+        const sortedFolders = this.sortFiles(folders);
+        const sortedFiles = this.sortFiles(files);
+        
+        // Combine: folders first, then files
+        const sortedItems = [...sortedFolders, ...sortedFiles];
+        
+        // Create file rows
+        sortedItems.forEach(file => {
+            const isSelected = this.selectedFiles.has(file.id);
+            
+            const fileRow = document.createElement('div');
+            fileRow.className = `gdrive-list-item ${isSelected ? 'selected' : ''}`;
+            fileRow.dataset.fileId = file.id;
+            fileRow.tabIndex = 0;
+            
+            fileRow.innerHTML = `
+                <div class="gdrive-list-cell gdrive-list-name">
+                    <div class="gdrive-list-icon">
+                        <i class="icon ${this.getFileIcon(file)}"></i>
+                    </div>
+                    <span class="gdrive-list-title">${this.escapeHtml(file.name)}</span>
+                </div>
+                <div class="gdrive-list-cell gdrive-list-owner">
+                    <span>Me</span>
+                </div>
+                <div class="gdrive-list-cell gdrive-list-modified">
+                    <span>${this.formatDate(file.modified || file.date)}</span>
+                </div>
+                <div class="gdrive-list-cell gdrive-list-size">
+                    <span>${file.size ? this.formatFileSize(file.size) : '—'}</span>
+                </div>
+            `;
+            
+            container.appendChild(fileRow);
+            
+            // Setup file click and context menu
+            fileRow.addEventListener('click', (e) => {
+                this.handleFileClick(e);
+            });
+            
+            // Setup right-click for context menu
+            fileRow.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                this.selectFile(file.id, fileRow);
+                this.showContextMenu(e.clientX, e.clientY, file.id);
+            });
+            
+            // Setup double-click to open
+            fileRow.addEventListener('dblclick', () => {
+                this.openFile(file.id);
+            });
+        });
     }
 
     getFileIcon(file) {
-        const iconMap = {
-            'folder': '📁',
-            'image': '🖼️',
-            'video': '🎥',
-            'audio': '🎵',
-            'document': '📄',
-            'pdf': '📕',
-            'archive': '📦',
-            'code': '💻',
-            'default': '📄'
-        };
+        if (file.type === 'folder') return 'icon-folder';
         
-        return iconMap[file.type] || iconMap.default;
+        // Detect file type from extension
+        const ext = file.name.split('.').pop().toLowerCase();
+        
+        // Map extensions to icons
+        switch (ext) {
+            // Documents
+            case 'pdf': return 'icon-pdf';
+            case 'doc': case 'docx': return 'icon-word';
+            case 'xls': case 'xlsx': case 'csv': return 'icon-excel';
+            case 'ppt': case 'pptx': return 'icon-powerpoint';
+            case 'txt': case 'rtf': return 'icon-file-text';
+            
+            // Images
+            case 'jpg': case 'jpeg': case 'png': case 'gif': case 'bmp': case 'webp': return 'icon-image';
+            
+            // Videos
+            case 'mp4': case 'avi': case 'mov': case 'wmv': case 'mkv': case 'flv': return 'icon-video';
+            
+            // Audio
+            case 'mp3': case 'wav': case 'ogg': case 'flac': case 'm4a': return 'icon-audio';
+            
+            // Archives
+            case 'zip': case 'rar': case '7z': case 'tar': case 'gz': return 'icon-archive';
+            
+            // Code
+            case 'html': case 'css': case 'js': case 'py': case 'java': case 'php': case 'json': case 'xml': return 'icon-code';
+            
+            // Executable
+            case 'exe': case 'bat': case 'cmd': case 'sh': return 'icon-executable';
+            
+            // Default
+            default: return 'icon-file';
+        }
     }
 
     formatFileSize(bytes) {
@@ -947,69 +1096,65 @@ class GDriveManager {
 
     // Integration with existing TeleDrive functionality
     showGDriveInterface() {
-        console.log('🔄 Showing Google Drive interface...');
+        console.log('Showing Google Drive interface');
 
-        // Show Google Drive style interface elements
-        const layout = document.getElementById('gdriveLayout');
-        const toolbar = document.getElementById('gdriveToolbar');
-        const breadcrumb = document.getElementById('gdriveBreadcrumb');
-        const sidebar = document.getElementById('gdriveSidebar');
-        const filesDisplay = document.getElementById('gdriveFilesDisplay');
+        // Hide Windows Explorer interface elements
+        const explorerElements = [
+            document.querySelector('.explorer-ribbon'),
+            document.querySelector('.files-container'),
+            document.getElementById('detailsPane')
+        ];
 
-        if (layout) {
-            layout.style.display = 'flex';
-            layout.style.visibility = 'visible';
-            console.log('✅ Layout shown');
-        } else {
-            console.log('❌ Layout not found');
+        explorerElements.forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+
+        // Show Google Drive interface elements
+        const gdriveLayout = document.getElementById('gdriveLayout');
+        const gdriveToolbar = document.getElementById('gdriveToolbar');
+        const gdriveBreadcrumb = document.getElementById('gdriveBreadcrumb');
+        const gdriveFilesDisplay = document.getElementById('gdriveFilesDisplay');
+        const gdriveSidebar = document.getElementById('gdriveSidebar');
+
+        if (gdriveLayout) gdriveLayout.style.display = 'block';
+        if (gdriveToolbar) gdriveToolbar.style.display = 'flex';
+        if (gdriveBreadcrumb) gdriveBreadcrumb.style.display = 'flex';
+        if (gdriveFilesDisplay) gdriveFilesDisplay.style.display = 'flex';
+        if (gdriveSidebar) gdriveSidebar.style.display = 'flex';
+
+        // Update breadcrumb
+        this.updateBreadcrumb(this.currentPath);
+
+        // Hide welcome screen if visible
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        if (welcomeScreen) welcomeScreen.style.display = 'none';
+
+        // Clear any previous files
+        if (gdriveFilesDisplay) {
+            gdriveFilesDisplay.innerHTML = '';
         }
 
-        if (toolbar) {
-            toolbar.style.display = 'flex';
-            toolbar.style.visibility = 'visible';
-            console.log('✅ Toolbar shown');
-        } else {
-            console.log('❌ Toolbar not found');
+        // Mark this interface as active
+        localStorage.setItem('use-gdrive-interface', 'true');
+
+        // Update toggle button
+        const toggleBtn = document.getElementById('toggleInterfaceBtn');
+        if (toggleBtn) {
+            toggleBtn.title = 'Switch to Classic View';
+            toggleBtn.innerHTML = '<i class="icon icon-layout"></i>';
         }
 
-        if (breadcrumb) {
-            breadcrumb.style.display = 'flex';
-            breadcrumb.style.visibility = 'visible';
-            console.log('✅ Breadcrumb shown');
-        } else {
-            console.log('❌ Breadcrumb not found');
-        }
+        // Refresh files display
+        this.renderFiles();
+        
+        // Resize handler
+        this.handleWindowResize();
+        window.addEventListener('resize', () => this.handleWindowResize());
 
-        if (sidebar) {
-            sidebar.style.display = 'block';
-            sidebar.style.visibility = 'visible';
-            console.log('✅ Sidebar shown');
-        } else {
-            console.log('❌ Sidebar not found');
-        }
-
-        if (filesDisplay) {
-            filesDisplay.style.display = 'block';
-            filesDisplay.style.visibility = 'visible';
-            console.log('✅ Files display shown');
-        } else {
-            console.log('❌ Files display not found');
-        }
-
-        // Hide old interface elements
-        const oldToolbar = document.querySelector('.toolbar');
-        const filesContainer = document.getElementById('filesContainer');
-
-        if (oldToolbar) {
-            oldToolbar.style.display = 'none';
-            console.log('✅ Old toolbar hidden');
-        }
-        if (filesContainer) {
-            filesContainer.style.display = 'none';
-            console.log('✅ Old files container hidden');
-        }
-
-        console.log('✅ Google Drive interface setup complete');
+        // Force refresh all elements after a short delay
+        setTimeout(() => {
+            this.forceRefreshInterface();
+        }, 50);
     }
 
     hideGDriveInterface() {
@@ -1171,30 +1316,28 @@ class GDriveManager {
     }
 
     getEmptyStateHTML() {
-        const isSearching = this.searchQuery.trim().length > 0;
-
-        if (isSearching) {
+        if (this.searchQuery) {
+            // Search with no results
             return `
                 <div class="gdrive-empty">
-                    <div class="gdrive-empty-icon">🔍</div>
-                    <div class="gdrive-empty-text">No files found</div>
-                    <div class="gdrive-empty-subtext">Try adjusting your search terms</div>
-                </div>
-            `;
-        } else if (this.currentSessionId) {
-            return `
-                <div class="gdrive-empty">
-                    <div class="gdrive-empty-icon">📁</div>
-                    <div class="gdrive-empty-text">This session is empty</div>
-                    <div class="gdrive-empty-subtext">No files have been scanned from this Telegram session yet</div>
+                    <i class="icon icon-search gdrive-empty-icon"></i>
+                    <div class="gdrive-empty-text">Không tìm thấy kết quả nào</div>
+                    <div class="gdrive-empty-subtext">Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc</div>
                 </div>
             `;
         } else {
+            // Empty folder
             return `
                 <div class="gdrive-empty">
-                    <div class="gdrive-empty-icon">☁️</div>
-                    <div class="gdrive-empty-text">No sessions available</div>
-                    <div class="gdrive-empty-subtext">Start by scanning your Telegram sessions to see files here</div>
+                    <i class="icon icon-folder gdrive-empty-icon"></i>
+                    <div class="gdrive-empty-text">Thư mục này trống</div>
+                    <div class="gdrive-empty-subtext">Tải lên tệp hoặc tạo thư mục mới</div>
+                    <div style="margin-top: 16px;">
+                        <button class="gdrive-btn-primary" id="emptyStateUploadBtn">
+                            <i class="icon icon-upload" style="margin-right: 8px;"></i>
+                            Tải lên tệp
+                        </button>
+                    </div>
                 </div>
             `;
         }
@@ -1649,44 +1792,81 @@ class GDriveManager {
 
     // Force refresh interface to ensure all elements are visible
     forceRefreshInterface() {
-        console.log('🔄 Force refreshing Google Drive interface...');
-
-        // Force show all elements
-        const elements = [
-            { id: 'gdriveLayout', display: 'flex' },
-            { id: 'gdriveToolbar', display: 'flex' },
-            { id: 'gdriveBreadcrumb', display: 'flex' },
-            { id: 'gdriveSidebar', display: 'block' },
-            { id: 'gdriveFilesDisplay', display: 'block' }
+        console.log('Forcing refresh of Google Drive interface');
+        
+        // Re-apply all display settings
+        const gdriveLayout = document.getElementById('gdriveLayout');
+        const gdriveToolbar = document.getElementById('gdriveToolbar');
+        const gdriveBreadcrumb = document.getElementById('gdriveBreadcrumb');
+        const gdriveFilesDisplay = document.getElementById('gdriveFilesDisplay');
+        const gdriveSidebar = document.getElementById('gdriveSidebar');
+        
+        // Ensure everything is visible
+        if (gdriveLayout) {
+            gdriveLayout.style.display = 'block';
+            // Force reflow
+            void gdriveLayout.offsetWidth;
+        }
+        
+        if (gdriveToolbar) {
+            gdriveToolbar.style.display = 'flex';
+            // Force reflow
+            void gdriveToolbar.offsetWidth;
+        }
+        
+        if (gdriveBreadcrumb) {
+            gdriveBreadcrumb.style.display = 'flex';
+            // Force reflow
+            void gdriveBreadcrumb.offsetWidth;
+        }
+        
+        if (gdriveFilesDisplay) {
+            // Reset class to ensure proper display
+            gdriveFilesDisplay.className = this.currentView === 'list' 
+                ? 'gdrive-files-display gdrive-list-view'
+                : 'gdrive-files-display gdrive-grid-view';
+            
+            // Force reflow
+            void gdriveFilesDisplay.offsetWidth;
+        }
+        
+        if (gdriveSidebar) {
+            gdriveSidebar.style.display = 'block';
+            // Force reflow
+            void gdriveSidebar.offsetWidth;
+        }
+        
+        // Hide windows explorer elements
+        const explorerElements = [
+            document.querySelector('.explorer-ribbon'),
+            document.querySelector('.files-container'),
+            document.getElementById('detailsPane'),
+            document.getElementById('welcomeScreen')
         ];
-
-        elements.forEach(({ id, display }) => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.style.display = display;
-                element.style.visibility = 'visible';
-                element.style.opacity = '1';
-                console.log(`✅ ${id} forced to show`);
+        
+        explorerElements.forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+        
+        // Update view toggle buttons
+        const gridBtn = document.querySelector('[data-view="grid"]');
+        const listBtn = document.querySelector('[data-view="list"]');
+        
+        if (gridBtn && listBtn) {
+            if (this.currentView === 'grid') {
+                gridBtn.classList.add('active');
+                listBtn.classList.remove('active');
             } else {
-                console.log(`❌ ${id} not found`);
+                gridBtn.classList.remove('active');
+                listBtn.classList.add('active');
             }
-        });
-
-        // Hide old interface
-        const oldElements = [
-            { selector: '.toolbar', display: 'none' },
-            { id: 'filesContainer', display: 'none' }
-        ];
-
-        oldElements.forEach(({ selector, id, display }) => {
-            const element = selector ? document.querySelector(selector) : document.getElementById(id);
-            if (element) {
-                element.style.display = display;
-                console.log(`✅ Old element hidden: ${selector || id}`);
-            }
-        });
-
-        console.log('✅ Force refresh complete');
+        }
+        
+        // Re-render files
+        this.renderFiles();
+        
+        // Apply responsive layout
+        this.handleWindowResize();
     }
 
     // Test search filters dropdown functionality
@@ -1738,6 +1918,114 @@ class GDriveManager {
     trackUserAction(action, data = {}) {
         // Optional: Track user interactions for analytics
         console.log('User action:', action, data);
+    }
+
+    handleWindowResize() {
+        // Adjust interface elements based on screen size
+        const isMobile = window.innerWidth < 768;
+        const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+        
+        // Get Google Drive elements
+        const gdriveLayout = document.getElementById('gdriveLayout');
+        const gdriveSidebar = document.getElementById('gdriveSidebar');
+        const gdriveFilesDisplay = document.getElementById('gdriveFilesDisplay');
+        
+        // Adjust view based on screen size
+        if (isMobile) {
+            // Mobile view
+            if (gdriveSidebar) {
+                gdriveSidebar.style.display = 'none';
+            }
+            
+            // Change to grid view with fewer columns on small screens
+            if (gdriveFilesDisplay) {
+                gdriveFilesDisplay.classList.remove('gdrive-list-view');
+                gdriveFilesDisplay.classList.add('gdrive-grid-view');
+                gdriveFilesDisplay.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            }
+        } else if (isTablet) {
+            // Tablet view
+            if (gdriveSidebar) {
+                gdriveSidebar.style.width = '200px';
+            }
+            
+            // Change to grid view with more columns
+            if (gdriveFilesDisplay) {
+                gdriveFilesDisplay.classList.remove('gdrive-list-view');
+                gdriveFilesDisplay.classList.add('gdrive-grid-view');
+                gdriveFilesDisplay.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            }
+        } else {
+            // Desktop view
+            if (gdriveSidebar) {
+                gdriveSidebar.style.width = '256px';
+                gdriveSidebar.style.display = 'block';
+            }
+            
+            // Use current view setting for desktop
+            if (gdriveFilesDisplay) {
+                if (this.currentView === 'list') {
+                    gdriveFilesDisplay.classList.remove('gdrive-grid-view');
+                    gdriveFilesDisplay.classList.add('gdrive-list-view');
+                } else {
+                    gdriveFilesDisplay.classList.remove('gdrive-list-view');
+                    gdriveFilesDisplay.classList.add('gdrive-grid-view');
+                    gdriveFilesDisplay.style.gridTemplateColumns = 'repeat(4, 1fr)';
+                }
+            }
+        }
+    }
+
+    sortFiles(files) {
+        if (!files || files.length === 0) return [];
+        
+        return [...files].sort((a, b) => {
+            // Apply sorting based on current sort field and order
+            switch (this.sortBy) {
+                case 'name':
+                    if (this.sortOrder === 'asc') {
+                        return a.name.localeCompare(b.name);
+                    } else {
+                        return b.name.localeCompare(a.name);
+                    }
+                
+                case 'modified':
+                    const aDate = new Date(a.modified || a.date || 0);
+                    const bDate = new Date(b.modified || b.date || 0);
+                    if (this.sortOrder === 'asc') {
+                        return aDate - bDate;
+                    } else {
+                        return bDate - aDate;
+                    }
+                
+                case 'size':
+                    const aSize = a.size || 0;
+                    const bSize = b.size || 0;
+                    if (this.sortOrder === 'asc') {
+                        return aSize - bSize;
+                    } else {
+                        return bSize - aSize;
+                    }
+                
+                case 'type':
+                    if (this.sortOrder === 'asc') {
+                        return (a.type || '').localeCompare(b.type || '');
+                    } else {
+                        return (b.type || '').localeCompare(a.type || '');
+                    }
+                
+                case 'owner':
+                    // Since we don't have actual owner info, we'll just use alphabetical
+                    if (this.sortOrder === 'asc') {
+                        return (a.owner || 'Me').localeCompare(b.owner || 'Me');
+                    } else {
+                        return (b.owner || 'Me').localeCompare(a.owner || 'Me');
+                    }
+                
+                default:
+                    return 0;
+            }
+        });
     }
 }
 

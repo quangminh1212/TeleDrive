@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Small delay to ensure all scripts are loaded
     setTimeout(() => {
         initializeGDriveIntegration();
-    }, 100);
+    }, 200);
 });
 
 function initializeGDriveIntegration() {
@@ -16,6 +16,9 @@ function initializeGDriveIntegration() {
         console.warn('GDriveManager not found, skipping integration');
         return;
     }
+
+    // Luôn sử dụng giao diện Google Drive mặc định
+    localStorage.setItem('use-gdrive-interface', 'true');
 
     // Integrate with existing TeleDrive functionality
     gdriveManager.integrateWithExistingInterface();
@@ -26,17 +29,14 @@ function initializeGDriveIntegration() {
     // Setup event listeners for seamless integration
     setupIntegrationEventListeners();
 
-    // Force show Google Drive interface if it should be shown
-    const shouldShow = localStorage.getItem('use-gdrive-interface');
-    if (shouldShow === null || shouldShow === 'true') {
-        setTimeout(() => {
-            gdriveManager.showGDriveInterface();
-            // Force refresh to ensure all elements are visible
-            if (typeof gdriveManager.forceRefreshInterface === 'function') {
-                gdriveManager.forceRefreshInterface();
-            }
-        }, 200);
-    }
+    // Force show Google Drive interface immediately
+    setTimeout(() => {
+        gdriveManager.showGDriveInterface();
+        // Force refresh to ensure all elements are visible
+        if (typeof gdriveManager.forceRefreshInterface === 'function') {
+            gdriveManager.forceRefreshInterface();
+        }
+    }, 300);
 
     console.log('Google Drive integration initialized');
 }
@@ -52,9 +52,8 @@ function setupFunctionOverrides() {
 
     // Override loadSessions to work with Google Drive interface
     window.loadSessions = function() {
-        const useGDrive = localStorage.getItem('use-gdrive-interface') !== 'false';
-        
-        if (useGDrive && gdriveManager) {
+        // Always use Google Drive interface
+        if (gdriveManager) {
             gdriveManager.loadFiles();
         } else if (originalFunctions.loadSessions) {
             originalFunctions.loadSessions();
@@ -63,9 +62,8 @@ function setupFunctionOverrides() {
 
     // Override displayFiles to work with Google Drive interface
     window.displayFiles = function(files, sessionId) {
-        const useGDrive = localStorage.getItem('use-gdrive-interface') !== 'false';
-        
-        if (useGDrive && gdriveManager) {
+        // Always use Google Drive interface
+        if (gdriveManager) {
             // Convert files to Google Drive format and display
             const gdriveFiles = gdriveManager.convertToGDriveFormat(files, sessionId);
             gdriveManager.files = gdriveFiles;
@@ -78,9 +76,8 @@ function setupFunctionOverrides() {
 
     // Override searchFiles to work with Google Drive interface
     window.searchFiles = function(query) {
-        const useGDrive = localStorage.getItem('use-gdrive-interface') !== 'false';
-        
-        if (useGDrive && gdriveManager) {
+        // Always use Google Drive interface
+        if (gdriveManager) {
             gdriveManager.searchFiles(query);
         } else if (originalFunctions.searchFiles) {
             originalFunctions.searchFiles(query);
@@ -94,18 +91,16 @@ function setupFunctionOverrides() {
 function setupIntegrationEventListeners() {
     // Listen for session selection events
     document.addEventListener('sessionSelected', (event) => {
-        const useGDrive = localStorage.getItem('use-gdrive-interface') !== 'false';
-        
-        if (useGDrive && gdriveManager && event.detail) {
+        // Always use Google Drive interface
+        if (gdriveManager && event.detail) {
             gdriveManager.loadFiles(event.detail.sessionId);
         }
     });
 
     // Listen for file scan completion events
     document.addEventListener('scanCompleted', (event) => {
-        const useGDrive = localStorage.getItem('use-gdrive-interface') !== 'false';
-        
-        if (useGDrive && gdriveManager) {
+        // Always use Google Drive interface
+        if (gdriveManager) {
             // Refresh the current view
             gdriveManager.loadFiles(gdriveManager.currentSessionId);
         }
@@ -124,16 +119,15 @@ function setupIntegrationEventListeners() {
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'childList') {
-                const useGDrive = localStorage.getItem('use-gdrive-interface') !== 'false';
-                
                 // Check if files were added to the old interface
                 const filesContainer = document.getElementById('filesContainer');
-                if (filesContainer && mutation.target === filesContainer && useGDrive) {
+                if (filesContainer && mutation.target === filesContainer) {
                     // Files were loaded in old interface, but we're using Google Drive interface
                     // This might happen during initial load, so we should switch
                     setTimeout(() => {
                         if (gdriveManager) {
                             gdriveManager.showGDriveInterface();
+                            gdriveManager.forceRefreshInterface();
                         }
                     }, 100);
                 }
@@ -148,7 +142,6 @@ function setupIntegrationEventListeners() {
     }
 }
 
-// Helper function to dispatch custom events
 function dispatchCustomEvent(eventName, detail = {}) {
     const event = new CustomEvent(eventName, { detail });
     document.dispatchEvent(event);

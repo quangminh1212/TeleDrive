@@ -28,6 +28,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css?v=1753289571">
     <link rel="stylesheet" href="/static/css/mobile.css?v=1753289571">
+    <link rel="stylesheet" href="/static/css/gdrive.css?v=1753289571">
 </head>
 <body>
     <!-- Windows Explorer Style Title Bar -->
@@ -462,131 +463,131 @@
                 <div class="gdrive-layout" id="gdriveLayout" style="display: none; flex: 1; height: calc(100vh - 120px);">
                     <div style="display: flex; height: 100%;">
                         <!-- Google Drive Sidebar -->
-                        <div class="gdrive-sidebar" id="gdriveSidebar" style="width: 256px; background: #fff; border-right: 1px solid #e8eaed; flex-shrink: 0;">
+                        <div class="gdrive-sidebar" id="gdriveSidebar">
                             <div style="padding: 16px;">
-                                <button class="gdrive-btn-primary" id="sidebarNewBtn" style="width: 100%; justify-content: flex-start; border-radius: 24px; padding: 12px 24px; font-weight: 500; box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3);">
+                                <button class="gdrive-btn-primary" id="sidebarNewBtn">
                                     <i class="icon icon-plus" style="margin-right: 12px;"></i>
-                                    New
+                                    Tạo mới
                                 </button>
                             </div>
 
                             <div style="padding: 0 8px;">
-                                <div class="gdrive-sidebar-item active" style="display: flex; align-items: center; padding: 8px 16px; border-radius: 0 24px 24px 0; background: #e8f0fe; color: #1a73e8; margin-bottom: 4px; cursor: pointer;">
-                                    <i class="icon icon-folder" style="margin-right: 12px; font-size: 20px;"></i>
-                                    <span>My Drive</span>
+                                <div class="gdrive-sidebar-item active">
+                                    <i class="icon icon-folder"></i>
+                                    <span>Telegram Drive</span>
                                 </div>
 
-                                <div class="gdrive-sidebar-item" style="display: flex; align-items: center; padding: 8px 16px; border-radius: 0 24px 24px 0; color: #5f6368; margin-bottom: 4px; cursor: pointer;">
-                                    <i class="icon icon-users" style="margin-right: 12px; font-size: 20px;"></i>
-                                    <span>Shared with me</span>
+                                <div class="gdrive-sidebar-item">
+                                    <i class="icon icon-users"></i>
+                                    <span>Được chia sẻ với tôi</span>
                                 </div>
 
-                                <div class="gdrive-sidebar-item" style="display: flex; align-items: center; padding: 8px 16px; border-radius: 0 24px 24px 0; color: #5f6368; margin-bottom: 4px; cursor: pointer;">
-                                    <i class="icon icon-clock" style="margin-right: 12px; font-size: 20px;"></i>
-                                    <span>Recent</span>
+                                <div class="gdrive-sidebar-item">
+                                    <i class="icon icon-clock"></i>
+                                    <span>Gần đây</span>
                                 </div>
 
-                                <div class="gdrive-sidebar-item" style="display: flex; align-items: center; padding: 8px 16px; border-radius: 0 24px 24px 0; color: #5f6368; margin-bottom: 4px; cursor: pointer;">
-                                    <i class="icon icon-star" style="margin-right: 12px; font-size: 20px;"></i>
-                                    <span>Starred</span>
+                                <div class="gdrive-sidebar-item">
+                                    <i class="icon icon-star"></i>
+                                    <span>Có gắn dấu sao</span>
                                 </div>
 
-                                <div class="gdrive-sidebar-item" style="display: flex; align-items: center; padding: 8px 16px; border-radius: 0 24px 24px 0; color: #5f6368; margin-bottom: 4px; cursor: pointer;">
-                                    <i class="icon icon-trash" style="margin-right: 12px; font-size: 20px;"></i>
-                                    <span>Trash</span>
+                                <div class="gdrive-sidebar-item">
+                                    <i class="icon icon-trash"></i>
+                                    <span>Thùng rác</span>
                                 </div>
                             </div>
 
                             <div style="padding: 16px; border-top: 1px solid #e8eaed; margin-top: 16px;">
-                                <div style="font-size: 12px; color: #5f6368; margin-bottom: 8px;">Storage</div>
+                                <div style="font-size: 12px; color: #5f6368; margin-bottom: 8px;">Bộ nhớ</div>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <div style="flex: 1; height: 4px; background: #e8eaed; border-radius: 2px; overflow: hidden;">
                                         <div style="width: 30%; height: 100%; background: #1a73e8;"></div>
                                     </div>
                                 </div>
-                                <div style="font-size: 12px; color: #5f6368; margin-top: 4px;">3.2 GB of 15 GB used</div>
+                                <div style="font-size: 12px; color: #5f6368; margin-top: 4px;">3.2 GB / không giới hạn</div>
                             </div>
                         </div>
 
                         <!-- Main Content Area -->
                         <div style="flex: 1; display: flex; flex-direction: column;">
                             <!-- Google Drive Style Toolbar -->
-                <div class="gdrive-toolbar" id="gdriveToolbar" style="display: none;">
+                <div class="gdrive-toolbar" id="gdriveToolbar">
                     <div class="gdrive-toolbar-left">
-                        <button class="gdrive-btn-primary" id="newBtn" style="border-radius: 24px; padding: 12px 24px; font-weight: 500;">
-                            <i class="icon icon-plus"></i>
-                            New
+                        <button class="gdrive-btn-primary" id="newBtn">
+                            <i class="icon icon-plus" style="margin-right: 8px;"></i>
+                            Tạo mới
                         </button>
                     </div>
                     <div class="gdrive-toolbar-right">
                         <div class="gdrive-search-box">
-                            <i class="icon icon-search gdrive-search-icon" style="color: #5f6368; font-size: 20px;"></i>
-                            <input type="text" class="gdrive-search-input" placeholder="Search in Drive" id="gdriveSearchInput">
-                            <button class="gdrive-search-filter-btn" id="searchFilterBtn" title="Search options">
+                            <i class="icon icon-search gdrive-search-icon"></i>
+                            <input type="text" class="gdrive-search-input" placeholder="Tìm kiếm trong Drive" id="gdriveSearchInput">
+                            <button class="gdrive-btn-ghost gdrive-search-filter-btn" id="searchFilterBtn" title="Tùy chọn tìm kiếm">
                                 <i class="icon icon-tune" style="font-size: 20px;"></i>
                             </button>
                         </div>
                         <div class="gdrive-view-toggle" style="background: transparent; padding: 0; gap: 4px;">
-                            <button class="gdrive-view-btn active" data-view="grid" title="Grid view" style="width: 40px; height: 40px; border-radius: 50%; background: transparent; border: none; display: flex; align-items: center; justify-content: center;">
+                            <button class="gdrive-btn-ghost gdrive-view-btn active" data-view="grid" title="Xem dạng lưới" style="width: 40px; height: 40px; border-radius: 50%;">
                                 <i class="icon icon-grid" style="font-size: 20px;"></i>
                             </button>
-                            <button class="gdrive-view-btn" data-view="list" title="List view" style="width: 40px; height: 40px; border-radius: 50%; background: transparent; border: none; display: flex; align-items: center; justify-content: center;">
+                            <button class="gdrive-btn-ghost gdrive-view-btn" data-view="list" title="Xem dạng danh sách" style="width: 40px; height: 40px; border-radius: 50%;">
                                 <i class="icon icon-list" style="font-size: 20px;"></i>
                             </button>
                         </div>
-                        <button class="gdrive-btn-ghost" id="settingsBtn" style="width: 40px; height: 40px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;">
+                        <button class="gdrive-btn-ghost" id="settingsBtn" title="Cài đặt" style="width: 40px; height: 40px; border-radius: 50%;">
                             <i class="icon icon-settings" style="font-size: 20px;"></i>
                         </button>
-                        <button class="gdrive-btn-ghost" id="toggleInterfaceBtn" title="Switch to Classic View" style="width: 40px; height: 40px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;">
+                        <button class="gdrive-btn-ghost" id="toggleInterfaceBtn" title="Chuyển đến giao diện cổ điển" style="width: 40px; height: 40px; border-radius: 50%;">
                             <i class="icon icon-layout" style="font-size: 20px;"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- Google Drive Breadcrumb -->
-                <div class="gdrive-breadcrumb" id="gdriveBreadcrumb" style="display: none; padding: 12px 24px; background: #fff; border-bottom: 1px solid #e8eaed;">
-                    <div class="gdrive-breadcrumb-item current" style="color: #202124; font-size: 22px; font-weight: 400; display: flex; align-items: center; gap: 8px;">
-                        <i class="icon icon-folder" style="font-size: 24px; color: #1a73e8;"></i>
-                        <span>My Drive</span>
+                <div class="gdrive-breadcrumb" id="gdriveBreadcrumb">
+                    <div class="gdrive-breadcrumb-item current">
+                        <i class="icon icon-folder" style="margin-right: 8px; font-size: 24px; color: #1a73e8;"></i>
+                        <span>Telegram Drive</span>
                     </div>
                 </div>
 
                 <!-- Selection Info and Bulk Operations -->
                 <div class="gdrive-bulk-toolbar" id="gdriveBulkToolbar" style="display: none;">
                     <div class="gdrive-bulk-info">
-                        <span class="selection-count">0 items selected</span>
+                        <span class="selection-count">0 mục đã chọn</span>
                     </div>
                     <div class="gdrive-bulk-actions">
                         <button class="gdrive-btn-ghost" id="bulkDownloadBtn">
                             <i class="icon icon-download"></i>
-                            Download
+                            Tải xuống
                         </button>
                         <button class="gdrive-btn-ghost" id="bulkShareBtn">
                             <i class="icon icon-share"></i>
-                            Share
+                            Chia sẻ
                         </button>
                         <button class="gdrive-btn-ghost" id="bulkStarBtn">
                             <i class="icon icon-star"></i>
-                            Star
+                            Gắn dấu sao
                         </button>
                         <button class="gdrive-btn-ghost" id="bulkMoveBtn">
                             <i class="icon icon-move"></i>
-                            Move
+                            Di chuyển
                         </button>
                         <button class="gdrive-btn-ghost" id="bulkDeleteBtn">
                             <i class="icon icon-trash"></i>
-                            Delete
+                            Xóa
                         </button>
                         <button class="gdrive-btn-ghost" id="clearSelectionBtn">
                             <i class="icon icon-times"></i>
-                            Clear
+                            Bỏ chọn
                         </button>
                     </div>
                 </div>
 
                             <!-- Google Drive Files Display -->
-                            <div class="gdrive-files-display gdrive-grid-view" id="gdriveFilesDisplay" style="flex: 1; overflow-y: auto;">
-                                <!-- Files will be loaded here -->
+                            <div class="gdrive-files-display gdrive-grid-view" id="gdriveFilesDisplay">
+                                <!-- Các tệp sẽ được thêm vào đây bởi JavaScript -->
                             </div>
 
                 <!-- Files Container -->
