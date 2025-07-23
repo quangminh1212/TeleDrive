@@ -151,6 +151,11 @@ else:
 # Initialize security middleware
 init_security_middleware(app)
 
+# Initialize enhanced security
+from .security import init_security_headers, init_csrf_protection
+init_security_headers(app)
+init_csrf_protection(app)
+
 # Add cache headers for static files
 @app.after_request
 def add_cache_headers(response):
