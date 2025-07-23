@@ -206,3 +206,25 @@ teledrive.log
 *.bak
 *.code-workspace
 .history/
+
+# TeleDrive runtime files
+dev_mode.txt
+*.session.save
+instance/teledrive.db
+__pycache__/
+*/__pycache__/
+src/__pycache__/
+src/*/__pycache__/
+
+# Chrome profile data
+chrome_profile/
+browser_data/
+user_data/
+
+# Local runtime configs
+config/local_config.json
+config/user_settings.json
+
+# Telegram API keys and secrets
+*.api_id
+*.api_hash
