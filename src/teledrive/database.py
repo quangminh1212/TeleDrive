@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Database configuration for TeleDrive
-Cấu hình database chung cho toàn bộ ứng dụng
+Cau hinh database chung cho toan bo ung dung
 """
 
 from flask_sqlalchemy import SQLAlchemy
@@ -12,65 +12,65 @@ import os
 db = SQLAlchemy()
 
 def init_database(app):
-    """Khởi tạo database với Flask app"""
+    """Khoi tao database voi Flask app"""
     try:
-        # Đảm bảo thư mục instance tồn tại
+        # Dam bao thu muc instance ton tai
         from pathlib import Path
 
-        # Thử tạo thư mục instance với quyền đầy đủ
+        # Thu tao thu muc instance voi quyen day du
         instance_dir = Path('instance')
         try:
-            # Tạo thư mục instance nếu chưa tồn tại
+            # Tao thu muc instance neu chua ton tai
             instance_dir.mkdir(exist_ok=True, mode=0o777)
             
-            # Đảm bảo quyền ghi cho thư mục
+            # Dam bao quyen ghi cho thu muc
             os.chmod(instance_dir, 0o777)
             
-            # Test quyền ghi
+            # Test quyen ghi
             test_file = instance_dir / 'test_write.tmp'
             test_file.write_text('test')
             test_file.unlink()
             
-            print(f"[OK] Thư mục instance đã sẵn sàng: {instance_dir.resolve()}")
+            print(f"[OK] Thu muc instance da san sang: {instance_dir.resolve()}")
         except Exception as e:
-            print(f"[WARNING] Không thể ghi vào thư mục instance: {e}")
-            # Nếu không thể ghi vào instance, dùng thư mục hiện tại
+            print(f"[WARNING] Khong the ghi vao thu muc instance: {e}")
+            # Neu khong the ghi vao instance, dung thu muc hien tai
             instance_dir = Path('.')
-            print(f"[INFO] Sử dụng thư mục hiện tại cho database: {instance_dir.resolve()}")
+            print(f"[INFO] Su dung thu muc hien tai cho database: {instance_dir.resolve()}")
 
-        # Chỉ init nếu chưa được init
+        # Chi init neu chua duoc init
         if not hasattr(app, 'extensions') or 'sqlalchemy' not in app.extensions:
-            # Đảm bảo SQLALCHEMY_DATABASE_URI được cấu hình đúng
+            # Dam bao SQLALCHEMY_DATABASE_URI duoc cau hinh dung
             if 'SQLALCHEMY_DATABASE_URI' not in app.config:
                 db_path = instance_dir / 'teledrive.db'
                 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path.resolve()}'
-                print(f"[INFO] Cấu hình database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+                print(f"[INFO] Cau hinh database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
             
             db.init_app(app)
 
         with app.app_context():
-            # Tạo tables
+            # Tao tables
             db.create_all()
             print("[OK] Database initialized successfully")
 
     except Exception as e:
         print(f"[ERROR] Database initialization failed: {str(e)}")
-        # Thử tạo database đơn giản trong thư mục hiện tại
+        # Thu tao database don gian trong thu muc hien tai
         try:
             import sqlite3
             from pathlib import Path
 
-            # Thử instance trước, nếu không được thì dùng thư mục hiện tại
+            # Thu instance truoc, neu khong duoc thi dung thu muc hien tai
             for db_dir in [Path('instance'), Path('.')]:
                 try:
                     if db_dir.name == 'instance':
                         db_dir.mkdir(exist_ok=True, mode=0o777)
-                        # Đảm bảo quyền ghi cho thư mục
+                        # Dam bao quyen ghi cho thu muc
                         os.chmod(db_dir, 0o777)
 
                     db_path = db_dir / 'teledrive.db'
 
-                    # Tạo database đơn giản
+                    # Tao database don gian
                     conn = sqlite3.connect(str(db_path))
                     cursor = conn.cursor()
                     cursor.execute('''
@@ -92,13 +92,13 @@ def init_database(app):
                     break
 
                 except Exception as dir_error:
-                    if db_dir.name == '.':  # Thư mục cuối cùng
+                    if db_dir.name == '.':  # Thu muc cuoi cung
                         print(f"[ERROR] Cannot create database anywhere: {dir_error}")
                     continue
 
         except Exception as fallback_error:
             print(f"[ERROR] Fallback database creation failed: {fallback_error}")
-            # Không raise để app vẫn có thể chạy
+            # Khong raise de app van co the chay
             pass
 
     return db

@@ -25,7 +25,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Sửa database trước khi import app
-print("🔧 Checking database...")
+print("[INFO] Checking database...")
 from pathlib import Path
 
 # Tạo thư mục instance và đảm bảo database tồn tại
@@ -36,7 +36,7 @@ db_path = instance_dir / 'teledrive.db'
 # Nếu database không tồn tại, tạo một database đơn giản
 if not db_path.exists():
     import sqlite3
-    print(f"📁 Creating database: {db_path}")
+    print(f"[INFO] Creating database: {db_path}")
     conn = sqlite3.connect(str(db_path))
     cursor = conn.cursor()
     cursor.execute('''
@@ -54,30 +54,30 @@ if not db_path.exists():
     ''')
     conn.commit()
     conn.close()
-    print("✅ Database created successfully")
+    print("[OK] Database created successfully")
 
-print("🎯 Starting TeleDrive...")
+print("[INFO] Starting TeleDrive...")
 print("=" * 50)
 
 if __name__ == '__main__':
     try:
         # Import app từ teledrive module
-        print("🚀 Creating Flask app...")
+        print("[INFO] Creating Flask app...")
 
         # Set environment variable for dev mode
         os.environ['DEV_MODE'] = 'true'
 
         from src.teledrive.app import app
-        print("✅ Flask app created with routes")
+        print("[OK] Flask app created with routes")
 
         # Set Flask config
         app.config['DEV_MODE'] = True
 
-        print("🌐 Server starting at: http://localhost:3000")
-        print("🔧 Port: 3000 (updated from 5000)")
-        print("🔧 Dev Mode: Enabled (no login required)")
-        print("👤 User: Developer (admin)")
-        print("📱 Press Ctrl+C to stop")
+        print("[INFO] Server starting at: http://localhost:3000")
+        print("[INFO] Port: 3000 (updated from 5000)")
+        print("[INFO] Dev Mode: Enabled (no login required)")
+        print("[INFO] User: Developer (admin)")
+        print("[INFO] Press Ctrl+C to stop")
         print("=" * 50)
 
         # Chạy server
@@ -90,9 +90,9 @@ if __name__ == '__main__':
         )
 
     except KeyboardInterrupt:
-        print("\n✅ Server stopped by user")
+        print("\n[OK] Server stopped by user")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[ERROR] Error: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

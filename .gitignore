@@ -144,6 +144,7 @@ static/uploads/
 
 # Database backups
 instance/*_backup_*.db
+instance/*.db
 
 # Temporary files
 bash.exe.stackdump
@@ -174,3 +175,11 @@ yarn-error.log*
 
 # Docker
 .dockerignore
+
+# MCP file
+mcp.json
+
+# Temporary runtime files
+.env
+.env.*
+test_write.tmp
