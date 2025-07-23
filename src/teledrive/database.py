@@ -7,6 +7,8 @@ Cau hinh database chung cho toan bo ung dung
 
 from flask_sqlalchemy import SQLAlchemy
 import os
+import time
+from pathlib import Path
 
 # Tạo database instance chung
 db = SQLAlchemy()
@@ -15,16 +17,16 @@ def init_database(app):
     """Khoi tao database voi Flask app"""
     try:
         # Dam bao thu muc instance ton tai
-        from pathlib import Path
-
-        # Thu tao thu muc instance voi quyen day du
         instance_dir = Path('instance')
         try:
             # Tao thu muc instance neu chua ton tai
             instance_dir.mkdir(exist_ok=True, mode=0o777)
             
             # Dam bao quyen ghi cho thu muc
-            os.chmod(instance_dir, 0o777)
+            try:
+                os.chmod(instance_dir, 0o777)
+            except Exception as chmod_error:
+                print(f"[WARNING] Khong the thay doi quyen thu muc: {chmod_error}")
             
             # Test quyen ghi
             test_file = instance_dir / 'test_write.tmp'
@@ -43,8 +45,29 @@ def init_database(app):
             # Dam bao SQLALCHEMY_DATABASE_URI duoc cau hinh dung
             if 'SQLALCHEMY_DATABASE_URI' not in app.config:
                 db_path = instance_dir / 'teledrive.db'
+                
+                # Kiểm tra quyền truy cập file
+                if db_path.exists():
+                    try:
+                        # Thử mở file để kiểm tra quyền
+                        with open(db_path, 'a'):
+                            pass
+                        print(f"[OK] Da kiem tra quyen truy cap database: {db_path}")
+                    except Exception as access_error:
+                        print(f"[WARNING] Khong the truy cap database hien tai: {access_error}")
+                        # Thử đổi tên file cũ và tạo mới
+                        try:
+                            backup_path = instance_dir / f'teledrive_backup_{int(time.time())}.db'
+                            db_path.rename(backup_path)
+                            print(f"[INFO] Da sao luu database cu sang: {backup_path}")
+                        except Exception as rename_error:
+                            print(f"[WARNING] Khong the sao luu database cu: {rename_error}")
+                
                 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path.resolve()}'
                 print(f"[INFO] Cau hinh database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+            
+            # Tắt cảnh báo tracking modifications
+            app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
             
             db.init_app(app)
 
@@ -66,9 +89,29 @@ def init_database(app):
                     if db_dir.name == 'instance':
                         db_dir.mkdir(exist_ok=True, mode=0o777)
                         # Dam bao quyen ghi cho thu muc
-                        os.chmod(db_dir, 0o777)
+                        try:
+                            os.chmod(db_dir, 0o777)
+                        except Exception as chmod_error:
+                            print(f"[WARNING] Khong the thay doi quyen thu muc: {chmod_error}")
 
                     db_path = db_dir / 'teledrive.db'
+                    
+                    # Kiểm tra nếu file đã tồn tại và không thể ghi
+                    if db_path.exists():
+                        try:
+                            # Thử mở file để kiểm tra quyền
+                            with open(db_path, 'a'):
+                                pass
+                        except Exception:
+                            # Nếu không mở được, thử đổi tên
+                            backup_path = db_dir / f'teledrive_backup_{int(time.time())}.db'
+                            try:
+                                db_path.rename(backup_path)
+                                print(f"[INFO] Da sao luu database cu sang: {backup_path}")
+                            except Exception:
+                                # Nếu không đổi tên được, thử tạo tên file mới
+                                db_path = db_dir / f'teledrive_new_{int(time.time())}.db'
+                                print(f"[INFO] Se tao database moi tai: {db_path}")
 
                     # Tao database don gian
                     conn = sqlite3.connect(str(db_path))
