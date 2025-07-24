@@ -8,7 +8,7 @@ including secure HTTP headers, CSRF protection, and rate limiting.
 from typing import Dict, List
 from flask import Flask, Response, request
 
-from .csrf import init_csrf, csrf, exempt_blueprints
+from .csrf import init_csrf_protection, csrf, exempt_blueprints
 from .ratelimit import init_rate_limiting, limiter
 
 
@@ -20,7 +20,7 @@ def init_security_middleware(app: Flask) -> None:
         app: Flask application instance
     """
     # Initialize CSRF protection
-    init_csrf(app)
+    init_csrf_protection(app)
     
     # Initialize rate limiting
     init_rate_limiting(app)
