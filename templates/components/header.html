@@ -2,21 +2,28 @@
 <div class="gdrive-header">
     <!-- Logo -->
     <div class="gdrive-logo">
-        <span class="app-icon-text">📁</span>
+        <span class="app-logo">
+            <i class="fas fa-cloud"></i>
+        </span>
         <span class="gdrive-logo-text">TeleDrive</span>
     </div>
     
     <!-- Search -->
     <div class="gdrive-search-box">
-        <i class="icon icon-search"></i>
+        <i class="fas fa-search"></i>
         <input type="text" class="gdrive-search-input" placeholder="Tìm kiếm trong TeleDrive" id="globalSearch">
     </div>
     
     <!-- User menu -->
     <div class="user-menu">
         <!-- Settings button -->
-        <button class="gdrive-btn gdrive-btn-icon gdrive-btn-text" id="settingsButton">
-            <i class="icon icon-settings"></i>
+        <button class="header-action-btn" id="settingsButton" title="Cài đặt">
+            <i class="fas fa-cog"></i>
+        </button>
+        
+        <!-- Notifications button (if needed) -->
+        <button class="header-action-btn" id="notificationsButton" title="Thông báo">
+            <i class="fas fa-bell"></i>
         </button>
         
         <!-- User avatar dropdown -->
@@ -29,52 +36,217 @@
             <div class="user-dropdown-menu" id="userDropdownMenu">
                 <!-- User info section -->
                 <div class="user-info">
-                    <div class="user-avatar">
+                    <div class="user-avatar user-avatar-lg">
                         {{ current_user.username[0] if current_user.is_authenticated else 'G' }}
                     </div>
-                    <div class="user-info-name">
-                        {{ current_user.username if current_user.is_authenticated else 'Khách' }}
+                    <div class="user-info-details">
+                        <div class="user-info-name">
+                            {{ current_user.username if current_user.is_authenticated else 'Khách' }}
+                        </div>
+                        {% if current_user.is_authenticated and current_user.email %}
+                        <div class="user-info-email">{{ current_user.email }}</div>
+                        {% endif %}
                     </div>
-                    {% if current_user.is_authenticated and current_user.email %}
-                    <div class="user-info-email">{{ current_user.email }}</div>
-                    {% endif %}
                 </div>
                 
                 <!-- Menu items -->
                 {% if current_user.is_authenticated %}
                     {% if current_user.is_admin %}
                     <div class="user-dropdown-item" data-action="admin">
-                        <i class="icon icon-shield"></i>
-                        Quản trị hệ thống
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Quản trị hệ thống</span>
                     </div>
                     {% endif %}
                     
                     <div class="user-dropdown-item" data-action="profile">
-                        <i class="icon icon-user"></i>
-                        Thông tin cá nhân
+                        <i class="fas fa-user"></i>
+                        <span>Thông tin cá nhân</span>
                     </div>
                     
                     <div class="user-dropdown-item" data-action="settings">
-                        <i class="icon icon-settings"></i>
-                        Cài đặt
+                        <i class="fas fa-cog"></i>
+                        <span>Cài đặt</span>
                     </div>
                     
                     <div class="user-dropdown-divider"></div>
                     
                     <div class="user-dropdown-item" data-action="logout">
-                        <i class="icon icon-logout"></i>
-                        Đăng xuất
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Đăng xuất</span>
                     </div>
                 {% else %}
                     <div class="user-dropdown-item" data-action="login">
-                        <i class="icon icon-login"></i>
-                        Đăng nhập
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Đăng nhập</span>
                     </div>
                 {% endif %}
             </div>
         </div>
+        
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <div class="admin-badge">
+            <a href="/admin" class="admin-badge-btn" title="Quản trị viên">
+                ADMIN
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<style>
+    /* Header specific styles */
+    .header-action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    
+    .header-action-btn:hover {
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+    
+    .app-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background-color: var(--primary);
+        color: white;
+        font-size: 18px;
+    }
+    
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: var(--primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    
+    .user-avatar:hover {
+        transform: scale(1.05);
+    }
+    
+    .user-avatar-lg {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+        margin-right: 1rem;
+    }
+    
+    .user-dropdown {
+        position: relative;
+    }
+    
+    .user-dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: 280px;
+        background-color: var(--bg-main);
+        border: 1px solid var(--border);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-md);
+        z-index: 100;
+        display: none;
+        overflow: hidden;
+    }
+    
+    .user-dropdown-menu.show {
+        display: block;
+        animation: fadeInScale 0.2s ease forwards;
+    }
+    
+    .user-info {
+        display: flex;
+        padding: 1rem;
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+    }
+    
+    .user-info-details {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .user-info-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .user-info-email {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+    
+    .user-dropdown-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: background-color var(--transition-fast);
+    }
+    
+    .user-dropdown-item:hover {
+        background-color: var(--bg-tertiary);
+    }
+    
+    .user-dropdown-item i {
+        width: 20px;
+        margin-right: 0.75rem;
+        color: var(--text-secondary);
+    }
+    
+    .user-dropdown-divider {
+        height: 1px;
+        background-color: var(--border);
+        margin: 4px 0;
+    }
+    
+    .admin-badge {
+        margin-left: 0.5rem;
+    }
+    
+    .admin-badge-btn {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background-color: var(--primary);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+</style>
 
 <script>
     // Toggle user dropdown menu
@@ -85,10 +257,21 @@
     
     // Close dropdown when clicking outside
     document.addEventListener('click', function(event) {
-        if (!event.target.closest('.user-dropdown') && document.getElementById('userDropdownMenu').classList.contains('show')) {
-            document.getElementById('userDropdownMenu').classList.remove('show');
+        const dropdown = document.querySelector('.user-dropdown');
+        const menu = document.getElementById('userDropdownMenu');
+        
+        if (dropdown && menu && !dropdown.contains(event.target) && menu.classList.contains('show')) {
+            menu.classList.remove('show');
         }
     });
+    
+    // Settings button
+    const settingsButton = document.getElementById('settingsButton');
+    if (settingsButton) {
+        settingsButton.addEventListener('click', function() {
+            window.location.href = '/settings';
+        });
+    }
     
     // Handle menu item clicks
     document.querySelectorAll('.user-dropdown-item').forEach(item => {

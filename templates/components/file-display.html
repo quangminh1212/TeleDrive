@@ -6,10 +6,13 @@
         <div class="gdrive-breadcrumbs">
             {% for item in breadcrumbs %}
                 {% if loop.last %}
-                    <div class="gdrive-breadcrumb-item">{{ item.name }}</div>
+                    <div class="gdrive-breadcrumb-item current">{{ item.name }}</div>
                 {% else %}
                     <div class="gdrive-breadcrumb-item">
                         <a href="{{ item.path }}">{{ item.name }}</a>
+                    </div>
+                    <div class="gdrive-breadcrumb-separator">
+                        <i class="fas fa-chevron-right"></i>
                     </div>
                 {% endif %}
             {% endfor %}
@@ -20,10 +23,10 @@
             <!-- View toggle buttons -->
             <div class="view-toggle">
                 <button class="view-toggle-btn" id="gridViewBtn" title="Grid View">
-                    <i class="icon icon-grid"></i>
+                    <i class="fas fa-th-large"></i>
                 </button>
                 <button class="view-toggle-btn" id="listViewBtn" title="List View">
-                    <i class="icon icon-list"></i>
+                    <i class="fas fa-list"></i>
                 </button>
             </div>
         </div>
@@ -36,89 +39,152 @@
                 {% if view_type == 'grid' %}
                     <!-- Grid view item -->
                     <div class="gdrive-file-card" data-id="{{ file.id }}">
-                        <div class="gdrive-file-select"></div>
+                        <div class="gdrive-file-select">
+                            <div class="select-checkbox">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
                         <div class="gdrive-file-thumbnail">
                             {% if file.is_directory %}
-                                <i class="gdrive-folder-icon"></i>
+                                <i class="fas fa-folder fa-3x"></i>
                             {% elif file.type == 'image' %}
                                 <img src="{{ file.thumbnail_url|default(file.url) }}" alt="{{ file.name }}">
+                            {% elif file.type == 'video' %}
+                                <i class="fas fa-video fa-3x"></i>
+                            {% elif file.type == 'audio' %}
+                                <i class="fas fa-music fa-3x"></i>
+                            {% elif file.type == 'pdf' %}
+                                <i class="fas fa-file-pdf fa-3x"></i>
+                            {% elif file.type == 'doc' or file.type == 'docx' %}
+                                <i class="fas fa-file-word fa-3x"></i>
+                            {% elif file.type == 'xls' or file.type == 'xlsx' %}
+                                <i class="fas fa-file-excel fa-3x"></i>
+                            {% elif file.type == 'ppt' or file.type == 'pptx' %}
+                                <i class="fas fa-file-powerpoint fa-3x"></i>
                             {% else %}
-                                <i class="gdrive-file-icon"></i>
+                                <i class="fas fa-file fa-3x"></i>
                             {% endif %}
                         </div>
                         <div class="gdrive-file-info">
                             <div class="gdrive-file-name" title="{{ file.name }}">{{ file.name }}</div>
                             <div class="gdrive-file-meta">
-                                <span>{{ file.size }}</span>
-                                <span>{{ file.modified }}</span>
+                                <span class="gdrive-file-size">{{ file.size }}</span>
+                                <span class="gdrive-file-modified">{{ file.modified }}</span>
                             </div>
+                        </div>
+                        <div class="gdrive-file-actions">
+                            <button class="gdrive-action-btn" title="Tải xuống">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="gdrive-action-btn" title="Thêm tùy chọn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
                         </div>
                     </div>
                 {% else %}
                     <!-- List view item -->
-                    <div class="gdrive-file-row" data-id="{{ file.id }}">
-                        <div class="gdrive-file-select"></div>
-                        <div class="gdrive-file-row-name">
-                            {% if file.is_directory %}
-                                <i class="gdrive-folder-row-icon"></i>
-                            {% else %}
-                                <i class="gdrive-file-row-icon"></i>
-                            {% endif %}
-                            <span class="gdrive-file-row-label" title="{{ file.name }}">{{ file.name }}</span>
+                    <div class="gdrive-list-item" data-id="{{ file.id }}">
+                        <div class="gdrive-file-select">
+                            <div class="select-checkbox">
+                                <i class="fas fa-check"></i>
+                            </div>
                         </div>
-                        <div class="gdrive-file-row-owner">{{ file.owner|default('') }}</div>
-                        <div class="gdrive-file-row-date">{{ file.modified }}</div>
-                        <div class="gdrive-file-row-size">{{ file.size }}</div>
+                        <div class="gdrive-list-cell gdrive-list-name">
+                            <div class="gdrive-list-icon">
+                                {% if file.is_directory %}
+                                    <i class="fas fa-folder"></i>
+                                {% elif file.type == 'image' %}
+                                    <i class="fas fa-image"></i>
+                                {% elif file.type == 'video' %}
+                                    <i class="fas fa-video"></i>
+                                {% elif file.type == 'audio' %}
+                                    <i class="fas fa-music"></i>
+                                {% elif file.type == 'pdf' %}
+                                    <i class="fas fa-file-pdf"></i>
+                                {% elif file.type == 'doc' or file.type == 'docx' %}
+                                    <i class="fas fa-file-word"></i>
+                                {% elif file.type == 'xls' or file.type == 'xlsx' %}
+                                    <i class="fas fa-file-excel"></i>
+                                {% elif file.type == 'ppt' or file.type == 'pptx' %}
+                                    <i class="fas fa-file-powerpoint"></i>
+                                {% else %}
+                                    <i class="fas fa-file"></i>
+                                {% endif %}
+                            </div>
+                            <span class="gdrive-list-title" title="{{ file.name }}">{{ file.name }}</span>
+                        </div>
+                        <div class="gdrive-list-cell gdrive-list-owner">{{ file.owner|default('') }}</div>
+                        <div class="gdrive-list-cell gdrive-list-modified">{{ file.modified }}</div>
+                        <div class="gdrive-list-cell gdrive-list-size">{{ file.size }}</div>
+                        <div class="gdrive-list-actions">
+                            <button class="gdrive-action-btn" title="Tải xuống">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="gdrive-action-btn" title="Thêm tùy chọn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
                     </div>
                 {% endif %}
             {% endfor %}
         {% else %}
             <!-- Empty state -->
             <div class="gdrive-empty">
-                <div class="gdrive-empty-icon">📁</div>
+                <div class="gdrive-empty-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
                 <div class="gdrive-empty-text">
                     {% if search_query %}
                         Không tìm thấy kết quả cho "{{ search_query }}".
                     {% else %}
-                        Thư mục này trống. Hãy quét các kênh để tìm tệp tin.
+                        Không tìm thấy file nào
                     {% endif %}
                 </div>
-                {% if not search_query %}
-                    <button class="gdrive-btn gdrive-btn-primary mt-3" id="scanButton">Quét kênh</button>
-                {% endif %}
+                <div class="gdrive-empty-subtext">
+                    Thử thay đổi từ khóa tìm kiếm hoặc bỏ lọc
+                </div>
+                <button class="gdrive-btn gdrive-btn-primary mt-4" id="scanButton">
+                    <i class="fas fa-search"></i> Bắt đầu quét Telegram
+                </button>
             </div>
         {% endif %}
     </div>
     
     <!-- Selection toolbar (hidden by default) -->
     <div class="gdrive-bulk-toolbar" id="bulkToolbar" style="display: none;">
-        <div class="gdrive-bulk-count"><span id="selectedCount">0</span> đã chọn</div>
-        <button class="gdrive-btn gdrive-btn-secondary gdrive-btn-sm" id="downloadSelected">
-            <i class="icon icon-download"></i> Tải xuống
-        </button>
-        <button class="gdrive-btn gdrive-btn-secondary gdrive-btn-sm" id="deleteSelected">
-            <i class="icon icon-trash"></i> Xóa
-        </button>
-        <button class="gdrive-btn gdrive-btn-text gdrive-btn-sm" id="cancelSelection">
-            Hủy
-        </button>
+        <div class="gdrive-bulk-info">
+            <div class="gdrive-bulk-count">
+                <span id="selectedCount">0</span> đã chọn
+            </div>
+        </div>
+        <div class="gdrive-bulk-actions">
+            <button class="gdrive-btn gdrive-btn-secondary gdrive-btn-sm" id="downloadSelected">
+                <i class="fas fa-download"></i> Tải xuống
+            </button>
+            <button class="gdrive-btn gdrive-btn-secondary gdrive-btn-sm" id="deleteSelected">
+                <i class="fas fa-trash"></i> Xóa
+            </button>
+            <button class="gdrive-btn gdrive-btn-text gdrive-btn-sm" id="cancelSelection">
+                Hủy
+            </button>
+        </div>
     </div>
 </div>
 
 <!-- Context menu (hidden by default) -->
 <div class="gdrive-context-menu" id="contextMenu">
-    <div class="gdrive-context-menu-item" data-action="open">
-        <i class="icon icon-folder-open"></i> Mở
+    <div class="gdrive-context-item" data-action="open">
+        <i class="fas fa-folder-open"></i> Mở
     </div>
-    <div class="gdrive-context-menu-item" data-action="download">
-        <i class="icon icon-download"></i> Tải xuống
+    <div class="gdrive-context-item" data-action="download">
+        <i class="fas fa-download"></i> Tải xuống
     </div>
-    <div class="gdrive-context-menu-item" data-action="rename">
-        <i class="icon icon-edit"></i> Đổi tên
+    <div class="gdrive-context-item" data-action="rename">
+        <i class="fas fa-edit"></i> Đổi tên
     </div>
-    <div class="gdrive-context-menu-divider"></div>
-    <div class="gdrive-context-menu-item" data-action="delete">
-        <i class="icon icon-trash"></i> Xóa
+    <div class="gdrive-context-divider"></div>
+    <div class="gdrive-context-item" data-action="delete">
+        <i class="fas fa-trash"></i> Xóa
     </div>
 </div>
 
@@ -167,48 +233,67 @@
     })();
     
     // File selection functionality
-    const files = document.querySelectorAll('.gdrive-file-card, .gdrive-file-row');
+    const fileItems = document.querySelectorAll('.gdrive-file-card, .gdrive-list-item');
     const selectionToolbar = document.getElementById('bulkToolbar');
     const selectedCountEl = document.getElementById('selectedCount');
     let selectedFiles = [];
     
-    files.forEach(file => {
-        const checkbox = file.querySelector('.gdrive-file-select');
+    // Add click event listeners to file items
+    fileItems.forEach(item => {
+        const checkbox = item.querySelector('.gdrive-file-select');
         
         // Toggle selection on checkbox click
-        checkbox.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleFileSelection(file);
-            updateSelectionUI();
-        });
-        
-        // Handle shift+click for file
-        file.addEventListener('click', function(e) {
-            if (e.shiftKey) {
-                toggleFileSelection(file);
+        if (checkbox) {
+            checkbox.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleFileSelection(item);
                 updateSelectionUI();
-            } else {
-                // Regular click (open/navigate)
-                const fileId = file.dataset.id;
+            });
+        }
+        
+        // Select with shift key or open with normal click
+        item.addEventListener('click', function(e) {
+            if (e.shiftKey) {
+                toggleFileSelection(item);
+                updateSelectionUI();
+            } else if (!e.target.closest('.gdrive-action-btn') && !e.target.closest('.gdrive-file-select')) {
+                // Regular click (open/navigate) when not clicking on actions or checkbox
+                const fileId = item.dataset.id;
                 window.location.href = `/file/${fileId}`;
             }
         });
+        
+        // File action buttons
+        const actionBtns = item.querySelectorAll('.gdrive-action-btn');
+        actionBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const action = btn.title.toLowerCase();
+                const fileId = item.dataset.id;
+                
+                if (action.includes('tải xuống')) {
+                    window.location.href = `/download/${fileId}`;
+                } else if (action.includes('tùy chọn')) {
+                    showContextMenu(e, item);
+                }
+            });
+        });
     });
     
-    function toggleFileSelection(file) {
-        const fileId = file.dataset.id;
-        const checkbox = file.querySelector('.gdrive-file-select');
+    function toggleFileSelection(item) {
+        const fileId = item.dataset.id;
+        const checkbox = item.querySelector('.gdrive-file-select');
         
         if (selectedFiles.includes(fileId)) {
             // Deselect
             selectedFiles = selectedFiles.filter(id => id !== fileId);
-            file.classList.remove('selected');
-            checkbox.classList.remove('selected');
+            item.classList.remove('selected');
+            if (checkbox) checkbox.classList.remove('selected');
         } else {
             // Select
             selectedFiles.push(fileId);
-            file.classList.add('selected');
-            checkbox.classList.add('selected');
+            item.classList.add('selected');
+            if (checkbox) checkbox.classList.add('selected');
         }
     }
     
@@ -224,10 +309,10 @@
     // Cancel selection
     document.getElementById('cancelSelection').addEventListener('click', function() {
         selectedFiles = [];
-        files.forEach(file => {
-            file.classList.remove('selected');
-            const checkbox = file.querySelector('.gdrive-file-select');
-            checkbox.classList.remove('selected');
+        fileItems.forEach(item => {
+            item.classList.remove('selected');
+            const checkbox = item.querySelector('.gdrive-file-select');
+            if (checkbox) checkbox.classList.remove('selected');
         });
         updateSelectionUI();
     });
@@ -288,18 +373,23 @@
     const contextMenu = document.getElementById('contextMenu');
     let contextTarget = null;
     
-    // Show context menu on right click
-    files.forEach(file => {
-        file.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            
-            // Position menu
-            contextMenu.style.top = `${e.clientY}px`;
-            contextMenu.style.left = `${e.clientX}px`;
-            contextMenu.style.display = 'block';
-            
-            // Store target
-            contextTarget = file;
+    // Show context menu function
+    function showContextMenu(e, target) {
+        e.preventDefault();
+        
+        // Position menu
+        contextMenu.style.top = `${e.clientY}px`;
+        contextMenu.style.left = `${e.clientX}px`;
+        contextMenu.style.display = 'block';
+        
+        // Store target
+        contextTarget = target;
+    }
+    
+    // Add right click event listeners to file items
+    fileItems.forEach(item => {
+        item.addEventListener('contextmenu', function(e) {
+            showContextMenu(e, item);
         });
     });
     
@@ -309,7 +399,7 @@
     });
     
     // Handle context menu actions
-    document.querySelectorAll('.gdrive-context-menu-item').forEach(item => {
+    document.querySelectorAll('.gdrive-context-item').forEach(item => {
         item.addEventListener('click', function() {
             if (!contextTarget) return;
             

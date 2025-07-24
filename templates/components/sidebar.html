@@ -5,59 +5,61 @@
         <!-- Main navigation items -->
         <div class="gdrive-nav-item {% if active_page == 'home' %}active{% endif %}" data-action="home">
             <div class="gdrive-nav-icon">
-                <i class="icon icon-home"></i>
+                <i class="fas fa-home"></i>
             </div>
             <div class="gdrive-nav-label">Trang chủ</div>
         </div>
         
         <div class="gdrive-nav-item {% if active_page == 'recent' %}active{% endif %}" data-action="recent">
             <div class="gdrive-nav-icon">
-                <i class="icon icon-clock"></i>
+                <i class="fas fa-clock"></i>
             </div>
             <div class="gdrive-nav-label">Gần đây</div>
         </div>
         
         <div class="gdrive-nav-item {% if active_page == 'favorites' %}active{% endif %}" data-action="favorites">
             <div class="gdrive-nav-icon">
-                <i class="icon icon-star"></i>
+                <i class="fas fa-star"></i>
             </div>
             <div class="gdrive-nav-label">Yêu thích</div>
         </div>
         
         <div class="gdrive-nav-item {% if active_page == 'shared' %}active{% endif %}" data-action="shared">
             <div class="gdrive-nav-icon">
-                <i class="icon icon-users"></i>
+                <i class="fas fa-user-friends"></i>
             </div>
-            <div class="gdrive-nav-label">Chia sẻ</div>
+            <div class="gdrive-nav-label">Chia sẻ với tôi</div>
         </div>
         
         <div class="gdrive-nav-divider"></div>
         
-        <!-- File types -->
+        <!-- File types section -->
+        <div class="gdrive-nav-heading">Loại tệp tin</div>
+        
         <div class="gdrive-nav-item {% if active_page == 'documents' %}active{% endif %}" data-action="documents">
             <div class="gdrive-nav-icon">
-                <i class="icon icon-file-text"></i>
+                <i class="fas fa-file-alt"></i>
             </div>
             <div class="gdrive-nav-label">Tài liệu</div>
         </div>
         
         <div class="gdrive-nav-item {% if active_page == 'images' %}active{% endif %}" data-action="images">
             <div class="gdrive-nav-icon">
-                <i class="icon icon-image"></i>
+                <i class="fas fa-image"></i>
             </div>
             <div class="gdrive-nav-label">Hình ảnh</div>
         </div>
         
         <div class="gdrive-nav-item {% if active_page == 'videos' %}active{% endif %}" data-action="videos">
             <div class="gdrive-nav-icon">
-                <i class="icon icon-video"></i>
+                <i class="fas fa-video"></i>
             </div>
             <div class="gdrive-nav-label">Video</div>
         </div>
         
         <div class="gdrive-nav-item {% if active_page == 'audio' %}active{% endif %}" data-action="audio">
             <div class="gdrive-nav-icon">
-                <i class="icon icon-music"></i>
+                <i class="fas fa-music"></i>
             </div>
             <div class="gdrive-nav-label">Âm thanh</div>
         </div>
@@ -69,34 +71,37 @@
         
         <div class="gdrive-storage-info">
             <div class="gdrive-storage-progress">
-                <div class="gdrive-storage-bar" style="width: {{ storage_percent|default(10) }}%;"></div>
+                <div class="gdrive-storage-bar" style="width: {{ storage_percent|default(25) }}%;"></div>
             </div>
             <div class="gdrive-storage-text">
-                {{ storage_used|default('0 MB') }} / {{ storage_total|default('Không giới hạn') }}
+                <span>{{ storage_used|default('2.5 GB') }} / {{ storage_total|default('10 GB') }}</span>
+                <a href="#" class="gdrive-storage-upgrade">Nâng cấp</a>
             </div>
         </div>
         
-        <!-- Tools -->
         <div class="gdrive-nav-divider"></div>
+        
+        <!-- Tools section -->
+        <div class="gdrive-nav-heading">Công cụ</div>
         
         <div class="gdrive-nav-item {% if active_page == 'scan' %}active{% endif %}" data-action="scan">
             <div class="gdrive-nav-icon">
-                <i class="icon icon-refresh"></i>
+                <i class="fas fa-search"></i>
             </div>
-            <div class="gdrive-nav-label">Quét kênh</div>
+            <div class="gdrive-nav-label">Quét Telegram</div>
         </div>
         
         <div class="gdrive-nav-item {% if active_page == 'settings' %}active{% endif %}" data-action="settings">
             <div class="gdrive-nav-icon">
-                <i class="icon icon-settings"></i>
+                <i class="fas fa-cog"></i>
             </div>
             <div class="gdrive-nav-label">Cài đặt</div>
         </div>
         
         {% if current_user.is_authenticated and current_user.is_admin %}
         <div class="gdrive-nav-item {% if active_page == 'admin' %}active{% endif %}" data-action="admin">
-            <div class="gdrive-nav-icon">
-                <i class="icon icon-shield"></i>
+            <div class="gdrive-nav-icon admin-icon">
+                <i class="fas fa-shield-alt"></i>
             </div>
             <div class="gdrive-nav-label">Quản trị</div>
         </div>
@@ -108,15 +113,46 @@
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
 <style>
-    /* Storage progress bar */
+    /* Sidebar enhanced styles */
+    .gdrive-nav-item {
+        border-radius: 0 50px 50px 0;
+        margin: 2px 8px 2px 0;
+        padding: 8px 12px 8px 24px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .gdrive-nav-item.active {
+        font-weight: 500;
+    }
+    
+    .gdrive-nav-item.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 4px;
+        background-color: var(--primary);
+    }
+    
+    .gdrive-nav-heading {
+        padding-left: 24px;
+        margin-bottom: 4px;
+        letter-spacing: 0.5px;
+        font-size: 0.7rem;
+        color: var(--text-tertiary);
+    }
+    
+    /* Storage section styles */
     .gdrive-storage-info {
         padding: 0 24px;
-        margin-top: 8px;
+        margin: 8px 0 16px;
     }
     
     .gdrive-storage-progress {
         height: 4px;
-        background-color: var(--gdrive-border);
+        background-color: var(--bg-tertiary);
         border-radius: 2px;
         overflow: hidden;
         margin-bottom: 8px;
@@ -124,12 +160,45 @@
     
     .gdrive-storage-bar {
         height: 100%;
-        background-color: var(--gdrive-blue);
+        background-color: var(--primary);
     }
     
     .gdrive-storage-text {
-        font-size: 12px;
-        color: var(--gdrive-text-secondary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+    
+    .gdrive-storage-upgrade {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.75rem;
+    }
+    
+    .gdrive-storage-upgrade:hover {
+        text-decoration: underline;
+    }
+    
+    /* Admin icon styles */
+    .admin-icon {
+        color: #e11d48;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .gdrive-sidebar {
+            z-index: 100;
+            background-color: var(--bg-main);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .sidebar-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
     }
 </style>
 
@@ -177,16 +246,4 @@
             }
         });
     });
-    
-    // Mobile sidebar toggle
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const backdrop = document.getElementById('sidebarBackdrop');
-        
-        sidebar.classList.toggle('active');
-        backdrop.classList.toggle('active');
-    }
-    
-    // Close sidebar when clicking backdrop
-    document.getElementById('sidebarBackdrop').addEventListener('click', toggleSidebar);
 </script> 

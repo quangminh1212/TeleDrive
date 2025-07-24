@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -47,10 +47,84 @@
     
     <!-- Base Scripts -->
     <script>
+        // Check for saved theme preference or respect system preference
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for saved theme
+            const savedTheme = localStorage.getItem('theme');
+            
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                if (savedTheme === 'dark') {
+                    document.body.classList.add('dark-theme');
+                }
+            } else {
+                // Check system preference
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (prefersDark) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    document.body.classList.add('dark-theme');
+                    localStorage.setItem('theme', 'dark');
+                }
+            }
+            
+            // Add theme toggle to the header
+            const userMenu = document.querySelector('.user-menu');
+            if (userMenu) {
+                const themeToggle = document.createElement('button');
+                themeToggle.className = 'theme-toggle';
+                themeToggle.id = 'themeToggle';
+                themeToggle.innerHTML = document.documentElement.getAttribute('data-theme') === 'dark' ? 
+                    '<i class="fas fa-sun"></i>' : 
+                    '<i class="fas fa-moon"></i>';
+                userMenu.insertBefore(themeToggle, userMenu.firstChild);
+                
+                // Add event listener for theme toggle
+                themeToggle.addEventListener('click', toggleTheme);
+            }
+        });
+        
+        // Toggle theme function
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Update body class
+            if (newTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+            } else {
+                document.body.classList.remove('dark-theme');
+            }
+            
+            // Update toggle icon
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.innerHTML = newTheme === 'dark' ? 
+                    '<i class="fas fa-sun"></i>' : 
+                    '<i class="fas fa-moon"></i>';
+            }
+        }
+        
         // Mobile menu toggle
         document.getElementById('mobileMenuToggle').addEventListener('click', function() {
             toggleSidebar();
         });
+        
+        // Toggle sidebar function
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            
+            if (sidebar) {
+                sidebar.classList.toggle('active');
+            }
+            
+            if (backdrop) {
+                backdrop.classList.toggle('active');
+            }
+        }
         
         // Icon compatibility (replace class names for Font Awesome)
         document.addEventListener('DOMContentLoaded', function() {
@@ -101,7 +175,7 @@
         });
     </script>
     
-    <!-- Additional Scripts -->
+    <!-- Additional scripts -->
     {% block extra_js %}{% endblock %}
 </body>
 </html> 
