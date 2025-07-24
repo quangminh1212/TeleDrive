@@ -304,7 +304,7 @@ class SecurityAuditLogger:
             self.security_events = self.security_events[-1000:]
         
         # Log to application logger
-        from teledrive.observability import logger
+        from teledrive.monitor import logger
         logger.warning(f"Security Event: {event_type}", **event)
     
     def get_recent_events(self, limit: int = 100) -> List[Dict[str, Any]]:
