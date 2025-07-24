@@ -1,20 +1,42 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-TeleDrive Web Interface - Production Ready
-Giao diện web với phong cách Telegram để hiển thị các file đã quét được
+"""TeleDrive Web Interface
+
+This module provides the main Flask application for TeleDrive, a modern web interface
+for managing Telegram files with Google Drive-like experience.
+
+The application handles authentication, file browsing, searching, and administrative
+features with a focus on performance and security.
 """
 
 import json
+import logging
 import os
 import sys
-from pathlib import Path
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request, redirect, url_for, send_file, abort, make_response
-from flask_cors import CORS
-from flask_login import login_user, login_required, current_user
 from functools import wraps
+from pathlib import Path
+
 from dotenv import load_dotenv
+from flask import (Flask, abort, jsonify, make_response, redirect,
+                   render_template, request, send_file, url_for)
+from flask_cors import CORS
+from flask_login import current_user, login_required, login_user, logout_user
+
+# Load environment variables first
+load_dotenv()
+
+# Fix path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Import application components
+from .database import db
+from .auth import auth_manager
+from .models import OTPManager, validate_phone_number
+from .services import send_otp_sync
+from .services.filesystem import FileSystemManager
+from .config import config, validate_environment
+from .security import init_security_middleware
 
 # Dev mode helper
 def dev_mode_enabled():

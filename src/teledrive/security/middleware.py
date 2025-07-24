@@ -1,316 +1,252 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Security Middleware for TeleDrive
-Bảo mật middleware với headers, rate limiting, và input validation
+"""Security middleware for TeleDrive application.
+
+This module provides security middleware components like rate limiting,
+IP blocking, and request validation for the TeleDrive application.
 """
 
 import time
-import hashlib
+from datetime import datetime
 from functools import wraps
-from collections import defaultdict, deque
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Callable, Any
-from flask import request, jsonify, g, current_app
-from werkzeug.exceptions import TooManyRequests
-import re
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-class SecurityHeaders:
-    """Security headers middleware"""
-    
-    @staticmethod
-    def add_security_headers(response):
-        """Add security headers to response"""
-        # Content Security Policy
-        response.headers['Content-Security-Policy'] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
-            "img-src 'self' data: https:; "
-            "font-src 'self' data: https://fonts.gstatic.com; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none';"
-        )
-        
-        # Security headers
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['X-Frame-Options'] = 'DENY'
-        response.headers['X-XSS-Protection'] = '1; mode=block'
-        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-        response.headers['Permissions-Policy'] = (
-            'geolocation=(), microphone=(), camera=(), '
-            'payment=(), usb=(), magnetometer=(), gyroscope=()'
-        )
-        
-        # HSTS (only in production with HTTPS)
-        if current_app.config.get('HTTPS_ENABLED', False):
-            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-        
-        return response
+from flask import Flask, Response, abort, current_app, g, request
+
 
 class RateLimiter:
-    """Rate limiting middleware"""
+    """Rate limiting implementation to prevent abuse and DoS attacks.
     
-    def __init__(self):
-        self.requests = defaultdict(deque)
-        self.blocked_ips = {}
-        self.cleanup_interval = 300  # 5 minutes
-        self.last_cleanup = time.time()
+    Attributes:
+        limits: Dictionary mapping route patterns to rate limits
+        request_counts: Dictionary tracking requests per IP
+        window_size: Time window for rate limiting in seconds
+    """
     
-    def _get_client_ip(self) -> str:
-        """Get client IP address"""
-        # Check for forwarded IP (behind proxy)
-        if request.headers.get('X-Forwarded-For'):
-            return request.headers.get('X-Forwarded-For').split(',')[0].strip()
-        elif request.headers.get('X-Real-IP'):
-            return request.headers.get('X-Real-IP')
-        else:
-            return request.remote_addr or 'unknown'
-    
-    def _cleanup_old_requests(self):
-        """Clean up old request records"""
-        current_time = time.time()
+    def __init__(self, window_size: int = 60):
+        """Initialize the rate limiter.
         
-        # Clean up request history
-        cutoff_time = current_time - 60  # Keep last 1 minute
-        for ip in list(self.requests.keys()):
-            while self.requests[ip] and self.requests[ip][0] < cutoff_time:
-                self.requests[ip].popleft()
+        Args:
+            window_size: Time window in seconds for rate limiting
+        """
+        self.limits: Dict[str, int] = {}
+        self.request_counts: Dict[str, Dict[str, Tuple[int, float]]] = {}
+        self.window_size = window_size
+    
+    def add_limit(self, route_pattern: str, max_requests: int) -> None:
+        """Add a rate limit for a specific route pattern.
+        
+        Args:
+            route_pattern: Route pattern to limit
+            max_requests: Maximum requests allowed in the time window
+        """
+        self.limits[route_pattern] = max_requests
+    
+    def is_rate_limited(self, ip: str, route: str) -> bool:
+        """Check if a request should be rate limited.
+        
+        Args:
+            ip: IP address of the requester
+            route: Current route being accessed
             
-            # Remove empty deques
-            if not self.requests[ip]:
-                del self.requests[ip]
+        Returns:
+            bool: True if request should be rate limited, False otherwise
+        """
+        now = time.time()
         
-        # Clean up blocked IPs
-        for ip in list(self.blocked_ips.keys()):
-            if current_time > self.blocked_ips[ip]:
-                del self.blocked_ips[ip]
+        # Find applicable limit
+        max_requests = None
+        for pattern, limit in self.limits.items():
+            if route.startswith(pattern) or pattern == '*':
+                max_requests = limit
+                break
         
-        self.last_cleanup = current_time
-    
-    def is_rate_limited(self, limit_per_minute: int = 60, block_duration: int = 300) -> bool:
-        """Check if client is rate limited"""
-        current_time = time.time()
-        client_ip = self._get_client_ip()
+        if max_requests is None:
+            return False  # No limit for this route
         
-        # Periodic cleanup
-        if current_time - self.last_cleanup > self.cleanup_interval:
-            self._cleanup_old_requests()
+        # Get or initialize counter
+        key = f"{ip}:{route}"
+        if key not in self.request_counts:
+            self.request_counts[key] = (0, now)
         
-        # Check if IP is currently blocked
-        if client_ip in self.blocked_ips:
-            if current_time < self.blocked_ips[client_ip]:
-                return True
-            else:
-                del self.blocked_ips[client_ip]
+        count, window_start = self.request_counts[key]
         
-        # Add current request
-        self.requests[client_ip].append(current_time)
+        # Check if window expired
+        if now - window_start > self.window_size:
+            # Reset window
+            self.request_counts[key] = (1, now)
+            return False
         
-        # Count requests in last minute
-        cutoff_time = current_time - 60
-        recent_requests = sum(1 for req_time in self.requests[client_ip] if req_time > cutoff_time)
+        # Increment count
+        count += 1
+        self.request_counts[key] = (count, window_start)
         
-        # Check rate limit
-        if recent_requests > limit_per_minute:
-            # Block IP for specified duration
-            self.blocked_ips[client_ip] = current_time + block_duration
-            return True
-        
-        return False
+        # Check if limit exceeded
+        return count > max_requests
 
-class InputValidator:
-    """Input validation middleware"""
-    
-    # Common patterns
-    PHONE_PATTERN = re.compile(r'^\+[1-9]\d{1,14}$')
-    EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-    USERNAME_PATTERN = re.compile(r'^[a-zA-Z0-9_]{3,30}$')
-    
-    # Dangerous patterns to block
-    SQL_INJECTION_PATTERNS = [
-        re.compile(r'(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\b)', re.IGNORECASE),
-        re.compile(r'(\b(OR|AND)\s+\d+\s*=\s*\d+)', re.IGNORECASE),
-        re.compile(r'[\'";]', re.IGNORECASE),
-    ]
-    
-    XSS_PATTERNS = [
-        re.compile(r'<script[^>]*>.*?</script>', re.IGNORECASE | re.DOTALL),
-        re.compile(r'javascript:', re.IGNORECASE),
-        re.compile(r'on\w+\s*=', re.IGNORECASE),
-        re.compile(r'<iframe[^>]*>', re.IGNORECASE),
-    ]
-    
-    @classmethod
-    def validate_phone(cls, phone: str) -> bool:
-        """Validate phone number format"""
-        return bool(cls.PHONE_PATTERN.match(phone))
-    
-    @classmethod
-    def validate_email(cls, email: str) -> bool:
-        """Validate email format"""
-        return bool(cls.EMAIL_PATTERN.match(email))
-    
-    @classmethod
-    def validate_username(cls, username: str) -> bool:
-        """Validate username format"""
-        return bool(cls.USERNAME_PATTERN.match(username))
-    
-    @classmethod
-    def check_sql_injection(cls, text: str) -> bool:
-        """Check for SQL injection patterns"""
-        for pattern in cls.SQL_INJECTION_PATTERNS:
-            if pattern.search(text):
-                return True
-        return False
-    
-    @classmethod
-    def check_xss(cls, text: str) -> bool:
-        """Check for XSS patterns"""
-        for pattern in cls.XSS_PATTERNS:
-            if pattern.search(text):
-                return True
-        return False
-    
-    @classmethod
-    def sanitize_input(cls, text: str) -> str:
-        """Sanitize input text"""
-        if not isinstance(text, str):
-            return str(text)
-        
-        # Remove dangerous characters
-        text = re.sub(r'[<>"\']', '', text)
-        
-        # Limit length
-        if len(text) > 1000:
-            text = text[:1000]
-        
-        return text.strip()
 
 class LoginAttemptTracker:
-    """Track failed login attempts"""
+    """Tracks failed login attempts to prevent brute force attacks.
     
-    def __init__(self):
-        self.attempts = defaultdict(list)
-        self.blocked_ips = {}
+    Attributes:
+        max_attempts: Maximum allowed login attempts before lockout
+        lockout_time: Lockout time in seconds
+        attempts: Dictionary tracking login attempts per IP/username
+    """
     
-    def record_failed_attempt(self, identifier: str):
-        """Record a failed login attempt"""
-        current_time = datetime.utcnow()
-        self.attempts[identifier].append(current_time)
+    def __init__(self, max_attempts: int = 5, lockout_time: int = 600):
+        """Initialize the login attempt tracker.
         
-        # Clean old attempts (older than 1 hour)
-        cutoff_time = current_time - timedelta(hours=1)
-        self.attempts[identifier] = [
-            attempt for attempt in self.attempts[identifier] 
-            if attempt > cutoff_time
-        ]
+        Args:
+            max_attempts: Maximum allowed login attempts
+            lockout_time: Lockout time in seconds
+        """
+        self.max_attempts = max_attempts
+        self.lockout_time = lockout_time
+        self.attempts: Dict[str, Tuple[int, float]] = {}
     
-    def is_blocked(self, identifier: str, max_attempts: int = 5, block_duration: int = 900) -> bool:
-        """Check if identifier is blocked due to too many failed attempts"""
-        current_time = datetime.utcnow()
+    def record_attempt(self, username: str, ip: str, success: bool) -> None:
+        """Record a login attempt.
         
-        # Check if currently blocked
-        if identifier in self.blocked_ips:
-            if current_time < self.blocked_ips[identifier]:
-                return True
+        Args:
+            username: Username used in the attempt
+            ip: IP address of the requester
+            success: Whether the attempt was successful
+        """
+        key = f"{ip}:{username}"
+        
+        if success:
+            # Reset attempts on success
+            if key in self.attempts:
+                del self.attempts[key]
+            return
+        
+        now = time.time()
+        if key not in self.attempts:
+            self.attempts[key] = (1, now)
+        else:
+            attempts, first_attempt = self.attempts[key]
+            
+            # Reset if lockout period has passed
+            if now - first_attempt > self.lockout_time:
+                self.attempts[key] = (1, now)
             else:
-                del self.blocked_ips[identifier]
-        
-        # Count recent attempts
-        cutoff_time = current_time - timedelta(minutes=15)
-        recent_attempts = [
-            attempt for attempt in self.attempts.get(identifier, [])
-            if attempt > cutoff_time
-        ]
-        
-        if len(recent_attempts) >= max_attempts:
-            # Block for specified duration
-            self.blocked_ips[identifier] = current_time + timedelta(seconds=block_duration)
-            return True
-        
-        return False
+                self.attempts[key] = (attempts + 1, first_attempt)
     
-    def clear_attempts(self, identifier: str):
-        """Clear failed attempts for identifier (after successful login)"""
-        if identifier in self.attempts:
-            del self.attempts[identifier]
-        if identifier in self.blocked_ips:
-            del self.blocked_ips[identifier]
+    def is_locked_out(self, username: str, ip: str) -> bool:
+        """Check if a user is currently locked out.
+        
+        Args:
+            username: Username to check
+            ip: IP address to check
+            
+        Returns:
+            bool: True if the user is locked out, False otherwise
+        """
+        key = f"{ip}:{username}"
+        
+        if key not in self.attempts:
+            return False
+        
+        attempts, first_attempt = self.attempts[key]
+        now = time.time()
+        
+        # Reset if lockout period has passed
+        if now - first_attempt > self.lockout_time:
+            self.attempts[key] = (0, now)
+            return False
+        
+        return attempts >= self.max_attempts
 
-# Global instances
+
+# Initialize global instances
 rate_limiter = RateLimiter()
 login_tracker = LoginAttemptTracker()
 
-def rate_limit(limit_per_minute: int = 60):
-    """Rate limiting decorator"""
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            if current_app.config.get('RATELIMIT_ENABLED', True):
-                if rate_limiter.is_rate_limited(limit_per_minute):
-                    return jsonify({
-                        'error': 'Rate limit exceeded',
-                        'message': 'Too many requests. Please try again later.'
-                    }), 429
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
 
-def validate_input(validation_rules: Dict[str, Callable]):
-    """Input validation decorator"""
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
-            
-            # Validate each field
-            for field, validator in validation_rules.items():
-                if field in data:
-                    value = data[field]
-                    
-                    # Check for malicious patterns
-                    if isinstance(value, str):
-                        if InputValidator.check_sql_injection(value):
-                            return jsonify({'error': 'Invalid input detected'}), 400
-                        if InputValidator.check_xss(value):
-                            return jsonify({'error': 'Invalid input detected'}), 400
-                    
-                    # Apply custom validation
-                    if not validator(value):
-                        return jsonify({'error': f'Invalid {field} format'}), 400
-            
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
-
-def init_security_middleware(app):
-    """Initialize security middleware with Flask app"""
+def rate_limit(max_requests: int, window_size: int = 60):
+    """Decorator for applying rate limiting to a route.
     
-    @app.after_request
-    def add_security_headers(response):
-        return SecurityHeaders.add_security_headers(response)
+    Args:
+        max_requests: Maximum requests allowed in the time window
+        window_size: Time window in seconds
+        
+    Returns:
+        Function: Decorated route handler
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Get client IP
+            ip = request.remote_addr
+            
+            # Initialize limiter for this route if needed
+            route = request.path
+            
+            # Check if rate limited
+            if rate_limiter.is_rate_limited(ip, route):
+                abort(429, description="Too many requests")
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
+def init_security_middleware_chain(app: Flask) -> None:
+    """Initialize security middleware chain for the Flask application.
+    
+    Args:
+        app: The Flask application instance
+    """
+    # Configure default rate limits
+    rate_limiter.add_limit("/api/", 60)  # 60 requests per minute for API endpoints
+    rate_limiter.add_limit("/login", 10)  # 10 login attempts per minute
+    rate_limiter.add_limit("/admin/", 30)  # 30 requests per minute for admin endpoints
     
     @app.before_request
-    def security_checks():
-        """Run security checks before each request"""
-        # Skip security checks for static files
-        if request.endpoint and request.endpoint.startswith('static'):
-            return
+    def security_middleware():
+        """Apply security middleware to each request."""
+        # Skip for static files
+        if request.path.startswith('/static/'):
+            return None
         
-        # Rate limiting for API endpoints
-        if request.path.startswith('/api/') and current_app.config.get('RATELIMIT_ENABLED', True):
-            if rate_limiter.is_rate_limited():
-                return jsonify({
-                    'error': 'Rate limit exceeded',
-                    'message': 'Too many requests. Please try again later.'
-                }), 429
+        # Store request start time for logging
+        g.request_start_time = time.time()
         
-        # Store client info in g for logging
-        g.client_ip = rate_limiter._get_client_ip()
-        g.user_agent = request.headers.get('User-Agent', 'Unknown')
+        # Global rate limiting check for sensitive endpoints
+        ip = request.remote_addr
+        
+        # Check login rate limiting
+        if request.path == '/login' and request.method == 'POST':
+            if rate_limiter.is_rate_limited(ip, '/login'):
+                app.logger.warning(f"Rate limit exceeded for login from IP: {ip}")
+                return Response("Too many login attempts. Try again later.", 429)
+        
+        # Check admin rate limiting
+        if request.path.startswith('/admin/'):
+            if rate_limiter.is_rate_limited(ip, '/admin/'):
+                app.logger.warning(f"Rate limit exceeded for admin endpoint from IP: {ip}")
+                return Response("Too many requests to admin endpoints. Try again later.", 429)
+        
+        # Check API rate limiting
+        if request.path.startswith('/api/'):
+            if rate_limiter.is_rate_limited(ip, '/api/'):
+                app.logger.warning(f"Rate limit exceeded for API from IP: {ip}")
+                return Response("API rate limit exceeded. Try again later.", 429)
+        
+        return None
     
-    return app
+    @app.after_request
+    def log_request(response):
+        """Log request details for security monitoring."""
+        if hasattr(g, 'request_start_time'):
+            request_time = time.time() - g.request_start_time
+            
+            # Only log non-static requests and errors
+            if not request.path.startswith('/static/') and (response.status_code >= 400 or request_time > 1.0):
+                app.logger.info(
+                    f"Request: {request.method} {request.path} - "
+                    f"Status: {response.status_code} - "
+                    f"IP: {request.remote_addr} - "
+                    f"Time: {request_time:.2f}s"
+                )
+        
+        return response

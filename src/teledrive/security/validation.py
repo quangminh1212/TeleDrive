@@ -1,176 +1,262 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Input Validation and Sanitization
-Implements secure input validation and sanitization
+"""Input validation utilities for TeleDrive application.
+
+This module provides input validation and sanitization functions to protect
+against common security vulnerabilities like XSS and SQL injection.
 """
 
 import re
-import html
-import urllib.parse
-from typing import Any, Optional, Union, List
-from pathlib import Path
+from typing import Any, Dict, Optional, Pattern, Union
 
+# Common validation patterns
+EMAIL_PATTERN: Pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+PHONE_PATTERN: Pattern = re.compile(r'^\+?[0-9]{10,15}$')
+USERNAME_PATTERN: Pattern = re.compile(r'^[a-zA-Z0-9_]{3,30}$')
+PATH_PATTERN: Pattern = re.compile(r'^[a-zA-Z0-9_\-./\\]+$')
+FILENAME_PATTERN: Pattern = re.compile(r'^[a-zA-Z0-9_\-. ]+\.[a-zA-Z0-9]{1,10}$')
 
-class InputValidator:
-    """Input validation and sanitization utilities"""
-    
-    # Common regex patterns
-    EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-    PHONE_PATTERN = re.compile(r'^\+?[1-9]\d{1,14}$')
-    USERNAME_PATTERN = re.compile(r'^[a-zA-Z0-9_]{3,30}$')
-    FILENAME_PATTERN = re.compile(r'^[a-zA-Z0-9._-]+$')
-    
-    # Dangerous file extensions
-    DANGEROUS_EXTENSIONS = {
-        '.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js',
-        '.jar', '.php', '.asp', '.aspx', '.jsp', '.py', '.rb', '.pl',
-        '.sh', '.bash', '.ps1', '.msi', '.deb', '.rpm'
-    }
-    
-    @staticmethod
-    def sanitize_html(text: str) -> str:
-        """Sanitize HTML content to prevent XSS"""
-        if not isinstance(text, str):
-            return str(text)
-        return html.escape(text)
-    
-    @staticmethod
-    def sanitize_url(url: str) -> str:
-        """Sanitize URL to prevent injection"""
-        if not isinstance(url, str):
-            return ""
-        
-        # Parse and reconstruct URL to remove dangerous components
-        parsed = urllib.parse.urlparse(url)
-        
-        # Only allow http and https schemes
-        if parsed.scheme not in ['http', 'https', '']:
-            return ""
-        
-        return urllib.parse.urlunparse(parsed)
-    
-    @staticmethod
-    def validate_email(email: str) -> bool:
-        """Validate email address format"""
-        if not isinstance(email, str) or len(email) > 254:
-            return False
-        return bool(InputValidator.EMAIL_PATTERN.match(email))
-    
-    @staticmethod
-    def validate_phone(phone: str) -> bool:
-        """Validate phone number format"""
-        if not isinstance(phone, str):
-            return False
-        # Remove spaces and dashes
-        clean_phone = re.sub(r'[\s-]', '', phone)
-        return bool(InputValidator.PHONE_PATTERN.match(clean_phone))
-    
-    @staticmethod
-    def validate_username(username: str) -> bool:
-        """Validate username format"""
-        if not isinstance(username, str):
-            return False
-        return bool(InputValidator.USERNAME_PATTERN.match(username))
-    
-    @staticmethod
-    def validate_filename(filename: str) -> bool:
-        """Validate filename for security"""
-        if not isinstance(filename, str) or not filename:
-            return False
-        
-        # Check for path traversal attempts
-        if '..' in filename or '/' in filename or '\\' in filename:
-            return False
-        
-        # Check for dangerous extensions
-        file_path = Path(filename)
-        if file_path.suffix.lower() in InputValidator.DANGEROUS_EXTENSIONS:
-            return False
-        
-        # Check basic filename pattern
-        return bool(InputValidator.FILENAME_PATTERN.match(filename))
-    
-    @staticmethod
-    def sanitize_filename(filename: str) -> str:
-        """Sanitize filename for safe storage"""
-        if not isinstance(filename, str):
-            return "unknown"
-        
-        # Remove path components
-        filename = Path(filename).name
-        
-        # Replace dangerous characters
-        safe_chars = re.sub(r'[^\w\-_\.]', '_', filename)
-        
-        # Limit length
-        if len(safe_chars) > 255:
-            name, ext = Path(safe_chars).stem, Path(safe_chars).suffix
-            safe_chars = name[:255-len(ext)] + ext
-        
-        return safe_chars or "unknown"
-    
-    @staticmethod
-    def validate_integer(value: Any, min_val: Optional[int] = None, max_val: Optional[int] = None) -> bool:
-        """Validate integer value with optional range"""
-        try:
-            int_val = int(value)
-            if min_val is not None and int_val < min_val:
-                return False
-            if max_val is not None and int_val > max_val:
-                return False
-            return True
-        except (ValueError, TypeError):
-            return False
-    
-    @staticmethod
-    def validate_string_length(text: str, min_len: int = 0, max_len: int = 1000) -> bool:
-        """Validate string length"""
-        if not isinstance(text, str):
-            return False
-        return min_len <= len(text) <= max_len
-    
-    @staticmethod
-    def sanitize_search_query(query: str) -> str:
-        """Sanitize search query to prevent injection"""
-        if not isinstance(query, str):
-            return ""
-        
-        # Remove SQL injection patterns
-        dangerous_patterns = [
-            r'[;\'"\\]',  # SQL injection characters
-            r'--',        # SQL comments
-            r'/\*.*?\*/', # SQL block comments
-            r'\b(union|select|insert|update|delete|drop|create|alter)\b'  # SQL keywords
-        ]
-        
-        sanitized = query
-        for pattern in dangerous_patterns:
-            sanitized = re.sub(pattern, '', sanitized, flags=re.IGNORECASE)
-        
-        # Limit length and trim
-        return sanitized[:100].strip()
-    
-    @staticmethod
-    def validate_json_keys(data: dict, allowed_keys: List[str]) -> bool:
-        """Validate that JSON data only contains allowed keys"""
-        if not isinstance(data, dict):
-            return False
-        
-        return all(key in allowed_keys for key in data.keys())
+# Security patterns to detect malicious input
+SQL_INJECTION_PATTERNS: list[Pattern] = [
+    re.compile(r'(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\b)', re.IGNORECASE),
+    re.compile(r'(\b(OR|AND)\s+\d+\s*=\s*\d+)', re.IGNORECASE),
+    re.compile(r'[\'";]', re.IGNORECASE),
+]
 
-
-# Convenience functions
-def sanitize_html(text: str) -> str:
-    """Convenience function for HTML sanitization"""
-    return InputValidator.sanitize_html(text)
+XSS_PATTERNS: list[Pattern] = [
+    re.compile(r'<script[^>]*>.*?</script>', re.IGNORECASE | re.DOTALL),
+    re.compile(r'javascript:', re.IGNORECASE),
+    re.compile(r'on\w+\s*=', re.IGNORECASE),
+    re.compile(r'<iframe[^>]*>', re.IGNORECASE),
+]
 
 
 def validate_email(email: str) -> bool:
-    """Convenience function for email validation"""
-    return InputValidator.validate_email(email)
+    """Validate email format.
+    
+    Args:
+        email: Email address to validate
+        
+    Returns:
+        bool: True if email is valid, False otherwise
+    """
+    if not isinstance(email, str):
+        return False
+    return bool(EMAIL_PATTERN.match(email))
+
+
+def validate_phone_number(phone: str) -> bool:
+    """Validate phone number format.
+    
+    Args:
+        phone: Phone number to validate
+        
+    Returns:
+        bool: True if phone number is valid, False otherwise
+    """
+    if not isinstance(phone, str):
+        return False
+    
+    # Remove common separators
+    phone = re.sub(r'[\s\-.()\[\]]', '', phone)
+    
+    return bool(PHONE_PATTERN.match(phone))
+
+
+def validate_username(username: str) -> bool:
+    """Validate username format.
+    
+    Args:
+        username: Username to validate
+        
+    Returns:
+        bool: True if username is valid, False otherwise
+    """
+    if not isinstance(username, str):
+        return False
+    return bool(USERNAME_PATTERN.match(username))
+
+
+def validate_path(path: str) -> bool:
+    """Validate file or directory path.
+    
+    Args:
+        path: Path to validate
+        
+    Returns:
+        bool: True if path is valid, False otherwise
+    """
+    if not isinstance(path, str):
+        return False
+    
+    # Check for directory traversal attempts
+    if '..' in path:
+        return False
+    
+    return bool(PATH_PATTERN.match(path))
+
+
+def validate_filename(filename: str) -> bool:
+    """Validate filename.
+    
+    Args:
+        filename: Filename to validate
+        
+    Returns:
+        bool: True if filename is valid, False otherwise
+    """
+    if not isinstance(filename, str):
+        return False
+    return bool(FILENAME_PATTERN.match(filename))
+
+
+def sanitize_html(html: str) -> str:
+    """Remove potentially dangerous HTML content.
+    
+    Args:
+        html: HTML content to sanitize
+        
+    Returns:
+        str: Sanitized HTML content
+    """
+    if not isinstance(html, str):
+        return str(html)
+    
+    # Remove script tags
+    html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    
+    # Remove event handlers
+    html = re.sub(r' on\w+=".*?"', '', html, flags=re.IGNORECASE)
+    html = re.sub(r' on\w+=\'.*?\'', '', html, flags=re.IGNORECASE)
+    
+    # Remove javascript: URLs
+    html = re.sub(r'javascript:', 'disabled-javascript:', html, flags=re.IGNORECASE)
+    
+    # Remove iframe tags
+    html = re.sub(r'<iframe[^>]*>.*?</iframe>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    
+    return html
 
 
 def sanitize_filename(filename: str) -> str:
-    """Convenience function for filename sanitization"""
-    return InputValidator.sanitize_filename(filename)
+    """Sanitize a filename to make it safe for filesystem operations.
+    
+    Args:
+        filename: Filename to sanitize
+        
+    Returns:
+        str: Sanitized filename
+    """
+    if not isinstance(filename, str):
+        return "unnamed_file"
+    
+    # Remove path components
+    filename = re.sub(r'.*[/\\]', '', filename)
+    
+    # Remove dangerous characters
+    filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+    
+    # Ensure filename isn't empty
+    if not filename or filename == '.':
+        return "unnamed_file"
+    
+    # Limit length
+    if len(filename) > 255:
+        filename = filename[:255]
+    
+    return filename
+
+
+def detect_sql_injection(text: str) -> bool:
+    """Detect potential SQL injection patterns.
+    
+    Args:
+        text: Text to check
+        
+    Returns:
+        bool: True if SQL injection pattern detected, False otherwise
+    """
+    if not isinstance(text, str):
+        return False
+    
+    for pattern in SQL_INJECTION_PATTERNS:
+        if pattern.search(text):
+            return True
+    
+    return False
+
+
+def detect_xss(text: str) -> bool:
+    """Detect potential XSS patterns.
+    
+    Args:
+        text: Text to check
+        
+    Returns:
+        bool: True if XSS pattern detected, False otherwise
+    """
+    if not isinstance(text, str):
+        return False
+    
+    for pattern in XSS_PATTERNS:
+        if pattern.search(text):
+            return True
+    
+    return False
+
+
+def validate_input_dict(data: Dict[str, Any], 
+                        rules: Dict[str, Any], 
+                        require_all: bool = False) -> tuple[bool, Optional[str]]:
+    """Validate a dictionary of input data against validation rules.
+    
+    Args:
+        data: Dictionary of input data
+        rules: Dictionary of validation rules
+        require_all: Whether all keys in rules must be present in data
+        
+    Returns:
+        tuple: (is_valid, error_message)
+    """
+    if not isinstance(data, dict) or not isinstance(rules, dict):
+        return False, "Invalid input or rules format"
+    
+    # Check required fields
+    if require_all:
+        for key in rules:
+            if key not in data:
+                return False, f"Missing required field: {key}"
+    
+    # Validate each field
+    for key, value in data.items():
+        if key in rules:
+            rule = rules[key]
+            
+            # If rule is a function, call it
+            if callable(rule):
+                if not rule(value):
+                    return False, f"Invalid value for {key}"
+            
+            # If rule is a regex pattern
+            elif hasattr(rule, 'match'):
+                if not rule.match(str(value)):
+                    return False, f"Invalid format for {key}"
+            
+            # If rule is a type
+            elif isinstance(rule, type):
+                if not isinstance(value, rule):
+                    return False, f"Invalid type for {key}, expected {rule.__name__}"
+    
+    return True, None
+
+
+__all__ = [
+    'validate_email',
+    'validate_phone_number',
+    'validate_username',
+    'validate_path',
+    'validate_filename',
+    'sanitize_html',
+    'sanitize_filename',
+    'detect_sql_injection',
+    'detect_xss',
+    'validate_input_dict',
+]

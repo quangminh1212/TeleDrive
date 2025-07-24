@@ -1,0 +1,34 @@
+include LICENSE
+include README.md
+include pyproject.toml
+include setup.py
+include requirements.txt
+
+# Configuration files
+include config/*.json
+include config/*.yml
+include config/Dockerfile
+include .editorconfig
+
+# Documentation
+recursive-include docs *.md
+
+# Static files and templates
+recursive-include static *
+recursive-include templates *
+
+# Exclude test directories and files
+recursive-exclude tests *
+exclude .gitignore
+exclude .pre-commit-config.yaml
+exclude .flake8
+exclude .coveragerc
+
+# Exclude development and temporary files
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude *.so
+global-exclude .DS_Store
+global-exclude *.egg-info
+global-exclude *.egg
+global-exclude .env 

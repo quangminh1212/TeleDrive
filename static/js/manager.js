@@ -34,6 +34,7 @@ class GDriveManager {
         this.setupSearchFilters();
         this.setupBulkOperations();
         this.setupNewButtons();
+        this.setupMobileSidebar(); // Initialize mobile sidebar toggle
 
         // Luôn sử dụng giao diện Google Drive mặc định
         localStorage.setItem('use-gdrive-interface', 'true');
@@ -2024,6 +2025,43 @@ class GDriveManager {
                 
                 default:
                     return 0;
+            }
+        });
+    }
+
+    setupMobileSidebar() {
+        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+        const gdriveSidebar = document.getElementById('gdriveSidebar');
+        
+        if (!mobileSidebarToggle || !gdriveSidebar) return;
+        
+        // Show toggle button on mobile
+        if (window.innerWidth <= 768) {
+            mobileSidebarToggle.style.display = 'flex';
+        } else {
+            mobileSidebarToggle.style.display = 'none';
+        }
+        
+        // Toggle sidebar on mobile
+        mobileSidebarToggle.addEventListener('click', () => {
+            const sidebarIsVisible = gdriveSidebar.classList.contains('open');
+            
+            if (sidebarIsVisible) {
+                gdriveSidebar.classList.remove('open');
+                mobileSidebarToggle.innerHTML = '<i class="icon icon-menu"></i>';
+            } else {
+                gdriveSidebar.classList.add('open');
+                mobileSidebarToggle.innerHTML = '<i class="icon icon-times"></i>';
+            }
+        });
+        
+        // Update sidebar toggle visibility on resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                mobileSidebarToggle.style.display = 'flex';
+            } else {
+                mobileSidebarToggle.style.display = 'none';
+                gdriveSidebar.classList.remove('open');
             }
         });
     }
