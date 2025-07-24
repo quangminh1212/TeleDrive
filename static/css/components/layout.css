@@ -1,0 +1,201 @@
+/**
+ * TeleDrive - Layout Components
+ * Base layout styles for the application
+ */
+
+/* Root variables */
+:root {
+    /* Colors */
+    --gdrive-blue: #4285f4;
+    --gdrive-blue-hover: #3367d6;
+    --gdrive-light-blue: #e8f0fe;
+    --gdrive-light-gray: #f8f9fa;
+    --gdrive-border: #dadce0;
+    --gdrive-text: #202124;
+    --gdrive-text-secondary: #5f6368;
+    --gdrive-white: #ffffff;
+    --gdrive-yellow-folder: #ffca28;
+    --gdrive-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --gdrive-shadow-hover: 0 1px 4px rgba(0, 0, 0, 0.15);
+    
+    /* Dimensions */
+    --gdrive-header-height: 64px;
+    --gdrive-sidebar-width: 256px;
+    --gdrive-radius: 8px;
+    
+    /* Other */
+    --gdrive-transition: all 0.2s ease;
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--gdrive-light-gray);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a0a0a0;
+}
+
+/* Base layout */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 14px;
+    color: var(--gdrive-text);
+    background-color: var(--gdrive-white);
+    overflow-x: hidden;
+    line-height: 1.5;
+}
+
+/* Main layout container */
+.gdrive-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header */
+.gdrive-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--gdrive-header-height);
+    padding: 0 16px;
+    background-color: var(--gdrive-white);
+    border-bottom: 1px solid var(--gdrive-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--gdrive-shadow);
+}
+
+.gdrive-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    cursor: pointer;
+}
+
+.gdrive-logo-text {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--gdrive-text);
+}
+
+.app-icon-text {
+    font-size: 24px;
+}
+
+/* Main content container */
+.gdrive-content {
+    display: flex;
+    flex: 1;
+    position: relative;
+}
+
+/* Sidebar */
+.gdrive-sidebar {
+    width: var(--gdrive-sidebar-width);
+    height: calc(100vh - var(--gdrive-header-height));
+    position: sticky;
+    top: var(--gdrive-header-height);
+    background-color: var(--gdrive-white);
+    border-right: 1px solid var(--gdrive-border);
+    padding: 16px 0;
+    overflow-y: auto;
+    z-index: 5;
+    transition: var(--gdrive-transition);
+}
+
+/* Main content area */
+.gdrive-files-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - var(--gdrive-header-height));
+    background-color: var(--gdrive-white);
+    padding: 0;
+}
+
+/* Toolbar with breadcrumbs and actions */
+.gdrive-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    min-height: 48px;
+    border-bottom: 1px solid var(--gdrive-border);
+    background-color: var(--gdrive-white);
+}
+
+/* Files display area */
+.gdrive-files-display {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+/* Empty state */
+.gdrive-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 300px;
+    color: var(--gdrive-text-secondary);
+    text-align: center;
+}
+
+.gdrive-empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.gdrive-empty-text {
+    font-size: 16px;
+    max-width: 400px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .gdrive-sidebar {
+        position: fixed;
+        left: -100%;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+    }
+    
+    .gdrive-sidebar.active {
+        left: 0;
+    }
+    
+    .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+    
+    .sidebar-backdrop.active {
+        display: block;
+    }
+} 

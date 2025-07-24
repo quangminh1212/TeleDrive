@@ -1,0 +1,126 @@
+<!-- TeleDrive Header Component -->
+<div class="gdrive-header">
+    <!-- Logo -->
+    <div class="gdrive-logo">
+        <span class="app-icon-text">📁</span>
+        <span class="gdrive-logo-text">TeleDrive</span>
+    </div>
+    
+    <!-- Search -->
+    <div class="gdrive-search-box">
+        <i class="icon icon-search"></i>
+        <input type="text" class="gdrive-search-input" placeholder="Tìm kiếm trong TeleDrive" id="globalSearch">
+    </div>
+    
+    <!-- User menu -->
+    <div class="user-menu">
+        <!-- Settings button -->
+        <button class="gdrive-btn gdrive-btn-icon gdrive-btn-text" id="settingsButton">
+            <i class="icon icon-settings"></i>
+        </button>
+        
+        <!-- User avatar dropdown -->
+        <div class="user-dropdown">
+            <div class="user-avatar" id="userMenuToggle">
+                {{ current_user.username[0] if current_user.is_authenticated else 'G' }}
+            </div>
+            
+            <!-- Dropdown menu -->
+            <div class="user-dropdown-menu" id="userDropdownMenu">
+                <!-- User info section -->
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {{ current_user.username[0] if current_user.is_authenticated else 'G' }}
+                    </div>
+                    <div class="user-info-name">
+                        {{ current_user.username if current_user.is_authenticated else 'Khách' }}
+                    </div>
+                    {% if current_user.is_authenticated and current_user.email %}
+                    <div class="user-info-email">{{ current_user.email }}</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Menu items -->
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                    <div class="user-dropdown-item" data-action="admin">
+                        <i class="icon icon-shield"></i>
+                        Quản trị hệ thống
+                    </div>
+                    {% endif %}
+                    
+                    <div class="user-dropdown-item" data-action="profile">
+                        <i class="icon icon-user"></i>
+                        Thông tin cá nhân
+                    </div>
+                    
+                    <div class="user-dropdown-item" data-action="settings">
+                        <i class="icon icon-settings"></i>
+                        Cài đặt
+                    </div>
+                    
+                    <div class="user-dropdown-divider"></div>
+                    
+                    <div class="user-dropdown-item" data-action="logout">
+                        <i class="icon icon-logout"></i>
+                        Đăng xuất
+                    </div>
+                {% else %}
+                    <div class="user-dropdown-item" data-action="login">
+                        <i class="icon icon-login"></i>
+                        Đăng nhập
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle user dropdown menu
+    document.getElementById('userMenuToggle').addEventListener('click', function() {
+        const menu = document.getElementById('userDropdownMenu');
+        menu.classList.toggle('show');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.user-dropdown') && document.getElementById('userDropdownMenu').classList.contains('show')) {
+            document.getElementById('userDropdownMenu').classList.remove('show');
+        }
+    });
+    
+    // Handle menu item clicks
+    document.querySelectorAll('.user-dropdown-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const action = this.dataset.action;
+            
+            // Handle different actions
+            switch(action) {
+                case 'login':
+                    window.location.href = '/login';
+                    break;
+                case 'logout':
+                    window.location.href = '/logout';
+                    break;
+                case 'profile':
+                    window.location.href = '/profile';
+                    break;
+                case 'settings':
+                    window.location.href = '/settings';
+                    break;
+                case 'admin':
+                    window.location.href = '/admin';
+                    break;
+            }
+        });
+    });
+    
+    // Global search functionality
+    document.getElementById('globalSearch').addEventListener('keyup', function(e) {
+        if (e.key === 'Enter' && this.value.trim() !== '') {
+            // Perform search
+            window.location.href = '/search?q=' + encodeURIComponent(this.value.trim());
+        }
+    });
+</script> 

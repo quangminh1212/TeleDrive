@@ -1,0 +1,370 @@
+<!-- TeleDrive File Display Component -->
+<div class="gdrive-files-container">
+    <!-- Toolbar with breadcrumbs and actions -->
+    <div class="gdrive-toolbar">
+        <!-- Breadcrumbs -->
+        <div class="gdrive-breadcrumbs">
+            {% for item in breadcrumbs %}
+                {% if loop.last %}
+                    <div class="gdrive-breadcrumb-item">{{ item.name }}</div>
+                {% else %}
+                    <div class="gdrive-breadcrumb-item">
+                        <a href="{{ item.path }}">{{ item.name }}</a>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        
+        <!-- Actions -->
+        <div class="gdrive-actions">
+            <!-- View toggle buttons -->
+            <div class="view-toggle">
+                <button class="view-toggle-btn" id="gridViewBtn" title="Grid View">
+                    <i class="icon icon-grid"></i>
+                </button>
+                <button class="view-toggle-btn" id="listViewBtn" title="List View">
+                    <i class="icon icon-list"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Files display area -->
+    <div class="gdrive-files-display gdrive-grid-view" id="filesContainer">
+        {% if files %}
+            {% for file in files %}
+                {% if view_type == 'grid' %}
+                    <!-- Grid view item -->
+                    <div class="gdrive-file-card" data-id="{{ file.id }}">
+                        <div class="gdrive-file-select"></div>
+                        <div class="gdrive-file-thumbnail">
+                            {% if file.is_directory %}
+                                <i class="gdrive-folder-icon"></i>
+                            {% elif file.type == 'image' %}
+                                <img src="{{ file.thumbnail_url|default(file.url) }}" alt="{{ file.name }}">
+                            {% else %}
+                                <i class="gdrive-file-icon"></i>
+                            {% endif %}
+                        </div>
+                        <div class="gdrive-file-info">
+                            <div class="gdrive-file-name" title="{{ file.name }}">{{ file.name }}</div>
+                            <div class="gdrive-file-meta">
+                                <span>{{ file.size }}</span>
+                                <span>{{ file.modified }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- List view item -->
+                    <div class="gdrive-file-row" data-id="{{ file.id }}">
+                        <div class="gdrive-file-select"></div>
+                        <div class="gdrive-file-row-name">
+                            {% if file.is_directory %}
+                                <i class="gdrive-folder-row-icon"></i>
+                            {% else %}
+                                <i class="gdrive-file-row-icon"></i>
+                            {% endif %}
+                            <span class="gdrive-file-row-label" title="{{ file.name }}">{{ file.name }}</span>
+                        </div>
+                        <div class="gdrive-file-row-owner">{{ file.owner|default('') }}</div>
+                        <div class="gdrive-file-row-date">{{ file.modified }}</div>
+                        <div class="gdrive-file-row-size">{{ file.size }}</div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <!-- Empty state -->
+            <div class="gdrive-empty">
+                <div class="gdrive-empty-icon">📁</div>
+                <div class="gdrive-empty-text">
+                    {% if search_query %}
+                        Không tìm thấy kết quả cho "{{ search_query }}".
+                    {% else %}
+                        Thư mục này trống. Hãy quét các kênh để tìm tệp tin.
+                    {% endif %}
+                </div>
+                {% if not search_query %}
+                    <button class="gdrive-btn gdrive-btn-primary mt-3" id="scanButton">Quét kênh</button>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Selection toolbar (hidden by default) -->
+    <div class="gdrive-bulk-toolbar" id="bulkToolbar" style="display: none;">
+        <div class="gdrive-bulk-count"><span id="selectedCount">0</span> đã chọn</div>
+        <button class="gdrive-btn gdrive-btn-secondary gdrive-btn-sm" id="downloadSelected">
+            <i class="icon icon-download"></i> Tải xuống
+        </button>
+        <button class="gdrive-btn gdrive-btn-secondary gdrive-btn-sm" id="deleteSelected">
+            <i class="icon icon-trash"></i> Xóa
+        </button>
+        <button class="gdrive-btn gdrive-btn-text gdrive-btn-sm" id="cancelSelection">
+            Hủy
+        </button>
+    </div>
+</div>
+
+<!-- Context menu (hidden by default) -->
+<div class="gdrive-context-menu" id="contextMenu">
+    <div class="gdrive-context-menu-item" data-action="open">
+        <i class="icon icon-folder-open"></i> Mở
+    </div>
+    <div class="gdrive-context-menu-item" data-action="download">
+        <i class="icon icon-download"></i> Tải xuống
+    </div>
+    <div class="gdrive-context-menu-item" data-action="rename">
+        <i class="icon icon-edit"></i> Đổi tên
+    </div>
+    <div class="gdrive-context-menu-divider"></div>
+    <div class="gdrive-context-menu-item" data-action="delete">
+        <i class="icon icon-trash"></i> Xóa
+    </div>
+</div>
+
+<script>
+    // View toggle functionality
+    document.getElementById('gridViewBtn').addEventListener('click', function() {
+        const container = document.getElementById('filesContainer');
+        container.classList.add('gdrive-grid-view');
+        container.classList.remove('gdrive-list-view');
+        
+        // Update buttons
+        this.classList.add('active');
+        document.getElementById('listViewBtn').classList.remove('active');
+        
+        // Store preference
+        localStorage.setItem('view_preference', 'grid');
+    });
+    
+    document.getElementById('listViewBtn').addEventListener('click', function() {
+        const container = document.getElementById('filesContainer');
+        container.classList.add('gdrive-list-view');
+        container.classList.remove('gdrive-grid-view');
+        
+        // Update buttons
+        this.classList.add('active');
+        document.getElementById('gridViewBtn').classList.remove('active');
+        
+        // Store preference
+        localStorage.setItem('view_preference', 'list');
+    });
+    
+    // Set initial view based on preference or default
+    (function() {
+        const preference = localStorage.getItem('view_preference') || 'grid';
+        const container = document.getElementById('filesContainer');
+        
+        if (preference === 'grid') {
+            container.classList.add('gdrive-grid-view');
+            container.classList.remove('gdrive-list-view');
+            document.getElementById('gridViewBtn').classList.add('active');
+        } else {
+            container.classList.add('gdrive-list-view');
+            container.classList.remove('gdrive-grid-view');
+            document.getElementById('listViewBtn').classList.add('active');
+        }
+    })();
+    
+    // File selection functionality
+    const files = document.querySelectorAll('.gdrive-file-card, .gdrive-file-row');
+    const selectionToolbar = document.getElementById('bulkToolbar');
+    const selectedCountEl = document.getElementById('selectedCount');
+    let selectedFiles = [];
+    
+    files.forEach(file => {
+        const checkbox = file.querySelector('.gdrive-file-select');
+        
+        // Toggle selection on checkbox click
+        checkbox.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleFileSelection(file);
+            updateSelectionUI();
+        });
+        
+        // Handle shift+click for file
+        file.addEventListener('click', function(e) {
+            if (e.shiftKey) {
+                toggleFileSelection(file);
+                updateSelectionUI();
+            } else {
+                // Regular click (open/navigate)
+                const fileId = file.dataset.id;
+                window.location.href = `/file/${fileId}`;
+            }
+        });
+    });
+    
+    function toggleFileSelection(file) {
+        const fileId = file.dataset.id;
+        const checkbox = file.querySelector('.gdrive-file-select');
+        
+        if (selectedFiles.includes(fileId)) {
+            // Deselect
+            selectedFiles = selectedFiles.filter(id => id !== fileId);
+            file.classList.remove('selected');
+            checkbox.classList.remove('selected');
+        } else {
+            // Select
+            selectedFiles.push(fileId);
+            file.classList.add('selected');
+            checkbox.classList.add('selected');
+        }
+    }
+    
+    function updateSelectionUI() {
+        if (selectedFiles.length > 0) {
+            selectionToolbar.style.display = 'flex';
+            selectedCountEl.textContent = selectedFiles.length;
+        } else {
+            selectionToolbar.style.display = 'none';
+        }
+    }
+    
+    // Cancel selection
+    document.getElementById('cancelSelection').addEventListener('click', function() {
+        selectedFiles = [];
+        files.forEach(file => {
+            file.classList.remove('selected');
+            const checkbox = file.querySelector('.gdrive-file-select');
+            checkbox.classList.remove('selected');
+        });
+        updateSelectionUI();
+    });
+    
+    // Bulk actions
+    document.getElementById('downloadSelected').addEventListener('click', function() {
+        if (selectedFiles.length > 0) {
+            // Implement bulk download
+            fetch('/api/download-multiple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ids: selectedFiles })
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok');
+            })
+            .then(data => {
+                if (data.url) {
+                    window.location.href = data.url;
+                }
+            })
+            .catch(error => {
+                console.error('Error downloading files:', error);
+            });
+        }
+    });
+    
+    document.getElementById('deleteSelected').addEventListener('click', function() {
+        if (selectedFiles.length > 0 && confirm(`Bạn có chắc muốn xóa ${selectedFiles.length} tệp tin này?`)) {
+            // Implement bulk delete
+            fetch('/api/delete-multiple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ids: selectedFiles })
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Reload page to reflect changes
+                    window.location.reload();
+                } else {
+                    throw new Error('Network response was not ok');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting files:', error);
+            });
+        }
+    });
+    
+    // Context menu functionality
+    const contextMenu = document.getElementById('contextMenu');
+    let contextTarget = null;
+    
+    // Show context menu on right click
+    files.forEach(file => {
+        file.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            
+            // Position menu
+            contextMenu.style.top = `${e.clientY}px`;
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.display = 'block';
+            
+            // Store target
+            contextTarget = file;
+        });
+    });
+    
+    // Hide context menu when clicking elsewhere
+    document.addEventListener('click', function() {
+        contextMenu.style.display = 'none';
+    });
+    
+    // Handle context menu actions
+    document.querySelectorAll('.gdrive-context-menu-item').forEach(item => {
+        item.addEventListener('click', function() {
+            if (!contextTarget) return;
+            
+            const fileId = contextTarget.dataset.id;
+            const action = this.dataset.action;
+            
+            switch(action) {
+                case 'open':
+                    window.location.href = `/file/${fileId}`;
+                    break;
+                    
+                case 'download':
+                    window.location.href = `/download/${fileId}`;
+                    break;
+                    
+                case 'rename':
+                    // Show rename prompt
+                    const newName = prompt('Nhập tên mới:');
+                    if (newName) {
+                        fetch(`/api/rename/${fileId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ name: newName })
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                window.location.reload();
+                            }
+                        });
+                    }
+                    break;
+                    
+                case 'delete':
+                    if (confirm('Bạn có chắc muốn xóa tệp tin này?')) {
+                        fetch(`/api/delete/${fileId}`, {
+                            method: 'POST'
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                window.location.reload();
+                            }
+                        });
+                    }
+                    break;
+            }
+        });
+    });
+    
+    // Scan button functionality
+    const scanButton = document.getElementById('scanButton');
+    if (scanButton) {
+        scanButton.addEventListener('click', function() {
+            window.location.href = '/scan';
+        });
+    }
+</script> 

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TeleDrive{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    
+    <!-- Icons (Font Awesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    
+    <!-- Additional CSS -->
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Additional head content -->
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Main Layout -->
+    <div class="gdrive-layout">
+        <!-- Header -->
+        {% include 'components/header.html' %}
+        
+        <!-- Main content -->
+        <div class="gdrive-content">
+            <!-- Sidebar -->
+            {% include 'components/sidebar.html' %}
+            
+            <!-- Main content area -->
+            {% block content %}
+                <!-- Default content -->
+                {% include 'components/file-display.html' %}
+            {% endblock %}
+        </div>
+    </div>
+    
+    <!-- Mobile menu toggle -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Base Scripts -->
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+            toggleSidebar();
+        });
+        
+        // Icon compatibility (replace class names for Font Awesome)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Map of icon classes to Font Awesome classes
+            const iconMap = {
+                'icon-home': 'fa-solid fa-home',
+                'icon-search': 'fa-solid fa-search',
+                'icon-settings': 'fa-solid fa-cog',
+                'icon-user': 'fa-solid fa-user',
+                'icon-shield': 'fa-solid fa-shield-alt',
+                'icon-logout': 'fa-solid fa-sign-out-alt',
+                'icon-login': 'fa-solid fa-sign-in-alt',
+                'icon-clock': 'fa-solid fa-clock',
+                'icon-star': 'fa-solid fa-star',
+                'icon-users': 'fa-solid fa-users',
+                'icon-file-text': 'fa-solid fa-file-alt',
+                'icon-image': 'fa-solid fa-image',
+                'icon-video': 'fa-solid fa-video',
+                'icon-music': 'fa-solid fa-music',
+                'icon-refresh': 'fa-solid fa-sync',
+                'icon-download': 'fa-solid fa-download',
+                'icon-trash': 'fa-solid fa-trash',
+                'icon-edit': 'fa-solid fa-edit',
+                'icon-folder-open': 'fa-solid fa-folder-open',
+                'icon-list': 'fa-solid fa-list',
+                'icon-grid': 'fa-solid fa-th-large'
+            };
+            
+            // Replace all icon classes
+            document.querySelectorAll('.icon').forEach(icon => {
+                // Get all classes
+                const classes = Array.from(icon.classList);
+                
+                // Find icon class
+                for (const cls of classes) {
+                    if (cls.startsWith('icon-') && iconMap[cls]) {
+                        // Remove old class and add Font Awesome class
+                        icon.classList.remove(cls);
+                        icon.classList.remove('icon');
+                        
+                        // Add Font Awesome classes
+                        const faClasses = iconMap[cls].split(' ');
+                        faClasses.forEach(faCls => icon.classList.add(faCls));
+                        break;
+                    }
+                }
+            });
+        });
+    </script>
+    
+    <!-- Additional Scripts -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

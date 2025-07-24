@@ -1,0 +1,192 @@
+<!-- TeleDrive Sidebar Component -->
+<div class="gdrive-sidebar" id="sidebar">
+    <!-- Navigation -->
+    <div class="gdrive-nav">
+        <!-- Main navigation items -->
+        <div class="gdrive-nav-item {% if active_page == 'home' %}active{% endif %}" data-action="home">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-home"></i>
+            </div>
+            <div class="gdrive-nav-label">Trang chủ</div>
+        </div>
+        
+        <div class="gdrive-nav-item {% if active_page == 'recent' %}active{% endif %}" data-action="recent">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-clock"></i>
+            </div>
+            <div class="gdrive-nav-label">Gần đây</div>
+        </div>
+        
+        <div class="gdrive-nav-item {% if active_page == 'favorites' %}active{% endif %}" data-action="favorites">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-star"></i>
+            </div>
+            <div class="gdrive-nav-label">Yêu thích</div>
+        </div>
+        
+        <div class="gdrive-nav-item {% if active_page == 'shared' %}active{% endif %}" data-action="shared">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-users"></i>
+            </div>
+            <div class="gdrive-nav-label">Chia sẻ</div>
+        </div>
+        
+        <div class="gdrive-nav-divider"></div>
+        
+        <!-- File types -->
+        <div class="gdrive-nav-item {% if active_page == 'documents' %}active{% endif %}" data-action="documents">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-file-text"></i>
+            </div>
+            <div class="gdrive-nav-label">Tài liệu</div>
+        </div>
+        
+        <div class="gdrive-nav-item {% if active_page == 'images' %}active{% endif %}" data-action="images">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-image"></i>
+            </div>
+            <div class="gdrive-nav-label">Hình ảnh</div>
+        </div>
+        
+        <div class="gdrive-nav-item {% if active_page == 'videos' %}active{% endif %}" data-action="videos">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-video"></i>
+            </div>
+            <div class="gdrive-nav-label">Video</div>
+        </div>
+        
+        <div class="gdrive-nav-item {% if active_page == 'audio' %}active{% endif %}" data-action="audio">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-music"></i>
+            </div>
+            <div class="gdrive-nav-label">Âm thanh</div>
+        </div>
+        
+        <div class="gdrive-nav-divider"></div>
+        
+        <!-- Storage section -->
+        <div class="gdrive-nav-heading">Lưu trữ</div>
+        
+        <div class="gdrive-storage-info">
+            <div class="gdrive-storage-progress">
+                <div class="gdrive-storage-bar" style="width: {{ storage_percent|default(10) }}%;"></div>
+            </div>
+            <div class="gdrive-storage-text">
+                {{ storage_used|default('0 MB') }} / {{ storage_total|default('Không giới hạn') }}
+            </div>
+        </div>
+        
+        <!-- Tools -->
+        <div class="gdrive-nav-divider"></div>
+        
+        <div class="gdrive-nav-item {% if active_page == 'scan' %}active{% endif %}" data-action="scan">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-refresh"></i>
+            </div>
+            <div class="gdrive-nav-label">Quét kênh</div>
+        </div>
+        
+        <div class="gdrive-nav-item {% if active_page == 'settings' %}active{% endif %}" data-action="settings">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-settings"></i>
+            </div>
+            <div class="gdrive-nav-label">Cài đặt</div>
+        </div>
+        
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <div class="gdrive-nav-item {% if active_page == 'admin' %}active{% endif %}" data-action="admin">
+            <div class="gdrive-nav-icon">
+                <i class="icon icon-shield"></i>
+            </div>
+            <div class="gdrive-nav-label">Quản trị</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Mobile backdrop -->
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<style>
+    /* Storage progress bar */
+    .gdrive-storage-info {
+        padding: 0 24px;
+        margin-top: 8px;
+    }
+    
+    .gdrive-storage-progress {
+        height: 4px;
+        background-color: var(--gdrive-border);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+    
+    .gdrive-storage-bar {
+        height: 100%;
+        background-color: var(--gdrive-blue);
+    }
+    
+    .gdrive-storage-text {
+        font-size: 12px;
+        color: var(--gdrive-text-secondary);
+    }
+</style>
+
+<script>
+    // Handle navigation item clicks
+    document.querySelectorAll('.gdrive-nav-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const action = this.dataset.action;
+            
+            // Handle different actions
+            switch(action) {
+                case 'home':
+                    window.location.href = '/';
+                    break;
+                case 'recent':
+                    window.location.href = '/recent';
+                    break;
+                case 'favorites':
+                    window.location.href = '/favorites';
+                    break;
+                case 'shared':
+                    window.location.href = '/shared';
+                    break;
+                case 'documents':
+                    window.location.href = '/type/document';
+                    break;
+                case 'images':
+                    window.location.href = '/type/image';
+                    break;
+                case 'videos':
+                    window.location.href = '/type/video';
+                    break;
+                case 'audio':
+                    window.location.href = '/type/audio';
+                    break;
+                case 'scan':
+                    window.location.href = '/scan';
+                    break;
+                case 'settings':
+                    window.location.href = '/settings';
+                    break;
+                case 'admin':
+                    window.location.href = '/admin';
+                    break;
+            }
+        });
+    });
+    
+    // Mobile sidebar toggle
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
+        
+        sidebar.classList.toggle('active');
+        backdrop.classList.toggle('active');
+    }
+    
+    // Close sidebar when clicking backdrop
+    document.getElementById('sidebarBackdrop').addEventListener('click', toggleSidebar);
+</script> 
