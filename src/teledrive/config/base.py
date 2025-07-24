@@ -55,6 +55,24 @@ class BaseConfig:
                 result[key] = getattr(self, key)
         return result
     
+    def get_flask_config(self) -> Dict[str, Any]:
+        """
+        Get Flask-specific configuration.
+        
+        Returns:
+            Dict[str, Any]: Dictionary with Flask configuration
+        """
+        # Lọc các thuộc tính phù hợp với cấu hình Flask
+        flask_config = {}
+        config_dict = self.to_dict()
+        
+        # Thuộc tính Flask thường viết hoa
+        for key, value in config_dict.items():
+            if key.isupper():
+                flask_config[key] = value
+                
+        return flask_config
+    
     def validate(self) -> None:
         """
         Validate configuration.
