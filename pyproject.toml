@@ -1,17 +1,21 @@
 [build-system]
-requires = ["setuptools>=42.0", "wheel"]
+requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "teledrive"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Modern file management for Telegram files with Google Drive-style interface"
 readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
 authors = [
     {name = "TeleDrive Team", email = "contact@teledrive.dev"}
 ]
-license = {text = "MIT"}
-requires-python = ">=3.8"
+maintainers = [
+    {name = "TeleDrive Maintainers", email = "maintainers@teledrive.dev"}
+]
+keywords = ["telegram", "file-management", "google-drive", "flask"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
@@ -23,16 +27,15 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Topic :: Communications :: File Sharing",
     "Topic :: Utilities",
-    "Framework :: Flask"
+    "Framework :: Flask",
 ]
-
 dependencies = [
-    "Flask>=2.0.0",
-    "Flask-SQLAlchemy>=3.0.0",
-    "Flask-Login>=0.6.0",
-    "Flask-WTF>=1.1.0",
-    "Telethon>=1.26.0",
-    "SQLAlchemy>=2.0.0",
+    "flask>=2.0.0",
+    "flask-sqlalchemy>=3.0.0",
+    "flask-login>=0.6.0",
+    "flask-cors>=4.0.0",
+    "telethon>=1.26.0",
+    "sqlalchemy>=2.0.0",
     "python-dotenv>=0.21.0",
     "pillow>=9.3.0",
     "openpyxl>=3.0.10",
@@ -41,19 +44,24 @@ dependencies = [
     "werkzeug>=2.2.0",
     "jinja2>=3.1.0",
     "requests>=2.28.0",
-    "pydantic>=1.10.0"
+    "redis>=4.0.0",
+    "psutil>=5.9.0",
+    "waitress>=2.1.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "black>=23.1.0",
-    "flake8>=6.0.0",
     "isort>=5.12.0",
     "mypy>=1.0.0",
     "pytest>=7.2.0",
     "pytest-cov>=4.0.0",
-    "pre-commit>=3.0.0",
-    "bandit>=1.7.0",
+    "pytest-env>=0.8.0",
+]
+
+docs = [
+    "sphinx>=5.0.0",
+    "sphinx-rtd-theme>=1.1.0",
 ]
 
 production = [
@@ -64,18 +72,50 @@ production = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/quangminh1212/TeleDrive"
-"Bug Tracker" = "https://github.com/quangminh1212/TeleDrive/issues"
-"Documentation" = "https://github.com/quangminh1212/TeleDrive/wiki"
+Homepage = "https://github.com/quangminh1212/TeleDrive"
+Documentation = "https://github.com/quangminh1212/TeleDrive/blob/main/README.md"
+Repository = "https://github.com/quangminh1212/TeleDrive.git"
+Changelog = "https://github.com/quangminh1212/TeleDrive/blob/main/README.md"
+Issues = "https://github.com/quangminh1212/TeleDrive/issues"
+
+[project.scripts]
+teledrive = "src.teledrive.cli:main"
+
+[tool.setuptools]
+packages = ["src.teledrive"]
+package-dir = {"" = "."}
+include-package-data = true
+
+[tool.setuptools_scm]
+write_to = "src/teledrive/_version.py"
 
 [tool.black]
 line-length = 88
-target-version = ["py38", "py39", "py310"]
+target-version = ["py38", "py39", "py310", "py311"]
 include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
 
 [tool.isort]
 profile = "black"
+line_length = 88
 multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
 
 [tool.mypy]
 python_version = "3.8"
@@ -83,6 +123,10 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
+exclude = ["tests"]
+plugins = [
+    "sqlalchemy.ext.mypy.plugin",
+]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
@@ -90,6 +134,16 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["src/teledrive/tests"]
 python_files = "test_*.py"
-pythonpath = ["."]
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "--verbose --color=yes"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+env = [
+    "DEV_MODE=true",
+]

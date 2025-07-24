@@ -1,226 +1,134 @@
-# 🚀 TeleDrive - Modern Telegram File Manager
+# TeleDrive
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Code Style](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/quangminh1212/TeleDrive)
 
-> **Professional file management for your Telegram files with Google Drive-style interface**
+> Modern file management for Telegram with Google Drive-style interface
 
-TeleDrive is a modern web application for managing and organizing files from Telegram. With both Google Drive and Windows Explorer-like interfaces, TeleDrive helps you easily search, preview, and download files from your Telegram conversations.
+## Features
 
-<div align="center">
-  <img src="https://img.shields.io/badge/Telegram-Storage-blue" alt="Telegram Storage">
-  <img src="https://img.shields.io/badge/UI-Google_Drive-red" alt="Google Drive UI">
-  <img src="https://img.shields.io/badge/Platform-Web-green" alt="Web Platform">
-</div>
-
-## ✨ Features
-
-- 🗂️ **Google Drive-style Interface** - Modern and familiar file management experience
+- 🌐 **Modern Web Interface** - Clean, responsive Google Drive-style design
 - 🔍 **Advanced Search** - Find files quickly with powerful search capabilities
 - 👁️ **File Preview** - Preview documents, images, and media files
-- 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
-- 🔐 **Secure Authentication** - OTP-based login system
-- 👑 **Admin Panel** - Comprehensive user and system management
-- 🚀 **High Performance** - Optimized for handling large file collections
-- 🐳 **Docker Support** - Easy deployment with Docker and Docker Compose
-- 🔄 **Auto Commit** - Tự động commit các thay đổi trong dự án
+- 📱 **Mobile Ready** - Works seamlessly across all devices
+- 🔐 **Secure** - OTP-based authentication system
+- 🚀 **Fast & Efficient** - Optimized for large file collections
 
-## 📋 Requirements
+## Installation
 
-- Python 3.8 or higher
-- Telegram API credentials (from [my.telegram.org](https://my.telegram.org/apps))
-- Modern web browser
-- Git (for auto commit feature)
+### Prerequisites
 
-## 🚀 Quick Start
+- Python 3.8+
+- Git (optional, for development)
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/quangminh1212/TeleDrive.git
-   cd TeleDrive
-   ```
-
-2. **Install dependencies**
-   ```bash
-   # Using pip
-   pip install -r requirements.txt
-
-   # Or using make
-   make install
-   ```
-
-3. **Configure environment**
-   ```bash
-   # Copy environment template
-   cp .env.example .env
-
-   # Edit .env with your Telegram API credentials
-   nano .env
-   ```
-
-4. **Start the application**
-   ```bash
-   # Run the application (mặc định chạy web interface)
-   run.bat
-
-   # Các tùy chọn khác:
-   run.bat menu       # Hiển thị menu lựa chọn
-   run.bat auto-commit # Chạy với tự động commit
-   run.bat setup-git  # Thiết lập cấu hình Git
-   run.bat stop-commit # Dừng tự động commit
-   ```
-
-5. **Access the application**
-   
-   Open your browser and go to [http://localhost:3000](http://localhost:3000)
-
-## 🛠️ Configuration
-
-Edit `config/config.json` to customize your setup:
-
-```json
-{
-  "telegram": {
-    "api_id": "your_api_id",
-    "api_hash": "your_api_hash",
-    "phone_number": "+84xxxxxxxxx"
-  },
-  "channels": {
-    "use_default_channel": true,
-    "default_channel": "@your_channel_here"
-  },
-  "scanning": {
-    "max_messages": 1000,
-    "batch_size": 50,
-    "file_types": {
-      "documents": true,
-      "photos": true,
-      "videos": true,
-      "audio": true
-    }
-  },
-  "output": {
-    "formats": {
-      "csv": {"enabled": true},
-      "json": {"enabled": true},
-      "excel": {"enabled": true}
-    }
-  }
-}
-```
-
-## 🔄 Auto Commit Feature
-
-TeleDrive includes an automatic Git commit feature that helps you track changes to your project. This feature is integrated into the main `run.bat` file and can be accessed through command line parameters or the menu option.
-
-To use the auto commit feature:
-1. Launch the application using `run.bat auto-commit` or run `run.bat menu` và chọn option 2
-2. Changes to your project will be automatically committed every minute if changes are detected
-3. Use `run.bat stop-commit` to stop the auto commit process if needed
-4. Use `run.bat setup-git` to set up your Git user information
-
-## 🐳 Docker Deployment
-
-### Using Docker Compose (Recommended)
+### Quick Install
 
 ```bash
-# Clone and navigate to project
+# Clone the repository
 git clone https://github.com/quangminh1212/TeleDrive.git
 cd TeleDrive
 
-# Copy and configure environment
-cp .env.example .env
-# Edit .env with your configuration
+# Install dependencies
+pip install -r requirements.txt
 
-# Start services
-docker-compose -f config/docker.yml up -d
-
-# View logs
-docker-compose -f config/docker.yml logs -f
+# Run the application
+python main.py
+# or use the provided script on Windows
+run.bat
 ```
 
-### Using Docker
+Visit `http://localhost:3000` in your browser.
+
+## Usage
+
+### Running the Application
 
 ```bash
-# Build image
-docker build -f config/Dockerfile -t teledrive:latest .
+# Standard mode
+python main.py
 
-# Run container
-docker run -d \
-  --name teledrive \
-  -p 3000:3000 \
-  -v $(pwd)/instance:/app/instance \
-  -v $(pwd)/logs:/app/logs \
-  --env-file .env \
-  teledrive:latest
+# Development mode with hot reload
+python main.py --dev
+
+# Background mode (Windows)
+run.bat detached
 ```
 
-## 🌐 Web Interface
+### Configuration
 
-**First Time Setup:**
-1. Access: http://localhost:3000/setup
-2. Create an admin account
-3. Log in and start using
+Create a `.env` file in the project root (see `.env-example` for reference):
 
-**Features:**
-- 🔐 Authentication & User Management
-- 📁 File Manager with Search & Filter
-- 📊 Statistics & Download links
-- 📱 Responsive design with Google Drive UI
+```
+TELEGRAM_API_ID=your_api_id
+TELEGRAM_API_HASH=your_api_hash
+SECRET_KEY=your_secret_key
+```
 
-## 📁 Project Structure
+## Development
+
+### Project Structure
 
 ```
 TeleDrive/
-├── 📁 src/teledrive/          # Main application package
-│   ├── 📁 auth/               # Authentication system
-│   ├── 📁 config/             # Configuration management
-│   ├── 📁 core/               # Core business logic
-│   ├── 📁 models/             # Data models
-│   ├── 📁 services/           # Business services
-│   └── 📄 app.py              # Flask application
-├── 📁 config/                 # Configuration files
-├── 📁 static/                 # Static assets (CSS, JS)
-│   ├── 📁 css/                # CSS files
-│   └── 📁 js/                 # JavaScript files
-├── 📁 templates/              # HTML templates
-├── 📄 main.py                 # Entry point
-├── 📄 AutoCommit.ps1          # Auto commit script
-├── 📄 run.bat                 # Main launcher script
-└── 📄 requirements.txt        # Dependencies
+├── src/                      # Source code
+│   └── teledrive/            # Main package
+│       ├── auth/             # Authentication
+│       ├── core/             # Core functionality
+│       │   ├── monitoring/   # Application monitoring
+│       │   └── performance/  # Performance optimization
+│       ├── models/           # Data models
+│       ├── security/         # Security features
+│       ├── services/         # Business logic services
+│       ├── tests/            # Test suite
+│       │   ├── unit/         # Unit tests
+│       │   └── integration/  # Integration tests
+│       └── utils/            # Utilities
+├── static/                   # Static assets
+│   ├── css/                  # Stylesheets
+│   ├── js/                   # JavaScript
+│   └── images/               # Images
+├── templates/                # HTML templates
+├── config/                   # Configuration
+├── docs/                     # Documentation
+├── main.py                   # Application entry point
+├── run.bat                   # Windows launcher script
+├── pyproject.toml            # Project metadata
+├── pytest.ini                # Test configuration
+└── requirements.txt          # Dependencies
 ```
 
-## 📚 Documentation
+### Testing
 
-- [**API Documentation**](docs/API.md) - REST API reference
-- [**Security**](docs/SECURITY.md) - Security information
+```bash
+# Run all tests
+pytest
 
-## 🤝 Contributing
+# Run unit tests only
+pytest src/teledrive/tests/unit
 
-We welcome contributions! To contribute:
+# Generate coverage report
+pytest --cov=src
+```
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests (`python -m unittest`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+### Docker
 
-## 📄 License
+```bash
+# Build image
+docker build -t teledrive .
+
+# Run container
+docker run -p 3000:3000 teledrive
+```
+
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Support
+## Acknowledgements
 
-- 🐛 Issues: [GitHub Issues](https://github.com/quangminh1212/TeleDrive/issues)
-
----
-
-<div align="center">
-  <strong>Made with ❤️ by the TeleDrive Team</strong>
-</div>
+- [Flask](https://flask.palletsprojects.com/)
+- [SQLAlchemy](https://www.sqlalchemy.org/)
+- [Telethon](https://docs.telethon.dev/)
 
