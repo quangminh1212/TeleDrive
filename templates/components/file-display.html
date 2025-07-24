@@ -23,6 +23,12 @@
         
         <!-- Actions -->
         <div class="gdrive-actions">
+            <!-- New button -->
+            <button class="gdrive-btn-primary" id="newButton">
+                <i class="fas fa-plus"></i>
+                <span>Mới</span>
+            </button>
+            
             <!-- View toggle buttons -->
             <div class="view-toggle">
                 <button class="view-toggle-btn active" id="gridViewBtn" title="Xem dạng lưới">
@@ -42,151 +48,122 @@
     
     <!-- Files display area - Grid View -->
     <div class="gdrive-files-display gdrive-grid-view" id="gridView">
-        <!-- Example folders -->
-        <div class="gdrive-file-card">
-            <div class="gdrive-file-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
+        {% if files %}
+            {% for file in files %}
+                <div class="gdrive-file-card" data-id="{{ file.id }}">
+                    <div class="gdrive-file-select">
+                        <div class="select-checkbox">
+                            <i class="fas fa-check"></i>
+                        </div>
+                    </div>
+                    <div class="gdrive-file-thumbnail">
+                        {% if file.is_directory %}
+                            <i class="fas fa-folder fa-3x"></i>
+                        {% elif file.type == 'image' %}
+                            <img src="{{ file.thumbnail_url|default(file.url) }}" alt="{{ file.name }}" onerror="this.onerror=null;this.src='/static/images/placeholder.png';">
+                        {% elif file.type == 'video' %}
+                            <i class="fas fa-video fa-3x"></i>
+                        {% elif file.type == 'audio' %}
+                            <i class="fas fa-music fa-3x"></i>
+                        {% elif file.type == 'pdf' %}
+                            <i class="fas fa-file-pdf fa-3x"></i>
+                        {% elif file.type == 'doc' or file.type == 'docx' %}
+                            <i class="fas fa-file-word fa-3x"></i>
+                        {% elif file.type == 'xls' or file.type == 'xlsx' %}
+                            <i class="fas fa-file-excel fa-3x"></i>
+                        {% elif file.type == 'ppt' or file.type == 'pptx' %}
+                            <i class="fas fa-file-powerpoint fa-3x"></i>
+                        {% else %}
+                            <i class="fas fa-file fa-3x"></i>
+                        {% endif %}
+                    </div>
+                    <div class="gdrive-file-info">
+                        <div class="gdrive-file-name" title="{{ file.name }}">{{ file.name }}</div>
+                        <div class="gdrive-file-meta">
+                            <span class="gdrive-file-size">{{ file.size }}</span>
+                            <span class="gdrive-file-modified">{{ file.modified }}</span>
+                        </div>
+                    </div>
+                    <div class="gdrive-file-actions">
+                        <button class="gdrive-action-btn" title="Tải xuống">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="gdrive-action-btn" title="Thêm tùy chọn">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <!-- Empty state - hiển thị khi không có file -->
+            <div class="gdrive-empty-state">
+                <div class="gdrive-empty-icon">
+                    <i class="fas fa-folder-open fa-4x"></i>
+                </div>
+                <div class="gdrive-empty-text">Chưa có file nào</div>
+                <div class="gdrive-empty-subtext">Tải lên hoặc quét file từ Telegram</div>
+                <div class="gdrive-empty-actions">
+                    <button class="gdrive-btn-primary" id="uploadButton">
+                        <i class="fas fa-upload"></i>
+                        Tải lên
+                    </button>
+                    <button class="gdrive-btn-secondary" id="scanButton">
+                        <i class="fas fa-search"></i>
+                        Quét Telegram
+                    </button>
                 </div>
             </div>
-            <div class="gdrive-file-thumbnail">
-                <i class="fas fa-folder fa-3x"></i>
-            </div>
-            <div class="gdrive-file-info">
-                <div class="gdrive-file-name" title="Tài liệu cá nhân">Tài liệu cá nhân</div>
-                <div class="gdrive-file-meta">
-                    <span class="gdrive-file-modified">12/05/2023</span>
+            
+            <!-- Mock data hiển thị khi ở chế độ dev -->
+            {% if dev_mode %}
+            <div class="gdrive-file-card">
+                <div class="gdrive-file-select">
+                    <div class="select-checkbox">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+                <div class="gdrive-file-thumbnail">
+                    <i class="fas fa-folder fa-3x"></i>
+                </div>
+                <div class="gdrive-file-info">
+                    <div class="gdrive-file-name" title="Tài liệu cá nhân">Tài liệu cá nhân</div>
+                    <div class="gdrive-file-meta">
+                        <span class="gdrive-file-modified">12/05/2023</span>
+                    </div>
+                </div>
+                <div class="gdrive-file-actions">
+                    <button class="gdrive-action-btn" title="Thêm tùy chọn">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
                 </div>
             </div>
-            <div class="gdrive-file-actions">
-                <button class="gdrive-action-btn" title="Thêm tùy chọn">
-                    <i class="fas fa-ellipsis-v"></i>
-                </button>
-            </div>
-        </div>
-        
-        <div class="gdrive-file-card">
-            <div class="gdrive-file-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
+            
+            <div class="gdrive-file-card">
+                <div class="gdrive-file-select">
+                    <div class="select-checkbox">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+                <div class="gdrive-file-thumbnail">
+                    <i class="fas fa-file-pdf fa-3x"></i>
+                </div>
+                <div class="gdrive-file-info">
+                    <div class="gdrive-file-name" title="Báo cáo tài chính Q2 2023.pdf">Báo cáo tài chính Q2 2023.pdf</div>
+                    <div class="gdrive-file-meta">
+                        <span class="gdrive-file-size">2.4 MB</span>
+                    </div>
+                </div>
+                <div class="gdrive-file-actions">
+                    <button class="gdrive-action-btn" title="Tải xuống">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="gdrive-action-btn" title="Thêm tùy chọn">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
                 </div>
             </div>
-            <div class="gdrive-file-thumbnail">
-                <i class="fas fa-folder fa-3x"></i>
-            </div>
-            <div class="gdrive-file-info">
-                <div class="gdrive-file-name" title="Dự án">Dự án</div>
-                <div class="gdrive-file-meta">
-                    <span class="gdrive-file-modified">20/04/2023</span>
-                </div>
-            </div>
-            <div class="gdrive-file-actions">
-                <button class="gdrive-action-btn" title="Thêm tùy chọn">
-                    <i class="fas fa-ellipsis-v"></i>
-                </button>
-            </div>
-        </div>
-        
-        <!-- Example files -->
-        <div class="gdrive-file-card">
-            <div class="gdrive-file-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
-                </div>
-            </div>
-            <div class="gdrive-file-thumbnail">
-                <i class="fas fa-file-pdf fa-3x"></i>
-            </div>
-            <div class="gdrive-file-info">
-                <div class="gdrive-file-name" title="Báo cáo tài chính Q2 2023.pdf">Báo cáo tài chính Q2 2023.pdf</div>
-                <div class="gdrive-file-meta">
-                    <span class="gdrive-file-size">2.4 MB</span>
-                </div>
-            </div>
-            <div class="gdrive-file-actions">
-                <button class="gdrive-action-btn" title="Tải xuống">
-                    <i class="fas fa-download"></i>
-                </button>
-                <button class="gdrive-action-btn" title="Thêm tùy chọn">
-                    <i class="fas fa-ellipsis-v"></i>
-                </button>
-            </div>
-        </div>
-        
-        <div class="gdrive-file-card">
-            <div class="gdrive-file-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
-                </div>
-            </div>
-            <div class="gdrive-file-thumbnail">
-                <i class="fas fa-file-word fa-3x"></i>
-            </div>
-            <div class="gdrive-file-info">
-                <div class="gdrive-file-name" title="Kế hoạch dự án.docx">Kế hoạch dự án.docx</div>
-                <div class="gdrive-file-meta">
-                    <span class="gdrive-file-size">1.2 MB</span>
-                </div>
-            </div>
-            <div class="gdrive-file-actions">
-                <button class="gdrive-action-btn" title="Tải xuống">
-                    <i class="fas fa-download"></i>
-                </button>
-                <button class="gdrive-action-btn" title="Thêm tùy chọn">
-                    <i class="fas fa-ellipsis-v"></i>
-                </button>
-            </div>
-        </div>
-        
-        <div class="gdrive-file-card">
-            <div class="gdrive-file-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
-                </div>
-            </div>
-            <div class="gdrive-file-thumbnail">
-                <i class="fas fa-file-excel fa-3x"></i>
-            </div>
-            <div class="gdrive-file-info">
-                <div class="gdrive-file-name" title="Dữ liệu phân tích.xlsx">Dữ liệu phân tích.xlsx</div>
-                <div class="gdrive-file-meta">
-                    <span class="gdrive-file-size">3.7 MB</span>
-                </div>
-            </div>
-            <div class="gdrive-file-actions">
-                <button class="gdrive-action-btn" title="Tải xuống">
-                    <i class="fas fa-download"></i>
-                </button>
-                <button class="gdrive-action-btn" title="Thêm tùy chọn">
-                    <i class="fas fa-ellipsis-v"></i>
-                </button>
-            </div>
-        </div>
-        
-        <div class="gdrive-file-card">
-            <div class="gdrive-file-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
-                </div>
-            </div>
-            <div class="gdrive-file-thumbnail">
-                <i class="fas fa-image fa-3x"></i>
-            </div>
-            <div class="gdrive-file-info">
-                <div class="gdrive-file-name" title="Logo công ty.png">Logo công ty.png</div>
-                <div class="gdrive-file-meta">
-                    <span class="gdrive-file-size">542 KB</span>
-                </div>
-            </div>
-            <div class="gdrive-file-actions">
-                <button class="gdrive-action-btn" title="Tải xuống">
-                    <i class="fas fa-download"></i>
-                </button>
-                <button class="gdrive-action-btn" title="Thêm tùy chọn">
-                    <i class="fas fa-ellipsis-v"></i>
-                </button>
-            </div>
-        </div>
+            {% endif %}
+        {% endif %}
     </div>
     
     <!-- Files display area - List View -->
@@ -204,97 +181,107 @@
             <div class="gdrive-list-cell gdrive-list-size">Kích thước</div>
         </div>
         
-        <!-- Example folders -->
-        <div class="gdrive-list-item">
-            <div class="gdrive-list-cell gdrive-list-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
+        {% if files %}
+            {% for file in files %}
+                <div class="gdrive-list-item" data-id="{{ file.id }}">
+                    <div class="gdrive-list-cell gdrive-list-select">
+                        <div class="select-checkbox">
+                            <i class="fas fa-check"></i>
+                        </div>
+                    </div>
+                    <div class="gdrive-list-cell gdrive-list-name">
+                        {% if file.is_directory %}
+                            <i class="fas fa-folder"></i>
+                        {% elif file.type == 'image' %}
+                            <i class="fas fa-image"></i>
+                        {% elif file.type == 'video' %}
+                            <i class="fas fa-video"></i>
+                        {% elif file.type == 'audio' %}
+                            <i class="fas fa-music"></i>
+                        {% elif file.type == 'pdf' %}
+                            <i class="fas fa-file-pdf"></i>
+                        {% elif file.type == 'doc' or file.type == 'docx' %}
+                            <i class="fas fa-file-word"></i>
+                        {% elif file.type == 'xls' or file.type == 'xlsx' %}
+                            <i class="fas fa-file-excel"></i>
+                        {% elif file.type == 'ppt' or file.type == 'pptx' %}
+                            <i class="fas fa-file-powerpoint"></i>
+                        {% else %}
+                            <i class="fas fa-file"></i>
+                        {% endif %}
+                        <span>{{ file.name }}</span>
+                    </div>
+                    <div class="gdrive-list-cell gdrive-list-owner">{{ file.owner|default('Bạn') }}</div>
+                    <div class="gdrive-list-cell gdrive-list-modified">{{ file.modified }}</div>
+                    <div class="gdrive-list-cell gdrive-list-size">{{ file.size }}</div>
                 </div>
-            </div>
-            <div class="gdrive-list-cell gdrive-list-name">
-                <i class="fas fa-folder"></i>
-                <span>Tài liệu cá nhân</span>
-            </div>
-            <div class="gdrive-list-cell gdrive-list-owner">Bạn</div>
-            <div class="gdrive-list-cell gdrive-list-modified">12/05/2023</div>
-            <div class="gdrive-list-cell gdrive-list-size">--</div>
-        </div>
-        
-        <div class="gdrive-list-item">
-            <div class="gdrive-list-cell gdrive-list-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
+            {% endfor %}
+        {% else %}
+            <!-- Mock data hiển thị khi ở chế độ dev -->
+            {% if dev_mode %}
+            <!-- Example folders -->
+            <div class="gdrive-list-item">
+                <div class="gdrive-list-cell gdrive-list-select">
+                    <div class="select-checkbox">
+                        <i class="fas fa-check"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="gdrive-list-cell gdrive-list-name">
-                <i class="fas fa-folder"></i>
-                <span>Dự án</span>
-            </div>
-            <div class="gdrive-list-cell gdrive-list-owner">Bạn</div>
-            <div class="gdrive-list-cell gdrive-list-modified">20/04/2023</div>
-            <div class="gdrive-list-cell gdrive-list-size">--</div>
-        </div>
-        
-        <!-- Example files -->
-        <div class="gdrive-list-item">
-            <div class="gdrive-list-cell gdrive-list-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
+                <div class="gdrive-list-cell gdrive-list-name">
+                    <i class="fas fa-folder"></i>
+                    <span>Tài liệu cá nhân</span>
                 </div>
+                <div class="gdrive-list-cell gdrive-list-owner">Bạn</div>
+                <div class="gdrive-list-cell gdrive-list-modified">12/05/2023</div>
+                <div class="gdrive-list-cell gdrive-list-size">--</div>
             </div>
-            <div class="gdrive-list-cell gdrive-list-name">
-                <i class="fas fa-file-pdf"></i>
-                <span>Báo cáo tài chính Q2 2023.pdf</span>
-            </div>
-            <div class="gdrive-list-cell gdrive-list-owner">Bạn</div>
-            <div class="gdrive-list-cell gdrive-list-modified">10/06/2023</div>
-            <div class="gdrive-list-cell gdrive-list-size">2.4 MB</div>
-        </div>
-        
-        <div class="gdrive-list-item">
-            <div class="gdrive-list-cell gdrive-list-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
+            
+            <div class="gdrive-list-item">
+                <div class="gdrive-list-cell gdrive-list-select">
+                    <div class="select-checkbox">
+                        <i class="fas fa-check"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="gdrive-list-cell gdrive-list-name">
-                <i class="fas fa-file-word"></i>
-                <span>Kế hoạch dự án.docx</span>
-            </div>
-            <div class="gdrive-list-cell gdrive-list-owner">Bạn</div>
-            <div class="gdrive-list-cell gdrive-list-modified">15/05/2023</div>
-            <div class="gdrive-list-cell gdrive-list-size">1.2 MB</div>
-        </div>
-        
-        <div class="gdrive-list-item">
-            <div class="gdrive-list-cell gdrive-list-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
+                <div class="gdrive-list-cell gdrive-list-name">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Báo cáo tài chính Q2 2023.pdf</span>
                 </div>
+                <div class="gdrive-list-cell gdrive-list-owner">Bạn</div>
+                <div class="gdrive-list-cell gdrive-list-modified">10/06/2023</div>
+                <div class="gdrive-list-cell gdrive-list-size">2.4 MB</div>
             </div>
-            <div class="gdrive-list-cell gdrive-list-name">
-                <i class="fas fa-file-excel"></i>
-                <span>Dữ liệu phân tích.xlsx</span>
-            </div>
-            <div class="gdrive-list-cell gdrive-list-owner">Bạn</div>
-            <div class="gdrive-list-cell gdrive-list-modified">05/06/2023</div>
-            <div class="gdrive-list-cell gdrive-list-size">3.7 MB</div>
+            {% endif %}
+        {% endif %}
+    </div>
+    
+    <!-- Floating Action Button (FAB) - kiểu của Google Drive mới -->
+    <div class="gdrive-fab" id="addFab">
+        <div class="gdrive-fab-icon">
+            <i class="fas fa-plus"></i>
         </div>
-        
-        <div class="gdrive-list-item">
-            <div class="gdrive-list-cell gdrive-list-select">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
-                </div>
-            </div>
-            <div class="gdrive-list-cell gdrive-list-name">
-                <i class="fas fa-image"></i>
-                <span>Logo công ty.png</span>
-            </div>
-            <div class="gdrive-list-cell gdrive-list-owner">Bạn</div>
-            <div class="gdrive-list-cell gdrive-list-modified">01/06/2023</div>
-            <div class="gdrive-list-cell gdrive-list-size">542 KB</div>
+    </div>
+    
+    <!-- Selection toolbar -->
+    <div class="gdrive-selection-toolbar" id="selectionToolbar">
+        <div class="gdrive-selection-count">
+            <span id="selectedCount">0</span> đã chọn
         </div>
+        <div class="gdrive-selection-actions">
+            <button class="gdrive-selection-btn" title="Tải xuống">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="gdrive-selection-btn" title="Xóa">
+                <i class="fas fa-trash"></i>
+            </button>
+            <button class="gdrive-selection-btn" title="Thêm vào thư mục">
+                <i class="fas fa-folder-plus"></i>
+            </button>
+            <button class="gdrive-selection-btn" title="Thêm tùy chọn">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </div>
+        <button class="gdrive-selection-close">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
 </div>
 
@@ -306,6 +293,91 @@
         flex-direction: column;
         overflow: hidden;
         height: 100%;
+        position: relative;
+    }
+    
+    /* Toolbar styling */
+    .gdrive-toolbar {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        border-bottom: 1px solid var(--gdrive-border);
+    }
+    
+    /* Buttons styling */
+    .gdrive-btn-primary {
+        background-color: var(--gdrive-blue);
+        color: white;
+        border: none;
+        border-radius: 24px;
+        height: 36px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        font-family: 'Google Sans', 'Product Sans', 'Roboto', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        margin-right: 16px;
+    }
+    
+    .gdrive-btn-primary i {
+        margin-right: 8px;
+    }
+    
+    .gdrive-btn-secondary {
+        background-color: transparent;
+        color: var(--gdrive-text);
+        border: 1px solid var(--gdrive-border);
+        border-radius: 24px;
+        height: 36px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        font-family: 'Google Sans', 'Product Sans', 'Roboto', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        margin-right: 16px;
+    }
+    
+    .gdrive-btn-secondary i {
+        margin-right: 8px;
+    }
+    
+    /* Empty state styling */
+    .gdrive-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 64px 0;
+        width: 100%;
+    }
+    
+    .gdrive-empty-icon {
+        color: var(--gdrive-text-secondary);
+        margin-bottom: 16px;
+    }
+    
+    .gdrive-empty-text {
+        font-size: 20px;
+        font-weight: 500;
+        color: var(--gdrive-text);
+        margin-bottom: 8px;
+    }
+    
+    .gdrive-empty-subtext {
+        font-size: 14px;
+        color: var(--gdrive-text-secondary);
+        margin-bottom: 24px;
+    }
+    
+    .gdrive-empty-actions {
+        display: flex;
+        gap: 16px;
     }
     
     /* Grid view styles */
@@ -317,112 +389,91 @@
         overflow-y: auto;
     }
     
-    /* List view styles */
-    .gdrive-list-view {
-        display: flex;
-        flex-direction: column;
-        padding: 0;
-        overflow-y: auto;
-    }
-    
-    .gdrive-list-header {
-        display: flex;
-        height: 48px;
-        padding: 0 16px;
-        border-bottom: 1px solid var(--gdrive-border);
-        background-color: var(--gdrive-white);
-        position: sticky;
-        top: 0;
-        z-index: 2;
-    }
-    
-    .gdrive-list-item {
-        display: flex;
-        height: 48px;
-        padding: 0 16px;
-        border-bottom: 1px solid var(--gdrive-border);
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-    
-    .gdrive-list-item:hover {
-        background-color: var(--gdrive-light-gray);
-    }
-    
-    .gdrive-list-cell {
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-    
-    .gdrive-list-select {
-        width: 40px;
-        flex-shrink: 0;
-    }
-    
-    .gdrive-list-name {
-        flex: 1;
-        min-width: 200px;
-    }
-    
-    .gdrive-list-name i {
-        margin-right: 12px;
-        color: var(--gdrive-text-secondary);
-        width: 20px;
-    }
-    
-    .gdrive-list-name i.fa-folder {
-        color: var(--gdrive-yellow-folder);
-    }
-    
-    .gdrive-list-owner {
-        width: 120px;
-        color: var(--gdrive-text-secondary);
-    }
-    
-    .gdrive-list-modified {
-        width: 120px;
-        color: var(--gdrive-text-secondary);
-    }
-    
-    .gdrive-list-size {
-        width: 100px;
-        color: var(--gdrive-text-secondary);
-    }
-    
-    /* Context menu styles */
-    .gdrive-context-menu {
+    /* FAB styling */
+    .gdrive-fab {
         position: fixed;
-        width: 200px;
-        background-color: var(--gdrive-white);
-        border-radius: 4px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-        z-index: 1000;
-        overflow: hidden;
-        display: none;
-    }
-    
-    .gdrive-context-item {
+        bottom: 32px;
+        right: 32px;
+        width: 56px;
+        height: 56px;
+        border-radius: 28px;
+        background-color: var(--gdrive-blue);
+        color: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         display: flex;
         align-items: center;
-        height: 36px;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 100;
+        transition: all 0.2s ease;
+    }
+    
+    .gdrive-fab:hover {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    .gdrive-fab-icon {
+        font-size: 24px;
+    }
+    
+    /* Selection toolbar */
+    .gdrive-selection-toolbar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background-color: var(--gdrive-blue);
+        color: white;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
         padding: 0 16px;
-        font-size: 14px;
-        color: var(--gdrive-text);
+        z-index: 10;
+    }
+    
+    .gdrive-selection-toolbar.active {
+        display: flex;
+    }
+    
+    .gdrive-selection-count {
+        font-weight: 500;
+    }
+    
+    .gdrive-selection-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .gdrive-selection-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: none;
+        border: none;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
     }
     
-    .gdrive-context-item:hover {
-        background-color: var(--gdrive-light-gray);
+    .gdrive-selection-btn:hover {
+        background-color: rgba(255, 255, 255, 0.1);
     }
     
-    .gdrive-context-item i {
-        margin-right: 12px;
-        font-size: 16px;
-        color: var(--gdrive-text-secondary);
-        width: 20px;
+    .gdrive-selection-close {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: none;
+        border: none;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
     }
 </style>
 
@@ -451,7 +502,11 @@
         }
         
         // File selection functionality
-        const fileCards = document.querySelectorAll('.gdrive-file-card');
+        const fileCards = document.querySelectorAll('.gdrive-file-card, .gdrive-list-item');
+        const selectionToolbar = document.getElementById('selectionToolbar');
+        const selectedCountEl = document.getElementById('selectedCount');
+        let selectedItems = [];
+        
         fileCards.forEach(card => {
             card.addEventListener('click', function(e) {
                 // Don't select when clicking on action buttons
@@ -461,20 +516,41 @@
                     if (checkbox) {
                         checkbox.classList.toggle('active');
                     }
+                    
+                    // Update selection count
+                    if (this.classList.contains('selected')) {
+                        selectedItems.push(this.getAttribute('data-id'));
+                    } else {
+                        selectedItems = selectedItems.filter(id => id !== this.getAttribute('data-id'));
+                    }
+                    
+                    // Show/hide selection toolbar
+                    if (selectedItems.length > 0) {
+                        selectionToolbar.classList.add('active');
+                        selectedCountEl.textContent = selectedItems.length;
+                    } else {
+                        selectionToolbar.classList.remove('active');
+                    }
                 }
             });
         });
         
-        const listItems = document.querySelectorAll('.gdrive-list-item');
-        listItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                this.classList.toggle('selected');
-                const checkbox = this.querySelector('.select-checkbox');
-                if (checkbox) {
-                    checkbox.classList.toggle('active');
-                }
+        // Clear selection when clicking close button
+        const selectionClose = document.querySelector('.gdrive-selection-close');
+        if (selectionClose) {
+            selectionClose.addEventListener('click', function() {
+                fileCards.forEach(card => {
+                    card.classList.remove('selected');
+                    const checkbox = card.querySelector('.select-checkbox');
+                    if (checkbox) {
+                        checkbox.classList.remove('active');
+                    }
+                });
+                
+                selectedItems = [];
+                selectionToolbar.classList.remove('active');
             });
-        });
+        }
         
         // Context menu functionality
         const contextMenu = document.createElement('div');
@@ -515,5 +591,192 @@
                 }, 0);
             });
         });
+        
+        // New button functionality
+        const newButton = document.getElementById('newButton');
+        const addFab = document.getElementById('addFab');
+        
+        if (newButton) {
+            newButton.addEventListener('click', function() {
+                showCreateMenu(this);
+            });
+        }
+        
+        if (addFab) {
+            addFab.addEventListener('click', function() {
+                showCreateMenu(this);
+            });
+        }
+        
+        function showCreateMenu(button) {
+            const createMenu = document.createElement('div');
+            createMenu.className = 'gdrive-create-menu';
+            createMenu.innerHTML = `
+                <div class="gdrive-create-item"><i class="fas fa-folder"></i>Thư mục mới</div>
+                <div class="gdrive-create-item"><i class="fas fa-file-upload"></i>Tải file lên</div>
+                <div class="gdrive-create-item"><i class="fas fa-folder-upload"></i>Tải thư mục lên</div>
+                <div class="gdrive-create-item"><i class="fas fa-search"></i>Quét từ Telegram</div>
+            `;
+            
+            // Position the menu
+            document.body.appendChild(createMenu);
+            const rect = button.getBoundingClientRect();
+            if (button.id === 'newButton') {
+                createMenu.style.top = (rect.bottom + 8) + 'px';
+                createMenu.style.left = rect.left + 'px';
+            } else {
+                createMenu.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+                createMenu.style.right = (window.innerWidth - rect.right + 8) + 'px';
+            }
+            
+            createMenu.style.display = 'block';
+            
+            // Hide menu when clicking elsewhere
+            const hideMenu = function() {
+                createMenu.remove();
+                document.removeEventListener('click', hideMenu);
+            };
+            
+            setTimeout(() => {
+                document.addEventListener('click', hideMenu);
+            }, 0);
+            
+            // Handle menu item clicks
+            const menuItems = createMenu.querySelectorAll('.gdrive-create-item');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const text = this.textContent.trim();
+                    
+                    if (text.includes('Thư mục mới')) {
+                        // Tạo thư mục mới
+                        const folderName = prompt('Nhập tên thư mục mới:');
+                        if (folderName) {
+                            // TODO: Gọi API tạo thư mục
+                            alert('Tạo thư mục: ' + folderName);
+                        }
+                    } else if (text.includes('Tải file lên')) {
+                        // Tạo input file ẩn và kích hoạt click
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.multiple = true;
+                        input.click();
+                        
+                        input.onchange = function() {
+                            if (input.files.length > 0) {
+                                // TODO: Xử lý upload file
+                                alert('Đã chọn ' + input.files.length + ' file để tải lên');
+                            }
+                        };
+                    } else if (text.includes('Tải thư mục lên')) {
+                        // Tạo input file ẩn và kích hoạt click
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.multiple = true;
+                        input.webkitdirectory = true;
+                        input.click();
+                        
+                        input.onchange = function() {
+                            if (input.files.length > 0) {
+                                // TODO: Xử lý upload thư mục
+                                alert('Đã chọn thư mục với ' + input.files.length + ' file để tải lên');
+                            }
+                        };
+                    } else if (text.includes('Quét từ Telegram')) {
+                        // TODO: Chuyển tới trang quét Telegram
+                        window.location.href = '/scan';
+                    }
+                });
+            });
+        }
     });
-</script> 
+</script>
+
+<style>
+    /* Create menu */
+    .gdrive-create-menu {
+        position: absolute;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        width: 240px;
+        z-index: 1000;
+        display: none;
+        overflow: hidden;
+    }
+    
+    .gdrive-create-item {
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+    }
+    
+    .gdrive-create-item:hover {
+        background-color: var(--gdrive-light-gray);
+    }
+    
+    .gdrive-create-item i {
+        margin-right: 16px;
+        width: 24px;
+        color: var(--gdrive-text-secondary);
+    }
+    
+    /* File selection styles */
+    .gdrive-file-card.selected {
+        background-color: var(--gdrive-light-blue);
+    }
+    
+    .gdrive-file-card.selected::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 2px solid var(--gdrive-blue);
+        border-radius: var(--gdrive-radius);
+        pointer-events: none;
+    }
+    
+    .gdrive-list-item.selected {
+        background-color: var(--gdrive-light-blue);
+    }
+    
+    .select-checkbox.active {
+        background-color: var(--gdrive-blue);
+        color: white;
+    }
+    
+    /* Context menu */
+    .gdrive-context-menu {
+        position: fixed;
+        width: 200px;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        overflow: hidden;
+        display: none;
+    }
+    
+    .gdrive-context-item {
+        display: flex;
+        align-items: center;
+        height: 36px;
+        padding: 0 16px;
+        font-size: 14px;
+        color: var(--gdrive-text);
+        cursor: pointer;
+    }
+    
+    .gdrive-context-item:hover {
+        background-color: var(--gdrive-light-gray);
+    }
+    
+    .gdrive-context-item i {
+        margin-right: 12px;
+        font-size: 16px;
+        color: var(--gdrive-text-secondary);
+        width: 20px;
+    }
+</style> 

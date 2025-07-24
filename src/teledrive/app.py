@@ -491,13 +491,83 @@ def auth_required(f):
 # Main Routes
 @app.route('/')
 def index():
-    """Trang chính - Dashboard"""
+    """Trang chủ"""
     try:
-        # Trong dev mode, bỏ qua tất cả kiểm tra
+        # Ở chế độ dev, không cần đăng nhập
         if dev_mode_enabled():
-            dev_user = create_dev_user()
-            return render_template('index.html', user=dev_user)
-
+            # Tạo user giả cho dev mode
+            login_user(create_dev_user())
+            
+            # Lấy mẫu dữ liệu cho chế độ dev
+            sample_files = []
+            
+            # Các thư mục mẫu
+            sample_files.append({
+                'id': 'folder1',
+                'name': 'Tài liệu cá nhân',
+                'is_directory': True,
+                'modified': '12/05/2023',
+                'size': ''
+            })
+            
+            sample_files.append({
+                'id': 'folder2',
+                'name': 'Dự án',
+                'is_directory': True,
+                'modified': '20/04/2023',
+                'size': ''
+            })
+            
+            # Các file mẫu
+            sample_files.append({
+                'id': 'file1',
+                'name': 'Báo cáo tài chính Q2 2023.pdf',
+                'is_directory': False,
+                'type': 'pdf',
+                'modified': '10/06/2023',
+                'size': '2.4 MB'
+            })
+            
+            sample_files.append({
+                'id': 'file2',
+                'name': 'Kế hoạch dự án.docx',
+                'is_directory': False,
+                'type': 'doc',
+                'modified': '15/05/2023',
+                'size': '1.2 MB'
+            })
+            
+            sample_files.append({
+                'id': 'file3',
+                'name': 'Dữ liệu phân tích.xlsx',
+                'is_directory': False,
+                'type': 'xls',
+                'modified': '05/06/2023',
+                'size': '3.7 MB'
+            })
+            
+            sample_files.append({
+                'id': 'file4',
+                'name': 'Logo công ty.png',
+                'is_directory': False,
+                'type': 'image',
+                'url': '/static/images/placeholder.png',
+                'thumbnail_url': '/static/images/placeholder.png',
+                'modified': '01/06/2023',
+                'size': '542 KB'
+            })
+            
+            # Truyền breadcrumbs
+            breadcrumbs = [
+                {'name': 'TeleDrive', 'path': '/'}
+            ]
+            
+            return render_template('index.html', 
+                                user=current_user, 
+                                files=sample_files, 
+                                dev_mode=True,
+                                breadcrumbs=breadcrumbs)
+            
         # Kiểm tra có admin user nào chưa
         if hasattr(auth_manager, 'has_admin_user') and not auth_manager.has_admin_user():
             return redirect(url_for('setup'))
@@ -506,7 +576,7 @@ def index():
         if not current_user.is_authenticated:
             return redirect(url_for('login'))
 
-        return render_template('index.html', user=current_user)
+        return render_template('index.html', user=current_user, files=[], dev_mode=False)
     except Exception as e:
         # Fallback đơn giản khi có lỗi
         return '<h1>TeleDrive</h1><p>Đang tải...</p><script>setTimeout(function(){location.reload()}, 2000);</script>'
