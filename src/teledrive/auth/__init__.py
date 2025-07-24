@@ -15,6 +15,14 @@ auth_manager.login_message_category = 'info'
 # Import models and load user
 from .models import User
 
+# Import blueprint
+try:
+    from .routes import auth_bp
+except ImportError:
+    # Create a dummy blueprint if routes are not available
+    from flask import Blueprint
+    auth_bp = Blueprint('auth', __name__)
+
 @auth_manager.user_loader
 def load_user(user_id):
     """Load user by ID for Flask-Login."""
