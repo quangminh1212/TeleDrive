@@ -9,6 +9,7 @@ Database model for OTP verification in TeleDrive.
 from datetime import datetime, timedelta
 import random
 import re
+from typing import Tuple
 from ..database import db
 
 
@@ -26,6 +27,46 @@ def validate_phone_number(phone_number):
     # Số điện thoại bắt đầu bằng + và theo sau là 7-15 chữ số
     pattern = r'^\+[0-9]{7,15}$'
     return bool(re.match(pattern, phone_number))
+
+
+def format_phone_number(phone: str) -> str:
+    """
+    Chuẩn hóa số điện thoại.
+    
+    Args:
+        phone: Số điện thoại cần chuẩn hóa
+        
+    Returns:
+        str: Số điện thoại đã được chuẩn hóa
+    """
+    # Loại bỏ khoảng trắng và ký tự đặc biệt, giữ lại dấu +
+    phone = phone.strip()
+    
+    # Nếu đã có dấu + ở đầu, kiểm tra xem đã đúng format chưa
+    if phone.startswith('+'):
+        # Loại bỏ + và chỉ giữ lại số
+        digits_only = ''.join(filter(str.isdigit, phone[1:]))
+        
+        # Nếu đã có mã vùng 84, trả về luôn
+        if digits_only.startswith('84'):
+            return '+' + digits_only
+        # Nếu bắt đầu bằng 0, thay thế bằng 84
+        elif digits_only.startswith('0'):
+            return '+84' + digits_only[1:]
+        # Nếu không có mã vùng, thêm 84
+        else:
+            return '+84' + digits_only
+    else:
+        # Loại bỏ tất cả ký tự không phải số
+        digits_only = ''.join(filter(str.isdigit, phone))
+        
+        # Thêm mã quốc gia nếu chưa có
+        if digits_only.startswith('0'):
+            digits_only = '84' + digits_only[1:]
+        elif not digits_only.startswith('84'):
+            digits_only = '84' + digits_only
+        
+        return '+' + digits_only
 
 
 class OTPManager(db.Model):
