@@ -10,7 +10,9 @@
 
 > Modern file management for Telegram with Google Drive-style interface
 
-## Features
+TeleDrive is a web application that lets you manage your Telegram files through an elegant Google Drive-style interface. It provides powerful search, preview, and download capabilities with a focus on user experience and performance.
+
+## ✨ Features
 
 - 🌐 **Modern Web Interface** - Clean, responsive Google Drive-style design
 - 🔍 **Advanced Search** - Find files quickly with powerful search capabilities
@@ -19,34 +21,61 @@
 - 🔐 **Secure** - OTP-based authentication system
 - 🚀 **Fast & Efficient** - Optimized for large file collections
 
-## Installation
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.8+ 
+- Telegram API credentials (get from [my.telegram.org](https://my.telegram.org/apps))
 - Git (optional, for development)
 
-### Quick Install
+### Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/quangminh1212/TeleDrive.git
 cd TeleDrive
 
+# Create and activate a virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 
+# Set up environment variables
+cp .env-example .env
+# Edit .env to add your Telegram API credentials
+
 # Run the application
 python main.py
-# or use the provided script on Windows
+# or use the launcher on Windows
 run.bat
 ```
 
 Visit `http://localhost:3000` in your browser.
 
-## Usage
+## 📖 User Guide
 
-### Running the Application
+### Getting Started
+
+1. **First-time Setup:**
+   - Access the setup page at `http://localhost:3000/setup` 
+   - Create an admin account with your phone number
+   - Log in using OTP verification
+
+2. **Scanning Files:**
+   - Click "Scan" on the dashboard
+   - Select Telegram channels or chats to scan
+   - Wait for the scan to complete
+
+3. **Managing Files:**
+   - Browse your files in grid or list view
+   - Use the search box to find specific files
+   - Preview files directly in the browser
+   - Download files with a single click
+
+### Using the Application
 
 ```bash
 # Standard mode
@@ -61,15 +90,18 @@ run.bat detached
 
 ### Configuration
 
-Create a `.env` file in the project root (see `.env-example` for reference):
+Edit your `.env` file to customize the application:
 
 ```
 TELEGRAM_API_ID=your_api_id
 TELEGRAM_API_HASH=your_api_hash
 SECRET_KEY=your_secret_key
+FLASK_ENV=development  # or production
 ```
 
-## Development
+For advanced configuration, edit `config/config.json`.
+
+## 🛠️ Development
 
 ### Project Structure
 
@@ -89,16 +121,11 @@ TeleDrive/
 │       │   └── integration/  # Integration tests
 │       └── utils/            # Utilities
 ├── static/                   # Static assets
-│   ├── css/                  # Stylesheets
-│   ├── js/                   # JavaScript
-│   └── images/               # Images
 ├── templates/                # HTML templates
 ├── config/                   # Configuration
 ├── docs/                     # Documentation
 ├── main.py                   # Application entry point
-├── run.bat                   # Windows launcher script
 ├── pyproject.toml            # Project metadata
-├── pytest.ini                # Test configuration
 └── requirements.txt          # Dependencies
 ```
 
@@ -115,23 +142,38 @@ pytest src/teledrive/tests/unit
 pytest --cov=src
 ```
 
-### Docker
+### Docker Deployment
 
 ```bash
-# Build image
+# Build the image
 docker build -t teledrive .
 
-# Run container
-docker run -p 3000:3000 teledrive
+# Run the container
+docker run -p 3000:3000 --env-file .env teledrive
+
+# Using Docker Compose (recommended for production)
+docker compose up -d
 ```
 
-## License
+## 📝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests (`pytest`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgements
+## 🙏 Acknowledgements
 
-- [Flask](https://flask.palletsprojects.com/)
-- [SQLAlchemy](https://www.sqlalchemy.org/)
-- [Telethon](https://docs.telethon.dev/)
+- [Flask](https://flask.palletsprojects.com/) - The web framework used
+- [SQLAlchemy](https://www.sqlalchemy.org/) - ORM for database interactions
+- [Telethon](https://docs.telethon.dev/) - Telegram client library
 
