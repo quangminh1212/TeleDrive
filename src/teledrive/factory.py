@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from . import __version__, TEMPLATE_DIR, STATIC_DIR
 from .database import db, init_db
 from .auth import auth_manager
+from .security import init_security_middleware
 
 
 def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
@@ -65,6 +66,21 @@ def configure_app(app: Flask, test_config: Optional[Dict[str, Any]] = None) -> N
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path.resolve()}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
+    # Security configuration
+    app.config['WTF_CSRF_ENABLED'] = True
+    app.config['RATELIMIT_ENABLED'] = True
+    app.config['RATELIMIT_HEADERS_ENABLED'] = True
+    
+    if os.getenv('REDIS_URL'):
+        app.config['RATELIMIT_STORAGE_URL'] = os.getenv('REDIS_URL')
+        app.config['SESSION_TYPE'] = 'redis'
+        app.config['SESSION_REDIS'] = os.getenv('REDIS_URL')
+    else:
+        app.config['SESSION_TYPE'] = 'filesystem'
+    
+    app.config['SESSION_PERMANENT'] = True
+    app.config['SESSION_USE_SIGNER'] = True
+    
     # Load test config if provided
     if test_config:
         app.config.update(test_config)
@@ -86,6 +102,9 @@ def initialize_extensions(app: Flask) -> None:
     # Initialize auth manager
     auth_manager.init_app(app)
 
+    # Initialize security middleware
+    init_security_middleware(app)
+    
     # Initialize CORS with proper settings
     if app.config['ENV'] == 'production':
         CORS(app, origins=[os.getenv('ALLOWED_ORIGIN', 'https://yourdomain.com')], 
@@ -117,4 +136,12 @@ def register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(500)
     def internal_server_error(e):
-        return {"error": "Internal server error"}, 500 
+        return {"error": "Internal server error"}, 500
+        
+    @app.errorhandler(429)
+    def rate_limit_exceeded(e):
+        return {"error": "Rate limit exceeded. Please try again later."}, 429
+        
+    @app.errorhandler(403)
+    def forbidden(e):
+        return {"error": "Access forbidden."}, 403 
