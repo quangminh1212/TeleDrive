@@ -35,6 +35,8 @@
         /* Đảm bảo font hiển thị đúng */
         body {
             font-family: 'Roboto', 'Google Sans', 'Product Sans', sans-serif;
+            margin: 0;
+            padding: 0;
         }
         
         .gdrive-file-name, 
@@ -51,803 +53,344 @@
         .gdrive-bulk-toolbar .selection-count {
             font-family: 'Google Sans', 'Product Sans', 'Roboto', sans-serif;
         }
+        
+        /* Modern scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f3f4;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #dadce0;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #bdc1c6;
+        }
+        
+        /* Ẩn thanh tiêu đề explorer cũ */
+        .explorer-title-bar {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <!-- Windows Explorer Style Title Bar -->
-    <header class="explorer-title-bar" role="banner">
-        <div class="title-bar-left">
-            <div class="app-icon">
-                <!-- <img src="/static/images/logo.png" alt="TeleDrive Logo" class="app-icon-img"> -->
+    <!-- Cấu trúc theo Google Drive UI -->
+    <div class="gdrive-layout">
+        <!-- Header mới -->
+        <div class="gdrive-header">
+            <div class="gdrive-logo">
                 <span class="app-icon-text">📁</span>
+                <span class="gdrive-logo-text">TeleDrive</span>
             </div>
-            <h1 class="window-title">TeleDrive - File Manager</h1>
-        </div>
-        <div class="title-bar-right">
-            {% if user %}
-                <div class="user-info">
-                    <i class="icon icon-user"></i>
-                    <!-- Username hidden for cleaner UI -->
-                    {% if user.is_admin %}
-                        <div class="admin-menu-container">
-                            <button class="admin-badge-btn" id="adminMenuToggle" title="Cài đặt Admin">
-                                <span class="admin-badge">Admin</span>
-                                <i class="icon icon-chevron-down"></i>
-                            </button>
-                            <div class="admin-dropdown-menu" id="adminDropdownMenu">
-                                <div class="admin-menu-header">
-                                    <i class="icon icon-settings"></i>
-                                    <span>Quản lý hệ thống</span>
+            
+            <div class="gdrive-search-box">
+                <i class="icon icon-search"></i>
+                <input type="text" class="gdrive-search-input" placeholder="Tìm kiếm trong TeleDrive" id="globalSearch">
+            </div>
+            
+            <div class="user-menu">
+                {% if user %}
+                    <div class="user-info">
+                        <i class="icon icon-user"></i>
+                        {% if user.is_admin %}
+                            <div class="admin-menu-container">
+                                <button class="admin-badge-btn" id="adminMenuToggle" title="Cài đặt Admin">
+                                    <span class="admin-badge">Admin</span>
+                                    <i class="icon icon-chevron-down"></i>
+                                </button>
+                                <div class="admin-dropdown-menu" id="adminDropdownMenu">
+                                    <div class="admin-menu-header">
+                                        <i class="icon icon-settings"></i>
+                                        <span>Quản lý hệ thống</span>
+                                    </div>
+                                    <div class="admin-menu-divider"></div>
+                                    <button class="admin-menu-item" id="systemManagementBtn">
+                                        <i class="icon icon-server"></i>
+                                        <span>Quản lý hệ thống</span>
+                                    </button>
+                                    <button class="admin-menu-item" id="userManagementBtn">
+                                        <i class="icon icon-user"></i>
+                                        <span>Quản lý người dùng</span>
+                                    </button>
+                                    <button class="admin-menu-item" id="systemSettingsBtn">
+                                        <i class="icon icon-settings"></i>
+                                        <span>Cài đặt hệ thống</span>
+                                    </button>
+                                    <button class="admin-menu-item" id="scanSettingsBtn">
+                                        <i class="icon icon-scan"></i>
+                                        <span>Cài đặt Telegram</span>
+                                    </button>
+                                    <button class="admin-menu-item" id="logsViewBtn">
+                                        <i class="icon icon-file-text"></i>
+                                        <span>Xem logs</span>
+                                    </button>
                                 </div>
-                                <div class="admin-menu-divider"></div>
-                                <button class="admin-menu-item" id="systemManagementBtn">
-                                    <i class="icon icon-server"></i>
-                                    <span>Quản lý hệ thống</span>
-                                </button>
-                                <button class="admin-menu-item" id="userManagementBtn">
-                                    <i class="icon icon-user"></i>
-                                    <span>Quản lý người dùng</span>
-                                </button>
-                                <button class="admin-menu-item" id="systemSettingsBtn">
-                                    <i class="icon icon-settings"></i>
-                                    <span>Cài đặt hệ thống</span>
-                                </button>
-                                <button class="admin-menu-item" id="scanSettingsBtn">
-                                    <i class="icon icon-scan"></i>
-                                    <span>Cài đặt Telegram</span>
-                                </button>
-                                <button class="admin-menu-item" id="logsViewBtn">
-                                    <i class="icon icon-file-text"></i>
-                                    <span>Xem logs</span>
-                                </button>
-                                <div class="admin-menu-divider"></div>
-                                <button class="admin-menu-item" id="profileSettingsBtn">
-                                    <i class="icon icon-user"></i>
-                                    <span>Thông tin tài khoản</span>
-                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <a href="/login" class="login-link">Đăng nhập</a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Main content area -->
+        <div class="gdrive-content">
+            <!-- Sidebar -->
+            <div class="gdrive-sidebar">
+                <div class="gdrive-sidebar-item active">
+                    <i class="icon icon-home"></i>
+                    <span>TeleDrive Home</span>
+                </div>
+                <div class="gdrive-sidebar-item">
+                    <i class="icon icon-clock"></i>
+                    <span>Recent files</span>
+                </div>
+                <div class="gdrive-sidebar-item">
+                    <i class="icon icon-share"></i>
+                    <span>Shared with me</span>
+                </div>
+                <div class="gdrive-sidebar-item">
+                    <i class="icon icon-star"></i>
+                    <span>Favorites</span>
+                </div>
+                
+                <div class="gdrive-sidebar-divider"></div>
+                <div class="gdrive-sidebar-section">My Scans</div>
+                
+                <div class="gdrive-sidebar-item">
+                    <i class="icon icon-folder"></i>
+                    <span>All scans</span>
+                </div>
+                <div class="gdrive-sidebar-item">
+                    <i class="icon icon-file"></i>
+                    <span>Documents</span>
+                </div>
+                <div class="gdrive-sidebar-item">
+                    <i class="icon icon-image"></i>
+                    <span>Images</span>
+                </div>
+                <div class="gdrive-sidebar-item">
+                    <i class="icon icon-video"></i>
+                    <span>Videos</span>
+                </div>
+                <div class="gdrive-sidebar-item">
+                    <i class="icon icon-archive"></i>
+                    <span>Archives</span>
+                </div>
+                
+                <div class="gdrive-sidebar-divider"></div>
+                <div class="gdrive-sidebar-section">Telegram Sessions</div>
+                
+                <div class="gdrive-sidebar-storage">
+                    <div class="storage-usage-bar">
+                        <div class="storage-used" style="width: 25%"></div>
+                    </div>
+                    <div class="storage-text">2.5 GB of 10 GB used</div>
+                </div>
+                
+                <button class="gdrive-btn-primary gdrive-upgrade-btn">
+                    <i class="icon icon-upload"></i>
+                    <span>Scan Telegram</span>
+                </button>
+            </div>
+            
+            <!-- Files container -->
+            <div class="gdrive-files-container">
+                <!-- Toolbar with breadcrumbs and actions -->
+                <div class="gdrive-toolbar">
+                    <div class="gdrive-toolbar-left">
+                        <div class="gdrive-breadcrumb">
+                            <div class="gdrive-breadcrumb-item">
+                                <i class="icon icon-drive"></i>
+                                <span>TeleDrive</span>
+                            </div>
+                            <div class="gdrive-breadcrumb-separator">/</div>
+                            <div class="gdrive-breadcrumb-item current">
+                                <span>Home</span>
                             </div>
                         </div>
-                    {% endif %}
-                    <button class="logout-btn" id="logoutBtn" title="Đăng xuất" aria-label="Đăng xuất khỏi hệ thống">
-                        <i class="icon icon-sign-out" aria-hidden="true"></i>
-                        <span>Đăng xuất</span>
-                    </button>
-                </div>
-            {% else %}
-                <div class="user-info">
-                    <button class="logout-btn" id="logoutBtn" title="Đăng xuất">
-                        <i class="icon icon-sign-out"></i>
-                        <span>Đăng xuất</span>
-                    </button>
-                </div>
-            {% endif %}
-            <!-- Window controls removed -->
-        </div>
-    </div>
-
-    <!-- Windows Explorer Style Ribbon Toolbar -->
-    <div class="explorer-ribbon">
-        <div class="ribbon-tabs">
-            <button class="ribbon-tab active" data-tab="home">Home</button>
-            <button class="ribbon-tab" data-tab="share">Share</button>
-            <button class="ribbon-tab" data-tab="view">View</button>
-        </div>
-
-        <div class="ribbon-content">
-            <!-- Home Tab -->
-            <div class="ribbon-panel active" id="homePanel">
-                <div class="ribbon-group">
-                    <div class="ribbon-group-header">Clipboard</div>
-                    <div class="ribbon-buttons">
-                        <button class="ribbon-btn large" id="pasteBtn" title="Paste" disabled>
-                            <i class="icon icon-paste"></i>
-                            <span>Paste</span>
-                        </button>
-                        <div class="ribbon-btn-group">
-                            <button class="ribbon-btn" id="cutBtn" title="Cut" disabled>
-                                <i class="icon icon-cut"></i>
-                                <span>Cut</span>
+                    </div>
+                    
+                    <div class="gdrive-toolbar-right">
+                        <div class="gdrive-view-toggle">
+                            <button class="gdrive-view-btn active" data-view="grid" title="Grid view">
+                                <i class="icon icon-grid"></i>
                             </button>
-                            <button class="ribbon-btn" id="copyBtn" title="Copy" disabled>
-                                <i class="icon icon-copy"></i>
-                                <span>Copy</span>
+                            <button class="gdrive-view-btn" data-view="list" title="List view">
+                                <i class="icon icon-list"></i>
                             </button>
                         </div>
-                    </div>
-                </div>
-
-                <div class="ribbon-group">
-                    <div class="ribbon-group-header">Organize</div>
-                    <div class="ribbon-buttons">
-                        <button class="ribbon-btn large" id="moveBtn" title="Move to" disabled>
-                            <i class="icon icon-move"></i>
-                            <span>Move to</span>
-                        </button>
-                        <button class="ribbon-btn large" id="copyToBtn" title="Copy to" disabled>
-                            <i class="icon icon-copy-to"></i>
-                            <span>Copy to</span>
-                        </button>
-                        <button class="ribbon-btn large" id="deleteBtn" title="Delete" disabled>
-                            <i class="icon icon-trash"></i>
-                            <span>Delete</span>
-                        </button>
-                        <button class="ribbon-btn large" id="renameBtn" title="Rename" disabled>
-                            <i class="icon icon-edit"></i>
-                            <span>Rename</span>
+                        
+                        <button class="gdrive-btn-secondary" id="scanButton">
+                            <i class="icon icon-scan"></i>
+                            <span>Scan</span>
                         </button>
                     </div>
                 </div>
-
-                <div class="ribbon-group">
-                    <div class="ribbon-group-header">New</div>
-                    <div class="ribbon-buttons">
-                        <button class="ribbon-btn large" id="newFolderBtn" title="New folder">
-                            <i class="icon icon-folder-plus"></i>
-                            <span>New folder</span>
+                
+                <!-- Files display area -->
+                <div class="gdrive-files-display gdrive-grid-view" id="filesContainer">
+                    <!-- Empty state -->
+                    <div class="gdrive-empty">
+                        <div class="gdrive-empty-icon">📁</div>
+                        <div class="gdrive-empty-text">Không tìm thấy file nào</div>
+                        <div class="gdrive-empty-subtext">Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc</div>
+                        <button class="gdrive-btn-primary" id="startScanBtn" style="margin-top: 16px">
+                            <i class="icon icon-scan"></i>
+                            <span>Bắt đầu quét Telegram</span>
                         </button>
                     </div>
                 </div>
-
-                <div class="ribbon-group">
-                    <div class="ribbon-group-header">Open</div>
-                    <div class="ribbon-buttons">
-                        <button class="ribbon-btn large" id="propertiesBtn" title="Properties" disabled>
-                            <i class="icon icon-info"></i>
-                            <span>Properties</span>
-                        </button>
+                
+                <!-- Selection toolbar (hidden by default) -->
+                <div class="gdrive-bulk-toolbar" style="display: none;">
+                    <div class="gdrive-bulk-info">
+                        <span class="selection-count">0 items selected</span>
                     </div>
-                </div>
-            </div>
-
-            <!-- Share Tab -->
-            <div class="ribbon-panel" id="sharePanel">
-                <div class="ribbon-group">
-                    <div class="ribbon-group-header">Send</div>
-                    <div class="ribbon-buttons">
-                        <button class="ribbon-btn large" id="shareBtn" title="Share" disabled>
+                    <div class="gdrive-bulk-actions">
+                        <button class="gdrive-btn-ghost" data-action="download">
+                            <i class="icon icon-download"></i>
+                            <span>Download</span>
+                        </button>
+                        <button class="gdrive-btn-ghost" data-action="share">
                             <i class="icon icon-share"></i>
                             <span>Share</span>
                         </button>
-                        <button class="ribbon-btn large" id="emailBtn" title="Email" disabled>
-                            <i class="icon icon-email"></i>
-                            <span>Email</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- View Tab -->
-            <div class="ribbon-panel" id="viewPanel">
-                <div class="ribbon-group">
-                    <div class="ribbon-group-header">Layout</div>
-                    <div class="ribbon-buttons">
-                        <button class="ribbon-btn view-btn active" data-view="icons" title="Large icons">
-                            <i class="icon icon-view-grid"></i>
-                            <span>Large icons</span>
-                        </button>
-                        <button class="ribbon-btn view-btn" data-view="list" title="List">
-                            <i class="icon icon-view-list"></i>
-                            <span>List</span>
-                        </button>
-                        <button class="ribbon-btn view-btn" data-view="details" title="Details">
-                            <i class="icon icon-view-details"></i>
-                            <span>Details</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="ribbon-group">
-                    <div class="ribbon-group-header">Current view</div>
-                    <div class="ribbon-buttons">
-                        <button class="ribbon-btn" id="sortBtn" title="Sort by">
-                            <i class="icon icon-sort"></i>
-                            <span>Sort by</span>
-                        </button>
-                        <button class="ribbon-btn" id="groupBtn" title="Group by">
-                            <i class="icon icon-group"></i>
-                            <span>Group by</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="ribbon-group">
-                    <div class="ribbon-group-header">Show/hide</div>
-                    <div class="ribbon-buttons">
-                        <button class="ribbon-btn" id="detailsPaneBtn" title="Details pane">
-                            <i class="icon icon-panel-right"></i>
-                            <span>Details pane</span>
-                        </button>
-                        <button class="ribbon-btn" id="previewPaneBtn" title="Preview pane">
-                            <i class="icon icon-preview"></i>
-                            <span>Preview pane</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Container -->
-    <div class="main-container">
-        <!-- TeleDrive Navigation Pane -->
-        <aside class="navigation-pane" id="navigationPane">
-            <!-- Quick Access Section -->
-            <div class="nav-section">
-                <div class="nav-section-header">
-                    <button class="section-toggle expanded" data-section="quick-access">
-                        <i class="icon icon-chevron-down"></i>
-                    </button>
-                    <span class="section-title">Quick access</span>
-                </div>
-                <div class="nav-section-content" id="quickAccessContent">
-                    <div class="nav-item active" data-path="home">
-                        <i class="icon icon-cloud"></i>
-                        <span>TeleDrive Home</span>
-                    </div>
-                    <div class="nav-item" data-path="recent">
-                        <i class="icon icon-refresh"></i>
-                        <span>Recent files</span>
-                    </div>
-                    <div class="nav-item" data-path="shared">
-                        <i class="icon icon-share"></i>
-                        <span>Shared with me</span>
-                    </div>
-                    <div class="nav-item" data-path="favorites">
-                        <i class="icon icon-star"></i>
-                        <span>Favorites</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- My Scans Section -->
-            <div class="nav-section">
-                <div class="nav-section-header">
-                    <button class="section-toggle expanded" data-section="my-scans">
-                        <i class="icon icon-chevron-down"></i>
-                    </button>
-                    <span class="section-title">My Scans</span>
-                </div>
-                <div class="nav-section-content" id="myScansContent">
-                    <div class="nav-item" data-path="all-scans">
-                        <i class="icon icon-folder"></i>
-                        <span>All scans</span>
-                    </div>
-                    <div class="nav-item" data-path="documents">
-                        <i class="icon icon-file-text"></i>
-                        <span>Documents</span>
-                    </div>
-                    <div class="nav-item" data-path="images">
-                        <i class="icon icon-image"></i>
-                        <span>Images</span>
-                    </div>
-                    <div class="nav-item" data-path="videos">
-                        <i class="icon icon-video"></i>
-                        <span>Videos</span>
-                    </div>
-                    <div class="nav-item" data-path="archives">
-                        <i class="icon icon-archive"></i>
-                        <span>Archives</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Telegram Sessions Section -->
-            <div class="nav-section">
-                <div class="nav-section-header">
-                    <button class="section-toggle expanded" data-section="sessions">
-                        <i class="icon icon-chevron-down"></i>
-                    </button>
-                    <span class="section-title">Telegram Sessions</span>
-                </div>
-                <div class="nav-section-content" id="sessionsList">
-                    <div class="loading">
-                        <i class="icon icon-spinner"></i>
-                        <span>Loading sessions...</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Storage Section -->
-            <div class="nav-section">
-                <div class="nav-section-header">
-                    <button class="section-toggle collapsed" data-section="storage">
-                        <i class="icon icon-chevron-right"></i>
-                    </button>
-                    <span class="section-title">Storage</span>
-                </div>
-                <div class="nav-section-content" id="storageContent" style="display: none;">
-                    <div class="nav-item" data-path="trash">
-                        <i class="icon icon-trash"></i>
-                        <span>Trash</span>
-                    </div>
-                    <div class="nav-item" data-path="settings">
-                        <i class="icon icon-settings"></i>
-                        <span>Settings</span>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Windows Explorer Style Navigation Bar -->
-            <div class="explorer-navigation-bar">
-                <!-- Navigation Controls -->
-                <div class="nav-controls">
-                    <button id="backBtn" class="nav-btn" title="Back" disabled>
-                        <i class="icon icon-arrow-left"></i>
-                    </button>
-                    <button id="forwardBtn" class="nav-btn" title="Forward" disabled>
-                        <i class="icon icon-arrow-right"></i>
-                    </button>
-                    <button id="upBtn" class="nav-btn" title="Up">
-                        <i class="icon icon-arrow-up"></i>
-                    </button>
-                </div>
-
-                <!-- Address Bar Container -->
-                <div class="address-bar-container">
-                    <div class="address-bar" id="addressBar">
-                        <!-- Breadcrumb Navigation -->
-                        <div class="breadcrumb-navigation" id="breadcrumbNav">
-                            <button class="breadcrumb-item" data-path="home">
-                                <i class="icon icon-cloud"></i>
-                                <span>TeleDrive</span>
-                            </button>
-                            <i class="icon icon-chevron-right breadcrumb-separator"></i>
-                            <button class="breadcrumb-item active" data-path="home">
-                                <i class="icon icon-folder"></i>
-                                <span>Home</span>
-                            </button>
-                        </div>
-                        <!-- Editable Address Input -->
-                        <input type="text" id="addressInput" class="address-input" style="display: none;" placeholder="Type a path">
-                    </div>
-                    <button class="address-dropdown-btn" id="addressDropdownBtn" title="Recent locations">
-                        <i class="icon icon-chevron-down"></i>
-                    </button>
-                </div>
-
-                <!-- Search Box -->
-                <div class="search-container">
-                    <div class="search-box">
-                        <i class="icon icon-search"></i>
-                        <input type="text" id="searchInput" placeholder="Search files and folders">
-                        <button id="clearSearch" class="clear-search-btn" style="display: none;">
-                            <i class="icon icon-times"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <!-- Content Area -->
-            <div class="content-area">
-                <!-- Welcome Screen -->
-                <div class="welcome-screen" id="welcomeScreen">
-                    <div class="welcome-content">
-                        <i class="icon icon-cloud welcome-icon"></i>
-                        <h2>Welcome to TeleDrive</h2>
-                        <p>Your cloud storage for Telegram files. Select a session from the sidebar to browse your scanned files, or start a new scan to discover files from your Telegram chats.</p>
-
-                        <!-- No Scans Message -->
-                        <div class="no-scans-message" id="noScansMessage">
-                            <i class="icon icon-scan"></i>
-                            <p>Chưa có lượt scan nào. Hãy bắt đầu scan đầu tiên để khám phá files từ Telegram của bạn!</p>
-                        </div>
-
-                        <!-- Recent Scan Section -->
-                        <div class="recent-scan-section" id="recentScanSection" style="display: none;">
-                            <h3>📊 Lượt scan gần nhất</h3>
-                            <div class="recent-scan-card" id="recentScanCard">
-                                <div class="scan-info">
-                                    <div class="scan-header">
-                                        <span class="scan-name" id="recentScanName">Loading...</span>
-                                        <span class="scan-date" id="recentScanDate">Loading...</span>
-                                    </div>
-                                    <div class="scan-stats">
-                                        <div class="stat-item">
-                                            <i class="icon icon-file"></i>
-                                            <span id="recentScanFiles">0</span> files
-                                        </div>
-                                        <div class="stat-item">
-                                            <i class="icon icon-hdd"></i>
-                                            <span id="recentScanSize">0 MB</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <i class="icon icon-user"></i>
-                                            <span id="recentScanChats">0</span> chats
-                                        </div>
-                                    </div>
-                                </div>
-                                <button class="btn btn-secondary view-scan-btn" id="viewRecentScanBtn">
-                                    <i class="icon icon-eye"></i>
-                                    Xem files
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="welcome-actions">
-                            <button class="btn btn-primary start-scan-btn" id="startScanBtn">
-                                <i class="icon icon-scan"></i>
-                                Bắt đầu scan mới
-                            </button>
-                            <button class="btn btn-secondary manage-sessions-btn" id="manageSessionsBtn">
-                                <i class="icon icon-settings"></i>
-                                Quản lý sessions
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Google Drive Layout Container -->
-                <div class="gdrive-layout" id="gdriveLayout" style="display: none; flex: 1; height: calc(100vh - 120px);">
-                    <div style="display: flex; height: 100%;">
-                        <!-- Google Drive Sidebar -->
-                        <div class="gdrive-sidebar" id="gdriveSidebar">
-                            <div style="padding: 16px;">
-                                <button class="gdrive-btn-primary" id="sidebarNewBtn">
-                                    <i class="icon icon-plus" style="margin-right: 12px;"></i>
-                                    Tạo mới
-                                </button>
-                            </div>
-
-                            <div style="padding: 0 8px;">
-                                <div class="gdrive-sidebar-item active">
-                                    <i class="icon icon-folder"></i>
-                                    <span>Telegram Drive</span>
-                                </div>
-
-                                <div class="gdrive-sidebar-item">
-                                    <i class="icon icon-users"></i>
-                                    <span>Được chia sẻ với tôi</span>
-                                </div>
-
-                                <div class="gdrive-sidebar-item">
-                                    <i class="icon icon-clock"></i>
-                                    <span>Gần đây</span>
-                                </div>
-
-                                <div class="gdrive-sidebar-item">
-                                    <i class="icon icon-star"></i>
-                                    <span>Có gắn dấu sao</span>
-                                </div>
-
-                                <div class="gdrive-sidebar-item">
-                                    <i class="icon icon-trash"></i>
-                                    <span>Thùng rác</span>
-                                </div>
-                            </div>
-
-                            <div style="padding: 16px; border-top: 1px solid #e8eaed; margin-top: 16px;">
-                                <div style="font-size: 12px; color: #5f6368; margin-bottom: 8px;">Bộ nhớ</div>
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <div style="flex: 1; height: 4px; background: #e8eaed; border-radius: 2px; overflow: hidden;">
-                                        <div style="width: 30%; height: 100%; background: #1a73e8;"></div>
-                                    </div>
-                                </div>
-                                <div style="font-size: 12px; color: #5f6368; margin-top: 4px;">3.2 GB / không giới hạn</div>
-                            </div>
-                        </div>
-
-                        <!-- Main Content Area -->
-                        <div style="flex: 1; display: flex; flex-direction: column;">
-                            <!-- Google Drive Style Toolbar -->
-                <div class="gdrive-toolbar" id="gdriveToolbar">
-                    <div class="gdrive-toolbar-left">
-                        <button class="gdrive-btn-primary" id="newBtn">
-                            <i class="icon icon-plus" style="margin-right: 8px;"></i>
-                            Tạo mới
-                        </button>
-                    </div>
-                    <div class="gdrive-toolbar-right">
-                        <div class="gdrive-search-box">
-                            <i class="icon icon-search gdrive-search-icon"></i>
-                            <input type="text" class="gdrive-search-input" placeholder="Tìm kiếm trong Drive" id="gdriveSearchInput">
-                            <button class="gdrive-btn-ghost gdrive-search-filter-btn" id="searchFilterBtn" title="Tùy chọn tìm kiếm">
-                                <i class="icon icon-tune" style="font-size: 20px;"></i>
-                            </button>
-                        </div>
-                        <div class="gdrive-view-toggle" style="background: transparent; padding: 0; gap: 4px;">
-                            <button class="gdrive-btn-ghost gdrive-view-btn active" data-view="grid" title="Xem dạng lưới" style="width: 40px; height: 40px; border-radius: 50%;">
-                                <i class="icon icon-grid" style="font-size: 20px;"></i>
-                            </button>
-                            <button class="gdrive-btn-ghost gdrive-view-btn" data-view="list" title="Xem dạng danh sách" style="width: 40px; height: 40px; border-radius: 50%;">
-                                <i class="icon icon-list" style="font-size: 20px;"></i>
-                            </button>
-                        </div>
-                        <button class="gdrive-btn-ghost" id="settingsBtn" title="Cài đặt" style="width: 40px; height: 40px; border-radius: 50%;">
-                            <i class="icon icon-settings" style="font-size: 20px;"></i>
-                        </button>
-                        <button class="gdrive-btn-ghost" id="toggleInterfaceBtn" title="Chuyển đến giao diện cổ điển" style="width: 40px; height: 40px; border-radius: 50%;">
-                            <i class="icon icon-layout" style="font-size: 20px;"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Google Drive Breadcrumb -->
-                <div class="gdrive-breadcrumb" id="gdriveBreadcrumb">
-                    <div class="gdrive-breadcrumb-item current">
-                        <i class="icon icon-folder" style="margin-right: 8px; font-size: 24px; color: #1a73e8;"></i>
-                        <span>Telegram Drive</span>
-                    </div>
-                </div>
-
-                <!-- Selection Info and Bulk Operations -->
-                <div class="gdrive-bulk-toolbar" id="gdriveBulkToolbar" style="display: none;">
-                    <div class="gdrive-bulk-info">
-                        <span class="selection-count">0 mục đã chọn</span>
-                    </div>
-                    <div class="gdrive-bulk-actions">
-                        <button class="gdrive-btn-ghost" id="bulkDownloadBtn">
-                            <i class="icon icon-download"></i>
-                            Tải xuống
-                        </button>
-                        <button class="gdrive-btn-ghost" id="bulkShareBtn">
-                            <i class="icon icon-share"></i>
-                            Chia sẻ
-                        </button>
-                        <button class="gdrive-btn-ghost" id="bulkStarBtn">
-                            <i class="icon icon-star"></i>
-                            Gắn dấu sao
-                        </button>
-                        <button class="gdrive-btn-ghost" id="bulkMoveBtn">
-                            <i class="icon icon-move"></i>
-                            Di chuyển
-                        </button>
-                        <button class="gdrive-btn-ghost" id="bulkDeleteBtn">
+                        <button class="gdrive-btn-ghost gdrive-btn-danger" data-action="delete">
                             <i class="icon icon-trash"></i>
-                            Xóa
-                        </button>
-                        <button class="gdrive-btn-ghost" id="clearSelectionBtn">
-                            <i class="icon icon-times"></i>
-                            Bỏ chọn
+                            <span>Delete</span>
                         </button>
                     </div>
                 </div>
-
-                            <!-- Google Drive Files Display -->
-                            <div class="gdrive-files-display gdrive-grid-view" id="gdriveFilesDisplay">
-                                <!-- Các tệp sẽ được thêm vào đây bởi JavaScript -->
-                            </div>
-
-                <!-- Files Container -->
-                <div class="files-container" id="filesContainer" style="display: none;">
-                    <!-- List View Header (only visible in list/details view) -->
-                    <div class="list-header" id="listHeader" style="display: none;">
-                        <div class="header-cell name-header" data-sort="name">
-                            <span>Tên</span>
-                            <i class="icon icon-sort sort-indicator"></i>
-                        </div>
-                        <div class="header-cell date-header" data-sort="modified">
-                            <span>Ngày sửa đổi</span>
-                            <i class="icon icon-sort sort-indicator"></i>
-                        </div>
-                        <div class="header-cell type-header" data-sort="type">
-                            <span>Loại</span>
-                            <i class="icon icon-sort sort-indicator"></i>
-                        </div>
-                        <div class="header-cell size-header" data-sort="size">
-                            <span>Kích cỡ</span>
-                            <i class="icon icon-sort sort-indicator"></i>
-                        </div>
-                    </div>
-
-                    <!-- Files Display Area -->
-                    <div class="files-display" id="filesDisplay">
-                        <!-- Files will be loaded here -->
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="pagination" id="pagination" style="display: none;">
-                        <button id="prevPage" class="page-btn">
-                            <i class="icon icon-chevron-left"></i>
-                        </button>
-                        <span id="pageInfo">Trang 1 / 1</span>
-                        <button id="nextPage" class="page-btn">
-                            <i class="icon icon-chevron-right"></i>
-                        </button>
-                    </div>
-                </div>
-
-                            <!-- Loading -->
-                            <div class="loading-screen" id="loadingScreen" style="display: none;">
-                                <div class="loading">
-                                    <i class="fas fa-spinner fa-spin"></i>
-                                    <span>Đang tải file...</span>
-                                </div>
-                            </div>
-                        </div> <!-- End Main Content Area -->
-                    </div> <!-- End Flex Container -->
-                </div> <!-- End Google Drive Layout -->
-
-                <!-- No Results -->
-                <div class="no-results" id="noResults" style="display: none;">
-                    <i class="fas fa-search"></i>
-                    <h3>Không tìm thấy file nào</h3>
-                    <p>Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc</p>
-                </div>
-            </div>
-        </main>
-
-        <!-- Windows Explorer Style Details Pane -->
-        <aside class="details-pane" id="detailsPane" style="display: none;">
-            <div class="details-header">
-                <h3>Details</h3>
-                <button class="details-close" id="detailsPaneClose" title="Close details pane">
-                    <i class="icon icon-times"></i>
-                </button>
-            </div>
-
-            <div class="details-content" id="detailsContent">
-                <div class="no-selection">
-                    <i class="icon icon-info"></i>
-                    <p>Select an item to view its details</p>
-                </div>
-            </div>
-        </aside>
-    </div>
-
-    <!-- File Detail Modal -->
-    <div class="modal" id="fileModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">Chi tiết file</h3>
-                <button class="modal-close" id="modalClose">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="modal-body" id="modalBody">
-                <!-- File details will be loaded here -->
-            </div>
-            
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="modalCloseBtn">Đóng</button>
-                <button class="btn btn-primary" id="downloadBtn">
-                    <i class="fas fa-download"></i>
-                    Tải xuống
-                </button>
             </div>
         </div>
     </div>
-
-    <!-- File Preview Modal -->
-    <div id="previewModal" class="modal preview-modal">
-        <div class="modal-content preview-content">
-            <div class="modal-header">
-                <h3 id="previewTitle">Xem trước file</h3>
-                <div class="preview-actions">
-                    <button id="previewDownloadBtn" class="btn btn-primary">
-                        <i class="fas fa-download"></i>
-                        Tải xuống
-                    </button>
-                    <button class="modal-close" id="previewClose">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="modal-body preview-body">
-                <div id="previewContent" class="preview-content-area">
-                    <!-- Preview content will be populated by JavaScript -->
-                </div>
-                <div id="previewInfo" class="preview-info">
-                    <!-- File info will be populated by JavaScript -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-
-    <!-- Mobile Menu Overlay -->
-    <div class="mobile-overlay" id="mobileOverlay"></div>
-
-    <!-- Google Drive Context Menu -->
-    <div class="gdrive-context-menu" id="gdriveContextMenu">
-        <button class="gdrive-context-item" data-action="open">
-            <i class="icon icon-eye"></i>
-            <span>Open</span>
-        </button>
-        <button class="gdrive-context-item" data-action="download">
-            <i class="icon icon-download"></i>
-            <span>Download</span>
-        </button>
-        <div class="gdrive-context-divider"></div>
-        <button class="gdrive-context-item" data-action="rename">
-            <i class="icon icon-edit"></i>
-            <span>Rename</span>
-        </button>
-        <button class="gdrive-context-item" data-action="copy">
-            <i class="icon icon-copy"></i>
-            <span>Make a copy</span>
-        </button>
-        <button class="gdrive-context-item" data-action="move">
-            <i class="icon icon-move"></i>
-            <span>Move to</span>
-        </button>
-        <div class="gdrive-context-divider"></div>
-        <button class="gdrive-context-item" data-action="share">
-            <i class="icon icon-share"></i>
-            <span>Share</span>
-        </button>
-        <button class="gdrive-context-item" data-action="star">
-            <i class="icon icon-star"></i>
-            <span>Add to starred</span>
-        </button>
-        <div class="gdrive-context-divider"></div>
-        <button class="gdrive-context-item" data-action="delete">
-            <i class="icon icon-trash"></i>
-            <span>Remove</span>
-        </button>
-    </div>
-
-    <!-- Google Drive Modal -->
-    <div class="gdrive-modal" id="gdriveModal">
-        <div class="gdrive-modal-content">
-            <div class="gdrive-modal-header">
-                <h2 class="gdrive-modal-title" id="gdriveModalTitle">Modal Title</h2>
-                <button class="gdrive-modal-close" id="gdriveModalClose">
-                    <i class="icon icon-times"></i>
-                </button>
-            </div>
-            <div class="gdrive-modal-body" id="gdriveModalBody">
-                <!-- Modal content will be inserted here -->
-            </div>
-        </div>
-    </div>
-
-    <!-- File Upload Progress -->
-    <div class="gdrive-upload-progress" id="gdriveUploadProgress" style="display: none;">
-        <h4>Uploading files</h4>
-        <div id="uploadProgressList">
-            <!-- Upload progress items will be added here -->
-        </div>
-    </div>
-
-    <!-- Search Filter Dropdown -->
-    <div class="gdrive-search-filters" id="gdriveSearchFilters" style="display: none;">
-        <div class="gdrive-filter-section">
-            <label class="gdrive-filter-label">File Type</label>
-            <select class="gdrive-filter-select" id="fileTypeFilter">
-                <option value="">All types</option>
-                <option value="image">Images</option>
-                <option value="video">Videos</option>
-                <option value="audio">Audio</option>
-                <option value="document">Documents</option>
-                <option value="archive">Archives</option>
-                <option value="code">Code</option>
-            </select>
-        </div>
-        <div class="gdrive-filter-section">
-            <label class="gdrive-filter-label">Size</label>
-            <select class="gdrive-filter-select" id="sizeFilter">
-                <option value="">Any size</option>
-                <option value="small">Small (< 1 MB)</option>
-                <option value="medium">Medium (1-10 MB)</option>
-                <option value="large">Large (10-100 MB)</option>
-                <option value="huge">Huge (> 100 MB)</option>
-            </select>
-        </div>
-        <div class="gdrive-filter-section">
-            <label class="gdrive-filter-label">Modified</label>
-            <select class="gdrive-filter-select" id="dateFilter">
-                <option value="">Any time</option>
-                <option value="today">Today</option>
-                <option value="week">This week</option>
-                <option value="month">This month</option>
-                <option value="year">This year</option>
-            </select>
-        </div>
-        <div class="gdrive-filter-actions">
-            <button class="gdrive-btn-secondary" id="clearFiltersBtn">Clear</button>
-            <button class="gdrive-btn-primary" id="applyFiltersBtn">Apply</button>
-        </div>
-    </div>
+    
+    <!-- Mobile sidebar toggle button -->
+    <button class="gdrive-mobile-sidebar-toggle" id="mobileSidebarToggle" style="display: none;">
+        <i class="icon icon-menu"></i>
+    </button>
 
     <!-- Scripts -->
     <script src="/static/js/app.js?v=1753289572"></script>
+    <script src="/static/js/explorer.js?v=1753289572"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile sidebar toggle
+            const sidebar = document.querySelector('.gdrive-sidebar');
+            const sidebarToggle = document.getElementById('mobileSidebarToggle');
+            
+            if (window.innerWidth <= 768) {
+                sidebarToggle.style.display = 'flex';
+            }
+            
+            sidebarToggle?.addEventListener('click', function() {
+                sidebar.classList.toggle('open');
+            });
+            
+            // Admin menu toggle
+            const adminMenuToggle = document.getElementById('adminMenuToggle');
+            const adminDropdownMenu = document.getElementById('adminDropdownMenu');
+            
+            adminMenuToggle?.addEventListener('click', function(e) {
+                adminDropdownMenu.classList.toggle('show');
+                e.stopPropagation();
+            });
+            
+            // Close admin menu when clicking elsewhere
+            document.addEventListener('click', function() {
+                adminDropdownMenu?.classList.remove('show');
+            });
+            
+            // Admin menu actions
+            document.getElementById('systemManagementBtn')?.addEventListener('click', function() {
+                adminAction('system_management');
+            });
+            
+            document.getElementById('userManagementBtn')?.addEventListener('click', function() {
+                adminAction('user_management');
+            });
+            
+            document.getElementById('systemSettingsBtn')?.addEventListener('click', function() {
+                adminAction('system_settings');
+            });
+            
+            document.getElementById('scanSettingsBtn')?.addEventListener('click', function() {
+                adminAction('scan_settings');
+            });
+            
+            document.getElementById('logsViewBtn')?.addEventListener('click', function() {
+                adminAction('logs_view');
+            });
+            
+            document.getElementById('scanButton')?.addEventListener('click', function() {
+                startScan();
+            });
+            
+            document.getElementById('startScanBtn')?.addEventListener('click', function() {
+                startScan();
+            });
+            
+            // Admin action handler
+            function adminAction(action) {
+                fetch('/api/admin/menu-action', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action: action })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.redirect) {
+                        window.location.href = data.redirect;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+            
+            // Start scan function
+            function startScan() {
+                // Show loading indicator
+                const filesContainer = document.getElementById('filesContainer');
+                filesContainer.innerHTML = '<div class="gdrive-loading"><div class="gdrive-loading-spinner"></div><div class="gdrive-loading-text">Đang quét Telegram...</div></div>';
+                
+                fetch('/api/scan/telegram', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        scan_type: 'telegram',
+                        options: {
+                            max_messages: 1000,
+                            file_types: ['documents', 'photos', 'videos', 'audio']
+                        }
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        alert('Đã bắt đầu quét Telegram thành công! Vui lòng đợi trong giây lát.');
+                    } else {
+                        // Show error message
+                        alert('Lỗi khi bắt đầu quét: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Đã xảy ra lỗi khi bắt đầu quét. Vui lòng thử lại sau.');
+                });
+            }
+        });
+    </script>
 </body>
 </html>
