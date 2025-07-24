@@ -115,3 +115,8 @@ config/user_*.json
 *_report.md
 report_*.md
 stats_*.json
+
+# TeleDrive specific files
+.teledrive_running
+auto_commit_log.txt
+RunAutoCommit.bat

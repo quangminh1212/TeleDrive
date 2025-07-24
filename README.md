@@ -24,12 +24,14 @@ TeleDrive is a modern web application for managing and organizing files from Tel
 - 👑 **Admin Panel** - Comprehensive user and system management
 - 🚀 **High Performance** - Optimized for handling large file collections
 - 🐳 **Docker Support** - Easy deployment with Docker and Docker Compose
+- 🔄 **Auto Commit** - Tự động commit các thay đổi trong dự án
 
 ## 📋 Requirements
 
 - Python 3.8 or higher
 - Telegram API credentials (from [my.telegram.org](https://my.telegram.org/apps))
 - Modern web browser
+- Git (for auto commit feature)
 
 ## 🚀 Quick Start
 
@@ -62,9 +64,6 @@ TeleDrive is a modern web application for managing and organizing files from Tel
 4. **Start the application**
    ```bash
    # Run the application
-   python main.py
-
-   # Or on Windows
    run.bat
    ```
 
@@ -106,6 +105,17 @@ Edit `config/config.json` to customize your setup:
   }
 }
 ```
+
+## 🔄 Auto Commit Feature
+
+TeleDrive includes an automatic Git commit feature that helps you track changes to your project. This feature is integrated into the main `run.bat` file and can be accessed through the menu options.
+
+To use the auto commit feature:
+1. Launch the application using `run.bat`
+2. Select option 2 to run TeleDrive with auto commit enabled
+3. Changes to your project will be automatically committed every minute if changes are detected
+4. Use option 3 to stop the auto commit process if needed
+5. Use option 4 to set up your Git user information
 
 ## 🐳 Docker Deployment
 
@@ -173,6 +183,7 @@ TeleDrive/
 │   └── 📁 js/                 # JavaScript files
 ├── 📁 templates/              # HTML templates
 ├── 📄 main.py                 # Entry point
+├── 📄 AutoCommit.ps1          # Auto commit script
 └── 📄 requirements.txt        # Dependencies
 ```
 

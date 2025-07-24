@@ -24,7 +24,12 @@ function Write-Log {
     param ([string]$message)
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     Write-Host "[$timestamp] $message"
-    Add-Content -Path "auto_commit_log.txt" -Value "[$timestamp] $message"
+    Add-Content -Path "logs\auto_commit_log.txt" -Value "[$timestamp] $message"
+}
+
+# Đảm bảo thư mục logs tồn tại
+if (!(Test-Path "logs")) {
+    New-Item -ItemType Directory -Path "logs" | Out-Null
 }
 
 Write-Log "Bắt đầu theo dõi thay đổi và tự động commit"
@@ -60,7 +65,7 @@ while ($true) {
         $status = & $gitCommand status -s
         $currentTime = Get-Date
         
-        # Kiểm tra nếu có thay đổi hoặc đã 10 phút kể từ lần commit cuối
+        # Kiểm tra nếu có thay đổi hoặc đã 1 phút kể từ lần commit cuối
         if ($status -and ($currentTime - $lastCommitTime).TotalMinutes -ge 1) {
             # Có thay đổi và đã đủ thời gian
             Write-Log "Phát hiện thay đổi. Đang commit..."
