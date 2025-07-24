@@ -12,18 +12,26 @@
     <div class="gdrive-search-box">
         <i class="fas fa-search"></i>
         <input type="text" class="gdrive-search-input" placeholder="Tìm kiếm trong TeleDrive" id="globalSearch">
+        <button class="gdrive-search-options" title="Tùy chọn tìm kiếm">
+            <i class="fas fa-sliders-h"></i>
+        </button>
     </div>
     
     <!-- User menu -->
     <div class="user-menu">
+        <!-- Support button -->
+        <button class="header-action-btn" id="supportButton" title="Trợ giúp">
+            <i class="fas fa-question-circle"></i>
+        </button>
+        
         <!-- Settings button -->
         <button class="header-action-btn" id="settingsButton" title="Cài đặt">
             <i class="fas fa-cog"></i>
         </button>
         
-        <!-- Notifications button (if needed) -->
-        <button class="header-action-btn" id="notificationsButton" title="Thông báo">
-            <i class="fas fa-bell"></i>
+        <!-- Apps menu button -->
+        <button class="header-action-btn" id="appsButton" title="Ứng dụng Google">
+            <i class="fas fa-th"></i>
         </button>
         
         <!-- User avatar dropdown -->
@@ -99,56 +107,41 @@
         width: 36px;
         height: 36px;
         border-radius: 50%;
+        background: none;
+        border: none;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--text-secondary);
-        background: transparent;
-        border: none;
         cursor: pointer;
-        transition: all var(--transition-fast);
+        color: var(--gdrive-text-secondary);
+        margin-left: 8px;
+        transition: var(--gdrive-transition);
     }
     
     .header-action-btn:hover {
-        background-color: var(--bg-tertiary);
-        color: var(--text-primary);
-    }
-    
-    .app-logo {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        background-color: var(--primary);
-        color: white;
-        font-size: 18px;
+        background-color: var(--gdrive-light-gray);
+        color: var(--gdrive-text);
     }
     
     .user-avatar {
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        background-color: var(--primary);
+        background-color: var(--gdrive-blue);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 500;
         cursor: pointer;
-        transition: transform 0.2s ease;
-    }
-    
-    .user-avatar:hover {
-        transform: scale(1.05);
+        font-weight: 500;
+        margin-left: 8px;
     }
     
     .user-avatar-lg {
-        width: 60px;
-        height: 60px;
+        width: 64px;
+        height: 64px;
         font-size: 24px;
-        margin-right: 1rem;
+        margin: 0;
     }
     
     .user-dropdown {
@@ -159,151 +152,124 @@
         position: absolute;
         top: calc(100% + 8px);
         right: 0;
-        width: 280px;
-        background-color: var(--bg-main);
-        border: 1px solid var(--border);
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow-md);
-        z-index: 100;
-        display: none;
+        width: 300px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
         overflow: hidden;
+        display: none;
+        animation: fadeIn 0.2s ease;
     }
     
-    .user-dropdown-menu.show {
+    .user-dropdown-menu.active {
         display: block;
-        animation: fadeInScale 0.2s ease forwards;
     }
     
     .user-info {
         display: flex;
-        padding: 1rem;
-        border-bottom: 1px solid var(--border);
         align-items: center;
+        padding: 16px;
+        border-bottom: 1px solid var(--gdrive-border);
     }
     
     .user-info-details {
-        display: flex;
-        flex-direction: column;
+        margin-left: 16px;
     }
     
     .user-info-name {
-        font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 16px;
+        font-weight: 500;
     }
     
     .user-info-email {
-        font-size: 0.8rem;
-        color: var(--text-secondary);
-        margin-top: 2px;
+        font-size: 14px;
+        color: var(--gdrive-text-secondary);
+        margin-top: 4px;
     }
     
     .user-dropdown-item {
         display: flex;
         align-items: center;
-        padding: 0.75rem 1rem;
+        padding: 12px 16px;
         cursor: pointer;
-        transition: background-color var(--transition-fast);
     }
     
     .user-dropdown-item:hover {
-        background-color: var(--bg-tertiary);
+        background-color: var(--gdrive-light-gray);
     }
     
     .user-dropdown-item i {
-        width: 20px;
-        margin-right: 0.75rem;
-        color: var(--text-secondary);
+        width: 24px;
+        margin-right: 16px;
+        color: var(--gdrive-text-secondary);
     }
     
     .user-dropdown-divider {
         height: 1px;
-        background-color: var(--border);
-        margin: 4px 0;
+        background-color: var(--gdrive-border);
+        margin: 8px 0;
     }
     
-    .admin-badge {
-        margin-left: 0.5rem;
+    .gdrive-search-options {
+        background: none;
+        border: none;
+        color: var(--gdrive-text-secondary);
+        cursor: pointer;
+        padding: 0 8px;
     }
     
-    .admin-badge-btn {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 4px;
-        background-color: var(--primary);
-        color: white;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-decoration: none;
+    .gdrive-search-options:hover {
+        color: var(--gdrive-text);
     }
     
-    @keyframes fadeInScale {
-        from {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 
 <script>
     // Toggle user dropdown menu
-    document.getElementById('userMenuToggle').addEventListener('click', function() {
-        const menu = document.getElementById('userDropdownMenu');
-        menu.classList.toggle('show');
-    });
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(event) {
-        const dropdown = document.querySelector('.user-dropdown');
-        const menu = document.getElementById('userDropdownMenu');
+    document.addEventListener('DOMContentLoaded', function() {
+        const userMenuToggle = document.getElementById('userMenuToggle');
+        const userDropdownMenu = document.getElementById('userDropdownMenu');
         
-        if (dropdown && menu && !dropdown.contains(event.target) && menu.classList.contains('show')) {
-            menu.classList.remove('show');
-        }
-    });
-    
-    // Settings button
-    const settingsButton = document.getElementById('settingsButton');
-    if (settingsButton) {
-        settingsButton.addEventListener('click', function() {
-            window.location.href = '/settings';
-        });
-    }
-    
-    // Handle menu item clicks
-    document.querySelectorAll('.user-dropdown-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const action = this.dataset.action;
+        if (userMenuToggle && userDropdownMenu) {
+            userMenuToggle.addEventListener('click', function() {
+                userDropdownMenu.classList.toggle('active');
+            });
             
-            // Handle different actions
-            switch(action) {
-                case 'login':
-                    window.location.href = '/login';
-                    break;
-                case 'logout':
-                    window.location.href = '/logout';
-                    break;
-                case 'profile':
-                    window.location.href = '/profile';
-                    break;
-                case 'settings':
-                    window.location.href = '/settings';
-                    break;
-                case 'admin':
-                    window.location.href = '/admin';
-                    break;
-            }
-        });
-    });
-    
-    // Global search functionality
-    document.getElementById('globalSearch').addEventListener('keyup', function(e) {
-        if (e.key === 'Enter' && this.value.trim() !== '') {
-            // Perform search
-            window.location.href = '/search?q=' + encodeURIComponent(this.value.trim());
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!userMenuToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+                    userDropdownMenu.classList.remove('active');
+                }
+            });
+            
+            // Handle dropdown item clicks
+            const dropdownItems = userDropdownMenu.querySelectorAll('.user-dropdown-item');
+            dropdownItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const action = this.getAttribute('data-action');
+                    
+                    // Handle different actions
+                    if (action === 'logout') {
+                        window.location.href = '/logout';
+                    } else if (action === 'login') {
+                        window.location.href = '/login';
+                    } else if (action === 'profile') {
+                        window.location.href = '/profile';
+                    } else if (action === 'settings') {
+                        window.location.href = '/settings';
+                    } else if (action === 'admin') {
+                        window.location.href = '/admin';
+                    }
+                    
+                    // Close dropdown
+                    userDropdownMenu.classList.remove('active');
+                });
+            });
         }
     });
 </script> 
