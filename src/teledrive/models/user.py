@@ -17,6 +17,7 @@ class User(db.Model, UserMixin):
     User model for TeleDrive authentication and authorization.
     """
     __tablename__ = 'users'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
