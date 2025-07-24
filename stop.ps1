@@ -1,4 +1,4 @@
-$processes = Get-Process -Name powershell | Where-Object { $_.CommandLine -like "*AutoCommit.ps1*" }
+$processes = Get-Process -Name powershell | Where-Object { $_.CommandLine -like "*ac.ps1*" }
 
 if ($processes) {
     Write-Host "Đang dừng các tiến trình tự động commit..."
