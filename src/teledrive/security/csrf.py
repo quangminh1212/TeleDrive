@@ -12,7 +12,7 @@ from flask_wtf.csrf import CSRFProtect
 csrf = CSRFProtect()
 
 
-def init_csrf(app: Flask) -> None:
+def init_csrf_protection(app: Flask) -> None:
     """
     Initialize CSRF protection for the Flask application.
     
