@@ -89,3 +89,29 @@ secrets.env
 # Automatically generated
 .python-version
 .coverage.*
+
+# Temporary and debug files
+*_temp.*
+*.tmp
+*.bak
+*.backup
+*.debug
+.pytest_cache/
+debug_*.py
+test_*.py
+*_test.py
+*_example.py
+
+# Chrome profile data
+chrome_profile/
+browser_data/
+user_data/
+
+# Local configuration
+config/local_*.json
+config/user_*.json
+
+# Exported reports
+*_report.md
+report_*.md
+stats_*.json
