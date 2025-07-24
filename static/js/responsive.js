@@ -11,6 +11,7 @@ class ResponsiveManager {
         this.config = {
             mobileBp: 768, // Mobile breakpoint
             tabletBp: 1024, // Tablet breakpoint
+            smallMobileBp: 480, // Small mobile breakpoint
             animationDuration: 300, // Duration for animations (ms)
         };
 
@@ -18,9 +19,13 @@ class ResponsiveManager {
         this.state = {
             isMobile: false,
             isTablet: false,
+            isSmallMobile: false,
+            isPortrait: window.innerHeight > window.innerWidth,
             sidebarOpen: false,
             currentView: 'grid', // grid hoặc list
             lastWindowWidth: window.innerWidth,
+            touchStartX: null,
+            touchStartY: null
         };
 
         // Initialize
@@ -51,21 +56,30 @@ class ResponsiveManager {
      */
     checkScreenSize() {
         const width = window.innerWidth;
+        const height = window.innerHeight;
         
         // Cập nhật trạng thái thiết bị
         const wasMobile = this.state.isMobile;
         const wasTablet = this.state.isTablet;
+        const wasSmallMobile = this.state.isSmallMobile;
+        const wasPortrait = this.state.isPortrait;
         
         this.state.isMobile = width <= this.config.mobileBp;
         this.state.isTablet = width > this.config.mobileBp && width <= this.config.tabletBp;
+        this.state.isSmallMobile = width <= this.config.smallMobileBp;
+        this.state.isPortrait = height > width;
         this.state.lastWindowWidth = width;
         
         // Kiểm tra nếu có sự thay đổi về trạng thái
-        const mobileChanged = wasMobile !== this.state.isMobile;
-        const tabletChanged = wasTablet !== this.state.isTablet;
+        const deviceStateChanged = wasMobile !== this.state.isMobile || wasTablet !== this.state.isTablet || wasSmallMobile !== this.state.isSmallMobile;
+        const orientationChanged = wasPortrait !== this.state.isPortrait;
         
-        if (mobileChanged || tabletChanged) {
+        if (deviceStateChanged) {
             this.handleDeviceStateChange();
+        }
+        
+        if (orientationChanged) {
+            this.handleOrientationChange();
         }
     }
 
@@ -76,6 +90,7 @@ class ResponsiveManager {
         // Cập nhật class cho body
         document.body.classList.toggle('is-mobile', this.state.isMobile);
         document.body.classList.toggle('is-tablet', this.state.isTablet);
+        document.body.classList.toggle('is-small-mobile', this.state.isSmallMobile);
         
         // Cập nhật sidebar
         if (this.state.isMobile) {
@@ -95,9 +110,53 @@ class ResponsiveManager {
         window.dispatchEvent(new CustomEvent('deviceStateChanged', {
             detail: {
                 isMobile: this.state.isMobile,
-                isTablet: this.state.isTablet
+                isTablet: this.state.isTablet,
+                isSmallMobile: this.state.isSmallMobile
             }
         }));
+    }
+
+    /**
+     * Xử lý khi hướng màn hình thay đổi
+     */
+    handleOrientationChange() {
+        // Cập nhật class cho body
+        document.body.classList.toggle('is-portrait', this.state.isPortrait);
+        document.body.classList.toggle('is-landscape', !this.state.isPortrait);
+        
+        // Kiểm tra và điều chỉnh layout
+        this.adjustLayoutForOrientation();
+        
+        // Dispatch event để các thành phần khác có thể phản ứng
+        window.dispatchEvent(new CustomEvent('orientationChanged', {
+            detail: {
+                isPortrait: this.state.isPortrait
+            }
+        }));
+    }
+
+    /**
+     * Điều chỉnh layout cho phù hợp với hướng màn hình
+     */
+    adjustLayoutForOrientation() {
+        // Điều chỉnh cho mobile
+        if (this.state.isMobile) {
+            // Đóng sidebar trong chế độ landscape
+            if (!this.state.isPortrait && this.state.sidebarOpen) {
+                this.closeSidebar();
+            }
+            
+            // Điều chỉnh số cột hiển thị
+            const gridView = document.querySelector('.gdrive-grid-view');
+            if (gridView) {
+                if (this.state.isPortrait) {
+                    gridView.style.gridTemplateColumns = this.state.isSmallMobile ? 
+                        'repeat(1, 1fr)' : 'repeat(2, 1fr)';
+                } else {
+                    gridView.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+                }
+            }
+        }
     }
 
     /**
@@ -107,6 +166,9 @@ class ResponsiveManager {
         // Thêm classes cơ bản
         document.body.classList.toggle('is-mobile', this.state.isMobile);
         document.body.classList.toggle('is-tablet', this.state.isTablet);
+        document.body.classList.toggle('is-small-mobile', this.state.isSmallMobile);
+        document.body.classList.toggle('is-portrait', this.state.isPortrait);
+        document.body.classList.toggle('is-landscape', !this.state.isPortrait);
         
         // Thêm viewport meta tag nếu chưa có
         if (!document.querySelector('meta[name="viewport"]')) {
@@ -118,6 +180,9 @@ class ResponsiveManager {
         
         // Thêm responsive styles
         this.addResponsiveStyles();
+        
+        // Điều chỉnh layout theo hướng màn hình
+        this.adjustLayoutForOrientation();
     }
 
     /**
@@ -146,6 +211,8 @@ class ResponsiveManager {
                 z-index: 1000;
                 transition: transform ${this.config.animationDuration}ms ease-in-out;
                 box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+                width: 80% !important;
+                max-width: 300px;
             }
             
             .is-mobile .gdrive-sidebar.open {
@@ -161,12 +228,12 @@ class ResponsiveManager {
                 background: transparent;
                 cursor: pointer;
                 z-index: 1001;
+                align-items: center;
+                justify-content: center;
             }
             
             .is-mobile .mobile-menu-toggle {
                 display: flex;
-                align-items: center;
-                justify-content: center;
             }
             
             /* Backdrop for mobile sidebar */
@@ -198,8 +265,32 @@ class ResponsiveManager {
                 padding: 8px;
             }
             
+            .is-mobile .gdrive-toolbar {
+                height: auto;
+                padding: 8px;
+                flex-wrap: wrap;
+            }
+            
+            .is-mobile .gdrive-breadcrumbs {
+                width: 100%;
+                margin-bottom: 8px;
+                white-space: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scroll-behavior: smooth;
+            }
+            
+            /* Grid View Adjustments for Mobile */
+            .is-mobile .gdrive-grid-view {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .is-mobile.is-small-mobile .gdrive-grid-view {
+                grid-template-columns: repeat(1, 1fr);
+            }
+            
             .is-mobile .gdrive-file-card {
-                width: calc(50% - 16px);
+                width: calc(100% - 16px);
                 margin: 8px;
                 height: 180px;
             }
@@ -208,15 +299,58 @@ class ResponsiveManager {
                 width: calc(33.33% - 16px);
             }
             
-            @media (max-width: 480px) {
-                .is-mobile .gdrive-file-card {
-                    width: calc(100% - 16px);
-                }
+            /* File actions on mobile */
+            .is-mobile .gdrive-file-actions {
+                display: flex;
+                opacity: 1;
             }
             
             /* Mobile Header */
             .is-mobile .gdrive-header {
                 padding: 0 8px;
+            }
+            
+            /* Mobile FAB positioning */
+            .is-mobile .gdrive-fab {
+                bottom: 16px;
+                right: 16px;
+            }
+            
+            /* Landscape specific adjustments */
+            .is-mobile.is-landscape .gdrive-grid-view {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            }
+            
+            .is-mobile.is-landscape .gdrive-file-card {
+                height: 150px;
+            }
+            
+            /* Screenreader only elements */
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border-width: 0;
+            }
+            
+            /* Fix for mobile modal views */
+            .is-mobile .gdrive-modal-content {
+                width: 95%;
+                max-height: 80vh;
+            }
+            
+            /* Better touch targets on mobile */
+            .is-mobile button,
+            .is-mobile .gdrive-btn-primary,
+            .is-mobile .gdrive-btn-secondary,
+            .is-mobile .gdrive-action-btn {
+                min-height: 44px;
+                min-width: 44px;
             }
         `;
         document.head.appendChild(style);
@@ -227,14 +361,45 @@ class ResponsiveManager {
      */
     setupEventListeners() {
         // Resize event
-        window.addEventListener('resize', () => {
+        window.addEventListener('resize', this.debounce(() => {
             this.checkScreenSize();
-        });
+        }, 150));
         
         // Orientation change event (đặc biệt quan trọng cho mobile)
         window.addEventListener('orientationchange', () => {
             // Chờ một chút để màn hình ổn định kích thước sau khi xoay
-            setTimeout(() => this.checkScreenSize(), 100);
+            setTimeout(() => this.checkScreenSize(), 150);
+        });
+        
+        // Click event cho document (đóng các dropdown khi click bên ngoài)
+        document.addEventListener('click', (e) => {
+            // Kiểm tra xem click có phải là bên ngoài dropdown không
+            if (!e.target.closest('.dropdown, .dropdown-menu, .dropdown-toggle')) {
+                this.closeAllDropdowns();
+            }
+        });
+    }
+
+    /**
+     * Debounce function để hạn chế gọi quá nhiều lần
+     * @param {Function} func - Hàm cần debounce
+     * @param {number} wait - Thời gian đợi (ms)
+     * @returns {Function} - Hàm đã được debounce
+     */
+    debounce(func, wait) {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    /**
+     * Đóng tất cả các dropdowns
+     */
+    closeAllDropdowns() {
+        document.querySelectorAll('.dropdown-menu.visible, .dropdown.open').forEach(el => {
+            el.classList.remove('visible', 'open');
         });
     }
 
@@ -243,10 +408,15 @@ class ResponsiveManager {
      */
     setupMobileNavigation() {
         // Tạo backdrop cho mobile sidebar
-        const backdrop = document.createElement('div');
-        backdrop.className = 'mobile-backdrop';
-        backdrop.addEventListener('click', () => this.closeSidebar());
-        document.body.appendChild(backdrop);
+        let backdrop = document.getElementById('sidebarBackdrop');
+        
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.id = 'sidebarBackdrop';
+            backdrop.className = 'mobile-backdrop';
+            backdrop.addEventListener('click', () => this.closeSidebar());
+            document.body.appendChild(backdrop);
+        }
         
         // Tìm hoặc tạo nút toggle menu
         let menuToggle = document.getElementById('mobileMenuToggle');
@@ -281,7 +451,7 @@ class ResponsiveManager {
      */
     openSidebar() {
         const sidebar = document.querySelector('.gdrive-sidebar');
-        const backdrop = document.querySelector('.mobile-backdrop');
+        const backdrop = document.getElementById('sidebarBackdrop');
         
         if (sidebar) {
             sidebar.classList.add('open');
@@ -301,7 +471,7 @@ class ResponsiveManager {
      */
     closeSidebar() {
         const sidebar = document.querySelector('.gdrive-sidebar');
-        const backdrop = document.querySelector('.mobile-backdrop');
+        const backdrop = document.getElementById('sidebarBackdrop');
         
         if (sidebar) {
             sidebar.classList.remove('open');
@@ -365,6 +535,11 @@ class ResponsiveManager {
                 listBtn.classList.add('active');
             }
         }
+        
+        // Điều chỉnh grid layout cho phù hợp với hướng màn hình
+        if (viewMode === 'grid') {
+            this.adjustLayoutForOrientation();
+        }
     }
 
     /**
@@ -387,18 +562,18 @@ class ResponsiveManager {
 
     // Touch event handlers
     handleTouchStart(e) {
-        this.touchStartX = e.touches[0].clientX;
-        this.touchStartY = e.touches[0].clientY;
+        this.state.touchStartX = e.touches[0].clientX;
+        this.state.touchStartY = e.touches[0].clientY;
     }
 
     handleTouchMove(e) {
-        if (!this.touchStartX || !this.touchStartY) return;
+        if (!this.state.touchStartX || !this.state.touchStartY) return;
         
         const touchX = e.touches[0].clientX;
         const touchY = e.touches[0].clientY;
         
-        const diffX = touchX - this.touchStartX;
-        const diffY = touchY - this.touchStartY;
+        const diffX = touchX - this.state.touchStartX;
+        const diffY = touchY - this.state.touchStartY;
         
         // Chỉ xử lý nếu swipe ngang đủ mạnh và không quá nhiều swipe dọc
         if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
@@ -418,8 +593,8 @@ class ResponsiveManager {
     }
 
     handleTouchEnd() {
-        this.touchStartX = null;
-        this.touchStartY = null;
+        this.state.touchStartX = null;
+        this.state.touchStartY = null;
     }
 
     /**
@@ -445,6 +620,92 @@ class ResponsiveManager {
         setTimeout(() => {
             announcer.textContent = '';
         }, 1000);
+    }
+    
+    /**
+     * Điều chỉnh và tối ưu UI cho thiết bị hiện tại
+     * Phương thức này có thể được gọi từ bên ngoài để cập nhật UI
+     */
+    optimizeUIForCurrentDevice() {
+        // Kiểm tra lại kích thước màn hình
+        this.checkScreenSize();
+        
+        // Thực hiện các điều chỉnh bổ sung
+        if (this.state.isMobile) {
+            // Tối ưu cho mobile
+            this.optimizeForMobile();
+        } else if (this.state.isTablet) {
+            // Tối ưu cho tablet
+            this.optimizeForTablet();
+        } else {
+            // Tối ưu cho desktop
+            this.optimizeForDesktop();
+        }
+    }
+    
+    /**
+     * Tối ưu UI cho thiết bị mobile
+     */
+    optimizeForMobile() {
+        // Điều chỉnh các thành phần cho mobile
+        
+        // Ẩn các phần tử không cần thiết
+        document.querySelectorAll('.desktop-only').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // Đơn giản hóa breadcrumbs trên mobile
+        const breadcrumbs = document.querySelector('.gdrive-breadcrumbs');
+        if (breadcrumbs) {
+            const items = breadcrumbs.querySelectorAll('.gdrive-breadcrumb-item:not(:first-child):not(:last-child)');
+            if (items.length > 2) {
+                // Nếu có nhiều hơn 2 mục, chỉ giữ lại mục đầu tiên và cuối cùng
+                for (let i = 1; i < items.length - 1; i++) {
+                    items[i].style.display = 'none';
+                }
+                
+                // Thêm chỉ báo rút gọn
+                if (!breadcrumbs.querySelector('.breadcrumb-ellipsis')) {
+                    const ellipsis = document.createElement('div');
+                    ellipsis.className = 'gdrive-breadcrumb-item breadcrumb-ellipsis';
+                    ellipsis.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
+                    
+                    breadcrumbs.insertBefore(ellipsis, items[items.length - 1]);
+                }
+            }
+        }
+        
+        // Điều chỉnh kích thước nút
+        document.querySelectorAll('button, .gdrive-btn-primary, .gdrive-btn-secondary').forEach(btn => {
+            if (!btn.classList.contains('mobile-adjusted')) {
+                btn.classList.add('mobile-adjusted');
+                // Đảm bảo nút đủ lớn để dễ nhấn
+                btn.style.minHeight = '44px';
+                btn.style.minWidth = '44px';
+            }
+        });
+    }
+    
+    /**
+     * Tối ưu UI cho thiết bị tablet
+     */
+    optimizeForTablet() {
+        // Điều chỉnh UI cho tablet
+        // Thiết lập lại các giá trị bị thay đổi bởi mobile
+        document.querySelectorAll('.mobile-adjusted').forEach(el => {
+            el.classList.remove('mobile-adjusted');
+        });
+    }
+    
+    /**
+     * Tối ưu UI cho desktop
+     */
+    optimizeForDesktop() {
+        // Điều chỉnh UI cho desktop
+        // Thiết lập lại các giá trị bị thay đổi bởi mobile
+        document.querySelectorAll('.mobile-adjusted').forEach(el => {
+            el.classList.remove('mobile-adjusted');
+        });
     }
 }
 

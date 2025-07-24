@@ -23,6 +23,9 @@ class FilePreviewManager {
             audioExtensions: ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac'],
             documentExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'],
             textExtensions: ['txt', 'md', 'js', 'css', 'html', 'xml', 'json', 'csv', 'log', 'py', 'java', 'c', 'cpp', 'h', 'php', 'rb', 'sql'],
+            apiBase: '/api',
+            fileServePath: '/api/file/serve',
+            fileDownloadPath: '/api/file/download',
             officePreviewUrl: 'https://view.officeapps.live.com/op/view.aspx?src=',
             googleDocsPreviewUrl: 'https://docs.google.com/viewer?url=',
             ...options
@@ -205,7 +208,7 @@ class FilePreviewManager {
         // Cập nhật kích thước file
         const fileSizeEl = this.modal.querySelector('.gdrive-preview-filesize');
         if (fileSizeEl) {
-            fileSizeEl.textContent = file.size_formatted || '';
+            fileSizeEl.textContent = file.size_formatted || this.formatFileSize(file.size) || '';
         }
         
         // Cập nhật nút điều hướng (ẩn/hiện)
@@ -229,6 +232,39 @@ class FilePreviewManager {
         // Hiển thị cả hai nút
         if (prevBtn) prevBtn.style.display = 'block';
         if (nextBtn) nextBtn.style.display = 'block';
+    }
+    
+    /**
+     * Lấy URL API cho file
+     * @param {Object} file - Thông tin file
+     * @param {string} endpoint - API endpoint ('serve' hoặc 'download')
+     * @returns {string} - URL của API
+     */
+    getFileApiUrl(file, endpoint = 'serve') {
+        // Nếu đã có URL file
+        if (file.url) {
+            return file.url;
+        }
+        
+        // Nếu có đường dẫn file
+        if (file.path) {
+            const path = encodeURIComponent(file.path);
+            
+            switch (endpoint) {
+                case 'download':
+                    return `${this.config.fileDownloadPath}?path=${path}`;
+                case 'serve':
+                default:
+                    return `${this.config.fileServePath}?path=${path}`;
+            }
+        }
+        
+        // Fallback nếu không có URL hoặc đường dẫn
+        if (file.id) {
+            return `${this.config.apiBase}/file/${endpoint}/${file.id}`;
+        }
+        
+        return '';
     }
     
     /**
@@ -274,35 +310,34 @@ class FilePreviewManager {
      * @param {HTMLElement} container - Container để render preview
      */
     async renderImagePreview(file, container) {
-        // Tạo element img
-        const img = document.createElement('img');
-        img.className = 'gdrive-preview-image';
-        img.alt = file.name;
-        
-        // Set src từ URL file hoặc blob
-        if (file.url) {
-            // URL trực tiếp (có thể từ Telegram)
-            img.src = file.url;
-        } else if (file.path) {
-            // URL local
-            img.src = `/api/file/serve?path=${encodeURIComponent(file.path)}`;
-        } else if (file.thumbnail_url) {
-            // Thumbnail URL nếu không có URL chính
-            img.src = file.thumbnail_url;
-        }
-        
-        // Thêm image loading và error handling
-        img.onload = () => {
+        try {
+            // Tạo element img
+            const img = document.createElement('img');
+            img.className = 'gdrive-preview-image';
+            img.alt = file.name;
+            
+            // Set src từ URL file hoặc blob
+            const imgUrl = file.thumbnail_url || this.getFileApiUrl(file, 'serve');
+            if (!imgUrl) {
+                throw new Error('Không thể tạo URL cho hình ảnh');
+            }
+            
+            // Thêm loading và error handling
+            const loadPromise = new Promise((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = () => reject(new Error('Không thể tải hình ảnh'));
+            });
+            
+            img.src = imgUrl;
+            
+            // Đợi hình ảnh tải xong hoặc xảy ra lỗi
+            await loadPromise;
+            
+            // Thêm vào container
             container.appendChild(img);
-        };
-        
-        img.onerror = () => {
-            this.renderErrorPreview(container, 'Không thể tải hình ảnh');
-        };
-        
-        // Preload image
-        const preloadImage = new Image();
-        preloadImage.src = img.src;
+        } catch (error) {
+            this.renderErrorPreview(container, error);
+        }
     }
     
     /**
@@ -319,10 +354,12 @@ class FilePreviewManager {
         video.preload = 'auto';
         
         // Set source từ URL file
-        if (file.url) {
-            video.src = file.url;
-        } else if (file.path) {
-            video.src = `/api/file/serve?path=${encodeURIComponent(file.path)}`;
+        const videoUrl = this.getFileApiUrl(file, 'serve');
+        if (videoUrl) {
+            video.src = videoUrl;
+        } else {
+            this.renderErrorPreview(container, 'Không thể tạo URL cho video');
+            return;
         }
         
         // Error handling
@@ -346,10 +383,12 @@ class FilePreviewManager {
         audio.autoplay = false;
         
         // Set source từ URL file
-        if (file.url) {
-            audio.src = file.url;
-        } else if (file.path) {
-            audio.src = `/api/file/serve?path=${encodeURIComponent(file.path)}`;
+        const audioUrl = this.getFileApiUrl(file, 'serve');
+        if (audioUrl) {
+            audio.src = audioUrl;
+        } else {
+            this.renderErrorPreview(container, 'Không thể tạo URL cho file âm thanh');
+            return;
         }
         
         // Error handling
@@ -376,11 +415,10 @@ class FilePreviewManager {
         iframe.className = 'gdrive-preview-pdf';
         
         // Set source
-        let pdfUrl;
-        if (file.url) {
-            pdfUrl = file.url;
-        } else if (file.path) {
-            pdfUrl = `/api/file/serve?path=${encodeURIComponent(file.path)}`;
+        const pdfUrl = this.getFileApiUrl(file, 'serve');
+        if (!pdfUrl) {
+            this.renderErrorPreview(container, 'Không thể tạo URL cho file PDF');
+            return;
         }
         
         // Sử dụng PDF.js viewer nếu có thể
@@ -414,30 +452,24 @@ class FilePreviewManager {
             }
             
             // Fetch nội dung văn bản
-            let textUrl;
-            if (file.url) {
-                textUrl = file.url;
-            } else if (file.path) {
-                textUrl = `/api/file/serve?path=${encodeURIComponent(file.path)}`;
+            const textUrl = this.getFileApiUrl(file, 'serve');
+            if (!textUrl) {
+                throw new Error('Không thể tạo URL cho file văn bản');
             }
             
-            if (textUrl) {
-                const response = await fetch(textUrl);
-                if (!response.ok) {
-                    throw new Error('Không thể tải nội dung file');
-                }
-                
-                // Kiểm tra kích thước
-                const contentLength = response.headers.get('Content-Length');
-                if (contentLength && parseInt(contentLength) > this.config.maxTextPreviewSize) {
-                    throw new Error(`File quá lớn để xem trước (${this.formatFileSize(parseInt(contentLength))})`);
-                }
-                
-                const text = await response.text();
-                code.textContent = text;
-            } else {
-                code.textContent = 'Không có nội dung để hiển thị';
+            const response = await fetch(textUrl);
+            if (!response.ok) {
+                throw new Error(`Không thể tải nội dung file: ${response.status} ${response.statusText}`);
             }
+            
+            // Kiểm tra kích thước
+            const contentLength = response.headers.get('Content-Length');
+            if (contentLength && parseInt(contentLength) > this.config.maxTextPreviewSize) {
+                throw new Error(`File quá lớn để xem trước (${this.formatFileSize(parseInt(contentLength))})`);
+            }
+            
+            const text = await response.text();
+            code.textContent = text;
             
             pre.appendChild(code);
             container.appendChild(pre);
@@ -462,20 +494,24 @@ class FilePreviewManager {
         iframe.className = 'gdrive-preview-document';
         
         // Xác định URL
-        let docUrl;
-        if (file.url) {
-            docUrl = file.url;
-        } else if (file.path) {
-            const baseUrl = window.location.origin;
-            docUrl = `${baseUrl}/api/file/serve?path=${encodeURIComponent(file.path)}`;
+        const docUrl = this.getFileApiUrl(file, 'serve');
+        if (!docUrl) {
+            this.renderErrorPreview(container, 'Không thể tạo URL cho file');
+            return;
+        }
+        
+        // Đảm bảo URL là absolute
+        let absoluteDocUrl = docUrl;
+        if (!absoluteDocUrl.startsWith('http')) {
+            absoluteDocUrl = `${window.location.origin}${docUrl}`;
         }
         
         // Sử dụng Office Online hoặc Google Docs Viewer
         const extension = this.getFileExtension(file.name);
         if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) {
-            iframe.src = `${this.config.officePreviewUrl}${encodeURIComponent(docUrl)}`;
+            iframe.src = `${this.config.officePreviewUrl}${encodeURIComponent(absoluteDocUrl)}`;
         } else {
-            iframe.src = `${this.config.googleDocsPreviewUrl}${encodeURIComponent(docUrl)}&embedded=true`;
+            iframe.src = `${this.config.googleDocsPreviewUrl}${encodeURIComponent(absoluteDocUrl)}&embedded=true`;
         }
         
         container.appendChild(iframe);
@@ -594,17 +630,13 @@ class FilePreviewManager {
         
         // Sử dụng FileOperations nếu có
         if (window.fileOperations) {
-            window.fileOperations.downloadFile(this.currentFile.path);
+            window.fileOperations.downloadFile(this.currentFile.path || this.currentFile.id);
             return;
         }
         
         // Tạo link tải xuống
-        let downloadUrl;
-        if (this.currentFile.url) {
-            downloadUrl = this.currentFile.url;
-        } else if (this.currentFile.path) {
-            downloadUrl = `/api/file/download?path=${encodeURIComponent(this.currentFile.path)}`;
-        } else {
+        const downloadUrl = this.getFileApiUrl(this.currentFile, 'download');
+        if (!downloadUrl) {
             console.error('Không tìm thấy URL để tải xuống');
             return;
         }
@@ -614,6 +646,7 @@ class FilePreviewManager {
         a.href = downloadUrl;
         a.download = this.currentFile.name || 'download';
         a.target = '_blank';
+        a.rel = 'noopener noreferrer';
         a.style.display = 'none';
         
         document.body.appendChild(a);
@@ -632,7 +665,7 @@ class FilePreviewManager {
      */
     getFileExtension(filename) {
         if (!filename) return '';
-        return filename.split('.').pop();
+        return filename.split('.').pop().toLowerCase();
     }
     
     /**
@@ -641,7 +674,7 @@ class FilePreviewManager {
      * @returns {string} - Chuỗi đã format
      */
     formatFileSize(bytes) {
-        if (bytes === 0) return '0 B';
+        if (bytes === 0 || !bytes) return '0 B';
         
         const units = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(1024));
