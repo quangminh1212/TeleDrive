@@ -2,121 +2,49 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
+
+# Distribution / packaging
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
+build/
 *.egg-info/
-.installed.cfg
-*.egg
 
-# Virtual environments
+# Virtual environment
 venv/
-virtualenv/
-ENV/
 env/
-.env
-.venv
+ENV/
 
-# IDE and editor files
+# IDE files
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
-.DS_Store
-.project
-.pydevproject
-.settings/
-.spyderproject
-.spyproject
-.ropeproject
 
-# Coverage and testing
-.coverage
-htmlcov/
-coverage.xml
-.hypothesis/
-.pytest_cache/
-.tox/
-nosetests.xml
-coverage/
-
-# Sphinx documentation
-docs/_build/
-docs/api/
-
-# Application specific
-instance/
-*.db
-*.sqlite3
+# Logs
 logs/
 *.log
 
-# Telegram related files
-*.session
-*.session-journal
+# Database
+instance/*.db
+*.db
+
+# Temporary files
+.teledrive_running
+tmp/
+temp/
+*.tmp
 
 # Output files
 output/
-/downloads/
-/media/
+downloads/
 
-# Config files with credentials (except templates)
-config.json
-config.local.json
-*.env
+# Windows specific
+Thumbs.db
+desktop.ini
 
-# Misc
+# MacOS specific
 .DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-secrets.env
 
-# Automatically generated
-.python-version
-.coverage.*
-
-# Temporary and debug files
-*_temp.*
-*.tmp
-*.bak
-*.backup
-*.debug
+# Runtime data
+.coverage
+htmlcov/
 .pytest_cache/
-debug_*.py
-test_*.py
-*_test.py
-*_example.py
-
-# Chrome profile data
-chrome_profile/
-browser_data/
-user_data/
-
-# Local configuration
-config/local_*.json
-config/user_*.json
-
-# Exported reports
-*_report.md
-report_*.md
-stats_*.json
-
-# TeleDrive specific files
-.teledrive_running
-auto_commit_log.txt
-RunAutoCommit.bat
