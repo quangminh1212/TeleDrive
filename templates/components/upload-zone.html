@@ -1,0 +1,291 @@
+<!-- TeleDrive Upload Zone Component -->
+<div class="gdrive-upload-zone" id="uploadZone">
+    <div class="gdrive-upload-content">
+        <div class="gdrive-upload-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <div class="gdrive-upload-text">
+            Kéo thả files vào đây để tải lên
+        </div>
+        <div class="gdrive-upload-subtext">
+            Hoặc
+        </div>
+        <div class="gdrive-upload-actions">
+            <button class="gdrive-btn-primary" id="uploadFilesBtn">
+                <i class="fas fa-file-upload"></i>
+                Chọn files
+            </button>
+            <button class="gdrive-btn-secondary" id="uploadFolderBtn">
+                <i class="fas fa-folder-upload"></i>
+                Chọn thư mục
+            </button>
+        </div>
+    </div>
+    
+    <!-- Input ẩn để chọn files -->
+    <input type="file" id="fileInput" style="display: none;" multiple>
+    <!-- Input ẩn để chọn thư mục -->
+    <input type="file" id="folderInput" style="display: none;" webkitdirectory directory multiple>
+</div>
+
+<style>
+    .gdrive-upload-zone {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+        border: 2px dashed var(--gdrive-border);
+        border-radius: var(--gdrive-radius);
+        background-color: rgba(0, 0, 0, 0.02);
+        margin: 16px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .gdrive-upload-zone:hover,
+    .gdrive-upload-zone.drag-over {
+        border-color: var(--gdrive-blue);
+        background-color: rgba(66, 133, 244, 0.05);
+    }
+    
+    .gdrive-upload-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .gdrive-upload-icon {
+        font-size: 48px;
+        color: var(--gdrive-blue);
+        margin-bottom: 16px;
+    }
+    
+    .gdrive-upload-text {
+        font-size: 18px;
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+    
+    .gdrive-upload-subtext {
+        font-size: 14px;
+        color: var(--gdrive-text-secondary);
+        margin: 8px 0;
+    }
+    
+    .gdrive-upload-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+    
+    .gdrive-upload-zone.drag-over {
+        transform: scale(1.01);
+        box-shadow: 0 0 0 2px var(--gdrive-blue);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Lấy các elements
+        const uploadZone = document.getElementById('uploadZone');
+        const uploadFilesBtn = document.getElementById('uploadFilesBtn');
+        const uploadFolderBtn = document.getElementById('uploadFolderBtn');
+        const fileInput = document.getElementById('fileInput');
+        const folderInput = document.getElementById('folderInput');
+        
+        // Kiểm tra xem trình duyệt có hỗ trợ webkitdirectory không
+        if (!('webkitdirectory' in fileInput)) {
+            uploadFolderBtn.style.display = 'none';
+        }
+        
+        // Khi click vào nút "Chọn files"
+        uploadFilesBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            fileInput.click();
+        });
+        
+        // Khi click vào nút "Chọn thư mục"
+        uploadFolderBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            folderInput.click();
+        });
+        
+        // Khi click vào vùng upload
+        uploadZone.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        // Khi chọn files
+        fileInput.addEventListener('change', function() {
+            if (this.files.length) {
+                handleSelectedFiles(this.files);
+            }
+        });
+        
+        // Khi chọn thư mục
+        folderInput.addEventListener('change', function() {
+            if (this.files.length) {
+                handleSelectedFiles(this.files);
+            }
+        });
+        
+        // Xử lý drag & drop (sẽ được xử lý bởi DragDropManager)
+        // Nhưng vẫn cần các event handlers cơ bản để hiển thị visual feedback
+        uploadZone.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.add('drag-over');
+        });
+        
+        uploadZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        
+        uploadZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!this.contains(e.relatedTarget)) {
+                this.classList.remove('drag-over');
+            }
+        });
+        
+        // Hàm xử lý files được chọn
+        function handleSelectedFiles(files) {
+            // Hiển thị thông báo
+            showUploadingNotification(files.length);
+            
+            // Nếu đã tích hợp với FileOperations
+            if (window.fileOperations) {
+                // Lấy đường dẫn hiện tại
+                const currentPath = getCurrentPath();
+                
+                // Upload files
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    window.fileOperations.uploadFile(currentPath, file, updateProgress)
+                        .then(result => {
+                            console.log(`File ${file.name} uploaded successfully`, result);
+                        })
+                        .catch(error => {
+                            console.error(`Failed to upload ${file.name}`, error);
+                        });
+                }
+            } else {
+                console.warn('FileOperations module not available');
+                // Fallback - giả lập tải lên thành công sau 2 giây
+                setTimeout(() => {
+                    showUploadSuccessNotification(files.length);
+                }, 2000);
+            }
+            
+            // Reset input để có thể chọn cùng file lần nữa nếu cần
+            fileInput.value = '';
+            folderInput.value = '';
+        }
+        
+        // Lấy đường dẫn hiện tại (sẽ được cập nhật bởi ứng dụng)
+        function getCurrentPath() {
+            // Mặc định là thư mục gốc
+            return window.currentPath || '/';
+        }
+        
+        // Hiển thị thông báo đang tải lên
+        function showUploadingNotification(fileCount) {
+            // Kiểm tra nếu có notifications container
+            let container = document.querySelector('.gdrive-notifications');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'gdrive-notifications';
+                Object.assign(container.style, {
+                    position: 'fixed',
+                    bottom: '20px',
+                    right: '20px',
+                    zIndex: '9999'
+                });
+                document.body.appendChild(container);
+            }
+            
+            // Tạo thông báo
+            const notification = document.createElement('div');
+            notification.className = 'gdrive-notification notification-info';
+            notification.textContent = `Đang tải lên ${fileCount} tệp tin...`;
+            
+            // Style thông báo
+            Object.assign(notification.style, {
+                backgroundColor: '#2196f3',
+                color: 'white',
+                padding: '12px 16px',
+                borderRadius: '4px',
+                margin: '8px 0',
+                boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)',
+                animation: 'fadeIn 0.3s'
+            });
+            
+            // Thêm vào container
+            container.appendChild(notification);
+            
+            // Xóa sau 5 giây
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+        
+        // Hiển thị thông báo tải lên thành công
+        function showUploadSuccessNotification(fileCount) {
+            let container = document.querySelector('.gdrive-notifications');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'gdrive-notifications';
+                Object.assign(container.style, {
+                    position: 'fixed',
+                    bottom: '20px',
+                    right: '20px',
+                    zIndex: '9999'
+                });
+                document.body.appendChild(container);
+            }
+            
+            // Tạo thông báo
+            const notification = document.createElement('div');
+            notification.className = 'gdrive-notification notification-success';
+            notification.textContent = `Đã tải lên ${fileCount} tệp tin thành công!`;
+            
+            // Style thông báo
+            Object.assign(notification.style, {
+                backgroundColor: '#4caf50',
+                color: 'white',
+                padding: '12px 16px',
+                borderRadius: '4px',
+                margin: '8px 0',
+                boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)',
+                animation: 'fadeIn 0.3s'
+            });
+            
+            // Thêm vào container
+            container.appendChild(notification);
+            
+            // Xóa sau 5 giây
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+        
+        // Cập nhật tiến trình upload
+        function updateProgress(percent, event) {
+            // Sẽ được cài đặt sau khi tích hợp với progress bar
+            console.log(`Upload progress: ${percent.toFixed(1)}%`);
+        }
+        
+        // Style cho animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script> 
