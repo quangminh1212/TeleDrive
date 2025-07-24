@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 TeleDrive - Entry Point
-Điểm khởi đầu cho ứng dụng TeleDrive
+
+Điểm khởi đầu cho ứng dụng TeleDrive sử dụng application factory pattern.
 """
 
 import sys
@@ -77,6 +78,8 @@ warnings.filterwarnings("ignore")
 parser = argparse.ArgumentParser(description="TeleDrive Application Runner")
 parser.add_argument("--detached", action="store_true", help="Chạy trong tiến trình riêng (tránh bị treo)")
 parser.add_argument("--no-detach", action="store_true", help="Buộc chạy trong tiến trình hiện tại")
+parser.add_argument("--env", choices=["development", "production", "testing"], default="development", help="Môi trường chạy ứng dụng")
+parser.add_argument("--port", type=int, default=3000, help="Port để chạy ứng dụng")
 args = parser.parse_args()
 
 # Nếu được chỉ định chạy detached và không có cờ no-detach
@@ -84,7 +87,10 @@ if args.detached and not args.no_detach:
     run_detached()
     sys.exit(0)
 
-# Sửa database trước khi import app
+# Thiết lập biến môi trường trước khi import
+os.environ['FLASK_ENV'] = args.env
+os.environ['DEV_MODE'] = 'true' if args.env == 'development' else 'false'
+
 print("[INFO] Checking database...")
 
 # Tạo thư mục instance và đảm bảo database tồn tại
@@ -121,30 +127,25 @@ print("=" * 50)
 
 if __name__ == '__main__':
     try:
-        # Set environment variable for dev mode BEFORE importing
-        os.environ['DEV_MODE'] = 'true'
-
-        # Import app từ teledrive module
+        # Import app từ factory
         print("[INFO] Creating Flask app...")
-        
-        # Import app từ cấu trúc thư mục mới
-        from src.teledrive.app import app
-        print("[OK] Flask app created with routes")
+        from src.teledrive.factory import create_app
+        app = create_app()
+        print("[OK] Flask app created")
 
-        # Set Flask config
-        app.config['DEV_MODE'] = True
-
-        print("[INFO] Server starting at: http://localhost:3000")
-        print("[INFO] Dev Mode: Enabled (no login required)")
-        print("[INFO] User: Developer (admin)")
+        print(f"[INFO] Server starting at: http://localhost:{args.port}")
+        print(f"[INFO] Environment: {args.env}")
+        if args.env == 'development':
+            print("[INFO] Dev Mode: Enabled (no login required)")
+            print("[INFO] User: Developer (admin)")
         print("[INFO] Press Ctrl+C to stop")
         print("=" * 50)
 
         # Chạy server
         app.run(
             host='0.0.0.0',
-            port=3000,
-            debug=False,
+            port=args.port,
+            debug=(args.env == 'development'),
             threaded=True,
             use_reloader=False
         )
