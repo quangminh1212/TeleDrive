@@ -63,8 +63,14 @@ TeleDrive is a modern web application for managing and organizing files from Tel
 
 4. **Start the application**
    ```bash
-   # Run the application
+   # Run the application (mặc định chạy web interface)
    run.bat
+
+   # Các tùy chọn khác:
+   run.bat menu       # Hiển thị menu lựa chọn
+   run.bat auto-commit # Chạy với tự động commit
+   run.bat setup-git  # Thiết lập cấu hình Git
+   run.bat stop-commit # Dừng tự động commit
    ```
 
 5. **Access the application**
@@ -108,14 +114,13 @@ Edit `config/config.json` to customize your setup:
 
 ## 🔄 Auto Commit Feature
 
-TeleDrive includes an automatic Git commit feature that helps you track changes to your project. This feature is integrated into the main `run.bat` file and can be accessed through the menu options.
+TeleDrive includes an automatic Git commit feature that helps you track changes to your project. This feature is integrated into the main `run.bat` file and can be accessed through command line parameters or the menu option.
 
 To use the auto commit feature:
-1. Launch the application using `run.bat`
-2. Select option 2 to run TeleDrive with auto commit enabled
-3. Changes to your project will be automatically committed every minute if changes are detected
-4. Use option 3 to stop the auto commit process if needed
-5. Use option 4 to set up your Git user information
+1. Launch the application using `run.bat auto-commit` or run `run.bat menu` và chọn option 2
+2. Changes to your project will be automatically committed every minute if changes are detected
+3. Use `run.bat stop-commit` to stop the auto commit process if needed
+4. Use `run.bat setup-git` to set up your Git user information
 
 ## 🐳 Docker Deployment
 
@@ -184,6 +189,7 @@ TeleDrive/
 ├── 📁 templates/              # HTML templates
 ├── 📄 main.py                 # Entry point
 ├── 📄 AutoCommit.ps1          # Auto commit script
+├── 📄 run.bat                 # Main launcher script
 └── 📄 requirements.txt        # Dependencies
 ```
 
