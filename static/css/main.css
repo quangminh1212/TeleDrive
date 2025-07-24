@@ -5,17 +5,23 @@
  * Imports all component stylesheets and contains global styles.
  */
 
+/* Import Google Fonts - Inter is a modern, clean font with excellent readability */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 /* Import component styles */
 @import 'components/layout.css';
+@import 'components/typography.css';
+@import 'components/spacing.css';
 @import 'components/ui-elements.css';
 @import 'components/file-display.css';
+@import 'components/responsive.css';
+
+/* Import modern theme */
+@import 'modern-theme.css';
 
 /* Import existing styles for compatibility */
 @import 'gdrive.css';
 @import 'mobile.css';
-
-/* Custom fonts */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
 /* Reset */
 * {
@@ -28,7 +34,7 @@
 html, body {
     height: 100%;
     width: 100%;
-    font-family: 'Roboto', Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* Hide explorer old UI elements */
@@ -80,10 +86,10 @@ html, body {
 .text-center { text-align: center !important; }
 .text-start { text-align: left !important; }
 .text-end { text-align: right !important; }
-.text-primary { color: var(--gdrive-blue) !important; }
-.text-secondary { color: var(--gdrive-text-secondary) !important; }
+.text-primary { color: var(--primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
 
-.rounded { border-radius: var(--gdrive-radius) !important; }
-.border { border: 1px solid var(--gdrive-border) !important; }
-.shadow { box-shadow: var(--gdrive-shadow) !important; }
-.shadow-hover { box-shadow: var(--gdrive-shadow-hover) !important; } 
+.rounded { border-radius: var(--border-radius) !important; }
+.border { border: 1px solid var(--border) !important; }
+.shadow { box-shadow: var(--shadow) !important; }
+.shadow-hover { box-shadow: var(--shadow-md) !important; } 
