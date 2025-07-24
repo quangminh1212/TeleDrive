@@ -831,74 +831,6 @@ def api_files():
             'total': 0
         }), 500
 
-# Test route without auth
-@app.route('/api/test')
-def api_test():
-    """Test API route"""
-    return jsonify({'status': 'ok', 'message': 'API is working'})
-
-# Simple sessions test route
-@app.route('/api/sessions-test')
-def api_sessions_test():
-    """Test sessions route"""
-    return jsonify({'status': 'ok', 'message': 'Sessions API test working', 'sessions': []})
-
-# New sessions route with different name
-@app.route('/api/telegram-sessions')
-def api_telegram_sessions():
-    """Get Telegram sessions"""
-    return jsonify({'status': 'ok', 'sessions': [], 'message': 'Telegram sessions API working'})
-
-# Old sessions route removed - moved above
-
-# Simple HTML test route
-@app.route('/test')
-def test_simple():
-    """Simple test route"""
-    return '<h1>TeleDrive Test</h1><p>Server is working!</p>'
-
-# Test SQLAlchemy route
-@app.route('/test-db')
-def test_db():
-    """Test database connection"""
-    try:
-        # Test basic database connection
-        with app.app_context():
-            # Simple query to test connection using text()
-            from sqlalchemy import text
-            result = db.session.execute(text("SELECT 1")).fetchone()
-            return jsonify({
-                'status': 'OK',
-                'database': 'Connected',
-                'result': result[0] if result else None,
-                'uri': app.config.get('SQLALCHEMY_DATABASE_URI')
-            })
-    except Exception as e:
-        return jsonify({
-            'status': 'ERROR',
-            'error': str(e),
-            'uri': app.config.get('SQLALCHEMY_DATABASE_URI')
-        }), 500
-
-# Debug route for index
-@app.route('/debug')
-def debug_index():
-    """Debug route to test index functionality"""
-    try:
-        dev_mode = dev_mode_enabled()
-
-        # Không check database để tránh lỗi SQLAlchemy
-        return jsonify({
-            'dev_mode': dev_mode,
-            'config_dev_mode': app.config.get('DEV_MODE', False),
-            'env_dev_mode': os.getenv('DEV_MODE', 'not_set'),
-            'database_uri': app.config.get('SQLALCHEMY_DATABASE_URI', 'not_set'),
-            'db_initialized': hasattr(app, 'extensions') and 'sqlalchemy' in app.extensions,
-            'status': 'OK - Debug route working'
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/scans')
 @dev_login_required
 def get_scans():
@@ -942,10 +874,6 @@ def api_start_telegram_scan():
             'message': 'Failed to start Telegram scan'
         }), 500
 
-# Duplicate function removed - using the first one above
-
-
-
 @app.route('/api/files/<session_id>')
 @auth_required
 def get_session_files(session_id):
@@ -962,8 +890,6 @@ def get_session_files(session_id):
     except Exception as e:
         logger.error(f"Error in /api/files/{session_id}: {str(e)}", exc_info=True)
         return jsonify({'error': 'Internal server error', 'files': [], 'scan_info': {}}), 500
-
-
 
 @app.route('/api/stats/<session_id>')
 @auth_required

@@ -9,16 +9,16 @@ import sys
 import os
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+# Add root directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def create_logs_table():
     """Create logs table in database"""
     try:
         # Import after adding to path
-        from teledrive.app import app
-        from teledrive.database import db
-        from teledrive.models.logs import LogEntry
+        from src.teledrive.app import app
+        from src.teledrive.database import db
+        from src.teledrive.models.logs import LogEntry
 
         with app.app_context():
             print("🔄 Creating logs table...")

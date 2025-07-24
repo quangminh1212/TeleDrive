@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 TeleDrive - Entry Point
-Entry point cho TeleDrive Web Application
+Điểm khởi đầu cho ứng dụng TeleDrive
 """
 
 import sys
@@ -10,9 +10,10 @@ import os
 import logging
 import argparse
 import subprocess
+from pathlib import Path
 
 # Thêm thư mục src vào Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Hàm chạy TeleDrive trong tiến trình riêng biệt
 def run_detached():
@@ -85,7 +86,6 @@ if args.detached and not args.no_detach:
 
 # Sửa database trước khi import app
 print("[INFO] Checking database...")
-from pathlib import Path
 
 # Tạo thư mục instance và đảm bảo database tồn tại
 instance_dir = Path('instance')
@@ -126,20 +126,15 @@ if __name__ == '__main__':
 
         # Import app từ teledrive module
         print("[INFO] Creating Flask app...")
-
-        # Import trực tiếp để tránh conflict
-        import sys
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-
-        # Import app một cách cẩn thận
-        from teledrive.app import app
+        
+        # Import app từ cấu trúc thư mục mới
+        from src.teledrive.app import app
         print("[OK] Flask app created with routes")
 
         # Set Flask config
         app.config['DEV_MODE'] = True
 
         print("[INFO] Server starting at: http://localhost:3000")
-        print("[INFO] Port: 3000 (updated from 5000)")
         print("[INFO] Dev Mode: Enabled (no login required)")
         print("[INFO] User: Developer (admin)")
         print("[INFO] Press Ctrl+C to stop")
