@@ -1,202 +1,131 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-OTP Manager for Telegram Authentication
-Quản lý mã OTP cho xác thực qua Telegram
+OTP Manager Model
+
+Database model for OTP verification in TeleDrive.
 """
 
-import secrets
-import string
 from datetime import datetime, timedelta
-from typing import Optional, Tuple
-from flask_sqlalchemy import SQLAlchemy
+import random
+import re
 from ..database import db
 
-class OTPCode(db.Model):
-    """Model lưu trữ mã OTP tạm thời"""
+
+def validate_phone_number(phone_number):
+    """
+    Validate phone number format.
+    
+    Args:
+        phone_number: The phone number to validate
+        
+    Returns:
+        bool: True if the phone number is valid, False otherwise
+    """
+    # Kiểm tra định dạng cơ bản của số điện thoại
+    # Số điện thoại bắt đầu bằng + và theo sau là 7-15 chữ số
+    pattern = r'^\+[0-9]{7,15}$'
+    return bool(re.match(pattern, phone_number))
+
+
+class OTPManager(db.Model):
+    """
+    OTP Manager model for handling OTP verification.
+    """
     __tablename__ = 'otp_codes'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
-    phone_number = db.Column(db.String(20), nullable=False, index=True)
-    code = db.Column(db.String(6), nullable=False)
+    phone_number = db.Column(db.String(20), nullable=False)
+    otp_code = db.Column(db.String(6), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     expires_at = db.Column(db.DateTime, nullable=False)
-    is_used = db.Column(db.Boolean, default=False)
+    is_verified = db.Column(db.Boolean, default=False)
     attempts = db.Column(db.Integer, default=0)
     
-    def __init__(self, phone_number: str, code: str, expires_in_minutes: int = 5):
+    def __init__(self, phone_number):
+        """
+        Initialize a new OTP record.
+        
+        Args:
+            phone_number: User's phone number
+        """
         self.phone_number = phone_number
-        self.code = code
-        self.expires_at = datetime.utcnow() + timedelta(minutes=expires_in_minutes)
+        self.otp_code = self.generate_otp()
+        self.created_at = datetime.utcnow()
+        self.expires_at = self.created_at + timedelta(minutes=5)  # OTP hết hạn sau 5 phút
+        self.is_verified = False
+        self.attempts = 0
     
-    def is_expired(self) -> bool:
-        """Kiểm tra mã OTP đã hết hạn chưa"""
+    @staticmethod
+    def generate_otp():
+        """
+        Generate a 6-digit OTP code.
+        
+        Returns:
+            str: 6-digit OTP code
+        """
+        return str(random.randint(100000, 999999))
+    
+    def verify(self, code):
+        """
+        Verify the OTP code.
+        
+        Args:
+            code: The OTP code to verify
+            
+        Returns:
+            bool: True if verification is successful, False otherwise
+        """
+        self.attempts += 1
+        
+        # Kiểm tra OTP đã hết hạn chưa
+        if datetime.utcnow() > self.expires_at:
+            return False
+        
+        # Kiểm tra quá số lần thử
+        if self.attempts > 3:
+            return False
+        
+        # Kiểm tra OTP có đúng không
+        if self.otp_code == code:
+            self.is_verified = True
+            db.session.commit()
+            return True
+        
+        db.session.commit()
+        return False
+    
+    def is_expired(self):
+        """
+        Check if the OTP has expired.
+        
+        Returns:
+            bool: True if the OTP has expired, False otherwise
+        """
         return datetime.utcnow() > self.expires_at
     
-    def is_valid(self) -> bool:
-        """Kiểm tra mã OTP còn hợp lệ không"""
-        return not self.is_used and not self.is_expired() and self.attempts < 3
+    @classmethod
+    def get_active_otp(cls, phone_number):
+        """
+        Get active OTP for a phone number.
+        
+        Args:
+            phone_number: The phone number to get active OTP for
+            
+        Returns:
+            OTPManager: Active OTP record or None
+        """
+        return cls.query.filter_by(
+            phone_number=phone_number,
+            is_verified=False
+        ).order_by(cls.created_at.desc()).first()
     
-    def mark_used(self):
-        """Đánh dấu mã OTP đã được sử dụng"""
-        self.is_used = True
+    @classmethod
+    def cleanup_old_otps(cls):
+        """
+        Clean up old OTP records.
+        """
+        expired_time = datetime.utcnow() - timedelta(days=1)
+        cls.query.filter(cls.created_at < expired_time).delete()
         db.session.commit()
-    
-    def increment_attempts(self):
-        """Tăng số lần thử"""
-        self.attempts += 1
-        db.session.commit()
-
-class OTPManager:
-    """Quản lý mã OTP"""
-    
-    @staticmethod
-    def generate_otp_code(length: int = 6) -> str:
-        """Tạo mã OTP ngẫu nhiên"""
-        digits = string.digits
-        return ''.join(secrets.choice(digits) for _ in range(length))
-    
-    @staticmethod
-    def create_otp(phone_number: str, expires_in_minutes: int = 5) -> str:
-        """Tạo mã OTP mới cho số điện thoại"""
-        try:
-            # Xóa các mã OTP cũ chưa sử dụng của số này
-            OTPCode.query.filter_by(
-                phone_number=phone_number, 
-                is_used=False
-            ).delete()
-            
-            # Tạo mã OTP mới
-            code = OTPManager.generate_otp_code()
-            otp = OTPCode(phone_number, code, expires_in_minutes)
-            
-            db.session.add(otp)
-            db.session.commit()
-            
-            return code
-            
-        except Exception as e:
-            db.session.rollback()
-            raise Exception(f"Lỗi tạo mã OTP: {str(e)}")
-    
-    @staticmethod
-    def verify_otp(phone_number: str, code: str) -> Tuple[bool, str]:
-        """Xác thực mã OTP"""
-        try:
-            # Tìm mã OTP mới nhất chưa sử dụng
-            otp = OTPCode.query.filter_by(
-                phone_number=phone_number,
-                code=code,
-                is_used=False
-            ).order_by(OTPCode.created_at.desc()).first()
-            
-            if not otp:
-                return False, "Mã OTP không đúng"
-            
-            # Tăng số lần thử
-            otp.increment_attempts()
-            
-            if not otp.is_valid():
-                if otp.is_expired():
-                    return False, "Mã OTP đã hết hạn"
-                elif otp.attempts >= 3:
-                    return False, "Đã vượt quá số lần thử cho phép"
-                else:
-                    return False, "Mã OTP không hợp lệ"
-            
-            # Đánh dấu đã sử dụng
-            otp.mark_used()
-            return True, "Xác thực thành công"
-            
-        except Exception as e:
-            return False, f"Lỗi xác thực: {str(e)}"
-    
-    @staticmethod
-    def cleanup_expired_otps():
-        """Xóa các mã OTP đã hết hạn"""
-        try:
-            expired_count = OTPCode.query.filter(
-                OTPCode.expires_at < datetime.utcnow()
-            ).delete()
-            db.session.commit()
-            return expired_count
-        except Exception as e:
-            db.session.rollback()
-            raise Exception(f"Lỗi dọn dẹp OTP: {str(e)}")
-    
-    @staticmethod
-    def get_otp_stats(phone_number: str) -> dict:
-        """Lấy thống kê OTP cho số điện thoại"""
-        try:
-            total = OTPCode.query.filter_by(phone_number=phone_number).count()
-            used = OTPCode.query.filter_by(phone_number=phone_number, is_used=True).count()
-            expired = OTPCode.query.filter(
-                OTPCode.phone_number == phone_number,
-                OTPCode.expires_at < datetime.utcnow(),
-                OTPCode.is_used == False
-            ).count()
-            
-            return {
-                'total': total,
-                'used': used,
-                'expired': expired,
-                'pending': total - used - expired
-            }
-        except Exception as e:
-            return {'error': str(e)}
-
-def format_phone_number(phone: str) -> str:
-    """Chuẩn hóa số điện thoại"""
-    # Loại bỏ khoảng trắng và ký tự đặc biệt, giữ lại dấu +
-    phone = phone.strip()
-    
-    # Nếu đã có dấu + ở đầu, kiểm tra xem đã đúng format chưa
-    if phone.startswith('+'):
-        # Loại bỏ + và chỉ giữ lại số
-        digits_only = ''.join(filter(str.isdigit, phone[1:]))
-        
-        # Nếu đã có mã vùng 84, trả về luôn
-        if digits_only.startswith('84'):
-            return '+' + digits_only
-        # Nếu bắt đầu bằng 0, thay thế bằng 84
-        elif digits_only.startswith('0'):
-            return '+84' + digits_only[1:]
-        # Nếu không có mã vùng, thêm 84
-        else:
-            return '+84' + digits_only
-    else:
-        # Loại bỏ tất cả ký tự không phải số
-        digits_only = ''.join(filter(str.isdigit, phone))
-        
-        # Thêm mã quốc gia nếu chưa có
-        if digits_only.startswith('0'):
-            digits_only = '84' + digits_only[1:]
-        elif not digits_only.startswith('84'):
-            digits_only = '84' + digits_only
-        
-        return '+' + digits_only
-
-def validate_phone_number(phone: str) -> Tuple[bool, str]:
-    """Kiểm tra tính hợp lệ của số điện thoại"""
-    if not phone:
-        return False, "Vui lòng nhập số điện thoại"
-    
-    # Chuẩn hóa số điện thoại
-    formatted_phone = format_phone_number(phone)
-    
-    # Kiểm tra độ dài (số VN: +84xxxxxxxxx = 12 ký tự)
-    if len(formatted_phone) < 10 or len(formatted_phone) > 15:
-        return False, "Số điện thoại không hợp lệ"
-    
-    # Kiểm tra định dạng số VN
-    if formatted_phone.startswith('+84'):
-        phone_digits = formatted_phone[3:]  # Bỏ +84
-        if len(phone_digits) != 9:
-            return False, "Số điện thoại Việt Nam phải có 9 chữ số sau mã vùng"
-        
-        # Kiểm tra đầu số hợp lệ
-        valid_prefixes = ['3', '5', '7', '8', '9']
-        if phone_digits[0] not in valid_prefixes:
-            return False, "Đầu số điện thoại không hợp lệ"
-    
-    return True, formatted_phone
