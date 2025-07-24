@@ -73,6 +73,15 @@ class BaseConfig:
                 
         return flask_config
     
+    def is_production(self) -> bool:
+        """
+        Check if the application is running in production mode.
+        
+        Returns:
+            bool: True if in production mode, False otherwise
+        """
+        return os.getenv('FLASK_ENV', '').lower() == 'production' or not self.DEV_MODE
+    
     def validate(self) -> None:
         """
         Validate configuration.
