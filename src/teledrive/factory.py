@@ -14,19 +14,12 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 
 from . import __version__, TEMPLATE_DIR, STATIC_DIR
-from .database import db
+from .database import db, init_db
 from .auth import auth_manager
 
 
 def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
-    """Create and configure the Flask application.
-
-    Args:
-        test_config: Configuration dictionary for testing purposes
-
-    Returns:
-        A configured Flask application
-    """
+    """Create and configure the Flask application."""
     # Load environment variables
     load_dotenv()
 
@@ -53,12 +46,7 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
 
 
 def configure_app(app: Flask, test_config: Optional[Dict[str, Any]] = None) -> None:
-    """Configure application settings.
-    
-    Args:
-        app: Flask application instance
-        test_config: Configuration dictionary for testing purposes
-    """
+    """Configure application settings."""
     # Default configuration
     app.config.update(
         SECRET_KEY=os.getenv('SECRET_KEY', 'dev-key-insecure'),
@@ -91,13 +79,9 @@ def configure_app(app: Flask, test_config: Optional[Dict[str, Any]] = None) -> N
 
 
 def initialize_extensions(app: Flask) -> None:
-    """Initialize Flask extensions.
-    
-    Args:
-        app: Flask application instance
-    """
-    # Initialize database
-    db.init_app(app)
+    """Initialize Flask extensions."""
+    # Initialize database with improved init function
+    init_db(app)
     
     # Initialize auth manager
     auth_manager.init_app(app)
@@ -108,18 +92,10 @@ def initialize_extensions(app: Flask) -> None:
              supports_credentials=True)
     else:
         CORS(app)
-    
-    # Create tables within app context
-    with app.app_context():
-        db.create_all()
 
 
 def register_blueprints(app: Flask) -> None:
-    """Register Flask blueprints.
-    
-    Args:
-        app: Flask application instance
-    """
+    """Register Flask blueprints."""
     # Import blueprints
     from .api import api_bp
     from .admin import admin_bp
@@ -134,11 +110,7 @@ def register_blueprints(app: Flask) -> None:
 
 
 def register_error_handlers(app: Flask) -> None:
-    """Register error handlers.
-    
-    Args:
-        app: Flask application instance
-    """
+    """Register error handlers."""
     @app.errorhandler(404)
     def page_not_found(e):
         return {"error": "Resource not found"}, 404
