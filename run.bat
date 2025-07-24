@@ -9,6 +9,32 @@ echo                 TELEDRIVE WEB INTERFACE LAUNCHER
 echo ================================================================
 echo.
 
+REM Kiểm tra có tham số không
+if "%1"=="" (
+    REM Không có tham số, chạy mặc định ứng dụng web
+    goto :runApp
+) else (
+    REM Có tham số, xử lý theo tham số
+    if "%1"=="auto-commit" (
+        call :startAutoCommit
+        goto :runApp
+    )
+    if "%1"=="stop-commit" (
+        call :stopAutoCommit
+        exit /b 0
+    )
+    if "%1"=="setup-git" (
+        call :setupGit
+        exit /b 0
+    )
+    if "%1"=="menu" (
+        goto :showMenu
+    )
+)
+
+goto :runApp
+
+:showMenu
 REM Hiển thị menu lựa chọn
 echo Chọn chế độ khởi động:
 echo [1] Chạy TeleDrive
@@ -34,6 +60,7 @@ if "%option%"=="5" (
     exit /b 0
 )
 
+:runApp
 echo.
 echo [INFO] Khởi động web interface tại http://localhost:3000
 echo.
