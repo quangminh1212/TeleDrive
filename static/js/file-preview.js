@@ -18,6 +18,8 @@ class FilePreviewManager {
             modalContentSelector: '.gdrive-preview-content', // CSS selector cho phần nội dung preview
             maxTextPreviewSize: 500000,  // Kích thước tối đa cho preview văn bản (~500KB)
             maxImagePreviewSize: 10000000,  // Kích thước tối đa cho preview ảnh (~10MB)
+            maxVideoPreviewSize: 50000000,  // Kích thước tối đa cho preview video (~50MB)
+            requestTimeout: 30000,  // Timeout cho các request (30 giây)
             imageExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'],
             videoExtensions: ['mp4', 'webm', 'ogg', 'mov', 'avi'],
             audioExtensions: ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac'],
@@ -34,6 +36,7 @@ class FilePreviewManager {
         // State
         this.currentFile = null;
         this.modal = null;
+        this.abortControllers = new Map(); // Để hủy các request khi cần
         
         // Khởi tạo
         this.init();
@@ -181,10 +184,7 @@ class FilePreviewManager {
             contentContainer.innerHTML = '';
             
             // Hiển thị loading
-            const loading = document.createElement('div');
-            loading.className = 'gdrive-preview-loading';
-            loading.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            contentContainer.appendChild(loading);
+            this._showLoading(contentContainer);
         }
         
         // Hiển thị modal
@@ -278,13 +278,46 @@ class FilePreviewManager {
         // Xóa loading
         container.innerHTML = '';
         
+        // Hiển thị loading
+        this._showLoading(container);
+        
         // Lấy extension file
         const extension = this.getFileExtension(file.name).toLowerCase();
         
         try {
+            // Kiểm tra kích thước file nếu có
+            if (file.size) {
+                const maxSizeByType = {
+                    'text': this.config.maxTextPreviewSize,
+                    'image': this.config.maxImagePreviewSize,
+                    'video': this.config.maxVideoPreviewSize
+                };
+                
+                const fileType = this._getFileTypeFromExtension(extension);
+                const maxSize = maxSizeByType[fileType];
+                
+                if (maxSize && file.size > maxSize) {
+                    throw new Error(`File quá lớn để xem trước (${this.formatFileSize(file.size)}). Vui lòng tải xuống để xem.`);
+                }
+            }
+            
+            // Hủy các request trước đó nếu có
+            this._cancelPreviousRequests();
+            
+            // Tạo abort controller mới cho request hiện tại
+            const abortController = new AbortController();
+            this.abortControllers.set('currentPreview', abortController);
+            
+            // Đặt timeout cho request
+            const timeoutId = setTimeout(() => {
+                abortController.abort();
+                this._removeLoading(container);
+                this.renderErrorPreview(container, 'Tải nội dung quá thời gian. Vui lòng thử lại.');
+            }, this.config.requestTimeout);
+            
             // Chọn loại preview dựa vào extension
             if (this.config.imageExtensions.includes(extension)) {
-                await this.renderImagePreview(file, container);
+                await this.renderImagePreview(file, container, abortController.signal);
             } else if (this.config.videoExtensions.includes(extension)) {
                 this.renderVideoPreview(file, container);
             } else if (this.config.audioExtensions.includes(extension)) {
@@ -292,29 +325,97 @@ class FilePreviewManager {
             } else if (extension === 'pdf') {
                 this.renderPdfPreview(file, container);
             } else if (this.config.textExtensions.includes(extension)) {
-                await this.renderTextPreview(file, container);
+                await this.renderTextPreview(file, container, abortController.signal);
             } else if (this.config.documentExtensions.includes(extension)) {
                 this.renderDocumentPreview(file, container);
             } else {
                 this.renderUnsupportedPreview(file, container);
             }
+            
+            // Xóa timeout nếu thành công
+            clearTimeout(timeoutId);
+            
         } catch (error) {
             console.error('Error rendering preview:', error);
+            this._removeLoading(container);
             this.renderErrorPreview(container, error);
+        } finally {
+            // Xóa abort controller
+            this.abortControllers.delete('currentPreview');
         }
+    }
+    
+    /**
+     * Hiển thị loading trong container
+     * @param {HTMLElement} container - Container để hiển thị loading
+     */
+    _showLoading(container) {
+        if (!container) return;
+        
+        const loading = document.createElement('div');
+        loading.className = 'gdrive-preview-loading';
+        loading.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        container.appendChild(loading);
+    }
+    
+    /**
+     * Xóa loading khỏi container
+     * @param {HTMLElement} container - Container chứa loading
+     */
+    _removeLoading(container) {
+        if (!container) return;
+        
+        const loading = container.querySelector('.gdrive-preview-loading');
+        if (loading) {
+            loading.remove();
+        }
+    }
+    
+    /**
+     * Hủy các request đang chờ
+     */
+    _cancelPreviousRequests() {
+        for (const [key, controller] of this.abortControllers.entries()) {
+            controller.abort();
+            this.abortControllers.delete(key);
+        }
+    }
+    
+    /**
+     * Xác định loại file dựa trên extension
+     * @param {string} extension - Phần mở rộng của file
+     * @returns {string} - Loại file (text, image, video, audio, document, other)
+     */
+    _getFileTypeFromExtension(extension) {
+        if (this.config.textExtensions.includes(extension)) return 'text';
+        if (this.config.imageExtensions.includes(extension)) return 'image';
+        if (this.config.videoExtensions.includes(extension)) return 'video';
+        if (this.config.audioExtensions.includes(extension)) return 'audio';
+        if (this.config.documentExtensions.includes(extension)) return 'document';
+        return 'other';
     }
     
     /**
      * Render preview hình ảnh
      * @param {Object} file - Thông tin file
      * @param {HTMLElement} container - Container để render preview
+     * @param {AbortSignal} signal - Signal để hủy request khi cần
      */
-    async renderImagePreview(file, container) {
+    async renderImagePreview(file, container, signal) {
         try {
+            // Xóa loading hiện tại
+            this._removeLoading(container);
+            
             // Tạo element img
             const img = document.createElement('img');
             img.className = 'gdrive-preview-image';
             img.alt = file.name;
+            
+            // Thêm overlay loading mới
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'gdrive-preview-loading-overlay';
+            loadingOverlay.innerHTML = '<div class="gdrive-preview-loading-spinner"><i class="fas fa-spinner fa-spin"></i></div>';
+            container.appendChild(loadingOverlay);
             
             // Set src từ URL file hoặc blob
             const imgUrl = file.thumbnail_url || this.getFileApiUrl(file, 'serve');
@@ -324,18 +425,32 @@ class FilePreviewManager {
             
             // Thêm loading và error handling
             const loadPromise = new Promise((resolve, reject) => {
-                img.onload = () => resolve();
-                img.onerror = () => reject(new Error('Không thể tải hình ảnh'));
+                img.onload = () => {
+                    loadingOverlay.remove();
+                    resolve();
+                };
+                img.onerror = () => {
+                    loadingOverlay.remove();
+                    reject(new Error('Không thể tải hình ảnh'));
+                };
+                
+                // Hủy tải nếu có signal abort
+                if (signal) {
+                    signal.addEventListener('abort', () => {
+                        img.src = '';
+                        reject(new Error('Hủy tải hình ảnh'));
+                    });
+                }
             });
             
             img.src = imgUrl;
+            container.appendChild(img);
             
             // Đợi hình ảnh tải xong hoặc xảy ra lỗi
             await loadPromise;
-            
-            // Thêm vào container
-            container.appendChild(img);
         } catch (error) {
+            // Xóa tất cả nội dung và hiển thị lỗi
+            container.innerHTML = '';
             this.renderErrorPreview(container, error);
         }
     }
@@ -346,28 +461,62 @@ class FilePreviewManager {
      * @param {HTMLElement} container - Container để render preview
      */
     renderVideoPreview(file, container) {
-        // Tạo element video
-        const video = document.createElement('video');
-        video.className = 'gdrive-preview-video';
-        video.controls = true;
-        video.autoplay = false;
-        video.preload = 'auto';
+        // Xóa loading
+        this._removeLoading(container);
         
-        // Set source từ URL file
-        const videoUrl = this.getFileApiUrl(file, 'serve');
-        if (videoUrl) {
+        try {
+            // Tạo element video
+            const video = document.createElement('video');
+            video.className = 'gdrive-preview-video';
+            video.controls = true;
+            video.autoplay = false;
+            video.preload = 'metadata'; // Chỉ tải metadata trước
+            video.controlsList = 'nodownload'; // Ngăn download từ player
+            
+            // Thêm overlay loading
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'gdrive-preview-loading-overlay';
+            loadingOverlay.innerHTML = '<div class="gdrive-preview-loading-spinner"><i class="fas fa-spinner fa-spin"></i></div>';
+            container.appendChild(loadingOverlay);
+            
+            // Set source từ URL file
+            const videoUrl = this.getFileApiUrl(file, 'serve');
+            if (!videoUrl) {
+                throw new Error('Không thể tạo URL cho video');
+            }
+            
+            // Event listeners
+            video.addEventListener('canplay', () => {
+                loadingOverlay.remove();
+            });
+            
+            video.addEventListener('error', (e) => {
+                loadingOverlay.remove();
+                console.error('Video loading error:', e);
+                container.innerHTML = '';
+                this.renderErrorPreview(container, 'Không thể tải video. Có thể định dạng không được hỗ trợ hoặc file bị lỗi.');
+            });
+            
+            // Timeout nếu video không tải được
+            const timeout = setTimeout(() => {
+                if (video.readyState < 1) { // HAVE_NOTHING or loading very slowly
+                    loadingOverlay.remove();
+                    container.innerHTML = '';
+                    this.renderErrorPreview(container, 'Tải video quá thời gian. Có thể file quá lớn.');
+                }
+            }, 10000); // 10 seconds timeout
+            
+            video.addEventListener('loadedmetadata', () => {
+                clearTimeout(timeout);
+            });
+            
+            // Thêm source và set video
             video.src = videoUrl;
-        } else {
-            this.renderErrorPreview(container, 'Không thể tạo URL cho video');
-            return;
+            container.appendChild(video);
+        } catch (error) {
+            container.innerHTML = '';
+            this.renderErrorPreview(container, error);
         }
-        
-        // Error handling
-        video.addEventListener('error', () => {
-            this.renderErrorPreview(container, 'Không thể tải video');
-        });
-        
-        container.appendChild(video);
     }
     
     /**
@@ -376,32 +525,63 @@ class FilePreviewManager {
      * @param {HTMLElement} container - Container để render preview
      */
     renderAudioPreview(file, container) {
-        // Tạo element audio
-        const audio = document.createElement('audio');
-        audio.className = 'gdrive-preview-audio';
-        audio.controls = true;
-        audio.autoplay = false;
+        // Xóa loading
+        this._removeLoading(container);
         
-        // Set source từ URL file
-        const audioUrl = this.getFileApiUrl(file, 'serve');
-        if (audioUrl) {
+        try {
+            // Tạo element audio
+            const audio = document.createElement('audio');
+            audio.className = 'gdrive-preview-audio';
+            audio.controls = true;
+            audio.autoplay = false;
+            audio.controlsList = 'nodownload'; // Ngăn download từ player
+            
+            // Set source từ URL file
+            const audioUrl = this.getFileApiUrl(file, 'serve');
+            if (!audioUrl) {
+                throw new Error('Không thể tạo URL cho file âm thanh');
+            }
+            
+            // Thêm overlay loading
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'gdrive-preview-loading-small';
+            loadingOverlay.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải âm thanh...';
+            
+            // Error handling
+            audio.addEventListener('error', (e) => {
+                console.error('Audio loading error:', e);
+                container.innerHTML = '';
+                this.renderErrorPreview(container, 'Không thể tải file âm thanh. Có thể định dạng không được hỗ trợ hoặc file bị lỗi.');
+            });
+            
+            audio.addEventListener('canplay', () => {
+                if (loadingOverlay.parentElement) {
+                    loadingOverlay.remove();
+                }
+            });
+            
             audio.src = audioUrl;
-        } else {
-            this.renderErrorPreview(container, 'Không thể tạo URL cho file âm thanh');
-            return;
+            
+            // Wrapper để căn giữa audio player
+            const audioWrapper = document.createElement('div');
+            audioWrapper.className = 'gdrive-preview-audio-wrapper';
+            audioWrapper.appendChild(loadingOverlay);
+            audioWrapper.appendChild(audio);
+            
+            // Thêm thông tin file
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'gdrive-preview-audio-info';
+            fileInfo.innerHTML = `
+                <div class="gdrive-preview-audio-title">${file.name || 'Không có tên'}</div>
+                <div class="gdrive-preview-audio-meta">${file.size_formatted || this.formatFileSize(file.size) || 'Không rõ kích thước'}</div>
+            `;
+            audioWrapper.appendChild(fileInfo);
+            
+            container.appendChild(audioWrapper);
+        } catch (error) {
+            container.innerHTML = '';
+            this.renderErrorPreview(container, error);
         }
-        
-        // Error handling
-        audio.addEventListener('error', () => {
-            this.renderErrorPreview(container, 'Không thể tải file âm thanh');
-        });
-        
-        // Wrapper để căn giữa audio player
-        const audioWrapper = document.createElement('div');
-        audioWrapper.className = 'gdrive-preview-audio-wrapper';
-        audioWrapper.appendChild(audio);
-        
-        container.appendChild(audioWrapper);
     }
     
     /**
@@ -437,8 +617,9 @@ class FilePreviewManager {
      * Render preview văn bản
      * @param {Object} file - Thông tin file
      * @param {HTMLElement} container - Container để render preview
+     * @param {AbortSignal} signal - Signal để hủy request khi cần
      */
-    async renderTextPreview(file, container) {
+    async renderTextPreview(file, container, signal) {
         try {
             // Tạo element pre và code
             const pre = document.createElement('pre');
@@ -457,7 +638,7 @@ class FilePreviewManager {
                 throw new Error('Không thể tạo URL cho file văn bản');
             }
             
-            const response = await fetch(textUrl);
+            const response = await fetch(textUrl, { signal });
             if (!response.ok) {
                 throw new Error(`Không thể tải nội dung file: ${response.status} ${response.statusText}`);
             }
@@ -469,16 +650,41 @@ class FilePreviewManager {
             }
             
             const text = await response.text();
-            code.textContent = text;
+            
+            // Nếu nội dung quá dài, cắt bớt
+            const maxChars = 100000; // ~100KB text
+            if (text.length > maxChars) {
+                code.textContent = text.substring(0, maxChars) + '\n\n/* Nội dung còn lại bị cắt bớt vì quá dài... */';
+                
+                // Thêm thông báo
+                const notice = document.createElement('div');
+                notice.className = 'gdrive-preview-text-notice';
+                notice.innerHTML = `
+                    <i class="fas fa-info-circle"></i> 
+                    File văn bản quá lớn, chỉ hiển thị ${this.formatFileSize(maxChars)} đầu tiên.
+                    <a href="${this.getFileApiUrl(file, 'download')}" download="${file.name}">Tải xuống</a> để xem đầy đủ.
+                `;
+                container.appendChild(notice);
+            } else {
+                code.textContent = text;
+            }
+            
+            // Xóa loading
+            this._removeLoading(container);
             
             pre.appendChild(code);
             container.appendChild(pre);
             
             // Apply syntax highlighting nếu có thể
             if (window.hljs) {
-                window.hljs.highlightElement(code);
+                try {
+                    window.hljs.highlightElement(code);
+                } catch (e) {
+                    console.warn('Không thể highlight code:', e);
+                }
             }
         } catch (error) {
+            this._removeLoading(container);
             this.renderErrorPreview(container, error.message);
         }
     }
@@ -537,10 +743,21 @@ class FilePreviewManager {
             <div class="gdrive-preview-error-help">
                 Bạn có thể tải xuống để xem file này
             </div>
+            <button class="gdrive-btn-secondary gdrive-download-btn">
+                <i class="fas fa-download"></i> Tải xuống
+            </button>
         `;
         
         container.innerHTML = '';
         container.appendChild(errorDiv);
+        
+        // Add event listener cho nút tải xuống
+        const downloadBtn = errorDiv.querySelector('.gdrive-download-btn');
+        if (downloadBtn && this.currentFile) {
+            downloadBtn.addEventListener('click', () => {
+                this.downloadCurrentFile();
+            });
+        }
     }
     
     /**
@@ -797,41 +1014,63 @@ class FilePreviewManager {
                 background-color: #f5f5f5;
             }
             
-            .gdrive-preview-navigation {
+            /* Loading styles */
+            .gdrive-preview-loading {
                 display: flex;
-                gap: 16px;
+                align-items: center;
+                justify-content: center;
+                font-size: 32px;
+                color: #666;
+                height: 100%;
+                width: 100%;
             }
             
-            .gdrive-preview-navigation button {
-                width: 40px;
-                height: 40px;
+            .gdrive-preview-loading i {
+                animation: spin 1s linear infinite;
+            }
+            
+            .gdrive-preview-loading-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10;
+            }
+            
+            .gdrive-preview-loading-spinner {
+                width: 60px;
+                height: 60px;
+                background-color: white;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border: none;
-                background-color: #e0e0e0;
-                color: #333;
-                cursor: pointer;
-                transition: background-color 0.2s ease;
+                font-size: 24px;
+                color: #666;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             }
             
-            .gdrive-preview-navigation button:hover {
-                background-color: #d0d0d0;
+            .gdrive-preview-loading-spinner i {
+                animation: spin 1s linear infinite;
             }
             
-            /* Preview Types */
-            .gdrive-preview-image {
-                max-width: 100%;
-                max-height: 100%;
-                object-fit: contain;
+            .gdrive-preview-loading-small {
+                padding: 10px;
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+                border-radius: 4px;
+                margin-bottom: 10px;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
             }
             
-            .gdrive-preview-video {
-                max-width: 100%;
-                max-height: 100%;
-            }
-            
+            /* Audio player styles */
             .gdrive-preview-audio-wrapper {
                 width: 80%;
                 max-width: 500px;
@@ -839,19 +1078,34 @@ class FilePreviewManager {
                 border-radius: 8px;
                 padding: 16px;
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
             }
             
             .gdrive-preview-audio {
                 width: 100%;
+                margin-bottom: 16px;
             }
             
-            .gdrive-preview-pdf,
-            .gdrive-preview-document {
+            .gdrive-preview-audio-info {
                 width: 100%;
-                height: 100%;
-                border: none;
+                text-align: center;
             }
             
+            .gdrive-preview-audio-title {
+                font-weight: 500;
+                font-size: 16px;
+                margin-bottom: 4px;
+                word-break: break-word;
+            }
+            
+            .gdrive-preview-audio-meta {
+                font-size: 12px;
+                color: #666;
+            }
+            
+            /* Text preview styles */
             .gdrive-preview-text {
                 width: 100%;
                 height: 100%;
@@ -865,9 +1119,30 @@ class FilePreviewManager {
                 line-height: 1.5;
                 white-space: pre-wrap;
                 tab-size: 4;
+                margin: 0;
             }
             
-            /* Error and Loading States */
+            .gdrive-preview-text-notice {
+                background-color: #f8f9fa;
+                border-bottom: 1px solid #e0e0e0;
+                padding: 8px 16px;
+                position: sticky;
+                top: 0;
+                z-index: 5;
+                font-size: 12px;
+                color: #666;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .gdrive-preview-text-notice a {
+                color: #1a73e8;
+                text-decoration: none;
+                font-weight: 500;
+            }
+            
+            /* Error message styles */
             .gdrive-preview-error,
             .gdrive-preview-unsupported {
                 display: flex;
@@ -897,18 +1172,20 @@ class FilePreviewManager {
             .gdrive-preview-error-help {
                 font-size: 14px;
                 color: #666;
+                margin-bottom: 16px;
             }
             
-            .gdrive-preview-loading {
+            .gdrive-download-btn {
+                padding: 8px 16px;
+                border-radius: 4px;
+                background-color: #f1f3f4;
+                color: #1a73e8;
+                border: 1px solid #dadce0;
+                cursor: pointer;
+                font-size: 14px;
                 display: flex;
                 align-items: center;
-                justify-content: center;
-                font-size: 32px;
-                color: #666;
-            }
-            
-            .gdrive-preview-loading i {
-                animation: spin 1s linear infinite;
+                gap: 8px;
             }
             
             @keyframes spin {

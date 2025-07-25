@@ -137,88 +137,156 @@ class FileSystemManager:
         """Browse directory contents with pagination and sorting"""
         try:
             dir_path = self._validate_path(directory_path)
+            
+            # Validate parameters
+            page = max(1, page)  # Ensure page is at least 1
+            per_page = min(1000, max(10, per_page))  # Limit items per page (10-1000)
 
-            # Check cache first
+            # Check cache first using modified cache key that includes pagination
             cache_key = f"{str(dir_path)}_{sort_by}_{sort_order}"
             if use_cache and cache_key in self._cache:
-                cached_data, timestamp = self._cache[cache_key]
-                if (datetime.now() - timestamp).seconds < self._cache_timeout:
-                    # Use cached data for pagination
-                    items = cached_data
-                    total_items = len(items)
-                    start_idx = (page - 1) * per_page
-                    end_idx = start_idx + per_page
-                    paginated_items = items[start_idx:end_idx]
+                cached_data, timestamp, modified_time = self._cache[cache_key]
+                
+                # Check if cache is still valid (within timeout and directory hasn't been modified)
+                cache_valid = (datetime.now() - timestamp).seconds < self._cache_timeout
+                
+                # Also check if directory has been modified since caching
+                try:
+                    current_modified_time = dir_path.stat().st_mtime
+                    if cache_valid and current_modified_time <= modified_time:
+                        # Use cached data for pagination
+                        items = cached_data
+                        total_items = len(items)
+                        start_idx = (page - 1) * per_page
+                        end_idx = start_idx + per_page
+                        paginated_items = items[start_idx:end_idx]
 
-                    return {
-                        'success': True,
-                        'current_path': str(dir_path),
-                        'parent_path': str(dir_path.parent) if dir_path.parent != dir_path else None,
-                        'items': paginated_items,
-                        'pagination': {
-                            'page': page,
-                            'per_page': per_page,
-                            'total_items': total_items,
-                            'total_pages': (total_items + per_page - 1) // per_page,
-                            'has_next': end_idx < total_items,
-                            'has_prev': page > 1
-                        },
-                        'stats': {
-                            'total_items': total_items,
-                            'directories': sum(1 for item in items if item['is_directory']),
-                            'files': sum(1 for item in items if not item['is_directory']),
-                            'total_size': sum(item['size'] for item in items if not item['is_directory'])
+                        return {
+                            'success': True,
+                            'current_path': str(dir_path),
+                            'parent_path': str(dir_path.parent) if dir_path.parent != dir_path else None,
+                            'items': paginated_items,
+                            'pagination': {
+                                'page': page,
+                                'per_page': per_page,
+                                'total_items': total_items,
+                                'total_pages': (total_items + per_page - 1) // per_page,
+                                'has_next': end_idx < total_items,
+                                'has_prev': page > 1
+                            },
+                            'stats': {
+                                'total_items': total_items,
+                                'directories': sum(1 for item in items if item['is_directory']),
+                                'files': sum(1 for item in items if not item['is_directory']),
+                                'total_size': sum(item['size'] for item in items if not item['is_directory'])
+                            },
+                            'from_cache': True
                         }
-                    }
+                except (OSError, PermissionError):
+                    # If we can't stat the directory, proceed without cache
+                    pass
             
+            # Directory existence checks
             if not dir_path.exists():
                 raise FileNotFoundError(f"Directory not found: {directory_path}")
             
             if not dir_path.is_dir():
                 raise NotADirectoryError(f"Path is not a directory: {directory_path}")
             
-            # Get directory contents
+            # For large directories, use a more efficient approach
             items = []
+            
+            # Get directory contents with scandir (more efficient than iterdir)
+            # scandir provides a significant performance advantage by avoiding redundant stat calls
             try:
-                for item in dir_path.iterdir():
+                # Import os.scandir in function scope to ensure it's available
+                import os
+                from concurrent.futures import ThreadPoolExecutor
+                import threading
+                
+                # Record the directory's modified time for cache validation
+                dir_modified_time = dir_path.stat().st_mtime
+                
+                # Use a thread local storage for thread safety
+                thread_local = threading.local()
+                
+                def get_item_info(entry):
+                    """Process a single directory entry in a thread-safe manner"""
                     try:
-                        stat_info = item.stat()
-                        is_dir = item.is_dir()
+                        # Each item gets its own stat info
+                        is_dir = entry.is_dir()
+                        stat_info = entry.stat()
+                        path_obj = Path(entry.path)
                         
                         file_info = {
-                            'name': item.name,
-                            'path': str(item),
+                            'name': entry.name,
+                            'path': entry.path,
                             'is_directory': is_dir,
                             'size': 0 if is_dir else stat_info.st_size,
                             'size_formatted': '—' if is_dir else self._format_file_size(stat_info.st_size),
                             'modified': datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
                             'modified_formatted': datetime.fromtimestamp(stat_info.st_mtime).strftime('%d/%m/%Y %H:%M'),
-                            'file_type': 'folder' if is_dir else self._get_file_type(item),
-                            'icon': self._get_file_icon(self._get_file_type(item), is_dir),
-                            'permissions': self._get_file_permissions(item),
-                            'extension': '' if is_dir else item.suffix.lower()
+                            'file_type': 'folder' if is_dir else self._get_file_type(path_obj),
+                            'icon': self._get_file_icon(self._get_file_type(path_obj), is_dir),
+                            'permissions': self._get_file_permissions(path_obj),
+                            'extension': '' if is_dir else os.path.splitext(entry.name)[1].lower()
                         }
                         
                         # Add MIME type for files
                         if not is_dir:
-                            mime_type, _ = mimetypes.guess_type(str(item))
+                            mime_type, _ = mimetypes.guess_type(entry.path)
                             file_info['mime_type'] = mime_type or 'application/octet-stream'
                         
-                        items.append(file_info)
-                        
-                    except (PermissionError, OSError) as e:
+                        return file_info
+                    except (PermissionError, OSError):
                         # Skip files we can't access
-                        continue
+                        return None
+                
+                # First, count the entries quickly to determine if we should use threads
+                entry_count = sum(1 for _ in os.scandir(dir_path))
+                
+                # For directories with many entries, use parallelization
+                # Only use threads if there are enough entries to justify the overhead
+                if entry_count > 500:  # Adjust this threshold as needed
+                    with ThreadPoolExecutor(max_workers=min(32, os.cpu_count() * 4)) as executor:
+                        # Process entries in parallel
+                        futures = []
+                        for entry in os.scandir(dir_path):
+                            futures.append(executor.submit(get_item_info, entry))
                         
+                        # Collect results
+                        for future in futures:
+                            result = future.result()
+                            if result:  # Skip None results (permission errors)
+                                items.append(result)
+                else:
+                    # For smaller directories, avoid thread overhead
+                    for entry in os.scandir(dir_path):
+                        item_info = get_item_info(entry)
+                        if item_info:
+                            items.append(item_info)
+                
             except PermissionError:
                 raise PermissionError(f"Access denied to directory: {directory_path}")
             
-            # Sort items
+            # Sort items - optimize sorting for large datasets
             reverse = sort_order.lower() == 'desc'
             
+            # For name and type, we need case-insensitive sorting
             if sort_by == 'name':
                 # Sort directories first, then by name
-                items.sort(key=lambda x: (not x['is_directory'], x['name'].lower()), reverse=reverse)
+                if len(items) > 10000:  # Optimization for very large directories
+                    # Split directories and files, sort each separately, then combine
+                    directories = [item for item in items if item['is_directory']]
+                    files = [item for item in items if not item['is_directory']]
+                    
+                    directories.sort(key=lambda x: x['name'].lower(), reverse=reverse)
+                    files.sort(key=lambda x: x['name'].lower(), reverse=reverse)
+                    
+                    items = directories + files if not reverse else files + directories
+                else:
+                    # For smaller directories, the original approach works fine
+                    items.sort(key=lambda x: (not x['is_directory'], x['name'].lower()), reverse=reverse)
             elif sort_by == 'size':
                 items.sort(key=lambda x: (not x['is_directory'], x['size']), reverse=reverse)
             elif sort_by == 'modified':
@@ -226,15 +294,15 @@ class FileSystemManager:
             elif sort_by == 'type':
                 items.sort(key=lambda x: (not x['is_directory'], x['file_type'], x['name'].lower()), reverse=reverse)
             
-            # Cache the sorted items
+            # Cache the sorted items with the directory's modified time
             if use_cache:
-                self._cache[cache_key] = (items, datetime.now())
+                self._cache[cache_key] = (items, datetime.now(), dir_modified_time)
 
             # Pagination
             total_items = len(items)
             start_idx = (page - 1) * per_page
             end_idx = start_idx + per_page
-            paginated_items = items[start_idx:end_idx]
+            paginated_items = items[start_idx:end_idx] if start_idx < total_items else []
 
             # Get parent directory info
             parent_path = None
@@ -250,7 +318,7 @@ class FileSystemManager:
                     'page': page,
                     'per_page': per_page,
                     'total_items': total_items,
-                    'total_pages': (total_items + per_page - 1) // per_page,
+                    'total_pages': max(1, (total_items + per_page - 1) // per_page),
                     'has_next': end_idx < total_items,
                     'has_prev': page > 1
                 },
@@ -259,14 +327,17 @@ class FileSystemManager:
                     'directories': sum(1 for item in items if item['is_directory']),
                     'files': sum(1 for item in items if not item['is_directory']),
                     'total_size': sum(item['size'] for item in items if not item['is_directory'])
-                }
+                },
+                'from_cache': False
             }
             
         except Exception as e:
+            import traceback
             return {
                 'success': False,
                 'error': str(e),
-                'error_type': type(e).__name__
+                'error_type': type(e).__name__,
+                'traceback': traceback.format_exc() if os.environ.get('DEBUG') else None
             }
     
     def create_folder(self, parent_path: str, folder_name: str) -> Dict:
