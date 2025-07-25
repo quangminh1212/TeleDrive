@@ -175,7 +175,7 @@
     cursor: pointer;
     color: var(--gdrive-text-secondary);
     transition: var(--gdrive-transition);
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .header-action-btn:hover {
