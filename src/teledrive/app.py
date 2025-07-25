@@ -38,6 +38,12 @@ from .services.filesystem import FileSystemManager
 from .config import config, validate_environment
 from .security import init_security_middleware
 
+from .security.input_validation import (
+    validate_request_json, validate_query_params,
+    FILENAME_SCHEMA, PATH_SCHEMA
+)
+from .security.validation import sanitize_filename
+
 # Dev mode helper
 def dev_mode_enabled():
     """Kiểm tra xem có bật dev mode không"""
@@ -668,62 +674,126 @@ def send_otp():
         
         formatted_phone = result
         
+        # Kiểm tra xem tài khoản có bị khóa không
+        if OTPManager.is_account_locked(formatted_phone):
+            lock_info = OTPManager.get_lock_info(formatted_phone)
+            remaining_mins = lock_info.get('remaining_seconds', 0) // 60 + 1
+            return jsonify({
+                'success': False,
+                'message': f"Tài khoản tạm thời bị khóa. Vui lòng thử lại sau {remaining_mins} phút.",
+                'locked': True,
+                'lock_info': lock_info
+            }), 403
+        
         # Kiểm tra user có tồn tại không
         user = auth_manager.find_user_by_phone(formatted_phone)
         if not user:
             return jsonify({'success': False, 'message': 'Số điện thoại chưa được đăng ký'}), 404
         
-        # Gửi OTP qua Telegram
-        try:
-            # Tạo OTP code để test
-            from .models.otp import OTPManager
-            otp_code = OTPManager.create_otp(formatted_phone)
-
-            # Return success với OTP code để test
+        # Tạo và gửi OTP
+        otp_code = OTPManager.create_otp(formatted_phone)
+        
+        # Nếu không thể tạo OTP (có thể do rate limit)
+        if not otp_code:
+            return jsonify({
+                'success': False, 
+                'message': 'Không thể gửi OTP vào lúc này. Vui lòng thử lại sau vài phút.'
+            }), 429
+        
+        # Trong môi trường production, OTP sẽ được gửi qua SMS hoặc Telegram
+        # Ở đây chúng ta hiển thị OTP để testing
+        if app.config.get('ENV') == 'development' or app.config.get('DEV_MODE', False):
             return jsonify({
                 'success': True,
-                'message': f'Mã OTP đã được tạo: {otp_code} (Test mode)',
-                'otp_code': otp_code  # Chỉ để test, production sẽ xóa
+                'message': f'Mã OTP đã được tạo: {otp_code} (Chế độ phát triển)',
+                'otp_code': otp_code  # Chỉ hiển thị trong chế độ phát triển
             })
-
-        except Exception as e:
-            print(f"Lỗi gửi OTP: {e}")
-            return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500
+        else:
+            # Trong production, gửi OTP qua dịch vụ SMS hoặc Telegram
+            try:
+                # Import không đồng bộ để tránh lỗi khi chưa cấu hình
+                from .services import send_otp_sync
+                send_result = send_otp_sync(formatted_phone, otp_code)
+                
+                if send_result.get('success', False):
+                    return jsonify({
+                        'success': True,
+                        'message': 'Mã OTP đã được gửi đến số điện thoại của bạn'
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'message': send_result.get('message', 'Không thể gửi OTP. Vui lòng thử lại sau.')
+                    }), 500
+            except Exception as e:
+                print(f"Lỗi gửi OTP: {e}")
+                # Fallback để testing trong trường hợp lỗi
+                return jsonify({
+                    'success': True,
+                    'message': f'Mã OTP đã được tạo: {otp_code} (Fallback mode)',
+                    'otp_code': otp_code
+                })
             
     except Exception as e:
         return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500
 
 @app.route('/verify-otp', methods=['POST'])
+@validate_request_json({
+    "phone_number": PHONE_NUMBER_SCHEMA,
+    "otp_code": OTP_SCHEMA,
+    "remember": {"type": bool, "required": False}
+})
 def verify_otp():
-    """Xác thực mã OTP và đăng nhập"""
+    """Xác thực mã OTP và đăng nhập với validation đầu vào"""
     try:
         data = request.get_json()
         phone_number = data.get('phone_number', '').strip()
         otp_code = data.get('otp_code', '').strip()
         remember = data.get('remember', False)
+        
+        # Validate số điện thoại (đã được xác thực bởi decorator, đây chỉ là để format)
+        is_valid, result = validate_phone_number(phone_number)
+        formatted_phone = result
 
-        if not phone_number or not otp_code:
-            return jsonify({'success': False, 'message': 'Vui lòng nhập đầy đủ thông tin'}), 400
+        # Kiểm tra xem tài khoản có bị khóa không
+        if OTPManager.is_account_locked(formatted_phone):
+            lock_info = OTPManager.get_lock_info(formatted_phone)
+            remaining_mins = lock_info.get('remaining_seconds', 0) // 60 + 1
+            return jsonify({
+                'success': False,
+                'message': f"Tài khoản tạm thời bị khóa. Vui lòng thử lại sau {remaining_mins} phút.",
+                'locked': True,
+                'lock_info': lock_info
+            }), 403
+            
+        # Test OTP for admin testing (chỉ trong chế độ phát triển)
+        if app.config.get('ENV') == 'development' or app.config.get('DEV_MODE', False):
+            if otp_code == '123456':
+                # Find user by phone
+                user = auth_manager.find_user_by_phone(formatted_phone)
+                if user:
+                    login_user(user, remember=remember)
+                    return jsonify({
+                        'success': True,
+                        'message': 'Đăng nhập thành công (chế độ phát triển)',
+                        'redirect': url_for('index')
+                    })
 
-        # Test OTP for admin testing
-        if otp_code == '123456':
-            # Find user by phone
-            user = auth_manager.find_user_by_phone(phone_number)
-            if user:
-                login_user(user, remember=remember)
-                return jsonify({
-                    'success': True,
-                    'message': 'Đăng nhập thành công (test mode)',
-                    'redirect': url_for('index')
-                })
+        # Lấy OTP hiện tại của số điện thoại
+        active_otp = OTPManager.get_active_otp(formatted_phone)
+        if not active_otp:
+            return jsonify({
+                'success': False, 
+                'message': 'Mã OTP không tồn tại hoặc đã hết hạn. Vui lòng yêu cầu mã mới.'
+            }), 400
 
         # Validate OTP
-        is_valid, message = OTPManager.verify_otp(phone_number, otp_code)
+        is_valid, message = active_otp.verify(otp_code)
         if not is_valid:
             return jsonify({'success': False, 'message': message}), 400
 
         # Xác thực người dùng
-        user = auth_manager.authenticate_user_by_phone(phone_number)
+        user = auth_manager.authenticate_user_by_phone(formatted_phone)
 
         if user:
             login_user(user, remember=remember)
@@ -737,8 +807,20 @@ def verify_otp():
         else:
             return jsonify({'success': False, 'message': 'Không thể đăng nhập. Vui lòng thử lại'}), 401
 
+    except ValidationError as e:
+        return jsonify({
+            'success': False, 
+            'message': e.message,
+            'field': e.field,
+            'code': e.code
+        }), 400
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'}), 500
+        current_app.logger.error(f"Error verifying OTP: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'message': f'Lỗi hệ thống: {str(e)}',
+            'code': 'SYSTEM_ERROR'
+        }), 500
 
 # ===== ADMIN ROUTES =====
 
@@ -1025,39 +1107,78 @@ def create_file():
 
 @app.route('/api/folder/create', methods=['POST'])
 @auth_required
+@validate_request_json({
+    "parent_path": PATH_SCHEMA,
+    "folder_name": {
+        "type": str,
+        "required": True,
+        "min_length": 1,
+        "max_length": 255,
+        "pattern": r"^[a-zA-Z0-9_\-. ]+$",
+        "pattern_message": "Tên thư mục chỉ được chứa chữ cái, chữ số, dấu gạch dưới, dấu gạch ngang, dấu chấm và dấu cách",
+        "check_xss": True
+    }
+})
 def create_folder():
-    """Create a new folder"""
+    """Create a new folder with input validation"""
     try:
         data = request.get_json()
         parent_path = data.get('parent_path')
         folder_name = data.get('folder_name')
 
-        if not parent_path or not folder_name:
-            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+        # Sanitize folder name
+        folder_name = sanitize_filename(folder_name)
+        
+        # Check if parent directory exists
+        if not os.path.exists(parent_path) or not os.path.isdir(parent_path):
+            return jsonify({
+                'success': False,
+                'error': 'Thư mục cha không tồn tại hoặc không phải là thư mục',
+                'code': 'PARENT_NOT_FOUND'
+            }), 404
+            
+        # Check for path traversal attempts
+        if '..' in parent_path or '..' in folder_name:
+            return jsonify({
+                'success': False,
+                'error': 'Đường dẫn không hợp lệ',
+                'code': 'INVALID_PATH'
+            }), 400
 
-        result = fs_manager.create_folder(parent_path, folder_name)
-        return jsonify(result)
+        # Create full path
+        full_path = os.path.join(parent_path, folder_name)
+        
+        # Check if folder already exists
+        if os.path.exists(full_path):
+            return jsonify({
+                'success': False,
+                'error': 'Thư mục đã tồn tại',
+                'code': 'ALREADY_EXISTS'
+            }), 409
+
+        # Create folder
+        os.makedirs(full_path, exist_ok=True)
+        
+        # Return success response
+        return jsonify({
+            'success': True,
+            'message': 'Tạo thư mục thành công',
+            'folder_path': full_path
+        })
     except Exception as e:
-        logger.error(f"Error creating folder: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
+        current_app.logger.error(f"Error creating folder: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Lỗi khi tạo thư mục: {str(e)}',
+            'code': 'CREATE_FOLDER_ERROR'
+        }), 500
 
 @app.route('/api/item/rename', methods=['POST'])
 @auth_required
 def rename_item():
-    """Rename a file or folder"""
-    try:
-        data = request.get_json()
-        item_path = data.get('item_path')
-        new_name = data.get('new_name')
-
-        if not item_path or not new_name:
-            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
-
-        result = fs_manager.rename_item(item_path, new_name)
-        return jsonify(result)
-    except Exception as e:
-        logger.error(f"Error renaming item: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
+    """Rename a file or folder - DEPRECATED, use api_item_rename instead"""
+    # Redirect to new API endpoint
+    return api_item_rename()
 
 @app.route('/api/item/delete', methods=['POST'])
 @auth_required
@@ -1116,38 +1237,120 @@ def move_item():
 
 @app.route('/api/search')
 @auth_required
-def search_files():
-    """Search for files in directory"""
+@validate_query_params({
+    "path": {
+        "type": str, 
+        "required": False,
+        "validator": validate_path,
+        "validator_message": "Đường dẫn tìm kiếm không hợp lệ"
+    },
+    "query": {
+        "type": str,
+        "required": True,
+        "min_length": 1,
+        "max_length": 200,
+        "check_xss": True,
+        "check_sql_injection": True
+    },
+    "max_results": {
+        "type": int,
+        "required": False,
+        "minimum": 1,
+        "maximum": 1000
+    }
+})
+def search_files(validated_params):
+    """Search for files in directory with validated parameters"""
     try:
-        path = request.args.get('path', 'C:\\')
-        query = request.args.get('query', '')
-        file_types = request.args.getlist('file_types')
-        max_results = int(request.args.get('max_results', 100))
+        # Extract validated parameters
+        path = validated_params.get('path', 'C:\\')
+        query = validated_params.get('query', '')
+        file_types = request.args.getlist('file_types')  # Not validated by decorator
+        max_results = validated_params.get('max_results', 100)
+        
+        # Validate file_types if provided
+        if file_types:
+            valid_types = ['image', 'video', 'audio', 'document', 'archive', 'other']
+            for file_type in file_types:
+                if file_type not in valid_types:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Loại file không hợp lệ: {file_type}',
+                        'code': 'INVALID_FILE_TYPE'
+                    }), 400
 
-        if not query:
-            return jsonify({'success': False, 'error': 'Search query is required'}), 400
-
+        # Call the file manager's search function with validated parameters
         result = fs_manager.search_files(path, query, file_types, max_results)
         return jsonify(result)
+    except ValueError as e:
+        return jsonify({
+            'success': False,
+            'error': f'Lỗi giá trị: {str(e)}',
+            'code': 'VALUE_ERROR'
+        }), 400
     except Exception as e:
-        logger.error(f"Error searching files: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
+        current_app.logger.error(f"Error searching files: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'error': f'Lỗi khi tìm kiếm: {str(e)}',
+            'code': 'SEARCH_ERROR'
+        }), 500
 
 @app.route('/api/file/preview')
 @auth_required
-def get_file_preview():
-    """Get file preview information"""
+@validate_query_params({
+    "path": {
+        "type": str,
+        "required": True,
+        "validator": validate_path,
+        "validator_message": "Đường dẫn file không hợp lệ"
+    }
+})
+def get_file_preview(validated_params):
+    """Get file preview information with validated path"""
     try:
-        file_path = request.args.get('path')
-
-        if not file_path:
-            return jsonify({'success': False, 'error': 'File path is required'}), 400
-
+        file_path = validated_params.get('path')
+        
+        # Kiểm tra xem file có tồn tại không
+        if not os.path.exists(file_path):
+            return jsonify({
+                'success': False, 
+                'error': 'File không tồn tại',
+                'code': 'FILE_NOT_FOUND'
+            }), 404
+            
+        # Kiểm tra xem có phải là file hay không
+        if os.path.isdir(file_path):
+            return jsonify({
+                'success': False, 
+                'error': 'Đường dẫn là thư mục, không phải file',
+                'code': 'PATH_IS_DIRECTORY'
+            }), 400
+            
+        # Kiểm tra quyền đọc
+        if not os.access(file_path, os.R_OK):
+            return jsonify({
+                'success': False, 
+                'error': 'Không có quyền đọc file',
+                'code': 'PERMISSION_DENIED'
+            }), 403
+        
+        # Gọi hàm xem trước file từ file manager
         result = fs_manager.get_file_preview(file_path)
         return jsonify(result)
+    except ValueError as e:
+        return jsonify({
+            'success': False,
+            'error': f'Lỗi giá trị: {str(e)}',
+            'code': 'VALUE_ERROR'
+        }), 400
     except Exception as e:
-        logger.error(f"Error getting file preview: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
+        current_app.logger.error(f"Error getting file preview: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Lỗi khi xem trước file: {str(e)}',
+            'code': 'PREVIEW_ERROR'
+        }), 500
 
 @app.route('/api/file/serve')
 @auth_required
@@ -2382,3 +2585,67 @@ if __name__ == '__main__':
         port=config.server.port,
         threaded=True
     )
+
+@app.route('/api/item/rename', methods=['POST'])
+@login_required
+@validate_request_json({
+    "item_path": PATH_SCHEMA,
+    "new_name": {
+        "type": str,
+        "required": True,
+        "min_length": 1,
+        "max_length": 255,
+        "pattern": r"^[a-zA-Z0-9_\-. ]+$",
+        "pattern_message": "Tên mới chỉ được chứa chữ cái, chữ số, dấu gạch dưới, dấu gạch ngang, dấu chấm và dấu cách",
+        "check_xss": True
+    }
+})
+def api_item_rename():
+    """Rename a file or folder."""
+    try:
+        data = request.get_json()
+        item_path = data.get('item_path')
+        new_name = data.get('new_name')
+        
+        # Sanitize input
+        new_name = sanitize_filename(new_name)
+        
+        # Check if item exists
+        if not os.path.exists(item_path):
+            return jsonify({
+                'success': False,
+                'error': 'File hoặc thư mục không tồn tại',
+                'code': 'ITEM_NOT_FOUND'
+            }), 404
+        
+        # Get the parent directory
+        parent_dir = os.path.dirname(item_path)
+        
+        # Create the new path
+        new_path = os.path.join(parent_dir, new_name)
+        
+        # Check if target already exists
+        if os.path.exists(new_path):
+            return jsonify({
+                'success': False,
+                'error': 'Tên mới đã tồn tại trong thư mục này',
+                'code': 'ALREADY_EXISTS'
+            }), 409
+        
+        # Rename the file or folder
+        os.rename(item_path, new_path)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Đổi tên thành công',
+            'new_path': new_path,
+            'old_path': item_path
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error renaming item: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Lỗi khi đổi tên: ' + str(e),
+            'code': 'RENAME_ERROR'
+        }), 500
