@@ -75,12 +75,12 @@ def setup_content_security_policy(app: Flask) -> None:
         # Content Security Policy
         csp = {
             'default-src': ["'self'"],
-            'script-src': ["'self'"],
-            'style-src': ["'self'"],
-            'img-src': ["'self'", 'data:'],
-            'font-src': ["'self'"],
-            'connect-src': ["'self'"],
-            'frame-ancestors': ["'none'"],
+            'script-src': ["'self'", "cdnjs.cloudflare.com", "'unsafe-inline'", "'unsafe-eval'"],
+            'style-src': ["'self'", "cdnjs.cloudflare.com", "fonts.googleapis.com", "'unsafe-inline'"],
+            'img-src': ["'self'", 'data:', "*"],
+            'font-src': ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com"],
+            'connect-src': ["'self'", "*"],
+            'frame-ancestors': ["'self'"],
             'form-action': ["'self'"],
             'base-uri': ["'self'"],
             'object-src': ["'none'"]
@@ -89,7 +89,7 @@ def setup_content_security_policy(app: Flask) -> None:
         # Add unsafe-inline in development for easier debugging
         if app.debug or app.testing:
             csp['script-src'].append("'unsafe-inline'")
-            csp['style-src'].append("'unsafe-inline'")
+            csp['script-src'].append("'unsafe-eval'")
             
         # Build CSP header
         csp_header = '; '.join([f"{k} {' '.join(v)}" for k, v in csp.items()])
