@@ -16,7 +16,14 @@ from dotenv import load_dotenv
 from . import __version__, TEMPLATE_DIR, STATIC_DIR
 from .database import db, init_db
 from .auth import auth_manager
-from .security import init_security_middleware
+from .security import init_security_middleware, init_attack_prevention
+from .performance import memory_monitor_start
+from .performance.middleware import (
+    init_performance_middleware,
+    cache_control_middleware,
+    compression_middleware,
+    rate_limit_middleware
+)
 
 
 def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
@@ -42,6 +49,12 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
 
     # Register error handlers
     register_error_handlers(app)
+
+    # Initialize performance monitoring
+    initialize_performance_monitoring(app)
+    
+    # Initialize advanced security features
+    initialize_advanced_security(app)
     
     return app
 
@@ -80,6 +93,19 @@ def configure_app(app: Flask, test_config: Optional[Dict[str, Any]] = None) -> N
     
     app.config['SESSION_PERMANENT'] = True
     app.config['SESSION_USE_SIGNER'] = True
+    
+    # Performance configuration
+    app.config['COMPRESS_MIMETYPES'] = [
+        'text/html', 'text/css', 'text/xml', 'application/json',
+        'application/javascript', 'text/javascript'
+    ]
+    app.config['COMPRESS_LEVEL'] = 6
+    app.config['COMPRESS_MIN_SIZE'] = 500
+    
+    # Security configuration
+    app.config['ENABLE_ADVANCED_SECURITY'] = os.getenv('ENABLE_ADVANCED_SECURITY', 'true').lower() == 'true'
+    app.config['MAX_FAILED_LOGIN_ATTEMPTS'] = int(os.getenv('MAX_FAILED_LOGIN_ATTEMPTS', '5'))
+    app.config['LOGIN_LOCKOUT_DURATION'] = int(os.getenv('LOGIN_LOCKOUT_DURATION', '1800'))  # 30 minutes
     
     # Load test config if provided
     if test_config:
@@ -144,4 +170,41 @@ def register_error_handlers(app: Flask) -> None:
         
     @app.errorhandler(403)
     def forbidden(e):
-        return {"error": "Access forbidden."}, 403 
+        return {"error": "Access forbidden."}, 403
+
+
+def initialize_performance_monitoring(app: Flask) -> None:
+    """Initialize performance monitoring."""
+    # Initialize performance middleware for request tracking
+    init_performance_middleware(app)
+    
+    # Configure cache headers
+    cache_control_middleware(app, cache_timeout=3600)
+    
+    # Enable response compression
+    if os.getenv('ENABLE_COMPRESSION', 'true').lower() == 'true':
+        compression_middleware(app)
+    
+    # Configure rate limiting
+    if os.getenv('ENABLE_RATE_LIMIT', 'true').lower() == 'true':
+        limits = [
+            os.getenv('RATE_LIMIT_DEFAULT', '200 per day'),
+            os.getenv('RATE_LIMIT_HOURLY', '50 per hour')
+        ]
+        rate_limit_middleware(app, default_limits=limits)
+    
+    # Start memory monitoring in a background thread
+    if os.getenv('MONITOR_MEMORY', 'false').lower() == 'true':
+        memory_monitor_start()
+
+
+def initialize_advanced_security(app: Flask) -> None:
+    """Initialize advanced security features."""
+    # Skip in test mode
+    if app.testing:
+        return
+    
+    # Initialize attack prevention if enabled
+    if app.config.get('ENABLE_ADVANCED_SECURITY', True):
+        init_attack_prevention(app)
+        app.logger.info("Advanced security features enabled") 

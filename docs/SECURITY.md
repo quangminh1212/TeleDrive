@@ -16,8 +16,11 @@ TeleDrive implements multiple layers of security:
 ### 🔐 Authentication & Authorization
 - Secure session management
 - Role-based access control (RBAC)
-- Multi-factor authentication support
+- OTP-based authentication
 - Login attempt tracking and rate limiting
+- Brute force protection with exponential backoff
+- Account lockout after multiple failed attempts
+- IP blocking for suspicious activities
 
 ### 🛡️ Web Security
 - **OWASP Compliance**: Following OWASP Top 10 guidelines
@@ -25,12 +28,15 @@ TeleDrive implements multiple layers of security:
 - **XSS Prevention**: Input sanitization and output encoding
 - **Security Headers**: Comprehensive HTTP security headers
 - **Content Security Policy**: Strict CSP implementation
+- **Attack Pattern Detection**: Real-time detection of suspicious request patterns
+- **Request Flooding Prevention**: Protection against DoS attempts
 
 ### 🔒 Data Protection
 - **Input Validation**: Comprehensive input sanitization
 - **SQL Injection Prevention**: Parameterized queries
 - **File Upload Security**: Safe file handling and validation
 - **Path Traversal Protection**: Secure file path handling
+- **Sensitive Path Protection**: Blocking access to sensitive system paths
 
 ### 🚨 Security Headers Implemented
 - `Content-Security-Policy`
@@ -40,6 +46,25 @@ TeleDrive implements multiple layers of security:
 - `Strict-Transport-Security` (HTTPS)
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Permissions-Policy`
+- `X-Response-Time` (for performance monitoring)
+
+### 🔄 Real-time Security Monitoring
+- Request pattern analysis
+- Rate limiting by IP and endpoint
+- Suspicious activity logging
+- Automated IP blocking for detected attacks
+- Memory usage monitoring
+- Performance degradation alerts
+
+### 🛑 Attack Prevention
+The application includes an advanced attack prevention system with:
+- Directory traversal detection
+- SQL injection pattern detection
+- XSS attack pattern detection
+- Command injection prevention
+- Request flooding detection
+- Brute force protection
+- IP-based blocking with configurable durations
 
 ## Reporting a Vulnerability
 
@@ -86,6 +111,9 @@ export SECRET_KEY="your-strong-secret-key"
 export DATABASE_URL="postgresql://user:pass@localhost/db"
 export REDIS_URL="redis://localhost:6379"
 export FLASK_ENV="production"
+export ENABLE_ADVANCED_SECURITY="true"
+export MAX_FAILED_LOGIN_ATTEMPTS="5"
+export LOGIN_LOCKOUT_DURATION="1800"
 ```
 
 ### 📊 Security Monitoring
@@ -93,6 +121,20 @@ export FLASK_ENV="production"
 - Monitor failed login attempts
 - Set up alerts for suspicious activities
 - Regular security audits
+- Check request performance metrics
+
+### 🔐 Advanced Security Configuration
+New environment variables for enhanced security:
+```bash
+# Attack Prevention
+export ENABLE_ADVANCED_SECURITY="true"    # Enable advanced security features
+export MAX_FAILED_LOGIN_ATTEMPTS="5"      # Max failed attempts before lockout
+export LOGIN_LOCKOUT_DURATION="1800"      # Lockout duration in seconds (30 min)
+export ENABLE_RATE_LIMIT="true"           # Enable API rate limiting
+export RATE_LIMIT_DEFAULT="200 per day"   # Default rate limit
+export RATE_LIMIT_HOURLY="50 per hour"    # Hourly rate limit
+export MONITOR_MEMORY="true"              # Enable memory monitoring
+```
 
 ## Security Testing
 
