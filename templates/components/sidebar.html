@@ -1,4 +1,4 @@
-<!-- TeleDrive Sidebar Component -->
+<!-- TeleDrive Sidebar Component - Google Drive Style -->
 <div class="gdrive-sidebar" id="sidebar">
     <!-- Navigation -->
     <div class="gdrive-nav">
@@ -31,6 +31,13 @@
             <div class="gdrive-nav-label">Chia sẻ với tôi</div>
         </div>
         
+        <div class="gdrive-nav-item" data-action="scan">
+            <div class="gdrive-nav-icon">
+                <i class="fas fa-sync-alt"></i>
+            </div>
+            <div class="gdrive-nav-label">Quét Telegram</div>
+        </div>
+        
         <div class="gdrive-nav-divider"></div>
         
         <!-- File types section -->
@@ -38,28 +45,28 @@
         
         <div class="gdrive-nav-item {% if active_page == 'documents' %}active{% endif %}" data-action="documents">
             <div class="gdrive-nav-icon">
-                <i class="fas fa-file-alt"></i>
+                <i class="fas fa-file-alt" style="color: #4285f4;"></i>
             </div>
             <div class="gdrive-nav-label">Tài liệu</div>
         </div>
         
         <div class="gdrive-nav-item {% if active_page == 'images' %}active{% endif %}" data-action="images">
             <div class="gdrive-nav-icon">
-                <i class="fas fa-image"></i>
+                <i class="fas fa-image" style="color: #34a853;"></i>
             </div>
             <div class="gdrive-nav-label">Hình ảnh</div>
         </div>
         
         <div class="gdrive-nav-item {% if active_page == 'videos' %}active{% endif %}" data-action="videos">
             <div class="gdrive-nav-icon">
-                <i class="fas fa-video"></i>
+                <i class="fas fa-video" style="color: #ea4335;"></i>
             </div>
             <div class="gdrive-nav-label">Video</div>
         </div>
         
         <div class="gdrive-nav-item {% if active_page == 'audio' %}active{% endif %}" data-action="audio">
             <div class="gdrive-nav-icon">
-                <i class="fas fa-music"></i>
+                <i class="fas fa-music" style="color: #fbbc05;"></i>
             </div>
             <div class="gdrive-nav-label">Âm thanh</div>
         </div>
@@ -71,7 +78,7 @@
         
         <div class="gdrive-storage-info">
             <div class="gdrive-storage-progress">
-                <div class="gdrive-storage-bar" style="width: {{ storage_percent|default(25) }}%;"></div>
+                <div class="gdrive-storage-bar" style="width: {{ storage_percent|default(25) }}%; background-color: #4285f4;"></div>
             </div>
             <div class="gdrive-storage-text">
                 <span>{{ storage_used|default('2.5 GB') }} / {{ storage_total|default('10 GB') }}</span>
@@ -84,14 +91,7 @@
         <!-- Tools section -->
         <div class="gdrive-nav-heading">Công cụ</div>
         
-        <div class="gdrive-nav-item {% if active_page == 'scan' %}active{% endif %}" data-action="scan">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-search"></i>
-            </div>
-            <div class="gdrive-nav-label">Quét Telegram</div>
-        </div>
-        
-        <div class="gdrive-nav-item {% if active_page == 'settings' %}active{% endif %}" data-action="settings">
+        <div class="gdrive-nav-item" data-action="settings">
             <div class="gdrive-nav-icon">
                 <i class="fas fa-cog"></i>
             </div>
@@ -99,8 +99,8 @@
         </div>
         
         {% if current_user.is_authenticated and current_user.is_admin %}
-        <div class="gdrive-nav-item {% if active_page == 'admin' %}active{% endif %}" data-action="admin">
-            <div class="gdrive-nav-icon admin-icon">
+        <div class="gdrive-nav-item" data-action="admin">
+            <div class="gdrive-nav-icon">
                 <i class="fas fa-shield-alt"></i>
             </div>
             <div class="gdrive-nav-label">Quản trị</div>
@@ -109,53 +109,90 @@
     </div>
 </div>
 
-<!-- Mobile backdrop -->
+<!-- Mobile sidebar backdrop -->
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
 <style>
-    /* Sidebar enhanced styles */
+    /* Google Drive style sidebar enhancements */
+    .gdrive-sidebar {
+        background-color: white;
+        width: var(--sidebar-width);
+        height: calc(100vh - var(--header-height));
+        overflow-y: auto;
+        border-right: 1px solid var(--border);
+        padding: 12px 0;
+        flex-shrink: 0;
+        transition: transform 0.3s ease;
+    }
+    
     .gdrive-nav-item {
-        border-radius: 0 50px 50px 0;
-        margin: 2px 8px 2px 0;
-        padding: 8px 12px 8px 24px;
-        position: relative;
-        overflow: hidden;
+        display: flex;
+        align-items: center;
+        padding: 0 12px 0 24px;
+        height: 48px;
+        border-radius: 0 24px 24px 0;
+        margin-right: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .gdrive-nav-item:hover {
+        background-color: var(--bg-tertiary);
     }
     
     .gdrive-nav-item.active {
+        background-color: var(--primary-light);
         font-weight: 500;
     }
     
-    .gdrive-nav-item.active::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        height: 100%;
-        width: 4px;
-        background-color: var(--primary);
+    .gdrive-nav-icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        color: var(--text-secondary);
+    }
+    
+    .gdrive-nav-item.active .gdrive-nav-icon {
+        color: var(--primary);
+    }
+    
+    .gdrive-nav-label {
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .gdrive-nav-divider {
+        height: 1px;
+        background-color: var(--border);
+        margin: 12px 0;
     }
     
     .gdrive-nav-heading {
-        padding-left: 24px;
-        margin-bottom: 4px;
-        letter-spacing: 0.5px;
-        font-size: 0.7rem;
-        color: var(--text-tertiary);
+        padding: 0 24px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
     }
     
-    /* Storage section styles */
     .gdrive-storage-info {
         padding: 0 24px;
-        margin: 8px 0 16px;
+        margin-bottom: 8px;
     }
     
     .gdrive-storage-progress {
         height: 4px;
         background-color: var(--bg-tertiary);
-        border-radius: 2px;
-        overflow: hidden;
+        border-radius: 4px;
         margin-bottom: 8px;
+        overflow: hidden;
     }
     
     .gdrive-storage-bar {
@@ -166,8 +203,7 @@
     .gdrive-storage-text {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        font-size: 0.75rem;
+        font-size: 12px;
         color: var(--text-secondary);
     }
     
@@ -175,16 +211,10 @@
         color: var(--primary);
         text-decoration: none;
         font-weight: 500;
-        font-size: 0.75rem;
     }
     
     .gdrive-storage-upgrade:hover {
         text-decoration: underline;
-    }
-    
-    /* Admin icon styles */
-    .admin-icon {
-        color: #e11d48;
     }
     
     /* Mobile responsiveness */

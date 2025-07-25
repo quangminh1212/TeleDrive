@@ -1,19 +1,19 @@
-<!-- TeleDrive Header Component -->
+<!-- TeleDrive Header Component - Google Drive Style -->
 <div class="gdrive-header">
     <!-- Logo -->
     <div class="gdrive-logo">
         <span class="app-logo">
-            <i class="fas fa-cloud"></i>
+            <i class="fas fa-cloud" style="color: #4285f4;"></i>
         </span>
         <span class="gdrive-logo-text">TeleDrive</span>
     </div>
     
     <!-- Search -->
     <div class="gdrive-search-box">
-        <i class="fas fa-search"></i>
+        <i class="fas fa-search" style="color: #5f6368;"></i>
         <input type="text" class="gdrive-search-input" placeholder="Tìm kiếm trong TeleDrive" id="globalSearch">
         <button class="gdrive-search-options" title="Tùy chọn tìm kiếm">
-            <i class="fas fa-sliders-h"></i>
+            <i class="fas fa-sliders-h" style="color: #5f6368;"></i>
         </button>
     </div>
     
@@ -36,7 +36,7 @@
         
         <!-- User avatar dropdown -->
         <div class="user-dropdown">
-            <div class="user-avatar" id="userMenuToggle">
+            <div class="user-avatar" id="userMenuToggle" style="background-color: #4285f4;">
                 {{ current_user.username[0] if current_user.is_authenticated else 'G' }}
             </div>
             
@@ -44,7 +44,7 @@
             <div class="user-dropdown-menu" id="userDropdownMenu">
                 <!-- User info section -->
                 <div class="user-info">
-                    <div class="user-avatar user-avatar-lg">
+                    <div class="user-avatar user-avatar-lg" style="background-color: #4285f4;">
                         {{ current_user.username[0] if current_user.is_authenticated else 'G' }}
                     </div>
                     <div class="user-info-details">

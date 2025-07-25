@@ -5,6 +5,7 @@
 {% block head %}
 <!-- Custom page head content -->
 <meta name="description" content="TeleDrive - Quản lý file từ Telegram">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -12,17 +13,49 @@
 {% if not files or files|length == 0 %}
 <div class="gdrive-welcome">
     <div class="gdrive-welcome-icon">
-        <i class="fas fa-cloud-upload-alt fa-5x"></i>
+        <i class="fas fa-cloud-upload-alt fa-5x" style="color: #4285f4;"></i>
     </div>
     <h2>Chào mừng đến với TeleDrive!</h2>
-    <p>Bạn có thể tải lên file, quét file từ Telegram hoặc kéo thả file vào đây để bắt đầu.</p>
+    <p>Lưu trữ và quản lý file từ Telegram một cách dễ dàng. Bắt đầu bằng cách tải lên file hoặc quét từ Telegram.</p>
     <div class="gdrive-welcome-actions">
-        <button class="gdrive-btn-primary" id="uploadButtonHome">
+        <button class="gdrive-btn-primary" id="uploadButtonHome" style="background-color: #4285f4;">
             <i class="fas fa-upload"></i> Tải lên file
         </button>
         <button class="gdrive-btn-secondary" id="scanButtonHome">
             <i class="fas fa-search"></i> Quét Telegram
         </button>
+        <button class="gdrive-btn-secondary" id="createFolderButton">
+            <i class="fas fa-folder-plus"></i> Tạo thư mục
+        </button>
+    </div>
+    <div class="gdrive-welcome-tips" style="margin-top: 40px; text-align: center;">
+        <div class="gdrive-tip-heading" style="font-weight: 500; margin-bottom: 16px; color: #5f6368;">Bạn có thể:</div>
+        <div class="gdrive-tips-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; max-width: 800px; margin: 0 auto;">
+            <div class="gdrive-tip-item" style="text-align: center;">
+                <div class="gdrive-tip-icon" style="font-size: 24px; margin-bottom: 8px; color: #4285f4;">
+                    <i class="fas fa-file-upload"></i>
+                </div>
+                <div class="gdrive-tip-text" style="color: #5f6368; font-size: 14px;">
+                    Tải lên và lưu trữ file từ máy tính
+                </div>
+            </div>
+            <div class="gdrive-tip-item" style="text-align: center;">
+                <div class="gdrive-tip-icon" style="font-size: 24px; margin-bottom: 8px; color: #34a853;">
+                    <i class="fab fa-telegram"></i>
+                </div>
+                <div class="gdrive-tip-text" style="color: #5f6368; font-size: 14px;">
+                    Quét và quản lý file từ Telegram
+                </div>
+            </div>
+            <div class="gdrive-tip-item" style="text-align: center;">
+                <div class="gdrive-tip-icon" style="font-size: 24px; margin-bottom: 8px; color: #fbbc05;">
+                    <i class="fas fa-share-alt"></i>
+                </div>
+                <div class="gdrive-tip-text" style="color: #5f6368; font-size: 14px;">
+                    Chia sẻ file với người khác
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endif %}
@@ -42,6 +75,35 @@
         });
         document.getElementById('scanButtonHome')?.addEventListener('click', function() {
             document.getElementById('scanButton')?.click();
+        });
+        document.getElementById('createFolderButton')?.addEventListener('click', function() {
+            // Hiển thị dialog tạo thư mục
+            const folderName = prompt('Nhập tên thư mục mới:');
+            if (folderName) {
+                // Gửi request tạo thư mục
+                fetch('/api/folder/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        parent_path: '/',
+                        folder_name: folderName
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Không thể tạo thư mục: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Đã xảy ra lỗi khi tạo thư mục');
+                });
+            }
         });
     });
 </script>

@@ -1,41 +1,40 @@
 /**
- * TeleDrive Modern Theme
+ * TeleDrive Modern Theme - Google Drive Style
  * 
- * A minimalist, modern theme with reduced color palette
- * for a more elegant and professional appearance.
+ * A theme designed to closely mimic Google Drive's clean, modern interface
  */
 
 :root {
-  /* Main color palette - simplified and muted */
-  --primary: #4361ee; /* Primary blue - softer than original Google blue */
-  --primary-light: #edf2ff;
-  --primary-dark: #3a56d4;
-  --secondary: #94a3b8; /* Slate gray - neutral secondary color */
+  /* Google Drive color palette */
+  --primary: #4285f4; /* Google blue */
+  --primary-light: #e8f0fe;
+  --primary-dark: #3367d6;
+  --secondary: #5f6368; /* Google gray */
   
-  /* Text colors - softer contrast */
-  --text-primary: #1e293b; /* Dark slate for main text */
-  --text-secondary: #64748b; /* Medium slate for secondary text */
-  --text-tertiary: #94a3b8; /* Light slate for tertiary text */
+  /* Text colors - Google style */
+  --text-primary: #202124; /* Google's primary text */
+  --text-secondary: #5f6368; /* Google's secondary text */
+  --text-tertiary: #80868b; /* Google's tertiary text */
   --text-inverted: #ffffff; /* White text on dark backgrounds */
   
-  /* Background colors - minimal palette */
+  /* Background colors - Google style */
   --bg-main: #ffffff;
-  --bg-secondary: #f8fafc; /* Very light blue-gray */
-  --bg-tertiary: #f1f5f9; /* Light blue-gray for hover states */
-  --bg-sidebar: #f8fafc; /* Subtle background for sidebar */
+  --bg-secondary: #f8f9fa; /* Google's light gray background */
+  --bg-tertiary: #f1f3f4; /* Google's hover state background */
+  --bg-sidebar: #ffffff; /* White sidebar like Google Drive */
   
   /* Utility colors */
-  --success: #34d399; /* Softer green */
-  --warning: #fbbf24; /* Softer amber */
-  --danger: #f87171; /* Softer red */
-  --info: #60a5fa; /* Softer blue */
+  --success: #34a853; /* Google green */
+  --warning: #fbbc05; /* Google yellow */
+  --danger: #ea4335; /* Google red */
+  --info: #4285f4; /* Google blue */
   
-  /* Border and shadow */
-  --border: #e2e8f0; /* Light gray border */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  /* Border and shadow - Google style */
+  --border: #dadce0; /* Google's border color */
+  --shadow-sm: 0 1px 2px 0 rgba(60, 64, 67, 0.1);
+  --shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.1), 0 1px 2px -1px rgba(60, 64, 67, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(60, 64, 67, 0.1), 0 2px 4px -2px rgba(60, 64, 67, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(60, 64, 67, 0.1), 0 4px 6px -4px rgba(60, 64, 67, 0.1);
   
   /* Layout variables */
   --header-height: 64px;
@@ -44,36 +43,36 @@
   --border-radius-sm: 4px;
   --border-radius-lg: 12px;
   
-  /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+  /* Typography - Google fonts */
+  --font-sans: 'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-display: 'Google Sans', 'Product Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: 'Roboto Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark mode color palette */
+/* Dark mode color palette - Google Dark Theme */
 .dark-theme {
-  --primary: #60a5fa;
-  --primary-light: #1e3a8a;
-  --primary-dark: #93c5fd;
+  --primary: #8ab4f8; /* Google blue for dark mode */
+  --primary-light: #1a73e8;
+  --primary-dark: #aecbfa;
   
   /* Inverted text colors */
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  --text-inverted: #1e293b;
+  --text-primary: #e8eaed; /* Google dark mode text */
+  --text-secondary: #9aa0a6;
+  --text-tertiary: #80868b;
+  --text-inverted: #202124;
   
-  /* Dark backgrounds */
-  --bg-main: #0f172a; /* Dark blue-gray background */
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --bg-sidebar: #1e293b;
+  /* Dark backgrounds - Google style */
+  --bg-main: #202124; /* Google dark background */
+  --bg-secondary: #28292c;
+  --bg-tertiary: #3c4043;
+  --bg-sidebar: #202124;
   
   /* Border and shadow */
-  --border: #334155;
+  --border: #5f6368;
 }
 
 /* Base styles */
@@ -490,3 +489,43 @@ body {
 .h-full { height: 100%; }
 .relative { position: relative; }
 .absolute { position: absolute; } 
+
+/* Google Drive welcome section */
+.gdrive-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.gdrive-welcome-icon {
+  color: var(--primary);
+  margin-bottom: 1.5rem;
+}
+
+.gdrive-welcome h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.gdrive-welcome p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.gdrive-welcome-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+} 
