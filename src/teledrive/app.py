@@ -42,7 +42,7 @@ from .security.input_validation import (
     validate_request_json, validate_query_params,
     FILENAME_SCHEMA, PATH_SCHEMA, OTP_SCHEMA
 )
-from .security.validation import sanitize_filename
+from .security.validation import sanitize_filename, validate_path
 
 # Dev mode helper
 def dev_mode_enabled():

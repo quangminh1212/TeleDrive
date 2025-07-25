@@ -8,18 +8,41 @@
 {% endblock %}
 
 {% block content %}
-<!-- File display component already included in base.html -->
+<!-- File display component đã có sẵn, bổ sung thêm hướng dẫn nổi bật khi không có file -->
+{% if not files or files|length == 0 %}
+<div class="gdrive-welcome">
+    <div class="gdrive-welcome-icon">
+        <i class="fas fa-cloud-upload-alt fa-5x"></i>
+    </div>
+    <h2>Chào mừng đến với TeleDrive!</h2>
+    <p>Bạn có thể tải lên file, quét file từ Telegram hoặc kéo thả file vào đây để bắt đầu.</p>
+    <div class="gdrive-welcome-actions">
+        <button class="gdrive-btn-primary" id="uploadButtonHome">
+            <i class="fas fa-upload"></i> Tải lên file
+        </button>
+        <button class="gdrive-btn-secondary" id="scanButtonHome">
+            <i class="fas fa-search"></i> Quét Telegram
+        </button>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
     // Set active page for sidebar highlighting
     document.addEventListener('DOMContentLoaded', function() {
-        // Add "active" class to Home nav item
         const homeNavItem = document.querySelector('.gdrive-nav-item[data-action="home"]');
         if (homeNavItem) {
             homeNavItem.classList.add('active');
         }
+        // Sự kiện cho nút tải lên và quét Telegram ở trang chủ
+        document.getElementById('uploadButtonHome')?.addEventListener('click', function() {
+            document.getElementById('uploadButton')?.click();
+        });
+        document.getElementById('scanButtonHome')?.addEventListener('click', function() {
+            document.getElementById('scanButton')?.click();
+        });
     });
 </script>
 {% endblock %}
