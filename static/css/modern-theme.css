@@ -97,18 +97,19 @@ body {
   overflow: hidden;
 }
 
-/* Header styling */
+/* Cải thiện header và thanh công cụ */
 .gdrive-header {
-  height: var(--header-height);
-  display: flex;
-  align-items: center;
-  padding: 0 1rem;
-  background-color: var(--bg-main);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  transition: background-color var(--transition), border-color var(--transition);
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    background-color: var(--bg-main);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    transition: background-color var(--transition), border-color var(--transition);
+    box-shadow: var(--shadow-sm);
 }
 
 .gdrive-logo {
@@ -134,38 +135,41 @@ body {
   overflow: hidden;
 }
 
-/* Sidebar styling */
+/* Cải thiện giao diện sidebar */
 .gdrive-sidebar {
-  width: var(--sidebar-width);
-  background-color: var(--bg-sidebar);
-  border-right: 1px solid var(--border);
-  overflow-y: auto;
-  padding: 1rem 0;
-  height: calc(100vh - var(--header-height));
-  flex-shrink: 0;
-  transition: background-color var(--transition), border-color var(--transition), width var(--transition);
+    background-color: var(--bg-sidebar);
+    width: var(--sidebar-width);
+    height: calc(100vh - var(--header-height));
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    padding: 12px 0;
+    flex-shrink: 0;
+    transition: transform var(--transition), background-color var(--transition), border-color var(--transition), width var(--transition);
 }
 
 .gdrive-nav-item {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1.5rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  border-radius: 0 100px 100px 0;
-  margin-right: 0.75rem;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+    display: flex;
+    align-items: center;
+    padding: 0 12px 0 24px;
+    height: 48px;
+    border-radius: 0 24px 24px 0;
+    margin-right: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-bottom: 2px;
 }
 
 .gdrive-nav-item:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
+    background-color: var(--bg-tertiary);
 }
 
 .gdrive-nav-item.active {
-  background-color: var(--primary-light);
-  color: var(--primary);
-  font-weight: 500;
+    background-color: var(--primary-light);
+    font-weight: 500;
+}
+
+.gdrive-nav-item.active .gdrive-nav-icon {
+    color: var(--primary);
 }
 
 .gdrive-nav-icon {
@@ -201,23 +205,24 @@ body {
   margin-top: 0.5rem;
 }
 
-/* Search box */
+/* Cải thiện thanh tìm kiếm */
 .gdrive-search-box {
-  display: flex;
-  align-items: center;
-  background-color: var(--bg-secondary);
-  border-radius: 100px;
-  padding: 0.5rem 1rem;
-  margin: 0 1rem;
-  flex: 1;
-  max-width: 720px;
-  transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-secondary);
+    border-radius: 100px;
+    padding: 0.5rem 1rem;
+    margin: 0 1rem;
+    flex: 1;
+    max-width: 720px;
+    transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+    border: 1px solid transparent;
 }
 
 .gdrive-search-box:focus-within {
-  background-color: var(--bg-main);
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
+    background-color: var(--bg-main);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
 }
 
 .gdrive-search-input {
@@ -264,12 +269,16 @@ body {
   overflow: hidden;
 }
 
+/* Toolbar cải tiến */
 .gdrive-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    background-color: var(--bg-main);
+    border-bottom: 1px solid var(--border);
+    height: 64px;
+    box-shadow: var(--shadow-sm);
 }
 
 .gdrive-files-display {
@@ -285,32 +294,43 @@ body {
   grid-gap: 1rem;
 }
 
+/* Nâng cao chất lượng hiển thị của file card */
 .gdrive-file-card {
-  border-radius: var(--border-radius);
-  background-color: var(--bg-main);
-  border: 1px solid var(--border);
-  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-  overflow: hidden;
-  cursor: pointer;
-  position: relative;
+    border-radius: var(--border-radius);
+    background-color: var(--bg-main);
+    border: 1px solid var(--border);
+    transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 220px;
 }
 
 .gdrive-file-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-  border-color: var(--primary-light);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--primary-light);
+}
+
+.gdrive-file-card.selected {
+    border-color: var(--primary);
+    background-color: var(--selection-bg);
+    box-shadow: 0 0 0 2px var(--primary-light);
 }
 
 .gdrive-file-thumbnail {
-  width: 100%;
-  height: 140px;
-  background-color: var(--bg-tertiary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.5rem;
-  color: var(--text-secondary);
-  overflow: hidden;
+    width: 100%;
+    height: 140px;
+    background-color: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
 }
 
 .gdrive-file-thumbnail img {
@@ -320,16 +340,22 @@ body {
 }
 
 .gdrive-file-info {
-  padding: 0.75rem 1rem;
+    padding: 0.75rem 1rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: var(--bg-main);
 }
 
 .gdrive-file-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
 }
 
 .gdrive-file-meta {
@@ -339,29 +365,36 @@ body {
   color: var(--text-tertiary);
 }
 
-/* Empty state styling */
+/* Cải thiện hiển thị khi không có file */
 .gdrive-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 2rem;
-  text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+    text-align: center;
 }
 
 .gdrive-empty-icon {
-  font-size: 5rem;
-  margin-bottom: 1.5rem;
-  opacity: 0.5;
+    font-size: 5rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-tertiary);
+    opacity: 0.8;
 }
 
 .gdrive-empty-text {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 1rem;
-  max-width: 400px;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    max-width: 400px;
+}
+
+.gdrive-empty-subtext {
+    color: var(--text-tertiary);
+    margin-bottom: 1.5rem;
+    max-width: 400px;
 }
 
 /* Button styles */
@@ -380,27 +413,82 @@ body {
   gap: 0.5rem;
 }
 
+/* Nút hành động chính */
 .gdrive-btn-primary {
-  background-color: var(--primary);
-  color: var(--text-inverted);
+    background-color: var(--primary);
+    color: var(--text-inverted);
+    border: none;
+    border-radius: 24px;
+    height: 36px;
+    padding: 0 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
 }
 
 .gdrive-btn-primary:hover {
-  background-color: var(--primary-dark);
+    background-color: var(--primary-dark);
+    box-shadow: var(--shadow);
 }
 
+/* Nút hành động phụ */
 .gdrive-btn-secondary {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    height: 36px;
+    padding: 0 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
 .gdrive-btn-secondary:hover {
-  background-color: var(--border);
+    background-color: var(--bg-tertiary);
+    border-color: var(--text-secondary);
 }
 
 .gdrive-btn-sm {
   padding: 0.375rem 0.75rem;
   font-size: 0.75rem;
+}
+
+/* Cập nhật các border-radius cho các nút */
+.view-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: none;
+    border: none;
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid transparent;
+}
+
+.view-btn:hover {
+    background: var(--hover-overlay);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+.view-btn.active {
+    background: var(--primary-blue);
+    color: white;
+    box-shadow: var(--shadow);
 }
 
 /* Theme toggle - for dark mode */
@@ -528,4 +616,34 @@ body {
   gap: 1rem;
   flex-wrap: wrap;
   justify-content: center;
+} 
+
+/* Floating Action Button */
+.gdrive-fab {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background-color: var(--primary);
+    color: var(--text-inverted);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.gdrive-fab:hover {
+    box-shadow: 0 6px 16px rgba(60, 64, 67, 0.3);
+    transform: translateY(-2px);
+    background-color: var(--primary-dark);
+}
+
+.gdrive-fab-icon {
+    font-size: 24px;
 } 
