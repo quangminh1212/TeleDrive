@@ -1,0 +1,315 @@
+/**
+ * TeleDrive - Icon Alignment Fix
+ * Khắc phục vấn đề icon bị lệch trong các button
+ */
+
+/* Fix cho tất cả icon buttons */
+.gdrive-btn-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    color: var(--gdrive-text-secondary, #5f6368) !important;
+    transition: all 0.2s ease !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+}
+
+.gdrive-btn-icon:hover {
+    background-color: rgba(60, 64, 67, 0.08) !important;
+    color: var(--gdrive-text, #202124) !important;
+}
+
+.gdrive-btn-icon:focus {
+    outline: none !important;
+    background-color: rgba(60, 64, 67, 0.12) !important;
+}
+
+/* Fix cho icon trong view toggle */
+.gdrive-view-toggle .gdrive-btn-icon {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 4px !important;
+    font-size: 16px !important;
+}
+
+.gdrive-view-toggle .gdrive-btn-icon.active {
+    background-color: var(--gdrive-white, #ffffff) !important;
+    color: var(--gdrive-blue, #4285f4) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Fix cho FontAwesome icons */
+.gdrive-btn-icon i,
+.gdrive-btn-icon .fas,
+.gdrive-btn-icon .far,
+.gdrive-btn-icon .fab,
+.gdrive-btn-icon svg {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+}
+
+/* Fix cho FontAwesome SVG icons */
+.gdrive-btn-icon svg.svg-inline--fa {
+    vertical-align: baseline !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+/* Fix cho upload buttons */
+.gdrive-btn-primary,
+.gdrive-btn-secondary {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 8px 16px !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+    border: 1px solid transparent !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    box-sizing: border-box !important;
+    line-height: 1 !important;
+}
+
+.gdrive-btn-primary i,
+.gdrive-btn-secondary i,
+.gdrive-btn-primary svg,
+.gdrive-btn-secondary svg {
+    font-size: 14px !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+}
+
+/* Fix cho SVG trong primary/secondary buttons */
+.gdrive-btn-primary svg.svg-inline--fa,
+.gdrive-btn-secondary svg.svg-inline--fa {
+    width: 14px !important;
+    height: 14px !important;
+    vertical-align: baseline !important;
+    flex-shrink: 0 !important;
+}
+
+/* Fix cho upload zone icons */
+.gdrive-upload-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--gdrive-blue, #4285f4) !important;
+    margin-bottom: 24px !important;
+    opacity: 0.8 !important;
+}
+
+.gdrive-upload-icon svg {
+    width: 64px !important;
+    height: 64px !important;
+    display: block !important;
+}
+
+.gdrive-upload-icon i,
+.gdrive-upload-icon svg {
+    font-size: 64px !important;
+    line-height: 1 !important;
+}
+
+/* Fix cho SVG trong upload zone */
+.gdrive-upload-icon svg.svg-inline--fa {
+    width: 64px !important;
+    height: 64px !important;
+    vertical-align: baseline !important;
+}
+
+/* Fix cho empty state icons */
+.gdrive-empty-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 16px !important;
+}
+
+.gdrive-empty-icon i,
+.gdrive-empty-icon svg {
+    font-size: 48px !important;
+    color: var(--gdrive-text-secondary, #5f6368) !important;
+    line-height: 1 !important;
+}
+
+/* Fix cho SVG trong empty state */
+.gdrive-empty-icon svg.svg-inline--fa {
+    width: 48px !important;
+    height: 48px !important;
+    vertical-align: baseline !important;
+}
+
+/* Fix cho action buttons trong file cards */
+.gdrive-action-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    color: var(--gdrive-text-secondary, #5f6368) !important;
+    transition: all 0.2s ease !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+}
+
+.gdrive-action-btn:hover {
+    background-color: rgba(60, 64, 67, 0.08) !important;
+    color: var(--gdrive-text, #202124) !important;
+}
+
+.gdrive-action-btn i,
+.gdrive-action-btn svg {
+    line-height: 1 !important;
+    vertical-align: middle !important;
+}
+
+/* Fix cho SVG trong action buttons */
+.gdrive-action-btn svg.svg-inline--fa {
+    width: 14px !important;
+    height: 14px !important;
+    vertical-align: baseline !important;
+}
+
+/* Fix cho dropdown menu icons */
+.gdrive-dropdown-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 8px 16px !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.gdrive-dropdown-item i {
+    width: 16px !important;
+    height: 16px !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    flex-shrink: 0 !important;
+}
+
+/* Fix cho breadcrumb icons */
+.gdrive-breadcrumb-link i {
+    font-size: 16px !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+}
+
+/* Fix cho mobile responsive */
+@media (max-width: 768px) {
+    .gdrive-btn-icon {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 16px !important;
+    }
+    
+    .gdrive-view-toggle .gdrive-btn-icon {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 14px !important;
+    }
+    
+    .gdrive-action-btn {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 12px !important;
+    }
+}
+
+/* Fix cho FAB (Floating Action Button) */
+.gdrive-fab {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 28px !important;
+    background-color: var(--gdrive-blue, #4285f4) !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+    cursor: pointer !important;
+    z-index: 100 !important;
+    transition: all 0.2s ease !important;
+    border: none !important;
+    position: fixed !important;
+    bottom: 32px !important;
+    right: 32px !important;
+}
+
+.gdrive-fab:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4) !important;
+    transform: translateY(-2px) !important;
+    background-color: var(--gdrive-blue-hover, #3367d6) !important;
+}
+
+.gdrive-fab-icon,
+.gdrive-fab i {
+    font-size: 24px !important;
+    line-height: 1 !important;
+}
+
+/* Đảm bảo tất cả icons có baseline alignment */
+i.fas, i.far, i.fab, i.fal, i.fad,
+svg.svg-inline--fa {
+    vertical-align: baseline !important;
+    line-height: inherit !important;
+}
+
+/* Global fix cho tất cả FontAwesome SVG icons */
+svg.svg-inline--fa {
+    vertical-align: baseline !important;
+    display: inline-block !important;
+}
+
+/* Fix cho buttons chứa SVG icons */
+button svg.svg-inline--fa,
+.gdrive-btn svg.svg-inline--fa,
+.gdrive-btn-primary svg.svg-inline--fa,
+.gdrive-btn-secondary svg.svg-inline--fa,
+.gdrive-btn-icon svg.svg-inline--fa,
+.gdrive-action-btn svg.svg-inline--fa {
+    vertical-align: baseline !important;
+    margin: 0 !important;
+    position: relative !important;
+    top: 0 !important;
+    transform: none !important;
+}
+
+/* Đặc biệt fix cho primary/secondary buttons */
+.gdrive-btn-primary,
+.gdrive-btn-secondary {
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.gdrive-btn-primary svg.svg-inline--fa,
+.gdrive-btn-secondary svg.svg-inline--fa {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    position: static !important;
+}

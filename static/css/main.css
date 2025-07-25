@@ -23,6 +23,9 @@
 @import 'gdrive.css';
 @import 'mobile.css';
 
+/* Import icon fixes - must be last to override other styles */
+@import 'icon-fix.css';
+
 /* Reset */
 * {
     box-sizing: border-box;
