@@ -91,13 +91,20 @@
         <!-- Tools section -->
         <div class="gdrive-nav-heading">Công cụ</div>
         
+        <div class="gdrive-nav-item" data-action="stats">
+            <div class="gdrive-nav-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <div class="gdrive-nav-label">Thống kê</div>
+        </div>
+
         <div class="gdrive-nav-item" data-action="settings">
             <div class="gdrive-nav-icon">
                 <i class="fas fa-cog"></i>
             </div>
             <div class="gdrive-nav-label">Cài đặt</div>
         </div>
-        
+
         {% if current_user and current_user.is_authenticated and current_user.is_admin %}
         <div class="gdrive-nav-item" data-action="admin">
             <div class="gdrive-nav-icon">
@@ -302,6 +309,9 @@
                     break;
                 case 'scan':
                     window.location.href = '/scan';
+                    break;
+                case 'stats':
+                    window.location.href = '/stats';
                     break;
                 case 'settings':
                     window.location.href = '/settings';
