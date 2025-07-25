@@ -5,8 +5,8 @@
  * Imports all component stylesheets and contains global styles.
  */
 
-/* Import Google Fonts - Inter is a modern, clean font with excellent readability */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Import Google Fonts - Fonts sử dụng bởi Google Drive */
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap');
 
 /* Import component styles */
 @import 'components/layout.css';
@@ -37,7 +37,26 @@
 html, body {
     height: 100%;
     width: 100%;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+:root {
+    --gdrive-blue: #4285f4;
+    --gdrive-blue-hover: #3367d6;
+    --gdrive-red: #ea4335;
+    --gdrive-yellow: #fbbc05;
+    --gdrive-green: #34a853;
+    --gdrive-light-blue: #e8f0fe;
+    --gdrive-light-gray: #f8f9fa;
+    --gdrive-border: #dadce0;
+    --gdrive-text: #202124;
+    --gdrive-text-secondary: #5f6368;
+    --gdrive-white: #ffffff;
+    --gdrive-header-height: 64px;
+    --gdrive-sidebar-width: 256px;
+    --gdrive-transition: all 0.2s ease;
+    --gdrive-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --gdrive-shadow-md: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Hide explorer old UI elements */
@@ -89,10 +108,10 @@ html, body {
 .text-center { text-align: center !important; }
 .text-start { text-align: left !important; }
 .text-end { text-align: right !important; }
-.text-primary { color: var(--primary) !important; }
-.text-secondary { color: var(--text-secondary) !important; }
+.text-primary { color: var(--gdrive-blue) !important; }
+.text-secondary { color: var(--gdrive-text-secondary) !important; }
 
 .rounded { border-radius: var(--border-radius) !important; }
-.border { border: 1px solid var(--border) !important; }
-.shadow { box-shadow: var(--shadow) !important; }
-.shadow-hover { box-shadow: var(--shadow-md) !important; } 
+.border { border: 1px solid var(--gdrive-border) !important; }
+.shadow { box-shadow: var(--gdrive-shadow) !important; }
+.shadow-hover { box-shadow: var(--gdrive-shadow-md) !important; } 

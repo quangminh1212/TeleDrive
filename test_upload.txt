@@ -1,0 +1,2 @@
+Đây là file test để kiểm tra chức năng upload sau khi sửa lỗi TypeError.
+File này được tạo để đảm bảo rằng lỗi request.content_length đã được sửa thành công.

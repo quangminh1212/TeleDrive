@@ -206,19 +206,23 @@ def create_file():
 def upload_file():
     """
     Upload a file.
-    
+
     Returns:
         JSON response with file information
     """
+    current_app.logger.info("Upload request received")
+
     # Check if file is present in the request
     if 'file' not in request.files:
+        current_app.logger.error("No file in request")
         return jsonify({
             'success': False,
             'error': 'No file provided',
             'code': 'MISSING_FILE'
         }), 400
-    
+
     file = request.files['file']
+    current_app.logger.info(f"File received: {file.filename}")
     
     # Check if file has a name
     if file.filename == '':
@@ -250,7 +254,7 @@ def upload_file():
     
     # Check file size limit (10MB default)
     max_size = current_app.config.get('MAX_CONTENT_LENGTH', 10 * 1024 * 1024)
-    if request.content_length > max_size:
+    if request.content_length is not None and request.content_length > max_size:
         return jsonify({
             'success': False,
             'error': f'File exceeds maximum size ({max_size // (1024 * 1024)}MB)',
@@ -270,9 +274,11 @@ def upload_file():
         # Get path for the upload based on user and current date
         from flask_login import current_user
         user_id = getattr(current_user, 'id', 0) or 0
-        
+        current_app.logger.info(f"Upload attempt: user_id={user_id}, filename={secure_name}")
+
         # Get secure path for file upload
         upload_path = _get_upload_path(user_id, secure_name)
+        current_app.logger.info(f"Upload path: {upload_path}")
         
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(upload_path), exist_ok=True)

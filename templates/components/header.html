@@ -2,10 +2,17 @@
 <div class="gdrive-header">
     <!-- Logo -->
     <div class="gdrive-logo">
-        <span class="app-logo">
-            <i class="fas fa-cloud" style="color: #4285f4;"></i>
-        </span>
-        <span class="gdrive-logo-text">TeleDrive</span>
+        <a href="/" class="gdrive-logo-link">
+            <span class="app-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="gdrive-icon">
+                    <!-- Google Drive icon - triangle parts -->
+                    <path d="M8.34 15.5L3.67 7.33H13L17.66 15.5H8.34z" fill="#0066da"/>
+                    <path d="M17.67 15.5L22.33 7.33H13L8.34 15.5H17.67z" fill="#00ac47"/>
+                    <path d="M13 7.33l-4.66 8.17-4.67 8.17h9.33L17.67 15.5 13 7.33z" fill="#ea4335"/>
+                </svg>
+            </span>
+            <span class="gdrive-logo-text">TeleDrive</span>
+        </a>
     </div>
     
     <!-- Search -->
@@ -35,7 +42,7 @@
         </button>
 
         <!-- Apps menu button -->
-        <button class="header-action-btn" id="appsButton" title="Ứng dụng Google">
+        <button class="header-action-btn" id="appsButton" title="Ứng dụng">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M6,8c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM12,20c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM6,20c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM6,14c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM12,14c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM16,6c0,1.1 0.9,2 2,2s2,-0.9 2,-2 -0.9,-2 -2,-2 -2,0.9 -2,2zM12,8c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM18,14c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM18,20c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2z"/>
             </svg>
@@ -43,7 +50,7 @@
         
         <!-- User avatar dropdown -->
         <div class="user-dropdown">
-            <div class="user-avatar" id="userMenuToggle" style="background-color: #4285f4;">
+            <div class="user-avatar" id="userMenuToggle">
                 {{ current_user.username[0] if current_user and current_user.is_authenticated else 'D' }}
             </div>
             
@@ -51,7 +58,7 @@
             <div class="user-dropdown-menu" id="userDropdownMenu">
                 <!-- User info section -->
                 <div class="user-info">
-                    <div class="user-avatar user-avatar-lg" style="background-color: #4285f4;">
+                    <div class="user-avatar user-avatar-lg">
                         {{ current_user.username[0] if current_user and current_user.is_authenticated else 'D' }}
                     </div>
                     <div class="user-info-details">
@@ -109,20 +116,269 @@
 </div>
 
 <style>
-    /* Header specific styles - minimal overrides */
-    .gdrive-header .user-avatar {
+    /* Header styles giống Google Drive */
+    .gdrive-header {
+        height: var(--gdrive-header-height);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        background-color: var(--gdrive-white);
+        border-bottom: 1px solid var(--gdrive-border);
+        z-index: 100;
+        position: sticky;
+        top: 0;
+    }
+
+    .gdrive-logo {
+        display: flex;
+        align-items: center;
+        margin-right: 16px;
+    }
+    
+    .gdrive-logo-link {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .gdrive-logo-text {
+        font-family: 'Google Sans', 'Product Sans', sans-serif;
+        font-size: 22px;
+        font-weight: 500;
+        color: var(--gdrive-text);
+        margin-left: 8px;
+    }
+
+    .gdrive-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* Improved search box styling chính xác như Google Drive */
+    .gdrive-search-box {
+        flex: 1;
+        max-width: 720px;
+        height: 48px;
+        background-color: var(--gdrive-light-gray);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        margin: 0 16px;
+        transition: var(--gdrive-transition);
+        border: 1px solid transparent;
+    }
+
+    .gdrive-search-box:hover, 
+    .gdrive-search-box:focus-within {
+        background-color: var(--gdrive-white);
+        border-color: var(--gdrive-border);
+        box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.2), 0 1px 3px 1px rgba(60, 64, 67, 0.1);
+    }
+
+    .gdrive-search-box i {
+        color: var(--gdrive-text-secondary);
+        font-size: 18px;
+    }
+
+    .gdrive-search-input {
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--gdrive-text);
+        margin-left: 8px;
+        flex: 1;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    .gdrive-search-options {
+        background: none;
+        border: none;
+        cursor: pointer;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--gdrive-transition);
+    }
+
+    .gdrive-search-options:hover {
+        background-color: rgba(60, 64, 67, 0.08);
+    }
+
+    /* Header action buttons */
+    .user-menu {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .header-action-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--gdrive-text-secondary);
+        transition: var(--gdrive-transition);
+        font-size: 18px;
+    }
+
+    .header-action-btn:hover {
+        background-color: rgba(60, 64, 67, 0.08);
+        color: var(--gdrive-text);
+    }
+
+    /* Avatar styles */
+    .user-dropdown {
+        position: relative;
+    }
+
+    .user-avatar {
         width: 32px;
         height: 32px;
+        border-radius: 50%;
+        background-color: var(--gdrive-blue);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
         font-size: 14px;
+        font-weight: 500;
+        font-family: 'Google Sans', sans-serif;
+        transition: var(--gdrive-transition);
     }
 
-    /* Apps button special styling for Google dots icon */
-    .header-action-btn svg {
+    .user-avatar:hover {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .user-avatar-lg {
+        width: 80px;
+        height: 80px;
+        font-size: 32px;
+    }
+
+    /* User dropdown menu */
+    .user-dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background-color: var(--gdrive-white);
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        min-width: 320px;
+        z-index: 1000;
+        display: none;
+        overflow: hidden;
+        animation: fadeIn 0.15s ease-out;
+    }
+
+    .user-dropdown-menu.active {
+        display: block;
+    }
+
+    .user-info {
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border-bottom: 1px solid var(--gdrive-border);
+    }
+
+    .user-info-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-info-name {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--gdrive-text);
+        margin-bottom: 4px;
+        font-family: 'Google Sans', sans-serif;
+    }
+
+    .user-info-email {
+        font-size: 14px;
+        color: var(--gdrive-text-secondary);
+    }
+
+    .user-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 24px;
+        cursor: pointer;
+        transition: var(--gdrive-transition);
+        font-size: 14px;
+        color: var(--gdrive-text);
+    }
+
+    .user-dropdown-item:hover {
+        background-color: var(--gdrive-light-gray);
+    }
+
+    .user-dropdown-item i {
         width: 20px;
-        height: 20px;
+        font-size: 16px;
+        color: var(--gdrive-text-secondary);
     }
 
-    /* Notification badge for notifications button */
+    .user-dropdown-divider {
+        height: 1px;
+        background-color: var(--gdrive-border);
+        margin: 8px 0;
+    }
+
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+        .gdrive-search-box {
+            max-width: 250px;
+        }
+        
+        .gdrive-logo-text {
+            display: none;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .gdrive-search-box {
+            display: none;
+        }
+        
+        .user-dropdown-menu {
+            width: 100vw;
+            position: fixed;
+            top: var(--gdrive-header-height);
+            right: 0;
+            border-radius: 0;
+        }
+    }
+
+    /* Animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Special styling for notification badge */
     .header-action-btn#notificationsButton {
         position: relative;
     }
@@ -134,9 +390,9 @@
         right: 8px;
         width: 8px;
         height: 8px;
-        background-color: #ea4335;
+        background-color: var(--gdrive-red);
         border-radius: 50%;
-        display: none; /* Show when there are notifications */
+        display: none;
     }
 
     .header-action-btn#notificationsButton.has-notifications::after {
@@ -151,7 +407,8 @@
         const userDropdownMenu = document.getElementById('userDropdownMenu');
         
         if (userMenuToggle && userDropdownMenu) {
-            userMenuToggle.addEventListener('click', function() {
+            userMenuToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
                 userDropdownMenu.classList.toggle('active');
             });
             

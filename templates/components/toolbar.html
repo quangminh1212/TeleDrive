@@ -5,8 +5,8 @@
         <!-- Breadcrumbs -->
         <div class="gdrive-breadcrumbs" id="breadcrumbs">
             <div class="gdrive-breadcrumb-item">
-                <a href="/" title="Trang chủ" class="gdrive-breadcrumb-link">
-                    <i class="fas fa-home"></i>
+                <a href="/" title="TeleDrive của tôi" class="gdrive-breadcrumb-link">
+                    <i class="fas fa-hdd"></i>
                 </a>
             </div>
             {% if breadcrumbs %}
@@ -23,35 +23,59 @@
                 {% endfor %}
             {% else %}
                 <div class="gdrive-breadcrumb-item">
-                    <span class="gdrive-breadcrumb-current">Trang chủ</span>
+                    <span class="gdrive-breadcrumb-current">TeleDrive của tôi</span>
                 </div>
             {% endif %}
         </div>
     </div>
     
+    <!-- Middle section - Search in current folder -->
+    <div class="gdrive-toolbar-middle">
+        <div class="gdrive-folder-search">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Tìm kiếm trong thư mục này" id="folderSearch">
+        </div>
+    </div>
+    
     <!-- Right section - View controls and actions -->
     <div class="gdrive-toolbar-right">
+        <!-- Selection info -->
+        <div class="gdrive-selection-info" id="selectionInfo">
+            <span id="selectedCount">0 đã chọn</span>
+        </div>
+        
         <!-- Sort dropdown -->
         <div class="gdrive-dropdown" id="sortDropdown">
             <button class="gdrive-btn-icon" id="sortButton" title="Sắp xếp">
                 <i class="fas fa-sort-amount-down"></i>
             </button>
             <div class="gdrive-dropdown-menu" id="sortMenu">
+                <div class="gdrive-dropdown-header">Sắp xếp theo</div>
                 <div class="gdrive-dropdown-item" data-sort="name">
                     <i class="fas fa-font"></i>
                     <span>Tên</span>
+                    <i class="fas fa-check sort-active" data-sort-type="name"></i>
                 </div>
                 <div class="gdrive-dropdown-item" data-sort="modified">
                     <i class="fas fa-clock"></i>
                     <span>Ngày sửa đổi</span>
+                    <i class="fas fa-check sort-active" data-sort-type="modified"></i>
                 </div>
                 <div class="gdrive-dropdown-item" data-sort="size">
                     <i class="fas fa-weight-hanging"></i>
                     <span>Kích thước</span>
+                    <i class="fas fa-check sort-active" data-sort-type="size"></i>
                 </div>
-                <div class="gdrive-dropdown-item" data-sort="type">
-                    <i class="fas fa-file"></i>
-                    <span>Loại</span>
+                <div class="gdrive-dropdown-divider"></div>
+                <div class="gdrive-dropdown-item" data-sort-dir="asc">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>Tăng dần</span>
+                    <i class="fas fa-check sort-active" data-sort-dir="asc"></i>
+                </div>
+                <div class="gdrive-dropdown-item" data-sort-dir="desc">
+                    <i class="fas fa-arrow-down"></i>
+                    <span>Giảm dần</span>
+                    <i class="fas fa-check sort-active" data-sort-dir="desc"></i>
                 </div>
             </div>
         </div>
@@ -67,7 +91,7 @@
         </div>
         
         <!-- Info panel toggle -->
-        <button class="gdrive-btn-icon" id="infoPanelBtn" title="Bảng thông tin">
+        <button class="gdrive-btn-icon" id="infoPanelBtn" title="Hiện chi tiết">
             <i class="fas fa-info-circle"></i>
         </button>
         
@@ -94,13 +118,45 @@
                     <i class="fas fa-folder-plus"></i>
                     <span>Tạo thư mục mới</span>
                 </div>
+                <div class="gdrive-dropdown-divider"></div>
+                <div class="gdrive-dropdown-item" data-action="scan-telegram">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Quét từ Telegram</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Selection toolbar -->
+<div class="gdrive-selection-toolbar" id="selectionToolbar">
+    <div class="gdrive-selection-count">
+        <span id="selectionCounter">0 đã chọn</span>
+    </div>
+    <div class="gdrive-selection-actions">
+        <button class="gdrive-selection-btn" id="selectionDownloadBtn" title="Tải xuống">
+            <i class="fas fa-download"></i>
+        </button>
+        <button class="gdrive-selection-btn" id="selectionShareBtn" title="Chia sẻ">
+            <i class="fas fa-share-alt"></i>
+        </button>
+        <button class="gdrive-selection-btn" id="selectionTrashBtn" title="Xóa">
+            <i class="fas fa-trash"></i>
+        </button>
+        <button class="gdrive-selection-btn" id="selectionMoveBtn" title="Di chuyển tới">
+            <i class="fas fa-folder-open"></i>
+        </button>
+        <button class="gdrive-selection-btn" id="selectionMoreBtn" title="Thêm tùy chọn">
+            <i class="fas fa-ellipsis-v"></i>
+        </button>
+    </div>
+    <button class="gdrive-selection-close" id="clearSelectionBtn">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+
 <style>
-    /* Toolbar styles */
+    /* Toolbar styles - Google Drive 2023 version */
     .gdrive-toolbar {
         display: flex;
         align-items: center;
@@ -112,13 +168,20 @@
         position: sticky;
         top: var(--gdrive-header-height);
         z-index: 10;
+        gap: 16px;
     }
     
     .gdrive-toolbar-left {
         display: flex;
         align-items: center;
-        flex: 1;
         min-width: 0;
+    }
+    
+    .gdrive-toolbar-middle {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        max-width: 480px;
     }
     
     .gdrive-toolbar-right {
@@ -189,6 +252,53 @@
         color: var(--gdrive-text);
     }
     
+    /* Folder search */
+    .gdrive-folder-search {
+        display: flex;
+        align-items: center;
+        background-color: var(--gdrive-light-gray);
+        border-radius: 8px;
+        padding: 0 12px;
+        height: 36px;
+        width: 100%;
+        transition: var(--gdrive-transition);
+    }
+    
+    .gdrive-folder-search:hover,
+    .gdrive-folder-search:focus-within {
+        background-color: var(--gdrive-white);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .gdrive-folder-search i {
+        color: var(--gdrive-text-secondary);
+        font-size: 14px;
+        margin-right: 8px;
+    }
+    
+    .gdrive-folder-search input {
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--gdrive-text);
+        width: 100%;
+        font-family: 'Roboto', sans-serif;
+    }
+    
+    /* Selection info */
+    .gdrive-selection-info {
+        font-size: 14px;
+        color: var(--gdrive-text);
+        margin-right: 12px;
+        display: none;
+    }
+    
+    .gdrive-selection-info.active {
+        display: block;
+    }
+    
     /* Button icons */
     .gdrive-btn-icon {
         width: 40px;
@@ -255,15 +365,23 @@
         display: block;
     }
     
+    .gdrive-dropdown-header {
+        padding: 12px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gdrive-text);
+        border-bottom: 1px solid var(--gdrive-border);
+    }
+    
     .gdrive-dropdown-item {
         display: flex;
         align-items: center;
-        gap: 12px;
         padding: 12px 16px;
         cursor: pointer;
         transition: var(--gdrive-transition);
         font-size: 14px;
         color: var(--gdrive-text);
+        position: relative;
     }
     
     .gdrive-dropdown-item:hover {
@@ -276,16 +394,119 @@
         font-size: 14px;
     }
     
+    .gdrive-dropdown-item i:first-child {
+        margin-right: 12px;
+    }
+    
+    .gdrive-dropdown-item .sort-active {
+        position: absolute;
+        right: 16px;
+        color: var(--gdrive-blue);
+        display: none;
+    }
+    
+    .gdrive-dropdown-item .sort-active.show {
+        display: block;
+    }
+    
     .gdrive-dropdown-divider {
         height: 1px;
         background-color: var(--gdrive-border);
         margin: 4px 0;
     }
     
+    /* Selection toolbar */
+    .gdrive-selection-toolbar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background-color: var(--gdrive-white);
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .gdrive-selection-toolbar.active {
+        transform: translateY(0);
+    }
+    
+    .gdrive-selection-count {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gdrive-text);
+    }
+    
+    .gdrive-selection-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .gdrive-selection-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--gdrive-text-secondary);
+        transition: var(--gdrive-transition);
+    }
+    
+    .gdrive-selection-btn:hover {
+        background-color: rgba(60, 64, 67, 0.08);
+        color: var(--gdrive-text);
+    }
+    
+    .gdrive-selection-close {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--gdrive-text-secondary);
+        transition: var(--gdrive-transition);
+    }
+    
+    .gdrive-selection-close:hover {
+        background-color: rgba(60, 64, 67, 0.08);
+        color: var(--gdrive-text);
+    }
+    
+    /* Animations */
+    @keyframes dropdownFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
     /* Mobile responsiveness */
     @media (max-width: 768px) {
         .gdrive-toolbar {
-            padding: 8px 12px;
+            padding: 8px;
+            gap: 8px;
+        }
+        
+        .gdrive-toolbar-middle {
+            display: none;
         }
         
         .gdrive-breadcrumbs {
@@ -299,12 +520,48 @@
         .gdrive-toolbar-right {
             gap: 2px;
         }
+        
+        .gdrive-selection-toolbar {
+            height: 56px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .gdrive-breadcrumb-item:not(:last-child) {
+            display: none;
+        }
+        
+        .gdrive-selection-btn span {
+            display: none;
+        }
     }
 </style>
 
 <script>
     // Toolbar functionality
     document.addEventListener('DOMContentLoaded', function() {
+        // Current sort state
+        let sortState = {
+            type: 'name',
+            direction: 'asc'
+        };
+        
+        // Update sort indicators
+        function updateSortIndicators() {
+            document.querySelectorAll('.sort-active').forEach(el => {
+                el.classList.remove('show');
+            });
+            
+            const typeIndicator = document.querySelector(`.sort-active[data-sort-type="${sortState.type}"]`);
+            const dirIndicator = document.querySelector(`.sort-active[data-sort-dir="${sortState.direction}"]`);
+            
+            if (typeIndicator) typeIndicator.classList.add('show');
+            if (dirIndicator) dirIndicator.classList.add('show');
+        }
+        
+        // Initial sort indicators
+        updateSortIndicators();
+        
         // View toggle functionality
         const viewToggle = document.getElementById('viewToggle');
         const gridViewBtn = document.getElementById('gridViewBtn');
@@ -322,8 +579,21 @@
                     
                     // Trigger view change event
                     document.dispatchEvent(new CustomEvent('viewChanged', { detail: { view } }));
+                    
+                    // Save preference in localStorage
+                    localStorage.setItem('preferredView', view);
                 }
             });
+            
+            // Check for saved view preference
+            const savedView = localStorage.getItem('preferredView');
+            if (savedView) {
+                if (savedView === 'list' && listViewBtn) {
+                    gridViewBtn.classList.remove('active');
+                    listViewBtn.classList.add('active');
+                    document.dispatchEvent(new CustomEvent('viewChanged', { detail: { view: 'list' } }));
+                }
+            }
         }
         
         // Dropdown functionality
@@ -347,17 +617,84 @@
                 menu.addEventListener('click', function(e) {
                     const item = e.target.closest('.gdrive-dropdown-item');
                     if (item) {
-                        const action = item.dataset.sort || item.dataset.action;
+                        const sortType = item.dataset.sort;
+                        const sortDir = item.dataset.sortDir;
+                        const action = item.dataset.action;
                         
-                        // Trigger action event
-                        document.dispatchEvent(new CustomEvent('toolbarAction', { 
-                            detail: { action, type: dropdownId.replace('Dropdown', '') } 
-                        }));
+                        // Handle sort changes
+                        if (sortType) {
+                            sortState.type = sortType;
+                            updateSortIndicators();
+                            document.dispatchEvent(new CustomEvent('sortChanged', { 
+                                detail: { type: sortState.type, direction: sortState.direction } 
+                            }));
+                        } 
+                        else if (sortDir) {
+                            sortState.direction = sortDir;
+                            updateSortIndicators();
+                            document.dispatchEvent(new CustomEvent('sortChanged', { 
+                                detail: { type: sortState.type, direction: sortState.direction } 
+                            }));
+                        }
+                        // Handle other actions
+                        else if (action) {
+                            // Trigger action event
+                            document.dispatchEvent(new CustomEvent('toolbarAction', { 
+                                detail: { action } 
+                            }));
+                            
+                            // Handle specific actions
+                            if (action === 'select-all') {
+                                document.dispatchEvent(new CustomEvent('selectAllFiles'));
+                            } else if (action === 'refresh') {
+                                window.location.reload();
+                            } else if (action === 'upload') {
+                                document.getElementById('uploadButton')?.click();
+                            } else if (action === 'new-folder') {
+                                const folderName = prompt('Nhập tên thư mục mới:');
+                                if (folderName) {
+                                    createNewFolder(folderName);
+                                }
+                            } else if (action === 'scan-telegram') {
+                                document.getElementById('scanButton')?.click();
+                            }
+                        }
                         
                         menu.classList.remove('active');
                     }
                 });
             }
+        }
+        
+        // Create new folder function
+        function createNewFolder(folderName) {
+            // Get current path from URL or default to root
+            const pathMatch = window.location.pathname.match(/\/folder\/(.+)/);
+            const parentPath = pathMatch ? decodeURIComponent(pathMatch[1]) : '/';
+            
+            // Send folder creation request
+            fetch('/api/folder/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    parent_path: parentPath,
+                    folder_name: folderName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Không thể tạo thư mục: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi tạo thư mục');
+            });
         }
         
         // Setup dropdowns
@@ -369,6 +706,78 @@
         if (infoPanelBtn) {
             infoPanelBtn.addEventListener('click', function() {
                 document.dispatchEvent(new CustomEvent('toggleInfoPanel'));
+                // Toggle active state
+                infoPanelBtn.classList.toggle('active');
+            });
+        }
+        
+        // Selection toolbar functionality
+        const selectionToolbar = document.getElementById('selectionToolbar');
+        const selectionCounter = document.getElementById('selectionCounter');
+        const selectionInfo = document.getElementById('selectionInfo');
+        const selectedCount = document.getElementById('selectedCount');
+        const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+        
+        // Show selection toolbar when files are selected
+        document.addEventListener('selectionChanged', function(e) {
+            const count = e.detail.count;
+            
+            if (count > 0) {
+                selectionToolbar.classList.add('active');
+                selectionInfo.classList.add('active');
+                selectionCounter.textContent = `${count} đã chọn`;
+                selectedCount.textContent = `${count} đã chọn`;
+            } else {
+                selectionToolbar.classList.remove('active');
+                selectionInfo.classList.remove('active');
+            }
+        });
+        
+        // Clear selection button
+        if (clearSelectionBtn) {
+            clearSelectionBtn.addEventListener('click', function() {
+                document.dispatchEvent(new CustomEvent('clearSelection'));
+            });
+        }
+        
+        // Selection action buttons
+        const selectionDownloadBtn = document.getElementById('selectionDownloadBtn');
+        const selectionShareBtn = document.getElementById('selectionShareBtn');
+        const selectionTrashBtn = document.getElementById('selectionTrashBtn');
+        const selectionMoveBtn = document.getElementById('selectionMoveBtn');
+        
+        if (selectionDownloadBtn) {
+            selectionDownloadBtn.addEventListener('click', function() {
+                document.dispatchEvent(new CustomEvent('downloadSelected'));
+            });
+        }
+        
+        if (selectionShareBtn) {
+            selectionShareBtn.addEventListener('click', function() {
+                document.dispatchEvent(new CustomEvent('shareSelected'));
+            });
+        }
+        
+        if (selectionTrashBtn) {
+            selectionTrashBtn.addEventListener('click', function() {
+                document.dispatchEvent(new CustomEvent('trashSelected'));
+            });
+        }
+        
+        if (selectionMoveBtn) {
+            selectionMoveBtn.addEventListener('click', function() {
+                document.dispatchEvent(new CustomEvent('moveSelected'));
+            });
+        }
+        
+        // Folder search functionality
+        const folderSearch = document.getElementById('folderSearch');
+        if (folderSearch) {
+            folderSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                document.dispatchEvent(new CustomEvent('folderSearch', { 
+                    detail: { searchTerm } 
+                }));
             });
         }
         
