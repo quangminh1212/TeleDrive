@@ -40,7 +40,7 @@ from .security import init_security_middleware
 
 from .security.input_validation import (
     validate_request_json, validate_query_params,
-    FILENAME_SCHEMA, PATH_SCHEMA
+    FILENAME_SCHEMA, PATH_SCHEMA, OTP_SCHEMA
 )
 from .security.validation import sanitize_filename
 
