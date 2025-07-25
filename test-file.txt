@@ -1,0 +1,10 @@
+This is a test file for TeleDrive upload functionality.
+
+TeleDrive is a Google Drive-like file management system with:
+- Drag & drop upload
+- Progress tracking
+- File preview
+- Telegram integration
+- Modern UI/UX
+
+Test completed successfully!

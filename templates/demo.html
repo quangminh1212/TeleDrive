@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive Demo - File Grid</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/gdrive.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="gdrive-container">
+        <!-- Header -->
+        <header class="gdrive-header">
+            <div class="gdrive-header-left">
+                <div class="gdrive-logo">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive" onerror="this.style.display='none'">
+                    <span>TeleDrive</span>
+                </div>
+            </div>
+            <div class="gdrive-header-center">
+                <div class="gdrive-search">
+                    <input type="text" placeholder="Tìm kiếm trong TeleDrive">
+                    <button class="gdrive-search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="gdrive-header-right">
+                <button class="gdrive-header-btn">
+                    <i class="fas fa-th"></i>
+                </button>
+                <div class="gdrive-user-avatar">D</div>
+            </div>
+        </header>
+
+        <div class="gdrive-main">
+            <!-- Sidebar -->
+            <aside class="gdrive-sidebar">
+                <nav class="gdrive-nav">
+                    <div class="gdrive-nav-item active">
+                        <i class="fas fa-home"></i>
+                        <span>Trang chủ</span>
+                    </div>
+                    <div class="gdrive-nav-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Gần đây</span>
+                    </div>
+                    <div class="gdrive-nav-item">
+                        <i class="fas fa-star"></i>
+                        <span>Yêu thích</span>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main content -->
+            <main class="gdrive-content">
+                <!-- Toolbar -->
+                <div class="gdrive-toolbar">
+                    <div class="gdrive-toolbar-left">
+                        <button class="gdrive-btn-primary">
+                            <i class="fas fa-plus"></i> Tạo mới
+                        </button>
+                    </div>
+                    <div class="gdrive-toolbar-right">
+                        <button class="gdrive-view-btn active" data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="gdrive-view-btn" data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Files Grid -->
+                <div class="gdrive-files-display gdrive-grid-view">
+                    <!-- Folder -->
+                    <div class="gdrive-file-card" data-type="folder">
+                        <div class="gdrive-file-select">
+                            <div class="select-checkbox">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-thumbnail">
+                            <div class="gdrive-folder-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-info">
+                            <div class="gdrive-file-name">Tài liệu cá nhân</div>
+                            <div class="gdrive-file-meta">
+                                <span class="gdrive-file-date">12/05/2023</span>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-actions">
+                            <button class="gdrive-action-btn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PDF File -->
+                    <div class="gdrive-file-card" data-type="pdf">
+                        <div class="gdrive-file-select">
+                            <div class="select-checkbox">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-thumbnail">
+                            <div class="gdrive-file-icon">
+                                <i class="fas fa-file-pdf"></i>
+                            </div>
+                            <div class="gdrive-file-type-badge">PDF</div>
+                        </div>
+                        <div class="gdrive-file-info">
+                            <div class="gdrive-file-name">Báo cáo tài chính Q2 2023.pdf</div>
+                            <div class="gdrive-file-meta">
+                                <span class="gdrive-file-date">10/06/2023</span>
+                                <span class="gdrive-file-size">2.4 MB</span>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-actions">
+                            <button class="gdrive-action-btn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                        <div class="gdrive-file-shared">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+
+                    <!-- Word Document -->
+                    <div class="gdrive-file-card" data-type="doc">
+                        <div class="gdrive-file-select">
+                            <div class="select-checkbox">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-thumbnail">
+                            <div class="gdrive-file-icon">
+                                <i class="fas fa-file-word"></i>
+                            </div>
+                            <div class="gdrive-file-type-badge">DOC</div>
+                        </div>
+                        <div class="gdrive-file-info">
+                            <div class="gdrive-file-name">Kế hoạch dự án.docx</div>
+                            <div class="gdrive-file-meta">
+                                <span class="gdrive-file-date">15/05/2023</span>
+                                <span class="gdrive-file-size">1.2 MB</span>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-actions">
+                            <button class="gdrive-action-btn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                        <div class="gdrive-file-favorite">
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+
+                    <!-- Excel File -->
+                    <div class="gdrive-file-card" data-type="xls">
+                        <div class="gdrive-file-select">
+                            <div class="select-checkbox">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-thumbnail">
+                            <div class="gdrive-file-icon">
+                                <i class="fas fa-file-excel"></i>
+                            </div>
+                            <div class="gdrive-file-type-badge">XLS</div>
+                        </div>
+                        <div class="gdrive-file-info">
+                            <div class="gdrive-file-name">Dữ liệu phân tích.xlsx</div>
+                            <div class="gdrive-file-meta">
+                                <span class="gdrive-file-date">05/06/2023</span>
+                                <span class="gdrive-file-size">3.7 MB</span>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-actions">
+                            <button class="gdrive-action-btn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Image File -->
+                    <div class="gdrive-file-card" data-type="image">
+                        <div class="gdrive-file-select">
+                            <div class="select-checkbox">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-thumbnail">
+                            <div class="gdrive-image-thumbnail">
+                                <img src="{{ url_for('static', filename='images/placeholder.png') }}" 
+                                     alt="Logo công ty" 
+                                     onerror="this.parentElement.innerHTML='<i class=\'fas fa-image\'></i>';">
+                            </div>
+                            <div class="gdrive-file-type-badge">PNG</div>
+                        </div>
+                        <div class="gdrive-file-info">
+                            <div class="gdrive-file-name">Logo công ty.png</div>
+                            <div class="gdrive-file-meta">
+                                <span class="gdrive-file-date">01/06/2023</span>
+                                <span class="gdrive-file-size">542 KB</span>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-actions">
+                            <button class="gdrive-action-btn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                        <div class="gdrive-file-favorite">
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+
+                    <!-- Video File -->
+                    <div class="gdrive-file-card" data-type="video">
+                        <div class="gdrive-file-select">
+                            <div class="select-checkbox">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-thumbnail">
+                            <div class="gdrive-file-icon">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <div class="gdrive-file-type-badge">MP4</div>
+                        </div>
+                        <div class="gdrive-file-info">
+                            <div class="gdrive-file-name">Video hướng dẫn.mp4</div>
+                            <div class="gdrive-file-meta">
+                                <span class="gdrive-file-date">25/06/2023</span>
+                                <span class="gdrive-file-size">45.2 MB</span>
+                            </div>
+                        </div>
+                        <div class="gdrive-file-actions">
+                            <button class="gdrive-action-btn">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                        <div class="gdrive-file-shared">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
