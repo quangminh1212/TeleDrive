@@ -14,11 +14,19 @@ from ..auth.decorators import dev_login_required
 def index():
     """
     Home page route.
-    
+
     Returns:
         Rendered template for the home page
     """
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return f"Error: {str(e)}", 500
+
+@views_bp.route('/test')
+def test():
+    """Test route"""
+    return "TeleDrive is working!"
 
 
 @views_bp.route('/login')

@@ -1,0 +1,361 @@
+<!-- TeleDrive Toolbar Component - Google Drive Style -->
+<div class="gdrive-toolbar" id="toolbar">
+    <!-- Left section - Breadcrumbs and path -->
+    <div class="gdrive-toolbar-left">
+        <!-- Breadcrumbs -->
+        <div class="gdrive-breadcrumbs" id="breadcrumbs">
+            <div class="gdrive-breadcrumb-item">
+                <a href="/" title="Trang chủ" class="gdrive-breadcrumb-link">
+                    <i class="fas fa-home"></i>
+                </a>
+            </div>
+            {% if breadcrumbs %}
+                {% for item in breadcrumbs %}
+                    <div class="gdrive-breadcrumb-item">
+                        {% if loop.last %}
+                            <span class="gdrive-breadcrumb-current">{{ item.name }}</span>
+                        {% else %}
+                            <a href="{{ item.path }}" class="gdrive-breadcrumb-link" title="{{ item.name }}">
+                                {{ item.name }}
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="gdrive-breadcrumb-item">
+                    <span class="gdrive-breadcrumb-current">Trang chủ</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Right section - View controls and actions -->
+    <div class="gdrive-toolbar-right">
+        <!-- Sort dropdown -->
+        <div class="gdrive-dropdown" id="sortDropdown">
+            <button class="gdrive-btn-icon" id="sortButton" title="Sắp xếp">
+                <i class="fas fa-sort-amount-down"></i>
+            </button>
+            <div class="gdrive-dropdown-menu" id="sortMenu">
+                <div class="gdrive-dropdown-item" data-sort="name">
+                    <i class="fas fa-font"></i>
+                    <span>Tên</span>
+                </div>
+                <div class="gdrive-dropdown-item" data-sort="modified">
+                    <i class="fas fa-clock"></i>
+                    <span>Ngày sửa đổi</span>
+                </div>
+                <div class="gdrive-dropdown-item" data-sort="size">
+                    <i class="fas fa-weight-hanging"></i>
+                    <span>Kích thước</span>
+                </div>
+                <div class="gdrive-dropdown-item" data-sort="type">
+                    <i class="fas fa-file"></i>
+                    <span>Loại</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- View toggle -->
+        <div class="gdrive-view-toggle" id="viewToggle">
+            <button class="gdrive-btn-icon active" id="gridViewBtn" title="Xem dạng lưới" data-view="grid">
+                <i class="fas fa-th"></i>
+            </button>
+            <button class="gdrive-btn-icon" id="listViewBtn" title="Xem dạng danh sách" data-view="list">
+                <i class="fas fa-list"></i>
+            </button>
+        </div>
+        
+        <!-- Info panel toggle -->
+        <button class="gdrive-btn-icon" id="infoPanelBtn" title="Bảng thông tin">
+            <i class="fas fa-info-circle"></i>
+        </button>
+        
+        <!-- More options -->
+        <div class="gdrive-dropdown" id="moreDropdown">
+            <button class="gdrive-btn-icon" id="moreButton" title="Thêm tùy chọn">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <div class="gdrive-dropdown-menu" id="moreMenu">
+                <div class="gdrive-dropdown-item" data-action="select-all">
+                    <i class="fas fa-check-square"></i>
+                    <span>Chọn tất cả</span>
+                </div>
+                <div class="gdrive-dropdown-item" data-action="refresh">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Làm mới</span>
+                </div>
+                <div class="gdrive-dropdown-divider"></div>
+                <div class="gdrive-dropdown-item" data-action="upload">
+                    <i class="fas fa-upload"></i>
+                    <span>Tải lên file</span>
+                </div>
+                <div class="gdrive-dropdown-item" data-action="new-folder">
+                    <i class="fas fa-folder-plus"></i>
+                    <span>Tạo thư mục mới</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Toolbar styles */
+    .gdrive-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 16px;
+        min-height: 48px;
+        border-bottom: 1px solid var(--gdrive-border);
+        background-color: var(--gdrive-white);
+        position: sticky;
+        top: var(--gdrive-header-height);
+        z-index: 10;
+    }
+    
+    .gdrive-toolbar-left {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .gdrive-toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    /* Breadcrumbs */
+    .gdrive-breadcrumbs {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
+        min-width: 0;
+    }
+    
+    .gdrive-breadcrumb-item {
+        display: flex;
+        align-items: center;
+        color: var(--gdrive-text);
+        font-size: 14px;
+        max-width: 200px;
+    }
+    
+    .gdrive-breadcrumb-item:not(:last-child)::after {
+        content: "›";
+        margin: 0 8px;
+        color: var(--gdrive-text-secondary);
+        font-size: 16px;
+    }
+    
+    .gdrive-breadcrumb-link {
+        color: var(--gdrive-text);
+        text-decoration: none;
+        padding: 6px 8px;
+        border-radius: 4px;
+        transition: var(--gdrive-transition);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+        display: inline-block;
+    }
+
+    .gdrive-breadcrumb-link:hover {
+        background-color: var(--gdrive-light-gray);
+    }
+
+    .gdrive-breadcrumb-current {
+        font-weight: 500;
+        color: var(--gdrive-text);
+        padding: 6px 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+        display: inline-block;
+    }
+
+    /* Home icon styling */
+    .gdrive-breadcrumb-link i {
+        font-size: 16px;
+        color: var(--gdrive-text-secondary);
+    }
+
+    .gdrive-breadcrumb-link:hover i {
+        color: var(--gdrive-text);
+    }
+    
+    /* View toggle */
+    .gdrive-view-toggle {
+        display: flex;
+        background-color: var(--gdrive-light-gray);
+        border-radius: 6px;
+        padding: 2px;
+    }
+    
+    .gdrive-view-toggle .gdrive-btn-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+        background: none;
+        transition: var(--gdrive-transition);
+    }
+    
+    .gdrive-view-toggle .gdrive-btn-icon.active {
+        background-color: var(--gdrive-white);
+        color: var(--gdrive-blue);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Dropdown */
+    .gdrive-dropdown {
+        position: relative;
+    }
+    
+    .gdrive-dropdown-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        background-color: var(--gdrive-white);
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        min-width: 200px;
+        z-index: 1000;
+        display: none;
+        overflow: hidden;
+        animation: dropdownFadeIn 0.15s ease-out;
+    }
+    
+    .gdrive-dropdown-menu.active {
+        display: block;
+    }
+    
+    .gdrive-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: var(--gdrive-transition);
+        font-size: 14px;
+        color: var(--gdrive-text);
+    }
+    
+    .gdrive-dropdown-item:hover {
+        background-color: var(--gdrive-light-gray);
+    }
+    
+    .gdrive-dropdown-item i {
+        width: 16px;
+        color: var(--gdrive-text-secondary);
+        font-size: 14px;
+    }
+    
+    .gdrive-dropdown-divider {
+        height: 1px;
+        background-color: var(--gdrive-border);
+        margin: 4px 0;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .gdrive-toolbar {
+            padding: 8px 12px;
+        }
+        
+        .gdrive-breadcrumbs {
+            max-width: 60%;
+        }
+        
+        .gdrive-breadcrumb-item {
+            max-width: 120px;
+        }
+        
+        .gdrive-toolbar-right {
+            gap: 2px;
+        }
+    }
+</style>
+
+<script>
+    // Toolbar functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // View toggle functionality
+        const viewToggle = document.getElementById('viewToggle');
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+        
+        if (viewToggle) {
+            viewToggle.addEventListener('click', function(e) {
+                if (e.target.closest('.gdrive-btn-icon')) {
+                    const btn = e.target.closest('.gdrive-btn-icon');
+                    const view = btn.dataset.view;
+                    
+                    // Update active state
+                    viewToggle.querySelectorAll('.gdrive-btn-icon').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Trigger view change event
+                    document.dispatchEvent(new CustomEvent('viewChanged', { detail: { view } }));
+                }
+            });
+        }
+        
+        // Dropdown functionality
+        function setupDropdown(dropdownId, buttonId, menuId) {
+            const dropdown = document.getElementById(dropdownId);
+            const button = document.getElementById(buttonId);
+            const menu = document.getElementById(menuId);
+            
+            if (button && menu) {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menu.classList.toggle('active');
+                    
+                    // Close other dropdowns
+                    document.querySelectorAll('.gdrive-dropdown-menu').forEach(m => {
+                        if (m !== menu) m.classList.remove('active');
+                    });
+                });
+                
+                // Handle dropdown item clicks
+                menu.addEventListener('click', function(e) {
+                    const item = e.target.closest('.gdrive-dropdown-item');
+                    if (item) {
+                        const action = item.dataset.sort || item.dataset.action;
+                        
+                        // Trigger action event
+                        document.dispatchEvent(new CustomEvent('toolbarAction', { 
+                            detail: { action, type: dropdownId.replace('Dropdown', '') } 
+                        }));
+                        
+                        menu.classList.remove('active');
+                    }
+                });
+            }
+        }
+        
+        // Setup dropdowns
+        setupDropdown('sortDropdown', 'sortButton', 'sortMenu');
+        setupDropdown('moreDropdown', 'moreButton', 'moreMenu');
+        
+        // Info panel toggle
+        const infoPanelBtn = document.getElementById('infoPanelBtn');
+        if (infoPanelBtn) {
+            infoPanelBtn.addEventListener('click', function() {
+                document.dispatchEvent(new CustomEvent('toggleInfoPanel'));
+            });
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.gdrive-dropdown-menu').forEach(menu => {
+                menu.classList.remove('active');
+            });
+        });
+    });
+</script>

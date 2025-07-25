@@ -95,7 +95,7 @@
     height: 24px;
 }
 
-/* Search box */
+/* Search box - Enhanced Google Drive style */
 .gdrive-search-box {
     display: flex;
     align-items: center;
@@ -107,11 +107,17 @@
     flex: 1;
     margin: 0 32px;
     transition: var(--gdrive-transition);
+    border: 1px solid transparent;
 }
 
 .gdrive-search-box:focus-within {
     background-color: white;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+    border-color: var(--gdrive-border);
+}
+
+.gdrive-search-box:hover {
+    box-shadow: 0 1px 3px rgba(32, 33, 36, 0.15);
 }
 
 .gdrive-search-input {
@@ -124,11 +130,66 @@
     padding: 0 8px;
 }
 
-/* User menu */
+.gdrive-search-input::placeholder {
+    color: var(--gdrive-text-secondary);
+}
+
+/* Search options button */
+.gdrive-search-options {
+    background: none;
+    border: none;
+    color: var(--gdrive-text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--gdrive-transition);
+}
+
+.gdrive-search-options:hover {
+    background-color: rgba(60, 64, 67, 0.08);
+    color: var(--gdrive-text);
+}
+
+/* User menu - Enhanced Google Drive style */
 .user-menu {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
+}
+
+/* Header action buttons */
+.header-action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--gdrive-text-secondary);
+    transition: var(--gdrive-transition);
+    font-size: 20px;
+}
+
+.header-action-btn:hover {
+    background-color: rgba(60, 64, 67, 0.08);
+    color: var(--gdrive-text);
+}
+
+.header-action-btn:active {
+    background-color: rgba(60, 64, 67, 0.12);
+}
+
+/* Google Apps button special styling */
+.header-action-btn#appsButton {
+    font-size: 18px;
 }
 
 .user-avatar {
@@ -140,8 +201,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
+    font-weight: 500;
     cursor: pointer;
+    font-size: 14px;
+    margin-left: 8px;
+    transition: var(--gdrive-transition);
+}
+
+.user-avatar:hover {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .user-dropdown {
@@ -150,57 +218,90 @@
 
 .user-dropdown-menu {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
     right: 0;
     background-color: white;
-    border-radius: var(--gdrive-radius);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    min-width: 280px;
-    padding: 8px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    min-width: 300px;
     z-index: 1000;
     display: none;
+    overflow: hidden;
+    animation: dropdownFadeIn 0.15s ease-out;
 }
 
-.user-dropdown-menu.show {
+.user-dropdown-menu.active {
     display: block;
 }
 
 .user-dropdown-item {
-    padding: 8px 16px;
+    padding: 12px 16px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
     cursor: pointer;
     transition: var(--gdrive-transition);
+    font-size: 14px;
+    color: var(--gdrive-text);
 }
 
 .user-dropdown-item:hover {
     background-color: var(--gdrive-light-gray);
 }
 
+.user-dropdown-item i {
+    width: 20px;
+    color: var(--gdrive-text-secondary);
+    font-size: 16px;
+}
+
 .user-dropdown-divider {
-    border-bottom: 1px solid var(--gdrive-border);
+    height: 1px;
+    background-color: var(--gdrive-border);
     margin: 8px 0;
 }
 
 .user-info {
-    padding: 16px;
+    padding: 20px 16px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    text-align: center;
     border-bottom: 1px solid var(--gdrive-border);
+}
+
+.user-info-details {
+    margin-left: 16px;
+    flex: 1;
 }
 
 .user-info-name {
     font-weight: 500;
-    margin-top: 8px;
     color: var(--gdrive-text);
+    font-size: 16px;
+    line-height: 1.3;
 }
 
 .user-info-email {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--gdrive-text-secondary);
+    margin-top: 4px;
+}
+
+.user-avatar-lg {
+    width: 64px;
+    height: 64px;
+    font-size: 24px;
+    margin: 0;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Sidebar navigation */

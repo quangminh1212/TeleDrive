@@ -1,0 +1,304 @@
+<!-- TeleDrive Context Menu Component - Google Drive Style -->
+<div class="gdrive-context-menu" id="contextMenu">
+    <div class="gdrive-context-menu-item" data-action="open">
+        <i class="fas fa-external-link-alt"></i>
+        <span>Mở</span>
+    </div>
+    
+    <div class="gdrive-context-menu-item" data-action="preview">
+        <i class="fas fa-eye"></i>
+        <span>Xem trước</span>
+    </div>
+    
+    <div class="gdrive-context-menu-divider"></div>
+    
+    <div class="gdrive-context-menu-item" data-action="download">
+        <i class="fas fa-download"></i>
+        <span>Tải xuống</span>
+    </div>
+    
+    <div class="gdrive-context-menu-item" data-action="share">
+        <i class="fas fa-share-alt"></i>
+        <span>Chia sẻ</span>
+    </div>
+    
+    <div class="gdrive-context-menu-divider"></div>
+    
+    <div class="gdrive-context-menu-item" data-action="rename">
+        <i class="fas fa-edit"></i>
+        <span>Đổi tên</span>
+    </div>
+    
+    <div class="gdrive-context-menu-item" data-action="move">
+        <i class="fas fa-arrows-alt"></i>
+        <span>Di chuyển</span>
+    </div>
+    
+    <div class="gdrive-context-menu-item" data-action="copy">
+        <i class="fas fa-copy"></i>
+        <span>Sao chép</span>
+    </div>
+    
+    <div class="gdrive-context-menu-divider"></div>
+    
+    <div class="gdrive-context-menu-item" data-action="star">
+        <i class="fas fa-star"></i>
+        <span>Thêm vào yêu thích</span>
+    </div>
+    
+    <div class="gdrive-context-menu-item" data-action="info">
+        <i class="fas fa-info-circle"></i>
+        <span>Chi tiết</span>
+    </div>
+    
+    <div class="gdrive-context-menu-divider"></div>
+    
+    <div class="gdrive-context-menu-item danger" data-action="delete">
+        <i class="fas fa-trash"></i>
+        <span>Xóa</span>
+    </div>
+</div>
+
+<style>
+    /* Context Menu Styles */
+    .gdrive-context-menu {
+        position: fixed;
+        background-color: var(--gdrive-white);
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+        min-width: 200px;
+        z-index: 10000;
+        display: none;
+        overflow: hidden;
+        animation: contextMenuFadeIn 0.15s ease-out;
+        user-select: none;
+    }
+    
+    .gdrive-context-menu.active {
+        display: block;
+    }
+    
+    .gdrive-context-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: var(--gdrive-transition);
+        font-size: 14px;
+        color: var(--gdrive-text);
+    }
+    
+    .gdrive-context-menu-item:hover {
+        background-color: var(--gdrive-light-gray);
+    }
+    
+    .gdrive-context-menu-item.danger {
+        color: #d93025;
+    }
+    
+    .gdrive-context-menu-item.danger:hover {
+        background-color: rgba(217, 48, 37, 0.08);
+    }
+    
+    .gdrive-context-menu-item.disabled {
+        color: var(--gdrive-text-secondary);
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+    .gdrive-context-menu-item.disabled:hover {
+        background-color: transparent;
+    }
+    
+    .gdrive-context-menu-item i {
+        width: 16px;
+        color: var(--gdrive-text-secondary);
+        font-size: 14px;
+    }
+    
+    .gdrive-context-menu-item.danger i {
+        color: #d93025;
+    }
+    
+    .gdrive-context-menu-divider {
+        height: 1px;
+        background-color: var(--gdrive-border);
+        margin: 4px 0;
+    }
+    
+    @keyframes contextMenuFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-4px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+    
+    /* Submenu styles */
+    .gdrive-context-menu-item.has-submenu::after {
+        content: "›";
+        margin-left: auto;
+        color: var(--gdrive-text-secondary);
+        font-size: 16px;
+    }
+    
+    .gdrive-context-submenu {
+        position: absolute;
+        left: 100%;
+        top: 0;
+        background-color: var(--gdrive-white);
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        min-width: 180px;
+        display: none;
+        overflow: hidden;
+        animation: contextMenuFadeIn 0.15s ease-out;
+    }
+    
+    .gdrive-context-menu-item:hover .gdrive-context-submenu {
+        display: block;
+    }
+</style>
+
+<script>
+    // Context Menu functionality
+    class ContextMenu {
+        constructor() {
+            this.menu = document.getElementById('contextMenu');
+            this.currentTarget = null;
+            this.init();
+        }
+        
+        init() {
+            // Hide menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!this.menu.contains(e.target)) {
+                    this.hide();
+                }
+            });
+            
+            // Handle menu item clicks
+            this.menu.addEventListener('click', (e) => {
+                const item = e.target.closest('.gdrive-context-menu-item');
+                if (item && !item.classList.contains('disabled')) {
+                    const action = item.dataset.action;
+                    this.handleAction(action);
+                    this.hide();
+                }
+            });
+            
+            // Handle right-click on file items
+            document.addEventListener('contextmenu', (e) => {
+                const fileItem = e.target.closest('.gdrive-file-card, .gdrive-file-row');
+                if (fileItem) {
+                    e.preventDefault();
+                    this.show(e.clientX, e.clientY, fileItem);
+                }
+            });
+            
+            // Hide menu on scroll
+            document.addEventListener('scroll', () => {
+                this.hide();
+            });
+        }
+        
+        show(x, y, target) {
+            this.currentTarget = target;
+            this.updateMenuItems(target);
+            
+            // Position menu
+            this.menu.style.left = x + 'px';
+            this.menu.style.top = y + 'px';
+            this.menu.classList.add('active');
+            
+            // Adjust position if menu goes off screen
+            const rect = this.menu.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            if (rect.right > viewportWidth) {
+                this.menu.style.left = (x - rect.width) + 'px';
+            }
+            
+            if (rect.bottom > viewportHeight) {
+                this.menu.style.top = (y - rect.height) + 'px';
+            }
+        }
+        
+        hide() {
+            this.menu.classList.remove('active');
+            this.currentTarget = null;
+        }
+        
+        updateMenuItems(target) {
+            const isFolder = target.classList.contains('folder') || 
+                           target.querySelector('.gdrive-folder-icon, .folder');
+            const isStarred = target.classList.contains('starred');
+            
+            // Update star/unstar text
+            const starItem = this.menu.querySelector('[data-action="star"]');
+            if (starItem) {
+                const span = starItem.querySelector('span');
+                const icon = starItem.querySelector('i');
+                if (isStarred) {
+                    span.textContent = 'Bỏ khỏi yêu thích';
+                    icon.className = 'fas fa-star-slash';
+                } else {
+                    span.textContent = 'Thêm vào yêu thích';
+                    icon.className = 'fas fa-star';
+                }
+            }
+            
+            // Disable preview for folders
+            const previewItem = this.menu.querySelector('[data-action="preview"]');
+            if (previewItem) {
+                if (isFolder) {
+                    previewItem.classList.add('disabled');
+                } else {
+                    previewItem.classList.remove('disabled');
+                }
+            }
+        }
+        
+        handleAction(action) {
+            if (!this.currentTarget) return;
+            
+            const fileId = this.currentTarget.dataset.id;
+            const fileName = this.currentTarget.querySelector('.gdrive-file-name, .gdrive-list-label')?.textContent;
+            
+            // Dispatch custom event for action handling
+            document.dispatchEvent(new CustomEvent('contextMenuAction', {
+                detail: {
+                    action,
+                    fileId,
+                    fileName,
+                    target: this.currentTarget
+                }
+            }));
+            
+            // Handle some actions directly
+            switch (action) {
+                case 'open':
+                    this.currentTarget.click();
+                    break;
+                case 'star':
+                    this.currentTarget.classList.toggle('starred');
+                    break;
+                case 'info':
+                    console.log('Show file info for:', fileName);
+                    break;
+                default:
+                    console.log('Context menu action:', action, 'for file:', fileName);
+            }
+        }
+    }
+    
+    // Initialize context menu when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        new ContextMenu();
+    });
+</script>

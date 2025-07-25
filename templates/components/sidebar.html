@@ -98,7 +98,7 @@
             <div class="gdrive-nav-label">Cài đặt</div>
         </div>
         
-        {% if current_user.is_authenticated and current_user.is_admin %}
+        {% if current_user and current_user.is_authenticated and current_user.is_admin %}
         <div class="gdrive-nav-item" data-action="admin">
             <div class="gdrive-nav-icon">
                 <i class="fas fa-shield-alt"></i>
@@ -115,16 +115,16 @@
 <style>
     /* Google Drive style sidebar enhancements */
     .gdrive-sidebar {
-        background-color: white;
-        width: var(--sidebar-width);
-        height: calc(100vh - var(--header-height));
+        background-color: var(--gdrive-white);
+        width: var(--gdrive-sidebar-width);
+        height: calc(100vh - var(--gdrive-header-height));
         overflow-y: auto;
-        border-right: 1px solid var(--border);
+        border-right: 1px solid var(--gdrive-border);
         padding: 12px 0;
         flex-shrink: 0;
         transition: transform 0.3s ease;
     }
-    
+
     .gdrive-nav-item {
         display: flex;
         align-items: center;
@@ -133,18 +133,20 @@
         border-radius: 0 24px 24px 0;
         margin-right: 12px;
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: var(--gdrive-transition);
+        color: var(--gdrive-text);
     }
-    
+
     .gdrive-nav-item:hover {
-        background-color: var(--bg-tertiary);
+        background-color: var(--gdrive-light-gray);
     }
-    
+
     .gdrive-nav-item.active {
-        background-color: var(--primary-light);
+        background-color: var(--gdrive-light-blue);
+        color: var(--gdrive-blue);
         font-weight: 500;
     }
-    
+
     .gdrive-nav-icon {
         width: 24px;
         height: 24px;
@@ -152,82 +154,116 @@
         align-items: center;
         justify-content: center;
         margin-right: 12px;
-        color: var(--text-secondary);
+        color: var(--gdrive-text-secondary);
+        font-size: 20px;
     }
-    
+
     .gdrive-nav-item.active .gdrive-nav-icon {
-        color: var(--primary);
+        color: var(--gdrive-blue);
     }
-    
+
     .gdrive-nav-label {
         font-size: 14px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        flex: 1;
     }
-    
+
     .gdrive-nav-divider {
         height: 1px;
-        background-color: var(--border);
+        background-color: var(--gdrive-border);
         margin: 12px 0;
     }
-    
+
     .gdrive-nav-heading {
         padding: 0 24px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 500;
-        color: var(--text-secondary);
-        margin-bottom: 8px;
+        color: var(--gdrive-text-secondary);
+        margin: 16px 0 8px;
         text-transform: uppercase;
-        letter-spacing: 0.07em;
+        letter-spacing: 0.8px;
     }
     
     .gdrive-storage-info {
         padding: 0 24px;
         margin-bottom: 8px;
     }
-    
+
     .gdrive-storage-progress {
         height: 4px;
-        background-color: var(--bg-tertiary);
+        background-color: var(--gdrive-light-gray);
         border-radius: 4px;
         margin-bottom: 8px;
         overflow: hidden;
+        position: relative;
     }
-    
+
     .gdrive-storage-bar {
         height: 100%;
-        background-color: var(--primary);
+        background: linear-gradient(90deg, var(--gdrive-blue) 0%, #34a853 50%, #fbbc05 75%, #ea4335 100%);
+        border-radius: 4px;
+        transition: width 0.3s ease;
     }
-    
+
     .gdrive-storage-text {
         display: flex;
         justify-content: space-between;
-        font-size: 12px;
-        color: var(--text-secondary);
+        align-items: center;
+        font-size: 13px;
+        color: var(--gdrive-text-secondary);
     }
-    
+
+    .gdrive-storage-text span {
+        font-weight: 400;
+    }
+
     .gdrive-storage-upgrade {
-        color: var(--primary);
+        color: var(--gdrive-blue);
         text-decoration: none;
         font-weight: 500;
+        font-size: 13px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: var(--gdrive-transition);
     }
-    
+
     .gdrive-storage-upgrade:hover {
-        text-decoration: underline;
+        background-color: var(--gdrive-light-blue);
+        text-decoration: none;
     }
     
     /* Mobile responsiveness */
     @media (max-width: 768px) {
         .gdrive-sidebar {
-            z-index: 100;
-            background-color: var(--bg-main);
-            box-shadow: var(--shadow-lg);
+            position: fixed;
+            left: -100%;
+            top: var(--gdrive-header-height);
+            z-index: 1000;
+            background-color: var(--gdrive-white);
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            transition: left 0.3s ease;
         }
-        
+
+        .gdrive-sidebar.active {
+            left: 0;
+        }
+
         .sidebar-backdrop {
+            position: fixed;
+            top: var(--gdrive-header-height);
+            left: 0;
+            width: 100%;
+            height: calc(100vh - var(--gdrive-header-height));
             background-color: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(2px);
+            z-index: 999;
+            display: none;
+        }
+
+        .sidebar-backdrop.active {
+            display: block;
         }
     }
 </style>

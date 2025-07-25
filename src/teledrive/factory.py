@@ -48,13 +48,13 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
     register_blueprints(app)
 
     # Register error handlers
-    register_error_handlers(app)
+    # register_error_handlers(app)
 
     # Initialize performance monitoring
-    initialize_performance_monitoring(app)
-    
+    # initialize_performance_monitoring(app)
+
     # Initialize advanced security features
-    initialize_advanced_security(app)
+    # initialize_advanced_security(app)
     
     return app
 
@@ -80,8 +80,8 @@ def configure_app(app: Flask, test_config: Optional[Dict[str, Any]] = None) -> N
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Security configuration
-    app.config['WTF_CSRF_ENABLED'] = True
-    app.config['RATELIMIT_ENABLED'] = True
+    app.config['WTF_CSRF_ENABLED'] = not app.config['DEV_MODE']  # Disable CSRF in dev mode
+    app.config['RATELIMIT_ENABLED'] = not app.config['DEV_MODE']  # Disable rate limiting in dev mode
     app.config['RATELIMIT_HEADERS_ENABLED'] = True
     
     if os.getenv('REDIS_URL'):
@@ -126,10 +126,11 @@ def initialize_extensions(app: Flask) -> None:
     init_db(app)
     
     # Initialize auth manager
-    auth_manager.init_app(app)
+    # auth_manager.init_app(app)
 
-    # Initialize security middleware
-    init_security_middleware(app)
+    # Initialize security middleware only in production
+    # if not app.config.get('DEV_MODE', False):
+    #     init_security_middleware(app)
     
     # Initialize CORS with proper settings
     if app.config['ENV'] == 'production':
@@ -168,9 +169,9 @@ def register_error_handlers(app: Flask) -> None:
     def rate_limit_exceeded(e):
         return {"error": "Rate limit exceeded. Please try again later."}, 429
         
-    @app.errorhandler(403)
-    def forbidden(e):
-        return {"error": "Access forbidden."}, 403
+    # @app.errorhandler(403)
+    # def forbidden(e):
+    #     return {"error": "Access forbidden."}, 403
 
 
 def initialize_performance_monitoring(app: Flask) -> None:

@@ -31,12 +31,18 @@
         <div class="gdrive-content">
             <!-- Sidebar -->
             {% include 'components/sidebar.html' %}
-            
-            <!-- Main content area -->
-            {% block content %}
-                <!-- Default content -->
-                {% include 'components/file-display.html' %}
-            {% endblock %}
+
+            <!-- Main content area with toolbar -->
+            <div class="gdrive-main-content">
+                <!-- Toolbar -->
+                {% include 'components/toolbar.html' %}
+
+                <!-- Content area -->
+                {% block content %}
+                    <!-- Default content -->
+                    {% include 'components/file-display.html' %}
+                {% endblock %}
+            </div>
         </div>
     </div>
     
@@ -44,6 +50,9 @@
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
+
+    <!-- Context Menu -->
+    {% include 'components/context-menu.html' %}
     
     <!-- Base Scripts -->
     <script>

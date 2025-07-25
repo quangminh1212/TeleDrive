@@ -23,21 +23,28 @@
         <button class="header-action-btn" id="supportButton" title="Trợ giúp">
             <i class="fas fa-question-circle"></i>
         </button>
-        
+
         <!-- Settings button -->
         <button class="header-action-btn" id="settingsButton" title="Cài đặt">
             <i class="fas fa-cog"></i>
         </button>
-        
+
+        <!-- Notifications button -->
+        <button class="header-action-btn" id="notificationsButton" title="Thông báo">
+            <i class="fas fa-bell"></i>
+        </button>
+
         <!-- Apps menu button -->
         <button class="header-action-btn" id="appsButton" title="Ứng dụng Google">
-            <i class="fas fa-th"></i>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6,8c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM12,20c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM6,20c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM6,14c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM12,14c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM16,6c0,1.1 0.9,2 2,2s2,-0.9 2,-2 -0.9,-2 -2,-2 -2,0.9 -2,2zM12,8c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM18,14c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM18,20c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2z"/>
+            </svg>
         </button>
         
         <!-- User avatar dropdown -->
         <div class="user-dropdown">
             <div class="user-avatar" id="userMenuToggle" style="background-color: #4285f4;">
-                {{ current_user.username[0] if current_user.is_authenticated else 'G' }}
+                {{ current_user.username[0] if current_user and current_user.is_authenticated else 'D' }}
             </div>
             
             <!-- Dropdown menu -->
@@ -45,39 +52,39 @@
                 <!-- User info section -->
                 <div class="user-info">
                     <div class="user-avatar user-avatar-lg" style="background-color: #4285f4;">
-                        {{ current_user.username[0] if current_user.is_authenticated else 'G' }}
+                        {{ current_user.username[0] if current_user and current_user.is_authenticated else 'D' }}
                     </div>
                     <div class="user-info-details">
                         <div class="user-info-name">
-                            {{ current_user.username if current_user.is_authenticated else 'Khách' }}
+                            {{ current_user.username if current_user and current_user.is_authenticated else 'Developer' }}
                         </div>
-                        {% if current_user.is_authenticated and current_user.email %}
+                        {% if current_user and current_user.is_authenticated and current_user.email %}
                         <div class="user-info-email">{{ current_user.email }}</div>
                         {% endif %}
                     </div>
                 </div>
                 
                 <!-- Menu items -->
-                {% if current_user.is_authenticated %}
+                {% if current_user and current_user.is_authenticated %}
                     {% if current_user.is_admin %}
                     <div class="user-dropdown-item" data-action="admin">
                         <i class="fas fa-shield-alt"></i>
                         <span>Quản trị hệ thống</span>
                     </div>
                     {% endif %}
-                    
+
                     <div class="user-dropdown-item" data-action="profile">
                         <i class="fas fa-user"></i>
                         <span>Thông tin cá nhân</span>
                     </div>
-                    
+
                     <div class="user-dropdown-item" data-action="settings">
                         <i class="fas fa-cog"></i>
                         <span>Cài đặt</span>
                     </div>
-                    
+
                     <div class="user-dropdown-divider"></div>
-                    
+
                     <div class="user-dropdown-item" data-action="logout">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>Đăng xuất</span>
@@ -91,7 +98,7 @@
             </div>
         </div>
         
-        {% if current_user.is_authenticated and current_user.is_admin %}
+        {% if current_user and current_user.is_authenticated and current_user.is_admin %}
         <div class="admin-badge">
             <a href="/admin" class="admin-badge-btn" title="Quản trị viên">
                 ADMIN
@@ -102,130 +109,38 @@
 </div>
 
 <style>
-    /* Header specific styles */
-    .header-action-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: none;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: var(--gdrive-text-secondary);
-        margin-left: 8px;
-        transition: var(--gdrive-transition);
+    /* Header specific styles - minimal overrides */
+    .gdrive-header .user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
     }
-    
-    .header-action-btn:hover {
-        background-color: var(--gdrive-light-gray);
-        color: var(--gdrive-text);
+
+    /* Apps button special styling for Google dots icon */
+    .header-action-btn svg {
+        width: 20px;
+        height: 20px;
     }
-    
-    .user-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background-color: var(--gdrive-blue);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-weight: 500;
-        margin-left: 8px;
-    }
-    
-    .user-avatar-lg {
-        width: 64px;
-        height: 64px;
-        font-size: 24px;
-        margin: 0;
-    }
-    
-    .user-dropdown {
+
+    /* Notification badge for notifications button */
+    .header-action-btn#notificationsButton {
         position: relative;
     }
-    
-    .user-dropdown-menu {
+
+    .header-action-btn#notificationsButton::after {
+        content: '';
         position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        width: 300px;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-        z-index: 1000;
-        overflow: hidden;
-        display: none;
-        animation: fadeIn 0.2s ease;
+        top: 8px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        background-color: #ea4335;
+        border-radius: 50%;
+        display: none; /* Show when there are notifications */
     }
-    
-    .user-dropdown-menu.active {
+
+    .header-action-btn#notificationsButton.has-notifications::after {
         display: block;
-    }
-    
-    .user-info {
-        display: flex;
-        align-items: center;
-        padding: 16px;
-        border-bottom: 1px solid var(--gdrive-border);
-    }
-    
-    .user-info-details {
-        margin-left: 16px;
-    }
-    
-    .user-info-name {
-        font-size: 16px;
-        font-weight: 500;
-    }
-    
-    .user-info-email {
-        font-size: 14px;
-        color: var(--gdrive-text-secondary);
-        margin-top: 4px;
-    }
-    
-    .user-dropdown-item {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        cursor: pointer;
-    }
-    
-    .user-dropdown-item:hover {
-        background-color: var(--gdrive-light-gray);
-    }
-    
-    .user-dropdown-item i {
-        width: 24px;
-        margin-right: 16px;
-        color: var(--gdrive-text-secondary);
-    }
-    
-    .user-dropdown-divider {
-        height: 1px;
-        background-color: var(--gdrive-border);
-        margin: 8px 0;
-    }
-    
-    .gdrive-search-options {
-        background: none;
-        border: none;
-        color: var(--gdrive-text-secondary);
-        cursor: pointer;
-        padding: 0 8px;
-    }
-    
-    .gdrive-search-options:hover {
-        color: var(--gdrive-text);
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 
