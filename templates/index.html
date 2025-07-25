@@ -259,66 +259,8 @@
 {% endblock %}
 
 {% block content %}
-<!-- File display component đã có sẵn, bổ sung thêm hướng dẫn nổi bật khi không có file -->
-{% if not files or files|length == 0 %}
-<div class="gdrive-welcome">
-    <div class="gdrive-welcome-icon">
-        <svg width="140" height="140" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#4285f4;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#3367d6;stop-opacity:1" />
-                </linearGradient>
-            </defs>
-            <circle cx="12" cy="12" r="11" fill="url(#cloudGradient)" opacity="0.1"/>
-            <path d="M19 13H13V19H11V13H5L12 6L19 13Z" fill="url(#cloudGradient)"/>
-            <path d="M5 20V18H19V20H5Z" fill="url(#cloudGradient)" opacity="0.7"/>
-        </svg>
-    </div>
-    <h2>Chào mừng đến với TeleDrive!</h2>
-    <p>Lưu trữ và quản lý file từ Telegram một cách dễ dàng. Bắt đầu bằng cách tải lên file hoặc quét từ Telegram.</p>
-    <div class="gdrive-welcome-actions">
-        <button class="gdrive-btn-primary" id="uploadButtonHome">
-            <i class="fas fa-upload"></i> Tải lên file
-        </button>
-        <button class="gdrive-btn-secondary" id="scanButtonHome">
-            <i class="fas fa-search"></i> Quét Telegram
-        </button>
-        <button class="gdrive-btn-secondary" id="createFolderButton">
-            <i class="fas fa-folder-plus"></i> Tạo thư mục
-        </button>
-    </div>
-    <div class="gdrive-welcome-tips">
-        <div class="gdrive-tip-heading">Bạn có thể:</div>
-        <div class="gdrive-tips-grid">
-            <div class="gdrive-tip-item">
-                <div class="gdrive-tip-icon" style="color: #4285f4;">
-                    <i class="fas fa-file-upload"></i>
-                </div>
-                <div class="gdrive-tip-text">
-                    Tải lên và lưu trữ file từ máy tính
-                </div>
-            </div>
-            <div class="gdrive-tip-item">
-                <div class="gdrive-tip-icon" style="color: #34a853;">
-                    <i class="fab fa-telegram"></i>
-                </div>
-                <div class="gdrive-tip-text">
-                    Quét và quản lý file từ Telegram
-                </div>
-            </div>
-            <div class="gdrive-tip-item">
-                <div class="gdrive-tip-icon" style="color: #fbbc05;">
-                    <i class="fas fa-share-alt"></i>
-                </div>
-                <div class="gdrive-tip-text">
-                    Chia sẻ file với người khác
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
+<!-- Include file display component -->
+{% include 'components/file-display.html' %}
 {% endblock %}
 
 {% block extra_js %}
