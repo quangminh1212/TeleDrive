@@ -739,8 +739,22 @@ def send_otp():
 
 @app.route('/verify-otp', methods=['POST'])
 @validate_request_json({
-    "phone_number": PHONE_NUMBER_SCHEMA,
-    "otp_code": OTP_SCHEMA,
+    "phone_number": {
+        "type": str,
+        "required": True,
+        "validator": validate_phone_number,
+        "min_length": 10,
+        "max_length": 20,
+        "validator_message": "Số điện thoại không hợp lệ"
+    },
+    "otp_code": {
+        "type": str,
+        "required": True,
+        "min_length": 6,
+        "max_length": 6,
+        "pattern": r"^\d{6}$",
+        "pattern_message": "Mã OTP phải gồm 6 chữ số"
+    },
     "remember": {"type": bool, "required": False}
 })
 def verify_otp():
