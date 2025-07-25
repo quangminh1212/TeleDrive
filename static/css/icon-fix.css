@@ -105,6 +105,10 @@
     height: 14px !important;
     vertical-align: baseline !important;
     flex-shrink: 0 !important;
+    display: inline-block !important;
+    line-height: 1 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 /* Fix cho upload zone icons */
@@ -305,6 +309,19 @@ button svg.svg-inline--fa,
 .gdrive-btn-secondary {
     align-items: center !important;
     justify-content: center !important;
+    line-height: 1 !important;
+    font-size: 14px !important;
+}
+
+/* Fix cho text trong buttons */
+.gdrive-btn-primary,
+.gdrive-btn-secondary {
+    text-align: center !important;
+}
+
+.gdrive-btn-primary *,
+.gdrive-btn-secondary * {
+    vertical-align: middle !important;
 }
 
 .gdrive-btn-primary svg.svg-inline--fa,
@@ -312,4 +329,23 @@ button svg.svg-inline--fa,
     margin-right: 0 !important;
     margin-left: 0 !important;
     position: static !important;
+    align-self: center !important;
+}
+
+/* Force perfect visual alignment for upload icon */
+.gdrive-btn-primary svg[data-icon="upload"],
+.gdrive-btn-secondary svg[data-icon="upload"] {
+    transform: translateY(1px) !important;
+    vertical-align: middle !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Visual alignment for other common icons */
+.gdrive-btn-primary svg[data-icon="search"],
+.gdrive-btn-secondary svg[data-icon="search"],
+.gdrive-btn-primary svg[data-icon="folder-plus"],
+.gdrive-btn-secondary svg[data-icon="folder-plus"] {
+    transform: translateY(0.5px) !important;
 }
