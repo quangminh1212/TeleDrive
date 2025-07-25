@@ -506,25 +506,7 @@ def index():
             
             # Lấy mẫu dữ liệu cho chế độ dev
             sample_files = []
-            
-            # Các thư mục mẫu
-            sample_files.append({
-                'id': 'folder1',
-                'name': 'Tài liệu cá nhân',
-                'is_directory': True,
-                'modified': '12/05/2023',
-                'size': ''
-            })
-            
-            sample_files.append({
-                'id': 'folder2',
-                'name': 'Dự án',
-                'is_directory': True,
-                'modified': '20/04/2023',
-                'size': ''
-            })
-            
-            # Các file mẫu
+
             # Folders
             sample_files.append({
                 'id': 'folder1',
@@ -669,9 +651,14 @@ def index():
                 {'name': 'TeleDrive', 'path': '/'}
             ]
             
-            return render_template('index.html', 
-                                user=current_user, 
-                                files=sample_files, 
+            # Debug log
+            print(f"[DEBUG] Rendering index.html with {len(sample_files)} files")
+            print(f"[DEBUG] First file: {sample_files[0] if sample_files else 'None'}")
+            print(f"[DEBUG] Dev mode: True")
+
+            return render_template('index.html',
+                                user=current_user,
+                                files=sample_files,
                                 dev_mode=True,
                                 breadcrumbs=breadcrumbs)
             
