@@ -1,6 +1,9 @@
 <!-- TeleDrive File Display Component - Google Drive Style -->
 <div class="gdrive-files-container">
     
+    <!-- Include toolbar filters -->
+    {% include 'components/toolbar-filters.html' %}
+    
     <!-- Files display area - Grid View -->
     <div class="gdrive-files-display gdrive-grid-view" id="gridView">
         {% if files %}
