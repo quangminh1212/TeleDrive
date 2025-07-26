@@ -72,27 +72,30 @@ body {
     align-items: center;
     justify-content: space-between;
     height: var(--gdrive-header-height);
-    padding: 0 16px;
-    background-color: var(--gdrive-white);
-    border-bottom: 1px solid var(--gdrive-border);
+    padding: 0 24px;
+    background-color: #fff;
+    border-bottom: 1px solid #e0e0e0;
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: var(--gdrive-shadow);
+    box-shadow: 0 1px 4px rgba(60,64,67,0.08);
+    border-radius: 0 0 12px 12px;
 }
 
 .gdrive-logo {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px;
+    padding: 8px 0 8px 4px;
     cursor: pointer;
 }
 
 .gdrive-logo-text {
     font-size: 22px;
     font-weight: 500;
-    color: var(--gdrive-text);
+    color: #202124;
+    font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+    letter-spacing: 0.01em;
 }
 
 .app-icon-text {
@@ -103,30 +106,35 @@ body {
 .gdrive-content {
     display: flex;
     flex: 1;
-    position: relative;
+    background: #f8f9fa;
+    min-height: calc(100vh - var(--gdrive-header-height));
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(60,64,67,0.06);
+    margin: 16px 16px 0 16px;
+    overflow: hidden;
 }
 
 /* Sidebar */
 .gdrive-sidebar {
     width: var(--gdrive-sidebar-width);
-    height: calc(100vh - var(--gdrive-header-height));
-    position: sticky;
-    top: var(--gdrive-header-height);
-    background-color: var(--gdrive-white);
-    border-right: 1px solid var(--gdrive-border);
-    padding: 16px 0;
-    overflow-y: auto;
-    z-index: 5;
-    transition: var(--gdrive-transition);
+    background: #fff;
+    border-right: 1px solid #e0e0e0;
+    box-shadow: 1px 0 4px rgba(60,64,67,0.04);
+    border-radius: 12px 0 0 12px;
+    padding: 16px 0 16px 0;
+    min-height: calc(100vh - var(--gdrive-header-height) - 32px);
 }
 
 /* Main content area */
 .gdrive-main-content {
     flex: 1;
+    background: #fff;
+    border-radius: 0 12px 12px 0;
+    box-shadow: none;
+    padding: 0 24px 24px 24px;
+    min-height: calc(100vh - var(--gdrive-header-height) - 32px);
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - var(--gdrive-header-height));
-    background-color: var(--gdrive-white);
 }
 
 .gdrive-files-container {
