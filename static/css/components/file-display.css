@@ -30,25 +30,32 @@
     transition: var(--gdrive-transition);
     display: flex;
     flex-direction: column;
+    align-items: center; /* căn giữa ngang */
+    justify-content: flex-start;
     height: 200px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
 .gdrive-file-card:hover {
     background-color: var(--gdrive-light-gray);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 16px rgba(26,115,232,0.10), 0 1.5px 6px rgba(0,0,0,0.10);
+    border-color: var(--gdrive-blue);
+    transform: translateY(-2px) scale(1.02);
+    z-index: 2;
 }
 
 .gdrive-file-card.selected {
     background-color: var(--gdrive-light-blue);
     border-color: var(--gdrive-blue);
+    box-shadow: 0 4px 16px rgba(26,115,232,0.12), 0 1.5px 6px rgba(0,0,0,0.12);
 }
 
 /* Checkbox for selection */
 .gdrive-file-select {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    z-index: 1;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
     opacity: 0;
     transition: opacity 0.15s ease;
 }
@@ -68,11 +75,12 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .select-checkbox i {
     color: var(--gdrive-white);
-    font-size: 12px;
+    font-size: 14px;
     display: none;
 }
 
@@ -87,39 +95,49 @@
 
 /* File thumbnail */
 .gdrive-file-thumbnail {
-    height: 120px;
+    height: 80px;
+    width: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 12px;
+    margin-top: 12px;
 }
 
-.gdrive-file-thumbnail img {
-    max-width: 100%;
-    max-height: 100%;
+.gdrive-file-thumbnail img,
+.gdrive-folder-icon svg,
+.gdrive-file-icon svg {
+    width: 64px;
+    height: 64px;
     object-fit: contain;
     border-radius: 4px;
 }
 
 /* File icon styles */
-.gdrive-folder-icon svg,
-.gdrive-file-icon svg {
-    width: 80px;
-    height: 80px;
+.gdrive-folder-icon {
+    color: #fbbc04;
 }
 
-.gdrive-folder-icon {
-    color: var(--gdrive-yellow);
-}
+.gdrive-file-icon.pdf-icon svg { color: #4285f4; }
+.gdrive-file-icon.doc-icon svg { color: #4285f4; }
+.gdrive-file-icon.xls-icon svg { color: #34a853; }
+.gdrive-file-icon.ppt-icon svg { color: #ea4335; }
+.gdrive-file-icon.zip-icon svg { color: #5f6368; }
 
 /* File info */
 .gdrive-file-info {
     margin-top: auto;
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
 }
 
 .gdrive-file-name {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
     color: var(--gdrive-text);
     white-space: nowrap;
@@ -127,26 +145,32 @@
     text-overflow: ellipsis;
     margin-bottom: 4px;
     font-family: 'Google Sans', sans-serif;
+    text-align: center;
+    max-width: 100%;
 }
 
 .gdrive-file-meta {
-    display: flex;
     font-size: 12px;
-    color: var(--gdrive-text-secondary);
+    color: #5f6368;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .gdrive-file-modified {
-    margin-right: 12px;
+    margin-right: 0;
 }
 
 /* File actions */
 .gdrive-file-actions {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 12px;
+    right: 12px;
     display: flex;
     gap: 4px;
     opacity: 0;
@@ -169,13 +193,13 @@
     cursor: pointer;
     color: var(--gdrive-text-secondary);
     transition: var(--gdrive-transition);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.10);
 }
 
 .gdrive-action-btn:hover {
     background-color: var(--gdrive-light-gray);
     color: var(--gdrive-text);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(26,115,232,0.10);
 }
 
 /* List view */
