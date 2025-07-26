@@ -100,8 +100,29 @@
             </div>
             <h3>Thư mục này trống</h3>
             <p>Kéo thả file vào đây hoặc sử dụng nút "Tạo mới" để thêm file</p>
+            <div class="gdrive-empty-actions">
+                <button class="gdrive-btn-primary" onclick="document.getElementById('createButton').click()">
+                    <i class="fas fa-plus"></i>
+                    Tạo mới
+                </button>
+            </div>
         </div>
     {% endif %}
+
+    <!-- Loading State -->
+    <div class="gdrive-loading" id="loadingState" style="display: none;">
+        <div class="gdrive-spinner"></div>
+        <span>Đang tải...</span>
+    </div>
+
+    <!-- Drag and Drop Overlay -->
+    <div class="gdrive-drop-overlay" id="dropOverlay" style="display: none;">
+        <div class="gdrive-drop-content">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <h3>Thả file vào đây để tải lên</h3>
+            <p>Hỗ trợ nhiều file cùng lúc</p>
+        </div>
+    </div>
 </div>
 
 
