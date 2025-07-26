@@ -84,8 +84,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        height: 48px;
-        padding: 8px 0;
+        height: 56px;
+        padding: 12px 0;
     }
 
     .gdrive-current-folder {
@@ -153,20 +153,21 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        height: 48px;
+        height: 56px;
         border-bottom: 1px solid var(--gdrive-border);
+        padding: 8px 0;
     }
 
     .gdrive-filter-group {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
     }
 
     .gdrive-filter-btn {
-        height: 36px;
-        padding: 0 16px;
-        border-radius: 18px;
+        height: 40px;
+        padding: 0 20px;
+        border-radius: 20px;
         display: flex;
         align-items: center;
         background-color: var(--gdrive-white);
@@ -175,6 +176,8 @@
         font-size: 14px;
         cursor: pointer;
         transition: var(--gdrive-transition);
+        min-width: fit-content;
+        white-space: nowrap;
     }
 
     .gdrive-filter-btn:hover {
@@ -182,12 +185,13 @@
     }
 
     .gdrive-filter-btn span {
-        margin-right: 8px;
+        margin-right: 10px;
     }
 
     .gdrive-filter-btn i {
         font-size: 12px;
         color: var(--gdrive-text-secondary);
+        margin-left: 2px;
     }
 
     .gdrive-filter-actions {
@@ -287,7 +291,18 @@
         }
 
         .gdrive-filter-btn {
-            padding: 0 12px;
+            padding: 0 16px;
+            height: 36px;
+        }
+
+        .gdrive-filter-group {
+            gap: 8px;
+        }
+
+        .gdrive-title-section,
+        .gdrive-filter-section {
+            height: 48px;
+            padding: 8px 0;
         }
     }
 
