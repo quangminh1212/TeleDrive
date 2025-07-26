@@ -18,7 +18,7 @@ def index():
     Returns:
         Rendered template for the home page
     """
-    print("[DEBUG] Index route called!")
+    # print("[DEBUG] Index route called!")  # Commented out to reduce console spam
     try:
         # Simple test files
         sample_files = [
@@ -40,7 +40,7 @@ def index():
             }
         ]
 
-        print(f"[DEBUG] Rendering with {len(sample_files)} files")
+        # print(f"[DEBUG] Rendering with {len(sample_files)} files")  # Commented out to reduce console spam
 
         return render_template('index.html', files=sample_files)
     except Exception as e:

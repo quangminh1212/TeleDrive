@@ -116,7 +116,7 @@ python main.py
 
 if errorlevel 1 (
     echo.
-    echo [ERROR] Có lỗi xảy ra khi chạy TeleDrive!
+    echo [ERROR] Co loi xay ra khi chay TeleDrive!
     pause
 )
 
