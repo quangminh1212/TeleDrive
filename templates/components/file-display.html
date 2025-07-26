@@ -4,13 +4,14 @@
     <!-- Include toolbar filters -->
     {% include 'components/toolbar-filters.html' %}
     
-    <!-- Files display area - Grid View -->
+    <!-- Files display area -->
     <div class="gdrive-files-display gdrive-grid-view" id="gridView">
         {% if files %}
+            <!-- Grid view version -->
             {% for file in files %}
                 <div class="gdrive-file-card" data-id="{{ file.id }}" data-type="{{ 'folder' if file.is_directory else file.type }}">
                     <div class="gdrive-file-select">
-                        <div class="select-checkbox">
+                        <div class="select-checkbox gdrive-file-checkbox">
                             <i class="fas fa-check"></i>
                         </div>
                     </div>
@@ -92,6 +93,61 @@
                     </div>
                 </div>
             {% endfor %}
+            
+            <!-- List view version -->
+            <div class="gdrive-list-files">
+                {% for file in files %}
+                    <div class="gdrive-list-item" data-id="{{ file.id }}" data-type="{{ 'folder' if file.is_directory else file.type }}">
+                        <div class="gdrive-list-select">
+                            <input type="checkbox" class="gdrive-checkbox gdrive-file-checkbox">
+                        </div>
+                        <div class="gdrive-list-name">
+                            {% if file.is_directory %}
+                                <div class="gdrive-list-icon folder-icon">
+                                    <svg viewBox="0 0 24 24" focusable="false" width="20px" height="20px">
+                                        <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" fill="#5f6368"></path>
+                                    </svg>
+                                </div>
+                            {% elif file.type == 'image' %}
+                                <div class="gdrive-list-icon image-icon">
+                                    <svg viewBox="0 0 24 24" focusable="false" width="20px" height="20px">
+                                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z" fill="#5f6368"></path>
+                                    </svg>
+                                </div>
+                            {% elif file.type == 'video' %}
+                                <div class="gdrive-list-icon video-icon">
+                                    <svg viewBox="0 0 24 24" focusable="false" width="20px" height="20px">
+                                        <path d="M18 4v1h-2V4c0-.55-.45-1-1-1H9c-.55 0-1 .45-1 1v1H6V4c0-.55-.45-1-1-1s-1 .45-1 1v16c0 .55.45 1 1 1s1-.45 1-1v-1h2v1c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-1h2v1c0 .55.45 1 1 1s1-.45 1-1V4c0-.55-.45-1-1-1s-1 .45-1 1z" fill="#ea4335"></path>
+                                    </svg>
+                                </div>
+                            {% else %}
+                                <div class="gdrive-list-icon file-icon">
+                                    <svg viewBox="0 0 24 24" focusable="false" width="20px" height="20px">
+                                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" fill="#5f6368"></path>
+                                    </svg>
+                                </div>
+                            {% endif %}
+                            <span class="gdrive-list-filename" title="{{ file.name }}">{{ file.name }}</span>
+                        </div>
+                        <div class="gdrive-list-owner">
+                            <span>Tôi</span>
+                        </div>
+                        <div class="gdrive-list-modified">
+                            <span>{{ file.modified }}</span>
+                        </div>
+                        <div class="gdrive-list-size">
+                            {% if not file.is_directory %}
+                                <span>{{ file.size }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="gdrive-list-actions">
+                            <button class="gdrive-action-btn" title="Tải xuống">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
         {% else %}
             <!-- Empty state - hiển thị khi không có file -->
             <div class="gdrive-empty">
@@ -443,77 +499,133 @@
             background-color: white;
         }
         
-        .gdrive-list-header {
-            display: grid;
-            grid-template-columns: 40px 1fr 120px 150px 100px 50px;
-            gap: 8px;
-            padding: 0 16px;
-            height: 48px;
-            align-items: center;
-            border-bottom: 1px solid var(--gdrive-border);
-            color: var(--gdrive-text-secondary);
-            font-weight: 500;
-            background-color: white;
+        /* List view styles */
+        .gdrive-files-display.gdrive-list-view .gdrive-file-card {
+            display: none;
         }
-        
+
+        .gdrive-files-display.gdrive-grid-view .gdrive-list-files {
+            display: none;
+        }
+
+        .gdrive-list-files {
+            width: 100%;
+        }
+
         .gdrive-list-item {
             display: grid;
-            grid-template-columns: 40px 1fr 120px 150px 100px 50px;
-            gap: 8px;
-            padding: 0 16px;
-            height: 48px;
+            grid-template-columns: 40px minmax(200px, 1fr) 120px 150px 100px 40px;
             align-items: center;
+            height: 48px;
             border-bottom: 1px solid var(--gdrive-border);
-            transition: background-color 0.2s;
+            transition: var(--gdrive-transition);
             cursor: pointer;
         }
-        
+
         .gdrive-list-item:hover {
             background-color: var(--gdrive-light-gray);
         }
-        
+
+        .gdrive-list-item.selected {
+            background-color: var(--gdrive-light-blue);
+        }
+
+        .gdrive-list-select {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 8px;
+        }
+
         .gdrive-list-name {
             display: flex;
             align-items: center;
             gap: 12px;
+            padding-right: 16px;
+            min-width: 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        
-        .gdrive-list-name i {
-            color: var(--gdrive-text-secondary);
+
+        .gdrive-list-icon {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        
-        .gdrive-list-name i.fa-folder {
-            color: var(--gdrive-yellow-folder);
+
+        .gdrive-list-filename {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 14px;
+            color: var(--gdrive-text);
+        }
+
+        .gdrive-list-owner, 
+        .gdrive-list-modified, 
+        .gdrive-list-size {
+            font-size: 14px;
+            color: var(--gdrive-text-secondary);
+            padding-right: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .gdrive-list-actions {
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gdrive-list-item:hover .gdrive-list-actions {
+            display: flex;
+        }
+
+        /* Responsive adjustments for list view */
+        @media (max-width: 768px) {
+            .gdrive-list-item {
+                grid-template-columns: 40px minmax(200px, 1fr) 100px 40px;
+            }
+
+            .gdrive-list-owner,
+            .gdrive-list-size {
+                display: none;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .gdrive-list-item {
+                grid-template-columns: 40px minmax(150px, 1fr) 40px;
+            }
+
+            .gdrive-list-modified {
+                display: none;
+            }
         }
     </style>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // View toggle functionality
-        const gridViewBtn = document.getElementById('gridViewBtn');
-        const listViewBtn = document.getElementById('listViewBtn');
-        const gridView = document.getElementById('gridView');
-        const listView = document.getElementById('listView');
-        
-        if (gridViewBtn && listViewBtn && gridView && listView) {
-            gridViewBtn.addEventListener('click', function() {
-                gridView.style.display = 'grid';
-                listView.style.display = 'none';
-                gridViewBtn.classList.add('active');
-                listViewBtn.classList.remove('active');
+        // File checkboxes functionality 
+        const fileCheckboxes = document.querySelectorAll('.gdrive-file-checkbox');
+        fileCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const fileItem = this.closest('.gdrive-file-card') || this.closest('.gdrive-list-item');
+                if (fileItem) {
+                    if (this.checked) {
+                        fileItem.classList.add('selected');
+                    } else {
+                        fileItem.classList.remove('selected');
+                    }
+                }
             });
-            
-            listViewBtn.addEventListener('click', function() {
-                gridView.style.display = 'none';
-                listView.style.display = 'flex';
-                gridViewBtn.classList.remove('active');
-                listViewBtn.classList.add('active');
-            });
-        }
+        });
         
         // Sort dropdown
         const sortButton = document.getElementById('sortButton');
