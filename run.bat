@@ -124,14 +124,14 @@ exit /b 0
 :startAutoCommit
 echo Đang khởi động tự động commit...
 echo @echo off > "%TEMP%\RunAutoCommit.bat"
-echo powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "%%~dp0AutoCommit.ps1" >> "%TEMP%\RunAutoCommit.bat"
+echo powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "%%~dp0commit.ps1" >> "%TEMP%\RunAutoCommit.bat"
 start "" "%TEMP%\RunAutoCommit.bat"
 echo Script tự động commit đã được khởi chạy trong background!
 goto :eof
 
 :stopAutoCommit
 echo Đang dừng tiến trình tự động commit...
-powershell -ExecutionPolicy Bypass -Command "Get-Process -Name powershell | Where-Object { $_.CommandLine -like '*AutoCommit.ps1*' } | Stop-Process -Force"
+powershell -ExecutionPolicy Bypass -Command "Get-Process -Name powershell | Where-Object { $_.CommandLine -like '*commit.ps1*' } | Stop-Process -Force"
 echo Đã dừng tiến trình tự động commit.
 pause
 goto :eof

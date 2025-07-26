@@ -1,156 +1,43 @@
-<!-- TeleDrive Sidebar Component - Google Drive Style -->
+<!-- TeleDrive Sidebar Component -->
 <div class="gdrive-sidebar" id="sidebar">
     <!-- Create button -->
-    <div class="gdrive-create-button-container">
-        <button class="gdrive-create-button" id="createButton">
-            <div class="gdrive-create-icon">
-                <svg width="36" height="36" viewBox="0 0 36 36">
-                    <path fill="#fff" d="M16 16v14h4V16h14v-4H20V2h-4v10H2v4h14z"></path>
-                </svg>
-            </div>
-            <span>Tạo mới</span>
-        </button>
-        
-        <!-- Create dropdown menu -->
-        <div class="gdrive-create-menu" id="createMenu">
-            <div class="gdrive-create-item" data-action="upload-file">
-                <i class="fas fa-file-upload"></i>
-                <span>Tải file lên</span>
-            </div>
-            <div class="gdrive-create-item" data-action="upload-folder">
-                <i class="fas fa-folder-upload"></i>
-                <span>Tải thư mục lên</span>
-            </div>
-            <div class="gdrive-create-item" data-action="new-folder">
-                <i class="fas fa-folder-plus"></i>
-                <span>Thư mục mới</span>
-            </div>
-            <div class="gdrive-create-divider"></div>
-            <div class="gdrive-create-item" data-action="scan-telegram">
-                <i class="fas fa-sync-alt"></i>
-                <span>Quét từ Telegram</span>
-            </div>
+    <button class="gdrive-create-button" id="createButton">
+        <div class="gdrive-create-icon">
+            <svg width="36" height="36" viewBox="0 0 36 36">
+                <path fill="#4285f4" d="M16 16v14h4V16h14v-4H20V2h-4v10H2v4h14z"></path>
+            </svg>
         </div>
-    </div>
+        <span>Tạo mới</span>
+    </button>
 
     <!-- Navigation -->
-    <div class="gdrive-nav">
-        <!-- Main navigation items -->
-        <div class="gdrive-nav-item {% if active_page == 'home' %}active{% endif %}" data-action="home">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-hdd"></i>
-            </div>
-            <div class="gdrive-nav-label">TeleDrive của tôi</div>
+    <nav class="gdrive-nav">
+        <div class="gdrive-nav-item active" data-action="home">
+            <i class="fas fa-home"></i>
+            <span>Trang chủ</span>
         </div>
-        
-        <div class="gdrive-nav-item {% if active_page == 'recent' %}active{% endif %}" data-action="recent">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="gdrive-nav-label">Gần đây</div>
+
+        <div class="gdrive-nav-item" data-action="recent">
+            <i class="fas fa-clock"></i>
+            <span>Gần đây</span>
         </div>
-        
-        <div class="gdrive-nav-item {% if active_page == 'favorites' %}active{% endif %}" data-action="favorites">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-star"></i>
-            </div>
-            <div class="gdrive-nav-label">Có gắn dấu sao</div>
+
+        <div class="gdrive-nav-item" data-action="favorites">
+            <i class="fas fa-star"></i>
+            <span>Có gắn dấu sao</span>
         </div>
-        
-        <div class="gdrive-nav-item {% if active_page == 'shared' %}active{% endif %}" data-action="shared">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-user-friends"></i>
-            </div>
-            <div class="gdrive-nav-label">Được chia sẻ với tôi</div>
+
+        <div class="gdrive-nav-item" data-action="shared">
+            <i class="fas fa-share-alt"></i>
+            <span>Được chia sẻ</span>
         </div>
-        
+
         <div class="gdrive-nav-item" data-action="trash">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-trash"></i>
-            </div>
-            <div class="gdrive-nav-label">Thùng rác</div>
+            <i class="fas fa-trash"></i>
+            <span>Thùng rác</span>
         </div>
-        
-        <div class="gdrive-nav-divider"></div>
-        
-        <!-- File types section -->
-        <div class="gdrive-nav-heading">Loại tệp tin</div>
-        
-        <div class="gdrive-nav-item {% if active_page == 'documents' %}active{% endif %}" data-action="documents">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-file-alt" style="color: var(--gdrive-blue);"></i>
-            </div>
-            <div class="gdrive-nav-label">Tài liệu</div>
-        </div>
-        
-        <div class="gdrive-nav-item {% if active_page == 'images' %}active{% endif %}" data-action="images">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-image" style="color: var(--gdrive-green);"></i>
-            </div>
-            <div class="gdrive-nav-label">Hình ảnh</div>
-        </div>
-        
-        <div class="gdrive-nav-item {% if active_page == 'videos' %}active{% endif %}" data-action="videos">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-video" style="color: var(--gdrive-red);"></i>
-            </div>
-            <div class="gdrive-nav-label">Video</div>
-        </div>
-        
-        <div class="gdrive-nav-item {% if active_page == 'audio' %}active{% endif %}" data-action="audio">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-music" style="color: var(--gdrive-yellow);"></i>
-            </div>
-            <div class="gdrive-nav-label">Âm thanh</div>
-        </div>
-        
-        <div class="gdrive-nav-divider"></div>
-        
-        <!-- Storage section -->
-        <div class="gdrive-nav-heading">Lưu trữ</div>
-        
-        <div class="gdrive-storage-info">
-            <div class="gdrive-storage-progress">
-                <div class="gdrive-storage-bar" style="width: {{ storage_percent|default(25) }}%;"></div>
-            </div>
-            <div class="gdrive-storage-text">
-                <span>{{ storage_used|default('2.5 GB') }} / {{ storage_total|default('15 GB') }}</span>
-                <a href="/upgrade" class="gdrive-storage-upgrade">Mua bộ nhớ</a>
-            </div>
-        </div>
-        
-        <div class="gdrive-nav-divider"></div>
-        
-        <!-- Tools section -->
-        <div class="gdrive-nav-heading">Công cụ</div>
-        
-        <div class="gdrive-nav-item" data-action="stats">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-chart-bar"></i>
-            </div>
-            <div class="gdrive-nav-label">Thống kê</div>
-        </div>
-
-        <div class="gdrive-nav-item" data-action="settings">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-cog"></i>
-            </div>
-            <div class="gdrive-nav-label">Cài đặt</div>
-        </div>
-
-        {% if current_user and current_user.is_authenticated and current_user.is_admin %}
-        <div class="gdrive-nav-item" data-action="admin">
-            <div class="gdrive-nav-icon">
-                <i class="fas fa-shield-alt"></i>
-            </div>
-            <div class="gdrive-nav-label">Quản trị</div>
-        </div>
-        {% endif %}
-    </div>
+    </nav>
 </div>
-
-<!-- Mobile sidebar backdrop -->
-<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
 <style>
     /* Google Drive style sidebar enhancements */

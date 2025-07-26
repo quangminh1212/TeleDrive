@@ -20,11 +20,11 @@
 @import 'modern-theme.css';
 
 /* Import existing styles for compatibility */
-@import 'gdrive.css';
+@import 'style.css';
 @import 'mobile.css';
 
 /* Import icon fixes - must be last to override other styles */
-@import 'icon-fix.css';
+@import 'icons.css';
 
 /* Reset */
 * {
