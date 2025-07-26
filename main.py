@@ -13,6 +13,12 @@ import argparse
 import subprocess
 from pathlib import Path
 
+# Thiết lập encoding UTF-8 cho console
+if os.name == 'nt':  # Windows
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+
 # Thêm thư mục src vào Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

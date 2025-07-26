@@ -69,6 +69,9 @@ def configure_app(app: Flask, test_config: Optional[Dict[str, Any]] = None) -> N
         DEBUG=os.getenv('DEBUG', 'false').lower() == 'true',
         TESTING=False,
         DEV_MODE=os.getenv('DEV_MODE', 'false').lower() == 'true',
+        # UTF-8 encoding configuration
+        JSON_AS_ASCII=False,
+        JSONIFY_PRETTYPRINT_REGULAR=True,
     )
 
     # Set database URI
@@ -124,20 +127,28 @@ def initialize_extensions(app: Flask) -> None:
     """Initialize Flask extensions."""
     # Initialize database with improved init function
     init_db(app)
-    
+
     # Initialize auth manager
     # auth_manager.init_app(app)
 
     # Initialize security middleware only in production
     # if not app.config.get('DEV_MODE', False):
     #     init_security_middleware(app)
-    
+
     # Initialize CORS with proper settings
     if app.config['ENV'] == 'production':
-        CORS(app, origins=[os.getenv('ALLOWED_ORIGIN', 'https://yourdomain.com')], 
+        CORS(app, origins=[os.getenv('ALLOWED_ORIGIN', 'https://yourdomain.com')],
              supports_credentials=True)
     else:
         CORS(app)
+
+    # Add UTF-8 encoding middleware
+    @app.after_request
+    def after_request(response):
+        """Ensure UTF-8 encoding for all responses."""
+        if response.content_type.startswith('text/') or response.content_type.startswith('application/json'):
+            response.charset = 'utf-8'
+        return response
 
 
 def register_blueprints(app: Flask) -> None:
