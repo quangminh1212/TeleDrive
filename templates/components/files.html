@@ -18,59 +18,41 @@
                     <div class="gdrive-file-thumbnail">
                         {% if file.is_directory %}
                             <div class="gdrive-folder-icon">
-                                <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                    <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" fill="#5f6368"></path>
-                                </svg>
+                                <svg viewBox="0 0 24 24" focusable="false"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" fill="#fbbc04"></path></svg>
                             </div>
                         {% elif file.type == 'image' %}
                             <img src="{{ file.thumbnail_url|default(file.url) }}" alt="{{ file.name }}" onerror="this.onerror=null;this.src='/static/images/placeholder.png';">
                         {% elif file.type == 'video' %}
                             <div class="gdrive-file-icon video-icon">
-                                <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                    <path d="M18 4v1h-2V4c0-.55-.45-1-1-1H9c-.55 0-1 .45-1 1v1H6V4c0-.55-.45-1-1-1s-1 .45-1 1v16c0 .55.45 1 1 1s1-.45 1-1v-1h2v1c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-1h2v1c0 .55.45 1 1 1s1-.45 1-1V4c0-.55-.45-1-1-1s-1 .45-1 1z" fill="#ea4335"></path>
-                                </svg>
+                                <svg viewBox="0 0 24 24" focusable="false"><path d="M18 4v1h-2V4c0-.55-.45-1-1-1H9c-.55 0-1 .45-1 1v1H6V4c0-.55-.45-1-1-1s-1 .45-1 1v16c0 .55.45 1 1 1s1-.45 1-1v-1h2v1c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-1h2v1c0 .55.45 1 1 1s1-.45 1-1V4c0-.55-.45-1-1-1s-1 .45-1 1z" fill="#ea4335"></path></svg>
                             </div>
                         {% elif file.type == 'audio' %}
                             <div class="gdrive-file-icon audio-icon">
-                                <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6zm-2 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" fill="#fbbc05"></path>
-                                </svg>
+                                <svg viewBox="0 0 24 24" focusable="false"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6zm-2 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" fill="#fbbc05"></path></svg>
                             </div>
                         {% elif file.type == 'pdf' %}
                             <div class="gdrive-file-icon pdf-icon">
-                                <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                    <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z" fill="#4285f4"></path>
-                                </svg>
+                                <svg viewBox="0 0 24 24" focusable="false"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z" fill="#4285f4"></path></svg>
                             </div>
                         {% elif file.type == 'doc' or file.type == 'docx' %}
                             <div class="gdrive-file-icon doc-icon">
-                                <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" fill="#4285f4"></path>
-                                </svg>
+                                <svg viewBox="0 0 24 24" focusable="false"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" fill="#4285f4"></path></svg>
                             </div>
                         {% elif file.type == 'xls' or file.type == 'xlsx' %}
                             <div class="gdrive-file-icon xls-icon">
-                                <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                    <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z" fill="#34a853"></path>
-                                </svg>
+                                <svg viewBox="0 0 24 24" focusable="false"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z" fill="#34a853"></path></svg>
                             </div>
                         {% elif file.type == 'ppt' or file.type == 'pptx' %}
                             <div class="gdrive-file-icon ppt-icon">
-                                <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-2V9h-3V7h5v10z" fill="#ea4335"></path>
-                                </svg>
+                                <svg viewBox="0 0 24 24" focusable="false"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-2V9h-3V7h5v10z" fill="#ea4335"></path></svg>
                             </div>
                         {% elif file.type == 'zip' or file.type == 'rar' or file.type == '7z' %}
                             <div class="gdrive-file-icon zip-icon">
-                                <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                    <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2zm-.5 3H8v1h1v1h1v-1h1v-1h-1V6H9v1h-.5zM12 16h1v-4h-1v4zm-1 0h1v-1h-1v1zm-1-1h1v-1h-1v1zm-1-1h1v-1h-1v1zm5-4h-1v6h1V9.5l1 1.25 1-1.25V15h1V10h-1l-1 1.25L13 10z" fill="#5f6368"></path>
-                                </svg>
+                                <svg viewBox="0 0 24 24" focusable="false"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2zm-.5 3H8v1h1v1h1v-1h1v-1h-1V6H9v1h-.5zM12 16h1v-4h-1v4zm-1 0h1v-1h-1v1zm-1-1h1v-1h-1v1zm-1-1h1v-1h-1v1zm5-4h-1v6h1V9.5l1 1.25 1-1.25V15h1V10h-1l-1 1.25L13 10z" fill="#5f6368"></path></svg>
                             </div>
                         {% else %}
                             <div class="gdrive-file-icon file-icon">
-                                <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" fill="#5f6368"></path>
-                                </svg>
+                                <svg viewBox="0 0 24 24" focusable="false"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" fill="#5f6368"></path></svg>
                             </div>
                         {% endif %}
                     </div>
@@ -96,13 +78,9 @@
                         <div class="gdrive-tooltip-header">
                             <div class="gdrive-tooltip-icon">
                                 {% if file.is_directory %}
-                                    <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                        <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" fill="#5f6368"></path>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" focusable="false"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" fill="#5f6368"></path></svg>
                                 {% else %}
-                                    <svg viewBox="0 0 24 24" focusable="false" width="24px" height="24px">
-                                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" fill="#5f6368"></path>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" focusable="false"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" fill="#5f6368"></path></svg>
                                 {% endif %}
                             </div>
                             <div class="gdrive-tooltip-title">{{ file.name }}</div>
@@ -145,27 +123,19 @@
                         <div class="gdrive-list-name">
                             {% if file.is_directory %}
                                 <div class="gdrive-list-icon folder-icon">
-                                    <svg viewBox="0 0 24 24" focusable="false" width="20px" height="20px">
-                                        <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" fill="#5f6368"></path>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" focusable="false"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" fill="#5f6368"></path></svg>
                                 </div>
                             {% elif file.type == 'image' %}
                                 <div class="gdrive-list-icon image-icon">
-                                    <svg viewBox="0 0 24 24" focusable="false" width="20px" height="20px">
-                                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z" fill="#5f6368"></path>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" focusable="false"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z" fill="#5f6368"></path></svg>
                                 </div>
                             {% elif file.type == 'video' %}
                                 <div class="gdrive-list-icon video-icon">
-                                    <svg viewBox="0 0 24 24" focusable="false" width="20px" height="20px">
-                                        <path d="M18 4v1h-2V4c0-.55-.45-1-1-1H9c-.55 0-1 .45-1 1v1H6V4c0-.55-.45-1-1-1s-1 .45-1 1v16c0 .55.45 1 1 1s1-.45 1-1v-1h2v1c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-1h2v1c0 .55.45 1 1 1s1-.45 1-1V4c0-.55-.45-1-1-1s-1 .45-1 1z" fill="#ea4335"></path>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" focusable="false"><path d="M18 4v1h-2V4c0-.55-.45-1-1-1H9c-.55 0-1 .45-1 1v1H6V4c0-.55-.45-1-1-1s-1 .45-1 1v16c0 .55.45 1 1 1s1-.45 1-1v-1h2v1c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-1h2v1c0 .55.45 1 1 1s1-.45 1-1V4c0-.55-.45-1-1-1s-1 .45-1 1z" fill="#ea4335"></path></svg>
                                 </div>
                             {% else %}
                                 <div class="gdrive-list-icon file-icon">
-                                    <svg viewBox="0 0 24 24" focusable="false" width="20px" height="20px">
-                                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" fill="#5f6368"></path>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24" focusable="false"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" fill="#5f6368"></path></svg>
                                 </div>
                             {% endif %}
                             <span class="gdrive-list-filename" title="{{ file.name }}">{{ file.name }}</span>
