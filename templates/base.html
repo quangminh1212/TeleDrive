@@ -9,10 +9,7 @@
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/static/css/main.css">
-    <link rel="stylesheet" href="/static/css/theme.css">
-    <link rel="stylesheet" href="/static/css/modern.css">
-    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/gdrive.css">
     
     <!-- Icons (Font Awesome) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -25,24 +22,23 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Main Layout -->
-    <div class="gdrive-layout">
+    <!-- Google Drive Container -->
+    <div class="gdrive-container">
         <!-- Header -->
         {% include 'components/header.html' %}
-        
-        <!-- Main content -->
-        <div class="gdrive-content">
+
+        <!-- Main Layout -->
+        <div class="gdrive-main">
             <!-- Sidebar -->
             {% include 'components/sidebar.html' %}
 
-            <!-- Main content area with toolbar -->
-            <div class="gdrive-main-content">
+            <!-- Content Area -->
+            <div class="gdrive-content">
                 <!-- Toolbar -->
                 {% include 'components/toolbar.html' %}
 
-                <!-- Content area -->
+                <!-- Files Display -->
                 {% block content %}
-                    <!-- Default content -->
                     {% include 'components/files.html' %}
                 {% endblock %}
             </div>
@@ -203,14 +199,8 @@
         });
     </script>
     
-    <!-- Core JavaScript Modules -->
-    <script src="/static/js/encoding-fix.js"></script>
-    <script src="/static/js/files.js"></script>
-    <script src="/static/js/drag.js"></script>
-    <script src="/static/js/preview.js"></script>
-    <script src="/static/js/mobile.js"></script>
-    <script src="/static/js/app.js"></script>
-    <script src="/static/js/ui.js"></script>
+    <!-- Google Drive JavaScript -->
+    <script src="/static/js/gdrive.js"></script>
 
     <!-- Additional scripts -->
     {% block extra_js %}{% endblock %}

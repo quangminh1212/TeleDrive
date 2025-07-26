@@ -1,42 +1,60 @@
-<!-- TeleDrive Sidebar Component -->
-<div class="gdrive-sidebar" id="sidebar">
-    <!-- Create button -->
-    <button class="gdrive-create-button" id="createButton">
-        <div class="gdrive-create-icon">
-            <svg width="36" height="36" viewBox="0 0 36 36">
-                <path fill="#4285f4" d="M16 16v14h4V16h14v-4H20V2h-4v10H2v4h14z"></path>
-            </svg>
-        </div>
-        <span>Tạo mới</span>
-    </button>
-
+<!-- Google Drive Sidebar -->
+<aside class="gdrive-sidebar">
     <!-- Navigation -->
     <nav class="gdrive-nav">
-        <div class="gdrive-nav-item active" data-action="home">
+        <a href="/" class="gdrive-nav-item active" data-action="home">
             <i class="fas fa-home"></i>
             <span>Trang chủ</span>
-        </div>
+        </a>
 
-        <div class="gdrive-nav-item" data-action="recent">
+        <a href="#" class="gdrive-nav-item" data-action="recent">
             <i class="fas fa-clock"></i>
             <span>Gần đây</span>
-        </div>
+        </a>
 
-        <div class="gdrive-nav-item" data-action="favorites">
+        <a href="#" class="gdrive-nav-item" data-action="favorites">
             <i class="fas fa-star"></i>
             <span>Có gắn dấu sao</span>
-        </div>
+        </a>
 
-        <div class="gdrive-nav-item" data-action="shared">
-            <i class="fas fa-share-alt"></i>
-            <span>Được chia sẻ</span>
-        </div>
+        <a href="#" class="gdrive-nav-item" data-action="shared">
+            <i class="fas fa-users"></i>
+            <span>Được chia sẻ với tôi</span>
+        </a>
 
-        <div class="gdrive-nav-item" data-action="trash">
+        <a href="#" class="gdrive-nav-item" data-action="telegram">
+            <i class="fab fa-telegram"></i>
+            <span>Telegram</span>
+        </a>
+
+        <!-- Section Divider -->
+        <div class="gdrive-nav-section">Loại tệp tin</div>
+
+        <a href="#" class="gdrive-nav-item" data-action="documents">
+            <i class="fas fa-file-alt"></i>
+            <span>Tài liệu</span>
+        </a>
+
+        <a href="#" class="gdrive-nav-item" data-action="images">
+            <i class="fas fa-image"></i>
+            <span>Hình ảnh</span>
+        </a>
+
+        <a href="#" class="gdrive-nav-item" data-action="videos">
+            <i class="fas fa-video"></i>
+            <span>Video</span>
+        </a>
+
+        <a href="#" class="gdrive-nav-item" data-action="audio">
+            <i class="fas fa-music"></i>
+            <span>Âm thanh</span>
+        </a>
+
+        <a href="#" class="gdrive-nav-item" data-action="trash">
             <i class="fas fa-trash"></i>
             <span>Thùng rác</span>
-        </div>
+        </a>
     </nav>
-</div>
+</aside>
 
 

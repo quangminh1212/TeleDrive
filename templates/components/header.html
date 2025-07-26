@@ -1,46 +1,41 @@
-<!-- TeleDrive Header Component - Google Drive Style -->
-<div class="gdrive-header">
-    <!-- Logo -->
-    <div class="gdrive-logo">
-        <a href="/" class="gdrive-logo-link">
-            <span class="app-logo">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="gdrive-icon">
-                    <!-- Google Drive icon - triangle parts -->
-                    <path d="M8.34 15.5L3.67 7.33H13L17.66 15.5H8.34z" fill="#0066da"/>
-                    <path d="M17.67 15.5L22.33 7.33H13L8.34 15.5H17.67z" fill="#00ac47"/>
-                    <path d="M13 7.33l-4.66 8.17-4.67 8.17h9.33L17.67 15.5 13 7.33z" fill="#ea4335"/>
-                </svg>
-            </span>
-            <span class="gdrive-logo-text">TeleDrive</span>
+<!-- Google Drive Header -->
+<header class="gdrive-header">
+    <!-- Left Section -->
+    <div class="gdrive-header-left">
+        <!-- Logo -->
+        <a href="/" class="gdrive-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
+                <path d="M8.34 15.5L3.67 7.33H13L17.66 15.5H8.34z" fill="#0066da"/>
+                <path d="M17.67 15.5L22.33 7.33H13L8.34 15.5H17.67z" fill="#00ac47"/>
+                <path d="M13 7.33l-4.66 8.17-4.67 8.17h9.33L17.67 15.5 13 7.33z" fill="#ea4335"/>
+            </svg>
+            <span>TeleDrive</span>
         </a>
     </div>
-    
-    <!-- Search -->
-    <div class="gdrive-search">
-        <input type="text" placeholder="Tìm kiếm trong TeleDrive" id="globalSearch">
-        <button class="gdrive-search-btn" title="Tìm kiếm">
-            <i class="fas fa-search"></i>
-        </button>
+
+    <!-- Center Section - Search -->
+    <div class="gdrive-header-center">
+        <div class="gdrive-search">
+            <input type="text" placeholder="Tìm kiếm trong TeleDrive" id="globalSearch">
+            <button class="gdrive-search-btn" title="Tìm kiếm">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
     </div>
-    
-    <!-- User menu -->
+
+    <!-- Right Section -->
     <div class="gdrive-header-right">
-        <!-- View toggle button -->
-        <button class="gdrive-header-btn" id="viewToggleButton" title="Chế độ xem">
+        <!-- Apps Grid -->
+        <button class="gdrive-header-btn" title="Ứng dụng Google">
             <i class="fas fa-th"></i>
         </button>
 
-        <!-- Settings button -->
-        <button class="gdrive-header-btn" id="settingsButton" title="Cài đặt">
-            <i class="fas fa-cog"></i>
-        </button>
-
-        <!-- User avatar -->
-        <div class="gdrive-user-avatar" id="userMenuToggle">
-            {{ current_user.username[0] if current_user and current_user.is_authenticated else 'D' }}
+        <!-- User Avatar -->
+        <div class="gdrive-user-avatar" id="userMenuToggle" title="Tài khoản Google">
+            {{ current_user.username[0].upper() if current_user and current_user.is_authenticated else 'D' }}
         </div>
     </div>
-</div>
+</header>
 
 
 
