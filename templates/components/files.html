@@ -1,126 +1,95 @@
-<!-- Google Drive Files Display -->
-<div class="gdrive-files-display gdrive-grid-view" id="filesDisplay">
-    {% if files %}
-        {% for file in files %}
-            <div class="gdrive-file-card" data-id="{{ file.id }}" data-type="{{ 'folder' if file.is_directory else file.type }}">
-                <!-- Selection Checkbox -->
-                <div class="gdrive-file-select">
-                    <div class="select-checkbox">
-                        <i class="fas fa-check"></i>
-                    </div>
-                </div>
-
-                <!-- File Thumbnail -->
-                <div class="gdrive-file-thumbnail">
-                    {% if file.is_directory %}
-                        <div class="gdrive-folder-icon">
-                            <i class="fas fa-folder"></i>
-                        </div>
-                    {% elif file.type == 'image' %}
-                        <div class="gdrive-image-thumbnail">
-                            <img src="{{ file.thumbnail_url|default(file.url) }}" alt="{{ file.name }}"
-                                 onerror="this.parentElement.innerHTML='<i class=\'fas fa-image\'></i>';">
-                        </div>
-                        <div class="gdrive-file-type-badge">{{ file.extension.upper() if file.extension else 'IMG' }}</div>
-                    {% elif file.type == 'pdf' %}
-                        <div class="gdrive-file-icon pdf">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <div class="gdrive-file-type-badge">PDF</div>
-                    {% elif file.type in ['doc', 'docx'] %}
-                        <div class="gdrive-file-icon doc">
-                            <i class="fas fa-file-word"></i>
-                        </div>
-                        <div class="gdrive-file-type-badge">DOC</div>
-                    {% elif file.type in ['xls', 'xlsx'] %}
-                        <div class="gdrive-file-icon xls">
-                            <i class="fas fa-file-excel"></i>
-                        </div>
-                        <div class="gdrive-file-type-badge">XLS</div>
-                    {% elif file.type == 'video' %}
-                        <div class="gdrive-file-icon video">
-                            <i class="fas fa-video"></i>
-                        </div>
-                        <div class="gdrive-file-type-badge">{{ file.extension.upper() if file.extension else 'VID' }}</div>
-                    {% elif file.type == 'audio' %}
-                        <div class="gdrive-file-icon audio">
-                            <i class="fas fa-music"></i>
-                        </div>
-                        <div class="gdrive-file-type-badge">{{ file.extension.upper() if file.extension else 'AUD' }}</div>
-                    {% elif file.type in ['zip', 'rar', '7z'] %}
-                        <div class="gdrive-file-icon archive">
-                            <i class="fas fa-file-archive"></i>
-                        </div>
-                        <div class="gdrive-file-type-badge">{{ file.extension.upper() if file.extension else 'ZIP' }}</div>
-                    {% else %}
-                        <div class="gdrive-file-icon">
-                            <i class="fas fa-file"></i>
-                        </div>
-                        <div class="gdrive-file-type-badge">{{ file.extension.upper() if file.extension else 'FILE' }}</div>
-                    {% endif %}
-                </div>
-
-                <!-- File Info -->
-                <div class="gdrive-file-info">
-                    <div class="gdrive-file-name" title="{{ file.name }}">{{ file.name }}</div>
-                    <div class="gdrive-file-meta">
-                        {% if not file.is_directory %}
-                            <span class="gdrive-file-size">{{ file.size_formatted if file.size_formatted else '0 B' }}</span>
-                        {% endif %}
-                        <span class="gdrive-file-date">{{ file.modified_date.strftime('%d/%m/%Y') if file.modified_date else '' }}</span>
-                    </div>
-                </div>
-
-                <!-- File Actions -->
-                <div class="gdrive-file-actions">
-                    <button class="gdrive-action-btn" title="Thêm tùy chọn">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                </div>
-
-                <!-- File Status Icons -->
-                {% if file.is_shared %}
-                    <div class="gdrive-file-shared" title="Đã chia sẻ">
-                        <i class="fas fa-users"></i>
-                    </div>
-                {% endif %}
-
-                {% if file.is_favorite %}
-                    <div class="gdrive-file-favorite" title="Đã gắn dấu sao">
-                        <i class="fas fa-star"></i>
-                    </div>
-                {% endif %}
+<!-- Telegram Chat Content Panel -->
+<div class="tg-chat-content" id="tgChatContent">
+    <!-- Tin nhắn bên trái (người khác) -->
+    <div class="tg-message tg-message-left">
+        <div class="tg-message-avatar">
+            <img src="/static/images/avatar2.png" alt="B">
+        </div>
+        <div class="tg-message-bubble">
+            <div class="tg-message-header">
+                <span class="tg-message-name">Hỗ trợ khách hàng</span>
+                <span class="tg-message-time">09:15</span>
             </div>
-        {% endfor %}
-    {% else %}
-        <!-- Empty State -->
-        <div class="gdrive-empty-state">
-            <div class="gdrive-empty-icon">
-                <i class="fas fa-folder-open"></i>
+            <div class="tg-message-text">
+                Chào bạn! Đây là giao diện chat kiểu Telegram.<br>
+                <a href="https://telegram.org/" target="_blank">Xem thêm về Telegram</a>
             </div>
-            <h3>Thư mục này trống</h3>
-            <p>Kéo thả file vào đây hoặc sử dụng nút "Tạo mới" để thêm file</p>
-            <div class="gdrive-empty-actions">
-                <button class="gdrive-btn-primary" onclick="document.getElementById('createButton').click()">
-                    <i class="fas fa-plus"></i>
-                    Tạo mới
-                </button>
+            <div class="tg-message-actions">
+                <span>👍 2</span> <span>💬 1</span> <span>🔗</span>
             </div>
         </div>
-    {% endif %}
-
-    <!-- Loading State -->
-    <div class="gdrive-loading" id="loadingState" style="display: none;">
-        <div class="gdrive-spinner"></div>
-        <span>Đang tải...</span>
     </div>
-
-    <!-- Drag and Drop Overlay -->
-    <div class="gdrive-drop-overlay" id="dropOverlay" style="display: none;">
-        <div class="gdrive-drop-content">
-            <i class="fas fa-cloud-upload-alt"></i>
-            <h3>Thả file vào đây để tải lên</h3>
-            <p>Hỗ trợ nhiều file cùng lúc</p>
+    <!-- Tin nhắn bên phải (mình) -->
+    <div class="tg-message tg-message-right">
+        <div class="tg-message-bubble">
+            <div class="tg-message-header">
+                <span class="tg-message-name">Bạn</span>
+                <span class="tg-message-time">09:16</span>
+            </div>
+            <div class="tg-message-text">
+                Cảm ơn! Giao diện này đã giống Telegram chưa?
+            </div>
+            <div class="tg-message-actions">
+                <span>👍</span> <span>💬</span>
+            </div>
+        </div>
+        <div class="tg-message-avatar">
+            <img src="/static/images/avatar1.png" alt="A">
+        </div>
+    </div>
+    <!-- Tin nhắn có file đính kèm -->
+    <div class="tg-message tg-message-left">
+        <div class="tg-message-avatar">
+            <img src="/static/images/avatar3.png" alt="C">
+        </div>
+        <div class="tg-message-bubble">
+            <div class="tg-message-header">
+                <span class="tg-message-name">Telegram Bot</span>
+                <span class="tg-message-time">09:17</span>
+            </div>
+            <div class="tg-message-text">
+                Đây là file bạn yêu cầu:
+                <div class="tg-message-file">
+                    <i class="fas fa-file-pdf"></i> <a href="#">Báo cáo tài chính.pdf</a> <span class="tg-file-size">2.4 MB</span>
+                </div>
+            </div>
+            <div class="tg-message-actions">
+                <span>🔗</span>
+            </div>
+        </div>
+    </div>
+    <!-- Tin nhắn có ảnh -->
+    <div class="tg-message tg-message-right">
+        <div class="tg-message-bubble">
+            <div class="tg-message-header">
+                <span class="tg-message-name">Bạn</span>
+                <span class="tg-message-time">09:18</span>
+            </div>
+            <div class="tg-message-text">
+                <img src="/static/images/demo-image.jpg" alt="Demo" class="tg-message-image">
+            </div>
+        </div>
+        <div class="tg-message-avatar">
+            <img src="/static/images/avatar1.png" alt="A">
+        </div>
+    </div>
+    <!-- Tin nhắn chia sẻ link bài viết -->
+    <div class="tg-message tg-message-left">
+        <div class="tg-message-avatar">
+            <img src="/static/images/avatar2.png" alt="B">
+        </div>
+        <div class="tg-message-bubble">
+            <div class="tg-message-header">
+                <span class="tg-message-name">Hỗ trợ khách hàng</span>
+                <span class="tg-message-time">09:19</span>
+            </div>
+            <div class="tg-message-text">
+                <a href="https://telegra.ph/huong-dan-su-dung-teledrive-01-01" target="_blank" class="tg-link-preview">
+                    <div class="tg-link-title">Hướng dẫn sử dụng TeleDrive</div>
+                    <div class="tg-link-desc">Bài viết chi tiết về cách sử dụng TeleDrive để quản lý file từ Telegram.</div>
+                    <div class="tg-link-url">telegra.ph/huong-dan-su-dung-teledrive-01-01</div>
+                </a>
+            </div>
         </div>
     </div>
 </div>
