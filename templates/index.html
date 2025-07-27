@@ -1,312 +1,219 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive File Manager</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive Logo" class="logo-image">
+                    <span>TeleDrive</span>
+                </div>
+                <div class="header-title">File Manager</div>
+            </div>
+            
+            <div class="header-center">
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="globalSearch" placeholder="Tìm kiếm file...">
+                    <button id="clearSearch" class="clear-btn" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="stats-summary" id="globalStats">
+                    <div class="stat-item">
+                        <span class="stat-value">0</span>
+                        <span class="stat-label">Files</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">0 B</span>
+                        <span class="stat-label">Total</span>
+                    </div>
+                </div>
 
-{% block title %}TeleDrive - Trang chủ{% endblock %}
+                <!-- User Menu -->
+                <div class="user-menu">
+                    <div class="user-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="username">{{ user.username }}</span>
+                        {% if user.is_admin %}
+                            <span class="admin-badge">Admin</span>
+                        {% endif %}
+                    </div>
+                    <div class="user-dropdown">
+                        <button class="dropdown-toggle" id="userMenuToggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu" id="userDropdown">
+                            <div class="dropdown-item user-details">
+                                <div class="user-name">{{ user.username }}</div>
+                                <div class="user-email">{{ user.email }}</div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item" id="logoutBtn">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Đăng xuất
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
 
-{% block head %}
-<!-- Custom page head content -->
-<meta name="description" content="TeleDrive - Quản lý file từ Telegram">
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-<style>
-    /* Hide toolbar and breadcrumb remnants on welcome page */
-    .gdrive-toolbar {
-        display: none !important;
-    }
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Scan Sessions</h3>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <div class="sessions-list" id="sessionsList">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Đang tải...</span>
+                </div>
+            </div>
+        </aside>
 
-    /* Hide any breadcrumb text that might leak */
-    .gdrive-main-content::before {
-        display: none !important;
-    }
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="view-options">
+                        <button class="view-btn active" data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-btn" data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="filter-options">
+                        <select id="fileTypeFilter">
+                            <option value="all">Tất cả file</option>
+                            <option value="document">Documents</option>
+                            <option value="photo">Photos</option>
+                            <option value="video">Videos</option>
+                            <option value="audio">Audio</option>
+                            <option value="voice">Voice</option>
+                            <option value="sticker">Stickers</option>
+                            <option value="animation">Animations</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="toolbar-right">
+                    <div class="sort-options">
+                        <select id="sortBy">
+                            <option value="name">Tên file</option>
+                            <option value="size">Kích thước</option>
+                            <option value="date">Ngày upload</option>
+                            <option value="type">Loại file</option>
+                        </select>
+                        <button id="sortOrder" class="sort-btn" data-order="asc">
+                            <i class="fas fa-sort-alpha-down"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-    /* Enhanced Welcome Page Styling */
-    .gdrive-welcome {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: calc(100vh - var(--gdrive-header-height) - 40px);
-        max-height: calc(100vh - var(--gdrive-header-height) - 20px);
-        padding: 28px 24px 12px;
-        text-align: center;
-        max-width: 900px;
-        margin: 0 auto;
-        position: relative;
-        z-index: 1;
-        overflow-y: auto;
-    }
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-content">
+                        <i class="fab fa-telegram-plane welcome-icon"></i>
+                        <h2>Chào mừng đến với TeleDrive</h2>
+                        <p>Chọn một scan session từ sidebar để xem các file đã quét được</p>
+                    </div>
+                </div>
 
-    .gdrive-welcome-icon {
-        margin-bottom: 24px;
-        opacity: 0.95;
-        animation: fadeInUp 0.6s ease-out;
-    }
+                <!-- Files Grid -->
+                <div class="files-container" id="filesContainer" style="display: none;">
+                    <div class="session-info" id="sessionInfo">
+                        <h2 id="sessionTitle">Session</h2>
+                        <div class="session-stats" id="sessionStats"></div>
+                    </div>
+                    
+                    <div class="files-grid" id="filesGrid">
+                        <!-- Files will be loaded here -->
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="pagination" id="pagination" style="display: none;">
+                        <button id="prevPage" class="page-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="pageInfo">Trang 1 / 1</span>
+                        <button id="nextPage" class="page-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
 
-    .gdrive-welcome h2 {
-        font-size: 32px;
-        font-weight: 400;
-        color: var(--gdrive-text);
-        margin: 0 0 16px;
-        font-family: 'Google Sans', sans-serif;
-        animation: fadeInUp 0.6s ease-out 0.1s both;
-    }
+                <!-- Loading -->
+                <div class="loading-screen" id="loadingScreen" style="display: none;">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Đang tải file...</span>
+                    </div>
+                </div>
 
-    .gdrive-welcome p {
-        font-size: 16px;
-        color: var(--gdrive-text-secondary);
-        margin: 0 0 32px;
-        line-height: 1.5;
-        max-width: 650px;
-        animation: fadeInUp 0.6s ease-out 0.2s both;
-    }
+                <!-- No Results -->
+                <div class="no-results" id="noResults" style="display: none;">
+                    <i class="fas fa-search"></i>
+                    <h3>Không tìm thấy file nào</h3>
+                    <p>Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc</p>
+                </div>
+            </div>
+        </main>
+    </div>
 
-    .gdrive-welcome-actions {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 32px;
-        flex-wrap: wrap;
-        justify-content: center;
-        animation: fadeInUp 0.6s ease-out 0.3s both;
-    }
+    <!-- File Detail Modal -->
+    <div class="modal" id="fileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Chi tiết file</h3>
+                <button class="modal-close" id="modalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body" id="modalBody">
+                <!-- File details will be loaded here -->
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="modalCloseBtn">Đóng</button>
+                <button class="btn btn-primary" id="downloadBtn">
+                    <i class="fas fa-download"></i>
+                    Tải xuống
+                </button>
+            </div>
+        </div>
+    </div>
 
-    .gdrive-welcome-actions button {
-        padding: 14px 28px;
-        border-radius: 28px;
-        font-size: 15px;
-        font-weight: 500;
-        border: none;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 160px;
-        justify-content: center;
-        font-family: 'Google Sans', sans-serif;
-    }
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
 
-    .gdrive-btn-primary {
-        background: linear-gradient(135deg, #4285f4 0%, #3367d6 100%);
-        color: white;
-        box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
-        border: none;
-    }
-
-    .gdrive-btn-primary:hover {
-        background: linear-gradient(135deg, #3367d6 0%, #2851a3 100%);
-        box-shadow: 0 4px 16px rgba(66, 133, 244, 0.4);
-        transform: translateY(-2px);
-    }
-
-    .gdrive-btn-secondary {
-        background-color: var(--gdrive-white);
-        color: var(--gdrive-text);
-        border: 2px solid #e8eaed;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    }
-
-    .gdrive-btn-secondary:hover {
-        background-color: #f8f9fa;
-        border-color: #dadce0;
-        transform: translateY(-2px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-    }
-
-    .gdrive-welcome-tips {
-        margin-top: 20px;
-        margin-bottom: 0;
-        text-align: center;
-        animation: fadeInUp 0.6s ease-out 0.4s both;
-    }
-
-    .gdrive-tip-heading {
-        font-weight: 500;
-        margin-bottom: 20px;
-        color: var(--gdrive-text-secondary);
-        font-size: 16px;
-        font-family: 'Google Sans', sans-serif;
-    }
-
-    .gdrive-tips-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 24px;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-
-    .gdrive-tip-item {
-        text-align: center;
-        padding: 20px 16px;
-        border-radius: 12px;
-        transition: all 0.3s ease;
-        background-color: rgba(255, 255, 255, 0.8);
-        border: 1px solid rgba(218, 220, 224, 0.5);
-    }
-
-    .gdrive-tip-item:hover {
-        background-color: #f8f9fa;
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-        border-color: #dadce0;
-    }
-
-    .gdrive-tip-icon {
-        font-size: 32px;
-        margin-bottom: 12px;
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .gdrive-tip-icon i {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .gdrive-tip-text {
-        color: var(--gdrive-text-secondary);
-        font-size: 15px;
-        line-height: 1.5;
-        font-weight: 400;
-        font-family: 'Roboto', sans-serif;
-    }
-
-    /* Animations */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Icon hover effects */
-    .gdrive-tip-icon {
-        transition: all 0.3s ease;
-    }
-
-    .gdrive-tip-item:hover .gdrive-tip-icon {
-        transform: scale(1.1);
-    }
-
-    .gdrive-tip-item:hover .gdrive-tip-icon i {
-        animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-    }
-
-    /* Mobile responsiveness */
-    @media (max-width: 768px) {
-        .gdrive-welcome {
-            padding: 32px 16px;
-            min-height: calc(100vh - var(--gdrive-header-height) - 80px);
-        }
-
-        .gdrive-welcome h2 {
-            font-size: 28px;
-        }
-
-        .gdrive-welcome p {
-            font-size: 16px;
-        }
-
-        .gdrive-welcome-actions {
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .gdrive-welcome-actions button {
-            width: 100%;
-            max-width: 300px;
-        }
-
-        .gdrive-tips-grid {
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
-
-        .gdrive-tip-item {
-            padding: 24px 16px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .gdrive-welcome-icon svg {
-            width: 100px;
-            height: 100px;
-        }
-
-        .gdrive-welcome h2 {
-            font-size: 24px;
-        }
-
-        .gdrive-welcome p {
-            font-size: 15px;
-        }
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<!-- Include file display component -->
-{% include 'components/files.html' %}
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Set active page for sidebar highlighting
-    document.addEventListener('DOMContentLoaded', function() {
-        const homeNavItem = document.querySelector('.gdrive-nav-item[data-action="home"]');
-        if (homeNavItem) {
-            homeNavItem.classList.add('active');
-        }
-        // Sự kiện cho nút tải lên và quét Telegram ở trang chủ
-        document.getElementById('uploadButtonHome')?.addEventListener('click', function() {
-            document.getElementById('uploadButton')?.click();
-        });
-        document.getElementById('scanButtonHome')?.addEventListener('click', function() {
-            document.getElementById('scanButton')?.click();
-        });
-        document.getElementById('createFolderButton')?.addEventListener('click', function() {
-            // Hiển thị dialog tạo thư mục
-            const folderName = prompt('Nhập tên thư mục mới:');
-            if (folderName) {
-                // Gửi request tạo thư mục
-                fetch('/api/folder/create', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        parent_path: '/',
-                        folder_name: folderName
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.reload();
-                    } else {
-                        alert('Không thể tạo thư mục: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Đã xảy ra lỗi khi tạo thư mục');
-                });
-            }
-        });
-    });
-</script>
-{% endblock %}
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
