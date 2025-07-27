@@ -1,39 +1,19 @@
-<!-- Google Drive Header -->
-<header class="gdrive-header">
-    <!-- Left Section -->
-    <div class="gdrive-header-left">
-        <!-- Logo -->
-        <a href="/" class="gdrive-logo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
-                <path d="M8.34 15.5L3.67 7.33H13L17.66 15.5H8.34z" fill="#0066da"/>
-                <path d="M17.67 15.5L22.33 7.33H13L8.34 15.5H17.67z" fill="#00ac47"/>
-                <path d="M13 7.33l-4.66 8.17-4.67 8.17h9.33L17.67 15.5 13 7.33z" fill="#ea4335"/>
-            </svg>
-            <span>TeleDrive</span>
-        </a>
-    </div>
-
-    <!-- Center Section - Search -->
-    <div class="gdrive-header-center">
-        <div class="gdrive-search">
-            <input type="text" placeholder="Tìm kiếm trong TeleDrive" id="globalSearch">
-            <button class="gdrive-search-btn" title="Tìm kiếm">
-                <i class="fas fa-search"></i>
-            </button>
+<!-- Telegram Chat Header -->
+<header class="tg-header">
+    <div class="tg-header-left">
+        <div class="tg-header-avatar online">
+            <img src="/static/images/avatar1.png" alt="A">
+        </div>
+        <div class="tg-header-info">
+            <div class="tg-header-name">Nhóm Dev TeleDrive</div>
+            <div class="tg-header-status">Đang hoạt động</div>
         </div>
     </div>
-
-    <!-- Right Section -->
-    <div class="gdrive-header-right">
-        <!-- Apps Grid -->
-        <button class="gdrive-header-btn" title="Ứng dụng Google">
-            <i class="fas fa-th"></i>
-        </button>
-
-        <!-- User Avatar -->
-        <div class="gdrive-user-avatar" id="userMenuToggle" title="Tài khoản Google">
-            {{ current_user.username[0].upper() if current_user and current_user.is_authenticated else 'D' }}
-        </div>
+    <div class="tg-header-actions">
+        <button class="tg-header-btn" title="Gọi thoại"><i class="fas fa-phone"></i></button>
+        <button class="tg-header-btn" title="Gọi video"><i class="fas fa-video"></i></button>
+        <button class="tg-header-btn" title="Tìm kiếm"><i class="fas fa-search"></i></button>
+        <button class="tg-header-btn" title="Cài đặt"><i class="fas fa-ellipsis-v"></i></button>
     </div>
 </header>
 
