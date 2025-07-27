@@ -124,7 +124,7 @@ class ConfigManager:
     def __init__(self, config_file='config.json'):
         self.config_file = config_file
         self.config = self.load_config()
-
+    
     def load_config(self):
         """Load configuration from JSON file"""
         try:
@@ -136,7 +136,7 @@ class ConfigManager:
         except json.JSONDecodeError as e:
             print(f"Lỗi đọc {self.config_file}: {e}")
             return self.get_default_config()
-
+    
     def save_config(self):
         """Save configuration to JSON file with validation"""
         try:
@@ -176,7 +176,7 @@ class ConfigManager:
                 except:
                     pass
             return False
-
+    
     def get_default_config(self):
         """Get default configuration"""
         return {
@@ -354,7 +354,7 @@ class ConfigManager:
         if phone_number:
             self.config['telegram']['phone_number'] = str(phone_number)
         return self.save_config()
-
+    
     def update_output_config(self, directory=None, csv_enabled=None, json_enabled=None, excel_enabled=None):
         """Update output configuration"""
         if directory:
@@ -366,7 +366,7 @@ class ConfigManager:
         if excel_enabled is not None:
             self.config['output']['formats']['excel']['enabled'] = excel_enabled
         return self.save_config()
-
+    
     def update_scanning_config(self, max_messages=None, batch_size=None, file_types=None):
         """Update scanning configuration"""
         if max_messages is not None:
@@ -376,7 +376,7 @@ class ConfigManager:
         if file_types:
             self.config['scanning']['file_types'].update(file_types)
         return self.save_config()
-
+    
     def update_filter_config(self, min_size=None, max_size=None, extensions=None, exclude_ext=None):
         """Update filter configuration"""
         if min_size is not None:
@@ -388,26 +388,26 @@ class ConfigManager:
         if exclude_ext is not None:
             self.config['filters']['exclude_extensions'] = exclude_ext
         return self.save_config()
-
+    
     def get_config(self, section=None):
         """Get configuration section or full config"""
         if section:
             return self.config.get(section, {})
         return self.config
-
+    
     def print_config(self):
         """Print current configuration"""
         print("\n" + "="*60)
         print("           CẤU HÌNH TELEGRAM FILE SCANNER")
         print("="*60)
-
+        
         # Telegram settings
         telegram = self.config.get('telegram', {})
         print(f"\n📱 TELEGRAM:")
         print(f"   API ID: {telegram.get('api_id', 'Chưa cấu hình')}")
         print(f"   API Hash: {'*' * len(telegram.get('api_hash', '')) if telegram.get('api_hash') else 'Chưa cấu hình'}")
         print(f"   Số điện thoại: {telegram.get('phone_number', 'Chưa cấu hình')}")
-
+        
         # Output settings
         output = self.config.get('output', {})
         formats = output.get('formats', {})
@@ -416,7 +416,7 @@ class ConfigManager:
         print(f"   CSV: {'✓' if formats.get('csv', {}).get('enabled') else '✗'}")
         print(f"   JSON: {'✓' if formats.get('json', {}).get('enabled') else '✗'}")
         print(f"   Excel: {'✓' if formats.get('excel', {}).get('enabled') else '✗'}")
-
+        
         # Scanning settings
         scanning = self.config.get('scanning', {})
         file_types = scanning.get('file_types', {})
@@ -424,20 +424,20 @@ class ConfigManager:
         print(f"   Max messages: {scanning.get('max_messages', 'Không giới hạn')}")
         print(f"   Batch size: {scanning.get('batch_size', 100)}")
         print(f"   File types: {', '.join([k for k, v in file_types.items() if v])}")
-
+        
         # Filter settings
         filters = self.config.get('filters', {})
         print(f"\n🔧 FILTERS:")
         print(f"   Min size: {filters.get('min_file_size', 0)} bytes")
         print(f"   Max size: {filters.get('max_file_size', 'Không giới hạn')}")
         print(f"   Extensions: {filters.get('file_extensions', []) or 'Tất cả'}")
-
+        
         print("="*60)
 
 def main():
     """Interactive config manager"""
     config_mgr = ConfigManager()
-
+    
     while True:
         print("\n" + "="*50)
         print("        QUẢN LÝ CẤU HÌNH")
@@ -485,11 +485,11 @@ def configure_telegram(config_mgr):
     """Configure Telegram settings"""
     print("\n📱 CẤU HÌNH TELEGRAM API")
     print("-"*30)
-
+    
     api_id = input("API ID (Enter để bỏ qua): ").strip()
     api_hash = input("API Hash (Enter để bỏ qua): ").strip()
     phone = input("Số điện thoại (+84xxxxxxxxx) (Enter để bỏ qua): ").strip()
-
+    
     config_mgr.update_telegram_config(
         api_id=api_id if api_id else None,
         api_hash=api_hash if api_hash else None,
@@ -500,18 +500,18 @@ def configure_output(config_mgr):
     """Configure output settings"""
     print("\n📁 CẤU HÌNH OUTPUT")
     print("-"*25)
-
+    
     directory = input("Thư mục output (Enter để bỏ qua): ").strip()
-
+    
     csv_input = input("Xuất CSV? (y/n/Enter để bỏ qua): ").strip().lower()
     csv_enabled = True if csv_input == 'y' else False if csv_input == 'n' else None
-
+    
     json_input = input("Xuất JSON? (y/n/Enter để bỏ qua): ").strip().lower()
     json_enabled = True if json_input == 'y' else False if json_input == 'n' else None
-
+    
     excel_input = input("Xuất Excel? (y/n/Enter để bỏ qua): ").strip().lower()
     excel_enabled = True if excel_input == 'y' else False if excel_input == 'n' else None
-
+    
     config_mgr.update_output_config(
         directory=directory if directory else None,
         csv_enabled=csv_enabled,
@@ -523,13 +523,13 @@ def configure_scanning(config_mgr):
     """Configure scanning settings"""
     print("\n🔍 CẤU HÌNH SCANNING")
     print("-"*28)
-
+    
     max_msg = input("Số message tối đa (Enter = không giới hạn): ").strip()
     max_messages = int(max_msg) if max_msg.isdigit() else None
-
+    
     batch = input("Batch size (Enter để bỏ qua): ").strip()
     batch_size = int(batch) if batch.isdigit() else None
-
+    
     config_mgr.update_scanning_config(
         max_messages=max_messages,
         batch_size=batch_size

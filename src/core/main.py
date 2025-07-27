@@ -25,7 +25,7 @@ except ImportError:
 
 class PrivateChannelScanner(TelegramFileScanner):
     """Scanner chuyên dụng cho private channel"""
-
+    
     async def join_private_channel(self, invite_link: str):
         """Join private channel từ invite link"""
         try:
@@ -55,7 +55,7 @@ class PrivateChannelScanner(TelegramFileScanner):
             print(f"❌ Không thể join private channel: {e}")
             print("💡 Có thể bạn đã là thành viên hoặc link đã hết hạn")
             return False
-
+    
     async def scan_private_channel_auto(self):
         """Quét private channel tự động từ config"""
         print("\n🔧 Đang khởi tạo kết nối Telegram...")
@@ -179,36 +179,36 @@ class PrivateChannelScanner(TelegramFileScanner):
             print("📁 Kết quả được lưu trong thư mục 'output/'")
         else:
             print("\n⚠️ Không tìm thấy file nào trong channel này")
-
+    
     async def check_channel_permissions(self, entity):
         """Kiểm tra quyền truy cập chi tiết"""
         try:
             # Lấy thông tin channel
             full_channel = await self.client.get_entity(entity)
             print(f"📊 Channel: {getattr(full_channel, 'title', 'Unknown')}")
-
+            
             # Kiểm tra quyền đọc tin nhắn
             await self.client.get_messages(entity, limit=1)
             print("✅ Có quyền đọc tin nhắn")
-
+            
             # Kiểm tra số lượng tin nhắn
             total = 0
             async for _ in self.client.iter_messages(entity, limit=10):
                 total += 1
-
+                
             if total > 0:
                 print(f"✅ Có thể truy cập tin nhắn (test: {total}/10)")
             else:
                 print("⚠️ Không tìm thấy tin nhắn nào")
-
+                
         except Exception as e:
             print(f"⚠️ Lỗi kiểm tra quyền: {e}")
-
+    
     async def scan_channel_by_entity(self, entity):
         """Quét channel bằng entity đã có"""
         print(f"📡 Bắt đầu quét channel: {getattr(entity, 'title', 'Unknown')}")
         print(f"📊 Đang đếm tổng số tin nhắn...")
-
+        
         # Đếm tổng số tin nhắn
         total_messages = 0
         try:
@@ -217,33 +217,33 @@ class PrivateChannelScanner(TelegramFileScanner):
         except Exception as e:
             print(f"⚠️ Lỗi khi đếm tin nhắn: {e}")
             return
-
+            
         print(f"📝 Tổng số tin nhắn: {total_messages:,}")
-
+        
         if total_messages == 0:
             print("❌ Không có tin nhắn nào để quét")
             return
-
+            
         print(f"🔍 Bắt đầu quét file...")
-
+        
         # Quét các tin nhắn và tìm file
         from tqdm.asyncio import tqdm
         progress_bar = tqdm(total=total_messages, desc="Đang quét")
-
+        
         try:
             async for message in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
                 file_info = self.extract_file_info(message)
-
+                
                 if file_info and self.should_include_file_type(file_info['file_type']):
                     self.files_data.append(file_info)
-
+                    
                 progress_bar.update(1)
-
+                
         except Exception as e:
             print(f"\n⚠️ Lỗi trong quá trình quét: {e}")
         finally:
             progress_bar.close()
-
+            
         print(f"✅ Hoàn thành! Tìm thấy {len(self.files_data)} file")
 
 async def main():

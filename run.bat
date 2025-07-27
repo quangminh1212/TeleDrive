@@ -9,8 +9,6 @@ if "%1"=="web" goto WEB_MODE
 if "%1"=="web-setup" goto WEB_SETUP
 if "%1"=="scanner" goto SCANNER_MODE
 if "%1"=="production" goto PRODUCTION_MODE
-if "%1"=="api" goto API_CHECK
-if "%1"=="login" goto TELEGRAM_LOGIN
 
 echo.
 echo ================================================================
@@ -23,8 +21,6 @@ echo    run.bat            - Chay web interface (mac dinh)
 echo    run.bat production - Chay production server
 echo    run.bat scanner    - Chay scanner CLI
 echo    run.bat config     - Menu cau hinh
-echo    run.bat api        - Kiem tra API status
-echo    run.bat login      - Dang nhap Telegram
 echo.
 
 :MAIN_START
@@ -572,54 +568,6 @@ echo [INFO] Logs trong thu muc: logs/
 echo.
 echo Nhan phim bat ky de thoat...
 pause >nul
-goto END
-
-:API_CHECK
-echo.
-echo ================================================================
-echo                      KIEM TRA API STATUS
-echo ================================================================
-echo.
-echo [INFO] Kiem tra trang thai API va ket noi Telegram...
-echo.
-
-python check_api.py
-if %errorlevel% neq 0 (
-    echo.
-    echo [ERROR] Co loi khi kiem tra API!
-    pause
-    goto END
-)
-
-echo.
-echo [INFO] Hoan thanh kiem tra API
-echo.
-pause
-goto END
-
-:TELEGRAM_LOGIN
-echo.
-echo ================================================================
-echo                      DANG NHAP TELEGRAM
-echo ================================================================
-echo.
-echo [INFO] Dang nhap Telegram lan dau...
-echo [WARNING] Ban can co dien thoai de nhan ma xac thuc!
-echo.
-
-python telegram_login.py
-if %errorlevel% neq 0 (
-    echo.
-    echo [ERROR] Dang nhap that bai!
-    pause
-    goto END
-)
-
-echo.
-echo [INFO] Dang nhap thanh cong!
-echo [INFO] Gio ban co the su dung TeleDrive
-echo.
-pause
 goto END
 
 :END

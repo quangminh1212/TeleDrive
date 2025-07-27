@@ -39,7 +39,7 @@ class TelegramFileScanner:
         self.files_data = []
         self.output_dir = Path(config.OUTPUT_DIR)
         self.output_dir.mkdir(exist_ok=True)
-
+        
     async def initialize(self):
         """Khởi tạo Telegram client"""
         if DETAILED_LOGGING_AVAILABLE:
@@ -85,7 +85,7 @@ class TelegramFileScanner:
             if DETAILED_LOGGING_AVAILABLE:
                 log_error(e, "Client initialization - unexpected error")
             raise e
-
+        
     async def get_channel_entity(self, channel_input: str):
         """Lấy entity của kênh từ username hoặc invite link"""
         try:
@@ -126,12 +126,12 @@ class TelegramFileScanner:
             print("   - Đối với private channel: https://t.me/joinchat/xxxxx hoặc https://t.me/+xxxxx")
             print("   - Đảm bảo bạn đã join kênh private trước")
             return None
-
+            
     def extract_file_info(self, message) -> Optional[Dict]:
         """Trích xuất thông tin file từ message"""
         if not message.media:
             return None
-
+            
         file_info = {
             'message_id': message.id,
             'date': message.date.isoformat(),
@@ -146,13 +146,13 @@ class TelegramFileScanner:
             'message_text': message.text or '',
             'sender_id': getattr(message.sender, 'id', None) if message.sender else None
         }
-
+        
         # Xử lý Document (files, videos, audio, etc.)
         if isinstance(message.media, MessageMediaDocument):
             doc = message.media.document
             file_info['file_size'] = doc.size
             file_info['mime_type'] = doc.mime_type
-
+            
             # Lấy tên file và các thuộc tính
             for attr in doc.attributes:
                 if isinstance(attr, DocumentAttributeFilename):
@@ -172,12 +172,12 @@ class TelegramFileScanner:
                     file_info['file_type'] = 'sticker'
                 elif isinstance(attr, DocumentAttributeAnimated):
                     file_info['file_type'] = 'animation'
-
+                    
             # Nếu không có tên file, tạo tên mặc định
             if not file_info['file_name']:
                 ext = self.get_extension_from_mime(file_info['mime_type'])
                 file_info['file_name'] = f"file_{message.id}{ext}"
-
+                
         # Xử lý Photo
         elif isinstance(message.media, MessageMediaPhoto):
             photo = message.media.photo
@@ -188,7 +188,7 @@ class TelegramFileScanner:
                 file_info['file_size'] = getattr(largest_size, 'size', None)
                 file_info['width'] = getattr(largest_size, 'w', None)
                 file_info['height'] = getattr(largest_size, 'h', None)
-
+                
         # Tạo download link nếu được yêu cầu
         if config.GENERATE_DOWNLOAD_LINKS and file_info['file_type']:
             # Tạo link download phù hợp cho cả public và private channel
@@ -205,9 +205,9 @@ class TelegramFileScanner:
                 else:
                     # Fallback
                     file_info['download_link'] = f"tg://openmessage?chat_id={chat_id}&message_id={message.id}"
-
+            
         return file_info if file_info['file_type'] else None
-
+        
     def get_extension_from_mime(self, mime_type: str) -> str:
         """Lấy extension từ MIME type"""
         mime_map = {
@@ -223,7 +223,7 @@ class TelegramFileScanner:
             'text/plain': '.txt'
         }
         return mime_map.get(mime_type, '')
-
+        
     def should_include_file_type(self, file_type: str) -> bool:
         """Kiểm tra có nên include file type này không"""
         type_config = {
@@ -236,7 +236,7 @@ class TelegramFileScanner:
             'animation': config.SCAN_ANIMATIONS
         }
         return type_config.get(file_type, True)
-
+        
     async def scan_channel(self, channel_input: str):
         """Quét tất cả file trong kênh"""
         if DETAILED_LOGGING_AVAILABLE:
@@ -290,7 +290,7 @@ class TelegramFileScanner:
         print(f"✅ Hoàn thành! Tìm thấy {len(self.files_data)} file")
         if DETAILED_LOGGING_AVAILABLE:
             log_step("HOÀN THÀNH QUÉT", f"Đã quét {processed_count:,} tin nhắn, tìm thấy {len(self.files_data)} file")
-
+        
     async def save_results(self):
         """Lưu kết quả ra các file"""
         if DETAILED_LOGGING_AVAILABLE:
@@ -392,40 +392,40 @@ class TelegramFileScanner:
 
         if DETAILED_LOGGING_AVAILABLE:
             log_step("HOÀN THÀNH LƯU KẾT QUẢ", f"Đã lưu thành công {len(self.files_data)} files vào 4 định dạng")
-
+        
     def print_statistics(self):
         """In thống kê"""
         if not self.files_data:
             return
-
+            
         df = pd.DataFrame(self.files_data)
-
+        
         print("\n📊 THỐNG KÊ:")
         print(f"Tổng số file: {len(self.files_data):,}")
-
+        
         # Thống kê theo loại file
         type_counts = df['file_type'].value_counts()
         print("\nPhân loại theo type:")
         for file_type, count in type_counts.items():
             print(f"  {file_type}: {count:,}")
-
+            
         # Thống kê kích thước
         total_size = df['file_size'].sum()
         if total_size > 0:
             print(f"\nTổng kích thước: {self.format_size(total_size)}")
             print(f"Kích thước trung bình: {self.format_size(df['file_size'].mean())}")
-
+            
     def format_size(self, size_bytes: float) -> str:
         """Format kích thước file"""
         if pd.isna(size_bytes):
             return "N/A"
-
+            
         for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
             if size_bytes < 1024.0:
                 return f"{size_bytes:.1f} {unit}"
             size_bytes /= 1024.0
         return f"{size_bytes:.1f} PB"
-
+        
     async def close(self):
         """Đóng kết nối"""
         if self.client:
@@ -433,19 +433,19 @@ class TelegramFileScanner:
 
 async def main():
     scanner = TelegramFileScanner()
-
+    
     try:
         await scanner.initialize()
-
+        
         # Nhập thông tin kênh
         channel_input = input("Nhập username kênh (ví dụ: @channelname) hoặc link: ").strip()
         if not channel_input:
             print("❌ Vui lòng nhập username hoặc link kênh")
             return
-
+            
         await scanner.scan_channel(channel_input)
         await scanner.save_results()
-
+        
     except KeyboardInterrupt:
         print("\n⏹️ Đã dừng bởi người dùng")
     except Exception as e:

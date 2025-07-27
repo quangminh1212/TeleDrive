@@ -16,78 +16,78 @@ import json
 
 class DetailedLogger:
     """Logger chi tiết với nhiều level và file riêng biệt"""
-
+    
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.loggers = {}
         self.setup_logging()
-
+    
     def setup_logging(self):
         """Thiết lập logging system"""
         # Tạo thư mục logs
         logs_dir = Path("logs")
         logs_dir.mkdir(exist_ok=True)
-
+        
         # Cấu hình format chi tiết
         detailed_format = logging.Formatter(
-            self.config.get('format',
+            self.config.get('format', 
                 '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s')
         )
-
+        
         simple_format = logging.Formatter(
             '%(asctime)s - %(levelname)s - %(message)s'
         )
-
+        
         # Setup main logger
         self.main_logger = self._create_logger(
-            'main',
+            'main', 
             self.config.get('file', 'logs/scanner.log'),
             detailed_format
         )
-
+        
         # Setup specialized loggers nếu enabled
         if self.config.get('separate_files', {}).get('enabled', False):
             separate_files = self.config['separate_files']
-
+            
             self.config_logger = self._create_logger(
-                'config',
+                'config', 
                 separate_files.get('config_log', 'logs/config.log'),
                 detailed_format
             )
-
+            
             self.api_logger = self._create_logger(
-                'api',
+                'api', 
                 separate_files.get('api_log', 'logs/api.log'),
                 detailed_format
             )
-
+            
             self.files_logger = self._create_logger(
-                'files',
+                'files', 
                 separate_files.get('files_log', 'logs/files.log'),
                 detailed_format
             )
-
+            
             self.errors_logger = self._create_logger(
-                'errors',
+                'errors', 
                 separate_files.get('errors_log', 'logs/errors.log'),
                 detailed_format,
                 level=logging.ERROR
             )
-
-    def _create_logger(self, name: str, filename: str, formatter: logging.Formatter,
+    
+    def _create_logger(self, name: str, filename: str, formatter: logging.Formatter, 
                       level: Optional[int] = None) -> logging.Logger:
         """Tạo logger với cấu hình chi tiết"""
         logger = logging.getLogger(name)
-
+        
         # Set level
         if level is None:
             level_str = self.config.get('level', 'INFO').upper()
             level = getattr(logging, level_str, logging.INFO)
         logger.setLevel(level)
-
+        
         # Clear existing handlers
         logger.handlers.clear()
-
+        
         # File handler với rotation
         file_handler = logging.handlers.RotatingFileHandler(
             filename,
@@ -97,86 +97,86 @@ class DetailedLogger:
         )
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
-
+        
         # Console handler nếu enabled
         if self.config.get('console_output', True):
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setFormatter(formatter)
             logger.addHandler(console_handler)
-
+        
         self.loggers[name] = logger
         return logger
-
+    
     def log_step(self, step_name: str, details: str = "", level: str = "INFO"):
         """Log một bước cụ thể với format đặc biệt"""
         if not self.config.get('detailed_steps', True):
             return
-
+            
         separator = "=" * 60
         timestamp = datetime.now().strftime("%H:%M:%S")
-
+        
         message = f"\n{separator}\n[{timestamp}] BƯỚC: {step_name}\n{separator}"
         if details:
             message += f"\nChi tiết: {details}"
         message += f"\n{separator}"
-
+        
         getattr(self.main_logger, level.lower())(message)
-
+    
     def log_config_change(self, action: str, details: Dict[str, Any]):
         """Log thay đổi cấu hình"""
         if not self.config.get('log_config_changes', True):
             return
-
+            
         if hasattr(self, 'config_logger'):
             self.config_logger.info(f"CONFIG {action}: {json.dumps(details, ensure_ascii=False, indent=2)}")
         else:
             self.main_logger.info(f"CONFIG {action}: {details}")
-
+    
     def log_api_call(self, method: str, params: Dict[str, Any], result: str = ""):
         """Log API calls"""
         if not self.config.get('log_api_calls', True):
             return
-
+            
         if hasattr(self, 'api_logger'):
             self.api_logger.debug(f"API CALL: {method} | Params: {params} | Result: {result}")
         else:
             self.main_logger.debug(f"API CALL: {method} | Params: {params}")
-
+    
     def log_file_operation(self, operation: str, file_path: str, details: str = ""):
         """Log file operations"""
         if not self.config.get('log_file_operations', True):
             return
-
+            
         if hasattr(self, 'files_logger'):
             self.files_logger.info(f"FILE {operation}: {file_path} | {details}")
         else:
             self.main_logger.info(f"FILE {operation}: {file_path}")
-
+    
     def log_progress(self, current: int, total: int, item_name: str = "items"):
         """Log progress với chi tiết"""
         if not self.config.get('show_progress_details', True):
             return
-
+            
         percentage = (current / total * 100) if total > 0 else 0
         self.main_logger.info(f"PROGRESS: {current}/{total} {item_name} ({percentage:.1f}%)")
-
+    
     def log_error(self, error: Exception, context: str = ""):
         """Log lỗi chi tiết"""
         import traceback
-
+        
         error_details = {
             'error_type': type(error).__name__,
             'error_message': str(error),
             'context': context,
             'traceback': traceback.format_exc()
         }
-
+        
         if hasattr(self, 'errors_logger'):
             self.errors_logger.error(f"ERROR: {json.dumps(error_details, ensure_ascii=False, indent=2)}")
         else:
             self.main_logger.error(f"ERROR in {context}: {error}")
             self.main_logger.debug(traceback.format_exc())
-
+    
     def get_logger(self, name: str = 'main') -> logging.Logger:
         """Lấy logger theo tên"""
         return self.loggers.get(name, self.main_logger)
