@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông tin tài khoản - TeleDrive Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .admin-page {
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .admin-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #28a745;
+        }
+        .admin-header h1 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 24px;
+        }
+        .admin-header p {
+            margin: 0;
+            color: #666;
+        }
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+        .profile-sidebar {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #007bff, #28a745);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            margin: 0 auto 20px auto;
+        }
+        .profile-info {
+            text-align: center;
+        }
+        .profile-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .profile-role {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .profile-stats {
+            border-top: 1px solid #f0f0f0;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #333;
+        }
+        .profile-content {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .settings-section {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .settings-section h3 {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 12px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 10px;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #28a745;
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-admin {
+            background: #dc3545;
+            color: white;
+        }
+        .status-verified {
+            background: #28a745;
+            color: white;
+        }
+        .activity-item {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        .activity-info {
+            flex: 1;
+        }
+        .activity-action {
+            font-weight: bold;
+            color: #333;
+        }
+        .activity-time {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .activity-icon {
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        @media (max-width: 768px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-page">
+        <a href="{{ url_for('index') }}" class="back-link">
+            <span>←</span> Quay lại Dashboard
+        </a>
+        
+        <div class="admin-header">
+            <h1>👤 Thông tin tài khoản</h1>
+            <p>Quản lý thông tin cá nhân và cài đặt tài khoản</p>
+        </div>
+
+        <div class="profile-grid">
+            <!-- Profile Sidebar -->
+            <div class="profile-sidebar">
+                <div class="profile-avatar" id="profileAvatar">
+                    {{ user.username[0].upper() if user.username else 'A' }}
+                </div>
+                <div class="profile-info">
+                    <div class="profile-name">{{ user.username or 'Admin User' }}</div>
+                    <div class="profile-role">
+                        <span class="status-badge {{ 'status-admin' if user.is_admin else 'status-user' }}">
+                            {{ 'Quản trị viên' if user.is_admin else 'Người dùng' }}
+                        </span>
+                        <span class="status-badge status-verified">Đã xác thực</span>
+                    </div>
+                </div>
+                
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Ngày tham gia:</span>
+                        <span class="stat-value">{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else 'N/A' }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Lần đăng nhập cuối:</span>
+                        <span class="stat-value">{{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'N/A' }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Trạng thái:</span>
+                        <span class="stat-value">{{ 'Hoạt động' if user.is_active else 'Không hoạt động' }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Sessions:</span>
+                        <span class="stat-value" id="sessionCount">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Content -->
+            <div class="profile-content">
+                <!-- Personal Information -->
+                <div class="settings-section">
+                    <h3>
+                        <span class="icon">📝</span>
+                        Thông tin cá nhân
+                    </h3>
+                    <form id="personalInfoForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="username">Tên đăng nhập:</label>
+                                <input type="text" id="username" name="username" value="{{ user.username or '' }}" required>
+                                <small>Tên đăng nhập duy nhất trong hệ thống</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email:</label>
+                                <input type="email" id="email" name="email" value="{{ user.email or '' }}">
+                                <small>Email để nhận thông báo (tùy chọn)</small>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Số điện thoại:</label>
+                            <input type="tel" id="phone" name="phone" value="{{ user.phone_number or '' }}" required>
+                            <small>Số điện thoại để đăng nhập và nhận OTP</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            💾 Cập nhật thông tin
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Security Settings -->
+                <div class="settings-section">
+                    <h3>
+                        <span class="icon">🔒</span>
+                        Bảo mật
+                    </h3>
+                    <form id="securityForm">
+                        <div class="form-group">
+                            <label for="currentPassword">Mật khẩu hiện tại:</label>
+                            <input type="password" id="currentPassword" name="current_password" placeholder="Nhập mật khẩu hiện tại">
+                            <small>Bắt buộc để thay đổi mật khẩu</small>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="newPassword">Mật khẩu mới:</label>
+                                <input type="password" id="newPassword" name="new_password" placeholder="Nhập mật khẩu mới">
+                                <small>Ít nhất 8 ký tự</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Xác nhận mật khẩu:</label>
+                                <input type="password" id="confirmPassword" name="confirm_password" placeholder="Nhập lại mật khẩu mới">
+                                <small>Phải trùng với mật khẩu mới</small>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-warning">
+                            🔒 Đổi mật khẩu
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Preferences -->
+                <div class="settings-section">
+                    <h3>
+                        <span class="icon">⚙️</span>
+                        Tùy chọn
+                    </h3>
+                    <form id="preferencesForm">
+                        <div class="form-group">
+                            <label for="language">Ngôn ngữ:</label>
+                            <select id="language" name="language">
+                                <option value="vi">Tiếng Việt</option>
+                                <option value="en">English</option>
+                            </select>
+                            <small>Ngôn ngữ hiển thị giao diện</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="timezone">Múi giờ:</label>
+                            <select id="timezone" name="timezone">
+                                <option value="Asia/Ho_Chi_Minh">Việt Nam (UTC+7)</option>
+                                <option value="UTC">UTC (UTC+0)</option>
+                                <option value="America/New_York">New York (UTC-5)</option>
+                            </select>
+                            <small>Múi giờ để hiển thị thời gian</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="notifications">Thông báo:</label>
+                            <select id="notifications" name="notifications">
+                                <option value="all">Tất cả thông báo</option>
+                                <option value="important">Chỉ thông báo quan trọng</option>
+                                <option value="none">Tắt thông báo</option>
+                            </select>
+                            <small>Mức độ thông báo bạn muốn nhận</small>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            ⚙️ Lưu tùy chọn
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="settings-section">
+                    <h3>
+                        <span class="icon">📊</span>
+                        Hoạt động gần đây
+                    </h3>
+                    <div id="recentActivity">
+                        <div class="activity-item">
+                            <div class="activity-info">
+                                <div class="activity-action">
+                                    <span class="activity-icon">🔑</span>
+                                    Đăng nhập thành công
+                                </div>
+                                <div class="activity-time">Hôm nay, 09:15</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-info">
+                                <div class="activity-action">
+                                    <span class="activity-icon">👥</span>
+                                    Tạo người dùng mới: testuser
+                                </div>
+                                <div class="activity-time">Hôm nay, 09:10</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-info">
+                                <div class="activity-action">
+                                    <span class="activity-icon">🖥️</span>
+                                    Truy cập trang quản lý hệ thống
+                                </div>
+                                <div class="activity-time">Hôm nay, 09:05</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadMoreActivity()">
+                        📄 Xem thêm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle form submissions
+        document.getElementById('personalInfoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            updatePersonalInfo();
+        });
+
+        document.getElementById('securityForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            changePassword();
+        });
+
+        document.getElementById('preferencesForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            updatePreferences();
+        });
+
+        function updatePersonalInfo() {
+            const formData = new FormData(document.getElementById('personalInfoForm'));
+            const data = Object.fromEntries(formData.entries());
+
+            fetch('/api/admin/profile/personal', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Đã cập nhật thông tin cá nhân thành công!');
+                    // Update avatar if username changed
+                    const newInitial = document.getElementById('username').value.charAt(0).toUpperCase();
+                    document.getElementById('profileAvatar').textContent = newInitial;
+                } else {
+                    alert('Lỗi: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi cập nhật thông tin');
+            });
+        }
+
+        function changePassword() {
+            const formData = new FormData(document.getElementById('securityForm'));
+            const data = Object.fromEntries(formData.entries());
+
+            // Validate passwords match
+            if (data.new_password !== data.confirm_password) {
+                alert('Mật khẩu xác nhận không khớp!');
+                return;
+            }
+
+            if (data.new_password.length < 8) {
+                alert('Mật khẩu mới phải có ít nhất 8 ký tự!');
+                return;
+            }
+
+            fetch('/api/admin/profile/password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Đã đổi mật khẩu thành công!');
+                    document.getElementById('securityForm').reset();
+                } else {
+                    alert('Lỗi: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi đổi mật khẩu');
+            });
+        }
+
+        function updatePreferences() {
+            const formData = new FormData(document.getElementById('preferencesForm'));
+            const data = Object.fromEntries(formData.entries());
+
+            fetch('/api/admin/profile/preferences', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Đã lưu tùy chọn thành công!');
+                } else {
+                    alert('Lỗi: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi lưu tùy chọn');
+            });
+        }
+
+        function loadMoreActivity() {
+            fetch('/api/admin/profile/activity')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Add more activity items
+                        const activityContainer = document.getElementById('recentActivity');
+                        data.activities.forEach(activity => {
+                            const activityItem = document.createElement('div');
+                            activityItem.className = 'activity-item';
+                            activityItem.innerHTML = `
+                                <div class="activity-info">
+                                    <div class="activity-action">
+                                        <span class="activity-icon">${activity.icon}</span>
+                                        ${activity.action}
+                                    </div>
+                                    <div class="activity-time">${activity.time}</div>
+                                </div>
+                            `;
+                            activityContainer.appendChild(activityItem);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading activity:', error);
+                });
+        }
+
+        // Load initial data
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load session count
+            fetch('/api/admin/profile/stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('sessionCount').textContent = data.stats.sessions || 0;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading stats:', error);
+                });
+        });
+    </script>
+</body>
+</html>

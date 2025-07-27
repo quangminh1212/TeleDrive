@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập - TeleDrive</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
     <style>
         .login-container {
             min-height: 100vh;
@@ -44,6 +43,12 @@
             width: 36px;
             height: 36px;
             object-fit: contain;
+        }
+
+        .login-logo .logo-icon {
+            font-size: 32px;
+            line-height: 1;
+            display: inline-block;
         }
         
         .login-logo span {
@@ -96,6 +101,44 @@
             background: var(--telegram-bg);
             color: var(--telegram-text);
             transition: var(--transition);
+        }
+        
+        .phone-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+        
+        .country-select {
+            flex: 0 0 120px;
+            padding: 12px 8px;
+            border: 2px solid var(--telegram-border);
+            border-radius: var(--border-radius-small);
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--telegram-bg);
+            color: var(--telegram-text);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .phone-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--telegram-border);
+            border-radius: var(--border-radius-small);
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--telegram-bg);
+            color: var(--telegram-text);
+            transition: var(--transition);
+        }
+        
+        .country-select:focus,
+        .phone-input:focus {
+            outline: none;
+            border-color: var(--telegram-blue);
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
         }
         
         .form-input:focus {
@@ -232,7 +275,8 @@
     <div class="login-container">
         <div class="login-card">
             <div class="login-logo">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive Logo" class="logo-image">
+                <!-- <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive Logo" class="logo-image"> -->
+                <span class="logo-icon">📁</span>
                 <span>TeleDrive</span>
             </div>
             
@@ -258,9 +302,38 @@
             <form id="phone-form" method="POST" style="display: block;">
                 <div class="form-group">
                     <label for="phone_number" class="form-label">Số điện thoại</label>
-                    <input type="tel" id="phone_number" name="phone_number" class="form-input" required
-                           placeholder="Nhập số điện thoại (VD: 0936374950)">
-                    <small class="form-help">Mã OTP sẽ được gửi đến Telegram của bạn</small>
+                    <div class="phone-input-group">
+                        <select id="country_code" class="country-select" required>
+                            <option value="+84" data-country="VN" selected>🇻🇳 +84</option>
+                            <option value="+1" data-country="US">🇺🇸 +1</option>
+                            <option value="+86" data-country="CN">🇨🇳 +86</option>
+                            <option value="+91" data-country="IN">🇮🇳 +91</option>
+                            <option value="+81" data-country="JP">🇯🇵 +81</option>
+                            <option value="+82" data-country="KR">🇰🇷 +82</option>
+                            <option value="+66" data-country="TH">🇹🇭 +66</option>
+                            <option value="+65" data-country="SG">🇸🇬 +65</option>
+                            <option value="+60" data-country="MY">🇲🇾 +60</option>
+                            <option value="+62" data-country="ID">🇮🇩 +62</option>
+                            <option value="+63" data-country="PH">🇵🇭 +63</option>
+                            <option value="+855" data-country="KH">🇰🇭 +855</option>
+                            <option value="+856" data-country="LA">🇱🇦 +856</option>
+                            <option value="+95" data-country="MM">🇲🇲 +95</option>
+                            <option value="+673" data-country="BN">🇧🇳 +673</option>
+                            <option value="+44" data-country="GB">🇬🇧 +44</option>
+                            <option value="+33" data-country="FR">🇫🇷 +33</option>
+                            <option value="+49" data-country="DE">🇩🇪 +49</option>
+                            <option value="+39" data-country="IT">🇮🇹 +39</option>
+                            <option value="+34" data-country="ES">🇪🇸 +34</option>
+                            <option value="+7" data-country="RU">🇷🇺 +7</option>
+                            <option value="+61" data-country="AU">🇦🇺 +61</option>
+                            <option value="+55" data-country="BR">🇧🇷 +55</option>
+                            <option value="+52" data-country="MX">🇲🇽 +52</option>
+                            <option value="+54" data-country="AR">🇦🇷 +54</option>
+                        </select>
+                        <input type="tel" id="phone_number" name="phone_number" class="phone-input" required
+                               placeholder="0936374950">
+                    </div>
+                    <small class="form-help">Mã OTP gửi qua Telegram</small>
                 </div>
 
                 <button type="submit" class="login-button" id="send-otp-btn">
@@ -359,7 +432,16 @@
                 setLoading(sendOtpBtn, true, 'Gửi mã OTP', 'Đang gửi...');
 
                 const formData = new FormData(phoneForm);
-                const phoneNumber = formData.get('phone_number');
+                const countryCode = document.getElementById('country_code').value;
+                const phoneInput = formData.get('phone_number');
+                
+                // Kết hợp country code với phone number nếu phone number chưa có country code
+                let phoneNumber;
+                if (phoneInput.startsWith('+')) {
+                    phoneNumber = phoneInput; // Đã có country code
+                } else {
+                    phoneNumber = countryCode + phoneInput; // Thêm country code
+                }
 
                 fetch('/send-otp', {
                     method: 'POST',

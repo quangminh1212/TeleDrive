@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xem logs - TeleDrive Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .admin-page {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .admin-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #17a2b8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .admin-header h1 {
+            margin: 0;
+            color: #333;
+            font-size: 24px;
+        }
+        .controls-panel {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+        .form-group input,
+        .form-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .logs-container {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        .logs-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+        .logs-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .status-live { background: #28a745; }
+        .status-paused { background: #ffc107; }
+        .status-error { background: #dc3545; }
+        .logs-content {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            padding: 0;
+        }
+        .log-entry {
+            padding: 8px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .log-entry:hover {
+            background: #f8f9fa;
+        }
+        .log-timestamp {
+            color: #666;
+            font-size: 12px;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+        .log-level {
+            font-weight: bold;
+            min-width: 60px;
+            flex-shrink: 0;
+            text-align: center;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        .log-level.INFO {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .log-level.WARNING {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .log-level.ERROR {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .log-level.DEBUG {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        .log-message {
+            flex: 1;
+            word-break: break-word;
+        }
+        .log-details {
+            color: #666;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #17a2b8;
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .auto-scroll {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .auto-scroll input[type="checkbox"] {
+            margin: 0;
+        }
+        .search-highlight {
+            background: yellow;
+            padding: 1px 2px;
+        }
+        .logs-footer {
+            padding: 10px 20px;
+            border-top: 1px solid #e0e0e0;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+        }
+        .pagination {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .pagination button {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .pagination button:hover {
+            background: #f8f9fa;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-page">
+        <a href="{{ url_for('index') }}" class="back-link">
+            <span>←</span> Quay lại Dashboard
+        </a>
+        
+        <div class="admin-header">
+            <h1>📄 Xem logs</h1>
+            <div class="auto-scroll">
+                <input type="checkbox" id="autoScroll" checked>
+                <label for="autoScroll">Auto scroll</label>
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <div class="controls-grid">
+                <div class="form-group">
+                    <label for="logLevel">Mức độ log:</label>
+                    <select id="logLevel">
+                        <option value="">Tất cả</option>
+                        <option value="DEBUG">DEBUG</option>
+                        <option value="INFO">INFO</option>
+                        <option value="WARNING">WARNING</option>
+                        <option value="ERROR">ERROR</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="logSource">Nguồn:</label>
+                    <select id="logSource">
+                        <option value="">Tất cả</option>
+                        <option value="app">Application</option>
+                        <option value="auth">Authentication</option>
+                        <option value="telegram">Telegram</option>
+                        <option value="database">Database</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="searchQuery">Tìm kiếm:</label>
+                    <input type="text" id="searchQuery" placeholder="Nhập từ khóa...">
+                </div>
+                <div class="form-group">
+                    <label for="dateFrom">Từ ngày:</label>
+                    <input type="datetime-local" id="dateFrom">
+                </div>
+                <div class="form-group">
+                    <label for="dateTo">Đến ngày:</label>
+                    <input type="datetime-local" id="dateTo">
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="applyFilters()">
+                            🔍 Lọc
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearFilters()">
+                            🗑️ Xóa bộ lọc
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Container -->
+        <div class="logs-container">
+            <div class="logs-header">
+                <div class="logs-stats">
+                    <div class="stat-item">
+                        <span class="status-indicator status-live" id="liveStatus"></span>
+                        <span id="connectionStatus">Live</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>📊 Tổng: <strong id="totalLogs">0</strong></span>
+                    </div>
+                    <div class="stat-item">
+                        <span>⚠️ Errors: <strong id="errorCount">0</strong></span>
+                    </div>
+                    <div class="stat-item">
+                        <span>🔄 Cập nhật: <span id="lastUpdate">--:--:--</span></span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-success" onclick="toggleLiveMode()" id="liveToggle">
+                        ⏸️ Tạm dừng
+                    </button>
+                    <button class="btn btn-warning" onclick="clearLogs()">
+                        🗑️ Xóa logs
+                    </button>
+                    <button class="btn btn-primary" onclick="exportLogs()">
+                        📤 Xuất logs
+                    </button>
+                </div>
+            </div>
+            
+            <div class="logs-content" id="logsContent">
+                <div class="log-entry">
+                    <div class="log-timestamp">--:--:--</div>
+                    <div class="log-level INFO">INFO</div>
+                    <div class="log-message">Đang tải logs...</div>
+                </div>
+            </div>
+            
+            <div class="logs-footer">
+                <div>
+                    Hiển thị <span id="displayedLogs">0</span> / <span id="totalLogsFooter">0</span> logs
+                </div>
+                <div class="pagination">
+                    <button onclick="previousPage()" id="prevBtn" disabled>← Trước</button>
+                    <span>Trang <span id="currentPage">1</span> / <span id="totalPages">1</span></span>
+                    <button onclick="nextPage()" id="nextBtn" disabled>Sau →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLiveMode = true;
+        let currentPage = 1;
+        let logsPerPage = 100;
+        let allLogs = [];
+        let filteredLogs = [];
+        let updateInterval;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLogs();
+            startLiveUpdates();
+            
+            // Set default date range (last 24 hours)
+            const now = new Date();
+            const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            document.getElementById('dateFrom').value = formatDateTimeLocal(yesterday);
+            document.getElementById('dateTo').value = formatDateTimeLocal(now);
+        });
+
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        function loadLogs() {
+            const filters = {
+                level: document.getElementById('logLevel').value,
+                source: document.getElementById('logSource').value,
+                search: document.getElementById('searchQuery').value,
+                date_from: document.getElementById('dateFrom').value,
+                date_to: document.getElementById('dateTo').value,
+                page: currentPage,
+                per_page: logsPerPage
+            };
+
+            fetch('/api/admin/logs?' + new URLSearchParams(filters))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        allLogs = data.logs;
+                        updateLogsDisplay();
+                        updateStats(data.stats);
+                        updatePagination(data.pagination);
+                    } else {
+                        console.error('Error loading logs:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading logs:', error);
+                    updateConnectionStatus(false);
+                });
+        }
+
+        function updateLogsDisplay() {
+            const logsContent = document.getElementById('logsContent');
+            const searchQuery = document.getElementById('searchQuery').value.toLowerCase();
+            
+            if (allLogs.length === 0) {
+                logsContent.innerHTML = `
+                    <div class="log-entry">
+                        <div class="log-timestamp">--:--:--</div>
+                        <div class="log-level INFO">INFO</div>
+                        <div class="log-message">Không có logs nào phù hợp với bộ lọc</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const logsHtml = allLogs.map(log => {
+                let message = log.message;
+                if (searchQuery && message.toLowerCase().includes(searchQuery)) {
+                    const regex = new RegExp(`(${searchQuery})`, 'gi');
+                    message = message.replace(regex, '<span class="search-highlight">$1</span>');
+                }
+
+                return `
+                    <div class="log-entry">
+                        <div class="log-timestamp">${formatTimestamp(log.timestamp)}</div>
+                        <div class="log-level ${log.level}">${log.level}</div>
+                        <div class="log-message">
+                            ${message}
+                            ${log.details ? `<div class="log-details">${log.details}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            logsContent.innerHTML = logsHtml;
+
+            // Auto scroll to bottom if enabled
+            if (document.getElementById('autoScroll').checked) {
+                logsContent.scrollTop = logsContent.scrollHeight;
+            }
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('vi-VN', { 
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function updateStats(stats) {
+            document.getElementById('totalLogs').textContent = stats.total || 0;
+            document.getElementById('errorCount').textContent = stats.errors || 0;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('vi-VN');
+            document.getElementById('totalLogsFooter').textContent = stats.total || 0;
+            document.getElementById('displayedLogs').textContent = allLogs.length;
+            
+            updateConnectionStatus(true);
+        }
+
+        function updatePagination(pagination) {
+            document.getElementById('currentPage').textContent = pagination.current_page || 1;
+            document.getElementById('totalPages').textContent = pagination.total_pages || 1;
+            
+            document.getElementById('prevBtn').disabled = !pagination.has_prev;
+            document.getElementById('nextBtn').disabled = !pagination.has_next;
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusIndicator = document.getElementById('liveStatus');
+            const statusText = document.getElementById('connectionStatus');
+            
+            if (connected) {
+                statusIndicator.className = 'status-indicator status-live';
+                statusText.textContent = 'Live';
+            } else {
+                statusIndicator.className = 'status-indicator status-error';
+                statusText.textContent = 'Disconnected';
+            }
+        }
+
+        function startLiveUpdates() {
+            if (updateInterval) clearInterval(updateInterval);
+            
+            if (isLiveMode) {
+                updateInterval = setInterval(loadLogs, 2000); // Update every 2 seconds
+            }
+        }
+
+        function toggleLiveMode() {
+            isLiveMode = !isLiveMode;
+            const button = document.getElementById('liveToggle');
+            
+            if (isLiveMode) {
+                button.innerHTML = '⏸️ Tạm dừng';
+                button.className = 'btn btn-success';
+                startLiveUpdates();
+            } else {
+                button.innerHTML = '▶️ Tiếp tục';
+                button.className = 'btn btn-warning';
+                if (updateInterval) clearInterval(updateInterval);
+            }
+        }
+
+        function applyFilters() {
+            currentPage = 1;
+            loadLogs();
+        }
+
+        function clearFilters() {
+            document.getElementById('logLevel').value = '';
+            document.getElementById('logSource').value = '';
+            document.getElementById('searchQuery').value = '';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            currentPage = 1;
+            loadLogs();
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadLogs();
+            }
+        }
+
+        function nextPage() {
+            currentPage++;
+            loadLogs();
+        }
+
+        function clearLogs() {
+            if (confirm('Bạn có chắc chắn muốn xóa tất cả logs? Hành động này không thể hoàn tác!')) {
+                fetch('/api/admin/logs/clear', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Đã xóa logs thành công!');
+                        loadLogs();
+                    } else {
+                        alert('Lỗi: ' + data.error);
+                    }
+                });
+            }
+        }
+
+        function exportLogs() {
+            const filters = {
+                level: document.getElementById('logLevel').value,
+                source: document.getElementById('logSource').value,
+                search: document.getElementById('searchQuery').value,
+                date_from: document.getElementById('dateFrom').value,
+                date_to: document.getElementById('dateTo').value
+            };
+            
+            const url = '/api/admin/logs/export?' + new URLSearchParams(filters);
+            window.open(url, '_blank');
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (updateInterval) clearInterval(updateInterval);
+        });
+    </script>
+</body>
+</html>
