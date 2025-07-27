@@ -1,59 +1,39 @@
-<!-- Google Drive Sidebar -->
-<aside class="gdrive-sidebar">
-    <!-- Navigation -->
-    <nav class="gdrive-nav">
-        <a href="/" class="gdrive-nav-item active" data-action="home">
-            <i class="fas fa-home"></i>
-            <span>Trang chủ</span>
-        </a>
-
-        <a href="#" class="gdrive-nav-item" data-action="recent">
-            <i class="fas fa-clock"></i>
-            <span>Gần đây</span>
-        </a>
-
-        <a href="#" class="gdrive-nav-item" data-action="favorites">
-            <i class="fas fa-star"></i>
-            <span>Có gắn dấu sao</span>
-        </a>
-
-        <a href="#" class="gdrive-nav-item" data-action="shared">
-            <i class="fas fa-users"></i>
-            <span>Được chia sẻ với tôi</span>
-        </a>
-
-        <a href="#" class="gdrive-nav-item" data-action="telegram">
-            <i class="fab fa-telegram"></i>
-            <span>Telegram</span>
-        </a>
-
-        <!-- Section Divider -->
-        <div class="gdrive-nav-section">Loại tệp tin</div>
-
-        <a href="#" class="gdrive-nav-item" data-action="documents">
-            <i class="fas fa-file-alt"></i>
-            <span>Tài liệu</span>
-        </a>
-
-        <a href="#" class="gdrive-nav-item" data-action="images">
-            <i class="fas fa-image"></i>
-            <span>Hình ảnh</span>
-        </a>
-
-        <a href="#" class="gdrive-nav-item" data-action="videos">
-            <i class="fas fa-video"></i>
-            <span>Video</span>
-        </a>
-
-        <a href="#" class="gdrive-nav-item" data-action="audio">
-            <i class="fas fa-music"></i>
-            <span>Âm thanh</span>
-        </a>
-
-        <a href="#" class="gdrive-nav-item" data-action="trash">
-            <i class="fas fa-trash"></i>
-            <span>Thùng rác</span>
-        </a>
+<!-- Telegram Sidebar (Danh sách chat) -->
+<aside class="tg-sidebar">
+    <div class="tg-sidebar-header">
+        <span class="tg-app-title">TeleDrive</span>
+        <button class="tg-new-chat-btn" title="Tạo chat mới">+</button>
+    </div>
+    <nav class="tg-chat-list">
+        <!-- Chat item giả lập -->
+        <div class="tg-chat-item tg-chat-active">
+            <div class="tg-chat-avatar online">
+                <img src="/static/images/avatar1.png" alt="A">
+            </div>
+            <div class="tg-chat-info">
+                <div class="tg-chat-name">Nhóm Dev TeleDrive</div>
+                <div class="tg-chat-status">Đang hoạt động</div>
+            </div>
+        </div>
+        <div class="tg-chat-item">
+            <div class="tg-chat-avatar">
+                <img src="/static/images/avatar2.png" alt="B">
+            </div>
+            <div class="tg-chat-info">
+                <div class="tg-chat-name">Hỗ trợ khách hàng</div>
+                <div class="tg-chat-status">Online</div>
+            </div>
+        </div>
+        <div class="tg-chat-item">
+            <div class="tg-chat-avatar offline">
+                <img src="/static/images/avatar3.png" alt="C">
+            </div>
+            <div class="tg-chat-info">
+                <div class="tg-chat-name">Telegram Bot</div>
+                <div class="tg-chat-status">Offline</div>
+            </div>
+        </div>
+        <!-- Thêm các chat item khác nếu muốn -->
     </nav>
 </aside>
 
