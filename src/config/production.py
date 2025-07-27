@@ -24,12 +24,12 @@ class DatabaseConfig:
     pool_timeout: int = field(default_factory=lambda: int(os.getenv('DB_POOL_TIMEOUT', '30')))
     pool_recycle: int = field(default_factory=lambda: int(os.getenv('DB_POOL_RECYCLE', '3600')))
     echo: bool = field(default_factory=lambda: os.getenv('DB_ECHO', 'false').lower() == 'true')
-    
+
     def __post_init__(self):
         """Validate database configuration"""
         if not self.uri:
             raise ValueError("DATABASE_URL is required")
-        
+
         # Parse database URL to validate
         parsed = urlparse(self.uri)
         if not parsed.scheme:
@@ -54,7 +54,7 @@ class SecurityConfig:
     csrf_enabled: bool = field(default_factory=lambda: os.getenv('CSRF_ENABLED', 'true').lower() == 'true')
     rate_limit_enabled: bool = field(default_factory=lambda: os.getenv('RATE_LIMIT_ENABLED', 'true').lower() == 'true')
     rate_limit_per_minute: int = field(default_factory=lambda: int(os.getenv('RATE_LIMIT_PER_MINUTE', '60')))
-    
+
     def __post_init__(self):
         """Generate secure secret key if not provided"""
         if not self.secret_key:
@@ -80,7 +80,7 @@ class TelegramConfig:
     session_name: str = field(default_factory=lambda: os.getenv('TELEGRAM_SESSION_NAME', 'telegram_scanner_session'))
     connection_timeout: int = field(default_factory=lambda: int(os.getenv('TELEGRAM_CONNECTION_TIMEOUT', '30')))
     request_timeout: int = field(default_factory=lambda: int(os.getenv('TELEGRAM_REQUEST_TIMEOUT', '60')))
-    
+
     def __post_init__(self):
         """Validate Telegram configuration"""
         if not self.api_id:
@@ -104,12 +104,12 @@ class ServerConfig:
 
 class ProductionConfig:
     """Main production configuration class"""
-    
+
     def __init__(self):
         self.environment = os.getenv('ENVIRONMENT', 'development')
         self.debug = os.getenv('DEBUG', 'false').lower() == 'true'
         self.testing = os.getenv('TESTING', 'false').lower() == 'true'
-        
+
         # Initialize configuration sections
         self.database = DatabaseConfig()
         self.redis = RedisConfig()
@@ -117,10 +117,10 @@ class ProductionConfig:
         self.logging = LoggingConfig()
         self.telegram = TelegramConfig()
         self.server = ServerConfig()
-        
+
         # Validate configuration
         self._validate_config()
-    
+
     def _validate_config(self):
         """Validate overall configuration"""
         if self.environment == 'production':
@@ -128,7 +128,7 @@ class ProductionConfig:
                 raise ValueError("DEBUG must be False in production")
             if self.security.secret_key == 'teledrive-secret-key-change-in-production':
                 raise ValueError("Must set secure SECRET_KEY in production")
-    
+
     def get_flask_config(self) -> Dict[str, Any]:
         """Get Flask configuration dictionary"""
         engine_options = {
@@ -153,11 +153,11 @@ class ProductionConfig:
             'RATELIMIT_ENABLED': self.security.rate_limit_enabled,
             'RATELIMIT_DEFAULT': f"{self.security.rate_limit_per_minute} per minute",
         }
-    
+
     def is_production(self) -> bool:
         """Check if running in production environment"""
         return self.environment == 'production'
-    
+
     def is_development(self) -> bool:
         """Check if running in development environment"""
         return self.environment == 'development'
@@ -173,19 +173,19 @@ def validate_environment():
     """Validate environment variables"""
     required_vars = [
         'TELEGRAM_API_ID',
-        'TELEGRAM_API_HASH', 
+        'TELEGRAM_API_HASH',
         'TELEGRAM_PHONE'
     ]
-    
+
     missing_vars = [var for var in required_vars if not os.getenv(var)]
-    
+
     if missing_vars:
         raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
-    
+
     if config.is_production():
         production_vars = ['SECRET_KEY', 'DATABASE_URL']
         missing_prod_vars = [var for var in production_vars if not os.getenv(var)]
-        
+
         if missing_prod_vars:
             raise ValueError(f"Missing required production environment variables: {', '.join(missing_prod_vars)}")
 

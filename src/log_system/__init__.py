@@ -7,7 +7,7 @@ Production-ready logging system
 
 from .production import (
     JSONFormatter, ProductionLogger, RequestLoggingMiddleware,
-    init_production_logging, get_logger, log_auth_event, 
+    init_production_logging, get_logger, log_auth_event,
     log_security_event, log_performance
 )
 

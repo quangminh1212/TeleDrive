@@ -1,5 +1,19 @@
 # 🚀 TeleDrive - Hướng dẫn khởi động nhanh
 
+## ✅ API đã được cấu hình sẵn
+
+### 📱 Telegram API Credentials
+- **API ID**: 21272067
+- **API Hash**: b7690dc86952dbc9b16717b101164af3
+- **App Title**: Telegram Unlimited Driver
+- **Phone**: +84936374950
+
+### 🔐 Đăng nhập lần đầu
+Nếu chưa đăng nhập Telegram, chạy:
+```bash
+python telegram_login.py
+```
+
 ## ❌ Lỗi "Số điện thoại chưa được đăng ký" - ĐÃ SỬA
 
 ### 🔧 Nguyên nhân
