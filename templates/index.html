@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}TeleDrive - Trang chủ{% endblock %}
+
+{% block head %}
+<!-- Custom page head content -->
+<meta name="description" content="TeleDrive - Quản lý file từ Telegram">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+    /* Hide toolbar and breadcrumb remnants on welcome page */
+    .gdrive-toolbar {
+        display: none !important;
+    }
+
+    /* Hide any breadcrumb text that might leak */
+    .gdrive-main-content::before {
+        display: none !important;
+    }
+
+    /* Enhanced Welcome Page Styling */
+    .gdrive-welcome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - var(--gdrive-header-height) - 40px);
+        max-height: calc(100vh - var(--gdrive-header-height) - 20px);
+        padding: 28px 24px 12px;
+        text-align: center;
+        max-width: 900px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+        overflow-y: auto;
+    }
+
+    .gdrive-welcome-icon {
+        margin-bottom: 24px;
+        opacity: 0.95;
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .gdrive-welcome h2 {
+        font-size: 32px;
+        font-weight: 400;
+        color: var(--gdrive-text);
+        margin: 0 0 16px;
+        font-family: 'Google Sans', sans-serif;
+        animation: fadeInUp 0.6s ease-out 0.1s both;
+    }
+
+    .gdrive-welcome p {
+        font-size: 16px;
+        color: var(--gdrive-text-secondary);
+        margin: 0 0 32px;
+        line-height: 1.5;
+        max-width: 650px;
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+
+    .gdrive-welcome-actions {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+        justify-content: center;
+        animation: fadeInUp 0.6s ease-out 0.3s both;
+    }
+
+    .gdrive-welcome-actions button {
+        padding: 14px 28px;
+        border-radius: 28px;
+        font-size: 15px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 160px;
+        justify-content: center;
+        font-family: 'Google Sans', sans-serif;
+    }
+
+    .gdrive-btn-primary {
+        background: linear-gradient(135deg, #4285f4 0%, #3367d6 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
+        border: none;
+    }
+
+    .gdrive-btn-primary:hover {
+        background: linear-gradient(135deg, #3367d6 0%, #2851a3 100%);
+        box-shadow: 0 4px 16px rgba(66, 133, 244, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .gdrive-btn-secondary {
+        background-color: var(--gdrive-white);
+        color: var(--gdrive-text);
+        border: 2px solid #e8eaed;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .gdrive-btn-secondary:hover {
+        background-color: #f8f9fa;
+        border-color: #dadce0;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .gdrive-welcome-tips {
+        margin-top: 20px;
+        margin-bottom: 0;
+        text-align: center;
+        animation: fadeInUp 0.6s ease-out 0.4s both;
+    }
+
+    .gdrive-tip-heading {
+        font-weight: 500;
+        margin-bottom: 20px;
+        color: var(--gdrive-text-secondary);
+        font-size: 16px;
+        font-family: 'Google Sans', sans-serif;
+    }
+
+    .gdrive-tips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 24px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .gdrive-tip-item {
+        text-align: center;
+        padding: 20px 16px;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        background-color: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(218, 220, 224, 0.5);
+    }
+
+    .gdrive-tip-item:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border-color: #dadce0;
+    }
+
+    .gdrive-tip-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gdrive-tip-icon i {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gdrive-tip-text {
+        color: var(--gdrive-text-secondary);
+        font-size: 15px;
+        line-height: 1.5;
+        font-weight: 400;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Icon hover effects */
+    .gdrive-tip-icon {
+        transition: all 0.3s ease;
+    }
+
+    .gdrive-tip-item:hover .gdrive-tip-icon {
+        transform: scale(1.1);
+    }
+
+    .gdrive-tip-item:hover .gdrive-tip-icon i {
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .gdrive-welcome {
+            padding: 32px 16px;
+            min-height: calc(100vh - var(--gdrive-header-height) - 80px);
+        }
+
+        .gdrive-welcome h2 {
+            font-size: 28px;
+        }
+
+        .gdrive-welcome p {
+            font-size: 16px;
+        }
+
+        .gdrive-welcome-actions {
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .gdrive-welcome-actions button {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .gdrive-tips-grid {
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        .gdrive-tip-item {
+            padding: 24px 16px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .gdrive-welcome-icon svg {
+            width: 100px;
+            height: 100px;
+        }
+
+        .gdrive-welcome h2 {
+            font-size: 24px;
+        }
+
+        .gdrive-welcome p {
+            font-size: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Include file display component -->
+{% include 'components/files.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set active page for sidebar highlighting
+    document.addEventListener('DOMContentLoaded', function() {
+        const homeNavItem = document.querySelector('.gdrive-nav-item[data-action="home"]');
+        if (homeNavItem) {
+            homeNavItem.classList.add('active');
+        }
+        // Sự kiện cho nút tải lên và quét Telegram ở trang chủ
+        document.getElementById('uploadButtonHome')?.addEventListener('click', function() {
+            document.getElementById('uploadButton')?.click();
+        });
+        document.getElementById('scanButtonHome')?.addEventListener('click', function() {
+            document.getElementById('scanButton')?.click();
+        });
+        document.getElementById('createFolderButton')?.addEventListener('click', function() {
+            // Hiển thị dialog tạo thư mục
+            const folderName = prompt('Nhập tên thư mục mới:');
+            if (folderName) {
+                // Gửi request tạo thư mục
+                fetch('/api/folder/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        parent_path: '/',
+                        folder_name: folderName
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Không thể tạo thư mục: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Đã xảy ra lỗi khi tạo thư mục');
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

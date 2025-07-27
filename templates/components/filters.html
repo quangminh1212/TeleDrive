@@ -1,0 +1,440 @@
+<!-- Google Drive Toolbar Filters Component -->
+<div class="gdrive-toolbar-filters">
+    <!-- Title and View Controls -->
+    <div class="gdrive-title-section">
+        <h1 class="gdrive-current-folder">
+            <span>Drive của tôi</span>
+            <i class="fas fa-caret-down"></i>
+        </h1>
+        <div class="gdrive-view-controls">
+            <div class="gdrive-view-btn active" title="Danh sách">
+                <i class="fas fa-list"></i>
+            </div>
+            <div class="gdrive-view-btn" title="Lưới">
+                <i class="fas fa-th"></i>
+            </div>
+            <div class="gdrive-view-info">
+                <i class="fas fa-info-circle"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter buttons -->
+    <div class="gdrive-filter-section">
+        <div class="gdrive-filter-group">
+            <div class="gdrive-filter-btn">
+                <span>Loại</span>
+                <i class="fas fa-caret-down"></i>
+            </div>
+            <div class="gdrive-filter-btn">
+                <span>Người</span>
+                <i class="fas fa-caret-down"></i>
+            </div>
+            <div class="gdrive-filter-btn">
+                <span>Lần sửa đổi gần đây nhất</span>
+                <i class="fas fa-caret-down"></i>
+            </div>
+            <div class="gdrive-filter-btn">
+                <span>Nguồn</span>
+                <i class="fas fa-caret-down"></i>
+            </div>
+        </div>
+        <div class="gdrive-filter-actions">
+            <button class="gdrive-more-btn">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Column headers for list view -->
+    <div class="gdrive-column-headers">
+        <div class="gdrive-column gdrive-column-selector">
+            <input type="checkbox" id="selectAll" class="gdrive-checkbox">
+        </div>
+        <div class="gdrive-column gdrive-column-name">
+            <span>Tên</span>
+            <i class="fas fa-sort-up"></i>
+        </div>
+        <div class="gdrive-column gdrive-column-owner">
+            <span>Chủ sở hữu</span>
+        </div>
+        <div class="gdrive-column gdrive-column-modified">
+            <span>Sửa đổi lần cuối</span>
+        </div>
+        <div class="gdrive-column gdrive-column-size">
+            <span>Kích cỡ tệp</span>
+        </div>
+        <div class="gdrive-column gdrive-column-actions">
+        </div>
+    </div>
+</div>
+
+<style>
+    .gdrive-toolbar-filters {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        background-color: var(--gdrive-white);
+        border-bottom: 1px solid var(--gdrive-border);
+        padding: 0 16px;
+    }
+
+    /* Title and View Controls */
+    .gdrive-title-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 56px;
+        padding: 12px 0;
+    }
+
+    .gdrive-current-folder {
+        display: flex;
+        align-items: center;
+        font-family: 'Google Sans', 'Product Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 400;
+        color: var(--gdrive-text);
+        margin: 0;
+        padding: 8px 0;
+    }
+
+    .gdrive-current-folder i,
+    .gdrive-current-folder svg {
+        margin-left: 6px;
+        font-size: 12px;
+        color: var(--gdrive-text-secondary);
+        width: 12px;
+        height: 12px;
+    }
+
+    .gdrive-view-controls {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .gdrive-view-btn {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        cursor: pointer;
+        color: var(--gdrive-text-secondary);
+        transition: var(--gdrive-transition);
+    }
+
+    .gdrive-view-btn i,
+    .gdrive-view-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .gdrive-view-btn:hover {
+        background-color: rgba(60, 64, 67, 0.08);
+    }
+
+    .gdrive-view-btn.active {
+        color: var(--gdrive-blue);
+    }
+
+    .gdrive-view-info {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        cursor: pointer;
+        color: var(--gdrive-text-secondary);
+        margin-left: 4px;
+        transition: var(--gdrive-transition);
+    }
+
+    .gdrive-view-info i,
+    .gdrive-view-info svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .gdrive-view-info:hover {
+        background-color: rgba(60, 64, 67, 0.08);
+    }
+
+    /* Filter buttons */
+    .gdrive-filter-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 56px;
+        border-bottom: 1px solid var(--gdrive-border);
+        padding: 8px 0;
+    }
+
+    .gdrive-filter-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .gdrive-filter-btn {
+        height: 40px;
+        padding: 0 20px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        background-color: var(--gdrive-white);
+        border: 1px solid var(--gdrive-border);
+        color: var(--gdrive-text);
+        font-size: 14px;
+        cursor: pointer;
+        transition: var(--gdrive-transition);
+        min-width: fit-content;
+        white-space: nowrap;
+    }
+
+    .gdrive-filter-btn:hover {
+        background-color: rgba(60, 64, 67, 0.04);
+    }
+
+    .gdrive-filter-btn span {
+        margin-right: 4px;
+    }
+
+    .gdrive-filter-btn i,
+    .gdrive-filter-btn svg {
+        font-size: 12px;
+        color: var(--gdrive-text-secondary);
+        margin-left: 4px;
+        width: 12px;
+        height: 12px;
+    }
+
+    .gdrive-filter-actions {
+        display: flex;
+        align-items: center;
+    }
+
+    .gdrive-more-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: var(--gdrive-text-secondary);
+        cursor: pointer;
+        transition: var(--gdrive-transition);
+    }
+
+    .gdrive-more-btn:hover {
+        background-color: rgba(60, 64, 67, 0.08);
+    }
+
+    /* Column headers */
+    .gdrive-column-headers {
+        display: grid;
+        grid-template-columns: 40px minmax(200px, 1fr) 120px 150px 100px 40px;
+        align-items: center;
+        height: 48px;
+        color: var(--gdrive-text-secondary);
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .gdrive-column {
+        display: flex;
+        align-items: center;
+        padding: 0 16px 0 0;
+    }
+
+    .gdrive-column-selector {
+        padding: 0 8px;
+        justify-content: center;
+    }
+
+    .gdrive-column span {
+        margin-right: 4px;
+    }
+
+    .gdrive-column i,
+    .gdrive-column svg {
+        font-size: 12px;
+        color: var(--gdrive-blue);
+        width: 12px;
+        height: 12px;
+    }
+
+    .gdrive-checkbox {
+        width: 18px;
+        height: 18px;
+        border-radius: 2px;
+        border: 2px solid var(--gdrive-border);
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+    .gdrive-checkbox:checked {
+        background-color: var(--gdrive-blue);
+        border-color: var(--gdrive-blue);
+    }
+
+    .gdrive-checkbox:checked::after {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .gdrive-column-headers {
+            grid-template-columns: 40px minmax(200px, 1fr) 100px 40px;
+        }
+
+        .gdrive-column-owner,
+        .gdrive-column-size {
+            display: none;
+        }
+
+        .gdrive-filter-btn {
+            padding: 0 16px;
+            height: 36px;
+        }
+
+        .gdrive-filter-group {
+            gap: 8px;
+        }
+
+        .gdrive-title-section,
+        .gdrive-filter-section {
+            height: 48px;
+            padding: 8px 0;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .gdrive-filter-group {
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding-bottom: 8px;
+        }
+
+        .gdrive-filter-group::-webkit-scrollbar {
+            display: none;
+        }
+
+        .gdrive-column-headers {
+            grid-template-columns: 40px minmax(150px, 1fr) 40px;
+        }
+
+        .gdrive-column-modified {
+            display: none;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle between list and grid view
+        const listViewBtn = document.querySelector('.gdrive-view-btn:first-child');
+        const gridViewBtn = document.querySelector('.gdrive-view-btn:last-child');
+        const filesDisplay = document.querySelector('.gdrive-files-display'); // Add this class to your files container
+        const headerViewToggleBtn = document.getElementById('viewToggleButton');
+
+        if (listViewBtn && gridViewBtn && filesDisplay) {
+            listViewBtn.addEventListener('click', function() {
+                filesDisplay.classList.remove('gdrive-grid-view');
+                filesDisplay.classList.add('gdrive-list-view');
+                listViewBtn.classList.add('active');
+                gridViewBtn.classList.remove('active');
+                
+                // Update header view toggle button if it exists
+                if (headerViewToggleBtn) {
+                    const icon = headerViewToggleBtn.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('fa-th');
+                        icon.classList.add('fa-list');
+                    }
+                }
+                
+                // Save view preference in localStorage
+                localStorage.setItem('gdrive-view-mode', 'list');
+            });
+
+            gridViewBtn.addEventListener('click', function() {
+                filesDisplay.classList.remove('gdrive-list-view');
+                filesDisplay.classList.add('gdrive-grid-view');
+                gridViewBtn.classList.add('active');
+                listViewBtn.classList.remove('active');
+                
+                // Update header view toggle button if it exists
+                if (headerViewToggleBtn) {
+                    const icon = headerViewToggleBtn.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('fa-list');
+                        icon.classList.add('fa-th');
+                    }
+                }
+                
+                // Save view preference in localStorage
+                localStorage.setItem('gdrive-view-mode', 'grid');
+            });
+            
+            // Check if view mode is saved in localStorage and apply it
+            const savedViewMode = localStorage.getItem('gdrive-view-mode');
+            if (savedViewMode === 'list') {
+                listViewBtn.click();
+            } else if (savedViewMode === 'grid') {
+                gridViewBtn.click();
+            }
+            
+            // Listen for header view toggle button clicks
+            if (headerViewToggleBtn) {
+                headerViewToggleBtn.addEventListener('click', function() {
+                    const icon = headerViewToggleBtn.querySelector('i');
+                    if (icon && icon.classList.contains('fa-th')) {
+                        listViewBtn.click();
+                    } else {
+                        gridViewBtn.click();
+                    }
+                });
+            }
+        }
+
+        // Select all checkbox functionality
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const fileCheckboxes = document.querySelectorAll('.gdrive-file-checkbox');
+
+        if (selectAllCheckbox && fileCheckboxes.length) {
+            selectAllCheckbox.addEventListener('change', function() {
+                fileCheckboxes.forEach(checkbox => {
+                    checkbox.checked = selectAllCheckbox.checked;
+                    const fileItem = checkbox.closest('.gdrive-file-item');
+                    if (fileItem) {
+                        if (selectAllCheckbox.checked) {
+                            fileItem.classList.add('selected');
+                        } else {
+                            fileItem.classList.remove('selected');
+                        }
+                    }
+                });
+            });
+        }
+    });
+</script> 

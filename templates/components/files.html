@@ -1,0 +1,128 @@
+<!-- Google Drive Files Display -->
+<div class="gdrive-files-display gdrive-grid-view" id="filesDisplay">
+    {% if files %}
+        {% for file in files %}
+            <div class="gdrive-file-card" data-id="{{ file.id }}" data-type="{{ 'folder' if file.is_directory else file.type }}">
+                <!-- Selection Checkbox -->
+                <div class="gdrive-file-select">
+                    <div class="select-checkbox">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+
+                <!-- File Thumbnail -->
+                <div class="gdrive-file-thumbnail">
+                    {% if file.is_directory %}
+                        <div class="gdrive-folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                    {% elif file.type == 'image' %}
+                        <div class="gdrive-image-thumbnail">
+                            <img src="{{ file.thumbnail_url|default(file.url) }}" alt="{{ file.name }}"
+                                 onerror="this.parentElement.innerHTML='<i class=\'fas fa-image\'></i>';">
+                        </div>
+                        <div class="gdrive-file-type-badge">{{ file.extension.upper() if file.extension else 'IMG' }}</div>
+                    {% elif file.type == 'pdf' %}
+                        <div class="gdrive-file-icon pdf">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="gdrive-file-type-badge">PDF</div>
+                    {% elif file.type in ['doc', 'docx'] %}
+                        <div class="gdrive-file-icon doc">
+                            <i class="fas fa-file-word"></i>
+                        </div>
+                        <div class="gdrive-file-type-badge">DOC</div>
+                    {% elif file.type in ['xls', 'xlsx'] %}
+                        <div class="gdrive-file-icon xls">
+                            <i class="fas fa-file-excel"></i>
+                        </div>
+                        <div class="gdrive-file-type-badge">XLS</div>
+                    {% elif file.type == 'video' %}
+                        <div class="gdrive-file-icon video">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="gdrive-file-type-badge">{{ file.extension.upper() if file.extension else 'VID' }}</div>
+                    {% elif file.type == 'audio' %}
+                        <div class="gdrive-file-icon audio">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <div class="gdrive-file-type-badge">{{ file.extension.upper() if file.extension else 'AUD' }}</div>
+                    {% elif file.type in ['zip', 'rar', '7z'] %}
+                        <div class="gdrive-file-icon archive">
+                            <i class="fas fa-file-archive"></i>
+                        </div>
+                        <div class="gdrive-file-type-badge">{{ file.extension.upper() if file.extension else 'ZIP' }}</div>
+                    {% else %}
+                        <div class="gdrive-file-icon">
+                            <i class="fas fa-file"></i>
+                        </div>
+                        <div class="gdrive-file-type-badge">{{ file.extension.upper() if file.extension else 'FILE' }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- File Info -->
+                <div class="gdrive-file-info">
+                    <div class="gdrive-file-name" title="{{ file.name }}">{{ file.name }}</div>
+                    <div class="gdrive-file-meta">
+                        {% if not file.is_directory %}
+                            <span class="gdrive-file-size">{{ file.size_formatted if file.size_formatted else '0 B' }}</span>
+                        {% endif %}
+                        <span class="gdrive-file-date">{{ file.modified_date.strftime('%d/%m/%Y') if file.modified_date else '' }}</span>
+                    </div>
+                </div>
+
+                <!-- File Actions -->
+                <div class="gdrive-file-actions">
+                    <button class="gdrive-action-btn" title="Thêm tùy chọn">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+
+                <!-- File Status Icons -->
+                {% if file.is_shared %}
+                    <div class="gdrive-file-shared" title="Đã chia sẻ">
+                        <i class="fas fa-users"></i>
+                    </div>
+                {% endif %}
+
+                {% if file.is_favorite %}
+                    <div class="gdrive-file-favorite" title="Đã gắn dấu sao">
+                        <i class="fas fa-star"></i>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <!-- Empty State -->
+        <div class="gdrive-empty-state">
+            <div class="gdrive-empty-icon">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <h3>Thư mục này trống</h3>
+            <p>Kéo thả file vào đây hoặc sử dụng nút "Tạo mới" để thêm file</p>
+            <div class="gdrive-empty-actions">
+                <button class="gdrive-btn-primary" onclick="document.getElementById('createButton').click()">
+                    <i class="fas fa-plus"></i>
+                    Tạo mới
+                </button>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Loading State -->
+    <div class="gdrive-loading" id="loadingState" style="display: none;">
+        <div class="gdrive-spinner"></div>
+        <span>Đang tải...</span>
+    </div>
+
+    <!-- Drag and Drop Overlay -->
+    <div class="gdrive-drop-overlay" id="dropOverlay" style="display: none;">
+        <div class="gdrive-drop-content">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <h3>Thả file vào đây để tải lên</h3>
+            <p>Hỗ trợ nhiều file cùng lúc</p>
+        </div>
+    </div>
+</div>
+
+

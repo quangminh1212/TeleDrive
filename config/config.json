@@ -1,0 +1,68 @@
+{
+  "telegram": {
+    "api_id": "21272067",
+    "api_hash": "b7690dc86952dbc9b16717b101164af3",
+    "phone_number": "+84936374950",
+    "session_name": "telegram_scanner_session",
+    "connection_timeout": 30,
+    "request_timeout": 60,
+    "retry_attempts": 3,
+    "retry_delay": 5
+  },
+  "channels": {
+    "use_default_channel": true,
+    "default_channel": "https://t.me/+mDSKNZmnHrM0YTNl"
+  },
+  "output": {
+    "directory": "output",
+    "formats": {
+      "csv": {
+        "enabled": true,
+        "filename": "telegram_files.csv"
+      },
+      "json": {
+        "enabled": true,
+        "filename": "telegram_files.json"
+      },
+      "excel": {
+        "enabled": true,
+        "filename": "telegram_files.xlsx"
+      }
+    }
+  },
+  "scanning": {
+    "max_messages": 1000,
+    "batch_size": 50,
+    "file_types": {
+      "documents": true,
+      "photos": true,
+      "videos": true,
+      "audio": true
+    }
+  },
+  "display": {
+    "show_progress": true,
+    "language": "vi"
+  },
+  "download": {
+    "generate_links": true,
+    "auto_download": false,
+    "download_directory": "downloads"
+  },
+  "filters": {
+    "min_file_size": 0,
+    "max_file_size": null,
+    "exclude_extensions": [
+      ".exe",
+      ".bat",
+      ".cmd",
+      ".scr"
+    ]
+  },
+  "logging": {
+    "enabled": true,
+    "level": "INFO",
+    "file": "logs/scanner.log"
+  },
+  "_last_updated": "2025-07-17"
+}
