@@ -23,16 +23,16 @@ logger = logging.getLogger(__name__)
 
 class TelegramOTPService:
     """Service gửi OTP qua Telegram"""
-    
+
     def __init__(self):
         self.client = None
         self._initialized = False
-    
+
     async def initialize(self):
         """Khởi tạo Telegram client"""
         if self._initialized:
             return True
-            
+
         try:
             self.client = TelegramClient(
                 config.telegram.session_name,
@@ -44,11 +44,11 @@ class TelegramOTPService:
             self._initialized = True
             logger.info("Telegram OTP Service đã được khởi tạo")
             return True
-            
+
         except Exception as e:
             logger.error(f"Lỗi khởi tạo Telegram client: {e}")
             return False
-    
+
     async def send_otp_to_user(self, phone_number: str) -> Tuple[bool, str]:
         """Gửi mã OTP đến user qua Telegram"""
         try:
@@ -56,33 +56,33 @@ class TelegramOTPService:
             is_valid, result = validate_phone_number(phone_number)
             if not is_valid:
                 return False, result
-            
+
             formatted_phone = result
-            
+
             # Khởi tạo client nếu chưa có
             if not self._initialized:
                 init_success = await self.initialize()
                 if not init_success:
                     return False, "Không thể kết nối Telegram"
-            
+
             # Tạo mã OTP
             otp_code = OTPManager.create_otp(formatted_phone)
-            
+
             # Tạo tin nhắn OTP
             message = self._create_otp_message(otp_code)
-            
+
             # Gửi tin nhắn đến user
             success = await self._send_message_to_phone(formatted_phone, message)
-            
+
             if success:
                 return True, "Mã OTP đã được gửi đến Telegram của bạn"
             else:
                 return False, "Không thể gửi mã OTP. Vui lòng kiểm tra số điện thoại"
-                
+
         except Exception as e:
             logger.error(f"Lỗi gửi OTP: {e}")
             return False, f"Lỗi hệ thống: {str(e)}"
-    
+
     async def _send_message_to_phone(self, phone_number: str, message: str) -> bool:
         """Gửi tin nhắn đến số điện thoại qua Telegram"""
         try:
@@ -101,27 +101,27 @@ class TelegramOTPService:
                             if contact_phone == phone_number:
                                 user = contact
                                 break
-                    
+
                     if not user:
                         logger.warning(f"Không tìm thấy user với số {phone_number}")
                         return False
-                        
+
                 except Exception as e:
                     logger.error(f"Lỗi tìm user: {e}")
                     return False
-            
+
             # Gửi tin nhắn
             await self.client.send_message(user, message)
             logger.info(f"Đã gửi OTP đến {phone_number}")
             return True
-            
+
         except FloodWaitError as e:
             logger.warning(f"Rate limit: phải chờ {e.seconds} giây")
             return False
         except Exception as e:
             logger.error(f"Lỗi gửi tin nhắn: {e}")
             return False
-    
+
     def _create_otp_message(self, otp_code: str) -> str:
         """Tạo nội dung tin nhắn OTP"""
         return f"""🔐 **TeleDrive - Mã xác thực**
@@ -132,7 +132,7 @@ Mã OTP của bạn là: **{otp_code}**
 🔒 Không chia sẻ mã này với bất kỳ ai
 
 Nếu bạn không yêu cầu mã này, vui lòng bỏ qua tin nhắn."""
-    
+
     async def close(self):
         """Đóng kết nối Telegram"""
         if self.client and self._initialized:
@@ -173,29 +173,29 @@ def send_otp_sync(phone_number: str) -> Tuple[bool, str]:
 # Alternative: Sử dụng bot thay vì client (nếu cần)
 class TelegramBotOTPService:
     """Service gửi OTP qua Telegram Bot (alternative approach)"""
-    
+
     def __init__(self, bot_token: str):
         self.bot_token = bot_token
         self.base_url = f"https://api.telegram.org/bot{bot_token}"
-    
+
     async def send_otp_via_bot(self, chat_id: str, otp_code: str) -> bool:
         """Gửi OTP qua Telegram Bot API"""
         import aiohttp
-        
+
         message = f"""🔐 **TeleDrive - Mã xác thực**
 
 Mã OTP của bạn là: **{otp_code}**
 
 ⏰ Mã có hiệu lực trong 5 phút
 🔒 Không chia sẻ mã này với bất kỳ ai"""
-        
+
         url = f"{self.base_url}/sendMessage"
         data = {
             'chat_id': chat_id,
             'text': message,
             'parse_mode': 'Markdown'
         }
-        
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, data=data) as response:

@@ -17,10 +17,10 @@ from src.models import validate_phone_number
 
 def create_admin_user():
     """Tạo admin user mới"""
-    
+
     # Tạo Flask app
     app = Flask(__name__)
-    
+
     # Cấu hình database
     basedir = os.path.abspath(os.path.dirname(__file__))
     instance_dir = os.path.join(basedir, 'instance')
@@ -29,19 +29,19 @@ def create_admin_user():
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'teledrive-secret-key-change-in-production'
-    
+
     # Khởi tạo database và auth
     init_database(app)
     auth_manager.init_app(app)
-    
+
     with app.app_context():
         print("🚀 TeleDrive Admin User Creator")
         print("=" * 50)
-        
+
         # Kiểm tra có admin user nào chưa
         if auth_manager.has_admin_user():
             print("✅ Đã có admin user trong hệ thống")
-            
+
             # Hiển thị danh sách users
             users = auth_manager.get_all_users()
             print(f"\n📊 Tổng số users: {len(users)}")
@@ -49,20 +49,20 @@ def create_admin_user():
                 status = "👑 Admin" if user.is_admin else "👤 User"
                 active = "✅ Active" if user.is_active else "❌ Inactive"
                 print(f"   {status} - {user.username} ({user.phone_number}) - {active}")
-            
+
             return True
-        
+
         print("⚠️  Chưa có admin user nào trong hệ thống")
         print("📝 Tạo admin user đầu tiên...")
         print()
-        
+
         # Nhập thông tin admin
         while True:
             username = input("👤 Nhập username admin: ").strip()
             if len(username) >= 3:
                 break
             print("❌ Username phải có ít nhất 3 ký tự")
-        
+
         while True:
             phone_number = input("📱 Nhập số điện thoại admin (VD: 0936374950): ").strip()
             is_valid, result = validate_phone_number(phone_number)
@@ -70,21 +70,21 @@ def create_admin_user():
                 phone_number = result
                 break
             print(f"❌ {result}")
-        
+
         email = input("📧 Nhập email admin (tùy chọn, Enter để bỏ qua): ").strip() or None
-        
+
         print()
         print("📋 Thông tin admin:")
         print(f"   Username: {username}")
         print(f"   Phone: {phone_number}")
         print(f"   Email: {email or 'Không có'}")
         print()
-        
+
         confirm = input("✅ Xác nhận tạo admin user? (y/n): ").lower().strip()
         if confirm != 'y':
             print("❌ Đã hủy tạo admin user")
             return False
-        
+
         # Tạo admin user
         success, message = auth_manager.create_user(
             username=username,
@@ -92,7 +92,7 @@ def create_admin_user():
             email=email,
             is_admin=True
         )
-        
+
         if success:
             print(f"✅ {message}")
             print()

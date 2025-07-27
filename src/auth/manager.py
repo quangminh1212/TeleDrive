@@ -14,12 +14,12 @@ from .models import User
 
 class AuthManager:
     """Quản lý xác thực và người dùng"""
-    
+
     def __init__(self, app=None):
         self.login_manager = LoginManager()
         if app:
             self.init_app(app)
-    
+
     def init_app(self, app):
         """Khởi tạo authentication với Flask app"""
         # Cấu hình Flask-Login
@@ -27,7 +27,7 @@ class AuthManager:
         self.login_manager.login_view = 'login'
         self.login_manager.login_message = 'Vui lòng đăng nhập để truy cập trang này.'
         self.login_manager.login_message_category = 'info'
-        
+
         # Cấu hình database
         if not app.config.get('SECRET_KEY'):
             app.config['SECRET_KEY'] = secrets.token_hex(32)
@@ -38,14 +38,14 @@ class AuthManager:
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
         # Database đã được init từ init_database(), không cần init lại
-        
+
         # User loader cho Flask-Login
         @self.login_manager.user_loader
         def load_user(user_id):
             return User.query.get(int(user_id))
-        
+
         # Database tables đã được tạo từ init_database()
-    
+
     def create_user(self, username, phone_number, email=None, is_admin=False):
         """Tạo người dùng mới"""
         try:
@@ -71,7 +71,7 @@ class AuthManager:
         except Exception as e:
             db.session.rollback()
             return False, f"Lỗi tạo người dùng: {str(e)}"
-    
+
     def authenticate_user_by_phone(self, phone_number):
         """Xác thực người dùng bằng số điện thoại (sau khi verify OTP)"""
         try:
@@ -95,19 +95,19 @@ class AuthManager:
         except Exception as e:
             print(f"Lỗi tìm user: {e}")
             return None
-    
+
     def get_user_count(self):
         """Lấy số lượng người dùng"""
         return User.query.count()
-    
+
     def has_admin_user(self):
         """Kiểm tra có admin user nào chưa"""
         return User.query.filter_by(is_admin=True).first() is not None
-    
+
     def get_all_users(self):
         """Lấy danh sách tất cả người dùng"""
         return User.query.all()
-    
+
     def deactivate_user(self, user_id):
         """Vô hiệu hóa người dùng"""
         try:
@@ -120,7 +120,7 @@ class AuthManager:
         except Exception as e:
             db.session.rollback()
             return False, f"Lỗi: {str(e)}"
-    
+
     def activate_user(self, user_id):
         """Kích hoạt người dùng"""
         try:
@@ -143,26 +143,26 @@ def validate_username(username):
     """Kiểm tra tính hợp lệ của username"""
     if len(username) < 3:
         return False, "Tên đăng nhập phải có ít nhất 3 ký tự"
-    
+
     if len(username) > 80:
         return False, "Tên đăng nhập không được quá 80 ký tự"
-    
+
     if not username.replace('_', '').replace('-', '').isalnum():
         return False, "Tên đăng nhập chỉ được chứa chữ cái, số, dấu gạch dưới và gạch ngang"
-    
+
     return True, "Tên đăng nhập hợp lệ"
 
 def validate_email(email):
     """Kiểm tra tính hợp lệ của email"""
     import re
-    
+
     if len(email) > 120:
         return False, "Email không được quá 120 ký tự"
-    
+
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(email_pattern, email):
         return False, "Định dạng email không hợp lệ"
-    
+
     return True, "Email hợp lệ"
 
 # Khởi tạo auth manager

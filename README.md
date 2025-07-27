@@ -30,15 +30,36 @@ run.bat config
 - 🇻🇳 **Tiếng Việt** - Giao diện tiếng Việt
 
 
-## 📁 Cấu hình
+## 🔧 Cấu hình API
 
-Chỉnh sửa file `config.json`:
+### 1. Lấy Telegram API Credentials
+1. Truy cập: https://my.telegram.org/apps
+2. Đăng nhập bằng số điện thoại
+3. Tạo ứng dụng mới:
+   - **App title**: Telegram Unlimited Driver
+   - **Short name**: TeleDrive
+4. Lưu lại **API ID** và **API Hash**
+
+### 2. Cấu hình credentials
+API credentials đã được cấu hình sẵn:
+- **API ID**: 21272067
+- **API Hash**: b7690dc86952dbc9b16717b101164af3
+- **Phone**: +84936374950
+
+### 3. Đăng nhập lần đầu
+```bash
+python telegram_login.py
+```
+
+## 📁 Cấu hình nâng cao
+
+Chỉnh sửa file `config.json` nếu cần:
 ```json
 {
   "telegram": {
-    "api_id": "your_api_id",
-    "api_hash": "your_api_hash",
-    "phone_number": "+84xxxxxxxxx"
+    "api_id": "21272067",
+    "api_hash": "b7690dc86952dbc9b16717b101164af3",
+    "phone_number": "+84936374950"
   },
   "channels": {
     "use_default_channel": true,

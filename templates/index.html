@@ -3,108 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleDrive File Manager</title>
+    <title>TeleDrive - Google Drive Style</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="gdrive-theme">
     <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-left">
-                <div class="logo">
-                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive Logo" class="logo-image">
-                    <span>TeleDrive</span>
-                </div>
-                <div class="header-title">File Manager</div>
+    <header class="gdrive-header">
+        <div class="gdrive-header-content">
+            <div class="gdrive-header-left">
+                <button class="gdrive-menu-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TeleDrive Logo" class="gdrive-logo">
+                <span class="gdrive-title">Drive</span>
             </div>
-            
-            <div class="header-center">
-                <div class="search-container">
+            <div class="gdrive-header-center">
+                <div class="gdrive-search-container">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="globalSearch" placeholder="Tìm kiếm file...">
-                    <button id="clearSearch" class="clear-btn" style="display: none;">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <input type="text" id="globalSearch" placeholder="Tìm kiếm trong Drive...">
+                    <button id="clearSearch" class="clear-btn" style="display: none;"><i class="fas fa-times"></i></button>
                 </div>
             </div>
-            
-            <div class="header-right">
-                <div class="stats-summary" id="globalStats">
-                    <div class="stat-item">
-                        <span class="stat-value">0</span>
-                        <span class="stat-label">Files</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">0 B</span>
-                        <span class="stat-label">Total</span>
-                    </div>
-                </div>
-
-                <!-- User Menu -->
-                <div class="user-menu">
-                    <div class="user-info">
-                        <i class="fas fa-user-circle"></i>
-                        <span class="username">{{ user.username }}</span>
-                        {% if user.is_admin %}
-                            <span class="admin-badge">Admin</span>
-                        {% endif %}
-                    </div>
-                    <div class="user-dropdown">
-                        <button class="dropdown-toggle" id="userMenuToggle">
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <div class="dropdown-menu" id="userDropdown">
-                            <div class="dropdown-item user-details">
-                                <div class="user-name">{{ user.username }}</div>
-                                <div class="user-email">{{ user.email }}</div>
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <button class="dropdown-item" id="logoutBtn">
-                                <i class="fas fa-sign-out-alt"></i>
-                                Đăng xuất
-                            </button>
-                        </div>
-                    </div>
+            <div class="gdrive-header-right">
+                <div class="gdrive-user-menu" id="userMenu">
+                    <i class="fas fa-user-circle"></i>
                 </div>
             </div>
         </div>
     </header>
-
     <!-- Main Container -->
-    <div class="main-container">
+    <div class="gdrive-main-container">
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h3>Scan Sessions</h3>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
+        <aside class="gdrive-sidebar" id="sidebar">
+            <div class="gdrive-sidebar-header">
+                <button class="gdrive-new-btn"><i class="fas fa-plus"></i> Mới</button>
             </div>
-            
-            <div class="sessions-list" id="sessionsList">
-                <div class="loading">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <span>Đang tải...</span>
-                </div>
+            <nav class="gdrive-nav">
+                <ul>
+                    <li class="gdrive-nav-item active"><i class="fas fa-hdd"></i> Drive của tôi</li>
+                    <li class="gdrive-nav-item"><i class="fas fa-users"></i> Được chia sẻ với tôi</li>
+                    <li class="gdrive-nav-item"><i class="fas fa-clock"></i> Gần đây</li>
+                    <li class="gdrive-nav-item"><i class="fas fa-star"></i> Có gắn dấu sao</li>
+                    <li class="gdrive-nav-item"><i class="fas fa-trash"></i> Thùng rác</li>
+                </ul>
+            </nav>
+            <div class="gdrive-sessions-list" id="sessionsList">
+                <div class="loading"><i class="fas fa-spinner fa-spin"></i><span>Đang tải...</span></div>
             </div>
         </aside>
-
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="gdrive-main-content">
             <!-- Toolbar -->
-            <div class="toolbar">
-                <div class="toolbar-left">
+            <div class="gdrive-toolbar">
+                <div class="gdrive-toolbar-left">
                     <div class="view-options">
-                        <button class="view-btn active" data-view="grid">
-                            <i class="fas fa-th"></i>
-                        </button>
-                        <button class="view-btn" data-view="list">
-                            <i class="fas fa-list"></i>
-                        </button>
+                        <button class="view-btn active" data-view="grid"><i class="fas fa-th"></i></button>
+                        <button class="view-btn" data-view="list"><i class="fas fa-list"></i></button>
                     </div>
-                    
                     <div class="filter-options">
                         <select id="fileTypeFilter">
                             <option value="all">Tất cả file</option>
@@ -118,8 +73,7 @@
                         </select>
                     </div>
                 </div>
-                
-                <div class="toolbar-right">
+                <div class="gdrive-toolbar-right">
                     <div class="sort-options">
                         <select id="sortBy">
                             <option value="name">Tên file</option>
@@ -127,56 +81,34 @@
                             <option value="date">Ngày upload</option>
                             <option value="type">Loại file</option>
                         </select>
-                        <button id="sortOrder" class="sort-btn" data-order="asc">
-                            <i class="fas fa-sort-alpha-down"></i>
-                        </button>
+                        <button id="sortOrder" class="sort-btn" data-order="asc"><i class="fas fa-sort-alpha-down"></i></button>
                     </div>
                 </div>
             </div>
-
             <!-- Content Area -->
-            <div class="content-area">
-                <!-- Welcome Screen -->
+            <div class="gdrive-content-area">
                 <div class="welcome-screen" id="welcomeScreen">
                     <div class="welcome-content">
-                        <i class="fab fa-telegram-plane welcome-icon"></i>
+                        <i class="fab fa-google-drive welcome-icon"></i>
                         <h2>Chào mừng đến với TeleDrive</h2>
                         <p>Chọn một scan session từ sidebar để xem các file đã quét được</p>
                     </div>
                 </div>
-
-                <!-- Files Grid -->
                 <div class="files-container" id="filesContainer" style="display: none;">
                     <div class="session-info" id="sessionInfo">
                         <h2 id="sessionTitle">Session</h2>
                         <div class="session-stats" id="sessionStats"></div>
                     </div>
-                    
-                    <div class="files-grid" id="filesGrid">
-                        <!-- Files will be loaded here -->
-                    </div>
-                    
-                    <!-- Pagination -->
+                    <div class="files-grid" id="filesGrid"></div>
                     <div class="pagination" id="pagination" style="display: none;">
-                        <button id="prevPage" class="page-btn">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
+                        <button id="prevPage" class="page-btn"><i class="fas fa-chevron-left"></i></button>
                         <span id="pageInfo">Trang 1 / 1</span>
-                        <button id="nextPage" class="page-btn">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
+                        <button id="nextPage" class="page-btn"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
-
-                <!-- Loading -->
                 <div class="loading-screen" id="loadingScreen" style="display: none;">
-                    <div class="loading">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <span>Đang tải file...</span>
-                    </div>
+                    <div class="loading"><i class="fas fa-spinner fa-spin"></i><span>Đang tải file...</span></div>
                 </div>
-
-                <!-- No Results -->
                 <div class="no-results" id="noResults" style="display: none;">
                     <i class="fas fa-search"></i>
                     <h3>Không tìm thấy file nào</h3>
@@ -185,35 +117,21 @@
             </div>
         </main>
     </div>
-
     <!-- File Detail Modal -->
     <div class="modal" id="fileModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalTitle">Chi tiết file</h3>
-                <button class="modal-close" id="modalClose">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
             </div>
-            
-            <div class="modal-body" id="modalBody">
-                <!-- File details will be loaded here -->
-            </div>
-            
+            <div class="modal-body" id="modalBody"></div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="modalCloseBtn">Đóng</button>
-                <button class="btn btn-primary" id="downloadBtn">
-                    <i class="fas fa-download"></i>
-                    Tải xuống
-                </button>
+                <button class="btn btn-primary" id="downloadBtn"><i class="fas fa-download"></i>Tải xuống</button>
             </div>
         </div>
     </div>
-
-    <!-- Mobile Menu Overlay -->
     <div class="mobile-overlay" id="mobileOverlay"></div>
-
-    <!-- Scripts -->
     <script src="/static/js/app.js"></script>
 </body>
 </html>

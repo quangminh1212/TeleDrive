@@ -47,7 +47,7 @@ def cleanup_old_outputs(days=7):
     if output_dir.exists():
         cutoff_date = datetime.now() - timedelta(days=days)
         count = 0
-        
+
         for file in output_dir.glob("*"):
             if file.is_file() and file.name != '.gitkeep':
                 try:
@@ -58,7 +58,7 @@ def cleanup_old_outputs(days=7):
                         count += 1
                 except Exception as e:
                     print(f"   ❌ Lỗi xóa {file}: {e}")
-        
+
         print(f"   📊 Đã xóa {count} file output cũ")
 
 def cleanup_temp_files():
@@ -66,7 +66,7 @@ def cleanup_temp_files():
     print("🗑️ Dọn dẹp temp files...")
     patterns = ['*.tmp', '*.bak', '*.old', '*~', '*.swp', '*.swo']
     count = 0
-    
+
     for pattern in patterns:
         for file in glob.glob(pattern, recursive=True):
             try:
@@ -75,7 +75,7 @@ def cleanup_temp_files():
                 count += 1
             except Exception as e:
                 print(f"   ❌ Lỗi xóa {file}: {e}")
-    
+
     print(f"   📊 Đã xóa {count} temp files")
 
 def cleanup_old_backups(keep_latest=2):
@@ -85,7 +85,7 @@ def cleanup_old_backups(keep_latest=2):
     if instance_dir.exists():
         backup_files = list(instance_dir.glob("*_backup_*.db"))
         backup_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
-        
+
         files_to_remove = backup_files[keep_latest:]
         for file in files_to_remove:
             try:
@@ -93,29 +93,29 @@ def cleanup_old_backups(keep_latest=2):
                 print(f"   ✅ Đã xóa backup cũ: {file}")
             except Exception as e:
                 print(f"   ❌ Lỗi xóa {file}: {e}")
-        
+
         print(f"   📊 Đã xóa {len(files_to_remove)} backup files cũ")
 
 def main():
     """Main cleanup function"""
     print("🚀 Bắt đầu dọn dẹp dự án TeleDrive...")
     print("=" * 50)
-    
+
     cleanup_pycache()
     print()
-    
+
     cleanup_logs()
     print()
-    
+
     cleanup_old_outputs(days=7)
     print()
-    
+
     cleanup_temp_files()
     print()
-    
+
     cleanup_old_backups(keep_latest=2)
     print()
-    
+
     print("=" * 50)
     print("✅ Hoàn thành dọn dẹp dự án!")
 
