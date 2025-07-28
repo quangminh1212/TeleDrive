@@ -298,6 +298,73 @@ function createFolder(event) {
     });
 }
 
+// Navigation functions
+let currentFolder = null;
+let viewMode = 'grid'; // 'grid' or 'list'
+
+function navigateToFolder(folderId, folderName = null) {
+    currentFolder = folderId;
+
+    // Update breadcrumb
+    updateBreadcrumb(folderId, folderName);
+
+    // Load files for this folder
+    loadFolderContents(folderId);
+}
+
+function updateBreadcrumb(folderId, folderName) {
+    const breadcrumb = document.getElementById('breadcrumb');
+
+    if (!folderId) {
+        // Root folder
+        breadcrumb.innerHTML = `
+            <a href="#" class="breadcrumb-item active" onclick="navigateToFolder(null)">
+                <span class="material-icons">home</span>
+                Home
+            </a>
+        `;
+    } else {
+        // Add folder to breadcrumb (simplified - in real app would build full path)
+        breadcrumb.innerHTML = `
+            <a href="#" class="breadcrumb-item" onclick="navigateToFolder(null)">
+                <span class="material-icons">home</span>
+                Home
+            </a>
+            <span class="breadcrumb-separator">›</span>
+            <a href="#" class="breadcrumb-item active" onclick="navigateToFolder(${folderId}, '${folderName}')">
+                <span class="material-icons">folder</span>
+                ${folderName}
+            </a>
+        `;
+    }
+}
+
+function loadFolderContents(folderId) {
+    // This would load files and folders for the specified folder
+    // For now, just refresh the current view
+    refreshFiles();
+}
+
+function toggleViewMode() {
+    const filesGrid = document.getElementById('files-grid');
+    const viewModeIcon = document.getElementById('view-mode-icon');
+    const viewModeText = document.getElementById('view-mode-text');
+
+    if (viewMode === 'grid') {
+        viewMode = 'list';
+        filesGrid.classList.remove('files-grid');
+        filesGrid.classList.add('files-list');
+        viewModeIcon.textContent = 'view_module';
+        viewModeText.textContent = 'Grid View';
+    } else {
+        viewMode = 'grid';
+        filesGrid.classList.remove('files-list');
+        filesGrid.classList.add('files-grid');
+        viewModeIcon.textContent = 'view_list';
+        viewModeText.textContent = 'List View';
+    }
+}
+
 // Setup file grid interactions
 function setupFileGrid() {
     // Add click handlers for file cards
