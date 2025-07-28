@@ -221,6 +221,23 @@
                 flex: none;
             }
         }
+
+        /* Enhanced country select styling */
+        .country-select select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 8px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 32px;
+            appearance: none;
+        }
+
+        .phone-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -258,14 +275,22 @@
                 <label for="phone_number">Phone Number</label>
                 <div class="form-row">
                     <div class="country-select">
-                        {{ form.country_code(class="form-control") }}
+                        {{ form.country_code(class="form-control", id="country_code") }}
                     </div>
                     <div class="phone-input">
-                        {{ form.phone_number(class="form-control", placeholder="987654321") }}
+                        {{ form.phone_number(class="form-control", placeholder="987654321", id="phone_number") }}
                     </div>
+                </div>
+                <div class="phone-hint">
+                    Enter your phone number without the country code (e.g., 987654321 for +84987654321)
                 </div>
                 {% if form.phone_number.errors %}
                     {% for error in form.phone_number.errors %}
+                        <div class="field-error">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+                {% if form.country_code.errors %}
+                    {% for error in form.country_code.errors %}
                         <div class="field-error">{{ error }}</div>
                     {% endfor %}
                 {% endif %}
@@ -279,5 +304,38 @@
             <a href="{{ url_for('register') }}" class="auth-link">Create account</a>
         </div>
     </div>
+
+    <script>
+        // Auto-focus phone number input when country is selected
+        document.getElementById('country_code').addEventListener('change', function() {
+            document.getElementById('phone_number').focus();
+        });
+
+        // Format phone number as user types
+        document.getElementById('phone_number').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+            e.target.value = value;
+        });
+
+        // Update hint based on selected country
+        document.getElementById('country_code').addEventListener('change', function() {
+            const countryCode = this.value;
+            const hint = document.querySelector('.phone-hint');
+
+            // Update hint with example for selected country
+            const examples = {
+                '+84': 'Enter your phone number without the country code (e.g., 987654321 for +84987654321)',
+                '+1': 'Enter your phone number without the country code (e.g., 2345678901 for +12345678901)',
+                '+44': 'Enter your phone number without the country code (e.g., 7700900123 for +447700900123)',
+                '+86': 'Enter your phone number without the country code (e.g., 13800138000 for +8613800138000)',
+                '+91': 'Enter your phone number without the country code (e.g., 9876543210 for +919876543210)'
+            };
+
+            hint.textContent = examples[countryCode] || 'Enter your phone number without the country code';
+        });
+
+        // Trigger initial hint update
+        document.getElementById('country_code').dispatchEvent(new Event('change'));
+    </script>
 </body>
 </html>
