@@ -21,21 +21,25 @@ function initializeApp() {
 
 // Setup global event listeners
 function setupGlobalEventListeners() {
-    // Close context menus when clicking elsewhere
+    // Close context menus and dropdowns when clicking elsewhere
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.context-menu')) {
             hideAllContextMenus();
         }
+        if (!e.target.closest('.user-menu')) {
+            hideUserDropdown();
+        }
     });
-    
+
     // Handle escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             hideAllContextMenus();
+            hideUserDropdown();
             hideLoading();
         }
     });
-    
+
     // Handle search input
     const searchInput = document.querySelector('.search-input');
     if (searchInput) {
@@ -712,8 +716,24 @@ window.TeleDrive = {
     deleteFile,
     toggleTheme,
     toggleSidebar,
+    toggleUserMenu,
     apiRequest
 };
+
+// User Menu Functions
+function toggleUserMenu() {
+    const dropdown = document.getElementById('user-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+    }
+}
+
+function hideUserDropdown() {
+    const dropdown = document.getElementById('user-dropdown');
+    if (dropdown) {
+        dropdown.classList.remove('show');
+    }
+}
 
 // Initialize theme on load
 initializeTheme();

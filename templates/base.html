@@ -39,9 +39,34 @@
             <button class="header-btn" onclick="location.href='{{ url_for('settings') }}'">
                 <span class="material-icons">settings</span>
             </button>
-            <div class="user-avatar">
-                <span class="material-icons">account_circle</span>
+            {% if current_user.is_authenticated %}
+            <div class="user-menu">
+                <button class="user-avatar" onclick="toggleUserMenu()">
+                    <span class="material-icons">account_circle</span>
+                    <span class="user-name">{{ current_user.username }}</span>
+                </button>
+                <div class="user-dropdown" id="user-dropdown">
+                    <a href="{{ url_for('profile') }}" class="dropdown-item">
+                        <span class="material-icons">person</span>
+                        Profile
+                    </a>
+                    <a href="{{ url_for('change_password') }}" class="dropdown-item">
+                        <span class="material-icons">lock</span>
+                        Change Password
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item">
+                        <span class="material-icons">logout</span>
+                        Sign Out
+                    </a>
+                </div>
             </div>
+            {% else %}
+            <div class="auth-buttons">
+                <a href="{{ url_for('login') }}" class="btn-login">Sign In</a>
+                <a href="{{ url_for('register') }}" class="btn-register">Sign Up</a>
+            </div>
+            {% endif %}
         </div>
     </header>
 

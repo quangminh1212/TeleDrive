@@ -10,8 +10,9 @@ import asyncio
 import threading
 from datetime import datetime
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, flash
 from flask_socketio import SocketIO, emit
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import eventlet
 
 # Import existing modules
@@ -23,12 +24,27 @@ import config
 from database import configure_flask_app, initialize_database
 from models import db, User, File, Folder, ScanSession, get_or_create_user
 
+# Import forms
+from forms import LoginForm, RegistrationForm, ChangePasswordForm
+
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'teledrive_secret_key_2025'
 
 # Configure database
 configure_flask_app(app)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message_category = 'info'
+
+@login_manager.user_loader
+def load_user(user_id):
+    """Load user by ID for Flask-Login"""
+    return User.query.get(int(user_id))
 
 # Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
@@ -37,7 +53,22 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 try:
     with app.app_context():
         db.create_all()
-        # Ensure default user exists
+
+        # Create default admin user with password
+        admin_user = User.query.filter_by(username='admin').first()
+        if not admin_user:
+            admin_user = User(
+                username='admin',
+                email='admin@teledrive.local',
+                role='admin',
+                is_active=True
+            )
+            admin_user.set_password('admin123')  # Default password
+            db.session.add(admin_user)
+            db.session.commit()
+            print("✅ Created admin user (username: admin, password: admin123)")
+
+        # Ensure default user exists for backward compatibility
         default_user = get_or_create_user()
         print("✅ Database initialized successfully")
 except Exception as e:
@@ -230,6 +261,7 @@ class WebTelegramScanner(TelegramFileScanner):
             scanning_active = False
 
 @app.route('/')
+@login_required
 def dashboard():
     """Main dashboard page"""
     # Get recent files from database
@@ -270,6 +302,7 @@ def dashboard():
     return render_template('index.html', files=all_files)
 
 @app.route('/settings')
+@login_required
 def settings():
     """Settings page for API configuration"""
     cm = ConfigManager()
@@ -278,6 +311,7 @@ def settings():
     return render_template('settings.html', config=current_config)
 
 @app.route('/scan')
+@login_required
 def scan_page():
     """Channel scanning page"""
     return render_template('scan.html')
@@ -948,6 +982,89 @@ def rename_folder(folder_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
+
+# Authentication routes
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """User login page"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember_me.data)
+            next_page = request.args.get('next')
+            if not next_page or not next_page.startswith('/'):
+                next_page = url_for('dashboard')
+            flash('Login successful!', 'success')
+            return redirect(next_page)
+        else:
+            flash('Invalid username or password', 'error')
+
+    return render_template('auth/login.html', form=form)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration page"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(
+            username=form.username.data,
+            email=form.email.data,
+            role='user',
+            is_active=True
+        )
+        user.set_password(form.password.data)
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+            flash('Registration successful! You can now log in.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Registration failed. Please try again.', 'error')
+
+    return render_template('auth/register.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    """User logout"""
+    logout_user()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('login'))
+
+@app.route('/profile')
+@login_required
+def profile():
+    """User profile page"""
+    return render_template('auth/profile.html', user=current_user)
+
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    """Change password page"""
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        if current_user.check_password(form.current_password.data):
+            current_user.set_password(form.new_password.data)
+            try:
+                db.session.commit()
+                flash('Password changed successfully!', 'success')
+                return redirect(url_for('profile'))
+            except Exception as e:
+                db.session.rollback()
+                flash('Failed to change password. Please try again.', 'error')
+        else:
+            flash('Current password is incorrect.', 'error')
+
+    return render_template('auth/change_password.html', form=form)
 
 @socketio.on('connect')
 def handle_connect():

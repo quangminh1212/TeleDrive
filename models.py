@@ -6,13 +6,15 @@ SQLAlchemy models for users, files, folders, and scan sessions
 
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 import json
+import bcrypt
 
 db = SQLAlchemy()
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     """User model for authentication and authorization"""
     __tablename__ = 'users'
     
@@ -32,7 +34,40 @@ class User(db.Model):
     
     def __repr__(self):
         return f'<User {self.username}>'
-    
+
+    # Flask-Login required methods
+    def get_id(self):
+        """Return the user ID as a string"""
+        return str(self.id)
+
+    def is_authenticated(self):
+        """Return True if the user is authenticated"""
+        return True
+
+    def is_anonymous(self):
+        """Return False as anonymous users aren't supported"""
+        return False
+
+    def is_active(self):
+        """Return True if the user account is active"""
+        return self.is_active
+
+    # Password methods
+    def set_password(self, password):
+        """Hash and set the user's password"""
+        if password:
+            password_bytes = password.encode('utf-8')
+            salt = bcrypt.gensalt()
+            self.password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+
+    def check_password(self, password):
+        """Check if the provided password matches the stored hash"""
+        if not self.password_hash or not password:
+            return False
+        password_bytes = password.encode('utf-8')
+        hash_bytes = self.password_hash.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hash_bytes)
+
     def to_dict(self):
         """Convert user to dictionary for JSON serialization"""
         return {
