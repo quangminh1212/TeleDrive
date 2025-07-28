@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-# TeleDrive - Telegram File Manager
-
-Công cụ quét và quản lý file từ các kênh Telegram với giao diện web hiện đại.
-
-## 🚀 Sử dụng nhanh
-
-### Khởi động Web Interface (mặc định):
-```batch
-run.bat
-=======
 # TeleDrive - Google Drive-like Telegram File Manager
 
 Modern web interface for scanning and managing files from Telegram channels with Google Drive-inspired design.
@@ -58,84 +47,103 @@ Modern web interface for scanning and managing files from Telegram channels with
 ## Quan ly cau hinh
 
 ### File .env (API Credentials)
->>>>>>> 7.addGGDriveUI
 ```
-Truy cập: http://localhost:5000
-
-### Chạy Scanner CLI:
-```batch
-run.bat scanner
+TELEGRAM_API_ID=21272067
+TELEGRAM_API_HASH=b7690dc86952dbc9b16717b101164af3
+TELEGRAM_PHONE=+84936374950
 ```
 
-### Cấu hình:
-```batch
-run.bat config
-```
+### File config.json (Cau hinh chi tiet)
+- **Telegram**: API credentials, session name, connection settings
+- **Output**: Thu muc, format file (CSV, JSON, Excel, Simple JSON)
+- **Scanning**: Gioi han message, batch size, loai file, performance
+- **Download**: Tao link download, auto download, file size limits
+- **Display**: Hien thi progress, ngon ngu, format ngay, colors
+- **Filters**: Loc theo kich thuoc, phan mo rong, ngay thang, patterns
+- **Logging**: Chi tiet log cho tung buoc, API calls, file operations
+- **Security**: Session management, timeout, privacy settings
 
-## ✨ Tính năng
+### Config Manager
+Chay `config.bat` de quan ly cau hinh qua giao dien:
+- Xem cau hinh hien tai
+- Thay doi cau hinh Telegram API
+- Cau hinh so dien thoai
+- Tuy chinh output format
+- Cau hinh scanning options
+- Dat filter cho file
+- Dong bo tu .env sang config.json
+- Kiem tra validation cau hinh
 
-- 🌐 **Web Interface** - Giao diện web hiện đại
-- 🔐 **Authentication** - Đăng nhập bảo mật
-- 📊 **Dashboard** - Xem và quản lý file
-- 🔍 **Search & Filter** - Tìm kiếm và lọc file
-- 📁 **Multi-format** - CSV, JSON, Excel
-- 🇻🇳 **Tiếng Việt** - Giao diện tiếng Việt
+## Su dung
 
+- **Private channel**: `https://t.me/joinchat/xxxxx` hoac `https://t.me/+xxxxx`
+- **Neu da join**: `@channelname`
+- **Ket qua**: Luu trong thu muc `output/`
 
-## 📁 Cấu hình
+## Logging System
 
-Chỉnh sửa file `config.json`:
+Du an co he thong logging chi tiet de theo doi tung buoc:
+
+### Cac loai log:
+- **scanner.log**: Log chinh cho toan bo qua trinh
+- **config.log**: Log thay doi cau hinh
+- **api.log**: Log cac API call den Telegram
+- **files.log**: Log cac thao tac file (doc/ghi)
+- **errors.log**: Log chi tiet cac loi xay ra
+
+### Cau hinh logging trong config.json:
 ```json
 {
-  "telegram": {
-    "api_id": "your_api_id",
-    "api_hash": "your_api_hash",
-    "phone_number": "+84xxxxxxxxx"
-  },
-  "channels": {
-    "use_default_channel": true,
-    "default_channel": "@your_channel_here"
-  },
-  "scanning": {
-    "max_messages": 1000,
-    "batch_size": 50,
-    "file_types": {
-      "documents": true,
-      "photos": true,
-      "videos": true,
-      "audio": true
-    }
-  },
-  "output": {
-    "formats": {
-      "csv": {"enabled": true},
-      "json": {"enabled": true},
-      "excel": {"enabled": true}
+  "logging": {
+    "enabled": true,
+    "level": "DEBUG",
+    "detailed_steps": true,
+    "log_api_calls": true,
+    "log_file_operations": true,
+    "separate_files": {
+      "enabled": true
     }
   }
 }
 ```
 
-## 📊 Kết quả
+### Xem log:
+- **Tat ca log**: Thu muc `logs/`
+- **Log realtime**: Hien thi tren console
+- **Log rotation**: Tu dong backup khi file qua lon
 
-File lưu trong `output/`: CSV, JSON, Excel
+## File structure
 
-## 🌐 Web Interface
+```
+TeleDrive/
+├── setup.bat         # Cai dat dependencies
+├── config.bat        # Quan ly cau hinh (bao gom phone + chi tiet)
+├── run.bat           # Chay scanner
+├── main.py           # Script chinh voi logging chi tiet
+├── engine.py         # Core engine voi logging chi tiet
+├── config.py         # Load cau hinh voi logging
+├── config_manager.py # Quan ly cau hinh tich hop (sync + validation)
+├── logger.py         # He thong logging chi tiet
+├── config.json       # Cau hinh chi tiet (bao gom logging)
 
-**Lần đầu sử dụng:**
-1. Truy cập: http://localhost:5000/setup
-2. Tạo tài khoản admin
-3. Đăng nhập và sử dụng
+├── logs/             # Thu muc chua tat ca log files
+│   ├── scanner.log   # Log chinh
+│   ├── config.log    # Log cau hinh
+│   ├── api.log       # Log API calls
+│   ├── files.log     # Log file operations
+│   └── errors.log    # Log loi chi tiet
+└── output/           # Ket qua scan
+```
 
-**Tính năng:**
-- 🔐 Authentication & User Management
-- 📁 File Manager với Search & Filter
-- 📊 Statistics & Download links
-- 📱 Responsive design
+## Loi thuong gap
 
-## 🛠️ Yêu cầu
+- **"invalid literal for int()"**: Chua cau hinh .env
+- **"Could not find entity"**: Sai ten channel hoac chua join
+- **"Python not found"**: Chua cai Python
 
-- Python 3.7+
-- Telegram API credentials
-- Windows (batch files)
+## Output format
 
+- CSV: Du lieu bang
+- Excel: Format dep
+- JSON: Du lieu chi tiet
+- Simple JSON: Chi ten file + link

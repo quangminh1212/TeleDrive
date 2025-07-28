@@ -1,9 +1,0 @@
-# Ignore all session files and sensitive data
-*.session
-*.session-journal
-*.db
-*.sqlite
-*.sqlite3
-
-# Keep directory structure
-!.gitignore
