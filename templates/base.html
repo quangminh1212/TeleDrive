@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TeleDrive - Telegram File Manager{% endblock %}</title>
+    
+    <!-- Google Drive-like styling -->
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Socket.IO for real-time updates -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="material-icons">cloud_download</span>
+                <span class="logo-text">TeleDrive</span>
+            </div>
+        </div>
+        
+        <div class="header-center">
+            <div class="search-container">
+                <span class="material-icons search-icon">search</span>
+                <input type="text" class="search-input" placeholder="Search files...">
+            </div>
+        </div>
+        
+        <div class="header-right">
+            <button class="header-btn" onclick="location.href='{{ url_for('settings') }}'">
+                <span class="material-icons">settings</span>
+            </button>
+            <div class="user-avatar">
+                <span class="material-icons">account_circle</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-content">
+            <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <span class="material-icons">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="{{ url_for('scan_page') }}" class="nav-item {% if request.endpoint == 'scan_page' %}active{% endif %}">
+                <span class="material-icons">scanner</span>
+                <span>Channel Scanner</span>
+            </a>
+            
+            <a href="{{ url_for('settings') }}" class="nav-item {% if request.endpoint == 'settings' %}active{% endif %}">
+                <span class="material-icons">settings</span>
+                <span>Settings</span>
+            </a>
+            
+            <div class="nav-divider"></div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Recent Files</div>
+                <a href="#" class="nav-item small">
+                    <span class="material-icons">description</span>
+                    <span>telegram_files.json</span>
+                </a>
+                <a href="#" class="nav-item small">
+                    <span class="material-icons">table_chart</span>
+                    <span>telegram_files.csv</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="sidebar-footer">
+            <div class="storage-info">
+                <div class="storage-text">Storage</div>
+                <div class="storage-bar">
+                    <div class="storage-used" style="width: 45%"></div>
+                </div>
+                <div class="storage-details">2.1 GB of 15 GB used</div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Processing...</div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

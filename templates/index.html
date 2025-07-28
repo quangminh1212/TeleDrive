@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - TeleDrive{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <div class="page-actions">
+        <button class="btn btn-primary" onclick="location.href='{{ url_for('scan_page') }}'">
+            <span class="material-icons">add</span>
+            New Scan
+        </button>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <span class="material-icons">folder</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-number" id="total-files">{{ files|length }}</div>
+            <div class="stat-label">Total Files</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <span class="material-icons">cloud_download</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-number" id="total-scans">-</div>
+            <div class="stat-label">Scans Completed</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <span class="material-icons">storage</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-number" id="total-size">-</div>
+            <div class="stat-label">Total Size</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <span class="material-icons">schedule</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-number" id="last-scan">-</div>
+            <div class="stat-label">Last Scan</div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Files -->
+<div class="section">
+    <div class="section-header">
+        <h2 class="section-title">Recent Files</h2>
+        <div class="section-actions">
+            <button class="btn btn-secondary" onclick="refreshFiles()">
+                <span class="material-icons">refresh</span>
+                Refresh
+            </button>
+        </div>
+    </div>
+    
+    <div class="files-container">
+        {% if files %}
+        <div class="files-grid" id="files-grid">
+            {% for file in files %}
+            <div class="file-card" data-filename="{{ file.name }}">
+                <div class="file-icon">
+                    {% if file.name.endswith('.json') %}
+                    <span class="material-icons">code</span>
+                    {% elif file.name.endswith('.csv') %}
+                    <span class="material-icons">table_chart</span>
+                    {% elif file.name.endswith('.xlsx') %}
+                    <span class="material-icons">description</span>
+                    {% else %}
+                    <span class="material-icons">insert_drive_file</span>
+                    {% endif %}
+                </div>
+                
+                <div class="file-info">
+                    <div class="file-name">{{ file.name }}</div>
+                    <div class="file-details">
+                        <span class="file-size">{{ (file.size / 1024) | round(1) }} KB</span>
+                        <span class="file-date">{{ file.modified }}</span>
+                    </div>
+                </div>
+                
+                <div class="file-actions">
+                    <button class="file-action-btn" onclick="downloadFile('{{ file.name }}')">
+                        <span class="material-icons">download</span>
+                    </button>
+                    <button class="file-action-btn" onclick="showFileMenu(event, '{{ file.name }}')">
+                        <span class="material-icons">more_vert</span>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <span class="material-icons">folder_open</span>
+            </div>
+            <div class="empty-title">No files yet</div>
+            <div class="empty-description">Start by scanning a Telegram channel to see files here</div>
+            <button class="btn btn-primary" onclick="location.href='{{ url_for('scan_page') }}'">
+                <span class="material-icons">scanner</span>
+                Start Scanning
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- File Context Menu -->
+<div id="file-menu" class="context-menu" style="display: none;">
+    <div class="context-menu-item" onclick="downloadFile(currentFile)">
+        <span class="material-icons">download</span>
+        Download
+    </div>
+    <div class="context-menu-item" onclick="previewFile(currentFile)">
+        <span class="material-icons">visibility</span>
+        Preview
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item danger" onclick="deleteFile(currentFile)">
+        <span class="material-icons">delete</span>
+        Delete
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFile = null;
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    setupFileGrid();
+});
+
+// Load dashboard statistics
+function loadStats() {
+    fetch('/api/get_files')
+        .then(response => response.json())
+        .then(files => {
+            document.getElementById('total-files').textContent = files.length;
+            
+            let totalSize = files.reduce((sum, file) => sum + file.size, 0);
+            document.getElementById('total-size').textContent = formatFileSize(totalSize);
+            
+            if (files.length > 0) {
+                document.getElementById('last-scan').textContent = files[0].modified;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading stats:', error);
+        });
+}
+
+// Refresh files list
+function refreshFiles() {
+    location.reload();
+}
+
+// Setup file grid interactions
+function setupFileGrid() {
+    // Add click handlers for file cards
+    document.querySelectorAll('.file-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('.file-actions')) {
+                const filename = this.dataset.filename;
+                previewFile(filename);
+            }
+        });
+    });
+}
+
+// Show file context menu
+function showFileMenu(event, filename) {
+    event.stopPropagation();
+    currentFile = filename;
+    
+    const menu = document.getElementById('file-menu');
+    menu.style.display = 'block';
+    menu.style.left = event.pageX + 'px';
+    menu.style.top = event.pageY + 'px';
+    
+    // Hide menu when clicking elsewhere
+    document.addEventListener('click', hideFileMenu);
+}
+
+// Hide file context menu
+function hideFileMenu() {
+    document.getElementById('file-menu').style.display = 'none';
+    document.removeEventListener('click', hideFileMenu);
+}
+
+// Download file
+function downloadFile(filename) {
+    const link = document.createElement('a');
+    link.href = '/output/' + filename;
+    link.download = filename;
+    link.click();
+    hideFileMenu();
+}
+
+// Preview file
+function previewFile(filename) {
+    showToast('File preview not implemented yet', 'info');
+    hideFileMenu();
+}
+
+// Delete file
+function deleteFile(filename) {
+    if (confirm('Are you sure you want to delete this file?')) {
+        showToast('File deletion not implemented yet', 'info');
+    }
+    hideFileMenu();
+}
+
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+</script>
+{% endblock %}

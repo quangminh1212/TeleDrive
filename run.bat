@@ -160,30 +160,91 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 7/7] Khoi dong TeleDrive Scanner...
+echo [BUOC 7/7] Chon giao dien...
 echo ================================================================
-echo 🚀 DANG KHOI DONG TELEDRIVE...
+echo 🚀 CHON GIAO DIEN TELEDRIVE
 echo ================================================================
 echo.
 echo 📱 TeleDrive - Telegram File Scanner ^& Manager
 echo 🔐 Ho tro Private ^& Public Channels
 echo.
-echo 📋 Cac dinh dang channel ho tro:
-echo    • @channelname                 (public channel)
-echo    • https://t.me/channelname     (public channel link)
-echo    • https://t.me/joinchat/xxxxx  (private invite - old format)
-echo    • https://t.me/+xxxxx          (private invite - new format)
+echo 🎯 Chon giao dien ban muon su dung:
 echo.
-echo 📁 Ket qua luu tai: 'output/' (JSON, CSV, Excel)
-echo 📊 Log chi tiet tai: 'logs/' (realtime ^& archived)
-echo 🔧 Cau hinh tai: 'config.json' ^& 'config.bat'
+echo    1. 🌐 WEB INTERFACE (Khuyến nghị)
+echo       • Giao diện hiện đại như Google Drive
+echo       • Dễ sử dụng với chuột và bàn phím
+echo       • Theo dõi tiến trình real-time
+echo       • Truy cập: http://localhost:3000
 echo.
-echo ⏹️  Nhan Ctrl+C de dung chuong trinh
-echo ================================================================
+echo    2. 💻 COMMAND LINE INTERFACE
+echo       • Giao diện dòng lệnh truyền thống
+echo       • Phù hợp cho người dùng nâng cao
+echo       • Chạy trực tiếp trong terminal
 echo.
+echo    3. ❌ Thoát
+echo.
+set /p choice="Nhap lua chon (1/2/3): "
 
-REM Chay chuong trinh chinh
-python main.py
+if "%choice%"=="1" (
+    echo.
+    echo 🌐 Khoi dong Web Interface...
+    echo ================================================================
+    echo 🚀 DANG KHOI DONG TELEDRIVE WEB INTERFACE...
+    echo ================================================================
+    echo.
+    echo 🌐 Truy cap tai: http://localhost:3000
+    echo 📊 Dashboard: http://localhost:3000
+    echo ⚙️  Settings: http://localhost:3000/settings
+    echo 🔍 Scanner: http://localhost:3000/scan
+    echo.
+    echo 💡 Meo:
+    echo    • Mo trinh duyet va truy cap http://localhost:3000
+    echo    • Cau hinh API credentials trong Settings
+    echo    • Su dung Scanner de quet channel
+    echo.
+    echo ⏹️  Nhan Ctrl+C de dung web server
+    echo ================================================================
+    echo.
+
+    REM Chay web interface
+    python app.py
+
+) else if "%choice%"=="2" (
+    echo.
+    echo 💻 Khoi dong Command Line Interface...
+    echo ================================================================
+    echo 🚀 DANG KHOI DONG TELEDRIVE CLI...
+    echo ================================================================
+    echo.
+    echo 📋 Cac dinh dang channel ho tro:
+    echo    • @channelname                 (public channel)
+    echo    • https://t.me/channelname     (public channel link)
+    echo    • https://t.me/joinchat/xxxxx  (private invite - old format)
+    echo    • https://t.me/+xxxxx          (private invite - new format)
+    echo.
+    echo 📁 Ket qua luu tai: 'output/' (JSON, CSV, Excel)
+    echo 📊 Log chi tiet tai: 'logs/' (realtime ^& archived)
+    echo 🔧 Cau hinh tai: 'config.json' ^& 'config.bat'
+    echo.
+    echo ⏹️  Nhan Ctrl+C de dung chuong trinh
+    echo ================================================================
+    echo.
+
+    REM Chay chuong trinh CLI
+    python main.py
+
+) else if "%choice%"=="3" (
+    echo.
+    echo ❌ Thoat chuong trinh...
+    timeout /t 2 >nul
+    exit /b 0
+
+) else (
+    echo.
+    echo ❌ Lua chon khong hop le! Vui long chon 1, 2 hoac 3.
+    timeout /t 3 >nul
+    goto :start_check
+)
 
 echo.
 echo ================================================================
@@ -202,9 +263,13 @@ echo 📊 Log chi tiet trong: 'logs/'
 echo 🔧 Cau hinh trong: 'config.json'
 echo.
 echo 💡 Meo:
-echo    • Chay lai 'run.bat' de quet them channel
+echo    • Chay lai 'run.bat' de chon giao dien khac
+echo    • Dung 'start.bat' de khoi dong truc tiep Web Interface
 echo    • Dung 'config.bat' de thay doi cau hinh
 echo    • Xem file log de debug neu co loi
+echo.
+echo 🌐 Giao dien Web: http://localhost:3000 (neu da chon Web Interface)
+echo 💻 CLI: Chay lai run.bat va chon option 2
 echo.
 echo Cam on ban da su dung TeleDrive! 🚀
 echo.

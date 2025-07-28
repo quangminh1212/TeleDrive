@@ -1,0 +1,255 @@
+#!/usr/bin/env python3
+"""
+TeleDrive Web Interface
+Flask web application for Telegram file scanning with Google Drive-like UI
+"""
+
+import os
+import json
+import asyncio
+import threading
+from datetime import datetime
+from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask_socketio import SocketIO, emit
+import eventlet
+
+# Import existing modules
+from engine import TelegramFileScanner
+from config_manager import ConfigManager
+import config
+
+# Initialize Flask app
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'teledrive_secret_key_2025'
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+
+# Global variables
+scanner = None
+scanning_active = False
+scan_progress = {'current': 0, 'total': 0, 'status': 'idle'}
+
+class WebTelegramScanner(TelegramFileScanner):
+    """Extended scanner with web interface support"""
+    
+    def __init__(self, socketio_instance):
+        super().__init__()
+        self.socketio = socketio_instance
+        
+    async def scan_channel_with_progress(self, channel_input):
+        """Scan channel with real-time progress updates"""
+        global scan_progress, scanning_active
+        
+        try:
+            scanning_active = True
+            scan_progress = {'current': 0, 'total': 0, 'status': 'connecting'}
+            self.socketio.emit('scan_progress', scan_progress)
+            
+            # Initialize scanner
+            await self.initialize()
+            
+            # Get channel entity
+            scan_progress['status'] = 'resolving_channel'
+            self.socketio.emit('scan_progress', scan_progress)
+            
+            entity = await self.resolve_channel(channel_input)
+            if not entity:
+                scan_progress['status'] = 'error'
+                scan_progress['error'] = 'Could not resolve channel'
+                self.socketio.emit('scan_progress', scan_progress)
+                return False
+                
+            # Get total messages
+            scan_progress['status'] = 'counting_messages'
+            self.socketio.emit('scan_progress', scan_progress)
+            
+            total_messages = await self.get_total_messages(entity)
+            scan_progress['total'] = total_messages
+            scan_progress['status'] = 'scanning'
+            self.socketio.emit('scan_progress', scan_progress)
+            
+            # Scan messages
+            processed = 0
+            async for message in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
+                if not scanning_active:  # Check if scan was cancelled
+                    break
+                    
+                file_info = self.extract_file_info(message)
+                if file_info and self.should_include_file_type(file_info['file_type']):
+                    self.files_data.append(file_info)
+                    
+                processed += 1
+                scan_progress['current'] = processed
+                
+                # Update progress every 10 messages
+                if processed % 10 == 0:
+                    self.socketio.emit('scan_progress', scan_progress)
+            
+            # Save results
+            scan_progress['status'] = 'saving'
+            self.socketio.emit('scan_progress', scan_progress)
+            
+            await self.save_results()
+            
+            scan_progress['status'] = 'completed'
+            scan_progress['files_found'] = len(self.files_data)
+            self.socketio.emit('scan_progress', scan_progress)
+            
+            return True
+            
+        except Exception as e:
+            scan_progress['status'] = 'error'
+            scan_progress['error'] = str(e)
+            self.socketio.emit('scan_progress', scan_progress)
+            return False
+        finally:
+            scanning_active = False
+
+@app.route('/')
+def dashboard():
+    """Main dashboard page"""
+    # Get recent scan results
+    output_files = []
+    if os.path.exists('output'):
+        for file in os.listdir('output'):
+            if file.endswith(('.json', '.csv', '.xlsx')):
+                file_path = os.path.join('output', file)
+                stat = os.stat(file_path)
+                output_files.append({
+                    'name': file,
+                    'size': stat.st_size,
+                    'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+                })
+    
+    output_files.sort(key=lambda x: x['modified'], reverse=True)
+    
+    return render_template('index.html', files=output_files[:10])
+
+@app.route('/settings')
+def settings():
+    """Settings page for API configuration"""
+    cm = ConfigManager()
+    current_config = cm.load_config()
+    
+    return render_template('settings.html', config=current_config)
+
+@app.route('/scan')
+def scan_page():
+    """Channel scanning page"""
+    return render_template('scan.html')
+
+@app.route('/api/save_settings', methods=['POST'])
+def save_settings():
+    """Save API settings"""
+    try:
+        data = request.get_json()
+        
+        cm = ConfigManager()
+        current_config = cm.load_config()
+        
+        # Update telegram settings
+        current_config['telegram']['api_id'] = data.get('api_id', '')
+        current_config['telegram']['api_hash'] = data.get('api_hash', '')
+        current_config['telegram']['phone_number'] = data.get('phone_number', '')
+        
+        # Save config
+        cm.save_config(current_config)
+        
+        # Also update .env file
+        env_content = f"""# Telegram API Credentials
+# Get from https://my.telegram.org/apps
+TELEGRAM_API_ID={data.get('api_id', '')}
+TELEGRAM_API_HASH={data.get('api_hash', '')}
+TELEGRAM_PHONE={data.get('phone_number', '')}
+"""
+        with open('.env', 'w', encoding='utf-8') as f:
+            f.write(env_content)
+        
+        return jsonify({'success': True, 'message': 'Settings saved successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/start_scan', methods=['POST'])
+def start_scan():
+    """Start channel scanning"""
+    global scanner, scanning_active
+    
+    try:
+        data = request.get_json()
+        channel_input = data.get('channel', '').strip()
+        
+        if not channel_input:
+            return jsonify({'success': False, 'error': 'Channel input is required'})
+        
+        if scanning_active:
+            return jsonify({'success': False, 'error': 'Scan already in progress'})
+        
+        # Create new scanner instance
+        scanner = WebTelegramScanner(socketio)
+        
+        # Start scanning in background thread
+        def run_scan():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(scanner.scan_channel_with_progress(channel_input))
+            loop.close()
+        
+        thread = threading.Thread(target=run_scan)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'success': True, 'message': 'Scan started'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/stop_scan', methods=['POST'])
+def stop_scan():
+    """Stop current scan"""
+    global scanning_active
+    
+    scanning_active = False
+    return jsonify({'success': True, 'message': 'Scan stopped'})
+
+@app.route('/api/get_files')
+def get_files():
+    """Get list of output files"""
+    files = []
+    if os.path.exists('output'):
+        for file in os.listdir('output'):
+            if file.endswith(('.json', '.csv', '.xlsx')):
+                file_path = os.path.join('output', file)
+                stat = os.stat(file_path)
+                files.append({
+                    'name': file,
+                    'size': stat.st_size,
+                    'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
+                    'type': file.split('.')[-1].upper()
+                })
+    
+    files.sort(key=lambda x: x['modified'], reverse=True)
+    return jsonify(files)
+
+@socketio.on('connect')
+def handle_connect():
+    """Handle client connection"""
+    emit('connected', {'status': 'Connected to TeleDrive'})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle client disconnection"""
+    pass
+
+if __name__ == '__main__':
+    print("🌐 Starting TeleDrive Web Interface...")
+    print("📱 Access at: http://localhost:3000")
+    print("⏹️  Press Ctrl+C to stop")
+    
+    # Create necessary directories
+    os.makedirs('templates', exist_ok=True)
+    os.makedirs('static/css', exist_ok=True)
+    os.makedirs('static/js', exist_ok=True)
+    os.makedirs('output', exist_ok=True)
+    os.makedirs('logs', exist_ok=True)
+    
+    socketio.run(app, host='0.0.0.0', port=3000, debug=False)

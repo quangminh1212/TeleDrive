@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - TeleDrive{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Settings</h1>
+    <div class="page-actions">
+        <button class="btn btn-primary" onclick="saveSettings()">
+            <span class="material-icons">save</span>
+            Save Changes
+        </button>
+    </div>
+</div>
+
+<div class="settings-container">
+    <!-- Telegram API Configuration -->
+    <div class="settings-section">
+        <div class="settings-section-header">
+            <h2 class="settings-section-title">
+                <span class="material-icons">telegram</span>
+                Telegram API Configuration
+            </h2>
+            <p class="settings-section-description">
+                Configure your Telegram API credentials. Get them from 
+                <a href="https://my.telegram.org/apps" target="_blank">my.telegram.org/apps</a>
+            </p>
+        </div>
+        
+        <div class="settings-form">
+            <div class="form-group">
+                <label for="api-id" class="form-label">API ID</label>
+                <input type="text" id="api-id" class="form-input" 
+                       value="{{ config.telegram.api_id }}" 
+                       placeholder="Enter your API ID">
+                <div class="form-help">Your unique API ID from Telegram</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="api-hash" class="form-label">API Hash</label>
+                <input type="text" id="api-hash" class="form-input" 
+                       value="{{ config.telegram.api_hash }}" 
+                       placeholder="Enter your API Hash">
+                <div class="form-help">Your API Hash from Telegram</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone-number" class="form-label">Phone Number</label>
+                <input type="tel" id="phone-number" class="form-input" 
+                       value="{{ config.telegram.phone_number }}" 
+                       placeholder="+84xxxxxxxxx">
+                <div class="form-help">Your phone number with country code (e.g., +84987654321)</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scanning Configuration -->
+    <div class="settings-section">
+        <div class="settings-section-header">
+            <h2 class="settings-section-title">
+                <span class="material-icons">scanner</span>
+                Scanning Configuration
+            </h2>
+            <p class="settings-section-description">
+                Configure how files are scanned and processed
+            </p>
+        </div>
+        
+        <div class="settings-form">
+            <div class="form-group">
+                <label for="max-messages" class="form-label">Max Messages</label>
+                <input type="number" id="max-messages" class="form-input" 
+                       value="{{ config.scanning.max_messages or '' }}" 
+                       placeholder="Leave empty for unlimited">
+                <div class="form-help">Maximum number of messages to scan (leave empty for all)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="batch-size" class="form-label">Batch Size</label>
+                <input type="number" id="batch-size" class="form-input" 
+                       value="{{ config.scanning.batch_size }}" 
+                       min="10" max="1000">
+                <div class="form-help">Number of messages to process at once</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- File Types -->
+    <div class="settings-section">
+        <div class="settings-section-header">
+            <h2 class="settings-section-title">
+                <span class="material-icons">file_copy</span>
+                File Types to Scan
+            </h2>
+            <p class="settings-section-description">
+                Choose which types of files to include in scans
+            </p>
+        </div>
+        
+        <div class="settings-form">
+            <div class="checkbox-grid">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="scan-documents" 
+                           {% if config.scanning.file_types.documents %}checked{% endif %}>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">
+                        <span class="material-icons">description</span>
+                        Documents
+                    </span>
+                </label>
+                
+                <label class="checkbox-item">
+                    <input type="checkbox" id="scan-photos" 
+                           {% if config.scanning.file_types.photos %}checked{% endif %}>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">
+                        <span class="material-icons">image</span>
+                        Photos
+                    </span>
+                </label>
+                
+                <label class="checkbox-item">
+                    <input type="checkbox" id="scan-videos" 
+                           {% if config.scanning.file_types.videos %}checked{% endif %}>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">
+                        <span class="material-icons">video_file</span>
+                        Videos
+                    </span>
+                </label>
+                
+                <label class="checkbox-item">
+                    <input type="checkbox" id="scan-audio" 
+                           {% if config.scanning.file_types.audio %}checked{% endif %}>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">
+                        <span class="material-icons">audio_file</span>
+                        Audio
+                    </span>
+                </label>
+                
+                <label class="checkbox-item">
+                    <input type="checkbox" id="scan-voice" 
+                           {% if config.scanning.file_types.voice %}checked{% endif %}>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">
+                        <span class="material-icons">mic</span>
+                        Voice Messages
+                    </span>
+                </label>
+                
+                <label class="checkbox-item">
+                    <input type="checkbox" id="scan-stickers" 
+                           {% if config.scanning.file_types.stickers %}checked{% endif %}>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">
+                        <span class="material-icons">emoji_emotions</span>
+                        Stickers
+                    </span>
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Output Configuration -->
+    <div class="settings-section">
+        <div class="settings-section-header">
+            <h2 class="settings-section-title">
+                <span class="material-icons">save_alt</span>
+                Output Configuration
+            </h2>
+            <p class="settings-section-description">
+                Configure output formats and file settings
+            </p>
+        </div>
+        
+        <div class="settings-form">
+            <div class="checkbox-grid">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="output-csv" 
+                           {% if config.output.formats.csv.enabled %}checked{% endif %}>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">
+                        <span class="material-icons">table_chart</span>
+                        CSV Format
+                    </span>
+                </label>
+                
+                <label class="checkbox-item">
+                    <input type="checkbox" id="output-json" 
+                           {% if config.output.formats.json.enabled %}checked{% endif %}>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">
+                        <span class="material-icons">code</span>
+                        JSON Format
+                    </span>
+                </label>
+                
+                <label class="checkbox-item">
+                    <input type="checkbox" id="output-excel" 
+                           {% if config.output.formats.excel.enabled %}checked{% endif %}>
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">
+                        <span class="material-icons">description</span>
+                        Excel Format
+                    </span>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Save settings
+function saveSettings() {
+    const settings = {
+        api_id: document.getElementById('api-id').value.trim(),
+        api_hash: document.getElementById('api-hash').value.trim(),
+        phone_number: document.getElementById('phone-number').value.trim()
+    };
+    
+    // Validate required fields
+    if (!settings.api_id || !settings.api_hash || !settings.phone_number) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    // Validate phone number format
+    if (!settings.phone_number.startsWith('+')) {
+        showToast('Phone number must include country code (e.g., +84987654321)', 'error');
+        return;
+    }
+    
+    showLoading('Saving settings...');
+    
+    fetch('/api/save_settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showToast('Settings saved successfully!', 'success');
+        } else {
+            showToast('Error saving settings: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error saving settings: ' + error.message, 'error');
+    });
+}
+
+// Auto-save on input change (debounced)
+let saveTimeout;
+document.querySelectorAll('.form-input, input[type="checkbox"]').forEach(input => {
+    input.addEventListener('change', function() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            // Auto-save logic could go here
+        }, 2000);
+    });
+});
+</script>
+{% endblock %}
