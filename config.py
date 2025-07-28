@@ -96,7 +96,7 @@ class ConfigManager:
                 "api_id": "",
                 "api_hash": "",
                 "phone_number": "",
-                "session_name": "telegram_scanner_session",
+                "session_name": "session",
                 "connection_timeout": 30,
                 "request_timeout": 60,
                 "retry_attempts": 3,
@@ -314,7 +314,7 @@ if not API_ID or not API_HASH or not PHONE_NUMBER:
     logger.warning("Thiếu thông tin API credentials. Vui lòng cấu hình .env hoặc config.json")
 
 # Telegram connection settings
-SESSION_NAME = get_safe(CONFIG, 'telegram.session_name', 'telegram_scanner_session')
+SESSION_NAME = get_safe(CONFIG, 'telegram.session_name', 'session')
 CONNECTION_TIMEOUT = int(get_safe(CONFIG, 'telegram.connection_timeout', 30))
 REQUEST_TIMEOUT = int(get_safe(CONFIG, 'telegram.request_timeout', 60))
 RETRY_ATTEMPTS = int(get_safe(CONFIG, 'telegram.retry_attempts', 3))

@@ -21,7 +21,7 @@ import eventlet
 
 # Import existing modules
 from engine import TelegramFileScanner
-from config_manager import ConfigManager
+from manager import ConfigManager
 import config
 
 # Import database modules
@@ -32,10 +32,10 @@ from models import db, User, File, Folder, ScanSession, ShareLink, get_or_create
 from forms import LoginForm, RegistrationForm, ChangePasswordForm, TelegramLoginForm, TelegramVerifyForm
 
 # Import Telegram authentication
-from telegram_auth import telegram_auth
+from auth import telegram_auth
 
 # Import Flask configuration loader
-from flask_config import flask_config
+from flask import flask_config
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -1407,7 +1407,7 @@ def change_password():
         else:
             flash('Current password is incorrect.', 'error')
 
-    return render_template('auth/change_password.html', form=form)
+    return render_template('auth/password.html', form=form)
 
 # Telegram authentication routes
 @app.route('/telegram_login', methods=['GET', 'POST'])
@@ -1446,7 +1446,7 @@ def telegram_login():
         else:
             flash(result['error'], 'error')
 
-    return render_template('auth/telegram_login.html', form=form)
+    return render_template('auth/tg_login.html', form=form)
 
 @app.route('/telegram_verify', methods=['GET', 'POST'])
 def telegram_verify():
@@ -1499,14 +1499,14 @@ def telegram_verify():
             else:
                 flash('User not found. Please contact administrator.', 'error')
         elif result.get('requires_password'):
-            return render_template('auth/telegram_verify.html',
+            return render_template('auth/tg_verify.html',
                                  form=form,
                                  phone_number=phone_number,
                                  requires_password=True)
         else:
             flash(result['error'], 'error')
 
-    return render_template('auth/telegram_verify.html',
+    return render_template('auth/tg_verify.html',
                          form=form,
                          phone_number=phone_number,
                          requires_password=requires_password)
