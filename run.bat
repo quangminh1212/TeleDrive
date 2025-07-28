@@ -27,13 +27,13 @@ if not exist config.json (
 )
 
 echo    ^> Kiem tra cau hinh Telegram API...
-python -c "import config; api_id = getattr(config, 'API_ID', ''); phone = getattr(config, 'PHONE_NUMBER', ''); configured = bool(api_id and phone and phone != '+84xxxxxxxxx'); print('✅ API da duoc cau hinh' if configured else '⚠️ API chua duoc cau hinh'); exit(0 if configured else 1)" 2>nul
+python -c "import json; config = json.load(open('config.json', 'r', encoding='utf-8')); api_id = config.get('telegram', {}).get('api_id', ''); phone = config.get('telegram', {}).get('phone_number', ''); configured = bool(api_id and phone and phone != '+84xxxxxxxxx'); print('✅ API da duoc cau hinh' if configured else '⚠️ API chua duoc cau hinh'); exit(0 if configured else 1)" 2>nul
 if errorlevel 1 (
     echo.
     echo ⚠️ TELEGRAM API CHUA DUOC CAU HINH!
     echo.
     echo 🔍 Dang kiem tra lai cau hinh chi tiet...
-    python test_config.py 2>nul
+    python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); exit(0 if result else 1)" 2>nul
     if not errorlevel 1 (
         echo.
         echo ✅ Cau hinh thuc te da hop le! Tiep tuc chay chuong trinh...
@@ -161,7 +161,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 6/7] Kiem tra ket noi Telegram...
 echo    ^> Kiem tra session va credentials...
-python -c "import config; print('✅ Credentials loaded successfully')" 2>nul
+python -c "import json; config = json.load(open('config.json', 'r', encoding='utf-8')); telegram = config.get('telegram', {}); api_id = telegram.get('api_id', ''); api_hash = telegram.get('api_hash', ''); phone = telegram.get('phone_number', ''); assert api_id and api_hash and phone, 'Missing credentials'; print('✅ Credentials loaded successfully')" 2>nul
 if errorlevel 1 (
     echo ❌ Loi khi load credentials!
     echo 🔧 Kiem tra lai cau hinh trong config.json

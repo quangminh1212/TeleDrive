@@ -62,8 +62,7 @@ pip install python-dotenv>=1.0.0
 pip install aiofiles>=23.0.0
 pip install openpyxl>=3.1.0
 
-echo "📦 Installing testing dependencies..."
-pip install pytest>=7.0.0
+
 
 echo "📦 Installing Telegram dependencies..."
 # Install telethon with specific version to avoid pyaes conflicts
@@ -162,7 +161,7 @@ echo "🗄️ Initializing database..."
 python init_db_simple.py
 
 # Set permissions
-chmod +x main.py app.py test_login.py init_db_simple.py
+chmod +x main.py app.py init_db_simple.py
 
 echo "✅ Setup completed successfully!"
 echo "📋 Next steps:"

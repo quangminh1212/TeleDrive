@@ -148,15 +148,15 @@ port = flask_config.get('flask.port', 5000)
 - **`.env`**: Environment variables (API credentials)
 - **`.env.example`**: Template for environment variables
 
-## Testing
+## Configuration Validation
 
-Run the configuration test suite to verify everything is working:
+Use the built-in configuration manager to verify settings:
 
 ```bash
-python test_config_integration.py
+python -c "from config_manager import ConfigManager; cm = ConfigManager(); cm.validate_configuration()"
 ```
 
-This will test:
+This will validate:
 - Configuration loading
 - Directory creation
 - Value validation

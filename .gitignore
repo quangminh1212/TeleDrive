@@ -48,10 +48,9 @@ Thumbs.db
 # Ignore Python virtual environment
 .venv/
 
-# Ignore pytest cache
+# Session files
 data/telegram_scanner_session.session
 .data/telegram_scanner_session.session-journal
-.pytest_cache/
 
 # Ignore log files
 logs/*.log

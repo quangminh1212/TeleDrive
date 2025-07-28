@@ -261,32 +261,7 @@ def get_database_stats():
         print(f"❌ Failed to get database stats: {e}")
         return None
 
-def test_database_connection(app=None):
-    """Test database connection and basic operations"""
-    if app is None:
-        app = Flask(__name__)
-        configure_flask_app(app)
 
-    try:
-        with app.app_context():
-            # Test basic connection
-            db.session.execute('SELECT 1')
-
-            # Test table existence
-            tables = ['users', 'files', 'folders', 'scan_sessions']
-            for table in tables:
-                try:
-                    db.session.execute(f'SELECT COUNT(*) FROM {table}')
-                except Exception as e:
-                    print(f"⚠️ Table {table} not accessible: {e}")
-                    return False
-
-            print("✅ Database connection test passed")
-            return True
-
-    except Exception as e:
-        print(f"❌ Database connection test failed: {e}")
-        return False
 
 def repair_database():
     """Attempt to repair database issues"""
