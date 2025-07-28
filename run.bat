@@ -26,6 +26,17 @@ if not exist config.json (
     echo ✅ Tim thay file config.json
 )
 
+echo    ^> Kiem tra file .env...
+if exist .env (
+    echo ✅ Tim thay file .env, dang load cac bien moi truong...
+    for /F "tokens=*" %%A in (.env) do set %%A
+    echo ✅ Da load cac bien moi truong tu .env
+) else (
+    echo ⚠️ Khong tim thay file .env, su dung cau hinh mac dinh
+    set PYTHONPATH=C:\VF\TeleDrive
+    set PYTHONUNBUFFERED=1
+)
+
 echo    ^> Kiem tra cau hinh Telegram API...
 python -c "import json; config = json.load(open('config.json', 'r', encoding='utf-8')); api_id = config.get('telegram', {}).get('api_id', ''); phone = config.get('telegram', {}).get('phone_number', ''); configured = bool(api_id and phone and phone != '+84xxxxxxxxx'); print('✅ API da duoc cau hinh' if configured else '⚠️ API chua duoc cau hinh'); exit(0 if configured else 1)" 2>nul
 if errorlevel 1 (
