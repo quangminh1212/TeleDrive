@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""
+Flask Configuration Loader for TeleDrive
+Loads configuration from config.json for Flask application settings
+"""
+
+import os
+import json
+from pathlib import Path
+from typing import Dict, Any, Optional
+
+class FlaskConfigLoader:
+    """Load Flask configuration from config.json"""
+    
+    def __init__(self, config_file: str = 'config.json'):
+        self.config_file = Path(config_file)
+        self._config = None
+        self.load_config()
+    
+    def load_config(self) -> Dict[str, Any]:
+        """Load configuration from JSON file"""
+        try:
+            if self.config_file.exists():
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    self._config = json.load(f)
+            else:
+                print(f"⚠️ Config file {self.config_file} not found, using defaults")
+                self._config = self._get_default_config()
+                self.save_config()
+        except Exception as e:
+            print(f"❌ Error loading config: {e}")
+            self._config = self._get_default_config()
+        
+        return self._config
+    
+    def save_config(self) -> None:
+        """Save current configuration to file"""
+        try:
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(self._config, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"❌ Error saving config: {e}")
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get configuration value using dot notation (e.g., 'flask.host')"""
+        if not self._config:
+            return default
+        
+        keys = key.split('.')
+        value = self._config
+        
+        try:
+            for k in keys:
+                value = value[k]
+            return value
+        except (KeyError, TypeError):
+            return default
+    
+    def get_flask_config(self) -> Dict[str, Any]:
+        """Get Flask-specific configuration"""
+        flask_config = {}
+        
+        # Basic Flask settings
+        flask_config['SECRET_KEY'] = self.get('flask.secret_key', 'teledrive_secret_key_2025')
+        flask_config['DEBUG'] = self.get('flask.debug', False)
+        
+        # Database settings
+        flask_config['SQLALCHEMY_DATABASE_URI'] = self.get('database.url', 'sqlite:///data/teledrive.db')
+        flask_config['SQLALCHEMY_TRACK_MODIFICATIONS'] = self.get('database.track_modifications', False)
+        
+        # Upload settings
+        flask_config['MAX_CONTENT_LENGTH'] = self.get('upload.max_content_length', 104857600)  # 100MB
+        flask_config['UPLOAD_FOLDER'] = self.get('upload.upload_directory', 'data/uploads')
+        
+        # Session settings
+        flask_config['PERMANENT_SESSION_LIFETIME'] = self.get('flask.permanent_session_lifetime', 86400)
+        
+        # Security settings
+        flask_config['SESSION_PROTECTION'] = self.get('security.session_protection', 'strong')
+        flask_config['REMEMBER_COOKIE_DURATION'] = self.get('security.remember_cookie_duration', 2592000)
+        
+        return flask_config
+    
+    def get_server_config(self) -> Dict[str, Any]:
+        """Get server configuration for running the Flask app"""
+        return {
+            'host': self.get('flask.host', '0.0.0.0'),
+            'port': self.get('flask.port', 3000),
+            'debug': self.get('flask.debug', False),
+            'threaded': self.get('flask.threaded', True),
+            'use_reloader': self.get('flask.use_reloader', False)
+        }
+    
+    def get_socketio_config(self) -> Dict[str, Any]:
+        """Get SocketIO configuration"""
+        return {
+            'cors_allowed_origins': self.get('flask.cors_allowed_origins', '*'),
+            'async_mode': self.get('flask.socketio_async_mode', 'eventlet')
+        }
+    
+    def get_login_config(self) -> Dict[str, Any]:
+        """Get Flask-Login configuration"""
+        return {
+            'login_view': self.get('flask.login_view', 'login'),
+            'login_message': self.get('flask.login_message', 'Please log in to access this page.'),
+            'login_message_category': self.get('flask.login_message_category', 'info')
+        }
+    
+    def get_upload_config(self) -> Dict[str, Any]:
+        """Get file upload configuration"""
+        return {
+            'max_file_size': self.get('upload.max_file_size', 104857600),
+            'upload_directory': self.get('upload.upload_directory', 'data/uploads'),
+            'allowed_extensions': self.get('upload.allowed_extensions', [
+                'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx',
+                'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z', 'mp3',
+                'mp4', 'avi', 'mkv', 'mov', 'wav', 'flac', 'json', 'csv', 'xml'
+            ]),
+            'create_subdirs': self.get('upload.create_subdirs', True),
+            'timestamp_filenames': self.get('upload.timestamp_filenames', True)
+        }
+    
+    def get_admin_config(self) -> Dict[str, Any]:
+        """Get admin user configuration"""
+        return {
+            'username': self.get('admin.username', 'admin'),
+            'email': self.get('admin.email', 'admin@teledrive.local'),
+            'default_password': self.get('admin.default_password', 'admin123'),
+            'role': self.get('admin.role', 'admin'),
+            'auto_create': self.get('admin.auto_create', True)
+        }
+    
+    def get_directories(self) -> Dict[str, str]:
+        """Get directory configuration"""
+        return {
+            'data': self.get('directories.data', 'data'),
+            'uploads': self.get('directories.uploads', 'data/uploads'),
+            'backups': self.get('directories.backups', 'data/backups'),
+            'temp': self.get('directories.temp', 'data/temp'),
+            'output': self.get('directories.output', 'output'),
+            'logs': self.get('directories.logs', 'logs'),
+            'templates': self.get('directories.templates', 'templates'),
+            'static': self.get('directories.static', 'static')
+        }
+    
+    def create_directories(self) -> None:
+        """Create all necessary directories"""
+        directories = self.get_directories()
+        
+        for name, path in directories.items():
+            dir_path = Path(path)
+            try:
+                dir_path.mkdir(parents=True, exist_ok=True)
+                print(f"✅ Created directory: {path}")
+            except Exception as e:
+                print(f"⚠️ Failed to create directory {path}: {e}")
+    
+    def _get_default_config(self) -> Dict[str, Any]:
+        """Get default configuration if config file doesn't exist"""
+        return {
+            "_schema_version": "1.0",
+            "_description": "TeleDrive Configuration",
+            "_last_updated": "2025-01-11",
+            "flask": {
+                "secret_key": "teledrive_secret_key_2025",
+                "host": "0.0.0.0",
+                "port": 3000,
+                "debug": False,
+                "threaded": True,
+                "use_reloader": False,
+                "cors_allowed_origins": "*",
+                "socketio_async_mode": "eventlet"
+            },
+            "database": {
+                "url": "sqlite:///data/teledrive.db",
+                "track_modifications": False
+            },
+            "upload": {
+                "max_file_size": 104857600,
+                "upload_directory": "data/uploads",
+                "allowed_extensions": ["txt", "pdf", "png", "jpg", "jpeg", "gif"]
+            },
+            "directories": {
+                "data": "data",
+                "uploads": "data/uploads",
+                "output": "output",
+                "logs": "logs"
+            },
+            "admin": {
+                "username": "admin",
+                "email": "admin@teledrive.local",
+                "default_password": "admin123",
+                "auto_create": True
+            }
+        }
+
+# Global instance
+flask_config = FlaskConfigLoader()

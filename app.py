@@ -8,7 +8,7 @@ import os
 import json
 import asyncio
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, flash
 from flask_socketio import SocketIO, emit
@@ -27,9 +27,18 @@ from models import db, User, File, Folder, ScanSession, ShareLink, get_or_create
 # Import forms
 from forms import LoginForm, RegistrationForm, ChangePasswordForm
 
+# Import Flask configuration loader
+from flask_config import flask_config
+
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'teledrive_secret_key_2025'
+
+# Load configuration from config.json
+flask_app_config = flask_config.get_flask_config()
+app.config.update(flask_app_config)
+
+# Create necessary directories
+flask_config.create_directories()
 
 # Configure database
 configure_flask_app(app)
@@ -37,9 +46,12 @@ configure_flask_app(app)
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
-login_manager.login_message = 'Please log in to access this page.'
-login_manager.login_message_category = 'info'
+
+# Configure Flask-Login from config file
+login_config = flask_config.get_login_config()
+login_manager.login_view = login_config['login_view']
+login_manager.login_message = login_config['login_message']
+login_manager.login_message_category = login_config['login_message_category']
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -47,26 +59,31 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio_config = flask_config.get_socketio_config()
+socketio = SocketIO(app,
+                   cors_allowed_origins=socketio_config['cors_allowed_origins'],
+                   async_mode=socketio_config['async_mode'])
 
 # Initialize database on first run
 try:
     with app.app_context():
         db.create_all()
 
-        # Create default admin user with password
-        admin_user = User.query.filter_by(username='admin').first()
-        if not admin_user:
-            admin_user = User(
-                username='admin',
-                email='admin@teledrive.local',
-                role='admin',
-                is_active=True
-            )
-            admin_user.set_password('admin123')  # Default password
-            db.session.add(admin_user)
-            db.session.commit()
-            print("✅ Created admin user (username: admin, password: admin123)")
+        # Create default admin user with password from config
+        admin_config = flask_config.get_admin_config()
+        if admin_config['auto_create']:
+            admin_user = User.query.filter_by(username=admin_config['username']).first()
+            if not admin_user:
+                admin_user = User(
+                    username=admin_config['username'],
+                    email=admin_config['email'],
+                    role=admin_config['role'],
+                    is_active=True
+                )
+                admin_user.set_password(admin_config['default_password'])
+                db.session.add(admin_user)
+                db.session.commit()
+                print(f"✅ Created admin user (username: {admin_config['username']}, password: {admin_config['default_password']})")
 
         # Ensure default user exists for backward compatibility
         default_user = get_or_create_user()
@@ -282,10 +299,11 @@ def dashboard():
 
     # Also get traditional output files for backward compatibility
     output_files = []
-    if os.path.exists('output'):
-        for file in os.listdir('output'):
+    output_dir = flask_config.get('directories.output', 'output')
+    if os.path.exists(output_dir):
+        for file in os.listdir(output_dir):
             if file.endswith(('.json', '.csv', '.xlsx')):
-                file_path = os.path.join('output', file)
+                file_path = os.path.join(output_dir, file)
                 stat = os.stat(file_path)
                 output_files.append({
                     'name': file,
@@ -417,10 +435,11 @@ def get_files():
         })
 
     # Also include output files for backward compatibility
-    if os.path.exists('output'):
-        for file in os.listdir('output'):
+    output_dir = flask_config.get('directories.output', 'output')
+    if os.path.exists(output_dir):
+        for file in os.listdir(output_dir):
             if file.endswith(('.json', '.csv', '.xlsx')):
-                file_path = os.path.join('output', file)
+                file_path = os.path.join(output_dir, file)
                 stat = os.stat(file_path)
                 files.append({
                     'name': file,
@@ -442,11 +461,12 @@ def download_file(filename):
             return jsonify({'error': 'Invalid file type'}), 400
 
         # Check if file exists
-        file_path = os.path.join('output', filename)
+        output_dir = flask_config.get('directories.output', 'output')
+        file_path = os.path.join(output_dir, filename)
         if not os.path.exists(file_path):
             return jsonify({'error': 'File not found'}), 404
 
-        return send_from_directory('output', filename, as_attachment=True)
+        return send_from_directory(output_dir, filename, as_attachment=True)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -477,7 +497,8 @@ def delete_file():
                 return jsonify({'success': False, 'error': 'Invalid file type'})
 
             # Check if file exists
-            file_path = os.path.join('output', filename)
+            output_dir = flask_config.get('directories.output', 'output')
+            file_path = os.path.join(output_dir, filename)
             if os.path.exists(file_path):
                 # Delete the file
                 os.remove(file_path)
@@ -677,16 +698,20 @@ def upload_file():
                 return jsonify({'success': False, 'error': 'Invalid folder'})
 
         # Create uploads directory if it doesn't exist
-        upload_dir = Path('data/uploads')
+        upload_config = flask_config.get_upload_config()
+        upload_dir = Path(upload_config['upload_directory'])
         upload_dir.mkdir(parents=True, exist_ok=True)
 
         for file in files:
             if file.filename:
                 # Secure filename
                 filename = file.filename
-                # Generate unique filename to avoid conflicts
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                unique_filename = f"{timestamp}_{filename}"
+                # Generate unique filename to avoid conflicts if configured
+                if upload_config['timestamp_filenames']:
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    unique_filename = f"{timestamp}_{filename}"
+                else:
+                    unique_filename = filename
                 file_path = upload_dir / unique_filename
 
                 # Save file
@@ -1464,9 +1489,10 @@ def download_shared_file(token):
         share_link.increment_download_count()
 
         # Serve the file
-        file_path = os.path.join('output', share_link.file.filename)
+        output_dir = flask_config.get('directories.output', 'output')
+        file_path = os.path.join(output_dir, share_link.file.filename)
         if os.path.exists(file_path):
-            return send_from_directory('output', share_link.file.filename, as_attachment=True)
+            return send_from_directory(output_dir, share_link.file.filename, as_attachment=True)
         else:
             return jsonify({'error': 'File not found on disk'}), 404
 
@@ -1484,15 +1510,17 @@ def handle_disconnect():
     pass
 
 if __name__ == '__main__':
+    # Get server configuration
+    server_config = flask_config.get_server_config()
+
     print("🌐 Starting TeleDrive Web Interface...")
-    print("📱 Access at: http://localhost:3000")
+    print(f"📱 Access at: http://{server_config['host']}:{server_config['port']}")
     print("⏹️  Press Ctrl+C to stop")
-    
-    # Create necessary directories
-    os.makedirs('templates', exist_ok=True)
-    os.makedirs('static/css', exist_ok=True)
-    os.makedirs('static/js', exist_ok=True)
-    os.makedirs('output', exist_ok=True)
-    os.makedirs('logs', exist_ok=True)
-    
-    socketio.run(app, host='0.0.0.0', port=3000, debug=False)
+
+    # Create necessary directories from config
+    directories = flask_config.get_directories()
+    for name, path in directories.items():
+        os.makedirs(path, exist_ok=True)
+
+    # Start server with configuration
+    socketio.run(app, **server_config)

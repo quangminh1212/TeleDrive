@@ -219,5 +219,69 @@
     "pool_recycle": -1,
     "max_overflow": 0,
     "echo": false
+  },
+  "flask": {
+    "_description": "Flask web server configuration",
+    "secret_key": "teledrive_secret_key_2025",
+    "host": "0.0.0.0",
+    "port": 3000,
+    "debug": false,
+    "threaded": true,
+    "use_reloader": false,
+    "cors_allowed_origins": "*",
+    "socketio_async_mode": "eventlet",
+    "login_view": "login",
+    "login_message": "Please log in to access this page.",
+    "login_message_category": "info",
+    "session_timeout": 3600,
+    "permanent_session_lifetime": 86400
+  },
+  "upload": {
+    "_description": "File upload configuration",
+    "max_file_size": 104857600,
+    "max_content_length": 104857600,
+    "upload_directory": "data/uploads",
+    "allowed_extensions": [
+      "txt", "pdf", "png", "jpg", "jpeg", "gif", "doc", "docx",
+      "xls", "xlsx", "ppt", "pptx", "zip", "rar", "7z", "mp3",
+      "mp4", "avi", "mkv", "mov", "wav", "flac", "json", "csv", "xml"
+    ],
+    "create_subdirs": true,
+    "timestamp_filenames": true,
+    "backup_existing": true
+  },
+  "security": {
+    "_description": "Security and authentication settings",
+    "password_min_length": 6,
+    "password_require_uppercase": false,
+    "password_require_lowercase": false,
+    "password_require_numbers": false,
+    "password_require_symbols": false,
+    "session_protection": "strong",
+    "remember_cookie_duration": 2592000,
+    "max_login_attempts": 5,
+    "lockout_duration": 900,
+    "csrf_protection": true,
+    "secure_cookies": false,
+    "httponly_cookies": true
+  },
+  "directories": {
+    "_description": "Application directory structure",
+    "data": "data",
+    "uploads": "data/uploads",
+    "backups": "data/backups",
+    "temp": "data/temp",
+    "output": "output",
+    "logs": "logs",
+    "templates": "templates",
+    "static": "static"
+  },
+  "admin": {
+    "_description": "Default admin user configuration",
+    "username": "admin",
+    "email": "admin@teledrive.local",
+    "default_password": "admin123",
+    "role": "admin",
+    "auto_create": true
   }
 }
