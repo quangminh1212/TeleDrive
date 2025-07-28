@@ -406,7 +406,7 @@ def api_admin_action(action):
 
 if __name__ == '__main__':
     print("🚀 Starting TeleDrive Web Application...")
-    print("📱 Access the interface at: http://localhost:5000")
+    print("📱 Access the interface at: http://localhost:3000")
     print("🔧 Make sure to configure your Telegram API credentials in settings")
 
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=3000)

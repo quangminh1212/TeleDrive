@@ -67,9 +67,9 @@ echo ================================================================
 echo 🌐 STARTING TELEDRIVE WEB INTERFACE...
 echo ================================================================
 echo.
-echo 📱 Web Interface: http://localhost:5000
-echo 🔧 Settings Page: http://localhost:5000/settings
-echo 📡 Scan Page: http://localhost:5000/scan
+echo 📱 Web Interface: http://localhost:3000
+echo 🔧 Settings Page: http://localhost:3000/settings
+echo 📡 Scan Page: http://localhost:3000/scan
 echo.
 echo 💡 Features:
 echo    • Google Drive-like interface

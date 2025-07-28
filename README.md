@@ -1,19 +1,48 @@
-# Telegram File Scanner
+# TeleDrive - Google Drive-like Telegram File Manager
 
-Quet va lay thong tin tat ca file trong private channel Telegram.
+Modern web interface for scanning and managing files from Telegram channels with Google Drive-inspired design.
 
-## Cai dat nhanh
+## 🚀 Quick Start
 
-1. **Chay setup**: Nhap doi `setup.bat`
-2. **Cau hinh**: Nhap doi `config.bat` (chon option 2 de cau hinh so dien thoai)
-3. **Chay scanner**: Nhap doi `run.bat`
+### Web Interface (Recommended)
+1. **Start web server**: Double-click `start.bat` or `web.bat`
+2. **Open browser**: Go to http://localhost:3000
+3. **Configure**: Visit Settings page to set up Telegram API
+4. **Start scanning**: Use the web interface to scan channels
 
-## Cai dat thu cong
+### Command Line Interface
+1. **Setup**: Run `setup.bat`
+2. **Configure**: Run `config.bat` (option 2 for phone number)
+3. **Scan**: Run `run.bat`
 
-1. **Chay setup**: Nhap doi `setup.bat`
-2. **Chinh sua .env**: Thay `+84xxxxxxxxx` bang so dien thoai that
-3. **Chinh sua config.json**: Tuy chinh cau hinh (tuy chon)
-4. **Chay scanner**: Nhap doi `run.bat`
+## 🌐 Web Interface Features
+
+### Google Drive-like Design
+- **Clean, modern interface** with familiar Google Drive styling
+- **Responsive design** that works on desktop, tablet, and mobile
+- **Drag & drop file upload** with progress indicators
+- **Real-time scanning progress** with live updates
+- **File grid and list views** with sorting and filtering
+- **Context menus** for file operations
+
+### Core Functionality
+- **Telegram Channel Scanning**: Scan public and private channels
+- **File Management**: Upload, download, preview, and organize files
+- **Search & Filter**: Find files quickly with advanced search
+- **Settings Management**: Configure API credentials and preferences
+- **Progress Tracking**: Monitor scanning operations in real-time
+
+### Access Points
+- **Main Dashboard**: http://localhost:3000
+- **Settings Page**: http://localhost:3000/settings
+- **Channel Scanner**: http://localhost:3000/scan
+
+## 🔧 Manual Setup
+
+1. **Run setup**: Execute `setup.bat`
+2. **Edit .env**: Replace `+84xxxxxxxxx` with your real phone number
+3. **Edit config.json**: Customize configuration (optional)
+4. **Run scanner**: Execute `run.bat` for CLI or `start.bat` for web
 
 ## Quan ly cau hinh
 
