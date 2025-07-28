@@ -29,7 +29,10 @@ from database import configure_flask_app, initialize_database
 from models import db, User, File, Folder, ScanSession, ShareLink, get_or_create_user
 
 # Import forms
-from forms import LoginForm, RegistrationForm, ChangePasswordForm
+from forms import LoginForm, RegistrationForm, ChangePasswordForm, TelegramLoginForm, TelegramVerifyForm
+
+# Import Telegram authentication
+from telegram_auth import telegram_auth
 
 # Import Flask configuration loader
 from flask_config import flask_config
@@ -1405,6 +1408,108 @@ def change_password():
             flash('Current password is incorrect.', 'error')
 
     return render_template('auth/change_password.html', form=form)
+
+# Telegram authentication routes
+@app.route('/telegram_login', methods=['GET', 'POST'])
+def telegram_login():
+    """Telegram login - phone number input"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    form = TelegramLoginForm()
+    if form.validate_on_submit():
+        phone_number = form.phone_number.data
+        country_code = form.country_code.data
+
+        # Store form data in session for the verification step
+        from flask import session
+        session['telegram_phone'] = f"{country_code}{phone_number}"
+        session['telegram_country_code'] = country_code
+
+        # Send verification code
+        async def send_code():
+            result = await telegram_auth.send_code_request(phone_number, country_code)
+            return result
+
+        # Run async function
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result = loop.run_until_complete(send_code())
+        finally:
+            loop.close()
+
+        if result['success']:
+            session['telegram_session_id'] = result['session_id']
+            flash('Verification code sent to your Telegram!', 'success')
+            return redirect(url_for('telegram_verify'))
+        else:
+            flash(result['error'], 'error')
+
+    return render_template('auth/telegram_login.html', form=form)
+
+@app.route('/telegram_verify', methods=['GET', 'POST'])
+def telegram_verify():
+    """Telegram verification - code input"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    from flask import session
+    if 'telegram_session_id' not in session:
+        flash('Session expired. Please try again.', 'error')
+        return redirect(url_for('telegram_login'))
+
+    form = TelegramVerifyForm()
+    phone_number = session.get('telegram_phone', '')
+    requires_password = request.args.get('requires_password', False)
+
+    if form.validate_on_submit():
+        session_id = session['telegram_session_id']
+        verification_code = form.verification_code.data
+        password = form.password.data if form.password.data else None
+
+        # Verify code
+        async def verify_code():
+            result = await telegram_auth.verify_code(session_id, verification_code, password)
+            return result
+
+        # Run async function
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result = loop.run_until_complete(verify_code())
+        finally:
+            loop.close()
+
+        if result['success']:
+            # Find or create user
+            user = User.query.filter_by(telegram_id=str(result['user']['telegram_id'])).first()
+            if user:
+                login_user(user, remember=True)
+                # Clear session data
+                session.pop('telegram_session_id', None)
+                session.pop('telegram_phone', None)
+                session.pop('telegram_country_code', None)
+
+                flash('Login successful!', 'success')
+                next_page = request.args.get('next')
+                if not next_page or not next_page.startswith('/'):
+                    next_page = url_for('dashboard')
+                return redirect(next_page)
+            else:
+                flash('User not found. Please contact administrator.', 'error')
+        elif result.get('requires_password'):
+            return render_template('auth/telegram_verify.html',
+                                 form=form,
+                                 phone_number=phone_number,
+                                 requires_password=True)
+        else:
+            flash(result['error'], 'error')
+
+    return render_template('auth/telegram_verify.html',
+                         form=form,
+                         phone_number=phone_number,
+                         requires_password=requires_password)
 
 # File sharing routes
 @app.route('/api/files/<int:file_id>/share', methods=['POST'])

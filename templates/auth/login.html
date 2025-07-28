@@ -247,7 +247,18 @@
             
             {{ form.submit(class="btn-primary") }}
         </form>
-        
+
+        <div style="text-align: center; margin: 24px 0;">
+            <div style="position: relative; margin: 24px 0;">
+                <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e1e5e9;"></div>
+                <div style="position: relative; background: white; padding: 0 16px; color: #666; font-size: 14px;">or</div>
+            </div>
+            <a href="{{ url_for('telegram_login') }}" style="display: inline-flex; align-items: center; justify-content: center; width: 100%; padding: 12px 24px; background: #0088cc; color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: all 0.2s ease;">
+                <span class="material-icons" style="margin-right: 8px; font-size: 20px;">telegram</span>
+                Sign in with Telegram
+            </a>
+        </div>
+
         <div class="auth-links">
             <a href="{{ url_for('register') }}" class="auth-link">Create account</a>
         </div>
