@@ -64,7 +64,7 @@ def create_database_directories():
 def configure_flask_app(app):
     """Configure Flask app with database settings"""
     db_config = setup_database_config()
-    
+
     # Flask-SQLAlchemy configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = db_config['url']
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = db_config['track_modifications']
@@ -73,15 +73,33 @@ def configure_flask_app(app):
         'pool_timeout': db_config['pool_timeout'],
         'pool_recycle': db_config['pool_recycle'],
         'max_overflow': db_config['max_overflow'],
-        'echo': db_config['echo']
+        'echo': db_config['echo'],
+        'pool_pre_ping': True,  # Verify connections before use
+        'connect_args': {
+            'check_same_thread': False,  # Allow SQLite to be used across threads
+            'timeout': 20  # Connection timeout in seconds
+        }
     }
-    
+
     # Initialize database with app
     db.init_app(app)
-    
+
     # Initialize Flask-Migrate
-    migrate = Migrate(app, db)
-    
+    try:
+        from flask_migrate import Migrate
+        migrate = Migrate(app, db)
+        print("✅ Flask-Migrate initialized")
+    except ImportError:
+        print("⚠️ Flask-Migrate not available, migrations disabled")
+
+    # Add database error handlers
+    @app.teardown_appcontext
+    def close_db(error):
+        """Close database connection on app context teardown"""
+        if error:
+            db.session.rollback()
+        db.session.remove()
+
     return app
 
 def initialize_database(app=None):
@@ -197,33 +215,96 @@ def get_database_stats():
     """Get database statistics"""
     if not DATABASE_FILE.exists():
         return None
-    
+
     try:
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
-        
+
         stats = {}
-        
+
         # Get table counts
         tables = ['users', 'files', 'folders', 'scan_sessions']
         for table in tables:
-            cursor.execute(f"SELECT COUNT(*) FROM {table}")
-            stats[f'{table}_count'] = cursor.fetchone()[0]
-        
+            try:
+                cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                stats[f'{table}_count'] = cursor.fetchone()[0]
+            except sqlite3.OperationalError:
+                stats[f'{table}_count'] = 0
+
         # Get database size
         stats['database_size'] = DATABASE_FILE.stat().st_size
-        
+
         # Get last modified
         stats['last_modified'] = datetime.fromtimestamp(
             DATABASE_FILE.stat().st_mtime
         ).isoformat()
-        
+
         conn.close()
         return stats
-        
+
     except Exception as e:
         print(f"❌ Failed to get database stats: {e}")
         return None
+
+def test_database_connection(app=None):
+    """Test database connection and basic operations"""
+    if app is None:
+        app = Flask(__name__)
+        configure_flask_app(app)
+
+    try:
+        with app.app_context():
+            # Test basic connection
+            db.session.execute('SELECT 1')
+
+            # Test table existence
+            tables = ['users', 'files', 'folders', 'scan_sessions']
+            for table in tables:
+                try:
+                    db.session.execute(f'SELECT COUNT(*) FROM {table}')
+                except Exception as e:
+                    print(f"⚠️ Table {table} not accessible: {e}")
+                    return False
+
+            print("✅ Database connection test passed")
+            return True
+
+    except Exception as e:
+        print(f"❌ Database connection test failed: {e}")
+        return False
+
+def repair_database():
+    """Attempt to repair database issues"""
+    try:
+        # Check database file integrity
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+
+        # Run integrity check
+        cursor.execute("PRAGMA integrity_check")
+        result = cursor.fetchone()
+
+        if result[0] != 'ok':
+            print(f"⚠️ Database integrity issues found: {result[0]}")
+
+            # Attempt to repair
+            cursor.execute("PRAGMA quick_check")
+            quick_result = cursor.fetchall()
+
+            if len(quick_result) == 1 and quick_result[0][0] == 'ok':
+                print("✅ Database repaired successfully")
+            else:
+                print("❌ Database repair failed, backup and recreate recommended")
+                return False
+        else:
+            print("✅ Database integrity check passed")
+
+        conn.close()
+        return True
+
+    except Exception as e:
+        print(f"❌ Database repair failed: {e}")
+        return False
 
 def migrate_json_data_to_database(app=None):
     """Migrate existing JSON data to database"""
