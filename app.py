@@ -18,10 +18,29 @@ from engine import TelegramFileScanner
 from config_manager import ConfigManager
 import config
 
+# Import database modules
+from database import configure_flask_app, initialize_database
+from models import db, User, File, Folder, ScanSession, get_or_create_user
+
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'teledrive_secret_key_2025'
+
+# Configure database
+configure_flask_app(app)
+
+# Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+
+# Initialize database on first run
+try:
+    with app.app_context():
+        db.create_all()
+        # Ensure default user exists
+        default_user = get_or_create_user()
+        print("✅ Database initialized successfully")
+except Exception as e:
+    print(f"⚠️ Database initialization warning: {e}")
 
 # Global variables
 scanner = None
@@ -30,10 +49,12 @@ scan_progress = {'current': 0, 'total': 0, 'status': 'idle'}
 
 class WebTelegramScanner(TelegramFileScanner):
     """Extended scanner with web interface support"""
-    
-    def __init__(self, socketio_instance):
+
+    def __init__(self, socketio_instance, user_id=None):
         super().__init__()
         self.socketio = socketio_instance
+        self.user_id = user_id or get_or_create_user().id
+        self.scan_session = None
         
     async def scan_channel_with_progress(self, channel_input):
         """Scan channel with real-time progress updates"""
@@ -43,66 +64,159 @@ class WebTelegramScanner(TelegramFileScanner):
             scanning_active = True
             scan_progress = {'current': 0, 'total': 0, 'status': 'connecting'}
             self.socketio.emit('scan_progress', scan_progress)
-            
+
+            # Create scan session in database
+            self.scan_session = ScanSession(
+                channel_name=channel_input,
+                user_id=self.user_id,
+                status='running'
+            )
+            db.session.add(self.scan_session)
+            db.session.commit()
+
             # Initialize scanner
             await self.initialize()
-            
+
             # Get channel entity
             scan_progress['status'] = 'resolving_channel'
             self.socketio.emit('scan_progress', scan_progress)
-            
+
             entity = await self.resolve_channel(channel_input)
             if not entity:
                 scan_progress['status'] = 'error'
                 scan_progress['error'] = 'Could not resolve channel'
+                self.scan_session.status = 'failed'
+                self.scan_session.error_message = 'Could not resolve channel'
+                self.scan_session.completed_at = datetime.utcnow()
+                db.session.commit()
                 self.socketio.emit('scan_progress', scan_progress)
                 return False
+
+            # Update scan session with channel info
+            if hasattr(entity, 'id'):
+                self.scan_session.channel_id = str(entity.id)
+            if hasattr(entity, 'title'):
+                self.scan_session.channel_name = entity.title
+            db.session.commit()
                 
             # Get total messages
             scan_progress['status'] = 'counting_messages'
             self.socketio.emit('scan_progress', scan_progress)
-            
+
             total_messages = await self.get_total_messages(entity)
             scan_progress['total'] = total_messages
+            self.scan_session.total_messages = total_messages
             scan_progress['status'] = 'scanning'
             self.socketio.emit('scan_progress', scan_progress)
-            
+            db.session.commit()
+
+            # Get or create folder for this scan
+            folder_name = f"Scan_{self.scan_session.channel_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            scan_folder = Folder(
+                name=folder_name,
+                user_id=self.user_id,
+                path=folder_name
+            )
+            db.session.add(scan_folder)
+            db.session.commit()
+
             # Scan messages
             processed = 0
+            files_saved = 0
             async for message in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
                 if not scanning_active:  # Check if scan was cancelled
                     break
-                    
+
                 file_info = self.extract_file_info(message)
                 if file_info and self.should_include_file_type(file_info['file_type']):
-                    self.files_data.append(file_info)
-                    
+                    # Save to database instead of just appending to list
+                    try:
+                        file_record = File(
+                            filename=file_info.get('filename', ''),
+                            original_filename=file_info.get('filename', ''),
+                            file_size=file_info.get('file_size', 0),
+                            mime_type=file_info.get('mime_type', ''),
+                            folder_id=scan_folder.id,
+                            user_id=self.user_id,
+                            telegram_message_id=file_info.get('message_id'),
+                            telegram_channel=self.scan_session.channel_name,
+                            telegram_channel_id=self.scan_session.channel_id,
+                            telegram_date=datetime.fromisoformat(
+                                file_info['date'].replace('Z', '+00:00')
+                            ) if file_info.get('date') else None
+                        )
+
+                        # Set metadata
+                        metadata = {
+                            'download_url': file_info.get('download_url', ''),
+                            'file_type': file_info.get('file_type', ''),
+                            'sender': file_info.get('sender', '')
+                        }
+                        file_record.set_metadata(metadata)
+
+                        db.session.add(file_record)
+                        files_saved += 1
+
+                        # Commit every 50 files to avoid memory issues
+                        if files_saved % 50 == 0:
+                            db.session.commit()
+
+                    except Exception as e:
+                        print(f"Error saving file to database: {e}")
+                        continue
+
                 processed += 1
                 scan_progress['current'] = processed
-                
+                scan_progress['files_found'] = files_saved
+
+                # Update scan session
+                self.scan_session.messages_scanned = processed
+                self.scan_session.files_found = files_saved
+
                 # Update progress every 10 messages
                 if processed % 10 == 0:
                     self.socketio.emit('scan_progress', scan_progress)
+                    db.session.commit()
             
-            # Save results
+            # Final commit and save results
             scan_progress['status'] = 'saving'
             self.socketio.emit('scan_progress', scan_progress)
-            
+
+            # Commit any remaining files
+            db.session.commit()
+
+            # Also save to traditional files for backward compatibility
             await self.save_results()
-            
+
+            # Update scan session as completed
+            self.scan_session.status = 'completed'
+            self.scan_session.completed_at = datetime.now()
+            self.scan_session.files_found = files_saved
+            self.scan_session.messages_scanned = processed
+            db.session.commit()
+
             scan_progress['status'] = 'completed'
-            scan_progress['files_found'] = len(self.files_data)
+            scan_progress['files_found'] = files_saved
             self.socketio.emit('scan_progress', scan_progress)
             self.socketio.emit('scan_complete', {
                 'success': True,
-                'files_found': len(self.files_data),
+                'files_found': files_saved,
                 'messages_scanned': processed,
-                'message': f'Scan completed! Found {len(self.files_data)} files'
+                'scan_session_id': self.scan_session.id,
+                'folder_id': scan_folder.id,
+                'message': f'Scan completed! Found {files_saved} files'
             })
 
             return True
 
         except Exception as e:
+            # Update scan session as failed
+            if self.scan_session:
+                self.scan_session.status = 'failed'
+                self.scan_session.error_message = str(e)
+                self.scan_session.completed_at = datetime.now()
+                db.session.commit()
+
             scan_progress['status'] = 'error'
             scan_progress['error'] = str(e)
             self.socketio.emit('scan_progress', scan_progress)
@@ -117,7 +231,23 @@ class WebTelegramScanner(TelegramFileScanner):
 @app.route('/')
 def dashboard():
     """Main dashboard page"""
-    # Get recent scan results
+    # Get recent files from database
+    recent_files = File.query.filter_by(is_deleted=False).order_by(File.created_at.desc()).limit(10).all()
+
+    # Convert to format expected by template
+    files = []
+    for file_record in recent_files:
+        files.append({
+            'id': file_record.id,
+            'name': file_record.filename,
+            'size': file_record.file_size or 0,
+            'modified': file_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if file_record.created_at else '',
+            'folder_name': file_record.folder.name if file_record.folder else 'Root',
+            'file_type': file_record.get_file_type(),
+            'telegram_channel': file_record.telegram_channel
+        })
+
+    # Also get traditional output files for backward compatibility
     output_files = []
     if os.path.exists('output'):
         for file in os.listdir('output'):
@@ -127,12 +257,16 @@ def dashboard():
                 output_files.append({
                     'name': file,
                     'size': stat.st_size,
-                    'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+                    'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
+                    'is_output_file': True
                 })
-    
+
     output_files.sort(key=lambda x: x['modified'], reverse=True)
-    
-    return render_template('index.html', files=output_files[:10])
+
+    # Combine files for display (database files first, then output files)
+    all_files = files + output_files[:5]  # Limit output files to 5
+
+    return render_template('index.html', files=all_files)
 
 @app.route('/settings')
 def settings():
@@ -223,8 +357,25 @@ def stop_scan():
 
 @app.route('/api/get_files')
 def get_files():
-    """Get list of output files"""
+    """Get list of files from database and output directory"""
+    # Get files from database
+    db_files = File.query.filter_by(is_deleted=False).order_by(File.created_at.desc()).all()
+
     files = []
+    for file_record in db_files:
+        files.append({
+            'id': file_record.id,
+            'name': file_record.filename,
+            'size': file_record.file_size or 0,
+            'modified': file_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if file_record.created_at else '',
+            'folder_name': file_record.folder.name if file_record.folder else 'Root',
+            'file_type': file_record.get_file_type(),
+            'telegram_channel': file_record.telegram_channel,
+            'source': 'database',
+            'type': file_record.get_file_type().upper()
+        })
+
+    # Also include output files for backward compatibility
     if os.path.exists('output'):
         for file in os.listdir('output'):
             if file.endswith(('.json', '.csv', '.xlsx')):
@@ -234,7 +385,8 @@ def get_files():
                     'name': file,
                     'size': stat.st_size,
                     'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
-                    'type': file.split('.')[-1].upper()
+                    'type': file.split('.')[-1].upper(),
+                    'source': 'output'
                 })
 
     files.sort(key=lambda x: x['modified'], reverse=True)
@@ -259,27 +411,38 @@ def download_file(filename):
 
 @app.route('/api/delete_file', methods=['POST'])
 def delete_file():
-    """Delete a file from the output directory"""
+    """Delete a file from database or output directory"""
     try:
         data = request.get_json()
         filename = data.get('filename', '').strip()
+        file_id = data.get('id')
 
-        if not filename:
-            return jsonify({'success': False, 'error': 'Filename is required'})
+        if not filename and not file_id:
+            return jsonify({'success': False, 'error': 'Filename or file ID is required'})
 
-        # Security check - only allow files from output directory
-        if not filename.endswith(('.json', '.csv', '.xlsx')):
-            return jsonify({'success': False, 'error': 'Invalid file type'})
+        # Try to delete from database first
+        if file_id:
+            file_record = File.query.get(file_id)
+            if file_record:
+                # Mark as deleted instead of actually deleting
+                file_record.is_deleted = True
+                db.session.commit()
+                return jsonify({'success': True, 'message': f'File {file_record.filename} deleted successfully'})
 
-        # Check if file exists
-        file_path = os.path.join('output', filename)
-        if not os.path.exists(file_path):
-            return jsonify({'success': False, 'error': 'File not found'})
+        # If not found in database, try output directory (backward compatibility)
+        if filename:
+            # Security check - only allow files from output directory
+            if not filename.endswith(('.json', '.csv', '.xlsx')):
+                return jsonify({'success': False, 'error': 'Invalid file type'})
 
-        # Delete the file
-        os.remove(file_path)
+            # Check if file exists
+            file_path = os.path.join('output', filename)
+            if os.path.exists(file_path):
+                # Delete the file
+                os.remove(file_path)
+                return jsonify({'success': True, 'message': f'File {filename} deleted successfully'})
 
-        return jsonify({'success': True, 'message': f'File {filename} deleted successfully'})
+        return jsonify({'success': False, 'error': 'File not found'})
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
