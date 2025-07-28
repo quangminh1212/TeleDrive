@@ -41,9 +41,8 @@ if errorlevel 1 (
     )
     echo.
     echo 📝 Huong dan cau hinh:
-    echo    1. Chay 'config.bat' de cau hinh API
-    echo    2. Hoac chinh sua truc tiep file 'config.json'
-    echo    3. Hoac su dung 'run_direct.bat' de bo qua kiem tra
+    echo    1. Chinh sua truc tiep file 'config.json'
+    echo    2. Hoac cau hinh trong Web Interface Settings
     echo.
     echo 🔗 Lay API credentials tu: https://my.telegram.org/apps
     echo.
@@ -95,7 +94,7 @@ if errorlevel 1 (
     python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); exit(0 if result else 1)" 2>nul
     if errorlevel 1 (
         echo ❌ Cau hinh van chua hop le sau khi dong bo!
-        echo 🔧 Chay 'config.bat' de cau hinh thu cong
+        echo 🔧 Chinh sua 'config.json' de cau hinh thu cong
         pause
         exit /b 1
     )
@@ -116,9 +115,8 @@ if errorlevel 1 (
         echo ❌ Khong the cai dat dependencies!
         echo.
         echo 🔧 Thu cac cach sau:
-        echo    1. Chay: setup.bat
-        echo    2. Cai dat thu cong: pip install -r requirements.txt
-        echo    3. Kiem tra ket noi internet
+        echo    1. Cai dat thu cong: pip install -r requirements.txt
+        echo    2. Kiem tra ket noi internet
         echo.
         pause
         exit /b 1
@@ -203,8 +201,7 @@ echo 🔧 Cau hinh trong: 'config.json'
 echo.
 echo 💡 Meo:
 echo    • Chay lai 'run.bat' de khoi dong lai Web Interface
-echo    • Dung 'start.bat' de khoi dong nhanh Web Interface
-echo    • Dung 'config.bat' de thay doi cau hinh
+echo    • Chinh sua 'config.json' de thay doi cau hinh
 echo    • Xem file log de debug neu co loi
 echo.
 echo 🌐 Giao dien Web: http://localhost:3000
