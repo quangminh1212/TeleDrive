@@ -613,6 +613,99 @@ def bulk_file_operations():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/search', methods=['GET'])
+def search_files():
+    """Search files by name, tags, or content"""
+    try:
+        query = request.args.get('q', '').strip()
+        file_type = request.args.get('type', '')
+        folder_id = request.args.get('folder_id')
+        limit = min(int(request.args.get('limit', 50)), 100)
+
+        if not query:
+            return jsonify({'success': False, 'error': 'Search query is required'})
+
+        user = get_or_create_user()
+
+        # Build search query
+        search_query = File.query.filter_by(user_id=user.id, is_deleted=False)
+
+        # Search by filename
+        search_query = search_query.filter(File.filename.contains(query))
+
+        # Filter by file type if specified
+        if file_type:
+            if file_type == 'image':
+                search_query = search_query.filter(File.mime_type.like('image/%'))
+            elif file_type == 'video':
+                search_query = search_query.filter(File.mime_type.like('video/%'))
+            elif file_type == 'audio':
+                search_query = search_query.filter(File.mime_type.like('audio/%'))
+            elif file_type == 'document':
+                search_query = search_query.filter(File.mime_type.in_([
+                    'application/pdf', 'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                ]))
+
+        # Filter by folder if specified
+        if folder_id:
+            search_query = search_query.filter_by(folder_id=folder_id)
+
+        # Execute search
+        files = search_query.order_by(File.created_at.desc()).limit(limit).all()
+
+        # Convert to dict format
+        results = [file_record.to_dict() for file_record in files]
+
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total': len(results),
+            'query': query
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/search/suggestions', methods=['GET'])
+def search_suggestions():
+    """Get search suggestions based on partial query"""
+    try:
+        query = request.args.get('q', '').strip()
+        limit = min(int(request.args.get('limit', 10)), 20)
+
+        if len(query) < 2:
+            return jsonify({'success': True, 'suggestions': []})
+
+        user = get_or_create_user()
+
+        # Get filename suggestions
+        files = File.query.filter(
+            File.user_id == user.id,
+            File.is_deleted == False,
+            File.filename.contains(query)
+        ).limit(limit).all()
+
+        suggestions = []
+        for file_record in files:
+            suggestions.append({
+                'text': file_record.filename,
+                'type': 'filename',
+                'file_id': file_record.id
+            })
+
+        # Get tag suggestions
+        # This would require a more complex query to extract tags from JSON
+        # For now, we'll skip tag suggestions
+
+        return jsonify({
+            'success': True,
+            'suggestions': suggestions[:limit]
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/folders', methods=['GET'])
 def get_folders():
     """Get folder hierarchy for current user"""

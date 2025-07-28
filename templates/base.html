@@ -26,7 +26,9 @@
         <div class="header-center">
             <div class="search-container">
                 <span class="material-icons search-icon">search</span>
-                <input type="text" class="search-input" placeholder="Search files...">
+                <input type="text" class="search-input" id="global-search" placeholder="Search files..."
+                       onkeyup="handleSearchInput(event)" autocomplete="off">
+                <div class="search-suggestions" id="search-suggestions" style="display: none;"></div>
             </div>
         </div>
         
@@ -104,6 +106,89 @@
 
     <!-- Scripts -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <script>
+    // Global search functionality
+    let searchTimeout;
+
+    function handleSearchInput(event) {
+        const query = event.target.value.trim();
+
+        if (event.key === 'Enter' && query) {
+            performSearch(query);
+            return;
+        }
+
+        // Clear previous timeout
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+
+        // Show suggestions after 300ms delay
+        if (query.length >= 2) {
+            searchTimeout = setTimeout(() => {
+                loadSearchSuggestions(query);
+            }, 300);
+        } else {
+            hideSearchSuggestions();
+        }
+    }
+
+    function loadSearchSuggestions(query) {
+        fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.suggestions.length > 0) {
+                    showSearchSuggestions(data.suggestions);
+                } else {
+                    hideSearchSuggestions();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading search suggestions:', error);
+                hideSearchSuggestions();
+            });
+    }
+
+    function showSearchSuggestions(suggestions) {
+        const container = document.getElementById('search-suggestions');
+
+        container.innerHTML = suggestions.map(suggestion => `
+            <div class="search-suggestion-item" onclick="selectSuggestion('${suggestion.text}')">
+                <span class="material-icons">
+                    ${suggestion.type === 'filename' ? 'insert_drive_file' : 'label'}
+                </span>
+                <span class="suggestion-text">${suggestion.text}</span>
+            </div>
+        `).join('');
+
+        container.style.display = 'block';
+    }
+
+    function hideSearchSuggestions() {
+        document.getElementById('search-suggestions').style.display = 'none';
+    }
+
+    function selectSuggestion(text) {
+        document.getElementById('global-search').value = text;
+        hideSearchSuggestions();
+        performSearch(text);
+    }
+
+    function performSearch(query) {
+        // Redirect to dashboard with search parameter
+        window.location.href = `/?search=${encodeURIComponent(query)}`;
+    }
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(event) {
+        const searchContainer = document.querySelector('.search-container');
+        if (!searchContainer.contains(event.target)) {
+            hideSearchSuggestions();
+        }
+    });
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

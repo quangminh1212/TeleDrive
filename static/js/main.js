@@ -325,6 +325,16 @@ function loadPreviewContent(filename) {
         loadCsvPreview(filename, container);
     } else if (['xlsx', 'xls'].includes(fileExt)) {
         loadExcelPreview(filename, container);
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(fileExt)) {
+        loadImagePreview(filename, container);
+    } else if (['mp4', 'webm', 'ogg', 'avi', 'mov'].includes(fileExt)) {
+        loadVideoPreview(filename, container);
+    } else if (['mp3', 'wav', 'ogg', 'flac', 'm4a'].includes(fileExt)) {
+        loadAudioPreview(filename, container);
+    } else if (['txt', 'md', 'py', 'js', 'html', 'css', 'xml', 'log'].includes(fileExt)) {
+        loadTextPreview(filename, container);
+    } else if (['pdf'].includes(fileExt)) {
+        loadPdfPreview(filename, container);
     } else {
         // Generic file info preview
         loadGenericPreview(filename, container);
@@ -409,6 +419,145 @@ function loadExcelPreview(filename, container) {
                 <span class="material-icons large">description</span>
                 <p>Excel file preview</p>
                 <p class="preview-note">Download the file to view its contents in Excel or a compatible application.</p>
+            </div>
+        </div>
+    `;
+}
+
+function loadImagePreview(filename, container) {
+    container.innerHTML = `
+        <div class="image-preview">
+            <div class="preview-header">
+                <span class="file-type-badge image">IMAGE</span>
+                <span class="file-info">Loading...</span>
+            </div>
+            <div class="image-container">
+                <img id="preview-image" src="/output/${filename}" alt="${filename}"
+                     onload="handleImageLoad(this)" onerror="handleImageError(this)">
+                <div class="image-controls">
+                    <button class="btn btn-small" onclick="zoomImage(-0.2)">
+                        <span class="material-icons">zoom_out</span>
+                    </button>
+                    <button class="btn btn-small" onclick="resetImageZoom()">
+                        <span class="material-icons">fit_screen</span>
+                    </button>
+                    <button class="btn btn-small" onclick="zoomImage(0.2)">
+                        <span class="material-icons">zoom_in</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function handleImageLoad(img) {
+    const fileInfo = img.parentElement.parentElement.querySelector('.file-info');
+    fileInfo.textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
+}
+
+function handleImageError(img) {
+    img.parentElement.innerHTML = `
+        <div class="preview-error">
+            <span class="material-icons">broken_image</span>
+            <p>Failed to load image</p>
+        </div>
+    `;
+}
+
+let currentZoom = 1;
+
+function zoomImage(delta) {
+    const img = document.getElementById('preview-image');
+    if (img) {
+        currentZoom = Math.max(0.1, Math.min(5, currentZoom + delta));
+        img.style.transform = `scale(${currentZoom})`;
+    }
+}
+
+function resetImageZoom() {
+    const img = document.getElementById('preview-image');
+    if (img) {
+        currentZoom = 1;
+        img.style.transform = 'scale(1)';
+    }
+}
+
+function loadVideoPreview(filename, container) {
+    container.innerHTML = `
+        <div class="video-preview">
+            <div class="preview-header">
+                <span class="file-type-badge video">VIDEO</span>
+                <span class="file-info">Video file</span>
+            </div>
+            <div class="video-container">
+                <video controls preload="metadata" style="max-width: 100%; max-height: 400px;">
+                    <source src="/output/${filename}" type="video/${filename.split('.').pop()}">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+    `;
+}
+
+function loadAudioPreview(filename, container) {
+    container.innerHTML = `
+        <div class="audio-preview">
+            <div class="preview-header">
+                <span class="file-type-badge audio">AUDIO</span>
+                <span class="file-info">Audio file</span>
+            </div>
+            <div class="audio-container">
+                <audio controls preload="metadata" style="width: 100%;">
+                    <source src="/output/${filename}" type="audio/${filename.split('.').pop()}">
+                    Your browser does not support the audio tag.
+                </audio>
+            </div>
+        </div>
+    `;
+}
+
+function loadTextPreview(filename, container) {
+    fetch(`/output/${filename}`)
+        .then(response => response.text())
+        .then(data => {
+            const fileExt = filename.split('.').pop().toLowerCase();
+            const lines = data.split('\n');
+            const displayLines = lines.slice(0, 500); // Show first 500 lines
+
+            container.innerHTML = `
+                <div class="text-preview">
+                    <div class="preview-header">
+                        <span class="file-type-badge text">${fileExt.toUpperCase()}</span>
+                        <span class="file-info">${lines.length} lines</span>
+                    </div>
+                    <pre class="text-content"><code>${displayLines.join('\n')}</code></pre>
+                    ${lines.length > 500 ? '<p class="preview-note">Showing first 500 lines</p>' : ''}
+                </div>
+            `;
+        })
+        .catch(error => {
+            container.innerHTML = `
+                <div class="preview-error">
+                    <span class="material-icons">error</span>
+                    <p>Error loading text preview: ${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+function loadPdfPreview(filename, container) {
+    container.innerHTML = `
+        <div class="pdf-preview">
+            <div class="preview-header">
+                <span class="file-type-badge pdf">PDF</span>
+                <span class="file-info">PDF document</span>
+            </div>
+            <div class="pdf-container">
+                <iframe src="/output/${filename}" style="width: 100%; height: 500px; border: none;">
+                    <p>Your browser does not support PDF preview.
+                       <a href="/output/${filename}" target="_blank">Click here to open the PDF</a>
+                    </p>
+                </iframe>
             </div>
         </div>
     `;
