@@ -8,11 +8,15 @@ import os
 import json
 import asyncio
 import threading
+import re
+import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
+from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, flash
 from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_wtf.csrf import CSRFProtect
 import eventlet
 
 # Import existing modules
@@ -43,6 +47,9 @@ flask_config.create_directories()
 # Configure database
 configure_flask_app(app)
 
+# Initialize CSRF Protection
+csrf = CSRFProtect(app)
+
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -63,6 +70,65 @@ socketio_config = flask_config.get_socketio_config()
 socketio = SocketIO(app,
                    cors_allowed_origins=socketio_config['cors_allowed_origins'],
                    async_mode=socketio_config['async_mode'])
+
+# Security functions
+def sanitize_filename(filename):
+    """Sanitize filename to prevent path traversal and other security issues"""
+    if not filename:
+        return None
+
+    # Use werkzeug's secure_filename as base
+    filename = secure_filename(filename)
+
+    # Additional sanitization
+    # Remove any remaining path separators
+    filename = filename.replace('/', '_').replace('\\', '_')
+
+    # Remove or replace dangerous characters
+    filename = re.sub(r'[<>:"|?*]', '_', filename)
+
+    # Limit filename length
+    if len(filename) > 255:
+        name, ext = os.path.splitext(filename)
+        filename = name[:255-len(ext)] + ext
+
+    # Ensure filename is not empty after sanitization
+    if not filename or filename == '.':
+        filename = f"file_{secrets.token_hex(8)}"
+
+    return filename
+
+def is_allowed_file(filename, allowed_extensions=None):
+    """Check if file extension is allowed"""
+    if not filename:
+        return False
+
+    if allowed_extensions is None:
+        upload_config = flask_config.get_upload_config()
+        allowed_extensions = upload_config.get('allowed_extensions', [])
+
+    # Get file extension
+    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+
+    # Check if extension is allowed
+    return ext in [ext.lower() for ext in allowed_extensions]
+
+def validate_file_content(file_path):
+    """Basic file content validation"""
+    try:
+        # Check file size
+        file_size = os.path.getsize(file_path)
+        max_size = flask_config.get('upload.max_file_size', 104857600)  # 100MB default
+
+        if file_size > max_size:
+            return False, f"File size ({file_size} bytes) exceeds maximum allowed size ({max_size} bytes)"
+
+        # Additional content validation could be added here
+        # For example, checking file headers, scanning for malware, etc.
+
+        return True, "File is valid"
+    except Exception as e:
+        return False, f"Error validating file: {str(e)}"
 
 # Initialize database on first run
 try:
@@ -704,18 +770,47 @@ def upload_file():
 
         for file in files:
             if file.filename:
-                # Secure filename
-                filename = file.filename
+                # Sanitize and validate filename
+                original_filename = file.filename
+                sanitized_filename = sanitize_filename(original_filename)
+
+                if not sanitized_filename:
+                    return jsonify({'success': False, 'error': f'Invalid filename: {original_filename}'})
+
+                # Check if file type is allowed
+                if not is_allowed_file(sanitized_filename):
+                    return jsonify({'success': False, 'error': f'File type not allowed: {sanitized_filename}'})
+
                 # Generate unique filename to avoid conflicts if configured
                 if upload_config['timestamp_filenames']:
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    unique_filename = f"{timestamp}_{filename}"
+                    unique_filename = f"{timestamp}_{sanitized_filename}"
                 else:
-                    unique_filename = filename
+                    unique_filename = sanitized_filename
+
                 file_path = upload_dir / unique_filename
+
+                # Ensure the file path is within the upload directory (prevent path traversal)
+                try:
+                    file_path = file_path.resolve()
+                    upload_dir_resolved = upload_dir.resolve()
+                    if not str(file_path).startswith(str(upload_dir_resolved)):
+                        return jsonify({'success': False, 'error': 'Invalid file path'})
+                except Exception:
+                    return jsonify({'success': False, 'error': 'Invalid file path'})
 
                 # Save file
                 file.save(str(file_path))
+
+                # Validate file content after saving
+                is_valid, validation_message = validate_file_content(file_path)
+                if not is_valid:
+                    # Remove the invalid file
+                    try:
+                        os.remove(file_path)
+                    except:
+                        pass
+                    return jsonify({'success': False, 'error': validation_message})
 
                 # Get file info
                 file_size = file_path.stat().st_size
@@ -723,19 +818,19 @@ def upload_file():
 
                 # Create database record
                 file_record = File(
-                    filename=filename,
-                    original_filename=filename,
+                    filename=sanitized_filename,
+                    original_filename=original_filename,
                     file_path=str(file_path),
                     file_size=file_size,
                     mime_type=mime_type,
                     folder_id=folder_id,
                     user_id=user.id,
-                    description=f'Uploaded file: {filename}'
+                    description=f'Uploaded file: {original_filename}'
                 )
 
                 db.session.add(file_record)
                 uploaded_files.append({
-                    'filename': filename,
+                    'filename': sanitized_filename,
                     'size': file_size,
                     'type': mime_type
                 })

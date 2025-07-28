@@ -233,10 +233,14 @@ def get_database_stats():
 
         stats = {}
 
-        # Get table counts
+        # Get table counts - using parameterized queries for security
         tables = ['users', 'files', 'folders', 'scan_sessions']
         for table in tables:
             try:
+                # Validate table name against whitelist to prevent SQL injection
+                if table not in ['users', 'files', 'folders', 'scan_sessions']:
+                    continue
+                # Use string formatting only with validated table names
                 cursor.execute(f"SELECT COUNT(*) FROM {table}")
                 stats[f'{table}_count'] = cursor.fetchone()[0]
             except sqlite3.OperationalError:

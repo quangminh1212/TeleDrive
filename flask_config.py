@@ -60,8 +60,11 @@ class FlaskConfigLoader:
         """Get Flask-specific configuration"""
         flask_config = {}
         
-        # Basic Flask settings
-        flask_config['SECRET_KEY'] = self.get('flask.secret_key', 'teledrive_secret_key_2025')
+        # Basic Flask settings - Use environment variable or generate secure key
+        import os
+        import secrets
+        default_secret = os.environ.get('FLASK_SECRET_KEY') or secrets.token_hex(32)
+        flask_config['SECRET_KEY'] = self.get('flask.secret_key', default_secret)
         flask_config['DEBUG'] = self.get('flask.debug', False)
         
         # Database settings
@@ -162,7 +165,7 @@ class FlaskConfigLoader:
             "_description": "TeleDrive Configuration",
             "_last_updated": "2025-01-11",
             "flask": {
-                "secret_key": "teledrive_secret_key_2025",
+                "secret_key": "",  # Will be auto-generated if empty
                 "host": "0.0.0.0",
                 "port": 3000,
                 "debug": False,
