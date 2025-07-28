@@ -54,6 +54,18 @@ function initializeUIComponents() {
     
     // Initialize file drag and drop
     initializeFileDragDrop();
+    
+    // Initialize context menus
+    initializeContextMenus();
+    
+    // Initialize file actions
+    initializeFileActions();
+    
+    // Initialize view toggle (grid/list)
+    initializeViewToggle();
+    
+    // Initialize breadcrumb navigation
+    initializeBreadcrumbs();
 }
 
 // Add ripple effect to buttons
@@ -78,39 +90,145 @@ function addRippleEffect(button) {
     });
 }
 
-// Initialize file drag and drop
+// Initialize file drag and drop with enhanced functionality
 function initializeFileDragDrop() {
+    // Global drag drop for file uploads
     const dropZones = document.querySelectorAll('.files-container, .scan-form');
     
-    dropZones.forEach(zone => {
-        zone.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            this.classList.add('drag-over');
-        });
-        
-        zone.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            this.classList.remove('drag-over');
-        });
-        
-        zone.addEventListener('drop', function(e) {
-            e.preventDefault();
-            this.classList.remove('drag-over');
-            handleFileDrop(e);
+    // Prevent default browser behavior for drag events document-wide
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // Highlight drop area when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZones.forEach(zone => {
+            zone.addEventListener(eventName, highlight, false);
         });
     });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZones.forEach(zone => {
+            zone.addEventListener(eventName, unhighlight, false);
+        });
+    });
+
+    function highlight(e) {
+        const target = getDropTarget(e.target);
+        if (target) target.classList.add('drag-over');
+        
+        // Show drop placeholder
+        const placeholder = document.querySelector('.drag-placeholder');
+        if (placeholder) placeholder.classList.add('active');
+    }
+
+    function unhighlight(e) {
+        const target = getDropTarget(e.target);
+        if (target) target.classList.remove('drag-over');
+        
+        // Hide drop placeholder
+        const placeholder = document.querySelector('.drag-placeholder');
+        if (placeholder) placeholder.classList.remove('active');
+    }
+    
+    // Find appropriate drop target parent element
+    function getDropTarget(element) {
+        if (element.classList.contains('files-container')) return element;
+        if (element.classList.contains('scan-form')) return element;
+        if (element.classList.contains('folder-card')) return element;
+        return element.closest('.files-container, .scan-form, .folder-card');
+    }
+
+    // Handle file drop
+    dropZones.forEach(zone => {
+        zone.addEventListener('drop', handleFileDrop, false);
+    });
+    
+    // Initialize folder drag & drop
+    initializeFolderDragDrop();
 }
 
 // Handle file drop
 function handleFileDrop(e) {
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
-        uploadFiles(files);
+        // Check if dropped on a folder card
+        const folderCard = e.target.closest('.folder-card');
+        let targetFolder = null;
+        
+        if (folderCard) {
+            targetFolder = folderCard.dataset.folderId;
+        } else if (window.currentFolder) {
+            targetFolder = window.currentFolder;
+        }
+        
+        uploadFiles(files, targetFolder);
+        showToast(`Uploading ${files.length} file(s)${targetFolder ? ' to folder' : ''}`, 'info');
     }
 }
 
-// Upload files function
-function uploadFiles(files) {
+// Initialize folder drag & drop functionality
+function initializeFolderDragDrop() {
+    const fileCards = document.querySelectorAll('.file-card[data-type="folder"]');
+    
+    fileCards.forEach(card => {
+        // Make folders draggable
+        card.setAttribute('draggable', 'true');
+        
+        card.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', card.dataset.folderId);
+            e.dataTransfer.effectAllowed = 'move';
+            card.classList.add('dragging');
+            
+            // Create drag image
+            const dragIcon = document.createElement('div');
+            dragIcon.classList.add('drag-icon');
+            dragIcon.innerHTML = '<span class="material-icons">folder</span>';
+            document.body.appendChild(dragIcon);
+            e.dataTransfer.setDragImage(dragIcon, 20, 20);
+            
+            // Remove drag icon after dragstart
+            setTimeout(() => {
+                document.body.removeChild(dragIcon);
+            }, 0);
+        });
+        
+        card.addEventListener('dragend', function() {
+            card.classList.remove('dragging');
+        });
+        
+        // Handle folder drop target
+        card.addEventListener('drop', function(e) {
+            const sourceId = e.dataTransfer.getData('text/plain');
+            const targetId = card.dataset.folderId;
+            
+            // Prevent dropping folder into itself
+            if (sourceId !== targetId) {
+                moveFolder(sourceId, targetId);
+            }
+        });
+    });
+    
+    // Make all folder areas drop targets for other folders
+    const folderContainers = document.querySelectorAll('.files-container');
+    folderContainers.forEach(container => {
+        container.addEventListener('drop', function(e) {
+            // Handle only if data is folder ID and not files
+            if (e.dataTransfer.types.includes('text/plain') && e.dataTransfer.files.length === 0) {
+                const sourceId = e.dataTransfer.getData('text/plain');
+                moveFolder(sourceId, window.currentFolder || 'root');
+            }
+        });
+    });
+}
+
+// Upload files function with folder support
+function uploadFiles(files, targetFolder = null) {
     if (!files || files.length === 0) {
         showToast('No files selected', 'error');
         return;
@@ -123,38 +241,118 @@ function uploadFiles(files) {
         formData.append('files', files[i]);
     }
 
-    // Add current folder if available
-    if (window.currentFolder) {
+    // Add target folder if specified, otherwise use current folder
+    if (targetFolder) {
+        formData.append('folder_id', targetFolder);
+    } else if (window.currentFolder) {
         formData.append('folder_id', window.currentFolder);
+    }
+
+    // Track upload progress
+    const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
+    let uploadedSize = 0;
+
+    // Create and show progress element
+    const progressContainer = document.createElement('div');
+    progressContainer.className = 'upload-progress-container';
+    progressContainer.innerHTML = `
+        <div class="upload-progress-header">
+            <span>Uploading ${files.length} file(s)</span>
+            <button class="btn-close" onclick="this.parentNode.parentNode.remove()">×</button>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+        </div>
+        <div class="upload-progress-info">
+            <span class="upload-file-name">Preparing...</span>
+            <span class="upload-size">0% (0/${formatFileSize(totalSize)})</span>
+        </div>
+    `;
+    
+    const toastContainer = document.getElementById('toast-container');
+    if (toastContainer) {
+        toastContainer.appendChild(progressContainer);
+    } else {
+        document.body.appendChild(progressContainer);
     }
 
     // Show loading state
     showLoading('Uploading files...');
 
-    // Upload files
-    fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
+    // Upload files with progress tracking
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/upload', true);
+    
+    xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            uploadedSize = e.loaded;
+            
+            // Update progress bar
+            const progressFill = progressContainer.querySelector('.progress-fill');
+            if (progressFill) progressFill.style.width = percent + '%';
+            
+            // Update info
+            const fileInfo = progressContainer.querySelector('.upload-size');
+            if (fileInfo) {
+                fileInfo.textContent = `${percent}% (${formatFileSize(uploadedSize)}/${formatFileSize(totalSize)})`;
+            }
+        }
+    });
+    
+    xhr.addEventListener('load', function() {
         hideLoading();
-        if (data.success) {
-            showToast(data.message, 'success');
-            // Refresh file list
-            if (typeof refreshFiles === 'function') {
-                refreshFiles();
-            } else {
-                location.reload();
+        
+        if (xhr.status === 200) {
+            try {
+                const data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    // Update progress container to success state
+                    progressContainer.classList.add('upload-success');
+                    progressContainer.querySelector('.upload-progress-header').innerHTML = `<span>Upload Complete</span>`;
+                    progressContainer.querySelector('.upload-file-name').textContent = `${files.length} file(s) uploaded successfully`;
+                    
+                    // Auto-remove progress after delay
+                    setTimeout(() => {
+                        progressContainer.remove();
+                    }, 5000);
+                    
+                    // Refresh file list
+                    if (typeof refreshFiles === 'function') {
+                        refreshFiles();
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    showUploadError(progressContainer, 'Upload failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                showUploadError(progressContainer, 'Invalid response from server');
             }
         } else {
-            showToast('Upload failed: ' + data.error, 'error');
+            showUploadError(progressContainer, `Server error: ${xhr.status}`);
         }
-    })
-    .catch(error => {
-        hideLoading();
-        showToast('Upload error: ' + error.message, 'error');
     });
+    
+    xhr.addEventListener('error', function() {
+        hideLoading();
+        showUploadError(progressContainer, 'Connection error');
+    });
+    
+    xhr.addEventListener('abort', function() {
+        hideLoading();
+        showUploadError(progressContainer, 'Upload aborted');
+    });
+    
+    xhr.send(formData);
+}
+
+// Helper function to show upload errors
+function showUploadError(progressContainer, errorMessage) {
+    progressContainer.classList.add('upload-error');
+    progressContainer.querySelector('.upload-progress-header').innerHTML = `<span>Upload Failed</span>`;
+    progressContainer.querySelector('.upload-file-name').textContent = errorMessage;
+    showToast(errorMessage, 'error');
 }
 
 // Handle search
@@ -233,10 +431,138 @@ function hideLoading() {
     }
 }
 
-// Context menu helpers
+// Context menu functionality
+function initializeContextMenus() {
+    // Setup file/folder context menus
+    document.querySelectorAll('.file-card').forEach(card => {
+        card.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            
+            // Hide any visible context menus
+            hideAllContextMenus();
+            
+            // Create context menu
+            const contextMenu = createContextMenu(card);
+            
+            // Position context menu
+            positionContextMenu(contextMenu, e.pageX, e.pageY);
+            
+            // Show context menu
+            document.body.appendChild(contextMenu);
+        });
+    });
+    
+    // Close context menu when clicking elsewhere
+    document.addEventListener('click', hideAllContextMenus);
+    document.addEventListener('scroll', hideAllContextMenus);
+}
+
+// Create a context menu based on item type
+function createContextMenu(fileCard) {
+    const isFolder = fileCard.dataset.type === 'folder';
+    const filename = fileCard.dataset.filename;
+    const fileId = fileCard.dataset.fileId;
+    const folderId = fileCard.dataset.folderId;
+    
+    const menu = document.createElement('div');
+    menu.className = 'context-menu';
+    
+    // Common menu items
+    let menuItems = '';
+    
+    if (isFolder) {
+        menuItems += `
+            <div class="context-menu-item" onclick="openFolder('${folderId}')">
+                <span class="material-icons">folder_open</span>
+                <span>Open</span>
+            </div>
+            <div class="context-menu-item" onclick="renameFolder('${folderId}')">
+                <span class="material-icons">edit</span>
+                <span>Rename</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item" onclick="shareFolder('${folderId}')">
+                <span class="material-icons">share</span>
+                <span>Share</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item danger" onclick="deleteFolder('${folderId}')">
+                <span class="material-icons">delete</span>
+                <span>Delete</span>
+            </div>
+        `;
+    } else {
+        // File specific menu
+        menuItems += `
+            <div class="context-menu-item" onclick="previewFile('${filename}')">
+                <span class="material-icons">visibility</span>
+                <span>Preview</span>
+            </div>
+            <div class="context-menu-item" onclick="downloadFile('${filename}')">
+                <span class="material-icons">download</span>
+                <span>Download</span>
+            </div>
+            <div class="context-menu-item" onclick="renameFile('${fileId}')">
+                <span class="material-icons">edit</span>
+                <span>Rename</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item" onclick="shareFile('${fileId}')">
+                <span class="material-icons">share</span>
+                <span>Share</span>
+            </div>
+            <div class="context-menu-item" onclick="copyFileLink('${fileId}')">
+                <span class="material-icons">link</span>
+                <span>Copy link</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item" onclick="moveFileToFolder('${fileId}')">
+                <span class="material-icons">drive_file_move</span>
+                <span>Move to...</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item danger" onclick="deleteFile('${filename}')">
+                <span class="material-icons">delete</span>
+                <span>Delete</span>
+            </div>
+        `;
+    }
+    
+    menu.innerHTML = menuItems;
+    return menu;
+}
+
+// Position context menu
+function positionContextMenu(menu, x, y) {
+    // First append to get dimensions
+    document.body.appendChild(menu);
+    
+    // Get menu dimensions
+    const menuWidth = menu.offsetWidth;
+    const menuHeight = menu.offsetHeight;
+    
+    // Get window dimensions
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Adjust position if menu would go outside window
+    if (x + menuWidth > windowWidth) {
+        x = windowWidth - menuWidth - 10;
+    }
+    
+    if (y + menuHeight > windowHeight) {
+        y = windowHeight - menuHeight - 10;
+    }
+    
+    // Set menu position
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+}
+
+// Hide all context menus
 function hideAllContextMenus() {
     document.querySelectorAll('.context-menu').forEach(menu => {
-        menu.style.display = 'none';
+        menu.remove();
     });
 }
 
@@ -296,6 +622,37 @@ async function apiRequest(url, options = {}) {
         console.error('API request failed:', error);
         throw error;
     }
+}
+
+// Move folder to another folder
+function moveFolder(sourceId, targetId) {
+    showLoading('Moving folder...');
+    
+    apiRequest('/api/folders/move', {
+        method: 'POST',
+        body: JSON.stringify({
+            folder_id: sourceId,
+            target_folder_id: targetId
+        })
+    })
+    .then(response => {
+        hideLoading();
+        if (response.success) {
+            showToast('Folder moved successfully', 'success');
+            // Refresh file list
+            if (typeof refreshFiles === 'function') {
+                refreshFiles();
+            } else {
+                location.reload();
+            }
+        } else {
+            showToast('Failed to move folder: ' + (response.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error moving folder: ' + error.message, 'error');
+    });
 }
 
 // File operations
@@ -1163,6 +1520,216 @@ function updateAudioPlayButton(audioId, isPlaying) {
 
 function handleAudioEnded(audioId) {
     updateAudioPlayButton(audioId, false);
+}
+
+// Initialize file action buttons
+function initializeFileActions() {
+    // Handle select mode toggle
+    const selectModeBtn = document.getElementById('select-mode-btn');
+    if (selectModeBtn) {
+        selectModeBtn.addEventListener('click', toggleSelectMode);
+    }
+    
+    // Handle multi-select checkboxes
+    document.querySelectorAll('.file-select-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectedFilesCount();
+            updateBulkActionButtonsState();
+        });
+    });
+    
+    // Handle bulk action buttons
+    document.querySelectorAll('.bulk-action-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const action = btn.dataset.action;
+            if (action) {
+                performBulkAction(action);
+            }
+        });
+    });
+}
+
+// Toggle between grid and list view
+function initializeViewToggle() {
+    const gridViewBtn = document.getElementById('grid-view-btn');
+    const listViewBtn = document.getElementById('list-view-btn');
+    const filesContainer = document.querySelector('.files-container');
+    
+    if (gridViewBtn && listViewBtn && filesContainer) {
+        gridViewBtn.addEventListener('click', function() {
+            filesContainer.classList.remove('files-list');
+            filesContainer.classList.add('files-grid');
+            
+            gridViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+            
+            localStorage.setItem('files-view', 'grid');
+        });
+        
+        listViewBtn.addEventListener('click', function() {
+            filesContainer.classList.remove('files-grid');
+            filesContainer.classList.add('files-list');
+            
+            listViewBtn.classList.add('active');
+            gridViewBtn.classList.remove('active');
+            
+            localStorage.setItem('files-view', 'list');
+        });
+        
+        // Apply saved view preference
+        const savedView = localStorage.getItem('files-view');
+        if (savedView === 'list') {
+            listViewBtn.click();
+        } else {
+            gridViewBtn.click();
+        }
+    }
+}
+
+// Initialize breadcrumbs for folder navigation
+function initializeBreadcrumbs() {
+    const breadcrumbs = document.querySelector('.breadcrumb');
+    if (breadcrumbs) {
+        breadcrumbs.addEventListener('click', function(e) {
+            const breadcrumbItem = e.target.closest('.breadcrumb-item');
+            if (breadcrumbItem) {
+                const folderId = breadcrumbItem.dataset.folderId;
+                if (folderId) {
+                    e.preventDefault();
+                    navigateToFolder(folderId);
+                }
+            }
+        });
+    }
+}
+
+// Toggle select mode for bulk operations
+function toggleSelectMode() {
+    const filesContainer = document.querySelector('.files-container');
+    const bulkToolbar = document.querySelector('.bulk-toolbar');
+    const selectModeBtn = document.getElementById('select-mode-btn');
+    
+    if (filesContainer && bulkToolbar && selectModeBtn) {
+        const isSelectMode = filesContainer.classList.toggle('select-mode');
+        
+        // Show/hide checkboxes
+        document.querySelectorAll('.file-checkbox').forEach(checkbox => {
+            checkbox.style.display = isSelectMode ? 'flex' : 'none';
+        });
+        
+        // Show/hide bulk toolbar
+        bulkToolbar.style.display = isSelectMode ? 'flex' : 'none';
+        
+        // Update button
+        selectModeBtn.classList.toggle('active', isSelectMode);
+        selectModeBtn.querySelector('.material-icons').textContent = 
+            isSelectMode ? 'close' : 'check_box_outline_blank';
+        
+        // Reset selections if exiting select mode
+        if (!isSelectMode) {
+            document.querySelectorAll('.file-select-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+            document.querySelectorAll('.file-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+        
+        // Update bulk info
+        updateSelectedFilesCount();
+    }
+}
+
+// Update the count of selected files
+function updateSelectedFilesCount() {
+    const bulkInfo = document.querySelector('.bulk-info');
+    const checkboxes = document.querySelectorAll('.file-select-checkbox:checked');
+    
+    if (bulkInfo) {
+        bulkInfo.textContent = `${checkboxes.length} item${checkboxes.length === 1 ? '' : 's'} selected`;
+    }
+}
+
+// Enable/disable bulk action buttons based on selection
+function updateBulkActionButtonsState() {
+    const hasSelection = document.querySelectorAll('.file-select-checkbox:checked').length > 0;
+    
+    document.querySelectorAll('.bulk-action-btn').forEach(btn => {
+        btn.disabled = !hasSelection;
+    });
+}
+
+// Perform bulk actions on selected files
+function performBulkAction(action) {
+    const selectedFiles = Array.from(document.querySelectorAll('.file-select-checkbox:checked'))
+        .map(checkbox => checkbox.closest('.file-card').dataset.fileId);
+    
+    if (selectedFiles.length === 0) {
+        showToast('No files selected', 'warning');
+        return;
+    }
+    
+    switch(action) {
+        case 'download':
+            downloadMultipleFiles(selectedFiles);
+            break;
+        case 'move':
+            moveMultipleFiles(selectedFiles);
+            break;
+        case 'delete':
+            deleteMultipleFiles(selectedFiles);
+            break;
+        case 'share':
+            shareMultipleFiles(selectedFiles);
+            break;
+        default:
+            showToast('Action not implemented', 'error');
+    }
+}
+
+// Navigate to a folder
+function navigateToFolder(folderId) {
+    window.location.href = `/folders/${folderId}`;
+}
+
+// Open a folder (from context menu)
+function openFolder(folderId) {
+    navigateToFolder(folderId);
+}
+
+// Rename a file
+function renameFile(fileId) {
+    const fileCard = document.querySelector(`.file-card[data-file-id="${fileId}"]`);
+    if (!fileCard) return;
+    
+    const currentName = fileCard.dataset.filename;
+    const newName = prompt('Enter new filename:', currentName);
+    
+    if (newName && newName !== currentName) {
+        apiRequest('/api/rename_file', {
+            method: 'POST',
+            body: JSON.stringify({
+                file_id: fileId,
+                new_name: newName
+            })
+        })
+        .then(response => {
+            if (response.success) {
+                showToast('File renamed successfully', 'success');
+                // Refresh file list
+                if (typeof refreshFiles === 'function') {
+                    refreshFiles();
+                } else {
+                    location.reload();
+                }
+            } else {
+                showToast('Failed to rename file: ' + (response.error || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error renaming file: ' + error.message, 'error');
+        });
+    }
 }
 
 // Utility function for time formatting
