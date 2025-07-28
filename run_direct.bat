@@ -9,77 +9,16 @@ echo              Telegram File Scanner ^& Manager
 echo ================================================================
 echo.
 
-echo [BUOC 1/7] Kiem tra cau hinh du an...
-echo    ^> Kiem tra file config.json...
-if not exist config.json (
-    echo ❌ KHONG TIM THAY FILE config.json!
-    echo.
-    echo 🔧 Dang tao cau hinh mac dinh...
-    python -c "from config_manager import ConfigManager; cm = ConfigManager(); cm.create_default_config(); print('✅ Da tao config.json mac dinh')" 2>nul
-    if errorlevel 1 (
-        echo ❌ Khong the tao cau hinh mac dinh!
-        echo 🔧 Chay setup.bat truoc khi su dung
-        pause
-        exit /b 1
-    )
-) else (
-    echo ✅ Tim thay file config.json
-)
-
-echo    ^> Kiem tra cau hinh Telegram API...
-python -c "import config; api_id = getattr(config, 'API_ID', ''); phone = getattr(config, 'PHONE_NUMBER', ''); configured = bool(api_id and phone and phone != '+84xxxxxxxxx'); print('✅ API da duoc cau hinh' if configured else '⚠️ API chua duoc cau hinh'); exit(0 if configured else 1)" 2>nul
-if errorlevel 1 (
-    echo.
-    echo ⚠️ TELEGRAM API CHUA DUOC CAU HINH!
-    echo.
-    echo 🔍 Dang kiem tra lai cau hinh chi tiet...
-    python test_config.py 2>nul
-    if not errorlevel 1 (
-        echo.
-        echo ✅ Cau hinh thuc te da hop le! Tiep tuc chay chuong trinh...
-        goto :config_ok
-    )
-    echo.
-    echo 📝 Huong dan cau hinh:
-    echo    1. Chay 'config.bat' de cau hinh API
-    echo    2. Hoac chinh sua truc tiep file 'config.json'
-    echo    3. Hoac su dung 'run_direct.bat' de bo qua kiem tra
-    echo.
-    echo 🔗 Lay API credentials tu: https://my.telegram.org/apps
-    echo.
-    echo Ban co muon cau hinh ngay bay gio khong? (Y/N)
-    set /p choice="Lua chon: "
-    if /i "%choice%"=="Y" (
-        echo.
-        echo 🔧 Mo config manager...
-        call config.bat
-        echo.
-        echo Quay lai run.bat...
-        pause
-        goto :start_check
-    ) else (
-        echo.
-        echo ❌ Khong the chay ma khong co cau hinh API!
-        echo 💡 Thu chay 'run_direct.bat' neu ban chac chan cau hinh da dung!
-        pause
-        exit /b 1
-    )
-) else (
-    echo ✅ Telegram API da duoc cau hinh
-)
-
-:config_ok
-
-:start_check
-
+echo [INFO] Cau hinh da duoc thiet lap trong config.json
+echo [INFO] Bo qua kiem tra cau hinh va khoi dong truc tiep...
 echo.
-echo [BUOC 2/7] Kiem tra Python...
+
+echo [BUOC 1/4] Kiem tra Python...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo ❌ KHONG TIM THAY PYTHON!
     echo.
     echo 📥 Vui long cai dat Python 3.8+ tu: https://python.org/downloads/
-    echo 🔧 Hoac chay setup.bat de cai dat tu dong
     echo.
     pause
     exit /b 1
@@ -88,37 +27,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 3/7] Kiem tra va dong bo cau hinh...
-echo    ^> Kiem tra tinh hop le cua cau hinh...
-python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '⚠️ Cau hinh co van de'); exit(0 if result else 1)" 2>nul
-if errorlevel 1 (
-    echo.
-    echo ⚠️ CAU HINH CO VAN DE!
-    echo 🔧 Dang thu dong bo cau hinh...
-
-    REM Thu dong bo neu co file .env
-    if exist .env (
-        echo    ^> Tim thay file .env, dang dong bo...
-        python -c "from config_manager import ConfigManager; cm = ConfigManager(); cm.sync_env_to_config(); print('✅ Dong bo thanh cong')" 2>nul
-        if not errorlevel 1 (
-            echo ✅ Da dong bo cau hinh tu .env
-        )
-    )
-
-    REM Kiem tra lai sau khi dong bo
-    python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); exit(0 if result else 1)" 2>nul
-    if errorlevel 1 (
-        echo ❌ Cau hinh van chua hop le sau khi dong bo!
-        echo 🔧 Chay 'config.bat' de cau hinh thu cong
-        pause
-        exit /b 1
-    )
-) else (
-    echo ✅ Cau hinh da hop le
-)
-
-echo.
-echo [BUOC 4/7] Kiem tra dependencies...
+echo [BUOC 2/4] Kiem tra dependencies...
 echo    ^> Kiem tra cac thu vien Python can thiet...
 python -c "import telethon, pandas, tqdm, aiofiles, openpyxl; print('✅ Tat ca dependencies da san sang')" 2>nul
 if errorlevel 1 (
@@ -143,36 +52,15 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 5/7] Khoi tao thu muc va he thong...
+echo [BUOC 3/4] Khoi tao thu muc va he thong...
 echo    ^> Tao cac thu muc can thiet...
 if not exist output mkdir output
 if not exist logs mkdir logs
 if not exist data mkdir data
 echo ✅ Cac thu muc da san sang
 
-echo    ^> Khoi tao he thong logging...
-python -c "from logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ Logging system ready')" 2>nul
-if errorlevel 1 (
-    echo ⚠️ Khong the khoi tao detailed logging (se su dung basic logging)
-) else (
-    echo ✅ He thong logging chi tiet da san sang
-)
-
 echo.
-echo [BUOC 6/7] Kiem tra ket noi Telegram...
-echo    ^> Kiem tra session va credentials...
-python -c "import config; print('✅ Credentials loaded successfully')" 2>nul
-if errorlevel 1 (
-    echo ❌ Loi khi load credentials!
-    echo 🔧 Kiem tra lai cau hinh trong config.json
-    pause
-    exit /b 1
-) else (
-    echo ✅ Telegram credentials da san sang
-)
-
-echo.
-echo [BUOC 7/7] Chon giao dien...
+echo [BUOC 4/4] Chon giao dien...
 echo ================================================================
 echo 🚀 CHON GIAO DIEN TELEDRIVE
 echo ================================================================
@@ -211,7 +99,7 @@ if "%choice%"=="1" (
     echo.
     echo 💡 Meo:
     echo    • Mo trinh duyet va truy cap http://localhost:3000
-    echo    • Cau hinh API credentials trong Settings
+    echo    • Dang nhap voi: admin / admin123
     echo    • Su dung Scanner de quet channel
     echo.
     echo ⏹️  Nhan Ctrl+C de dung web server
@@ -275,13 +163,13 @@ echo 📊 Log chi tiet trong: 'logs/'
 echo 🔧 Cau hinh trong: 'config.json'
 echo.
 echo 💡 Meo:
-echo    • Chay lai 'run.bat' de chon giao dien khac
+echo    • Chay lai 'run_direct.bat' de chon giao dien khac
 echo    • Dung 'start.bat' de khoi dong truc tiep Web Interface
 echo    • Dung 'config.bat' de thay doi cau hinh
 echo    • Xem file log de debug neu co loi
 echo.
 echo 🌐 Giao dien Web: http://localhost:3000 (neu da chon Web Interface)
-echo 💻 CLI: Chay lai run.bat va chon option 2
+echo 💻 CLI: Chay lai run_direct.bat va chon option 2
 echo.
 echo Cam on ban da su dung TeleDrive! 🚀
 echo.
