@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TeleDrive Setup Script
+# TeleDrive Setup Script for Linux
 echo "🚀 Setting up TeleDrive environment..."
 
 # Update system packages
@@ -10,6 +10,9 @@ sudo apt-get update -qq
 if ! command -v python3 &> /dev/null; then
     echo "📦 Installing Python 3..."
     sudo apt-get install -y python3 python3-pip python3-venv
+else
+    echo "📦 Installing python3-venv..."
+    sudo apt-get install -y python3-venv
 fi
 
 # Install system dependencies for Python packages
@@ -25,22 +28,26 @@ sudo apt-get install -y \
     libgif-dev \
     sqlite3
 
+# Add local bin to PATH for current session
+export PATH="$HOME/.local/bin:$PATH"
+
 # Create virtual environment
 echo "🔧 Creating Python virtual environment..."
 python3 -m venv .venv
 
 # Activate virtual environment and add to profile
 echo "🔧 Configuring virtual environment..."
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> $HOME/.profile
 echo 'source /mnt/persist/workspace/.venv/bin/activate' >> $HOME/.profile
 
 # Activate virtual environment for current session
 source .venv/bin/activate
 
-# Upgrade pip
-echo "📦 Upgrading pip..."
+# Upgrade pip within virtual environment
+echo "📦 Upgrading pip in virtual environment..."
 pip install --upgrade pip setuptools wheel
 
-# Install Python dependencies
+# Install Python dependencies in virtual environment
 echo "📦 Installing Python dependencies..."
 pip install -r requirements.txt
 
