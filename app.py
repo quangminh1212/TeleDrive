@@ -1522,5 +1522,12 @@ if __name__ == '__main__':
     for name, path in directories.items():
         os.makedirs(path, exist_ok=True)
 
+    # Remove incompatible parameters for socketio.run()
+    socketio_config = {
+        'host': server_config['host'],
+        'port': server_config['port'],
+        'debug': server_config['debug']
+    }
+
     # Start server with configuration
-    socketio.run(app, **server_config)
+    socketio.run(app, **socketio_config)

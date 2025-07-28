@@ -135,6 +135,7 @@ def initialize_database(app=None):
                     role='admin',
                     is_active=True
                 )
+                admin_user.set_password('admin123')  # Set the default password
                 db.session.add(admin_user)
                 print("✅ Created default admin user")
             
@@ -147,6 +148,7 @@ def initialize_database(app=None):
                     role='user',
                     is_active=True
                 )
+                default_user.set_password('default123')  # Set the default password
                 db.session.add(default_user)
                 print("✅ Created default user")
             

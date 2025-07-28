@@ -212,7 +212,7 @@
     }
   },
   "database": {
-    "url": "sqlite:///data/teledrive.db",
+    "url": "sqlite:///C:/VF/TeleDrive/data/teledrive.db",
     "track_modifications": false,
     "pool_size": 10,
     "pool_timeout": 20,
@@ -225,7 +225,7 @@
     "secret_key": "teledrive_secret_key_2025",
     "host": "0.0.0.0",
     "port": 3000,
-    "debug": false,
+    "debug": true,
     "threaded": true,
     "use_reloader": false,
     "cors_allowed_origins": "*",
