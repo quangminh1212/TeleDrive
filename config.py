@@ -102,11 +102,28 @@ class ConfigManager:
                 "retry_attempts": 3,
                 "retry_delay": 5,
                 "flood_sleep_threshold": 60,
-                "device_model": "Telegram File Scanner",
+                "device_model": "Telegram Unlimited Driver",
                 "system_version": "1.0",
                 "app_version": "1.0",
                 "lang_code": "vi",
-                "system_lang_code": "vi-VN"
+                "system_lang_code": "vi-VN",
+                "app_title": "Telegram Unlimited Driver",
+                "short_name": "TeleDrive",
+                "mtproto_servers": {
+                    "test": {
+                        "dc_id": 2,
+                        "ip": "149.154.167.40",
+                        "port": 443,
+                        "public_key": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAyMEdY1aR+sCR3ZSJrtztKTKqigvO/vBfqACJLZtS7QMgCGXJ6XIR\nyy7mx66W0/sOFa7/1mAZtEoIokDP3ShoqF4fVNb6XeqgQfaUHd8wJpDWHcR2OFwv\nplUUI1PLTktZ9uW2WE23b+ixNwJjJGwBDJPQEQFBE+vfmH0JP503wr5INS1poWg/\nj25sIWeYPHYeOrFp/eXaqhISP6G+q2IeTaWTXpwZj4LzXq5YOpk4bYEQ6mvRq7D1\naHWfYmlEGepfaYR8Q0YqvvhYtMte3ITnuSJs171+GDqpdKcSwHnd6FudwGO4pcCO\nj4WcDuXc2CTHgH8gFTNhp/Y8/SpDOhvn9QIDAQAB\n-----END RSA PUBLIC KEY-----"
+                    },
+                    "production": {
+                        "dc_id": 2,
+                        "ip": "149.154.167.50",
+                        "port": 443,
+                        "public_key": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEA6LszBcC1LGzyr992NzE0ieY+BSaOW622Aa9Bd4ZHLl+TuFQ4lo4g\n5nKaMBwK/BIb9xUfg0Q29/2mgIR6Zr9krM7HjuIcCzFvDtr+L0GQjae9H0pRB2OO\n62cECs5HKhT5DZ98K33vmWiLowc621dQuwKWSQKjWf50XYFw42h21P2KXUGyp2y/\n+aEyZ+uVgLLQbRA1dEjSDZ2iGRy12Mk5gpYc397aYp438fsJoHIgJ2lgMv5h7WY9\nt6N/byY9Nw9p21Og3AoXSL2q/2IJ1WRUhebgAdGVMlV1fkuOQoEzR7EdpqtQD9Cs\n5+bfo3Nhmcyvk5ftB0WkJ9z6bNZ7yxrP8wIDAQAB\n-----END RSA PUBLIC KEY-----"
+                    }
+                },
+                "server_environment": "production"
             },
             "output": {
                 "directory": "output",
@@ -224,7 +241,13 @@ class ConfigManager:
             'TELEGRAM_CONNECTION_TIMEOUT': ('telegram.connection_timeout', int),
             'TELEGRAM_REQUEST_TIMEOUT': ('telegram.request_timeout', int),
             'TELEGRAM_RETRY_ATTEMPTS': ('telegram.retry_attempts', int),
-            'TELEGRAM_RETRY_DELAY': ('telegram.retry_delay', int)
+            'TELEGRAM_RETRY_DELAY': ('telegram.retry_delay', int),
+            'TELEGRAM_APP_TITLE': ('telegram.app_title', str),
+            'TELEGRAM_SHORT_NAME': ('telegram.short_name', str),
+            'TELEGRAM_DEVICE_MODEL': ('telegram.device_model', str),
+            'TELEGRAM_SERVER_ENVIRONMENT': ('telegram.server_environment', str),
+            'TELEGRAM_LANG_CODE': ('telegram.lang_code', str),
+            'TELEGRAM_SYSTEM_LANG_CODE': ('telegram.system_lang_code', str)
         }
 
         for env_key, (config_path, value_type) in optional_settings.items():
@@ -299,11 +322,28 @@ RETRY_DELAY = int(get_safe(CONFIG, 'telegram.retry_delay', 5))
 FLOOD_SLEEP_THRESHOLD = int(get_safe(CONFIG, 'telegram.flood_sleep_threshold', 60))
 
 # Device information
-DEVICE_MODEL = get_safe(CONFIG, 'telegram.device_model', 'Telegram File Scanner')
+DEVICE_MODEL = get_safe(CONFIG, 'telegram.device_model', 'Telegram Unlimited Driver')
 SYSTEM_VERSION = get_safe(CONFIG, 'telegram.system_version', '1.0')
 APP_VERSION = get_safe(CONFIG, 'telegram.app_version', '1.0')
 LANG_CODE = get_safe(CONFIG, 'telegram.lang_code', 'vi')
 SYSTEM_LANG_CODE = get_safe(CONFIG, 'telegram.system_lang_code', 'vi-VN')
+
+# App information
+APP_TITLE = get_safe(CONFIG, 'telegram.app_title', 'Telegram Unlimited Driver')
+SHORT_NAME = get_safe(CONFIG, 'telegram.short_name', 'TeleDrive')
+
+# MTProto server configuration
+SERVER_ENVIRONMENT = get_safe(CONFIG, 'telegram.server_environment', 'production')
+MTPROTO_SERVERS = get_safe(CONFIG, 'telegram.mtproto_servers', {})
+
+# Get current server configuration based on environment
+def get_current_server_config():
+    """Get current MTProto server configuration"""
+    if SERVER_ENVIRONMENT in MTPROTO_SERVERS:
+        return MTPROTO_SERVERS[SERVER_ENVIRONMENT]
+    return None
+
+CURRENT_SERVER = get_current_server_config()
 
 # Output settings
 OUTPUT_DIR = get_safe(CONFIG, 'output.directory', 'output')
