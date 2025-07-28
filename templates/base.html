@@ -81,11 +81,16 @@
                 <span>Dashboard</span>
             </a>
             
+            <a href="{{ url_for('search_page') }}" class="nav-item {% if request.endpoint == 'search_page' %}active{% endif %}">
+                <span class="material-icons">search</span>
+                <span>Advanced Search</span>
+            </a>
+
             <a href="{{ url_for('scan_page') }}" class="nav-item {% if request.endpoint == 'scan_page' %}active{% endif %}">
                 <span class="material-icons">scanner</span>
                 <span>Channel Scanner</span>
             </a>
-            
+
             <a href="{{ url_for('settings') }}" class="nav-item {% if request.endpoint == 'settings' %}active{% endif %}">
                 <span class="material-icons">settings</span>
                 <span>Settings</span>
@@ -207,8 +212,8 @@
     }
 
     function performSearch(query) {
-        // Redirect to dashboard with search parameter
-        window.location.href = `/?search=${encodeURIComponent(query)}`;
+        // Redirect to advanced search page with query
+        window.location.href = `/search?q=${encodeURIComponent(query)}`;
     }
 
     // Hide suggestions when clicking outside

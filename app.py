@@ -316,6 +316,12 @@ def scan_page():
     """Channel scanning page"""
     return render_template('scan.html')
 
+@app.route('/search')
+@login_required
+def search_page():
+    """Advanced search page"""
+    return render_template('search.html')
+
 @app.route('/api/save_settings', methods=['POST'])
 def save_settings():
     """Save API settings"""
@@ -723,11 +729,19 @@ def upload_file():
 
 @app.route('/api/search', methods=['GET'])
 def search_files():
-    """Search files by name, tags, or content"""
+    """Advanced search files by name, tags, content, and metadata"""
     try:
         query = request.args.get('q', '').strip()
         file_type = request.args.get('type', '')
         folder_id = request.args.get('folder_id')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        size_min = request.args.get('size_min', '')
+        size_max = request.args.get('size_max', '')
+        channel = request.args.get('channel', '')
+        tags = request.args.get('tags', '')
+        sort_by = request.args.get('sort_by', 'date')
+        sort_order = request.args.get('sort_order', 'desc')
         limit = min(int(request.args.get('limit', 50)), 100)
 
         if not query:
@@ -738,8 +752,17 @@ def search_files():
         # Build search query
         search_query = File.query.filter_by(user_id=user.id, is_deleted=False)
 
-        # Search by filename
-        search_query = search_query.filter(File.filename.contains(query))
+        # Full-text search across multiple fields
+        search_terms = query.lower().split()
+        for term in search_terms:
+            search_query = search_query.filter(
+                db.or_(
+                    File.filename.ilike(f'%{term}%'),
+                    File.description.ilike(f'%{term}%'),
+                    File.telegram_channel.ilike(f'%{term}%'),
+                    File.tags.ilike(f'%{term}%')
+                )
+            )
 
         # Filter by file type if specified
         if file_type:
@@ -752,24 +775,132 @@ def search_files():
             elif file_type == 'document':
                 search_query = search_query.filter(File.mime_type.in_([
                     'application/pdf', 'application/msword',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'text/plain', 'application/json'
+                ]))
+            elif file_type == 'archive':
+                search_query = search_query.filter(File.mime_type.in_([
+                    'application/zip', 'application/x-rar-compressed',
+                    'application/x-7z-compressed', 'application/gzip'
                 ]))
 
         # Filter by folder if specified
         if folder_id:
-            search_query = search_query.filter_by(folder_id=folder_id)
+            if folder_id == 'root':
+                search_query = search_query.filter(File.folder_id.is_(None))
+            else:
+                search_query = search_query.filter_by(folder_id=folder_id)
+
+        # Filter by date range
+        if date_from:
+            try:
+                from_date = datetime.strptime(date_from, '%Y-%m-%d')
+                search_query = search_query.filter(File.created_at >= from_date)
+            except ValueError:
+                pass
+
+        if date_to:
+            try:
+                to_date = datetime.strptime(date_to, '%Y-%m-%d')
+                # Add one day to include the entire day
+                to_date = to_date.replace(hour=23, minute=59, second=59)
+                search_query = search_query.filter(File.created_at <= to_date)
+            except ValueError:
+                pass
+
+        # Filter by file size
+        if size_min:
+            try:
+                min_size = int(size_min)
+                search_query = search_query.filter(File.file_size >= min_size)
+            except ValueError:
+                pass
+
+        if size_max:
+            try:
+                max_size = int(size_max)
+                search_query = search_query.filter(File.file_size <= max_size)
+            except ValueError:
+                pass
+
+        # Filter by channel
+        if channel:
+            search_query = search_query.filter(File.telegram_channel.ilike(f'%{channel}%'))
+
+        # Filter by tags
+        if tags:
+            tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
+            for tag in tag_list:
+                search_query = search_query.filter(File.tags.ilike(f'%{tag}%'))
+
+        # Apply sorting
+        if sort_by == 'name':
+            if sort_order == 'asc':
+                search_query = search_query.order_by(File.filename.asc())
+            else:
+                search_query = search_query.order_by(File.filename.desc())
+        elif sort_by == 'size':
+            if sort_order == 'asc':
+                search_query = search_query.order_by(File.file_size.asc())
+            else:
+                search_query = search_query.order_by(File.file_size.desc())
+        elif sort_by == 'type':
+            if sort_order == 'asc':
+                search_query = search_query.order_by(File.mime_type.asc())
+            else:
+                search_query = search_query.order_by(File.mime_type.desc())
+        else:  # Default to date
+            if sort_order == 'asc':
+                search_query = search_query.order_by(File.created_at.asc())
+            else:
+                search_query = search_query.order_by(File.created_at.desc())
 
         # Execute search
-        files = search_query.order_by(File.created_at.desc()).limit(limit).all()
+        files = search_query.limit(limit).all()
 
-        # Convert to dict format
-        results = [file_record.to_dict() for file_record in files]
+        # Convert to dict format with search relevance
+        results = []
+        for file_record in files:
+            file_dict = file_record.to_dict()
+
+            # Calculate search relevance score
+            relevance_score = 0
+            filename_lower = file_record.filename.lower()
+
+            for term in search_terms:
+                if term in filename_lower:
+                    relevance_score += 10
+                if file_record.description and term in file_record.description.lower():
+                    relevance_score += 5
+                if file_record.telegram_channel and term in file_record.telegram_channel.lower():
+                    relevance_score += 3
+                if file_record.tags and term in file_record.tags.lower():
+                    relevance_score += 7
+
+            file_dict['relevance_score'] = relevance_score
+            results.append(file_dict)
+
+        # Sort by relevance if no specific sort order
+        if sort_by == 'relevance':
+            results.sort(key=lambda x: x['relevance_score'], reverse=(sort_order == 'desc'))
 
         return jsonify({
             'success': True,
             'results': results,
             'total': len(results),
-            'query': query
+            'query': query,
+            'filters': {
+                'file_type': file_type,
+                'folder_id': folder_id,
+                'date_from': date_from,
+                'date_to': date_to,
+                'size_min': size_min,
+                'size_max': size_max,
+                'channel': channel,
+                'tags': tags,
+                'sort_by': sort_by,
+                'sort_order': sort_order
+            }
         })
 
     except Exception as e:
@@ -777,7 +908,7 @@ def search_files():
 
 @app.route('/api/search/suggestions', methods=['GET'])
 def search_suggestions():
-    """Get search suggestions based on partial query"""
+    """Get intelligent search suggestions based on partial query"""
     try:
         query = request.args.get('q', '').strip()
         limit = min(int(request.args.get('limit', 10)), 20)
@@ -786,29 +917,118 @@ def search_suggestions():
             return jsonify({'success': True, 'suggestions': []})
 
         user = get_or_create_user()
+        suggestions = []
 
         # Get filename suggestions
         files = File.query.filter(
             File.user_id == user.id,
             File.is_deleted == False,
-            File.filename.contains(query)
-        ).limit(limit).all()
+            File.filename.ilike(f'%{query}%')
+        ).limit(limit // 2).all()
 
-        suggestions = []
         for file_record in files:
             suggestions.append({
                 'text': file_record.filename,
                 'type': 'filename',
-                'file_id': file_record.id
+                'icon': 'insert_drive_file',
+                'file_id': file_record.id,
+                'category': 'Files'
             })
 
-        # Get tag suggestions
-        # This would require a more complex query to extract tags from JSON
-        # For now, we'll skip tag suggestions
+        # Get channel suggestions
+        channels = db.session.query(File.telegram_channel).filter(
+            File.user_id == user.id,
+            File.is_deleted == False,
+            File.telegram_channel.ilike(f'%{query}%'),
+            File.telegram_channel.isnot(None)
+        ).distinct().limit(3).all()
+
+        for channel in channels:
+            if channel[0]:  # Check if channel name is not None
+                suggestions.append({
+                    'text': channel[0],
+                    'type': 'channel',
+                    'icon': 'tv',
+                    'category': 'Channels'
+                })
+
+        # Get file type suggestions
+        file_types = {
+            'image': ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+            'video': ['mp4', 'avi', 'mov', 'webm'],
+            'audio': ['mp3', 'wav', 'flac', 'm4a'],
+            'document': ['pdf', 'doc', 'docx', 'txt'],
+            'archive': ['zip', 'rar', '7z', 'tar']
+        }
+
+        for type_name, extensions in file_types.items():
+            if query.lower() in type_name or any(query.lower() in ext for ext in extensions):
+                suggestions.append({
+                    'text': f'type:{type_name}',
+                    'type': 'filter',
+                    'icon': 'filter_list',
+                    'category': 'Filters',
+                    'description': f'Show only {type_name} files'
+                })
+
+        # Get tag suggestions (if tags are stored)
+        # This is a simplified approach - in a real implementation, you'd have a proper tag system
+        tag_files = File.query.filter(
+            File.user_id == user.id,
+            File.is_deleted == False,
+            File.tags.ilike(f'%{query}%'),
+            File.tags.isnot(None)
+        ).limit(3).all()
+
+        added_tags = set()
+        for file_record in tag_files:
+            if file_record.tags:
+                try:
+                    # Assuming tags are stored as comma-separated values
+                    tags = [tag.strip() for tag in file_record.tags.split(',')]
+                    for tag in tags:
+                        if query.lower() in tag.lower() and tag not in added_tags:
+                            suggestions.append({
+                                'text': f'tag:{tag}',
+                                'type': 'tag',
+                                'icon': 'label',
+                                'category': 'Tags',
+                                'description': f'Files tagged with "{tag}"'
+                            })
+                            added_tags.add(tag)
+                            if len(added_tags) >= 3:
+                                break
+                except:
+                    pass
+
+        # Add search operators suggestions
+        operators = [
+            {'text': f'size:>{query}mb', 'desc': 'Files larger than specified size'},
+            {'text': f'date:{query}', 'desc': 'Files from specific date'},
+            {'text': f'folder:{query}', 'desc': 'Files in specific folder'}
+        ]
+
+        if query.isdigit():
+            for op in operators:
+                suggestions.append({
+                    'text': op['text'],
+                    'type': 'operator',
+                    'icon': 'search',
+                    'category': 'Search Operators',
+                    'description': op['desc']
+                })
+
+        # Remove duplicates and limit results
+        seen = set()
+        unique_suggestions = []
+        for suggestion in suggestions:
+            if suggestion['text'] not in seen:
+                seen.add(suggestion['text'])
+                unique_suggestions.append(suggestion)
 
         return jsonify({
             'success': True,
-            'suggestions': suggestions[:limit]
+            'suggestions': unique_suggestions[:limit]
         })
 
     except Exception as e:
