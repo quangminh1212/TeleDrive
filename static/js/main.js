@@ -101,8 +101,56 @@ function initializeFileDragDrop() {
 function handleFileDrop(e) {
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
-        showToast('File upload functionality not implemented yet', 'info');
+        uploadFiles(files);
     }
+}
+
+// Upload files function
+function uploadFiles(files) {
+    if (!files || files.length === 0) {
+        showToast('No files selected', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+
+    // Add files to form data
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+    }
+
+    // Add current folder if available
+    if (window.currentFolder) {
+        formData.append('folder_id', window.currentFolder);
+    }
+
+    // Show loading state
+    showLoading('Uploading files...');
+
+    // Upload files
+    fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showToast(data.message, 'success');
+            // Refresh file list
+            if (typeof refreshFiles === 'function') {
+                refreshFiles();
+            } else {
+                location.reload();
+            }
+        } else {
+            showToast('Upload failed: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Upload error: ' + error.message, 'error');
+    });
 }
 
 // Handle search

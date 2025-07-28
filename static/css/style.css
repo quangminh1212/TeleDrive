@@ -1407,6 +1407,60 @@ body {
     overflow: hidden;
 }
 
+/* Upload Modal */
+.upload-area {
+    border: 2px dashed #dadce0;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover,
+.upload-area.drag-over {
+    border-color: #1a73e8;
+    background-color: #f8f9ff;
+}
+
+.upload-icon .material-icons {
+    font-size: 48px;
+    color: #5f6368;
+    margin-bottom: 16px;
+}
+
+.upload-text {
+    font-size: 16px;
+    color: #5f6368;
+    margin-bottom: 16px;
+}
+
+.upload-progress {
+    padding: 20px;
+    text-align: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #f1f3f4;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #1a73e8;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    font-size: 14px;
+    color: #5f6368;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }

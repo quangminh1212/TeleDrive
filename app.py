@@ -9,6 +9,7 @@ import json
 import asyncio
 import threading
 from datetime import datetime
+from pathlib import Path
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
 from flask_socketio import SocketIO, emit
 import eventlet
@@ -607,6 +608,79 @@ def bulk_file_operations():
             'message': f'Bulk {operation} completed',
             'results': results,
             'affected_files': len(files)
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    """Upload files to the system"""
+    try:
+        if 'files' not in request.files:
+            return jsonify({'success': False, 'error': 'No files provided'})
+
+        files = request.files.getlist('files')
+        folder_id = request.form.get('folder_id')
+
+        if not files or all(f.filename == '' for f in files):
+            return jsonify({'success': False, 'error': 'No files selected'})
+
+        user = get_or_create_user()
+        uploaded_files = []
+
+        # Validate folder if specified
+        if folder_id:
+            folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+            if not folder:
+                return jsonify({'success': False, 'error': 'Invalid folder'})
+
+        # Create uploads directory if it doesn't exist
+        upload_dir = Path('data/uploads')
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        for file in files:
+            if file.filename:
+                # Secure filename
+                filename = file.filename
+                # Generate unique filename to avoid conflicts
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                unique_filename = f"{timestamp}_{filename}"
+                file_path = upload_dir / unique_filename
+
+                # Save file
+                file.save(str(file_path))
+
+                # Get file info
+                file_size = file_path.stat().st_size
+                mime_type = file.content_type or 'application/octet-stream'
+
+                # Create database record
+                file_record = File(
+                    filename=filename,
+                    original_filename=filename,
+                    file_path=str(file_path),
+                    file_size=file_size,
+                    mime_type=mime_type,
+                    folder_id=folder_id,
+                    user_id=user.id,
+                    description=f'Uploaded file: {filename}'
+                )
+
+                db.session.add(file_record)
+                uploaded_files.append({
+                    'filename': filename,
+                    'size': file_size,
+                    'type': mime_type
+                })
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Successfully uploaded {len(uploaded_files)} files',
+            'files': uploaded_files
         })
 
     except Exception as e:

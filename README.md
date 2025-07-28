@@ -26,11 +26,16 @@ Modern web interface for scanning and managing files from Telegram channels with
 - **Context menus** for file operations
 
 ### Core Functionality
-- **Telegram Channel Scanning**: Scan public and private channels
-- **File Management**: Upload, download, preview, and organize files
-- **Search & Filter**: Find files quickly with advanced search
-- **Settings Management**: Configure API credentials and preferences
-- **Progress Tracking**: Monitor scanning operations in real-time
+- **Telegram Channel Scanning**: Scan public and private channels with real-time progress
+- **Advanced File Management**: Upload, download, preview, rename, move, and organize files
+- **Folder Organization**: Create hierarchical folder structures with drag-and-drop support
+- **File Preview**: Support for 10+ file types including images, videos, audio, text, PDF, JSON, CSV, Excel
+- **Advanced Search**: Real-time search with auto-suggestions and filtering by type, folder, and tags
+- **Bulk Operations**: Select multiple files for batch operations (delete, move, tag)
+- **Database Integration**: SQLite database with full data persistence and migration support
+- **Mobile Responsive**: Optimized interface for all device sizes with touch-friendly controls
+- **Real-time Updates**: WebSocket integration for live progress and connection status
+- **Settings Management**: Configure API credentials and application preferences
 
 ### Access Points
 - **Main Dashboard**: http://localhost:3000
