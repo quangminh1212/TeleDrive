@@ -273,21 +273,21 @@ class ConfigManager:
             logger.info("Đã đồng bộ cấu hình từ .env vào config.json")
 
 # Initialize global config manager
-config_manager = ConfigManager()
-config_manager.update_from_env()
+cfg_mgr = ConfigManager()
+cfg_mgr.update_from_env()
 
 # Helper function for backward compatibility
 def load_config():
     """Load configuration (backward compatibility)"""
-    return config_manager._config
+    return cfg_mgr._config
 
 def save_config(config):
     """Save configuration (backward compatibility)"""
-    config_manager._config = config
-    return config_manager._save_config()
+    cfg_mgr._config = config
+    return cfg_mgr._save_config()
 
 # Load configuration
-CONFIG = config_manager._config
+CONFIG = cfg_mgr._config
 
 # ================================================================
 # CONFIGURATION VARIABLES (Backward Compatibility)

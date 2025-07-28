@@ -1626,13 +1626,13 @@ def view_shared_file(token):
         can_access, message = share_link.can_access()
         if not can_access:
             if "password" in message.lower():
-                return render_template('share/password_required.html', token=token, error=None)
+                return render_template('share/password.html', token=token, error=None)
             else:
-                return render_template('share/access_denied.html', message=message), 403
+                return render_template('share/denied.html', message=message), 403
 
         # Check view limit
         if share_link.is_view_limit_reached():
-            return render_template('share/access_denied.html', message="View limit reached"), 403
+            return render_template('share/denied.html', message="View limit reached"), 403
 
         # Increment view count
         share_link.increment_view_count()
@@ -1659,7 +1659,7 @@ def verify_share_password(token):
             session[f'share_verified_{token}'] = True
             return redirect(url_for('view_shared_file', token=token))
         else:
-            return render_template('share/password_required.html', token=token, error="Invalid password")
+            return render_template('share/password.html', token=token, error="Invalid password")
 
     except Exception as e:
         return render_template('share/error.html', error=str(e)), 500
