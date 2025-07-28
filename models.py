@@ -28,6 +28,13 @@ class User(UserMixin, db.Model):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Telegram-specific fields
+    telegram_id = Column(String(50), unique=True, nullable=True, index=True)
+    phone_number = Column(String(20), nullable=True)
+    first_name = Column(String(100), nullable=True)
+    last_name = Column(String(100), nullable=True)
+    auth_method = Column(String(20), default='password')  # password, telegram
     
     # Relationships
     files = relationship('File', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
@@ -78,6 +85,11 @@ class User(UserMixin, db.Model):
             'email': self.email,
             'role': self.role,
             'is_active': self.is_active,
+            'telegram_id': self.telegram_id,
+            'phone_number': self.phone_number,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'auth_method': self.auth_method,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

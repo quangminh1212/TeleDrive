@@ -5,9 +5,10 @@ Forms for user registration, login, and other authentication-related operations
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField
+from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, Regexp
 from models import User
+from telegram_auth import get_country_codes
 
 class LoginForm(FlaskForm):
     """User login form"""
@@ -94,3 +95,26 @@ class ResetPasswordForm(FlaskForm):
         EqualTo('password', message='Passwords must match')
     ])
     submit = SubmitField('Reset Password')
+
+class TelegramLoginForm(FlaskForm):
+    """Telegram login form - phone number input"""
+    country_code = SelectField('Country Code',
+                              choices=get_country_codes(),
+                              default='+84',
+                              validators=[DataRequired()])
+    phone_number = StringField('Phone Number', validators=[
+        DataRequired(message='Phone number is required'),
+        Regexp(r'^\d{8,15}$', message='Please enter a valid phone number (8-15 digits)')
+    ])
+    submit = SubmitField('Send Code')
+
+class TelegramVerifyForm(FlaskForm):
+    """Telegram verification form - code input"""
+    verification_code = StringField('Verification Code', validators=[
+        DataRequired(message='Verification code is required'),
+        Length(min=5, max=6, message='Verification code must be 5-6 digits')
+    ])
+    password = PasswordField('Two-Factor Password', validators=[
+        # Optional field for 2FA
+    ])
+    submit = SubmitField('Verify')

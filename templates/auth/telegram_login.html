@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in with Telegram - TeleDrive</title>
+    
+    <!-- Telegram-like styling -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        .logo .material-icons {
+            font-size: 48px;
+            color: #0088cc;
+            margin-right: 12px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .auth-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background: #fff;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #0088cc;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+        }
+
+        .country-select {
+            flex: 0 0 140px;
+        }
+
+        .phone-input {
+            flex: 1;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px 24px;
+            background: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 24px;
+        }
+
+        .btn-primary:hover {
+            background: #006699;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .auth-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .auth-link {
+            color: #0088cc;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .auth-link:hover {
+            color: #006699;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .alert-success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #bbdefb;
+        }
+
+        .field-error {
+            color: #c62828;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .telegram-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .telegram-info h4 {
+            color: #1565c0;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .telegram-info p {
+            color: #1976d2;
+            font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 32px 24px;
+                margin: 16px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .country-select {
+                flex: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">
+            <span class="material-icons">telegram</span>
+            <span class="logo-text">TeleDrive</span>
+        </div>
+        
+        <h1 class="auth-title">Sign in with Telegram</h1>
+        <p class="auth-subtitle">Enter your phone number to continue</p>
+        
+        <div class="telegram-info">
+            <h4>How it works:</h4>
+            <p>• Enter your phone number registered with Telegram</p>
+            <p>• We'll send you a verification code via Telegram</p>
+            <p>• Enter the code to complete sign in</p>
+        </div>
+        
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'error' if category == 'error' else category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('telegram_login') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                <label for="phone_number">Phone Number</label>
+                <div class="form-row">
+                    <div class="country-select">
+                        {{ form.country_code(class="form-control") }}
+                    </div>
+                    <div class="phone-input">
+                        {{ form.phone_number(class="form-control", placeholder="987654321") }}
+                    </div>
+                </div>
+                {% if form.phone_number.errors %}
+                    {% for error in form.phone_number.errors %}
+                        <div class="field-error">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            {{ form.submit(class="btn-primary") }}
+        </form>
+        
+        <div class="auth-links">
+            <a href="{{ url_for('login') }}" class="auth-link">← Back to regular login</a>
+            <a href="{{ url_for('register') }}" class="auth-link">Create account</a>
+        </div>
+    </div>
+</body>
+</html>
