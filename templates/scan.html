@@ -6,6 +6,7 @@
 <div class="page-header">
     <h1 class="page-title">Channel Scanner</h1>
     <div class="page-actions">
+        <div class="connection-status disconnected">Connecting...</div>
         <button class="btn btn-secondary" id="stop-scan-btn" onclick="stopScan()" style="display: none;">
             <span class="material-icons">stop</span>
             Stop Scan
@@ -164,18 +165,44 @@ document.addEventListener('DOMContentLoaded', function() {
 // Initialize Socket.IO connection
 function initializeSocket() {
     socket = io();
-    
+
     socket.on('connect', function() {
         console.log('Connected to server');
+        updateConnectionStatus(true);
+        addLogMessage('Connected to server', 'success');
     });
-    
+
     socket.on('scan_progress', function(data) {
         updateProgress(data);
     });
-    
+
+    socket.on('scan_complete', function(data) {
+        handleScanComplete(data);
+    });
+
+    socket.on('scan_log', function(data) {
+        addLogMessage(data.message, data.type || 'info');
+    });
+
     socket.on('disconnect', function() {
         console.log('Disconnected from server');
+        updateConnectionStatus(false);
+        addLogMessage('Disconnected from server', 'warning');
     });
+
+    socket.on('connect_error', function(error) {
+        console.error('Connection error:', error);
+        updateConnectionStatus(false);
+        addLogMessage('Connection error: ' + error.message, 'error');
+    });
+}
+
+function updateConnectionStatus(connected) {
+    const statusElement = document.querySelector('.connection-status');
+    if (statusElement) {
+        statusElement.className = `connection-status ${connected ? 'connected' : 'disconnected'}`;
+        statusElement.textContent = connected ? 'Connected' : 'Disconnected';
+    }
 }
 
 // Start scanning
@@ -281,17 +308,41 @@ function updateProgress(data) {
 function handleScanComplete(data) {
     clearInterval(scanInterval);
     resetScanUI();
-    
+
     // Show results
     document.getElementById('results-section').style.display = 'block';
     document.getElementById('total-files-found').textContent = data.files_found || 0;
-    document.getElementById('total-messages-scanned').textContent = data.current || 0;
-    
+    document.getElementById('total-messages-scanned').textContent = data.messages_scanned || data.current || 0;
+
     const duration = Math.round((Date.now() - scanStartTime) / 1000);
     document.getElementById('scan-duration').textContent = duration + 's';
-    
-    showToast('Scan completed successfully!', 'success');
-    addLogEntry(`Scan completed! Found ${data.files_found || 0} files`, 'success');
+
+    // Calculate and display scan statistics
+    const messagesScanned = data.messages_scanned || data.current || 0;
+    const filesFound = data.files_found || 0;
+    const scanRate = duration > 0 ? Math.round(messagesScanned / duration) : 0;
+
+    // Update additional statistics if elements exist
+    const scanRateElement = document.getElementById('scan-rate');
+    if (scanRateElement) {
+        scanRateElement.textContent = scanRate + ' msg/s';
+    }
+
+    const successRateElement = document.getElementById('success-rate');
+    if (successRateElement && messagesScanned > 0) {
+        const successRate = ((filesFound / messagesScanned) * 100).toFixed(2);
+        successRateElement.textContent = successRate + '%';
+    }
+
+    // Show detailed completion message
+    const completionMessage = `Scan completed successfully! Found ${filesFound} files in ${messagesScanned} messages (${scanRate} msg/s)`;
+    showToast(completionMessage, 'success');
+    addLogEntry(completionMessage, 'success');
+
+    // If scan session ID is provided, add link to view files
+    if (data.scan_session_id) {
+        addLogEntry(`View scan results: <a href="/?folder=${data.folder_id}" target="_blank">Open folder</a>`, 'info');
+    }
 }
 
 // Handle scan error

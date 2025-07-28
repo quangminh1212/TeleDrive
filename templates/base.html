@@ -17,6 +17,9 @@
     <!-- Header -->
     <header class="header">
         <div class="header-left">
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                <span class="material-icons">menu</span>
+            </button>
             <div class="logo">
                 <span class="material-icons">cloud_download</span>
                 <span class="logo-text">TeleDrive</span>
@@ -185,6 +188,24 @@
         const searchContainer = document.querySelector('.search-container');
         if (!searchContainer.contains(event.target)) {
             hideSearchSuggestions();
+        }
+    });
+
+    // Mobile menu functionality
+    function toggleMobileMenu() {
+        const sidebar = document.querySelector('.sidebar');
+        sidebar.classList.toggle('mobile-open');
+    }
+
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', function(event) {
+        const sidebar = document.querySelector('.sidebar');
+        const menuBtn = document.querySelector('.mobile-menu-btn');
+
+        if (sidebar.classList.contains('mobile-open') &&
+            !sidebar.contains(event.target) &&
+            !menuBtn.contains(event.target)) {
+            sidebar.classList.remove('mobile-open');
         }
     });
     </script>
