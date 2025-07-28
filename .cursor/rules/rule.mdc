@@ -40,3 +40,7 @@ alwaysApply: true
   - Toggle between grid and list views
   - File preview capabilities
   - AJAX interactions while maintaining Flask backend compatibility
+
+- ALWAYS use TER TOOL
+- Avoid using default terminal
+- Please edit the file in small chunks
