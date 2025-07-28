@@ -57,3 +57,17 @@ logs/*.log
 
 # Ignore output directory
 output/
+
+# Additional TeleDrive specific ignores
+data/auth_session_*.session
+data/temp/
+data/backups/
+data/uploads/
+instance/
+temp/
+backups/
+uploads/
+
+# Test files
+test_*.py
+*_test.py
