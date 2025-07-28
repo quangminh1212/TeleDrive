@@ -5,7 +5,6 @@ Flask web application for Telegram file scanning with Google Drive-like UI
 """
 
 import os
-import sys
 import json
 import asyncio
 import threading
@@ -19,12 +18,6 @@ from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
 import eventlet
-
-# Print Python path for debugging
-print("\n=== Python Path Configuration ===")
-print(f"PYTHONPATH: {os.environ.get('PYTHONPATH', 'Not set')}")
-print(f"sys.path: {sys.path}")
-print("===============================\n")
 
 # Import existing modules
 from engine import TelegramFileScanner
