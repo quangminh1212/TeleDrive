@@ -259,6 +259,190 @@ body {
     background: #1557b0;
 }
 
+/* Multi-select and Bulk Operations */
+.bulk-toolbar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background: #e8f0fe;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+
+.bulk-info {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a73e8;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.file-checkbox {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+}
+
+.file-select-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.file-card.selected {
+    background: #e8f0fe;
+    border-color: #1a73e8;
+}
+
+.file-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.file-card:hover {
+    background: #f8f9fa;
+    border-color: #dadce0;
+}
+
+.btn.active {
+    background: #1a73e8;
+    color: white;
+}
+
+.btn.active:hover {
+    background: #1557b0;
+}
+
+/* Bulk operation modals */
+.form-help {
+    font-size: 12px;
+    color: #5f6368;
+    margin-top: 4px;
+}
+
+/* Breadcrumb Navigation */
+.breadcrumb-container {
+    margin-bottom: 16px;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+    color: #5f6368;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.breadcrumb-item:hover {
+    background: #f1f3f4;
+    color: #202124;
+}
+
+.breadcrumb-item .material-icons {
+    font-size: 18px;
+    margin-right: 4px;
+}
+
+.breadcrumb-separator {
+    margin: 0 8px;
+    color: #dadce0;
+}
+
+.breadcrumb-separator::before {
+    content: '>';
+}
+
+/* Enhanced Context Menus */
+.context-menu {
+    min-width: 180px;
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #202124;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.context-menu-item:hover {
+    background: #f8f9fa;
+}
+
+.context-menu-item.danger {
+    color: #d93025;
+}
+
+.context-menu-item.danger:hover {
+    background: #fce8e6;
+}
+
+.context-menu-item .material-icons {
+    font-size: 18px;
+    color: #5f6368;
+}
+
+.context-menu-item.danger .material-icons {
+    color: #d93025;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background: #e8eaed;
+    margin: 8px 0;
+}
+
+/* Drag and Drop Enhancements */
+.file-card.drag-over {
+    background: #e8f0fe;
+    border-color: #1a73e8;
+    transform: scale(1.02);
+}
+
+.folder-card.drag-over {
+    background: #e6f4ea;
+    border-color: #137333;
+}
+
+.drag-placeholder {
+    border: 2px dashed #dadce0;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    color: #5f6368;
+    margin: 8px 0;
+}
+
+.drag-placeholder.active {
+    border-color: #1a73e8;
+    background: #e8f0fe;
+    color: #1a73e8;
+}
+
 .header-btn {
     width: 40px;
     height: 40px;

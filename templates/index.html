@@ -76,9 +76,24 @@
 
 <!-- Files & Folders -->
 <div class="section">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb-container">
+        <nav class="breadcrumb">
+            <a href="#" class="breadcrumb-item" onclick="navigateToFolder(null)">
+                <span class="material-icons">home</span>
+                Home
+            </a>
+            <div id="breadcrumb-path"></div>
+        </nav>
+    </div>
+
     <div class="section-header">
         <h2 class="section-title">Files & Folders</h2>
         <div class="section-actions">
+            <button class="btn btn-small" onclick="toggleSelectMode()" id="select-mode-btn">
+                <span class="material-icons">check_box_outline_blank</span>
+                <span id="select-mode-text">Select</span>
+            </button>
             <button class="btn btn-small" onclick="toggleViewMode()">
                 <span class="material-icons" id="view-mode-icon">view_list</span>
                 <span id="view-mode-text">List View</span>
@@ -89,12 +104,45 @@
             </button>
         </div>
     </div>
+
+    <!-- Bulk Operations Toolbar -->
+    <div class="bulk-toolbar" id="bulk-toolbar" style="display: none;">
+        <div class="bulk-info">
+            <span id="selected-count">0</span> files selected
+        </div>
+        <div class="bulk-actions">
+            <button class="btn btn-small" onclick="selectAllFiles()">
+                <span class="material-icons">select_all</span>
+                Select All
+            </button>
+            <button class="btn btn-small" onclick="deselectAllFiles()">
+                <span class="material-icons">deselect</span>
+                Deselect All
+            </button>
+            <button class="btn btn-small" onclick="showBulkMoveModal()">
+                <span class="material-icons">drive_file_move</span>
+                Move
+            </button>
+            <button class="btn btn-small" onclick="showBulkTagModal()">
+                <span class="material-icons">label</span>
+                Tag
+            </button>
+            <button class="btn btn-danger" onclick="bulkDeleteFiles()">
+                <span class="material-icons">delete</span>
+                Delete
+            </button>
+        </div>
+    </div>
     
     <div class="files-container">
         {% if files %}
         <div class="files-grid" id="files-grid">
             {% for file in files %}
-            <div class="file-card" data-filename="{{ file.name }}">
+            <div class="file-card" data-filename="{{ file.name }}" data-file-id="{{ file.id if file.id else '' }}" onclick="handleFileCardClick(event, this)">
+                <div class="file-checkbox" style="display: none;">
+                    <input type="checkbox" class="file-select-checkbox" onchange="handleFileSelection(this)">
+                </div>
+
                 <div class="file-icon">
                     {% if file.name.endswith('.json') %}
                     <span class="material-icons">code</span>
@@ -106,7 +154,7 @@
                     <span class="material-icons">insert_drive_file</span>
                     {% endif %}
                 </div>
-                
+
                 <div class="file-info">
                     <div class="file-name">{{ file.name }}</div>
                     <div class="file-details">
@@ -114,7 +162,7 @@
                         <span class="file-date">{{ file.modified }}</span>
                     </div>
                 </div>
-                
+
                 <div class="file-actions">
                     <button class="file-action-btn" onclick="downloadFile('{{ file.name }}')">
                         <span class="material-icons">download</span>
@@ -153,7 +201,41 @@
         Preview
     </div>
     <div class="context-menu-divider"></div>
+    <div class="context-menu-item" onclick="showRenameModal(currentFile)">
+        <span class="material-icons">edit</span>
+        Rename
+    </div>
+    <div class="context-menu-item" onclick="showMoveModal(currentFile)">
+        <span class="material-icons">drive_file_move</span>
+        Move to Folder
+    </div>
+    <div class="context-menu-item" onclick="showTagModal(currentFile)">
+        <span class="material-icons">label</span>
+        Add Tags
+    </div>
+    <div class="context-menu-item" onclick="copyFileLink(currentFile)">
+        <span class="material-icons">link</span>
+        Copy Link
+    </div>
+    <div class="context-menu-divider"></div>
     <div class="context-menu-item danger" onclick="deleteFile(currentFile)">
+        <span class="material-icons">delete</span>
+        Delete
+    </div>
+</div>
+
+<!-- Folder Context Menu -->
+<div id="folder-menu" class="context-menu" style="display: none;">
+    <div class="context-menu-item" onclick="openFolder(currentFolder)">
+        <span class="material-icons">folder_open</span>
+        Open
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" onclick="showRenameFolderModal(currentFolder)">
+        <span class="material-icons">edit</span>
+        Rename
+    </div>
+    <div class="context-menu-item danger" onclick="deleteFolder(currentFolder)">
         <span class="material-icons">delete</span>
         Delete
     </div>
@@ -218,16 +300,125 @@
         </div>
     </div>
 </div>
+
+<!-- Bulk Move Modal -->
+<div class="modal" id="bulk-move-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Move Selected Files</h3>
+            <button class="modal-close" onclick="hideBulkMoveModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="target-folder">Select Destination Folder:</label>
+                <select id="target-folder" class="form-input">
+                    <option value="">Root Folder</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideBulkMoveModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="executeBulkMove()">Move Files</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Tag Modal -->
+<div class="modal" id="bulk-tag-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Tag Selected Files</h3>
+            <button class="modal-close" onclick="hideBulkTagModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="bulk-tags">Tags (comma-separated):</label>
+                <input type="text" id="bulk-tags" class="form-input" placeholder="tag1, tag2, tag3">
+                <div class="form-help">Enter tags separated by commas</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideBulkTagModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="executeBulkTag()">Apply Tags</button>
+        </div>
+    </div>
+</div>
+
+<!-- Rename File Modal -->
+<div class="modal" id="rename-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Rename File</h3>
+            <button class="modal-close" onclick="hideRenameModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="new-filename">New Name:</label>
+                <input type="text" id="new-filename" class="form-input">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideRenameModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="executeRename()">Rename</button>
+        </div>
+    </div>
+</div>
+
+<!-- Move File Modal -->
+<div class="modal" id="move-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Move File</h3>
+            <button class="modal-close" onclick="hideMoveModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="move-target-folder">Select Destination Folder:</label>
+                <select id="move-target-folder" class="form-input">
+                    <option value="">Root Folder</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideMoveModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="executeMove()">Move</button>
+        </div>
+    </div>
+</div>
+
+<!-- Tag File Modal -->
+<div class="modal" id="tag-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add Tags</h3>
+            <button class="modal-close" onclick="hideTagModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="file-tags">Tags (comma-separated):</label>
+                <input type="text" id="file-tags" class="form-input" placeholder="tag1, tag2, tag3">
+                <div class="form-help">Enter tags separated by commas</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideTagModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="executeTag()">Apply Tags</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 let currentFile = null;
+let selectMode = false;
+let selectedFiles = new Set();
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
     loadStats();
     setupFileGrid();
+    loadFolders();
 });
 
 // Load dashboard statistics
@@ -567,6 +758,465 @@ function formatFileSize(bytes) {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+// Multi-select and bulk operations
+function toggleSelectMode() {
+    selectMode = !selectMode;
+    const btn = document.getElementById('select-mode-btn');
+    const icon = btn.querySelector('.material-icons');
+    const text = document.getElementById('select-mode-text');
+    const checkboxes = document.querySelectorAll('.file-checkbox');
+    const toolbar = document.getElementById('bulk-toolbar');
+
+    if (selectMode) {
+        icon.textContent = 'check_box';
+        text.textContent = 'Cancel';
+        btn.classList.add('active');
+        checkboxes.forEach(cb => cb.style.display = 'flex');
+        toolbar.style.display = 'flex';
+    } else {
+        icon.textContent = 'check_box_outline_blank';
+        text.textContent = 'Select';
+        btn.classList.remove('active');
+        checkboxes.forEach(cb => cb.style.display = 'none');
+        toolbar.style.display = 'none';
+        deselectAllFiles();
+    }
+}
+
+function handleFileCardClick(event, card) {
+    if (selectMode) {
+        event.preventDefault();
+        const checkbox = card.querySelector('.file-select-checkbox');
+        checkbox.checked = !checkbox.checked;
+        handleFileSelection(checkbox);
+    } else if (!event.target.closest('.file-actions')) {
+        const filename = card.dataset.filename;
+        previewFile(filename);
+    }
+}
+
+function handleFileSelection(checkbox) {
+    const card = checkbox.closest('.file-card');
+    const fileId = card.dataset.fileId;
+
+    if (checkbox.checked) {
+        selectedFiles.add(fileId);
+        card.classList.add('selected');
+    } else {
+        selectedFiles.delete(fileId);
+        card.classList.remove('selected');
+    }
+
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const count = selectedFiles.size;
+    document.getElementById('selected-count').textContent = count;
+
+    // Update bulk action buttons state
+    const bulkActions = document.querySelectorAll('.bulk-actions .btn');
+    bulkActions.forEach(btn => {
+        btn.disabled = count === 0;
+    });
+}
+
+function selectAllFiles() {
+    const checkboxes = document.querySelectorAll('.file-select-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        handleFileSelection(checkbox);
+    });
+}
+
+function deselectAllFiles() {
+    const checkboxes = document.querySelectorAll('.file-select-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+        handleFileSelection(checkbox);
+    });
+    selectedFiles.clear();
+    updateSelectedCount();
+}
+
+function showBulkMoveModal() {
+    if (selectedFiles.size === 0) {
+        showToast('Please select files first', 'warning');
+        return;
+    }
+    document.getElementById('bulk-move-modal').style.display = 'flex';
+}
+
+function hideBulkMoveModal() {
+    document.getElementById('bulk-move-modal').style.display = 'none';
+}
+
+function showBulkTagModal() {
+    if (selectedFiles.size === 0) {
+        showToast('Please select files first', 'warning');
+        return;
+    }
+    document.getElementById('bulk-tag-modal').style.display = 'flex';
+}
+
+function hideBulkTagModal() {
+    document.getElementById('bulk-tag-modal').style.display = 'none';
+}
+
+function executeBulkMove() {
+    const folderId = document.getElementById('target-folder').value || null;
+    const fileIds = Array.from(selectedFiles);
+
+    fetch('/api/files/bulk', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            operation: 'move',
+            file_ids: fileIds,
+            folder_id: folderId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Moved ${data.affected_files} files successfully`, 'success');
+            hideBulkMoveModal();
+            refreshFiles();
+            deselectAllFiles();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error moving files: ' + error.message, 'error');
+    });
+}
+
+function executeBulkTag() {
+    const tagsInput = document.getElementById('bulk-tags').value.trim();
+    if (!tagsInput) {
+        showToast('Please enter tags', 'warning');
+        return;
+    }
+
+    const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag);
+    const fileIds = Array.from(selectedFiles);
+
+    fetch('/api/files/bulk', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            operation: 'tag',
+            file_ids: fileIds,
+            tags: tags
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Tagged ${data.affected_files} files successfully`, 'success');
+            hideBulkTagModal();
+            refreshFiles();
+            deselectAllFiles();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error tagging files: ' + error.message, 'error');
+    });
+}
+
+function bulkDeleteFiles() {
+    if (selectedFiles.size === 0) {
+        showToast('Please select files first', 'warning');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedFiles.size} selected files?`)) {
+        return;
+    }
+
+    const fileIds = Array.from(selectedFiles);
+
+    fetch('/api/files/bulk', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            operation: 'delete',
+            file_ids: fileIds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Deleted ${data.affected_files} files successfully`, 'success');
+            refreshFiles();
+            deselectAllFiles();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error deleting files: ' + error.message, 'error');
+    });
+}
+
+function loadFolders() {
+    fetch('/api/folders')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('target-folder');
+                select.innerHTML = '<option value="">Root Folder</option>';
+
+                function addFolderOptions(folders, prefix = '') {
+                    folders.forEach(folder => {
+                        const option = document.createElement('option');
+                        option.value = folder.id;
+                        option.textContent = prefix + folder.name;
+                        select.appendChild(option);
+
+                        if (folder.children && folder.children.length > 0) {
+                            addFolderOptions(folder.children, prefix + '  ');
+                        }
+                    });
+                }
+
+                addFolderOptions(data.folders);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading folders:', error);
+        });
+}
+
+// Individual file operations
+let currentFileId = null;
+let currentFolder = null;
+
+function showRenameModal(filename) {
+    currentFile = filename;
+    document.getElementById('new-filename').value = filename;
+    document.getElementById('rename-modal').style.display = 'flex';
+    hideFileMenu();
+}
+
+function hideRenameModal() {
+    document.getElementById('rename-modal').style.display = 'none';
+}
+
+function executeRename() {
+    const newName = document.getElementById('new-filename').value.trim();
+    if (!newName) {
+        showToast('Please enter a new name', 'warning');
+        return;
+    }
+
+    // Find file ID from filename (this is a simplified approach)
+    const fileCard = document.querySelector(`[data-filename="${currentFile}"]`);
+    const fileId = fileCard ? fileCard.dataset.fileId : null;
+
+    if (!fileId) {
+        showToast('File ID not found', 'error');
+        return;
+    }
+
+    fetch(`/api/files/${fileId}/rename`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: newName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            hideRenameModal();
+            refreshFiles();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error renaming file: ' + error.message, 'error');
+    });
+}
+
+function showMoveModal(filename) {
+    currentFile = filename;
+    loadFoldersForMove();
+    document.getElementById('move-modal').style.display = 'flex';
+    hideFileMenu();
+}
+
+function hideMoveModal() {
+    document.getElementById('move-modal').style.display = 'none';
+}
+
+function executeMove() {
+    const folderId = document.getElementById('move-target-folder').value || null;
+    const fileCard = document.querySelector(`[data-filename="${currentFile}"]`);
+    const fileId = fileCard ? fileCard.dataset.fileId : null;
+
+    if (!fileId) {
+        showToast('File ID not found', 'error');
+        return;
+    }
+
+    fetch(`/api/files/${fileId}/move`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ folder_id: folderId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            hideMoveModal();
+            refreshFiles();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error moving file: ' + error.message, 'error');
+    });
+}
+
+function showTagModal(filename) {
+    currentFile = filename;
+    document.getElementById('tag-modal').style.display = 'flex';
+    hideFileMenu();
+}
+
+function hideTagModal() {
+    document.getElementById('tag-modal').style.display = 'none';
+}
+
+function executeTag() {
+    const tagsInput = document.getElementById('file-tags').value.trim();
+    if (!tagsInput) {
+        showToast('Please enter tags', 'warning');
+        return;
+    }
+
+    const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag);
+    const fileCard = document.querySelector(`[data-filename="${currentFile}"]`);
+    const fileId = fileCard ? fileCard.dataset.fileId : null;
+
+    if (!fileId) {
+        showToast('File ID not found', 'error');
+        return;
+    }
+
+    fetch(`/api/files/${fileId}/tags`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tags: tags })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            hideTagModal();
+            refreshFiles();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error tagging file: ' + error.message, 'error');
+    });
+}
+
+function copyFileLink(filename) {
+    const link = window.location.origin + '/download/' + encodeURIComponent(filename);
+    navigator.clipboard.writeText(link).then(() => {
+        showToast('File link copied to clipboard', 'success');
+    }).catch(() => {
+        showToast('Failed to copy link', 'error');
+    });
+    hideFileMenu();
+}
+
+function loadFoldersForMove() {
+    fetch('/api/folders')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('move-target-folder');
+                select.innerHTML = '<option value="">Root Folder</option>';
+
+                function addFolderOptions(folders, prefix = '') {
+                    folders.forEach(folder => {
+                        const option = document.createElement('option');
+                        option.value = folder.id;
+                        option.textContent = prefix + folder.name;
+                        select.appendChild(option);
+
+                        if (folder.children && folder.children.length > 0) {
+                            addFolderOptions(folder.children, prefix + '  ');
+                        }
+                    });
+                }
+
+                addFolderOptions(data.folders);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading folders:', error);
+        });
+}
+
+// Breadcrumb navigation
+function navigateToFolder(folderId) {
+    // This would filter files by folder and update breadcrumbs
+    // For now, just refresh to show all files
+    refreshFiles();
+}
+
+// Folder operations
+function openFolder(folderId) {
+    navigateToFolder(folderId);
+}
+
+function showRenameFolderModal(folderId) {
+    // Implementation for folder rename
+    showToast('Folder rename functionality coming soon', 'info');
+}
+
+function deleteFolder(folderId) {
+    if (confirm('Are you sure you want to delete this folder?')) {
+        fetch(`/api/folders/${folderId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                refreshFiles();
+            } else {
+                showToast(data.error, 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error deleting folder: ' + error.message, 'error');
+        });
+    }
 }
 </script>
 {% endblock %}
