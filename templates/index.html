@@ -6,6 +6,10 @@
 <div class="page-header">
     <h1 class="page-title">Dashboard</h1>
     <div class="page-actions">
+        <button class="btn btn-secondary" onclick="showCreateFolderModal()">
+            <span class="material-icons">create_new_folder</span>
+            New Folder
+        </button>
         <button class="btn btn-primary" onclick="location.href='{{ url_for('scan_page') }}'">
             <span class="material-icons">add</span>
             New Scan
@@ -56,11 +60,25 @@
     </div>
 </div>
 
-<!-- Recent Files -->
+<!-- Breadcrumb Navigation -->
+<div class="breadcrumb-container">
+    <nav class="breadcrumb" id="breadcrumb">
+        <a href="#" class="breadcrumb-item" onclick="navigateToFolder(null)">
+            <span class="material-icons">home</span>
+            Home
+        </a>
+    </nav>
+</div>
+
+<!-- Files & Folders -->
 <div class="section">
     <div class="section-header">
-        <h2 class="section-title">Recent Files</h2>
+        <h2 class="section-title">Files & Folders</h2>
         <div class="section-actions">
+            <button class="btn btn-small" onclick="toggleViewMode()">
+                <span class="material-icons" id="view-mode-icon">view_list</span>
+                <span id="view-mode-text">List View</span>
+            </button>
             <button class="btn btn-secondary" onclick="refreshFiles()">
                 <span class="material-icons">refresh</span>
                 Refresh
@@ -136,6 +154,35 @@
         Delete
     </div>
 </div>
+
+<!-- Create Folder Modal -->
+<div id="create-folder-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Create New Folder</h3>
+            <button class="modal-close" onclick="hideCreateFolderModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="create-folder-form" onsubmit="createFolder(event)">
+                <div class="form-group">
+                    <label class="form-label" for="folder-name">Folder Name</label>
+                    <input type="text" id="folder-name" class="form-input" placeholder="Enter folder name" required maxlength="255">
+                    <div class="form-help">Folder name cannot contain / or \ characters</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="parent-folder">Parent Folder</label>
+                    <select id="parent-folder" class="form-input">
+                        <option value="">Root</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideCreateFolderModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="document.getElementById('create-folder-form').requestSubmit()">Create Folder</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -170,6 +217,85 @@ function loadStats() {
 // Refresh files list
 function refreshFiles() {
     location.reload();
+}
+
+// Folder management functions
+function showCreateFolderModal() {
+    loadFolderOptions();
+    document.getElementById('create-folder-modal').style.display = 'flex';
+    document.getElementById('folder-name').focus();
+}
+
+function hideCreateFolderModal() {
+    document.getElementById('create-folder-modal').style.display = 'none';
+    document.getElementById('create-folder-form').reset();
+}
+
+function loadFolderOptions() {
+    fetch('/api/folders')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('parent-folder');
+                select.innerHTML = '<option value="">Root</option>';
+
+                function addFolderOptions(folders, prefix = '') {
+                    folders.forEach(folder => {
+                        const option = document.createElement('option');
+                        option.value = folder.id;
+                        option.textContent = prefix + folder.name;
+                        select.appendChild(option);
+
+                        if (folder.children && folder.children.length > 0) {
+                            addFolderOptions(folder.children, prefix + folder.name + '/');
+                        }
+                    });
+                }
+
+                addFolderOptions(data.folders);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading folders:', error);
+        });
+}
+
+function createFolder(event) {
+    event.preventDefault();
+
+    const folderName = document.getElementById('folder-name').value.trim();
+    const parentId = document.getElementById('parent-folder').value || null;
+
+    if (!folderName) {
+        showToast('Please enter a folder name', 'error');
+        return;
+    }
+
+    const data = {
+        name: folderName,
+        parent_id: parentId
+    };
+
+    fetch('/api/folders', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            hideCreateFolderModal();
+            refreshFiles();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error creating folder: ' + error.message, 'error');
+    });
 }
 
 // Setup file grid interactions

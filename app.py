@@ -447,6 +447,341 @@ def delete_file():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/files/<int:file_id>/rename', methods=['POST'])
+def rename_file(file_id):
+    """Rename a file"""
+    try:
+        data = request.get_json()
+        new_name = data.get('name', '').strip()
+
+        if not new_name:
+            return jsonify({'success': False, 'error': 'File name is required'})
+
+        user = get_or_create_user()
+        file_record = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not file_record:
+            return jsonify({'success': False, 'error': 'File not found'})
+
+        old_name = file_record.filename
+        file_record.filename = new_name
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'File renamed from "{old_name}" to "{new_name}"',
+            'file': file_record.to_dict()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/files/<int:file_id>/tags', methods=['POST'])
+def update_file_tags(file_id):
+    """Update file tags"""
+    try:
+        data = request.get_json()
+        tags = data.get('tags', [])
+
+        if not isinstance(tags, list):
+            return jsonify({'success': False, 'error': 'Tags must be a list'})
+
+        user = get_or_create_user()
+        file_record = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not file_record:
+            return jsonify({'success': False, 'error': 'File not found'})
+
+        # Validate and clean tags
+        clean_tags = []
+        for tag in tags:
+            if isinstance(tag, str) and tag.strip():
+                clean_tag = tag.strip().lower()
+                if len(clean_tag) <= 50 and clean_tag not in clean_tags:
+                    clean_tags.append(clean_tag)
+
+        file_record.set_tags(clean_tags)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Tags updated for "{file_record.filename}"',
+            'file': file_record.to_dict()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/files/<int:file_id>/move', methods=['POST'])
+def move_file(file_id):
+    """Move file to a different folder"""
+    try:
+        data = request.get_json()
+        folder_id = data.get('folder_id')
+
+        user = get_or_create_user()
+        file_record = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not file_record:
+            return jsonify({'success': False, 'error': 'File not found'})
+
+        # Validate target folder
+        if folder_id:
+            target_folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+            if not target_folder:
+                return jsonify({'success': False, 'error': 'Target folder not found'})
+
+        old_folder_name = file_record.folder.name if file_record.folder else 'Root'
+        file_record.folder_id = folder_id
+        db.session.commit()
+
+        new_folder_name = file_record.folder.name if file_record.folder else 'Root'
+
+        return jsonify({
+            'success': True,
+            'message': f'File moved from "{old_folder_name}" to "{new_folder_name}"',
+            'file': file_record.to_dict()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/files/bulk', methods=['POST'])
+def bulk_file_operations():
+    """Perform bulk operations on files"""
+    try:
+        data = request.get_json()
+        operation = data.get('operation')
+        file_ids = data.get('file_ids', [])
+
+        if not operation or not file_ids:
+            return jsonify({'success': False, 'error': 'Operation and file IDs are required'})
+
+        user = get_or_create_user()
+        files = File.query.filter(
+            File.id.in_(file_ids),
+            File.user_id == user.id,
+            File.is_deleted == False
+        ).all()
+
+        if not files:
+            return jsonify({'success': False, 'error': 'No valid files found'})
+
+        results = []
+
+        if operation == 'delete':
+            for file_record in files:
+                file_record.is_deleted = True
+                results.append(f'Deleted: {file_record.filename}')
+
+        elif operation == 'move':
+            folder_id = data.get('folder_id')
+            if folder_id:
+                target_folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+                if not target_folder:
+                    return jsonify({'success': False, 'error': 'Target folder not found'})
+
+            for file_record in files:
+                file_record.folder_id = folder_id
+                folder_name = target_folder.name if target_folder else 'Root'
+                results.append(f'Moved {file_record.filename} to {folder_name}')
+
+        elif operation == 'tag':
+            tags = data.get('tags', [])
+            clean_tags = [tag.strip().lower() for tag in tags if isinstance(tag, str) and tag.strip()]
+
+            for file_record in files:
+                file_record.set_tags(clean_tags)
+                results.append(f'Tagged: {file_record.filename}')
+
+        else:
+            return jsonify({'success': False, 'error': 'Invalid operation'})
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Bulk {operation} completed',
+            'results': results,
+            'affected_files': len(files)
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/folders', methods=['GET'])
+def get_folders():
+    """Get folder hierarchy for current user"""
+    try:
+        user = get_or_create_user()
+        folders = Folder.query.filter_by(user_id=user.id, is_deleted=False).all()
+
+        # Build folder tree
+        folder_tree = []
+        folder_dict = {}
+
+        # First pass: create folder dictionary
+        for folder in folders:
+            folder_dict[folder.id] = folder.to_dict()
+            folder_dict[folder.id]['children'] = []
+
+        # Second pass: build hierarchy
+        for folder in folders:
+            if folder.parent_id is None:
+                folder_tree.append(folder_dict[folder.id])
+            else:
+                if folder.parent_id in folder_dict:
+                    folder_dict[folder.parent_id]['children'].append(folder_dict[folder.id])
+
+        return jsonify({'success': True, 'folders': folder_tree})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/folders', methods=['POST'])
+def create_folder():
+    """Create a new folder"""
+    try:
+        data = request.get_json()
+        folder_name = data.get('name', '').strip()
+        parent_id = data.get('parent_id')
+
+        if not folder_name:
+            return jsonify({'success': False, 'error': 'Folder name is required'})
+
+        # Validate folder name
+        if len(folder_name) > 255:
+            return jsonify({'success': False, 'error': 'Folder name too long'})
+
+        if '/' in folder_name or '\\' in folder_name:
+            return jsonify({'success': False, 'error': 'Folder name cannot contain / or \\'})
+
+        user = get_or_create_user()
+
+        # Check if folder with same name exists in same parent
+        existing_folder = Folder.query.filter_by(
+            name=folder_name,
+            parent_id=parent_id,
+            user_id=user.id,
+            is_deleted=False
+        ).first()
+
+        if existing_folder:
+            return jsonify({'success': False, 'error': 'Folder with this name already exists'})
+
+        # Create folder
+        new_folder = Folder(
+            name=folder_name,
+            parent_id=parent_id,
+            user_id=user.id
+        )
+
+        # Set path
+        if parent_id:
+            parent_folder = Folder.query.get(parent_id)
+            if parent_folder and parent_folder.user_id == user.id:
+                new_folder.path = f"{parent_folder.path}/{folder_name}"
+            else:
+                return jsonify({'success': False, 'error': 'Invalid parent folder'})
+        else:
+            new_folder.path = folder_name
+
+        db.session.add(new_folder)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Folder "{folder_name}" created successfully',
+            'folder': new_folder.to_dict()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/folders/<int:folder_id>', methods=['DELETE'])
+def delete_folder(folder_id):
+    """Delete a folder (mark as deleted)"""
+    try:
+        user = get_or_create_user()
+        folder = Folder.query.filter_by(id=folder_id, user_id=user.id).first()
+
+        if not folder:
+            return jsonify({'success': False, 'error': 'Folder not found'})
+
+        # Check if folder has files or subfolders
+        has_files = File.query.filter_by(folder_id=folder_id, is_deleted=False).first() is not None
+        has_subfolders = Folder.query.filter_by(parent_id=folder_id, is_deleted=False).first() is not None
+
+        if has_files or has_subfolders:
+            return jsonify({'success': False, 'error': 'Cannot delete folder that contains files or subfolders'})
+
+        # Mark as deleted
+        folder.is_deleted = True
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Folder "{folder.name}" deleted successfully'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/folders/<int:folder_id>/rename', methods=['POST'])
+def rename_folder(folder_id):
+    """Rename a folder"""
+    try:
+        data = request.get_json()
+        new_name = data.get('name', '').strip()
+
+        if not new_name:
+            return jsonify({'success': False, 'error': 'Folder name is required'})
+
+        user = get_or_create_user()
+        folder = Folder.query.filter_by(id=folder_id, user_id=user.id).first()
+
+        if not folder:
+            return jsonify({'success': False, 'error': 'Folder not found'})
+
+        # Check if folder with same name exists in same parent
+        existing_folder = Folder.query.filter_by(
+            name=new_name,
+            parent_id=folder.parent_id,
+            user_id=user.id,
+            is_deleted=False
+        ).filter(Folder.id != folder_id).first()
+
+        if existing_folder:
+            return jsonify({'success': False, 'error': 'Folder with this name already exists'})
+
+        old_name = folder.name
+        folder.name = new_name
+
+        # Update path
+        if folder.parent_id:
+            parent_folder = Folder.query.get(folder.parent_id)
+            folder.path = f"{parent_folder.path}/{new_name}"
+        else:
+            folder.path = new_name
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Folder renamed from "{old_name}" to "{new_name}"',
+            'folder': folder.to_dict()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
 @socketio.on('connect')
 def handle_connect():
     """Handle client connection"""
