@@ -68,18 +68,27 @@ def configure_flask_app(app):
     # Flask-SQLAlchemy configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = db_config['url']
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = db_config['track_modifications']
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': db_config['pool_size'],
-        'pool_timeout': db_config['pool_timeout'],
-        'pool_recycle': db_config['pool_recycle'],
-        'max_overflow': db_config['max_overflow'],
-        'echo': db_config['echo'],
-        'pool_pre_ping': True,  # Verify connections before use
-        'connect_args': {
-            'check_same_thread': False,  # Allow SQLite to be used across threads
-            'timeout': 20  # Connection timeout in seconds
+
+    # Configure engine options based on database type
+    if db_config['url'].startswith('sqlite'):
+        # SQLite-specific configuration
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'echo': db_config['echo'],
+            'connect_args': {
+                'check_same_thread': False,  # Allow SQLite to be used across threads
+                'timeout': 20  # Connection timeout in seconds
+            }
         }
-    }
+    else:
+        # PostgreSQL/MySQL configuration with connection pooling
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_size': db_config['pool_size'],
+            'pool_timeout': db_config['pool_timeout'],
+            'pool_recycle': db_config['pool_recycle'],
+            'max_overflow': db_config['max_overflow'],
+            'echo': db_config['echo'],
+            'pool_pre_ping': True,  # Verify connections before use
+        }
 
     # Initialize database with app
     db.init_app(app)

@@ -213,6 +213,10 @@
         <span class="material-icons">label</span>
         Add Tags
     </div>
+    <div class="context-menu-item" onclick="showShareModal(currentFile)">
+        <span class="material-icons">share</span>
+        Share File
+    </div>
     <div class="context-menu-item" onclick="copyFileLink(currentFile)">
         <span class="material-icons">link</span>
         Copy Link
@@ -403,6 +407,122 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="hideTagModal()">Cancel</button>
             <button class="btn btn-primary" onclick="executeTag()">Apply Tags</button>
+        </div>
+    </div>
+</div>
+
+<!-- Share File Modal -->
+<div class="modal" id="share-modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Share File</h3>
+            <button class="modal-close" onclick="hideShareModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="share-tabs">
+                <button class="tab-btn active" onclick="switchShareTab('create')">Create Link</button>
+                <button class="tab-btn" onclick="switchShareTab('manage')">Manage Links</button>
+            </div>
+
+            <!-- Create Share Tab -->
+            <div class="tab-content" id="create-tab">
+                <form id="share-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="share-name">Link Name (Optional)</label>
+                            <input type="text" id="share-name" class="form-input" placeholder="My shared file">
+                        </div>
+                        <div class="form-group">
+                            <label for="share-description">Description (Optional)</label>
+                            <textarea id="share-description" class="form-input" rows="2" placeholder="Description of the shared file"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="share-password">Password Protection (Optional)</label>
+                            <input type="password" id="share-password" class="form-input" placeholder="Enter password">
+                        </div>
+                        <div class="form-group">
+                            <label for="share-expires">Expires In</label>
+                            <select id="share-expires" class="form-input">
+                                <option value="">Never</option>
+                                <option value="1">1 Day</option>
+                                <option value="7">1 Week</option>
+                                <option value="30">1 Month</option>
+                                <option value="90">3 Months</option>
+                                <option value="365">1 Year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="permissions-section">
+                        <h4>Permissions</h4>
+                        <div class="permission-grid">
+                            <label class="permission-item">
+                                <input type="checkbox" id="can-view" checked>
+                                <span class="checkmark"></span>
+                                <div class="permission-info">
+                                    <span class="permission-title">View</span>
+                                    <span class="permission-desc">Allow viewing the file</span>
+                                </div>
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="can-download" checked>
+                                <span class="checkmark"></span>
+                                <div class="permission-info">
+                                    <span class="permission-title">Download</span>
+                                    <span class="permission-desc">Allow downloading the file</span>
+                                </div>
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="can-preview" checked>
+                                <span class="checkmark"></span>
+                                <div class="permission-info">
+                                    <span class="permission-title">Preview</span>
+                                    <span class="permission-desc">Allow previewing file content</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="limits-section">
+                        <h4>Access Limits (Optional)</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="max-downloads">Max Downloads</label>
+                                <input type="number" id="max-downloads" class="form-input" placeholder="Unlimited" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="max-views">Max Views</label>
+                                <input type="number" id="max-views" class="form-input" placeholder="Unlimited" min="1">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Manage Links Tab -->
+            <div class="tab-content" id="manage-tab" style="display: none;">
+                <div class="share-links-list" id="share-links-list">
+                    <div class="loading-placeholder">Loading existing shares...</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <div class="share-result" id="share-result" style="display: none;">
+                <div class="share-url-container">
+                    <input type="text" id="share-url" class="share-url-input" readonly>
+                    <button class="btn btn-secondary" onclick="copyShareUrl()">
+                        <span class="material-icons">content_copy</span>
+                        Copy
+                    </button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="hideShareModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createShareLink()" id="create-share-btn">Create Share Link</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1217,6 +1337,224 @@ function deleteFolder(folderId) {
             showToast('Error deleting folder: ' + error.message, 'error');
         });
     }
+}
+
+// File sharing functions
+let currentShareFile = null;
+
+function showShareModal(filename) {
+    currentShareFile = filename;
+    currentFile = filename;
+
+    // Reset form
+    document.getElementById('share-form').reset();
+    document.getElementById('can-view').checked = true;
+    document.getElementById('can-download').checked = true;
+    document.getElementById('can-preview').checked = true;
+
+    // Switch to create tab
+    switchShareTab('create');
+
+    // Hide result section
+    document.getElementById('share-result').style.display = 'none';
+    document.getElementById('create-share-btn').style.display = 'inline-flex';
+
+    // Show modal
+    document.getElementById('share-modal').style.display = 'flex';
+
+    // Load existing shares
+    loadExistingShares();
+
+    hideFileMenu();
+}
+
+function hideShareModal() {
+    document.getElementById('share-modal').style.display = 'none';
+    currentShareFile = null;
+}
+
+function switchShareTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Show/hide tab content
+    document.getElementById('create-tab').style.display = tab === 'create' ? 'block' : 'none';
+    document.getElementById('manage-tab').style.display = tab === 'manage' ? 'block' : 'none';
+
+    // Update footer buttons
+    const createBtn = document.getElementById('create-share-btn');
+    createBtn.style.display = tab === 'create' ? 'inline-flex' : 'none';
+}
+
+function createShareLink() {
+    if (!currentShareFile) {
+        showToast('No file selected', 'error');
+        return;
+    }
+
+    // Get file ID from filename (simplified approach)
+    const fileCard = document.querySelector(`[data-filename="${currentShareFile}"]`);
+    const fileId = fileCard ? fileCard.dataset.fileId : null;
+
+    if (!fileId) {
+        showToast('File ID not found', 'error');
+        return;
+    }
+
+    // Collect form data
+    const shareData = {
+        name: document.getElementById('share-name').value.trim(),
+        description: document.getElementById('share-description').value.trim(),
+        password: document.getElementById('share-password').value,
+        expires_in_days: document.getElementById('share-expires').value || null,
+        can_view: document.getElementById('can-view').checked,
+        can_download: document.getElementById('can-download').checked,
+        can_preview: document.getElementById('can-preview').checked,
+        max_downloads: document.getElementById('max-downloads').value || null,
+        max_views: document.getElementById('max-views').value || null
+    };
+
+    // Convert to numbers
+    if (shareData.expires_in_days) shareData.expires_in_days = parseInt(shareData.expires_in_days);
+    if (shareData.max_downloads) shareData.max_downloads = parseInt(shareData.max_downloads);
+    if (shareData.max_views) shareData.max_views = parseInt(shareData.max_views);
+
+    // Create share link
+    fetch(`/api/files/${fileId}/share`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shareData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show share URL
+            document.getElementById('share-url').value = data.share_url;
+            document.getElementById('share-result').style.display = 'block';
+            document.getElementById('create-share-btn').style.display = 'none';
+
+            showToast('Share link created successfully!', 'success');
+
+            // Refresh existing shares
+            loadExistingShares();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error creating share link: ' + error.message, 'error');
+    });
+}
+
+function copyShareUrl() {
+    const shareUrl = document.getElementById('share-url');
+    shareUrl.select();
+    shareUrl.setSelectionRange(0, 99999); // For mobile devices
+
+    navigator.clipboard.writeText(shareUrl.value).then(() => {
+        showToast('Share URL copied to clipboard!', 'success');
+    }).catch(() => {
+        // Fallback for older browsers
+        document.execCommand('copy');
+        showToast('Share URL copied to clipboard!', 'success');
+    });
+}
+
+function loadExistingShares() {
+    if (!currentShareFile) return;
+
+    const fileCard = document.querySelector(`[data-filename="${currentShareFile}"]`);
+    const fileId = fileCard ? fileCard.dataset.fileId : null;
+
+    if (!fileId) return;
+
+    fetch(`/api/files/${fileId}/shares`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayExistingShares(data.shares);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading existing shares:', error);
+        });
+}
+
+function displayExistingShares(shares) {
+    const container = document.getElementById('share-links-list');
+
+    if (shares.length === 0) {
+        container.innerHTML = `
+            <div class="no-shares">
+                <span class="material-icons">share</span>
+                <p>No existing shares for this file</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    shares.forEach(share => {
+        const createdDate = new Date(share.created_at).toLocaleDateString();
+        const expiresDate = share.expires_at ? new Date(share.expires_at).toLocaleDateString() : 'Never';
+
+        html += `
+            <div class="share-item">
+                <div class="share-info">
+                    <div class="share-name">${share.name || 'Unnamed Share'}</div>
+                    <div class="share-details">
+                        <span>Created: ${createdDate}</span>
+                        <span>Expires: ${expiresDate}</span>
+                        <span>Views: ${share.view_count}</span>
+                        <span>Downloads: ${share.download_count}</span>
+                    </div>
+                </div>
+                <div class="share-actions">
+                    <button class="btn btn-small" onclick="copyShareUrlFromList('${share.share_url}')">
+                        <span class="material-icons">content_copy</span>
+                    </button>
+                    <button class="btn btn-small btn-danger" onclick="deleteShareLink(${share.id})">
+                        <span class="material-icons">delete</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function copyShareUrlFromList(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Share URL copied to clipboard!', 'success');
+    }).catch(() => {
+        showToast('Failed to copy URL', 'error');
+    });
+}
+
+function deleteShareLink(shareId) {
+    if (!confirm('Are you sure you want to delete this share link?')) {
+        return;
+    }
+
+    fetch(`/api/shares/${shareId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Share link deleted successfully', 'success');
+            loadExistingShares();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error deleting share link: ' + error.message, 'error');
+    });
 }
 </script>
 {% endblock %}

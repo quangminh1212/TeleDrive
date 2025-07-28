@@ -22,7 +22,7 @@ import config
 
 # Import database modules
 from database import configure_flask_app, initialize_database
-from models import db, User, File, Folder, ScanSession, get_or_create_user
+from models import db, User, File, Folder, ScanSession, ShareLink, get_or_create_user
 
 # Import forms
 from forms import LoginForm, RegistrationForm, ChangePasswordForm
@@ -1285,6 +1285,193 @@ def change_password():
             flash('Current password is incorrect.', 'error')
 
     return render_template('auth/change_password.html', form=form)
+
+# File sharing routes
+@app.route('/api/files/<int:file_id>/share', methods=['POST'])
+@login_required
+def create_share_link(file_id):
+    """Create a shareable link for a file"""
+    try:
+        file_record = File.query.filter_by(id=file_id, user_id=current_user.id, is_deleted=False).first()
+        if not file_record:
+            return jsonify({'success': False, 'error': 'File not found'})
+
+        data = request.get_json() or {}
+
+        # Create share link
+        share_link = ShareLink(
+            file_id=file_id,
+            user_id=current_user.id,
+            name=data.get('name', ''),
+            description=data.get('description', ''),
+            can_view=data.get('can_view', True),
+            can_download=data.get('can_download', True),
+            can_preview=data.get('can_preview', True),
+            max_downloads=data.get('max_downloads'),
+            max_views=data.get('max_views')
+        )
+
+        # Set password if provided
+        if data.get('password'):
+            share_link.set_password(data['password'])
+
+        # Set expiration if provided
+        if data.get('expires_in_days'):
+            days = int(data['expires_in_days'])
+            from datetime import timedelta
+            share_link.expires_at = datetime.utcnow() + timedelta(days=days)
+        elif data.get('expires_at'):
+            share_link.expires_at = datetime.fromisoformat(data['expires_at'])
+
+        db.session.add(share_link)
+        db.session.commit()
+
+        # Generate share URL
+        base_url = request.url_root.rstrip('/')
+        share_url = share_link.get_share_url(base_url)
+
+        return jsonify({
+            'success': True,
+            'share_link': share_link.to_dict(),
+            'share_url': share_url,
+            'message': 'Share link created successfully'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/files/<int:file_id>/shares', methods=['GET'])
+@login_required
+def get_file_shares(file_id):
+    """Get all share links for a file"""
+    try:
+        file_record = File.query.filter_by(id=file_id, user_id=current_user.id, is_deleted=False).first()
+        if not file_record:
+            return jsonify({'success': False, 'error': 'File not found'})
+
+        shares = ShareLink.query.filter_by(file_id=file_id, user_id=current_user.id).all()
+        base_url = request.url_root.rstrip('/')
+
+        share_data = []
+        for share in shares:
+            share_dict = share.to_dict()
+            share_dict['share_url'] = share.get_share_url(base_url)
+            share_data.append(share_dict)
+
+        return jsonify({
+            'success': True,
+            'shares': share_data
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/shares/<int:share_id>', methods=['DELETE'])
+@login_required
+def delete_share_link(share_id):
+    """Delete a share link"""
+    try:
+        share_link = ShareLink.query.filter_by(id=share_id, user_id=current_user.id).first()
+        if not share_link:
+            return jsonify({'success': False, 'error': 'Share link not found'})
+
+        db.session.delete(share_link)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Share link deleted successfully'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+# Public share access routes
+@app.route('/share/<token>')
+def view_shared_file(token):
+    """View a shared file (public access)"""
+    try:
+        share_link = ShareLink.query.filter_by(token=token).first()
+        if not share_link:
+            return render_template('share/not_found.html'), 404
+
+        # Check if share link can be accessed
+        can_access, message = share_link.can_access()
+        if not can_access:
+            if "password" in message.lower():
+                return render_template('share/password_required.html', token=token, error=None)
+            else:
+                return render_template('share/access_denied.html', message=message), 403
+
+        # Check view limit
+        if share_link.is_view_limit_reached():
+            return render_template('share/access_denied.html', message="View limit reached"), 403
+
+        # Increment view count
+        share_link.increment_view_count()
+
+        return render_template('share/view.html', share_link=share_link)
+
+    except Exception as e:
+        return render_template('share/error.html', error=str(e)), 500
+
+@app.route('/share/<token>/password', methods=['POST'])
+def verify_share_password(token):
+    """Verify password for protected share"""
+    try:
+        share_link = ShareLink.query.filter_by(token=token).first()
+        if not share_link:
+            return render_template('share/not_found.html'), 404
+
+        password = request.form.get('password', '')
+        can_access, message = share_link.can_access(password)
+
+        if can_access:
+            # Store password verification in session
+            from flask import session
+            session[f'share_verified_{token}'] = True
+            return redirect(url_for('view_shared_file', token=token))
+        else:
+            return render_template('share/password_required.html', token=token, error="Invalid password")
+
+    except Exception as e:
+        return render_template('share/error.html', error=str(e)), 500
+
+@app.route('/share/<token>/download')
+def download_shared_file(token):
+    """Download a shared file (public access)"""
+    try:
+        share_link = ShareLink.query.filter_by(token=token).first()
+        if not share_link:
+            return jsonify({'error': 'Share not found'}), 404
+
+        # Check if share link can be accessed
+        can_access, message = share_link.can_access()
+        if not can_access:
+            return jsonify({'error': message}), 403
+
+        # Check download permission
+        if not share_link.can_download:
+            return jsonify({'error': 'Download not allowed'}), 403
+
+        # Check download limit
+        if share_link.is_download_limit_reached():
+            return jsonify({'error': 'Download limit reached'}), 403
+
+        # Increment download count
+        share_link.increment_download_count()
+
+        # Serve the file
+        file_path = os.path.join('output', share_link.file.filename)
+        if os.path.exists(file_path):
+            return send_from_directory('output', share_link.file.filename, as_attachment=True)
+        else:
+            return jsonify({'error': 'File not found on disk'}), 404
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @socketio.on('connect')
 def handle_connect():

@@ -4,13 +4,15 @@ Database Models for TeleDrive
 SQLAlchemy models for users, files, folders, and scan sessions
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 import json
 import bcrypt
+import secrets
+import hashlib
 
 db = SQLAlchemy()
 
@@ -145,7 +147,7 @@ class File(db.Model):
     
     # File metadata and organization
     tags = Column(Text)  # JSON array of tags
-    metadata = Column(Text)  # JSON metadata
+    file_metadata = Column(Text)  # JSON metadata
     description = Column(Text)
     
     # File status and tracking
@@ -176,16 +178,16 @@ class File(db.Model):
     
     def get_metadata(self):
         """Get metadata as a dictionary"""
-        if self.metadata:
+        if self.file_metadata:
             try:
-                return json.loads(self.metadata)
+                return json.loads(self.file_metadata)
             except json.JSONDecodeError:
                 return {}
         return {}
-    
+
     def set_metadata(self, metadata_dict):
         """Set metadata from a dictionary"""
-        self.metadata = json.dumps(metadata_dict) if metadata_dict else None
+        self.file_metadata = json.dumps(metadata_dict) if metadata_dict else None
     
     def get_file_type(self):
         """Get file type category based on mime type"""
@@ -286,6 +288,147 @@ class ScanSession(db.Model):
             'error_message': self.error_message,
             'started_at': self.started_at.isoformat() if self.started_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None
+        }
+
+class ShareLink(db.Model):
+    """Model for file sharing links with permissions and expiration"""
+    __tablename__ = 'share_links'
+
+    id = Column(Integer, primary_key=True)
+    token = Column(String(64), unique=True, nullable=False, index=True)
+    file_id = Column(Integer, ForeignKey('files.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # Creator of the link
+
+    # Sharing settings
+    name = Column(String(255))  # Optional name for the share
+    description = Column(Text)  # Optional description
+    password_hash = Column(String(128))  # Optional password protection
+
+    # Permissions
+    can_view = Column(Boolean, default=True)
+    can_download = Column(Boolean, default=True)
+    can_preview = Column(Boolean, default=True)
+
+    # Access control
+    max_downloads = Column(Integer)  # Maximum number of downloads (None = unlimited)
+    download_count = Column(Integer, default=0)
+    max_views = Column(Integer)  # Maximum number of views (None = unlimited)
+    view_count = Column(Integer, default=0)
+
+    # Expiration
+    expires_at = Column(DateTime)  # When the link expires (None = never)
+
+    # Tracking
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_accessed = Column(DateTime)
+
+    # Relationships
+    file = relationship('File', backref='share_links')
+    creator = relationship('User', backref='created_shares')
+
+    def __init__(self, **kwargs):
+        super(ShareLink, self).__init__(**kwargs)
+        if not self.token:
+            self.token = self.generate_token()
+
+    @staticmethod
+    def generate_token():
+        """Generate a secure random token for the share link"""
+        return secrets.token_urlsafe(32)
+
+    def set_password(self, password):
+        """Set password protection for the share link"""
+        if password:
+            password_bytes = password.encode('utf-8')
+            salt = bcrypt.gensalt()
+            self.password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+        else:
+            self.password_hash = None
+
+    def check_password(self, password):
+        """Check if the provided password matches the stored hash"""
+        if not self.password_hash:
+            return True  # No password required
+        if not password:
+            return False
+        password_bytes = password.encode('utf-8')
+        hash_bytes = self.password_hash.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hash_bytes)
+
+    def is_expired(self):
+        """Check if the share link has expired"""
+        if not self.expires_at:
+            return False
+        return datetime.utcnow() > self.expires_at
+
+    def is_download_limit_reached(self):
+        """Check if download limit has been reached"""
+        if not self.max_downloads:
+            return False
+        return self.download_count >= self.max_downloads
+
+    def is_view_limit_reached(self):
+        """Check if view limit has been reached"""
+        if not self.max_views:
+            return False
+        return self.view_count >= self.max_views
+
+    def can_access(self, password=None):
+        """Check if the share link can be accessed"""
+        if not self.is_active:
+            return False, "Share link is disabled"
+
+        if self.is_expired():
+            return False, "Share link has expired"
+
+        if not self.check_password(password):
+            return False, "Invalid password"
+
+        return True, "Access granted"
+
+    def increment_view_count(self):
+        """Increment the view count and update last accessed time"""
+        self.view_count += 1
+        self.last_accessed = datetime.utcnow()
+        db.session.commit()
+
+    def increment_download_count(self):
+        """Increment the download count and update last accessed time"""
+        self.download_count += 1
+        self.last_accessed = datetime.utcnow()
+        db.session.commit()
+
+    def get_share_url(self, base_url):
+        """Get the full share URL"""
+        return f"{base_url}/share/{self.token}"
+
+    def to_dict(self):
+        """Convert share link to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'token': self.token,
+            'file_id': self.file_id,
+            'name': self.name,
+            'description': self.description,
+            'has_password': bool(self.password_hash),
+            'can_view': self.can_view,
+            'can_download': self.can_download,
+            'can_preview': self.can_preview,
+            'max_downloads': self.max_downloads,
+            'download_count': self.download_count,
+            'max_views': self.max_views,
+            'view_count': self.view_count,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_accessed': self.last_accessed.isoformat() if self.last_accessed else None,
+            'file': {
+                'filename': self.file.filename,
+                'file_size': self.file.file_size,
+                'mime_type': self.file.mime_type
+            } if self.file else None
         }
 
 # Database utility functions

@@ -1387,6 +1387,291 @@ body {
     }
 }
 
+/* File Sharing Modal */
+.modal-large {
+    max-width: 800px;
+    width: 90%;
+}
+
+.share-tabs {
+    display: flex;
+    border-bottom: 1px solid #e8eaed;
+    margin-bottom: 24px;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #5f6368;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+    color: #1a73e8;
+    border-bottom-color: #1a73e8;
+}
+
+.tab-btn:hover {
+    background: #f8f9fa;
+}
+
+.tab-content {
+    min-height: 400px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.permissions-section, .limits-section {
+    margin-bottom: 24px;
+}
+
+.permissions-section h4, .limits-section h4 {
+    font-size: 16px;
+    font-weight: 500;
+    color: #202124;
+    margin-bottom: 16px;
+}
+
+.permission-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.permission-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 16px;
+    border: 1px solid #e8eaed;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.permission-item:hover {
+    border-color: #1a73e8;
+    background: #f8f9fa;
+}
+
+.permission-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #dadce0;
+    border-radius: 4px;
+    margin-right: 12px;
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.permission-item input[type="checkbox"]:checked + .checkmark {
+    background: #1a73e8;
+    border-color: #1a73e8;
+}
+
+.permission-item input[type="checkbox"]:checked + .checkmark::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.permission-info {
+    flex: 1;
+}
+
+.permission-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #202124;
+    margin-bottom: 4px;
+}
+
+.permission-desc {
+    display: block;
+    font-size: 12px;
+    color: #5f6368;
+    line-height: 1.4;
+}
+
+.share-result {
+    margin-bottom: 16px;
+}
+
+.share-url-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.share-url-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #dadce0;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #f8f9fa;
+    font-family: 'Courier New', monospace;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* Share Links List */
+.share-links-list {
+    min-height: 200px;
+}
+
+.no-shares {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: #5f6368;
+}
+
+.no-shares .material-icons {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.share-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border: 1px solid #e8eaed;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.share-item:hover {
+    border-color: #1a73e8;
+    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.1);
+}
+
+.share-info {
+    flex: 1;
+}
+
+.share-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #202124;
+    margin-bottom: 4px;
+}
+
+.share-details {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: #5f6368;
+}
+
+.share-details span {
+    background: #f1f3f4;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.share-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.btn-danger {
+    background: #ea4335;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #d33b2c;
+}
+
+.loading-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #5f6368;
+    font-style: italic;
+}
+
+/* Mobile responsive for sharing modal */
+@media (max-width: 768px) {
+    .modal-large {
+        width: 95%;
+        max-width: none;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .permission-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .share-tabs {
+        overflow-x: auto;
+    }
+
+    .tab-btn {
+        white-space: nowrap;
+        min-width: 120px;
+    }
+
+    .share-url-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .share-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .share-actions {
+        align-self: flex-end;
+    }
+}
+
 .header-btn {
     width: 40px;
     height: 40px;

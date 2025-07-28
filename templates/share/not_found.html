@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Not Found - TeleDrive</title>
+    
+    <!-- Google Drive-like styling -->
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .error-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+            color: #1a73e8;
+        }
+
+        .logo .material-icons {
+            font-size: 32px;
+            margin-right: 8px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .error-icon {
+            width: 120px;
+            height: 120px;
+            background: #fce8e6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+
+        .error-icon .material-icons {
+            font-size: 60px;
+            color: #d93025;
+        }
+
+        .error-title {
+            font-size: 28px;
+            font-weight: 400;
+            color: #202124;
+            margin-bottom: 16px;
+        }
+
+        .error-message {
+            font-size: 16px;
+            color: #5f6368;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .error-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 32px;
+            text-align: left;
+        }
+
+        .error-details h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #202124;
+            margin-bottom: 8px;
+        }
+
+        .error-details ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .error-details li {
+            font-size: 14px;
+            color: #5f6368;
+            margin-bottom: 4px;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .error-details li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #1a73e8;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn .material-icons {
+            font-size: 18px;
+            margin-right: 8px;
+        }
+
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1557b0;
+        }
+
+        @media (max-width: 480px) {
+            .error-container {
+                padding: 32px 24px;
+                margin: 16px;
+            }
+            
+            .error-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="logo">
+            <span class="material-icons">cloud_download</span>
+            <span class="logo-text">TeleDrive</span>
+        </div>
+        
+        <div class="error-icon">
+            <span class="material-icons">link_off</span>
+        </div>
+        
+        <h1 class="error-title">Share Not Found</h1>
+        <p class="error-message">
+            The shared file you're looking for doesn't exist or has been removed.
+        </p>
+        
+        <div class="error-details">
+            <h4>This could happen if:</h4>
+            <ul>
+                <li>The share link has expired</li>
+                <li>The file has been deleted by the owner</li>
+                <li>The share link has been disabled</li>
+                <li>The link URL is incorrect or incomplete</li>
+            </ul>
+        </div>
+        
+        <a href="/" class="btn btn-primary">
+            <span class="material-icons">home</span>
+            Go to TeleDrive
+        </a>
+    </div>
+</body>
+</html>
