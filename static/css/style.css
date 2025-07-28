@@ -443,6 +443,545 @@ body {
     color: #1a73e8;
 }
 
+/* Enhanced Image Preview */
+.image-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.image-viewer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.image-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+    min-height: 400px;
+}
+
+.image-container:active {
+    cursor: grabbing;
+}
+
+.image-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.image-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: white;
+    border-top: 1px solid #e8eaed;
+    flex-wrap: wrap;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 8px;
+}
+
+.control-group:not(:last-child) {
+    border-right: 1px solid #e8eaed;
+}
+
+.zoom-level {
+    font-size: 14px;
+    font-weight: 500;
+    color: #5f6368;
+    min-width: 50px;
+    text-align: center;
+}
+
+.image-controls .btn {
+    padding: 8px;
+    min-width: auto;
+    border-radius: 6px;
+}
+
+.image-controls .btn .material-icons {
+    font-size: 18px;
+}
+
+/* Fullscreen styles */
+.modal-overlay:fullscreen {
+    background: black;
+}
+
+.modal-overlay:fullscreen .modal-content {
+    background: black;
+    border: none;
+    border-radius: 0;
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%;
+    height: 100%;
+}
+
+.modal-overlay:fullscreen .image-container {
+    background: black;
+    border-radius: 0;
+}
+
+.modal-overlay:fullscreen .image-controls {
+    background: rgba(0, 0, 0, 0.8);
+    border-top: 1px solid #333;
+}
+
+.modal-overlay:fullscreen .image-controls .btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal-overlay:fullscreen .image-controls .btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-overlay:fullscreen .zoom-level {
+    color: white;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .image-controls {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .control-group {
+        gap: 6px;
+        padding: 0 6px;
+    }
+
+    .image-controls .btn {
+        padding: 6px;
+    }
+
+    .image-controls .btn .material-icons {
+        font-size: 16px;
+    }
+}
+
+/* PDF Preview */
+.pdf-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.pdf-viewer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.pdf-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    background: white;
+    border-bottom: 1px solid #e8eaed;
+    flex-wrap: wrap;
+}
+
+.pdf-controls .control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 8px;
+}
+
+.pdf-controls .control-group:not(:last-child) {
+    border-right: 1px solid #e8eaed;
+}
+
+.page-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    color: #5f6368;
+}
+
+.page-info input {
+    width: 50px;
+    padding: 4px 8px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.pdf-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background: #f8f9fa;
+    padding: 20px;
+    overflow: auto;
+    min-height: 500px;
+}
+
+.pdf-container canvas {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    background: white;
+    max-width: 100%;
+    height: auto;
+}
+
+.pdf-controls .btn {
+    padding: 6px 12px;
+    min-width: auto;
+}
+
+.pdf-controls .btn .material-icons {
+    font-size: 18px;
+}
+
+#pdf-zoom-level {
+    font-size: 14px;
+    font-weight: 500;
+    color: #5f6368;
+    min-width: 50px;
+    text-align: center;
+}
+
+/* Mobile responsive for PDF */
+@media (max-width: 768px) {
+    .pdf-controls {
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .pdf-controls .control-group {
+        gap: 4px;
+        padding: 0 4px;
+    }
+
+    .pdf-controls .btn {
+        padding: 4px 8px;
+    }
+
+    .pdf-controls .btn .material-icons {
+        font-size: 16px;
+    }
+
+    .page-info input {
+        width: 40px;
+        padding: 2px 4px;
+        font-size: 12px;
+    }
+
+    .pdf-container {
+        padding: 10px;
+    }
+}
+
+/* Video Preview */
+.video-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.video-player {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.video-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 400px;
+}
+
+.video-container video {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+}
+
+.video-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    background: white;
+    border-bottom: 1px solid #e8eaed;
+    flex-wrap: wrap;
+}
+
+.video-progress {
+    padding: 8px 16px;
+    background: white;
+    border-bottom: 1px solid #e8eaed;
+}
+
+.video-progress input[type="range"] {
+    width: 100%;
+    height: 4px;
+    background: #e8eaed;
+    border-radius: 2px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.video-progress input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #1a73e8;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.time-display {
+    font-size: 14px;
+    color: #5f6368;
+    font-weight: 500;
+    min-width: 100px;
+}
+
+/* Audio Preview */
+.audio-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.audio-player {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    overflow: hidden;
+    color: white;
+}
+
+.audio-visualizer {
+    display: flex;
+    align-items: center;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.audio-artwork {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20px;
+}
+
+.audio-artwork .material-icons {
+    font-size: 40px;
+    color: white;
+}
+
+.audio-details {
+    flex: 1;
+}
+
+.track-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    word-break: break-word;
+}
+
+.track-duration {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.audio-progress {
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.audio-progress input[type="range"] {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+    margin-bottom: 8px;
+}
+
+.audio-progress input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.time-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.audio-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    background: rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
+}
+
+.audio-controls .btn-large {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: white;
+    color: #1a73e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.audio-controls .btn-large:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.audio-controls .btn-large .material-icons {
+    font-size: 24px;
+}
+
+.audio-controls .btn-small {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.audio-controls .btn-small:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.audio-controls input[type="range"] {
+    width: 80px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.audio-controls input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.audio-controls select {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.audio-controls label {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* Mobile responsive for media players */
+@media (max-width: 768px) {
+    .video-controls, .audio-controls {
+        gap: 8px;
+        padding: 12px;
+    }
+
+    .video-controls .control-group,
+    .audio-controls .control-group {
+        gap: 4px;
+    }
+
+    .audio-visualizer {
+        padding: 16px;
+    }
+
+    .audio-artwork {
+        width: 60px;
+        height: 60px;
+        margin-right: 16px;
+    }
+
+    .audio-artwork .material-icons {
+        font-size: 30px;
+    }
+
+    .track-title {
+        font-size: 16px;
+    }
+
+    .audio-controls .btn-large {
+        width: 48px;
+        height: 48px;
+    }
+
+    .audio-controls .btn-large .material-icons {
+        font-size: 20px;
+    }
+}
+
 .header-btn {
     width: 40px;
     height: 40px;

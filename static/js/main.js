@@ -481,42 +481,119 @@ function loadImagePreview(filename, container) {
         <div class="image-preview">
             <div class="preview-header">
                 <span class="file-type-badge image">IMAGE</span>
-                <span class="file-info">Loading...</span>
+                <span class="file-info" id="image-info">Loading...</span>
             </div>
-            <div class="image-container">
-                <img id="preview-image" src="/output/${filename}" alt="${filename}"
-                     onload="handleImageLoad(this)" onerror="handleImageError(this)">
+            <div class="image-viewer">
+                <div class="image-container" id="image-container">
+                    <img id="preview-image" src="/output/${filename}" alt="${filename}"
+                         onload="handleImageLoad(this)" onerror="handleImageError(this)"
+                         draggable="false">
+                </div>
                 <div class="image-controls">
-                    <button class="btn btn-small" onclick="zoomImage(-0.2)">
-                        <span class="material-icons">zoom_out</span>
-                    </button>
-                    <button class="btn btn-small" onclick="resetImageZoom()">
-                        <span class="material-icons">fit_screen</span>
-                    </button>
-                    <button class="btn btn-small" onclick="zoomImage(0.2)">
-                        <span class="material-icons">zoom_in</span>
-                    </button>
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="rotateImage(-90)" title="Rotate Left">
+                            <span class="material-icons">rotate_left</span>
+                        </button>
+                        <button class="btn btn-small" onclick="rotateImage(90)" title="Rotate Right">
+                            <span class="material-icons">rotate_right</span>
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="zoomImage(-0.2)" title="Zoom Out">
+                            <span class="material-icons">zoom_out</span>
+                        </button>
+                        <span class="zoom-level" id="zoom-level">100%</span>
+                        <button class="btn btn-small" onclick="zoomImage(0.2)" title="Zoom In">
+                            <span class="material-icons">zoom_in</span>
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="fitImageToScreen()" title="Fit to Screen">
+                            <span class="material-icons">fit_screen</span>
+                        </button>
+                        <button class="btn btn-small" onclick="resetImageView()" title="Reset View">
+                            <span class="material-icons">refresh</span>
+                        </button>
+                        <button class="btn btn-small" onclick="toggleFullscreen()" title="Fullscreen">
+                            <span class="material-icons">fullscreen</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     `;
+
+    // Initialize image viewer state
+    initializeImageViewer();
+}
+
+// Image viewer state
+let imageViewerState = {
+    zoom: 1,
+    rotation: 0,
+    panX: 0,
+    panY: 0,
+    isDragging: false,
+    lastMouseX: 0,
+    lastMouseY: 0
+};
+
+function initializeImageViewer() {
+    // Reset state
+    imageViewerState = {
+        zoom: 1,
+        rotation: 0,
+        panX: 0,
+        panY: 0,
+        isDragging: false,
+        lastMouseX: 0,
+        lastMouseY: 0
+    };
+
+    // Add event listeners for pan and zoom
+    const container = document.getElementById('image-container');
+    const image = document.getElementById('preview-image');
+
+    if (container && image) {
+        // Mouse events for panning
+        container.addEventListener('mousedown', startImagePan);
+        container.addEventListener('mousemove', panImage);
+        container.addEventListener('mouseup', endImagePan);
+        container.addEventListener('mouseleave', endImagePan);
+
+        // Wheel event for zooming
+        container.addEventListener('wheel', handleImageWheel);
+
+        // Touch events for mobile
+        container.addEventListener('touchstart', handleTouchStart);
+        container.addEventListener('touchmove', handleTouchMove);
+        container.addEventListener('touchend', handleTouchEnd);
+
+        // Prevent context menu
+        container.addEventListener('contextmenu', e => e.preventDefault());
+    }
 }
 
 function handleImageLoad(img) {
-    const fileInfo = img.parentElement.parentElement.querySelector('.file-info');
-    fileInfo.textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
+    const fileInfo = document.getElementById('image-info');
+    if (fileInfo) {
+        const fileSize = formatFileSize(img.src.length * 0.75); // Rough estimate
+        fileInfo.textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
+    }
+
+    // Fit image to screen initially
+    setTimeout(() => fitImageToScreen(), 100);
 }
 
 function handleImageError(img) {
-    img.parentElement.innerHTML = `
+    const container = img.parentElement;
+    container.innerHTML = `
         <div class="preview-error">
             <span class="material-icons">broken_image</span>
             <p>Failed to load image</p>
         </div>
     `;
 }
-
-let currentZoom = 1;
 
 function zoomImage(delta) {
     const img = document.getElementById('preview-image');
@@ -534,38 +611,567 @@ function resetImageZoom() {
     }
 }
 
+// Image manipulation functions
+function zoomImage(delta) {
+    const newZoom = Math.max(0.1, Math.min(5, imageViewerState.zoom + delta));
+    imageViewerState.zoom = newZoom;
+    updateImageTransform();
+    updateZoomLevel();
+}
+
+function rotateImage(degrees) {
+    imageViewerState.rotation += degrees;
+    updateImageTransform();
+}
+
+function fitImageToScreen() {
+    const container = document.getElementById('image-container');
+    const image = document.getElementById('preview-image');
+
+    if (!container || !image) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const imageAspect = image.naturalWidth / image.naturalHeight;
+    const containerAspect = containerRect.width / containerRect.height;
+
+    let scale;
+    if (imageAspect > containerAspect) {
+        scale = (containerRect.width - 40) / image.naturalWidth;
+    } else {
+        scale = (containerRect.height - 40) / image.naturalHeight;
+    }
+
+    imageViewerState.zoom = Math.min(1, scale);
+    imageViewerState.panX = 0;
+    imageViewerState.panY = 0;
+    updateImageTransform();
+    updateZoomLevel();
+}
+
+function resetImageView() {
+    imageViewerState.zoom = 1;
+    imageViewerState.rotation = 0;
+    imageViewerState.panX = 0;
+    imageViewerState.panY = 0;
+    updateImageTransform();
+    updateZoomLevel();
+}
+
+function updateImageTransform() {
+    const image = document.getElementById('preview-image');
+    if (!image) return;
+
+    const transform = `
+        translate(${imageViewerState.panX}px, ${imageViewerState.panY}px)
+        scale(${imageViewerState.zoom})
+        rotate(${imageViewerState.rotation}deg)
+    `;
+
+    image.style.transform = transform;
+    image.style.transformOrigin = 'center center';
+}
+
+function updateZoomLevel() {
+    const zoomLevel = document.getElementById('zoom-level');
+    if (zoomLevel) {
+        zoomLevel.textContent = Math.round(imageViewerState.zoom * 100) + '%';
+    }
+}
+
+// Pan functionality
+function startImagePan(e) {
+    if (e.button !== 0) return; // Only left mouse button
+    imageViewerState.isDragging = true;
+    imageViewerState.lastMouseX = e.clientX;
+    imageViewerState.lastMouseY = e.clientY;
+    document.body.style.cursor = 'grabbing';
+    e.preventDefault();
+}
+
+function panImage(e) {
+    if (!imageViewerState.isDragging) return;
+
+    const deltaX = e.clientX - imageViewerState.lastMouseX;
+    const deltaY = e.clientY - imageViewerState.lastMouseY;
+
+    imageViewerState.panX += deltaX;
+    imageViewerState.panY += deltaY;
+
+    imageViewerState.lastMouseX = e.clientX;
+    imageViewerState.lastMouseY = e.clientY;
+
+    updateImageTransform();
+}
+
+function endImagePan() {
+    imageViewerState.isDragging = false;
+    document.body.style.cursor = 'default';
+}
+
+// Wheel zoom
+function handleImageWheel(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    zoomImage(delta);
+}
+
+// Touch events for mobile
+let touchStartDistance = 0;
+let touchStartZoom = 1;
+
+function handleTouchStart(e) {
+    if (e.touches.length === 2) {
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        touchStartDistance = Math.hypot(
+            touch2.clientX - touch1.clientX,
+            touch2.clientY - touch1.clientY
+        );
+        touchStartZoom = imageViewerState.zoom;
+    } else if (e.touches.length === 1) {
+        imageViewerState.isDragging = true;
+        imageViewerState.lastMouseX = e.touches[0].clientX;
+        imageViewerState.lastMouseY = e.touches[0].clientY;
+    }
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+
+    if (e.touches.length === 2) {
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.hypot(
+            touch2.clientX - touch1.clientX,
+            touch2.clientY - touch1.clientY
+        );
+
+        const scale = currentDistance / touchStartDistance;
+        imageViewerState.zoom = Math.max(0.1, Math.min(5, touchStartZoom * scale));
+        updateImageTransform();
+        updateZoomLevel();
+    } else if (e.touches.length === 1 && imageViewerState.isDragging) {
+        const deltaX = e.touches[0].clientX - imageViewerState.lastMouseX;
+        const deltaY = e.touches[0].clientY - imageViewerState.lastMouseY;
+
+        imageViewerState.panX += deltaX;
+        imageViewerState.panY += deltaY;
+
+        imageViewerState.lastMouseX = e.touches[0].clientX;
+        imageViewerState.lastMouseY = e.touches[0].clientY;
+
+        updateImageTransform();
+    }
+}
+
+function handleTouchEnd() {
+    imageViewerState.isDragging = false;
+}
+
+// Fullscreen functionality
+function toggleFullscreen() {
+    const modal = document.querySelector('.modal-overlay');
+    if (!modal) return;
+
+    if (!document.fullscreenElement) {
+        modal.requestFullscreen().catch(err => {
+            console.log('Error attempting to enable fullscreen:', err);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
 function loadVideoPreview(filename, container) {
+    const videoId = 'video-' + Date.now();
     container.innerHTML = `
         <div class="video-preview">
             <div class="preview-header">
                 <span class="file-type-badge video">VIDEO</span>
-                <span class="file-info">Video file</span>
+                <span class="file-info" id="video-info-${videoId}">Loading video...</span>
             </div>
-            <div class="video-container">
-                <video controls preload="metadata" style="max-width: 100%; max-height: 400px;">
-                    <source src="/output/${filename}" type="video/${filename.split('.').pop()}">
-                    Your browser does not support the video tag.
-                </video>
+            <div class="video-player">
+                <div class="video-container">
+                    <video id="${videoId}" preload="metadata" onloadedmetadata="handleVideoLoad('${videoId}')" onerror="handleVideoError('${videoId}')">
+                        <source src="/output/${filename}" type="video/${getVideoMimeType(filename)}">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div class="video-controls">
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="toggleVideoPlayback('${videoId}')" id="play-btn-${videoId}">
+                            <span class="material-icons">play_arrow</span>
+                        </button>
+                        <button class="btn btn-small" onclick="stopVideo('${videoId}')">
+                            <span class="material-icons">stop</span>
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <span class="time-display" id="time-${videoId}">0:00 / 0:00</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="speed-${videoId}">Speed:</label>
+                        <select id="speed-${videoId}" onchange="changeVideoSpeed('${videoId}', this.value)">
+                            <option value="0.5">0.5x</option>
+                            <option value="0.75">0.75x</option>
+                            <option value="1" selected>1x</option>
+                            <option value="1.25">1.25x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2">2x</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="toggleVideoMute('${videoId}')" id="mute-btn-${videoId}">
+                            <span class="material-icons">volume_up</span>
+                        </button>
+                        <input type="range" id="volume-${videoId}" min="0" max="1" step="0.1" value="1" onchange="changeVideoVolume('${videoId}', this.value)">
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="toggleVideoFullscreen('${videoId}')" title="Fullscreen">
+                            <span class="material-icons">fullscreen</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="video-progress">
+                    <input type="range" id="progress-${videoId}" min="0" max="100" value="0" onchange="seekVideo('${videoId}', this.value)">
+                </div>
             </div>
         </div>
     `;
+
+    // Initialize video event listeners
+    initializeVideoPlayer(videoId);
 }
 
 function loadAudioPreview(filename, container) {
+    const audioId = 'audio-' + Date.now();
     container.innerHTML = `
         <div class="audio-preview">
             <div class="preview-header">
                 <span class="file-type-badge audio">AUDIO</span>
-                <span class="file-info">Audio file</span>
+                <span class="file-info" id="audio-info-${audioId}">Loading audio...</span>
             </div>
-            <div class="audio-container">
-                <audio controls preload="metadata" style="width: 100%;">
-                    <source src="/output/${filename}" type="audio/${filename.split('.').pop()}">
+            <div class="audio-player">
+                <div class="audio-visualizer">
+                    <div class="audio-artwork">
+                        <span class="material-icons">music_note</span>
+                    </div>
+                    <div class="audio-details">
+                        <div class="track-title">${filename}</div>
+                        <div class="track-duration" id="duration-${audioId}">--:--</div>
+                    </div>
+                </div>
+                <audio id="${audioId}" preload="metadata" onloadedmetadata="handleAudioLoad('${audioId}')" onerror="handleAudioError('${audioId}')">
+                    <source src="/output/${filename}" type="audio/${getAudioMimeType(filename)}">
                     Your browser does not support the audio tag.
                 </audio>
+                <div class="audio-progress">
+                    <input type="range" id="audio-progress-${audioId}" min="0" max="100" value="0" onchange="seekAudio('${audioId}', this.value)">
+                    <div class="time-info">
+                        <span id="current-time-${audioId}">0:00</span>
+                        <span id="total-time-${audioId}">0:00</span>
+                    </div>
+                </div>
+                <div class="audio-controls">
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="skipAudio('${audioId}', -10)">
+                            <span class="material-icons">replay_10</span>
+                        </button>
+                        <button class="btn btn-large" onclick="toggleAudioPlayback('${audioId}')" id="audio-play-btn-${audioId}">
+                            <span class="material-icons">play_arrow</span>
+                        </button>
+                        <button class="btn btn-small" onclick="skipAudio('${audioId}', 10)">
+                            <span class="material-icons">forward_10</span>
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="toggleAudioMute('${audioId}')" id="audio-mute-btn-${audioId}">
+                            <span class="material-icons">volume_up</span>
+                        </button>
+                        <input type="range" id="audio-volume-${audioId}" min="0" max="1" step="0.1" value="1" onchange="changeAudioVolume('${audioId}', this.value)">
+                    </div>
+                    <div class="control-group">
+                        <label for="audio-speed-${audioId}">Speed:</label>
+                        <select id="audio-speed-${audioId}" onchange="changeAudioSpeed('${audioId}', this.value)">
+                            <option value="0.5">0.5x</option>
+                            <option value="0.75">0.75x</option>
+                            <option value="1" selected>1x</option>
+                            <option value="1.25">1.25x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2">2x</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
     `;
+
+    // Initialize audio event listeners
+    initializeAudioPlayer(audioId);
+}
+
+// Media helper functions
+function getVideoMimeType(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const mimeTypes = {
+        'mp4': 'video/mp4',
+        'webm': 'video/webm',
+        'ogg': 'video/ogg',
+        'avi': 'video/x-msvideo',
+        'mov': 'video/quicktime'
+    };
+    return mimeTypes[ext] || 'video/mp4';
+}
+
+function getAudioMimeType(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const mimeTypes = {
+        'mp3': 'audio/mpeg',
+        'wav': 'audio/wav',
+        'ogg': 'audio/ogg',
+        'flac': 'audio/flac',
+        'm4a': 'audio/mp4'
+    };
+    return mimeTypes[ext] || 'audio/mpeg';
+}
+
+// Video player functions
+function initializeVideoPlayer(videoId) {
+    const video = document.getElementById(videoId);
+    if (!video) return;
+
+    video.addEventListener('timeupdate', () => updateVideoProgress(videoId));
+    video.addEventListener('ended', () => handleVideoEnded(videoId));
+    video.addEventListener('play', () => updateVideoPlayButton(videoId, true));
+    video.addEventListener('pause', () => updateVideoPlayButton(videoId, false));
+}
+
+function handleVideoLoad(videoId) {
+    const video = document.getElementById(videoId);
+    const info = document.getElementById(`video-info-${videoId}`);
+
+    if (video && info) {
+        const duration = formatTime(video.duration);
+        const dimensions = `${video.videoWidth}x${video.videoHeight}`;
+        info.textContent = `${dimensions} • ${duration}`;
+    }
+}
+
+function handleVideoError(videoId) {
+    const info = document.getElementById(`video-info-${videoId}`);
+    if (info) {
+        info.textContent = 'Error loading video';
+    }
+}
+
+function toggleVideoPlayback(videoId) {
+    const video = document.getElementById(videoId);
+    if (!video) return;
+
+    if (video.paused) {
+        video.play();
+    } else {
+        video.pause();
+    }
+}
+
+function stopVideo(videoId) {
+    const video = document.getElementById(videoId);
+    if (!video) return;
+
+    video.pause();
+    video.currentTime = 0;
+}
+
+function changeVideoSpeed(videoId, speed) {
+    const video = document.getElementById(videoId);
+    if (video) {
+        video.playbackRate = parseFloat(speed);
+    }
+}
+
+function toggleVideoMute(videoId) {
+    const video = document.getElementById(videoId);
+    const muteBtn = document.getElementById(`mute-btn-${videoId}`);
+
+    if (!video || !muteBtn) return;
+
+    video.muted = !video.muted;
+    const icon = muteBtn.querySelector('.material-icons');
+    icon.textContent = video.muted ? 'volume_off' : 'volume_up';
+}
+
+function changeVideoVolume(videoId, volume) {
+    const video = document.getElementById(videoId);
+    if (video) {
+        video.volume = parseFloat(volume);
+    }
+}
+
+function seekVideo(videoId, percentage) {
+    const video = document.getElementById(videoId);
+    if (video && video.duration) {
+        video.currentTime = (percentage / 100) * video.duration;
+    }
+}
+
+function updateVideoProgress(videoId) {
+    const video = document.getElementById(videoId);
+    const progress = document.getElementById(`progress-${videoId}`);
+    const timeDisplay = document.getElementById(`time-${videoId}`);
+
+    if (!video || !progress || !timeDisplay) return;
+
+    if (video.duration) {
+        const percentage = (video.currentTime / video.duration) * 100;
+        progress.value = percentage;
+
+        const current = formatTime(video.currentTime);
+        const total = formatTime(video.duration);
+        timeDisplay.textContent = `${current} / ${total}`;
+    }
+}
+
+function updateVideoPlayButton(videoId, isPlaying) {
+    const playBtn = document.getElementById(`play-btn-${videoId}`);
+    if (playBtn) {
+        const icon = playBtn.querySelector('.material-icons');
+        icon.textContent = isPlaying ? 'pause' : 'play_arrow';
+    }
+}
+
+function handleVideoEnded(videoId) {
+    updateVideoPlayButton(videoId, false);
+}
+
+function toggleVideoFullscreen(videoId) {
+    const video = document.getElementById(videoId);
+    if (!video) return;
+
+    if (video.requestFullscreen) {
+        video.requestFullscreen();
+    } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+    } else if (video.msRequestFullscreen) {
+        video.msRequestFullscreen();
+    }
+}
+
+// Audio player functions
+function initializeAudioPlayer(audioId) {
+    const audio = document.getElementById(audioId);
+    if (!audio) return;
+
+    audio.addEventListener('timeupdate', () => updateAudioProgress(audioId));
+    audio.addEventListener('ended', () => handleAudioEnded(audioId));
+    audio.addEventListener('play', () => updateAudioPlayButton(audioId, true));
+    audio.addEventListener('pause', () => updateAudioPlayButton(audioId, false));
+}
+
+function handleAudioLoad(audioId) {
+    const audio = document.getElementById(audioId);
+    const info = document.getElementById(`audio-info-${audioId}`);
+    const duration = document.getElementById(`duration-${audioId}`);
+    const totalTime = document.getElementById(`total-time-${audioId}`);
+
+    if (audio) {
+        const durationText = formatTime(audio.duration);
+        if (info) info.textContent = `Duration: ${durationText}`;
+        if (duration) duration.textContent = durationText;
+        if (totalTime) totalTime.textContent = durationText;
+    }
+}
+
+function handleAudioError(audioId) {
+    const info = document.getElementById(`audio-info-${audioId}`);
+    if (info) {
+        info.textContent = 'Error loading audio';
+    }
+}
+
+function toggleAudioPlayback(audioId) {
+    const audio = document.getElementById(audioId);
+    if (!audio) return;
+
+    if (audio.paused) {
+        audio.play();
+    } else {
+        audio.pause();
+    }
+}
+
+function skipAudio(audioId, seconds) {
+    const audio = document.getElementById(audioId);
+    if (!audio) return;
+
+    audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + seconds));
+}
+
+function toggleAudioMute(audioId) {
+    const audio = document.getElementById(audioId);
+    const muteBtn = document.getElementById(`audio-mute-btn-${audioId}`);
+
+    if (!audio || !muteBtn) return;
+
+    audio.muted = !audio.muted;
+    const icon = muteBtn.querySelector('.material-icons');
+    icon.textContent = audio.muted ? 'volume_off' : 'volume_up';
+}
+
+function changeAudioVolume(audioId, volume) {
+    const audio = document.getElementById(audioId);
+    if (audio) {
+        audio.volume = parseFloat(volume);
+    }
+}
+
+function changeAudioSpeed(audioId, speed) {
+    const audio = document.getElementById(audioId);
+    if (audio) {
+        audio.playbackRate = parseFloat(speed);
+    }
+}
+
+function seekAudio(audioId, percentage) {
+    const audio = document.getElementById(audioId);
+    if (audio && audio.duration) {
+        audio.currentTime = (percentage / 100) * audio.duration;
+    }
+}
+
+function updateAudioProgress(audioId) {
+    const audio = document.getElementById(audioId);
+    const progress = document.getElementById(`audio-progress-${audioId}`);
+    const currentTime = document.getElementById(`current-time-${audioId}`);
+
+    if (!audio || !progress || !currentTime) return;
+
+    if (audio.duration) {
+        const percentage = (audio.currentTime / audio.duration) * 100;
+        progress.value = percentage;
+        currentTime.textContent = formatTime(audio.currentTime);
+    }
+}
+
+function updateAudioPlayButton(audioId, isPlaying) {
+    const playBtn = document.getElementById(`audio-play-btn-${audioId}`);
+    if (playBtn) {
+        const icon = playBtn.querySelector('.material-icons');
+        icon.textContent = isPlaying ? 'pause' : 'play_arrow';
+    }
+}
+
+function handleAudioEnded(audioId) {
+    updateAudioPlayButton(audioId, false);
+}
+
+// Utility function for time formatting
+function formatTime(seconds) {
+    if (isNaN(seconds) || seconds === Infinity) return '0:00';
+
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 function loadTextPreview(filename, container) {
@@ -602,17 +1208,218 @@ function loadPdfPreview(filename, container) {
         <div class="pdf-preview">
             <div class="preview-header">
                 <span class="file-type-badge pdf">PDF</span>
-                <span class="file-info">PDF document</span>
+                <span class="file-info" id="pdf-info">Loading PDF...</span>
             </div>
-            <div class="pdf-container">
-                <iframe src="/output/${filename}" style="width: 100%; height: 500px; border: none;">
-                    <p>Your browser does not support PDF preview.
-                       <a href="/output/${filename}" target="_blank">Click here to open the PDF</a>
-                    </p>
-                </iframe>
+            <div class="pdf-viewer">
+                <div class="pdf-controls">
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="previousPdfPage()" id="prev-page" disabled>
+                            <span class="material-icons">navigate_before</span>
+                        </button>
+                        <span class="page-info">
+                            <input type="number" id="page-input" value="1" min="1" onchange="goToPdfPage(this.value)">
+                            <span>of <span id="total-pages">-</span></span>
+                        </span>
+                        <button class="btn btn-small" onclick="nextPdfPage()" id="next-page" disabled>
+                            <span class="material-icons">navigate_next</span>
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="zoomPdf(-0.2)" title="Zoom Out">
+                            <span class="material-icons">zoom_out</span>
+                        </button>
+                        <span class="zoom-level" id="pdf-zoom-level">100%</span>
+                        <button class="btn btn-small" onclick="zoomPdf(0.2)" title="Zoom In">
+                            <span class="material-icons">zoom_in</span>
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-small" onclick="fitPdfToWidth()" title="Fit Width">
+                            <span class="material-icons">fit_screen</span>
+                        </button>
+                        <button class="btn btn-small" onclick="rotatePdf()" title="Rotate">
+                            <span class="material-icons">rotate_right</span>
+                        </button>
+                        <button class="btn btn-small" onclick="downloadPdf('${filename}')" title="Download">
+                            <span class="material-icons">download</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="pdf-container" id="pdf-container">
+                    <canvas id="pdf-canvas"></canvas>
+                </div>
             </div>
         </div>
     `;
+
+    // Initialize PDF viewer
+    initializePdfViewer(filename);
+}
+
+// PDF.js viewer state
+let pdfViewerState = {
+    pdfDoc: null,
+    currentPage: 1,
+    totalPages: 0,
+    scale: 1.0,
+    rotation: 0,
+    canvas: null,
+    ctx: null
+};
+
+// Initialize PDF.js
+if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+function initializePdfViewer(filename) {
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+
+    pdfViewerState.canvas = canvas;
+    pdfViewerState.ctx = ctx;
+    pdfViewerState.currentPage = 1;
+    pdfViewerState.scale = 1.0;
+    pdfViewerState.rotation = 0;
+
+    // Load PDF
+    const url = `/output/${filename}`;
+
+    if (typeof pdfjsLib === 'undefined') {
+        // Fallback to iframe if PDF.js is not available
+        document.getElementById('pdf-container').innerHTML = `
+            <iframe src="${url}" style="width: 100%; height: 500px; border: none;">
+                <p>Your browser does not support PDF preview.
+                   <a href="${url}" target="_blank">Click here to open the PDF</a>
+                </p>
+            </iframe>
+        `;
+        return;
+    }
+
+    pdfjsLib.getDocument(url).promise.then(function(pdf) {
+        pdfViewerState.pdfDoc = pdf;
+        pdfViewerState.totalPages = pdf.numPages;
+
+        // Update UI
+        document.getElementById('total-pages').textContent = pdf.numPages;
+        document.getElementById('pdf-info').textContent = `${pdf.numPages} pages`;
+
+        // Enable navigation buttons
+        updatePdfNavigationButtons();
+
+        // Render first page
+        renderPdfPage(1);
+
+    }).catch(function(error) {
+        console.error('Error loading PDF:', error);
+        document.getElementById('pdf-container').innerHTML = `
+            <div class="preview-error">
+                <span class="material-icons">error</span>
+                <p>Failed to load PDF</p>
+                <a href="${url}" target="_blank" class="btn btn-primary">Open in new tab</a>
+            </div>
+        `;
+    });
+}
+
+function renderPdfPage(pageNum) {
+    if (!pdfViewerState.pdfDoc) return;
+
+    pdfViewerState.pdfDoc.getPage(pageNum).then(function(page) {
+        const viewport = page.getViewport({
+            scale: pdfViewerState.scale,
+            rotation: pdfViewerState.rotation
+        });
+
+        const canvas = pdfViewerState.canvas;
+        const ctx = pdfViewerState.ctx;
+
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
+
+        page.render(renderContext).promise.then(function() {
+            // Update page input
+            document.getElementById('page-input').value = pageNum;
+            pdfViewerState.currentPage = pageNum;
+            updatePdfNavigationButtons();
+        });
+    });
+}
+
+function previousPdfPage() {
+    if (pdfViewerState.currentPage > 1) {
+        renderPdfPage(pdfViewerState.currentPage - 1);
+    }
+}
+
+function nextPdfPage() {
+    if (pdfViewerState.currentPage < pdfViewerState.totalPages) {
+        renderPdfPage(pdfViewerState.currentPage + 1);
+    }
+}
+
+function goToPdfPage(pageNum) {
+    const page = parseInt(pageNum);
+    if (page >= 1 && page <= pdfViewerState.totalPages) {
+        renderPdfPage(page);
+    } else {
+        document.getElementById('page-input').value = pdfViewerState.currentPage;
+    }
+}
+
+function zoomPdf(delta) {
+    const newScale = Math.max(0.5, Math.min(3.0, pdfViewerState.scale + delta));
+    pdfViewerState.scale = newScale;
+    renderPdfPage(pdfViewerState.currentPage);
+    updatePdfZoomLevel();
+}
+
+function fitPdfToWidth() {
+    const container = document.getElementById('pdf-container');
+    const containerWidth = container.clientWidth - 40; // Account for padding
+
+    if (pdfViewerState.pdfDoc) {
+        pdfViewerState.pdfDoc.getPage(pdfViewerState.currentPage).then(function(page) {
+            const viewport = page.getViewport({ scale: 1.0 });
+            const scale = containerWidth / viewport.width;
+            pdfViewerState.scale = scale;
+            renderPdfPage(pdfViewerState.currentPage);
+            updatePdfZoomLevel();
+        });
+    }
+}
+
+function rotatePdf() {
+    pdfViewerState.rotation = (pdfViewerState.rotation + 90) % 360;
+    renderPdfPage(pdfViewerState.currentPage);
+}
+
+function downloadPdf(filename) {
+    const link = document.createElement('a');
+    link.href = `/output/${filename}`;
+    link.download = filename;
+    link.click();
+}
+
+function updatePdfNavigationButtons() {
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+
+    if (prevBtn) prevBtn.disabled = pdfViewerState.currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = pdfViewerState.currentPage >= pdfViewerState.totalPages;
+}
+
+function updatePdfZoomLevel() {
+    const zoomLevel = document.getElementById('pdf-zoom-level');
+    if (zoomLevel) {
+        zoomLevel.textContent = Math.round(pdfViewerState.scale * 100) + '%';
+    }
 }
 
 function loadGenericPreview(filename, container) {

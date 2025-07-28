@@ -44,3 +44,17 @@ output/*
 # OS
 .DS_Store
 Thumbs.db
+
+# Ignore Python virtual environment
+.venv/
+
+# Ignore pytest cache
+data/telegram_scanner_session.session
+.data/telegram_scanner_session.session-journal
+.pytest_cache/
+
+# Ignore log files
+logs/*.log
+
+# Ignore output directory
+output/
