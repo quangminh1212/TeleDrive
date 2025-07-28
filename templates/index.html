@@ -216,14 +216,24 @@ function downloadFile(filename) {
 
 // Preview file
 function previewFile(filename) {
-    showToast('File preview not implemented yet', 'info');
+    // Use the global TeleDrive function
+    if (window.TeleDrive && window.TeleDrive.previewFile) {
+        window.TeleDrive.previewFile(filename);
+    } else {
+        showToast('File preview functionality loading...', 'info');
+    }
     hideFileMenu();
 }
 
 // Delete file
 function deleteFile(filename) {
     if (confirm('Are you sure you want to delete this file?')) {
-        showToast('File deletion not implemented yet', 'info');
+        // Use the global TeleDrive function
+        if (window.TeleDrive && window.TeleDrive.deleteFile) {
+            window.TeleDrive.deleteFile(filename);
+        } else {
+            showToast('File deletion functionality loading...', 'info');
+        }
     }
     hideFileMenu();
 }

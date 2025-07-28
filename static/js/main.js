@@ -249,24 +249,194 @@ async function apiRequest(url, options = {}) {
 // File operations
 function downloadFile(filename) {
     const link = document.createElement('a');
-    link.href = `/output/${filename}`;
+    link.href = `/download/${filename}`;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     showToast(`Downloading ${filename}`, 'success');
 }
 
 function previewFile(filename) {
-    // This would open a file preview modal
-    showToast('File preview functionality will be implemented', 'info');
+    // Create preview modal
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content file-preview-modal">
+            <div class="modal-header">
+                <h3>File Preview: ${filename}</h3>
+                <button class="modal-close" onclick="closePreviewModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="preview-container" id="preview-container">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Loading preview...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePreviewModal()">Close</button>
+                <button class="btn btn-primary" onclick="downloadFile('${filename}')">Download</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Load preview content
+    loadPreviewContent(filename);
 }
 
 function deleteFile(filename) {
     if (confirm(`Are you sure you want to delete ${filename}?`)) {
-        // This would send a delete request to the server
-        showToast('File deletion functionality will be implemented', 'info');
+        apiRequest('/api/delete_file', 'POST', { filename: filename })
+            .then(response => {
+                if (response.success) {
+                    showToast(`File ${filename} deleted successfully`, 'success');
+                    // Remove file card from UI
+                    const fileCard = document.querySelector(`[data-filename="${filename}"]`);
+                    if (fileCard) {
+                        fileCard.remove();
+                    }
+                    // Refresh stats
+                    if (typeof loadStats === 'function') {
+                        loadStats();
+                    }
+                } else {
+                    showToast(`Error deleting file: ${response.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showToast(`Error deleting file: ${error.message}`, 'error');
+            });
+    }
+}
+
+function loadPreviewContent(filename) {
+    const container = document.getElementById('preview-container');
+    const fileExt = filename.split('.').pop().toLowerCase();
+
+    // Determine preview type based on file extension
+    if (['json'].includes(fileExt)) {
+        loadJsonPreview(filename, container);
+    } else if (['csv'].includes(fileExt)) {
+        loadCsvPreview(filename, container);
+    } else if (['xlsx', 'xls'].includes(fileExt)) {
+        loadExcelPreview(filename, container);
+    } else {
+        // Generic file info preview
+        loadGenericPreview(filename, container);
+    }
+}
+
+function loadJsonPreview(filename, container) {
+    fetch(`/output/${filename}`)
+        .then(response => response.json())
+        .then(data => {
+            container.innerHTML = `
+                <div class="json-preview">
+                    <div class="preview-header">
+                        <span class="file-type-badge json">JSON</span>
+                        <span class="file-info">${Array.isArray(data) ? data.length : Object.keys(data).length} items</span>
+                    </div>
+                    <pre class="json-content">${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        })
+        .catch(error => {
+            container.innerHTML = `
+                <div class="preview-error">
+                    <span class="material-icons">error</span>
+                    <p>Error loading JSON preview: ${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+function loadCsvPreview(filename, container) {
+    fetch(`/output/${filename}`)
+        .then(response => response.text())
+        .then(data => {
+            const lines = data.split('\n').slice(0, 100); // Show first 100 lines
+            const rows = lines.map(line => line.split(','));
+
+            let tableHtml = '<div class="csv-preview"><div class="preview-header"><span class="file-type-badge csv">CSV</span><span class="file-info">' + (lines.length - 1) + ' rows</span></div><table class="csv-table"><thead>';
+
+            if (rows.length > 0) {
+                tableHtml += '<tr>';
+                rows[0].forEach(header => {
+                    tableHtml += `<th>${header.replace(/"/g, '')}</th>`;
+                });
+                tableHtml += '</tr></thead><tbody>';
+
+                for (let i = 1; i < Math.min(rows.length, 21); i++) {
+                    tableHtml += '<tr>';
+                    rows[i].forEach(cell => {
+                        tableHtml += `<td>${cell.replace(/"/g, '')}</td>`;
+                    });
+                    tableHtml += '</tr>';
+                }
+                tableHtml += '</tbody></table>';
+
+                if (lines.length > 21) {
+                    tableHtml += `<p class="preview-note">Showing first 20 rows of ${lines.length - 1} total rows</p>`;
+                }
+            }
+
+            tableHtml += '</div>';
+            container.innerHTML = tableHtml;
+        })
+        .catch(error => {
+            container.innerHTML = `
+                <div class="preview-error">
+                    <span class="material-icons">error</span>
+                    <p>Error loading CSV preview: ${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+function loadExcelPreview(filename, container) {
+    container.innerHTML = `
+        <div class="excel-preview">
+            <div class="preview-header">
+                <span class="file-type-badge excel">EXCEL</span>
+                <span class="file-info">Excel file</span>
+            </div>
+            <div class="preview-content">
+                <span class="material-icons large">description</span>
+                <p>Excel file preview</p>
+                <p class="preview-note">Download the file to view its contents in Excel or a compatible application.</p>
+            </div>
+        </div>
+    `;
+}
+
+function loadGenericPreview(filename, container) {
+    const fileExt = filename.split('.').pop().toLowerCase();
+    const fileSize = 'Unknown size'; // We'll get this from file stats if available
+
+    container.innerHTML = `
+        <div class="generic-preview">
+            <div class="preview-header">
+                <span class="file-type-badge generic">${fileExt.toUpperCase()}</span>
+                <span class="file-info">${fileSize}</span>
+            </div>
+            <div class="preview-content">
+                <span class="material-icons large">insert_drive_file</span>
+                <p>File: ${filename}</p>
+                <p class="preview-note">Preview not available for this file type. Download to view contents.</p>
+            </div>
+        </div>
+    `;
+}
+
+function closePreviewModal() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
     }
 }
 

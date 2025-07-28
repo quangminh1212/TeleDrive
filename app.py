@@ -9,7 +9,7 @@ import json
 import asyncio
 import threading
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
 from flask_socketio import SocketIO, emit
 import eventlet
 
@@ -93,13 +93,23 @@ class WebTelegramScanner(TelegramFileScanner):
             scan_progress['status'] = 'completed'
             scan_progress['files_found'] = len(self.files_data)
             self.socketio.emit('scan_progress', scan_progress)
-            
+            self.socketio.emit('scan_complete', {
+                'success': True,
+                'files_found': len(self.files_data),
+                'messages_scanned': processed,
+                'message': f'Scan completed! Found {len(self.files_data)} files'
+            })
+
             return True
-            
+
         except Exception as e:
             scan_progress['status'] = 'error'
             scan_progress['error'] = str(e)
             self.socketio.emit('scan_progress', scan_progress)
+            self.socketio.emit('scan_complete', {
+                'success': False,
+                'error': str(e)
+            })
             return False
         finally:
             scanning_active = False
@@ -226,9 +236,53 @@ def get_files():
                     'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
                     'type': file.split('.')[-1].upper()
                 })
-    
+
     files.sort(key=lambda x: x['modified'], reverse=True)
     return jsonify(files)
+
+@app.route('/download/<filename>')
+def download_file(filename):
+    """Download output files"""
+    try:
+        # Security check - only allow files from output directory
+        if not filename.endswith(('.json', '.csv', '.xlsx')):
+            return jsonify({'error': 'Invalid file type'}), 400
+
+        # Check if file exists
+        file_path = os.path.join('output', filename)
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'File not found'}), 404
+
+        return send_from_directory('output', filename, as_attachment=True)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/delete_file', methods=['POST'])
+def delete_file():
+    """Delete a file from the output directory"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename', '').strip()
+
+        if not filename:
+            return jsonify({'success': False, 'error': 'Filename is required'})
+
+        # Security check - only allow files from output directory
+        if not filename.endswith(('.json', '.csv', '.xlsx')):
+            return jsonify({'success': False, 'error': 'Invalid file type'})
+
+        # Check if file exists
+        file_path = os.path.join('output', filename)
+        if not os.path.exists(file_path):
+            return jsonify({'success': False, 'error': 'File not found'})
+
+        # Delete the file
+        os.remove(file_path)
+
+        return jsonify({'success': True, 'message': f'File {filename} deleted successfully'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 @socketio.on('connect')
 def handle_connect():
