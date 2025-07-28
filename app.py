@@ -27,6 +27,17 @@ from models import db, User, File, Folder, ScanSession, get_or_create_user
 # Import forms
 from forms import LoginForm, RegistrationForm, ChangePasswordForm
 
+# Import sharing models and routes
+from models_sharing import FileShare, FilePermission, ShareAccessLog, FileComment, FileVersion
+from routes_sharing import register_sharing_routes
+
+# Import analytics
+from analytics import analytics
+
+# Import security and collaboration
+from security import security_manager, TwoFactorAuth, SecurityLog, SessionSecurity
+from collaboration import init_collaboration
+
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'teledrive_secret_key_2025'
@@ -1076,16 +1087,89 @@ def handle_disconnect():
     """Handle client disconnection"""
     pass
 
+# Register sharing routes
+register_sharing_routes(app)
+
+# Analytics routes
+@app.route('/analytics')
+@login_required
+def analytics_dashboard():
+    """Analytics dashboard page"""
+    return render_template('analytics.html')
+
+@app.route('/api/analytics/dashboard')
+@login_required
+def api_analytics_dashboard():
+    """Get dashboard analytics data"""
+    try:
+        stats = analytics.get_dashboard_stats(current_user.id)
+        return jsonify({'success': True, 'stats': stats})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/analytics/usage')
+@login_required
+def api_analytics_usage():
+    """Get usage analytics data"""
+    try:
+        days = int(request.args.get('days', 30))
+        stats = analytics.get_usage_analytics(current_user.id, days)
+        return jsonify({'success': True, 'stats': stats})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/analytics/sharing')
+@login_required
+def api_analytics_sharing():
+    """Get sharing analytics data"""
+    try:
+        stats = analytics.get_sharing_analytics(current_user.id)
+        return jsonify({'success': True, 'stats': stats})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/analytics/storage')
+@login_required
+def api_analytics_storage():
+    """Get storage analytics data"""
+    try:
+        stats = analytics.get_storage_analytics(current_user.id)
+        return jsonify({'success': True, 'stats': stats})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+# PWA routes
+@app.route('/manifest.json')
+def manifest():
+    """Serve PWA manifest"""
+    return send_from_directory('static', 'manifest.json')
+
+@app.route('/sw.js')
+def service_worker():
+    """Serve service worker"""
+    return send_from_directory('static', 'sw.js')
+
+@app.route('/offline.html')
+def offline():
+    """Offline page for PWA"""
+    return render_template('offline.html')
+
 if __name__ == '__main__':
     print("🌐 Starting TeleDrive Web Interface...")
     print("📱 Access at: http://localhost:3000")
     print("⏹️  Press Ctrl+C to stop")
-    
+
     # Create necessary directories
     os.makedirs('templates', exist_ok=True)
     os.makedirs('static/css', exist_ok=True)
     os.makedirs('static/js', exist_ok=True)
+    os.makedirs('static/icons', exist_ok=True)
     os.makedirs('output', exist_ok=True)
     os.makedirs('logs', exist_ok=True)
-    
+
+    # Initialize database with new tables
+    with app.app_context():
+        db.create_all()
+        print("✅ Database tables created/updated")
+
     socketio.run(app, host='0.0.0.0', port=3000, debug=False)

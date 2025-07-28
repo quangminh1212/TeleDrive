@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ file.filename }} - TeleDrive Share</title>
+    
+    <!-- Google Drive-like styling -->
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 500;
+            color: #1a73e8;
+        }
+
+        .share-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: #5f6368;
+            font-size: 14px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .file-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 32px;
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .file-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: #e8f0fe;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-icon .material-icons {
+            font-size: 40px;
+            color: #1a73e8;
+        }
+
+        .file-name {
+            font-size: 24px;
+            font-weight: 500;
+            color: #202124;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .file-details {
+            color: #5f6368;
+            margin-bottom: 32px;
+        }
+
+        .file-size {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .file-type {
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1557b0;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #5f6368;
+            border: 1px solid #dadce0;
+        }
+
+        .btn-secondary:hover {
+            background: #f1f3f4;
+        }
+
+        .password-form {
+            margin-top: 24px;
+            padding: 24px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .password-form.show {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #202124;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dadce0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+
+        .share-stats {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .preview-container {
+            margin-top: 32px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .preview-content {
+            background: white;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        .error-message {
+            color: #d93025;
+            background: #fce8e6;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .main-content {
+                padding: 24px 16px;
+            }
+
+            .file-card {
+                padding: 24px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <span class="material-icons">cloud</span>
+            TeleDrive
+        </div>
+        <div class="share-info">
+            <span class="material-icons">share</span>
+            Shared File
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="file-card">
+            <div class="file-icon">
+                {% if file.get_file_type() == 'image' %}
+                <span class="material-icons">image</span>
+                {% elif file.get_file_type() == 'video' %}
+                <span class="material-icons">movie</span>
+                {% elif file.get_file_type() == 'audio' %}
+                <span class="material-icons">audiotrack</span>
+                {% elif file.get_file_type() == 'document' %}
+                <span class="material-icons">description</span>
+                {% else %}
+                <span class="material-icons">insert_drive_file</span>
+                {% endif %}
+            </div>
+
+            <h1 class="file-name">{{ file.filename }}</h1>
+
+            <div class="file-details">
+                <div class="file-size">
+                    {% if file.file_size %}
+                    Size: {{ "%.2f"|format(file.file_size / 1024 / 1024) }} MB
+                    {% else %}
+                    Size: Unknown
+                    {% endif %}
+                </div>
+                <div class="file-type">Type: {{ file.get_file_type().title() }}</div>
+            </div>
+
+            <div class="actions">
+                {% if share.permission_level.value in ['download', 'edit', 'admin'] %}
+                <a href="/share/{{ share.share_token }}/download" class="btn btn-primary" id="download-btn">
+                    <span class="material-icons">download</span>
+                    Download
+                </a>
+                {% endif %}
+
+                {% if share.permission_level.value in ['view', 'download', 'edit', 'admin'] %}
+                <button class="btn btn-secondary" onclick="togglePreview()">
+                    <span class="material-icons">visibility</span>
+                    Preview
+                </button>
+                {% endif %}
+            </div>
+
+            {% if share.share_type.value == 'password' %}
+            <div class="password-form" id="password-form">
+                <div class="form-group">
+                    <label class="form-label" for="password">Enter Password:</label>
+                    <input type="password" id="password" class="form-input" placeholder="Password required">
+                </div>
+                <button class="btn btn-primary" onclick="submitPassword()">
+                    <span class="material-icons">lock_open</span>
+                    Access File
+                </button>
+            </div>
+            {% endif %}
+
+            <div class="share-stats">
+                <div class="stat-item">
+                    <span>Shared by:</span>
+                    <span>{{ share.owner.username }}</span>
+                </div>
+                <div class="stat-item">
+                    <span>Access level:</span>
+                    <span>{{ share.permission_level.value.title() }}</span>
+                </div>
+                {% if share.expires_at %}
+                <div class="stat-item">
+                    <span>Expires:</span>
+                    <span>{{ share.expires_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                {% endif %}
+                {% if share.max_downloads %}
+                <div class="stat-item">
+                    <span>Downloads:</span>
+                    <span>{{ share.download_count }} / {{ share.max_downloads }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="preview-container" id="preview-container" style="display: none;">
+            <div class="preview-content" id="preview-content">
+                <!-- Preview content will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let previewVisible = false;
+
+        function togglePreview() {
+            const container = document.getElementById('preview-container');
+            const content = document.getElementById('preview-content');
+            
+            if (!previewVisible) {
+                loadPreview();
+                container.style.display = 'block';
+                previewVisible = true;
+            } else {
+                container.style.display = 'none';
+                previewVisible = false;
+            }
+        }
+
+        function loadPreview() {
+            const content = document.getElementById('preview-content');
+            const filename = '{{ file.filename }}';
+            const fileType = '{{ file.get_file_type() }}';
+            
+            content.innerHTML = '<div style="text-align: center; padding: 20px;">Loading preview...</div>';
+            
+            // Simple preview based on file type
+            if (fileType === 'image') {
+                content.innerHTML = `<img src="/share/{{ share.share_token }}/download" style="max-width: 100%; height: auto;" alt="${filename}">`;
+            } else if (fileType === 'text') {
+                content.innerHTML = '<div style="text-align: center; padding: 20px;">Text preview not available for shared files</div>';
+            } else {
+                content.innerHTML = '<div style="text-align: center; padding: 20px;">Preview not available for this file type</div>';
+            }
+        }
+
+        function submitPassword() {
+            const password = document.getElementById('password').value;
+            if (!password) {
+                alert('Please enter a password');
+                return;
+            }
+            
+            // Add password to download URL
+            const downloadBtn = document.getElementById('download-btn');
+            if (downloadBtn) {
+                downloadBtn.href += '?password=' + encodeURIComponent(password);
+            }
+            
+            // Hide password form
+            document.getElementById('password-form').style.display = 'none';
+        }
+
+        // Show password form if required
+        {% if share.share_type.value == 'password' %}
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('password-form').classList.add('show');
+        });
+        {% endif %}
+    </script>
+</body>
+</html>
