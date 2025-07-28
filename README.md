@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # TeleDrive - Telegram File Manager
 
 Công cụ quét và quản lý file từ các kênh Telegram với giao diện web hiện đại.
@@ -7,6 +8,57 @@ Công cụ quét và quản lý file từ các kênh Telegram với giao diện 
 ### Khởi động Web Interface (mặc định):
 ```batch
 run.bat
+=======
+# TeleDrive - Google Drive-like Telegram File Manager
+
+Modern web interface for scanning and managing files from Telegram channels with Google Drive-inspired design.
+
+## 🚀 Quick Start
+
+### Web Interface (Recommended)
+1. **Start web server**: Double-click `start.bat` or `web.bat`
+2. **Open browser**: Go to http://localhost:3000
+3. **Configure**: Visit Settings page to set up Telegram API
+4. **Start scanning**: Use the web interface to scan channels
+
+### Command Line Interface
+1. **Setup**: Run `setup.bat`
+2. **Configure**: Run `config.bat` (option 2 for phone number)
+3. **Scan**: Run `run.bat`
+
+## 🌐 Web Interface Features
+
+### Google Drive-like Design
+- **Clean, modern interface** with familiar Google Drive styling
+- **Responsive design** that works on desktop, tablet, and mobile
+- **Drag & drop file upload** with progress indicators
+- **Real-time scanning progress** with live updates
+- **File grid and list views** with sorting and filtering
+- **Context menus** for file operations
+
+### Core Functionality
+- **Telegram Channel Scanning**: Scan public and private channels
+- **File Management**: Upload, download, preview, and organize files
+- **Search & Filter**: Find files quickly with advanced search
+- **Settings Management**: Configure API credentials and preferences
+- **Progress Tracking**: Monitor scanning operations in real-time
+
+### Access Points
+- **Main Dashboard**: http://localhost:3000
+- **Settings Page**: http://localhost:3000/settings
+- **Channel Scanner**: http://localhost:3000/scan
+
+## 🔧 Manual Setup
+
+1. **Run setup**: Execute `setup.bat`
+2. **Edit .env**: Replace `+84xxxxxxxxx` with your real phone number
+3. **Edit config.json**: Customize configuration (optional)
+4. **Run scanner**: Execute `run.bat` for CLI or `start.bat` for web
+
+## Quan ly cau hinh
+
+### File .env (API Credentials)
+>>>>>>> 7.addGGDriveUI
 ```
 Truy cập: http://localhost:5000
 
