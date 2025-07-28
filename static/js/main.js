@@ -700,8 +700,14 @@ function previewFile(filename) {
 
 function deleteFile(filename) {
     if (confirm(`Are you sure you want to delete ${filename}?`)) {
-        apiRequest('/api/delete_file', 'POST', { filename: filename })
+        showLoading('Deleting file...');
+        
+        apiRequest('/api/delete_file', {
+            method: 'POST',
+            body: JSON.stringify({ filename: filename })
+        })
             .then(response => {
+                hideLoading();
                 if (response.success) {
                     showToast(`File ${filename} deleted successfully`, 'success');
                     // Remove file card from UI
@@ -718,9 +724,455 @@ function deleteFile(filename) {
                 }
             })
             .catch(error => {
+                hideLoading();
                 showToast(`Error deleting file: ${error.message}`, 'error');
             });
     }
+}
+
+// Rename a folder
+function renameFolder(folderId) {
+    const folderCard = document.querySelector(`.file-card[data-folder-id="${folderId}"]`);
+    if (!folderCard) return;
+    
+    const currentName = folderCard.querySelector('.file-name').textContent.trim();
+    const newName = prompt('Enter new folder name:', currentName);
+    
+    if (newName && newName !== currentName) {
+        showLoading('Renaming folder...');
+        
+        apiRequest('/api/rename_folder', {
+            method: 'POST',
+            body: JSON.stringify({
+                folder_id: folderId,
+                new_name: newName
+            })
+        })
+        .then(response => {
+            hideLoading();
+            if (response.success) {
+                showToast('Folder renamed successfully', 'success');
+                // Update folder name in UI
+                const folderName = folderCard.querySelector('.file-name');
+                if (folderName) {
+                    folderName.textContent = newName;
+                } else {
+                    // Refresh if can't update directly
+                    location.reload();
+                }
+            } else {
+                showToast('Failed to rename folder: ' + (response.error || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showToast('Error renaming folder: ' + error.message, 'error');
+        });
+    }
+}
+
+// Delete a folder
+function deleteFolder(folderId) {
+    const folderCard = document.querySelector(`.file-card[data-folder-id="${folderId}"]`);
+    if (!folderCard) return;
+    
+    const folderName = folderCard.querySelector('.file-name').textContent.trim();
+    
+    if (confirm(`Are you sure you want to delete the folder "${folderName}" and all its contents? This action cannot be undone.`)) {
+        showLoading('Deleting folder...');
+        
+        apiRequest('/api/delete_folder', {
+            method: 'POST',
+            body: JSON.stringify({
+                folder_id: folderId
+            })
+        })
+        .then(response => {
+            hideLoading();
+            if (response.success) {
+                showToast(`Folder "${folderName}" deleted successfully`, 'success');
+                // Remove folder card from UI
+                folderCard.remove();
+                // Refresh stats
+                if (typeof loadStats === 'function') {
+                    loadStats();
+                }
+            } else {
+                showToast(`Error deleting folder: ${response.error || 'Unknown error'}`, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showToast(`Error deleting folder: ${error.message}`, 'error');
+        });
+    }
+}
+
+// Share a file
+function shareFile(fileId) {
+    showLoading('Preparing share...');
+    
+    apiRequest('/api/get_share_link', {
+        method: 'POST',
+        body: JSON.stringify({
+            file_id: fileId
+        })
+    })
+    .then(response => {
+        hideLoading();
+        if (response.success && response.share_link) {
+            showShareModal(response.share_link, response.file_name);
+        } else {
+            showToast('Failed to create share link: ' + (response.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error creating share link: ' + error.message, 'error');
+    });
+}
+
+// Share a folder
+function shareFolder(folderId) {
+    showLoading('Preparing share...');
+    
+    apiRequest('/api/get_folder_share_link', {
+        method: 'POST',
+        body: JSON.stringify({
+            folder_id: folderId
+        })
+    })
+    .then(response => {
+        hideLoading();
+        if (response.success && response.share_link) {
+            showShareModal(response.share_link, response.folder_name, true);
+        } else {
+            showToast('Failed to create share link: ' + (response.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error creating share link: ' + error.message, 'error');
+    });
+}
+
+// Show share modal with link
+function showShareModal(shareLink, itemName, isFolder = false) {
+    const modalId = 'share-modal-' + Date.now();
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = modalId;
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${isFolder ? 'Share Folder' : 'Share File'}: ${itemName}</h3>
+                <button class="modal-close" onclick="document.getElementById('${modalId}').remove();">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Anyone with the link below can access this ${isFolder ? 'folder' : 'file'}:</p>
+                <div class="share-url-container">
+                    <input type="text" class="share-url-input" id="share-url-${modalId}" value="${shareLink}" readonly />
+                    <button class="btn btn-primary" onclick="copyShareLink('share-url-${modalId}')">
+                        <span class="material-icons">content_copy</span>
+                        Copy
+                    </button>
+                </div>
+                
+                <div class="share-options" style="margin-top: 20px;">
+                    <h4>Share Options</h4>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="share-require-password-${modalId}" />
+                            Require password
+                        </label>
+                        
+                        <div id="password-fields-${modalId}" style="display: none; margin-top: 10px;">
+                            <input type="password" class="form-input" id="share-password-${modalId}" placeholder="Enter password" />
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Link expiration:</label>
+                        <select class="form-select" id="share-expiration-${modalId}">
+                            <option value="never">Never</option>
+                            <option value="1day">1 day</option>
+                            <option value="7days">7 days</option>
+                            <option value="30days">30 days</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove();">Close</button>
+                <button class="btn btn-primary" onclick="updateShareSettings('${modalId}', ${isFolder}, '${itemName}')">
+                    Update Settings
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add event listener for password checkbox
+    const passwordCheckbox = document.getElementById(`share-require-password-${modalId}`);
+    const passwordFields = document.getElementById(`password-fields-${modalId}`);
+    
+    if (passwordCheckbox && passwordFields) {
+        passwordCheckbox.addEventListener('change', function() {
+            passwordFields.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+}
+
+// Copy share link to clipboard
+function copyShareLink(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    input.select();
+    document.execCommand('copy');
+    
+    // Show feedback
+    showToast('Link copied to clipboard', 'success');
+}
+
+// Update share settings
+function updateShareSettings(modalId, isFolder, itemName) {
+    const requirePassword = document.getElementById(`share-require-password-${modalId}`).checked;
+    const password = requirePassword ? document.getElementById(`share-password-${modalId}`).value : '';
+    const expiration = document.getElementById(`share-expiration-${modalId}`).value;
+    
+    if (requirePassword && !password) {
+        showToast('Please enter a password', 'warning');
+        return;
+    }
+    
+    showLoading('Updating share settings...');
+    
+    apiRequest('/api/update_share_settings', {
+        method: 'POST',
+        body: JSON.stringify({
+            share_url: document.getElementById(`share-url-${modalId}`).value,
+            require_password: requirePassword,
+            password: password,
+            expiration: expiration
+        })
+    })
+    .then(response => {
+        hideLoading();
+        if (response.success) {
+            document.getElementById(modalId).remove();
+            showToast('Share settings updated successfully', 'success');
+        } else {
+            showToast('Failed to update share settings: ' + (response.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error updating share settings: ' + error.message, 'error');
+    });
+}
+
+// Copy file link to clipboard
+function copyFileLink(fileId) {
+    const fileCard = document.querySelector(`.file-card[data-file-id="${fileId}"]`);
+    if (!fileCard) return;
+    
+    const fileName = fileCard.dataset.filename;
+    
+    apiRequest('/api/get_direct_link', {
+        method: 'POST',
+        body: JSON.stringify({
+            file_id: fileId
+        })
+    })
+    .then(response => {
+        if (response.success && response.direct_link) {
+            // Create a temporary input element to copy the link
+            const tempInput = document.createElement('input');
+            tempInput.value = response.direct_link;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            
+            showToast(`Link for "${fileName}" copied to clipboard`, 'success');
+        } else {
+            showToast('Failed to get direct link: ' + (response.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error getting direct link: ' + error.message, 'error');
+    });
+}
+
+// Move file to another folder
+function moveFileToFolder(fileId) {
+    showFolderSelectionModal(fileId);
+}
+
+// Show folder selection modal
+function showFolderSelectionModal(fileId) {
+    const modalId = 'folder-select-modal-' + Date.now();
+    
+    // Create modal structure
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = modalId;
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Move to Folder</h3>
+                <button class="modal-close" onclick="document.getElementById('${modalId}').remove();">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="folder-tree-container" id="folder-tree-${modalId}">
+                    <div class="loading-placeholder">Loading folders...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove();">Cancel</button>
+                <button class="btn btn-primary" id="move-confirm-btn-${modalId}" disabled>Move</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Load folder tree
+    loadFolderTree(modalId, fileId);
+    
+    // Add event listener for move button
+    document.getElementById(`move-confirm-btn-${modalId}`).addEventListener('click', function() {
+        const selectedFolder = document.querySelector(`#folder-tree-${modalId} .folder-tree-item.selected`);
+        if (selectedFolder) {
+            const targetFolderId = selectedFolder.dataset.folderId;
+            moveFile(fileId, targetFolderId, modalId);
+        }
+    });
+}
+
+// Load folder tree for selection
+function loadFolderTree(modalId, fileId) {
+    const treeContainer = document.getElementById(`folder-tree-${modalId}`);
+    
+    apiRequest('/api/get_folder_tree')
+        .then(response => {
+            if (response.success && response.folders) {
+                treeContainer.innerHTML = buildFolderTreeHtml(response.folders, fileId);
+                
+                // Add click event listeners to folder items
+                document.querySelectorAll(`#folder-tree-${modalId} .folder-tree-item`).forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.stopPropagation(); // Prevent parent folder clicks
+                        
+                        // Deselect all folders
+                        document.querySelectorAll(`#folder-tree-${modalId} .folder-tree-item`).forEach(i => {
+                            i.classList.remove('selected');
+                        });
+                        
+                        // Select clicked folder
+                        this.classList.add('selected');
+                        
+                        // Enable move button
+                        document.getElementById(`move-confirm-btn-${modalId}`).disabled = false;
+                    });
+                    
+                    // Add click event for expand/collapse
+                    const expandIcon = item.querySelector('.folder-expand-icon');
+                    if (expandIcon) {
+                        expandIcon.addEventListener('click', function(e) {
+                            e.stopPropagation(); // Don't select the folder when clicking expand icon
+                            
+                            const folderItem = this.closest('.folder-tree-item');
+                            const subFolder = folderItem.nextElementSibling;
+                            
+                            if (subFolder && subFolder.classList.contains('folder-tree-children')) {
+                                const isExpanded = subFolder.style.display !== 'none';
+                                subFolder.style.display = isExpanded ? 'none' : 'block';
+                                this.textContent = isExpanded ? 'chevron_right' : 'expand_more';
+                            }
+                        });
+                    }
+                });
+            } else {
+                treeContainer.innerHTML = `<div class="error-message">Failed to load folders</div>`;
+            }
+        })
+        .catch(error => {
+            treeContainer.innerHTML = `<div class="error-message">Error loading folders: ${error.message}</div>`;
+        });
+}
+
+// Build HTML for folder tree
+function buildFolderTreeHtml(folders, fileId, level = 0) {
+    let html = '';
+    
+    folders.forEach(folder => {
+        // Skip the folder that contains the file (can't move to self)
+        const isCurrentFolder = folder.files && folder.files.some(file => file.id === fileId);
+        const isDisabled = isCurrentFolder ? 'disabled' : '';
+        
+        // Create folder item
+        html += `
+            <div class="folder-tree-item ${isDisabled}" data-folder-id="${folder.id}" style="padding-left: ${level * 20}px">
+                ${folder.children && folder.children.length > 0 ? 
+                    `<span class="material-icons folder-expand-icon">chevron_right</span>` : 
+                    `<span class="folder-expand-spacer"></span>`
+                }
+                <span class="material-icons folder-icon">folder</span>
+                <span class="folder-name">${folder.name}</span>
+            </div>
+        `;
+        
+        // Add children if any
+        if (folder.children && folder.children.length > 0) {
+            html += `<div class="folder-tree-children" style="display: none">`;
+            html += buildFolderTreeHtml(folder.children, fileId, level + 1);
+            html += `</div>`;
+        }
+    });
+    
+    return html;
+}
+
+// Move file to selected folder
+function moveFile(fileId, targetFolderId, modalId) {
+    showLoading('Moving file...');
+    
+    apiRequest('/api/move_file', {
+        method: 'POST',
+        body: JSON.stringify({
+            file_id: fileId,
+            target_folder_id: targetFolderId
+        })
+    })
+    .then(response => {
+        hideLoading();
+        if (response.success) {
+            document.getElementById(modalId).remove();
+            showToast('File moved successfully', 'success');
+            
+            // Remove file card from UI if we're in a folder view
+            const fileCard = document.querySelector(`.file-card[data-file-id="${fileId}"]`);
+            if (fileCard) {
+                fileCard.remove();
+            }
+            
+            // Refresh stats
+            if (typeof loadStats === 'function') {
+                loadStats();
+            }
+        } else {
+            showToast('Failed to move file: ' + (response.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error moving file: ' + error.message, 'error');
+    });
 }
 
 function loadPreviewContent(filename) {
@@ -2077,6 +2529,210 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+// Bulk Operations
+function downloadMultipleFiles(fileIds) {
+    if (!fileIds || fileIds.length === 0) return;
+    
+    if (fileIds.length === 1) {
+        // Just download the single file directly
+        const fileCard = document.querySelector(`.file-card[data-file-id="${fileIds[0]}"]`);
+        if (fileCard) {
+            downloadFile(fileCard.dataset.filename);
+        }
+        return;
+    }
+    
+    showLoading('Preparing download...');
+    
+    apiRequest('/api/prepare_bulk_download', {
+        method: 'POST',
+        body: JSON.stringify({
+            file_ids: fileIds
+        })
+    })
+    .then(response => {
+        hideLoading();
+        if (response.success && response.download_link) {
+            // Create a hidden download link
+            const link = document.createElement('a');
+            link.href = response.download_link;
+            link.download = response.archive_name || 'teledrive_files.zip';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast(`Downloading ${fileIds.length} files as ZIP archive`, 'success');
+        } else {
+            showToast('Failed to prepare download: ' + (response.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error preparing download: ' + error.message, 'error');
+    });
+}
+
+function moveMultipleFiles(fileIds) {
+    if (!fileIds || fileIds.length === 0) return;
+    
+    // If just one file, use the regular move function
+    if (fileIds.length === 1) {
+        moveFileToFolder(fileIds[0]);
+        return;
+    }
+    
+    // Show folder selection modal for multiple files
+    const modalId = 'multi-folder-select-modal-' + Date.now();
+    
+    // Create modal structure
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = modalId;
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Move ${fileIds.length} Files</h3>
+                <button class="modal-close" onclick="document.getElementById('${modalId}').remove();">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="folder-tree-container" id="folder-tree-${modalId}">
+                    <div class="loading-placeholder">Loading folders...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove();">Cancel</button>
+                <button class="btn btn-primary" id="move-confirm-btn-${modalId}" disabled>Move</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Load folder tree (using null for fileId to show all folders)
+    loadFolderTree(modalId, null);
+    
+    // Add event listener for move button
+    document.getElementById(`move-confirm-btn-${modalId}`).addEventListener('click', function() {
+        const selectedFolder = document.querySelector(`#folder-tree-${modalId} .folder-tree-item.selected`);
+        if (selectedFolder) {
+            const targetFolderId = selectedFolder.dataset.folderId;
+            moveMultipleFilesToFolder(fileIds, targetFolderId, modalId);
+        }
+    });
+}
+
+function moveMultipleFilesToFolder(fileIds, targetFolderId, modalId) {
+    showLoading(`Moving ${fileIds.length} files...`);
+    
+    apiRequest('/api/move_multiple_files', {
+        method: 'POST',
+        body: JSON.stringify({
+            file_ids: fileIds,
+            target_folder_id: targetFolderId
+        })
+    })
+    .then(response => {
+        hideLoading();
+        if (response.success) {
+            document.getElementById(modalId).remove();
+            showToast(`${fileIds.length} files moved successfully`, 'success');
+            
+            // Remove file cards from UI
+            fileIds.forEach(fileId => {
+                const fileCard = document.querySelector(`.file-card[data-file-id="${fileId}"]`);
+                if (fileCard) {
+                    fileCard.remove();
+                }
+            });
+            
+            // Exit select mode
+            toggleSelectMode();
+            
+            // Refresh stats
+            if (typeof loadStats === 'function') {
+                loadStats();
+            }
+        } else {
+            showToast('Failed to move files: ' + (response.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error moving files: ' + error.message, 'error');
+    });
+}
+
+function deleteMultipleFiles(fileIds) {
+    if (!fileIds || fileIds.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${fileIds.length} selected file(s)? This action cannot be undone.`)) {
+        return;
+    }
+    
+    showLoading(`Deleting ${fileIds.length} files...`);
+    
+    apiRequest('/api/delete_multiple_files', {
+        method: 'POST',
+        body: JSON.stringify({
+            file_ids: fileIds
+        })
+    })
+    .then(response => {
+        hideLoading();
+        if (response.success) {
+            showToast(`${fileIds.length} files deleted successfully`, 'success');
+            
+            // Remove file cards from UI
+            fileIds.forEach(fileId => {
+                const fileCard = document.querySelector(`.file-card[data-file-id="${fileId}"]`);
+                if (fileCard) {
+                    fileCard.remove();
+                }
+            });
+            
+            // Exit select mode
+            toggleSelectMode();
+            
+            // Refresh stats
+            if (typeof loadStats === 'function') {
+                loadStats();
+            }
+        } else {
+            showToast('Failed to delete files: ' + (response.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error deleting files: ' + error.message, 'error');
+    });
+}
+
+function shareMultipleFiles(fileIds) {
+    if (!fileIds || fileIds.length === 0) return;
+    
+    showLoading('Preparing share link...');
+    
+    apiRequest('/api/share_multiple_files', {
+        method: 'POST',
+        body: JSON.stringify({
+            file_ids: fileIds
+        })
+    })
+    .then(response => {
+        hideLoading();
+        if (response.success && response.share_link) {
+            showShareModal(response.share_link, `${fileIds.length} files`, false, true);
+        } else {
+            showToast('Failed to create share link: ' + (response.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showToast('Error creating share link: ' + error.message, 'error');
+    });
+}
+
 // Export functions for global use
 window.TeleDrive = {
     showToast,
@@ -2091,7 +2747,19 @@ window.TeleDrive = {
     toggleTheme,
     toggleSidebar,
     toggleUserMenu,
-    apiRequest
+    apiRequest,
+    // File actions
+    renameFile,
+    shareFile,
+    copyFileLink,
+    moveFileToFolder,
+    // Folder actions
+    openFolder,
+    renameFolder,
+    deleteFolder,
+    shareFolder,
+    // Selection mode
+    toggleSelectMode
 };
 
 // User Menu Functions
