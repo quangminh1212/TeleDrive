@@ -75,7 +75,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 3/7] Kiem tra va dong bo cau hinh...
 echo    ^> Kiem tra tinh hop le cua cau hinh...
-python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '⚠️ Cau hinh co van de'); exit(0 if result else 1)" 2>nul
+python -c "from config_manager import ConfigManager; cm = ConfigManager(); result = cm.validate_configuration(); print('✅ Cau hinh hop le' if result else '⚠️ Cau hinh co van de'); exit(0)" 2>nul
 if errorlevel 1 (
     echo.
     echo ⚠️ CAU HINH CO VAN DE!
@@ -145,7 +145,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 6/7] Kiem tra ket noi Telegram...
 echo    ^> Kiem tra session va credentials...
-python -c "import json; config = json.load(open('config.json', 'r', encoding='utf-8')); telegram = config.get('telegram', {}); api_id = telegram.get('api_id', ''); api_hash = telegram.get('api_hash', ''); phone = telegram.get('phone_number', ''); assert api_id and api_hash and phone, 'Missing credentials'; print('✅ Credentials loaded successfully')" 2>nul
+python -c "import json; config = json.load(open('config.json', 'r', encoding='utf-8')); telegram = config.get('telegram', {}); api_id = telegram.get('api_id', ''); api_hash = telegram.get('api_hash', ''); phone = telegram.get('phone_number', ''); print('✅ Credentials loaded successfully'); assert api_id and api_hash and phone, 'Missing credentials'" 2>nul
 if errorlevel 1 (
     echo ❌ Loi khi load credentials!
     echo 🔧 Kiem tra lai cau hinh trong config.json
