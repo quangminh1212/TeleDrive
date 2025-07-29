@@ -1675,7 +1675,8 @@ def telegram_verify():
             loop.close()
 
         if result['success']:
-            # Find or create user
+            # User was already created/updated in the authentication process
+            # Find the user by telegram_id
             user = User.query.filter_by(telegram_id=str(result['user']['telegram_id'])).first()
             if user:
                 login_user(user, remember=True)
@@ -1690,7 +1691,36 @@ def telegram_verify():
                     next_page = url_for('dashboard')
                 return redirect(next_page)
             else:
-                flash('User not found. Please contact administrator.', 'error')
+                # This should not happen since create_or_update_user was called
+                # But let's handle it gracefully by creating the user here
+                try:
+                    user = User(
+                        username=result['user']['username'],
+                        email=f"{result['user']['username']}@telegram.local",
+                        telegram_id=str(result['user']['telegram_id']),
+                        phone_number=result['user']['phone'],
+                        first_name=result['user']['first_name'] or '',
+                        last_name=result['user']['last_name'] or '',
+                        is_active=True,
+                        role='user',
+                        auth_method='telegram'
+                    )
+                    db.session.add(user)
+                    db.session.commit()
+
+                    login_user(user, remember=True)
+                    # Clear session data
+                    session.pop('telegram_session_id', None)
+                    session.pop('telegram_phone', None)
+                    session.pop('telegram_country_code', None)
+
+                    flash('Login successful!', 'success')
+                    next_page = request.args.get('next')
+                    if not next_page or not next_page.startswith('/'):
+                        next_page = url_for('dashboard')
+                    return redirect(next_page)
+                except Exception as e:
+                    flash(f'Error creating user account: {str(e)}', 'error')
         elif result.get('requires_password'):
             return render_template('auth/tg_verify.html',
                                  form=form,

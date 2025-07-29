@@ -152,20 +152,21 @@ class TelegramAuthenticator:
         username = telegram_user.username or f"user_{telegram_user.id}"
         email = f"{username}@telegram.local"
         
-        # Check if user already exists by telegram_id
-        user = User.query.filter_by(telegram_id=telegram_user.id).first()
-        
+        # Check if user already exists by telegram_id (store as string)
+        user = User.query.filter_by(telegram_id=str(telegram_user.id)).first()
+
         if not user:
             # Create new user
             user = User(
                 username=username,
                 email=email,
-                telegram_id=telegram_user.id,
+                telegram_id=str(telegram_user.id),  # Store as string for consistency
                 phone_number=phone_number,
                 first_name=telegram_user.first_name or '',
                 last_name=telegram_user.last_name or '',
                 is_active=True,
-                role='user'
+                role='user',
+                auth_method='telegram'  # Set auth method to telegram
             )
             db.session.add(user)
         else:
