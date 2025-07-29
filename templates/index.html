@@ -545,12 +545,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function loadStats() {
     fetch('/api/get_files')
         .then(response => response.json())
-        .then(files => {
+        .then(data => {
+            const files = data.files || [];
             document.getElementById('total-files').textContent = files.length;
-            
-            let totalSize = files.reduce((sum, file) => sum + file.size, 0);
+
+            let totalSize = files.reduce((sum, file) => sum + (file.size || 0), 0);
             document.getElementById('total-size').textContent = formatFileSize(totalSize);
-            
+
             if (files.length > 0) {
                 document.getElementById('last-scan').textContent = files[0].modified;
             }

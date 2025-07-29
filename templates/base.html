@@ -145,7 +145,7 @@
 
     <script>
     // Global search functionality
-    let searchTimeout;
+    let globalSearchTimeout;
 
     function handleSearchInput(event) {
         const query = event.target.value.trim();
@@ -156,13 +156,13 @@
         }
 
         // Clear previous timeout
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
+        if (globalSearchTimeout) {
+            clearTimeout(globalSearchTimeout);
         }
 
         // Show suggestions after 300ms delay
         if (query.length >= 2) {
-            searchTimeout = setTimeout(() => {
+            globalSearchTimeout = setTimeout(() => {
                 loadSearchSuggestions(query);
             }, 300);
         } else {
