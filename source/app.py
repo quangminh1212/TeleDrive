@@ -29,7 +29,7 @@ from database import configure_flask_app, initialize_database
 from models import db, User, File, Folder, ScanSession, ShareLink, get_or_create_user
 
 # Import forms
-from forms import LoginForm, RegistrationForm, ChangePasswordForm, TelegramLoginForm, TelegramVerifyForm
+from forms import LoginForm, RegistrationForm, ChangePasswordForm, TelegramLoginForm, TelegramVerifyForm, RequestPasswordResetForm, ResetPasswordForm
 
 # Import Telegram authentication
 from auth import telegram_auth
@@ -78,6 +78,67 @@ def load_user(user_id):
     """Load user by ID for Flask-Login"""
     return User.query.get(int(user_id))
 
+@app.before_request
+def check_session_timeout():
+    """Check if session has expired"""
+    from flask import session, request
+
+    # Skip session check for static files and auth routes
+    if request.endpoint and (request.endpoint.startswith('static') or
+                           request.endpoint in ['login', 'register', 'forgot_password', 'reset_password']):
+        return
+
+    if current_user.is_authenticated:
+        # Check if session has expired
+        last_activity = session.get('last_activity')
+        if last_activity:
+            from datetime import datetime, timedelta
+            last_activity_time = datetime.fromisoformat(last_activity)
+            session_timeout = timedelta(seconds=app.config.get('PERMANENT_SESSION_LIFETIME', 86400))
+
+            if datetime.utcnow() - last_activity_time > session_timeout:
+                logout_user()
+                session.clear()
+                flash('Your session has expired. Please log in again.', 'info')
+                return redirect(url_for('login'))
+
+        # Update last activity time
+        session['last_activity'] = datetime.utcnow().isoformat()
+        session.permanent = True
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses"""
+    # Prevent clickjacking
+    response.headers['X-Frame-Options'] = 'DENY'
+
+    # Prevent MIME type sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+
+    # Enable XSS protection
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+
+    # Referrer policy
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+
+    # Content Security Policy
+    csp = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' ws: wss:; "
+        "frame-ancestors 'none';"
+    )
+    response.headers['Content-Security-Policy'] = csp
+
+    # HTTPS-only cookies (enable in production with HTTPS)
+    if app.config.get('SESSION_COOKIE_SECURE', False):
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+
+    return response
+
 # Initialize SocketIO
 socketio_config = flask_config.flask_config.get_socketio_config()
 socketio = SocketIO(app,
@@ -85,6 +146,86 @@ socketio = SocketIO(app,
                    async_mode=socketio_config['async_mode'])
 
 # Security functions
+def log_security_event(event_type, user_id=None, username=None, ip_address=None, details=None):
+    """Log security-related events"""
+    import logging
+
+    # Create security logger if it doesn't exist
+    security_logger = logging.getLogger('security')
+    if not security_logger.handlers:
+        handler = logging.FileHandler('logs/security.log')
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        security_logger.addHandler(handler)
+        security_logger.setLevel(logging.INFO)
+
+    # Get IP address if not provided
+    if not ip_address:
+        ip_address = request.remote_addr if request else 'unknown'
+
+    # Create log message
+    log_message = f"Event: {event_type}"
+    if user_id:
+        log_message += f" | User ID: {user_id}"
+    if username:
+        log_message += f" | Username: {username}"
+    if ip_address:
+        log_message += f" | IP: {ip_address}"
+    if details:
+        log_message += f" | Details: {details}"
+
+    security_logger.info(log_message)
+
+# Rate limiting functionality
+from collections import defaultdict
+import time
+
+# In-memory rate limiting storage (use Redis in production)
+rate_limit_storage = defaultdict(list)
+
+def is_rate_limited(key, max_requests=5, window_seconds=300):
+    """Check if a key is rate limited"""
+    now = time.time()
+
+    # Clean old entries
+    rate_limit_storage[key] = [timestamp for timestamp in rate_limit_storage[key]
+                              if now - timestamp < window_seconds]
+
+    # Check if limit exceeded
+    if len(rate_limit_storage[key]) >= max_requests:
+        return True
+
+    # Record this request
+    rate_limit_storage[key].append(now)
+    return False
+
+# Simple caching system (use Redis in production)
+cache_storage = {}
+cache_ttl = {}
+
+def cache_get(key):
+    """Get value from cache if not expired"""
+    if key in cache_storage:
+        if key in cache_ttl and time.time() > cache_ttl[key]:
+            # Cache expired
+            del cache_storage[key]
+            del cache_ttl[key]
+            return None
+        return cache_storage[key]
+    return None
+
+def cache_set(key, value, ttl_seconds=300):
+    """Set value in cache with TTL"""
+    cache_storage[key] = value
+    cache_ttl[key] = time.time() + ttl_seconds
+
+def cache_delete(key):
+    """Delete key from cache"""
+    if key in cache_storage:
+        del cache_storage[key]
+    if key in cache_ttl:
+        del cache_ttl[key]
+
 def sanitize_filename(filename):
     """Sanitize filename to prevent path traversal and other security issues"""
     if not filename:
@@ -495,9 +636,26 @@ def stop_scan():
 
 @app.route('/api/get_files')
 def get_files():
-    """Get list of files from database and output directory"""
-    # Get files from database
-    db_files = File.query.filter_by(is_deleted=False).order_by(File.created_at.desc()).all()
+    """Get list of files from database and output directory with pagination"""
+    # Get pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    per_page = min(per_page, 100)  # Limit max items per page
+
+    # Check cache first
+    user = get_or_create_user()
+    cache_key = f"files_{user.id}_{page}_{per_page}"
+    cached_result = cache_get(cache_key)
+    if cached_result:
+        return jsonify(cached_result)
+
+    # Get files from database with pagination and eager loading
+    db_files_query = File.query.options(
+        db.joinedload(File.owner),
+        db.joinedload(File.folder)
+    ).filter_by(is_deleted=False).order_by(File.created_at.desc())
+    pagination = db_files_query.paginate(page=page, per_page=per_page, error_out=False)
+    db_files = pagination.items
 
     files = []
     for file_record in db_files:
@@ -529,7 +687,26 @@ def get_files():
                 })
 
     files.sort(key=lambda x: x['modified'], reverse=True)
-    return jsonify(files)
+
+    # Prepare response
+    response_data = {
+        'files': files,
+        'pagination': {
+            'page': pagination.page,
+            'per_page': pagination.per_page,
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'has_prev': pagination.has_prev,
+            'has_next': pagination.has_next,
+            'prev_num': pagination.prev_num,
+            'next_num': pagination.next_num
+        }
+    }
+
+    # Cache the response for 5 minutes
+    cache_set(cache_key, response_data, 300)
+
+    return jsonify(response_data)
 
 @app.route('/download/<filename>')
 def download_file(filename):
@@ -850,6 +1027,12 @@ def upload_file():
 
         db.session.commit()
 
+        # Invalidate file list cache for this user
+        user = get_or_create_user()
+        for page in range(1, 11):  # Clear first 10 pages of cache
+            for per_page in [20, 50, 100]:
+                cache_delete(f"files_{user.id}_{page}_{per_page}")
+
         return jsonify({
             'success': True,
             'message': f'Successfully uploaded {len(uploaded_files)} files',
@@ -875,7 +1058,8 @@ def search_files():
         tags = request.args.get('tags', '')
         sort_by = request.args.get('sort_by', 'date')
         sort_order = request.args.get('sort_order', 'desc')
-        limit = min(int(request.args.get('limit', 50)), 100)
+        page = request.args.get('page', 1, type=int)
+        per_page = min(int(request.args.get('per_page', 20)), 100)
 
         if not query:
             return jsonify({'success': False, 'error': 'Search query is required'})
@@ -883,7 +1067,10 @@ def search_files():
         user = get_or_create_user()
 
         # Build search query
-        search_query = File.query.filter_by(user_id=user.id, is_deleted=False)
+        search_query = File.query.options(
+            db.joinedload(File.owner),
+            db.joinedload(File.folder)
+        ).filter_by(user_id=user.id, is_deleted=False)
 
         # Full-text search across multiple fields
         search_terms = query.lower().split()
@@ -988,8 +1175,9 @@ def search_files():
             else:
                 search_query = search_query.order_by(File.created_at.desc())
 
-        # Execute search
-        files = search_query.limit(limit).all()
+        # Execute search with pagination
+        pagination = search_query.paginate(page=page, per_page=per_page, error_out=False)
+        files = pagination.items
 
         # Convert to dict format with search relevance
         results = []
@@ -1020,8 +1208,18 @@ def search_files():
         return jsonify({
             'success': True,
             'results': results,
-            'total': len(results),
+            'total': pagination.total,
             'query': query,
+            'pagination': {
+                'page': pagination.page,
+                'per_page': pagination.per_page,
+                'total': pagination.total,
+                'pages': pagination.pages,
+                'has_prev': pagination.has_prev,
+                'has_next': pagination.has_next,
+                'prev_num': pagination.prev_num,
+                'next_num': pagination.next_num
+            },
             'filters': {
                 'file_type': file_type,
                 'folder_id': folder_id,
@@ -1343,16 +1541,62 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
 
+    # Rate limiting for login attempts
+    client_ip = request.remote_addr
+    if is_rate_limited(f"login_{client_ip}", max_requests=10, window_seconds=300):  # 10 attempts per 5 minutes
+        flash('Too many login attempts. Please try again in 5 minutes.', 'error')
+        log_security_event('RATE_LIMITED', details=f'Login rate limit exceeded for IP: {client_ip}')
+        return render_template('auth/login.html', form=LoginForm())
+
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        if user and user.check_password(form.password.data):
-            login_user(user, remember=form.remember_me.data)
-            next_page = request.args.get('next')
-            if not next_page or not next_page.startswith('/'):
-                next_page = url_for('dashboard')
-            flash('Login successful!', 'success')
-            return redirect(next_page)
+
+        if user:
+            # Check if account is locked
+            if user.is_account_locked():
+                log_security_event('LOGIN_ATTEMPT_LOCKED_ACCOUNT', user.id, user.username,
+                                 details='Attempted login to locked account')
+                flash('Account is temporarily locked due to too many failed login attempts. Please try again later.', 'error')
+                return render_template('auth/login.html', form=form)
+
+            # Check password
+            if user.check_password(form.password.data):
+                # Record successful login
+                user.record_successful_login()
+                db.session.commit()
+
+                # Log successful login
+                log_security_event('LOGIN_SUCCESS', user.id, user.username)
+
+                login_user(user, remember=form.remember_me.data)
+
+                # Set initial session activity time
+                from flask import session
+                session['last_activity'] = datetime.utcnow().isoformat()
+                session.permanent = True
+
+                next_page = request.args.get('next')
+                if not next_page or not next_page.startswith('/'):
+                    next_page = url_for('dashboard')
+                flash('Login successful!', 'success')
+                return redirect(next_page)
+            else:
+                # Record failed login attempt
+                user.record_failed_login()
+                db.session.commit()
+
+                # Log failed login attempt
+                log_security_event('LOGIN_FAILED', user.id, user.username,
+                                 details=f'Failed attempts: {user.failed_login_attempts}')
+
+                remaining_attempts = max(0, 5 - user.failed_login_attempts)
+                if remaining_attempts > 0:
+                    flash(f'Invalid username or password. {remaining_attempts} attempts remaining.', 'error')
+                else:
+                    flash('Account locked due to too many failed attempts. Please try again in 15 minutes.', 'error')
+                    log_security_event('ACCOUNT_LOCKED', user.id, user.username,
+                                     details='Account locked due to failed login attempts')
         else:
             flash('Invalid username or password', 'error')
 
@@ -1389,6 +1633,9 @@ def register():
 @login_required
 def logout():
     """User logout"""
+    # Log logout event
+    log_security_event('LOGOUT', current_user.id, current_user.username)
+
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
@@ -1409,8 +1656,17 @@ def change_password():
             current_user.set_password(form.new_password.data)
             try:
                 db.session.commit()
-                flash('Password changed successfully!', 'success')
-                return redirect(url_for('profile'))
+
+                # Log password change
+                log_security_event('PASSWORD_CHANGED', current_user.id, current_user.username)
+
+                # Invalidate current session for security
+                from flask import session
+                session.clear()
+                logout_user()
+
+                flash('Password changed successfully! Please log in again.', 'success')
+                return redirect(url_for('login'))
             except Exception as e:
                 db.session.rollback()
                 flash('Failed to change password. Please try again.', 'error')
@@ -1418,6 +1674,72 @@ def change_password():
             flash('Current password is incorrect.', 'error')
 
     return render_template('auth/password.html', form=form)
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    """Request password reset"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    # Rate limiting for password reset requests
+    client_ip = request.remote_addr
+    if is_rate_limited(f"reset_{client_ip}", max_requests=3, window_seconds=3600):  # 3 attempts per hour
+        flash('Too many password reset requests. Please try again in 1 hour.', 'error')
+        log_security_event('RATE_LIMITED', details=f'Password reset rate limit exceeded for IP: {client_ip}')
+        return render_template('auth/forgot_password.html', form=RequestPasswordResetForm())
+
+    form = RequestPasswordResetForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            # Generate reset token
+            token = user.generate_reset_token()
+            try:
+                db.session.commit()
+
+                # In a real application, you would send an email here
+                # For now, we'll just flash the token (NOT recommended for production)
+                flash(f'Password reset instructions have been sent to your email. Reset token: {token}', 'info')
+                print(f"Password reset token for {user.email}: {token}")  # Log for development
+
+                return redirect(url_for('login'))
+            except Exception as e:
+                db.session.rollback()
+                flash('Failed to generate reset token. Please try again.', 'error')
+        else:
+            # Don't reveal if email exists or not for security
+            flash('If an account with that email exists, password reset instructions have been sent.', 'info')
+            return redirect(url_for('login'))
+
+    return render_template('auth/forgot_password.html', form=form)
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Reset password with token"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    # Find user with this token
+    user = User.query.filter_by(reset_token=token).first()
+    if not user or not user.verify_reset_token(token):
+        flash('Invalid or expired reset token.', 'error')
+        return redirect(url_for('forgot_password'))
+
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        # Set new password
+        user.set_password(form.password.data)
+        user.clear_reset_token()
+
+        try:
+            db.session.commit()
+            flash('Your password has been reset successfully. You can now log in.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Failed to reset password. Please try again.', 'error')
+
+    return render_template('auth/reset_password.html', form=form)
 
 # Telegram authentication routes
 @app.route('/telegram_login', methods=['GET', 'POST'])

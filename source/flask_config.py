@@ -88,11 +88,17 @@ class FlaskConfigLoader:
         flask_config['UPLOAD_FOLDER'] = self.get('upload.upload_directory', 'data/uploads')
         
         # Session settings
-        flask_config['PERMANENT_SESSION_LIFETIME'] = self.get('flask.permanent_session_lifetime', 86400)
-        
+        flask_config['PERMANENT_SESSION_LIFETIME'] = self.get('flask.permanent_session_lifetime', 86400)  # 24 hours
+
         # Security settings
         flask_config['SESSION_PROTECTION'] = self.get('security.session_protection', 'strong')
-        flask_config['REMEMBER_COOKIE_DURATION'] = self.get('security.remember_cookie_duration', 2592000)
+        flask_config['REMEMBER_COOKIE_DURATION'] = self.get('security.remember_cookie_duration', 2592000)  # 30 days
+
+        # Enhanced session security
+        flask_config['SESSION_COOKIE_SECURE'] = self.get('security.session_cookie_secure', False)  # Set to True in production with HTTPS
+        flask_config['SESSION_COOKIE_HTTPONLY'] = self.get('security.session_cookie_httponly', True)
+        flask_config['SESSION_COOKIE_SAMESITE'] = self.get('security.session_cookie_samesite', 'Lax')
+        flask_config['WTF_CSRF_TIME_LIMIT'] = self.get('security.csrf_time_limit', 3600)  # 1 hour CSRF token lifetime
         
         return flask_config
     
@@ -258,6 +264,16 @@ class FlaskConfigLoader:
                 "email": "admin@teledrive.local",
                 "default_password": "admin123",
                 "auto_create": True
+            },
+            "security": {
+                "session_protection": "strong",
+                "remember_cookie_duration": 2592000,
+                "session_cookie_secure": False,
+                "session_cookie_httponly": True,
+                "session_cookie_samesite": "Lax",
+                "csrf_time_limit": 3600,
+                "max_login_attempts": 5,
+                "lockout_duration": 900
             }
         }
 

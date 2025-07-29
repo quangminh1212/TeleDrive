@@ -35,6 +35,17 @@ class User(UserMixin, db.Model):
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
     auth_method = Column(String(20), default='password')  # password, telegram
+
+    # Password reset fields
+    reset_token = Column(String(64), nullable=True, index=True)
+    reset_token_expires = Column(DateTime, nullable=True)
+
+    # Account security fields
+    failed_login_attempts = Column(Integer, default=0)
+    locked_until = Column(DateTime, nullable=True)
+    last_login_attempt = Column(DateTime, nullable=True)
+    email_verified = Column(Boolean, default=False)
+    email_verification_token = Column(String(64), nullable=True, index=True)
     
     # Relationships
     files = relationship('File', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
@@ -76,6 +87,68 @@ class User(UserMixin, db.Model):
         password_bytes = password.encode('utf-8')
         hash_bytes = self.password_hash.encode('utf-8')
         return bcrypt.checkpw(password_bytes, hash_bytes)
+
+    def generate_reset_token(self):
+        """Generate a password reset token"""
+        self.reset_token = secrets.token_urlsafe(32)
+        self.reset_token_expires = datetime.utcnow() + timedelta(hours=1)  # Token expires in 1 hour
+        return self.reset_token
+
+    def verify_reset_token(self, token):
+        """Verify if the reset token is valid and not expired"""
+        if not self.reset_token or not self.reset_token_expires:
+            return False
+        if self.reset_token != token:
+            return False
+        if datetime.utcnow() > self.reset_token_expires:
+            return False
+        return True
+
+    def clear_reset_token(self):
+        """Clear the reset token after use"""
+        self.reset_token = None
+        self.reset_token_expires = None
+
+    def is_account_locked(self):
+        """Check if account is currently locked"""
+        if not self.locked_until:
+            return False
+        return datetime.utcnow() < self.locked_until
+
+    def record_failed_login(self):
+        """Record a failed login attempt"""
+        self.failed_login_attempts = (self.failed_login_attempts or 0) + 1
+        self.last_login_attempt = datetime.utcnow()
+
+        # Lock account after 5 failed attempts for 15 minutes
+        max_attempts = 5
+        lockout_duration = timedelta(minutes=15)
+
+        if self.failed_login_attempts >= max_attempts:
+            self.locked_until = datetime.utcnow() + lockout_duration
+
+    def record_successful_login(self):
+        """Record a successful login and clear failed attempts"""
+        self.failed_login_attempts = 0
+        self.locked_until = None
+        self.last_login_attempt = datetime.utcnow()
+
+    def generate_email_verification_token(self):
+        """Generate an email verification token"""
+        self.email_verification_token = secrets.token_urlsafe(32)
+        return self.email_verification_token
+
+    def verify_email_token(self, token):
+        """Verify email verification token"""
+        if not self.email_verification_token:
+            return False
+        if self.email_verification_token != token:
+            return False
+
+        # Mark email as verified and clear token
+        self.email_verified = True
+        self.email_verification_token = None
+        return True
 
     def to_dict(self):
         """Convert user to dictionary for JSON serialization"""
@@ -148,9 +221,9 @@ class File(db.Model):
     original_filename = Column(String(255))
     file_path = Column(String(500))  # Path on disk
     file_size = Column(Integer, default=0)
-    mime_type = Column(String(100))
-    folder_id = Column(Integer, ForeignKey('folders.id'), nullable=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    mime_type = Column(String(100), index=True)  # Index for file type filtering
+    folder_id = Column(Integer, ForeignKey('folders.id'), nullable=True, index=True)  # Index for folder queries
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)  # Index for user queries
     
     # Telegram-specific fields
     telegram_message_id = Column(Integer)
@@ -163,8 +236,8 @@ class File(db.Model):
     description = Column(Text)
     
     # File status and tracking
-    is_deleted = Column(Boolean, default=False)
-    is_favorite = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False, index=True)  # Index for filtering deleted files
+    is_favorite = Column(Boolean, default=False, index=True)  # Index for favorite files
     download_count = Column(Integer, default=0)
     
     # Timestamps
@@ -174,6 +247,14 @@ class File(db.Model):
     
     def __repr__(self):
         return f'<File {self.filename}>'
+
+    # Composite indexes for better query performance
+    __table_args__ = (
+        db.Index('idx_user_deleted_created', 'user_id', 'is_deleted', 'created_at'),
+        db.Index('idx_folder_deleted_created', 'folder_id', 'is_deleted', 'created_at'),
+        db.Index('idx_mime_deleted_created', 'mime_type', 'is_deleted', 'created_at'),
+        db.Index('idx_user_favorite', 'user_id', 'is_favorite'),
+    )
     
     def get_tags(self):
         """Get tags as a list"""
