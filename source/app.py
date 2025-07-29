@@ -37,8 +37,18 @@ from auth import telegram_auth
 # Import Flask configuration loader
 import flask_config
 
-# Initialize Flask app
-app = Flask(__name__, template_folder='../templates', static_folder='../static')
+# Initialize Flask app with absolute paths
+import os
+from pathlib import Path
+
+# Get project root directory (parent of source directory)
+project_root = Path(__file__).parent.parent
+template_folder = project_root / 'templates'
+static_folder = project_root / 'static'
+
+app = Flask(__name__,
+           template_folder=str(template_folder.absolute()),
+           static_folder=str(static_folder.absolute()))
 
 # Load configuration from config.json
 flask_app_config = flask_config.flask_config.get_flask_config()
@@ -1710,17 +1720,18 @@ def handle_disconnect():
     pass
 
 if __name__ == '__main__':
-    # Get server configuration
-    server_config = flask_config.flask_config.get_server_config()
-
     print("🌐 Starting TeleDrive Web Interface...")
-    print(f"📱 Access at: http://{server_config['host']}:{server_config['port']}")
-    print("⏹️  Press Ctrl+C to stop")
 
     # Create necessary directories from config
     directories = flask_config.flask_config.get_directories()
     for name, path in directories.items():
         os.makedirs(path, exist_ok=True)
+
+    # Get server configuration with port availability checking
+    server_config = flask_config.flask_config.get_server_config()
+
+    print(f"📱 Access at: http://{server_config['host']}:{server_config['port']}")
+    print("⏹️  Press Ctrl+C to stop")
 
     # Remove incompatible parameters for socketio.run()
     socketio_config = {
@@ -1729,5 +1740,28 @@ if __name__ == '__main__':
         'debug': server_config['debug']
     }
 
-    # Start server with configuration
-    socketio.run(app, **socketio_config)
+    try:
+        # Start server with configuration
+        socketio.run(app, **socketio_config)
+    except OSError as e:
+        if "address already in use" in str(e).lower() or "10048" in str(e):
+            print(f"❌ Port {server_config['port']} is already in use")
+            print("🔄 Trying to find an alternative port...")
+
+            # Force a new port selection
+            alternative_port = flask_config.flask_config._find_available_port(
+                server_config['host'], server_config['port'] + 1
+            )
+
+            print(f"✅ Using alternative port: {alternative_port}")
+            socketio_config['port'] = alternative_port
+
+            # Update config with new port
+            if flask_config.flask_config._config and 'flask' in flask_config.flask_config._config:
+                flask_config.flask_config._config['flask']['port'] = alternative_port
+                flask_config.flask_config.save_config()
+
+            # Try again with new port
+            socketio.run(app, **socketio_config)
+        else:
+            raise

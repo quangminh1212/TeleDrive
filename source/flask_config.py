@@ -6,15 +6,18 @@ Loads configuration from config.json for Flask application settings
 
 import os
 import json
+import socket
 from pathlib import Path
 from typing import Dict, Any, Optional
 
 class FlaskConfigLoader:
     """Load Flask configuration from config.json"""
-    
+
     def __init__(self, config_file: str = 'config.json'):
         self.config_file = Path(config_file)
         self._config = None
+        # Get project root directory (parent of source directory)
+        self.project_root = Path(__file__).parent.parent
         self.load_config()
     
     def load_config(self) -> Dict[str, Any]:
@@ -59,16 +62,25 @@ class FlaskConfigLoader:
     def get_flask_config(self) -> Dict[str, Any]:
         """Get Flask-specific configuration"""
         flask_config = {}
-        
+
         # Basic Flask settings - Use environment variable or generate secure key
         import os
         import secrets
         default_secret = os.environ.get('FLASK_SECRET_KEY') or secrets.token_hex(32)
         flask_config['SECRET_KEY'] = self.get('flask.secret_key', default_secret)
         flask_config['DEBUG'] = self.get('flask.debug', False)
-        
-        # Database settings
-        flask_config['SQLALCHEMY_DATABASE_URI'] = self.get('database.url', 'sqlite:///data/teledrive.db')
+
+        # Database settings - Use absolute path
+        default_db_path = self.project_root / 'data' / 'teledrive.db'
+        db_url = self.get('database.url', f'sqlite:///{default_db_path.absolute()}')
+
+        # If the URL is relative, make it absolute
+        if db_url.startswith('sqlite:///data/'):
+            relative_path = db_url.replace('sqlite:///', '')
+            absolute_path = self.project_root / relative_path
+            db_url = f'sqlite:///{absolute_path.absolute()}'
+
+        flask_config['SQLALCHEMY_DATABASE_URI'] = db_url
         flask_config['SQLALCHEMY_TRACK_MODIFICATIONS'] = self.get('database.track_modifications', False)
         
         # Upload settings
@@ -84,11 +96,55 @@ class FlaskConfigLoader:
         
         return flask_config
     
+    def _is_port_available(self, host: str, port: int) -> bool:
+        """Check if a port is available on the given host"""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(1)
+                result = sock.connect_ex((host, port))
+                return result != 0
+        except Exception:
+            return False
+
+    def _find_available_port(self, host: str, start_port: int, max_attempts: int = 10) -> int:
+        """Find an available port starting from start_port"""
+        for port in range(start_port, start_port + max_attempts):
+            if self._is_port_available(host, port):
+                return port
+
+        # If no port found in range, try some common alternative ports
+        alternative_ports = [5000, 8000, 8080, 8888, 9000]
+        for port in alternative_ports:
+            if port != start_port and self._is_port_available(host, port):
+                return port
+
+        # Last resort: return original port and let the system handle the error
+        return start_port
+
     def get_server_config(self) -> Dict[str, Any]:
         """Get server configuration for running the Flask app"""
+        host = self.get('flask.host', '0.0.0.0')
+        preferred_port = self.get('flask.port', 3000)
+
+        # Check if preferred port is available
+        if not self._is_port_available(host, preferred_port):
+            available_port = self._find_available_port(host, preferred_port + 1)
+            print(f"⚠️ Port {preferred_port} is already in use")
+            print(f"✅ Using alternative port: {available_port}")
+
+            # Update config with new port for future reference
+            if self._config and 'flask' in self._config:
+                self._config['flask']['port'] = available_port
+                self.save_config()
+
+            port = available_port
+        else:
+            port = preferred_port
+            print(f"✅ Using port: {port}")
+
         return {
-            'host': self.get('flask.host', '0.0.0.0'),
-            'port': self.get('flask.port', 3000),
+            'host': host,
+            'port': port,
             'debug': self.get('flask.debug', False),
             'threaded': self.get('flask.threaded', True),
             'use_reloader': self.get('flask.use_reloader', False)
@@ -149,17 +205,25 @@ class FlaskConfigLoader:
     def create_directories(self) -> None:
         """Create all necessary directories"""
         directories = self.get_directories()
-        
+
         for name, path in directories.items():
-            dir_path = Path(path)
+            # Convert relative paths to absolute paths
+            if not Path(path).is_absolute():
+                dir_path = self.project_root / path
+            else:
+                dir_path = Path(path)
+
             try:
                 dir_path.mkdir(parents=True, exist_ok=True)
-                print(f"✅ Created directory: {path}")
+                print(f"✅ Created directory: {dir_path}")
             except Exception as e:
-                print(f"⚠️ Failed to create directory {path}: {e}")
+                print(f"⚠️ Failed to create directory {dir_path}: {e}")
     
     def _get_default_config(self) -> Dict[str, Any]:
         """Get default configuration if config file doesn't exist"""
+        # Use absolute path for database
+        default_db_path = self.project_root / 'data' / 'teledrive.db'
+
         return {
             "_schema_version": "1.0",
             "_description": "TeleDrive Configuration",
@@ -175,7 +239,7 @@ class FlaskConfigLoader:
                 "socketio_async_mode": "eventlet"
             },
             "database": {
-                "url": "sqlite:///data/teledrive.db",
+                "url": f"sqlite:///{default_db_path.absolute()}",
                 "track_modifications": False
             },
             "upload": {

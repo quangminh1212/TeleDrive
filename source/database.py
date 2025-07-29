@@ -13,10 +13,11 @@ from flask import Flask
 from flask_migrate import Migrate
 from models import db, init_db, User, File, Folder, ScanSession
 
-# Database configuration
-DATABASE_DIR = Path('../data')
+# Database configuration - Use absolute paths
+PROJECT_ROOT = Path(__file__).parent.parent  # Go up from source/ to project root
+DATABASE_DIR = PROJECT_ROOT / 'data'
 DATABASE_FILE = DATABASE_DIR / 'teledrive.db'
-DATABASE_URL = f'sqlite:///{DATABASE_FILE}'
+DATABASE_URL = f'sqlite:///{DATABASE_FILE.absolute()}'
 
 def setup_database_config():
     """Setup database configuration in config.json"""
@@ -52,11 +53,11 @@ def create_database_directories():
     """Create necessary directories for database and data storage"""
     directories = [
         DATABASE_DIR,
-        Path('../data/uploads'),
-        Path('../data/backups'),
-        Path('../data/temp')
+        PROJECT_ROOT / 'data' / 'uploads',
+        PROJECT_ROOT / 'data' / 'backups',
+        PROJECT_ROOT / 'data' / 'temp'
     ]
-    
+
     for directory in directories:
         directory.mkdir(parents=True, exist_ok=True)
         print(f"✅ Created directory: {directory}")
