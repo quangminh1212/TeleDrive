@@ -38,7 +38,7 @@ from auth import telegram_auth
 import flask_config
 
 # Initialize Flask app
-app = Flask(__name__)
+app = Flask(__name__, template_folder='../templates', static_folder='../static')
 
 # Load configuration from config.json
 flask_app_config = flask_config.flask_config.get_flask_config()

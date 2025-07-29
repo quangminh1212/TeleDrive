@@ -14,7 +14,7 @@ from flask_migrate import Migrate
 from models import db, init_db, User, File, Folder, ScanSession
 
 # Database configuration
-DATABASE_DIR = Path('data')
+DATABASE_DIR = Path('../data')
 DATABASE_FILE = DATABASE_DIR / 'teledrive.db'
 DATABASE_URL = f'sqlite:///{DATABASE_FILE}'
 
@@ -52,9 +52,9 @@ def create_database_directories():
     """Create necessary directories for database and data storage"""
     directories = [
         DATABASE_DIR,
-        Path('data/uploads'),
-        Path('data/backups'),
-        Path('data/temp')
+        Path('../data/uploads'),
+        Path('../data/backups'),
+        Path('../data/temp')
     ]
     
     for directory in directories:
