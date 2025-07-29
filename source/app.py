@@ -88,23 +88,24 @@ def check_session_timeout():
                            request.endpoint in ['login', 'register', 'forgot_password', 'reset_password']):
         return
 
-    if current_user.is_authenticated:
-        # Check if session has expired
-        last_activity = session.get('last_activity')
-        if last_activity:
-            from datetime import datetime, timedelta
-            last_activity_time = datetime.fromisoformat(last_activity)
-            session_timeout = timedelta(seconds=app.config.get('PERMANENT_SESSION_LIFETIME', 86400))
+    # Skip session timeout check - allow access without authentication
+    # if current_user.is_authenticated:
+    #     # Check if session has expired
+    #     last_activity = session.get('last_activity')
+    #     if last_activity:
+    #         from datetime import datetime, timedelta
+    #         last_activity_time = datetime.fromisoformat(last_activity)
+    #         session_timeout = timedelta(seconds=app.config.get('PERMANENT_SESSION_LIFETIME', 86400))
 
-            if datetime.utcnow() - last_activity_time > session_timeout:
-                logout_user()
-                session.clear()
-                flash('Your session has expired. Please log in again.', 'info')
-                return redirect(url_for('login'))
+    #         if datetime.utcnow() - last_activity_time > session_timeout:
+    #             logout_user()
+    #             session.clear()
+    #             flash('Your session has expired. Please log in again.', 'info')
+    #             return redirect(url_for('login'))
 
-        # Update last activity time
-        session['last_activity'] = datetime.utcnow().isoformat()
-        session.permanent = True
+    #     # Update last activity time
+    #     session['last_activity'] = datetime.utcnow().isoformat()
+    #     session.permanent = True
 
 @app.after_request
 def add_security_headers(response):
@@ -498,7 +499,6 @@ class WebTelegramScanner(TelegramFileScanner):
             scanning_active = False
 
 @app.route('/')
-@login_required
 def dashboard():
     """Main dashboard page"""
     # Get recent files from database
@@ -540,22 +540,19 @@ def dashboard():
     return render_template('index.html', files=all_files)
 
 @app.route('/settings')
-@login_required
 def settings():
     """Settings page for API configuration"""
     cm = ConfigManager()
     current_config = cm.load_config()
-    
+
     return render_template('settings.html', config=current_config)
 
 @app.route('/scan')
-@login_required
 def scan_page():
     """Channel scanning page"""
     return render_template('scan.html')
 
 @app.route('/search')
-@login_required
 def search_page():
     """Advanced search page"""
     return render_template('search.html')
