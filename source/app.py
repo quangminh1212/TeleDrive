@@ -29,7 +29,7 @@ from database import configure_flask_app, initialize_database
 from models import db, User, File, Folder, ScanSession, ShareLink, FileComment, FileVersion, ActivityLog, SmartFolder, get_or_create_user
 
 # Import forms
-from forms import LoginForm, RegistrationForm, ChangePasswordForm, TelegramLoginForm, TelegramVerifyForm, RequestPasswordResetForm, ResetPasswordForm
+from forms import TelegramLoginForm, TelegramVerifyForm
 
 # Import Telegram authentication
 from auth import telegram_auth
@@ -1553,97 +1553,18 @@ def rename_folder(folder_id):
 # Authentication routes
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """User login page"""
+    """Redirect to Telegram login - only Telegram authentication is supported"""
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
 
-    # Rate limiting for login attempts
-    client_ip = request.remote_addr
-    if is_rate_limited(f"login_{client_ip}", max_requests=10, window_seconds=300):  # 10 attempts per 5 minutes
-        flash('Too many login attempts. Please try again in 5 minutes.', 'error')
-        log_security_event('RATE_LIMITED', details=f'Login rate limit exceeded for IP: {client_ip}')
-        return render_template('auth/login.html', form=LoginForm())
-
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-
-        if user:
-            # Check if account is locked
-            if user.is_account_locked():
-                log_security_event('LOGIN_ATTEMPT_LOCKED_ACCOUNT', user.id, user.username,
-                                 details='Attempted login to locked account')
-                flash('Account is temporarily locked due to too many failed login attempts. Please try again later.', 'error')
-                return render_template('auth/login.html', form=form)
-
-            # Check password
-            if user.check_password(form.password.data):
-                # Record successful login
-                user.record_successful_login()
-                db.session.commit()
-
-                # Log successful login
-                log_security_event('LOGIN_SUCCESS', user.id, user.username)
-
-                login_user(user, remember=form.remember_me.data)
-
-                # Set initial session activity time
-                from flask import session
-                session['last_activity'] = datetime.utcnow().isoformat()
-                session.permanent = True
-
-                next_page = request.args.get('next')
-                if not next_page or not next_page.startswith('/'):
-                    next_page = url_for('dashboard')
-                flash('Login successful!', 'success')
-                return redirect(next_page)
-            else:
-                # Record failed login attempt
-                user.record_failed_login()
-                db.session.commit()
-
-                # Log failed login attempt
-                log_security_event('LOGIN_FAILED', user.id, user.username,
-                                 details=f'Failed attempts: {user.failed_login_attempts}')
-
-                remaining_attempts = max(0, 5 - user.failed_login_attempts)
-                if remaining_attempts > 0:
-                    flash(f'Invalid username or password. {remaining_attempts} attempts remaining.', 'error')
-                else:
-                    flash('Account locked due to too many failed attempts. Please try again in 15 minutes.', 'error')
-                    log_security_event('ACCOUNT_LOCKED', user.id, user.username,
-                                     details='Account locked due to failed login attempts')
-        else:
-            flash('Invalid username or password', 'error')
-
-    return render_template('auth/login.html', form=form)
+    # Redirect directly to Telegram login
+    return redirect(url_for('telegram_login'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration page"""
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-
-    form = RegistrationForm()
-    if form.validate_on_submit():
-        user = User(
-            username=form.username.data,
-            email=form.email.data,
-            role='user',
-            is_active=True
-        )
-        user.set_password(form.password.data)
-
-        try:
-            db.session.add(user)
-            db.session.commit()
-            flash('Registration successful! You can now log in.', 'success')
-            return redirect(url_for('login'))
-        except Exception as e:
-            db.session.rollback()
-            flash('Registration failed. Please try again.', 'error')
-
-    return render_template('auth/register.html', form=form)
+    """Registration disabled - only Telegram authentication is supported"""
+    flash('Registration is disabled. Please use Telegram authentication.', 'info')
+    return redirect(url_for('telegram_login'))
 
 @app.route('/logout')
 @login_required
@@ -1665,97 +1586,21 @@ def profile():
 @app.route('/change_password', methods=['GET', 'POST'])
 @login_required
 def change_password():
-    """Change password page"""
-    form = ChangePasswordForm()
-    if form.validate_on_submit():
-        if current_user.check_password(form.current_password.data):
-            current_user.set_password(form.new_password.data)
-            try:
-                db.session.commit()
-
-                # Log password change
-                log_security_event('PASSWORD_CHANGED', current_user.id, current_user.username)
-
-                # Invalidate current session for security
-                from flask import session
-                session.clear()
-                logout_user()
-
-                flash('Password changed successfully! Please log in again.', 'success')
-                return redirect(url_for('login'))
-            except Exception as e:
-                db.session.rollback()
-                flash('Failed to change password. Please try again.', 'error')
-        else:
-            flash('Current password is incorrect.', 'error')
-
-    return render_template('auth/password.html', form=form)
+    """Password change disabled - only Telegram authentication is supported"""
+    flash('Password change is not available for Telegram authentication.', 'info')
+    return redirect(url_for('profile'))
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
-    """Request password reset"""
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-
-    # Rate limiting for password reset requests
-    client_ip = request.remote_addr
-    if is_rate_limited(f"reset_{client_ip}", max_requests=3, window_seconds=3600):  # 3 attempts per hour
-        flash('Too many password reset requests. Please try again in 1 hour.', 'error')
-        log_security_event('RATE_LIMITED', details=f'Password reset rate limit exceeded for IP: {client_ip}')
-        return render_template('auth/forgot_password.html', form=RequestPasswordResetForm())
-
-    form = RequestPasswordResetForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user:
-            # Generate reset token
-            token = user.generate_reset_token()
-            try:
-                db.session.commit()
-
-                # In a real application, you would send an email here
-                # For now, we'll just flash the token (NOT recommended for production)
-                flash(f'Password reset instructions have been sent to your email. Reset token: {token}', 'info')
-                print(f"Password reset token for {user.email}: {token}")  # Log for development
-
-                return redirect(url_for('login'))
-            except Exception as e:
-                db.session.rollback()
-                flash('Failed to generate reset token. Please try again.', 'error')
-        else:
-            # Don't reveal if email exists or not for security
-            flash('If an account with that email exists, password reset instructions have been sent.', 'info')
-            return redirect(url_for('login'))
-
-    return render_template('auth/forgot_password.html', form=form)
+    """Password reset disabled - only Telegram authentication is supported"""
+    flash('Password reset is not available. Please use Telegram authentication.', 'info')
+    return redirect(url_for('telegram_login'))
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
-    """Reset password with token"""
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-
-    # Find user with this token
-    user = User.query.filter_by(reset_token=token).first()
-    if not user or not user.verify_reset_token(token):
-        flash('Invalid or expired reset token.', 'error')
-        return redirect(url_for('forgot_password'))
-
-    form = ResetPasswordForm()
-    if form.validate_on_submit():
-        # Set new password
-        user.set_password(form.password.data)
-        user.clear_reset_token()
-
-        try:
-            db.session.commit()
-            flash('Your password has been reset successfully. You can now log in.', 'success')
-            return redirect(url_for('login'))
-        except Exception as e:
-            db.session.rollback()
-            flash('Failed to reset password. Please try again.', 'error')
-
-    return render_template('auth/reset_password.html', form=form)
+    """Password reset disabled - only Telegram authentication is supported"""
+    flash('Password reset is not available. Please use Telegram authentication.', 'info')
+    return redirect(url_for('telegram_login'))
 
 # Telegram authentication routes
 @app.route('/telegram_login', methods=['GET', 'POST'])

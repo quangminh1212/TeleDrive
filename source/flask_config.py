@@ -166,7 +166,7 @@ class FlaskConfigLoader:
     def get_login_config(self) -> Dict[str, Any]:
         """Get Flask-Login configuration"""
         return {
-            'login_view': self.get('flask.login_view', 'login'),
+            'login_view': self.get('flask.login_view', 'telegram_login'),
             'login_message': self.get('flask.login_message', 'Please log in to access this page.'),
             'login_message_category': self.get('flask.login_message_category', 'info')
         }
