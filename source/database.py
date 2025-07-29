@@ -22,31 +22,34 @@ DATABASE_URL = f'sqlite:///{DATABASE_FILE.absolute()}'
 def setup_database_config():
     """Setup database configuration in config.json"""
     config_file = Path('config.json')
-    
+
     if config_file.exists():
         with open(config_file, 'r', encoding='utf-8') as f:
             config = json.load(f)
     else:
         config = {}
-    
-    # Add database configuration
+
+    # Ensure database configuration uses absolute path
     if 'database' not in config:
-        config['database'] = {
-            'url': DATABASE_URL,
-            'track_modifications': False,
-            'pool_size': 10,
-            'pool_timeout': 20,
-            'pool_recycle': -1,
-            'max_overflow': 0,
-            'echo': False  # Set to True for SQL debugging
-        }
-        
-        # Save updated config
-        with open(config_file, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=2, ensure_ascii=False)
-        
-        print("✅ Added database configuration to config.json")
-    
+        config['database'] = {}
+
+    # Always update the database URL to use absolute path
+    config['database'].update({
+        'url': DATABASE_URL,
+        'track_modifications': False,
+        'pool_size': 10,
+        'pool_timeout': 20,
+        'pool_recycle': -1,
+        'max_overflow': 0,
+        'echo': False  # Set to True for SQL debugging
+    })
+
+    # Save updated config
+    with open(config_file, 'w', encoding='utf-8') as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+
+    print(f"✅ Updated database configuration with absolute path: {DATABASE_URL}")
+
     return config['database']
 
 def create_database_directories():
