@@ -1,8 +1,7 @@
 {
   "_schema_version": "1.0",
   "_description": "Telegram File Scanner Configuration",
-  "_last_updated": "2025-01-11",
-  
+  "_last_updated": "2025-07-29",
   "telegram": {
     "_description": "Telegram API configuration - Get credentials from https://my.telegram.org/apps",
     "api_id": "21272067",
@@ -37,7 +36,6 @@
     },
     "server_environment": "production"
   },
-  
   "output": {
     "_description": "Output file configuration",
     "directory": "output",
@@ -70,11 +68,13 @@
         "enabled": false,
         "filename": "simple_files.json",
         "encoding": "utf-8",
-        "fields": ["name", "download_link"]
+        "fields": [
+          "name",
+          "download_link"
+        ]
       }
     }
   },
-  
   "scanning": {
     "_description": "Scanning behavior configuration",
     "max_messages": null,
@@ -105,7 +105,6 @@
       "cache_size": 1000
     }
   },
-  
   "download": {
     "_description": "Download and link generation settings",
     "generate_links": true,
@@ -116,12 +115,16 @@
     "preserve_filename": true,
     "max_file_size_mb": 100,
     "allowed_extensions": [],
-    "blocked_extensions": [".exe", ".bat", ".cmd", ".scr"],
+    "blocked_extensions": [
+      ".exe",
+      ".bat",
+      ".cmd",
+      ".scr"
+    ],
     "download_timeout": 300,
     "verify_downloads": true,
     "resume_downloads": true
   },
-  
   "display": {
     "_description": "Display and UI configuration",
     "show_progress": true,
@@ -140,7 +143,6 @@
       "info": "blue"
     }
   },
-  
   "filters": {
     "_description": "File filtering configuration",
     "min_file_size": 0,
@@ -156,17 +158,21 @@
     "message_text_filter": "",
     "case_sensitive": false
   },
-  
   "security": {
-    "_description": "Security and privacy settings",
-    "mask_phone_numbers": true,
-    "mask_user_ids": false,
-    "exclude_personal_info": true,
-    "secure_session": true,
-    "auto_logout": false,
-    "session_timeout": 3600
+    "_description": "Security and authentication settings",
+    "password_min_length": 6,
+    "password_require_uppercase": false,
+    "password_require_lowercase": false,
+    "password_require_numbers": false,
+    "password_require_symbols": false,
+    "session_protection": "strong",
+    "remember_cookie_duration": 2592000,
+    "max_login_attempts": 5,
+    "lockout_duration": 900,
+    "csrf_protection": true,
+    "secure_cookies": false,
+    "httponly_cookies": true
   },
-  
   "logging": {
     "_description": "Logging configuration",
     "enabled": true,
@@ -189,7 +195,6 @@
       "errors_log": "logs/errors.log"
     }
   },
-  
   "advanced": {
     "_description": "Advanced configuration options",
     "use_ipv6": false,
@@ -211,5 +216,85 @@
       "smart_retry": true,
       "adaptive_batch_size": false
     }
+  },
+  "database": {
+    "url": "sqlite:///C:\\VF\\TeleDrive\\data\\teledrive.db",
+    "track_modifications": false,
+    "pool_size": 10,
+    "pool_timeout": 20,
+    "pool_recycle": -1,
+    "max_overflow": 0,
+    "echo": false
+  },
+  "flask": {
+    "_description": "Flask web server configuration",
+    "secret_key": "teledrive_secret_key_2025",
+    "host": "0.0.0.0",
+    "port": 3001,
+    "debug": false,
+    "threaded": true,
+    "use_reloader": false,
+    "cors_allowed_origins": "*",
+    "socketio_async_mode": "eventlet",
+    "login_view": "telegram_login",
+    "login_message": "Please log in to access this page.",
+    "login_message_category": "info",
+    "session_timeout": 3600,
+    "permanent_session_lifetime": 86400
+  },
+  "upload": {
+    "_description": "File upload configuration",
+    "max_file_size": 104857600,
+    "max_content_length": 104857600,
+    "upload_directory": "data/uploads",
+    "allowed_extensions": [
+      "txt",
+      "pdf",
+      "png",
+      "jpg",
+      "jpeg",
+      "gif",
+      "doc",
+      "docx",
+      "xls",
+      "xlsx",
+      "ppt",
+      "pptx",
+      "zip",
+      "rar",
+      "7z",
+      "mp3",
+      "mp4",
+      "avi",
+      "mkv",
+      "mov",
+      "wav",
+      "flac",
+      "json",
+      "csv",
+      "xml"
+    ],
+    "create_subdirs": true,
+    "timestamp_filenames": true,
+    "backup_existing": true
+  },
+  "directories": {
+    "_description": "Application directory structure",
+    "data": "data",
+    "uploads": "data/uploads",
+    "backups": "data/backups",
+    "temp": "data/temp",
+    "output": "output",
+    "logs": "logs",
+    "templates": "templates",
+    "static": "static"
+  },
+  "admin": {
+    "_description": "Default admin user configuration",
+    "username": "admin",
+    "email": "admin@teledrive.local",
+    "default_password": "admin123",
+    "role": "admin",
+    "auto_create": true
   }
 }

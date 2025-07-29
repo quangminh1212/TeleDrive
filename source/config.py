@@ -96,7 +96,7 @@ class ConfigManager:
                 "api_id": "",
                 "api_hash": "",
                 "phone_number": "",
-                "session_name": "telegram_scanner_session",
+                "session_name": "session",
                 "connection_timeout": 30,
                 "request_timeout": 60,
                 "retry_attempts": 3,
@@ -273,21 +273,21 @@ class ConfigManager:
             logger.info("Đã đồng bộ cấu hình từ .env vào config.json")
 
 # Initialize global config manager
-config_manager = ConfigManager()
-config_manager.update_from_env()
+cfg_mgr = ConfigManager()
+cfg_mgr.update_from_env()
 
 # Helper function for backward compatibility
 def load_config():
     """Load configuration (backward compatibility)"""
-    return config_manager._config
+    return cfg_mgr._config
 
 def save_config(config):
     """Save configuration (backward compatibility)"""
-    config_manager._config = config
-    return config_manager._save_config()
+    cfg_mgr._config = config
+    return cfg_mgr._save_config()
 
 # Load configuration
-CONFIG = config_manager._config
+CONFIG = cfg_mgr._config
 
 # ================================================================
 # CONFIGURATION VARIABLES (Backward Compatibility)
@@ -314,7 +314,7 @@ if not API_ID or not API_HASH or not PHONE_NUMBER:
     logger.warning("Thiếu thông tin API credentials. Vui lòng cấu hình .env hoặc config.json")
 
 # Telegram connection settings
-SESSION_NAME = get_safe(CONFIG, 'telegram.session_name', 'telegram_scanner_session')
+SESSION_NAME = get_safe(CONFIG, 'telegram.session_name', 'session')
 CONNECTION_TIMEOUT = int(get_safe(CONFIG, 'telegram.connection_timeout', 30))
 REQUEST_TIMEOUT = int(get_safe(CONFIG, 'telegram.request_timeout', 60))
 RETRY_ATTEMPTS = int(get_safe(CONFIG, 'telegram.retry_attempts', 3))
@@ -542,12 +542,61 @@ def get_config_summary():
 def print_config_summary():
     """Print configuration summary"""
     summary = get_config_summary()
-    print("\n" + "="*60)
-    print("           CẤU HÌNH HIỆN TẠI")
-    print("="*60)
-    print(f"API đã cấu hình: {'✓' if summary['api_configured'] else '✗'}")
-    print(f"Thư mục output: {summary['output_dir']}")
-    print(f"Batch size: {summary['batch_size']}")
-    print(f"Max messages: {summary['max_messages'] or 'Không giới hạn'}")
-    print(f"Formats: CSV={summary['formats_enabled']['csv']}, JSON={summary['formats_enabled']['json']}, Excel={summary['formats_enabled']['excel']}")
-    print("="*60)
+    print("=== CONFIGURATION SUMMARY ===")
+    for key, value in summary.items():
+        print(f"{key}: {value}")
+    print("============================")
+
+def create_default_config():
+    """Create default configuration file"""
+    config_manager = ConfigManager()
+    config_manager._config = config_manager._get_default_config()
+    config_manager._save_config()
+    print("✅ Đã tạo config.json mặc định")
+
+def validate_configuration():
+    """Validate current configuration"""
+    try:
+        config_manager = ConfigManager()
+        telegram_config = config_manager.get('telegram', {})
+        
+        # Check required fields
+        api_id = telegram_config.get('api_id', '')
+        api_hash = telegram_config.get('api_hash', '')
+        phone = telegram_config.get('phone_number', '')
+        
+        if not api_id or not api_hash or not phone:
+            return False
+            
+        # Check if phone is not default placeholder
+        if phone == '+84xxxxxxxxx':
+            return False
+            
+        return True
+    except Exception as e:
+        logger.error(f"Lỗi validate config: {e}")
+        return False
+
+def sync_env_to_config():
+    """Sync environment variables to config.json"""
+    try:
+        config_manager = ConfigManager()
+        
+        # Get values from environment
+        api_id = os.getenv('TELEGRAM_API_ID', '')
+        api_hash = os.getenv('TELEGRAM_API_HASH', '')
+        phone = os.getenv('TELEGRAM_PHONE', '')
+        
+        if api_id:
+            config_manager.set('telegram.api_id', api_id)
+        if api_hash:
+            config_manager.set('telegram.api_hash', api_hash)
+        if phone:
+            config_manager.set('telegram.phone_number', phone)
+            
+        config_manager._save_config()
+        print("✅ Đã đồng bộ từ .env sang config.json")
+        return True
+    except Exception as e:
+        logger.error(f"Lỗi sync env: {e}")
+        return False

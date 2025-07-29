@@ -171,7 +171,7 @@ class ConfigManager:
                 "api_id": "",
                 "api_hash": "",
                 "phone_number": "",
-                "session_name": "telegram_scanner_session"
+                "session_name": "session"
             },
             "output": {
                 "directory": "output",
@@ -211,7 +211,7 @@ class ConfigManager:
             'api_id': os.getenv('TELEGRAM_API_ID', ''),
             'api_hash': os.getenv('TELEGRAM_API_HASH', ''),
             'phone_number': os.getenv('TELEGRAM_PHONE', ''),
-            'session_name': os.getenv('TELEGRAM_SESSION_NAME', 'telegram_scanner_session'),
+            'session_name': os.getenv('TELEGRAM_SESSION_NAME', 'session'),
             'connection_timeout': int(os.getenv('TELEGRAM_CONNECTION_TIMEOUT', '30')),
             'request_timeout': int(os.getenv('TELEGRAM_REQUEST_TIMEOUT', '60')),
             'retry_attempts': int(os.getenv('TELEGRAM_RETRY_ATTEMPTS', '3')),

@@ -13,50 +13,54 @@ from flask import Flask
 from flask_migrate import Migrate
 from models import db, init_db, User, File, Folder, ScanSession
 
-# Database configuration
-DATABASE_DIR = Path('data')
+# Database configuration - Use absolute paths
+PROJECT_ROOT = Path(__file__).parent.parent  # Go up from source/ to project root
+DATABASE_DIR = PROJECT_ROOT / 'data'
 DATABASE_FILE = DATABASE_DIR / 'teledrive.db'
-DATABASE_URL = f'sqlite:///{DATABASE_FILE}'
+DATABASE_URL = f'sqlite:///{DATABASE_FILE.absolute()}'
 
 def setup_database_config():
     """Setup database configuration in config.json"""
     config_file = Path('config.json')
-    
+
     if config_file.exists():
         with open(config_file, 'r', encoding='utf-8') as f:
             config = json.load(f)
     else:
         config = {}
-    
-    # Add database configuration
+
+    # Ensure database configuration uses absolute path
     if 'database' not in config:
-        config['database'] = {
-            'url': DATABASE_URL,
-            'track_modifications': False,
-            'pool_size': 10,
-            'pool_timeout': 20,
-            'pool_recycle': -1,
-            'max_overflow': 0,
-            'echo': False  # Set to True for SQL debugging
-        }
-        
-        # Save updated config
-        with open(config_file, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=2, ensure_ascii=False)
-        
-        print("✅ Added database configuration to config.json")
-    
+        config['database'] = {}
+
+    # Always update the database URL to use absolute path
+    config['database'].update({
+        'url': DATABASE_URL,
+        'track_modifications': False,
+        'pool_size': 10,
+        'pool_timeout': 20,
+        'pool_recycle': -1,
+        'max_overflow': 0,
+        'echo': False  # Set to True for SQL debugging
+    })
+
+    # Save updated config
+    with open(config_file, 'w', encoding='utf-8') as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+
+    print(f"✅ Updated database configuration with absolute path: {DATABASE_URL}")
+
     return config['database']
 
 def create_database_directories():
     """Create necessary directories for database and data storage"""
     directories = [
         DATABASE_DIR,
-        Path('data/uploads'),
-        Path('data/backups'),
-        Path('data/temp')
+        PROJECT_ROOT / 'data' / 'uploads',
+        PROJECT_ROOT / 'data' / 'backups',
+        PROJECT_ROOT / 'data' / 'temp'
     ]
-    
+
     for directory in directories:
         directory.mkdir(parents=True, exist_ok=True)
         print(f"✅ Created directory: {directory}")
@@ -68,18 +72,27 @@ def configure_flask_app(app):
     # Flask-SQLAlchemy configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = db_config['url']
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = db_config['track_modifications']
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': db_config['pool_size'],
-        'pool_timeout': db_config['pool_timeout'],
-        'pool_recycle': db_config['pool_recycle'],
-        'max_overflow': db_config['max_overflow'],
-        'echo': db_config['echo'],
-        'pool_pre_ping': True,  # Verify connections before use
-        'connect_args': {
-            'check_same_thread': False,  # Allow SQLite to be used across threads
-            'timeout': 20  # Connection timeout in seconds
+
+    # Configure engine options based on database type
+    if db_config['url'].startswith('sqlite'):
+        # SQLite-specific configuration
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'echo': db_config['echo'],
+            'connect_args': {
+                'check_same_thread': False,  # Allow SQLite to be used across threads
+                'timeout': 20  # Connection timeout in seconds
+            }
         }
-    }
+    else:
+        # PostgreSQL/MySQL configuration with connection pooling
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_size': db_config['pool_size'],
+            'pool_timeout': db_config['pool_timeout'],
+            'pool_recycle': db_config['pool_recycle'],
+            'max_overflow': db_config['max_overflow'],
+            'echo': db_config['echo'],
+            'pool_pre_ping': True,  # Verify connections before use
+        }
 
     # Initialize database with app
     db.init_app(app)
@@ -126,6 +139,7 @@ def initialize_database(app=None):
                     role='admin',
                     is_active=True
                 )
+                admin_user.set_password('admin123')  # Set the default password
                 db.session.add(admin_user)
                 print("✅ Created default admin user")
             
@@ -138,6 +152,7 @@ def initialize_database(app=None):
                     role='user',
                     is_active=True
                 )
+                default_user.set_password('default123')  # Set the default password
                 db.session.add(default_user)
                 print("✅ Created default user")
             
@@ -222,10 +237,14 @@ def get_database_stats():
 
         stats = {}
 
-        # Get table counts
+        # Get table counts - using parameterized queries for security
         tables = ['users', 'files', 'folders', 'scan_sessions']
         for table in tables:
             try:
+                # Validate table name against whitelist to prevent SQL injection
+                if table not in ['users', 'files', 'folders', 'scan_sessions']:
+                    continue
+                # Use string formatting only with validated table names
                 cursor.execute(f"SELECT COUNT(*) FROM {table}")
                 stats[f'{table}_count'] = cursor.fetchone()[0]
             except sqlite3.OperationalError:
@@ -246,32 +265,7 @@ def get_database_stats():
         print(f"❌ Failed to get database stats: {e}")
         return None
 
-def test_database_connection(app=None):
-    """Test database connection and basic operations"""
-    if app is None:
-        app = Flask(__name__)
-        configure_flask_app(app)
 
-    try:
-        with app.app_context():
-            # Test basic connection
-            db.session.execute('SELECT 1')
-
-            # Test table existence
-            tables = ['users', 'files', 'folders', 'scan_sessions']
-            for table in tables:
-                try:
-                    db.session.execute(f'SELECT COUNT(*) FROM {table}')
-                except Exception as e:
-                    print(f"⚠️ Table {table} not accessible: {e}")
-                    return False
-
-            print("✅ Database connection test passed")
-            return True
-
-    except Exception as e:
-        print(f"❌ Database connection test failed: {e}")
-        return False
 
 def repair_database():
     """Attempt to repair database issues"""

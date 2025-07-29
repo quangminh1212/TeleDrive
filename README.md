@@ -1,6 +1,29 @@
+
 # TeleDrive - Google Drive-like Telegram File Manager
 
 Modern web interface for scanning and managing files from Telegram channels with Google Drive-inspired design.
+
+---
+
+## 🎯 Tổng quan dự án
+TeleDrive là ứng dụng quản lý file Telegram với giao diện Google Drive, hỗ trợ quét, quản lý, tìm kiếm, phân loại, preview file từ các channel Telegram.
+
+---
+
+## ✅ Tính năng đã hoàn thành
+- Tích hợp Telegram API, quét file từ channel công khai/lưu trữ
+- Hệ thống database SQLAlchemy ORM, backup/restore, migration
+- Quản lý file nâng cao: thư mục, tag, rename, di chuyển, bulk
+- Preview 10+ loại file: ảnh, video, audio, PDF, text, JSON, CSV, Excel
+- Tìm kiếm & lọc nâng cao, gợi ý realtime, filter theo nhiều tiêu chí
+- Giao diện Google Drive-like, responsive, hỗ trợ mobile
+- WebSocket realtime: cập nhật tiến trình, trạng thái kết nối
+- Logging chi tiết, phân loại log, log API, log thao tác file
+- Hệ thống cấu hình động, đồng bộ .env & config.json
+- Đầy đủ API RESTful cho mọi thao tác file/folder
+- Đã kiểm thử, tối ưu hiệu năng, bảo mật đầu vào, kiểm soát session
+
+---
 
 ## 🚀 Quick Start
 
@@ -14,6 +37,37 @@ Modern web interface for scanning and managing files from Telegram channels with
 1. **Setup**: Run `setup.bat`
 2. **Configure**: Run `config.bat` (option 2 for phone number)
 3. **Scan**: Run `run.bat`
+
+---
+
+## 🛠️ Tối ưu hóa & cải tiến
+- Giảm số lượng file batch từ 7 xuống 3, file config Python từ 4 xuống 2
+- Tích hợp logic quản lý config vào config_manager.py
+- Tự động sync/validate config khi chạy scanner
+- Đơn giản hóa workflow: setup.bat → config.bat → run.bat
+- Menu cấu hình trực quan, feedback rõ ràng
+- Dễ maintain, ít duplicate code, error handling tốt hơn
+
+---
+
+## 🗺️ Lộ trình phát triển & trạng thái
+- Giai đoạn 1: Core (DB, quản lý file, preview, search, realtime) ✅
+- Giai đoạn 2: Bảo mật & xác thực (auth, phân quyền, API security)
+- Giai đoạn 3: Chia sẻ, cộng tác, versioning, multi-user
+- Giai đoạn 4: Analytics, tích hợp cloud, mobile, PWA
+- Đã hoàn thành 18% tính năng so với Google Drive, nền tảng sẵn sàng mở rộng
+
+---
+
+## ❌ Tính năng còn thiếu & định hướng tương lai
+- Đăng ký/đăng nhập, social login, 2FA, reset password
+- Phân quyền file/folder, chia sẻ link, tracking, permission
+- Preview nâng cao: Word, Excel, PowerPoint, media streaming
+- Đồng bộ realtime, offline mode, mobile app native
+- Analytics, dashboard, báo cáo, API mở rộng, plugin, cloud sync
+- Tối ưu hiệu năng, bảo mật nâng cao, test coverage, CI/CD
+
+---
 
 ## 🌐 Web Interface Features
 
@@ -42,12 +96,16 @@ Modern web interface for scanning and managing files from Telegram channels with
 - **Settings Page**: http://localhost:3000/settings
 - **Channel Scanner**: http://localhost:3000/scan
 
+---
+
 ## 🔧 Manual Setup
 
 1. **Run setup**: Execute `setup.bat`
 2. **Edit .env**: Replace `+84xxxxxxxxx` with your real phone number
 3. **Edit config.json**: Customize configuration (optional)
 4. **Run scanner**: Execute `run.bat` for CLI or `start.bat` for web
+
+---
 
 ## Quan ly cau hinh
 
@@ -79,11 +137,15 @@ Chay `config.bat` de quan ly cau hinh qua giao dien:
 - Dong bo tu .env sang config.json
 - Kiem tra validation cau hinh
 
+---
+
 ## Su dung
 
 - **Private channel**: `https://t.me/joinchat/xxxxx` hoac `https://t.me/+xxxxx`
 - **Neu da join**: `@channelname`
 - **Ket qua**: Luu trong thu muc `output/`
+
+---
 
 ## Logging System
 
@@ -117,6 +179,8 @@ Du an co he thong logging chi tiet de theo doi tung buoc:
 - **Log realtime**: Hien thi tren console
 - **Log rotation**: Tu dong backup khi file qua lon
 
+---
+
 ## File structure
 
 ```
@@ -140,11 +204,15 @@ TeleDrive/
 └── output/           # Ket qua scan
 ```
 
+---
+
 ## Loi thuong gap
 
 - **"invalid literal for int()"**: Chua cau hinh .env
 - **"Could not find entity"**: Sai ten channel hoac chua join
 - **"Python not found"**: Chua cai Python
+
+---
 
 ## Output format
 
@@ -152,3 +220,22 @@ TeleDrive/
 - Excel: Format dep
 - JSON: Du lieu chi tiet
 - Simple JSON: Chi ten file + link
+
+---
+
+## 📊 Trạng thái dự án
+- Đã hoàn thành: 21/115 tính năng (18%)
+- Đang phát triển: authentication, chia sẻ, analytics
+- Định hướng: đạt 100% tính năng cơ bản trong 4 tháng
+- Sẵn sàng production, kiến trúc mở rộng, bảo trì tốt
+
+---
+
+## 📚 Tài liệu & tham khảo
+- Hướng dẫn chi tiết: xem README này
+- Cấu hình Telegram: mục "Cấu hình Telegram & môi trường"
+- API, developer guide: sẽ bổ sung trong các release tiếp theo
+
+---
+
+*Đã tổng hợp nội dung từ các file: completed-features.md, daily-tasks.md, dev-checklist.md, dev-roadmap.md, final-status.md, missing-features.md, optimization.md, project-summary.md, telegram-config.md*

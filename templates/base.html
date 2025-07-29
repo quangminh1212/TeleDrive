@@ -27,7 +27,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
+
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
     <!-- Socket.IO for real-time updates -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 </head>
@@ -101,16 +104,24 @@
                 <span>Dashboard</span>
             </a>
             
+            <a href="{{ url_for('search_page') }}" class="nav-item {% if request.endpoint == 'search_page' %}active{% endif %}">
+                <span class="material-icons">search</span>
+                <span>Advanced Search</span>
+            </a>
+
             <a href="{{ url_for('scan_page') }}" class="nav-item {% if request.endpoint == 'scan_page' %}active{% endif %}">
                 <span class="material-icons">scanner</span>
                 <span>Channel Scanner</span>
             </a>
 
+<<<<<<< HEAD
             <a href="{{ url_for('analytics_dashboard') }}" class="nav-item {% if request.endpoint == 'analytics_dashboard' %}active{% endif %}">
                 <span class="material-icons">analytics</span>
                 <span>Analytics</span>
             </a>
 
+=======
+>>>>>>> 98d1e8270d2d9ce3f11bdd567a95b3f63bc29b48
             <a href="{{ url_for('settings') }}" class="nav-item {% if request.endpoint == 'settings' %}active{% endif %}">
                 <span class="material-icons">settings</span>
                 <span>Settings</span>
@@ -228,7 +239,7 @@
 
     <script>
     // Global search functionality
-    let searchTimeout;
+    let globalSearchTimeout;
 
     function handleSearchInput(event) {
         const query = event.target.value.trim();
@@ -239,13 +250,13 @@
         }
 
         // Clear previous timeout
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
+        if (globalSearchTimeout) {
+            clearTimeout(globalSearchTimeout);
         }
 
         // Show suggestions after 300ms delay
         if (query.length >= 2) {
-            searchTimeout = setTimeout(() => {
+            globalSearchTimeout = setTimeout(() => {
                 loadSearchSuggestions(query);
             }, 300);
         } else {
@@ -295,8 +306,8 @@
     }
 
     function performSearch(query) {
-        // Redirect to dashboard with search parameter
-        window.location.href = `/?search=${encodeURIComponent(query)}`;
+        // Redirect to advanced search page with query
+        window.location.href = `/search?q=${encodeURIComponent(query)}`;
     }
 
     // Hide suggestions when clicking outside

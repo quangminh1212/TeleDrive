@@ -3,440 +3,194 @@
 {% block title %}Channel Scanner - TeleDrive{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">Channel Scanner</h1>
-    <div class="page-actions">
-        <div class="connection-status disconnected">Connecting...</div>
-        <button class="btn btn-secondary" id="stop-scan-btn" onclick="stopScan()" style="display: none;">
-            <span class="material-icons">stop</span>
-            Stop Scan
-        </button>
-    </div>
-</div>
-
-<!-- Scan Form -->
-<div class="scan-container">
-    <div class="scan-form-section">
-        <div class="scan-form-header">
-            <h2 class="scan-form-title">
-                <span class="material-icons">scanner</span>
-                Scan Telegram Channel
-            </h2>
-            <p class="scan-form-description">
-                Enter a Telegram channel username or invite link to scan for files
-            </p>
-        </div>
-        
-        <div class="scan-form">
-            <div class="form-group">
-                <label for="channel-input" class="form-label">Channel URL or Username</label>
-                <div class="input-group">
-                    <input type="text" id="channel-input" class="form-input" 
-                           placeholder="@channelname or https://t.me/channelname or https://t.me/+xxxxx">
-                    <button class="btn btn-primary" id="start-scan-btn" onclick="startScan()">
-                        <span class="material-icons">play_arrow</span>
-                        Start Scan
-                    </button>
-                </div>
-                <div class="form-help">
-                    Supported formats:
-                    <ul>
-                        <li><code>@channelname</code> - Public channel username</li>
-                        <li><code>https://t.me/channelname</code> - Public channel link</li>
-                        <li><code>https://t.me/joinchat/xxxxx</code> - Private invite (old format)</li>
-                        <li><code>https://t.me/+xxxxx</code> - Private invite (new format)</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Progress Section -->
-    <div class="progress-section" id="progress-section" style="display: none;">
-        <div class="progress-header">
-            <h3 class="progress-title">Scanning Progress</h3>
-            <div class="progress-status" id="progress-status">Initializing...</div>
-        </div>
-        
-        <div class="progress-bar-container">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-            </div>
-            <div class="progress-text">
-                <span id="progress-current">0</span> / <span id="progress-total">0</span> messages
-                (<span id="progress-percentage">0</span>%)
-            </div>
-        </div>
-        
-        <div class="progress-details">
-            <div class="progress-detail">
-                <span class="material-icons">folder</span>
-                <span>Files Found: <strong id="files-found">0</strong></span>
-            </div>
-            <div class="progress-detail">
-                <span class="material-icons">schedule</span>
-                <span>Elapsed: <strong id="elapsed-time">00:00</strong></span>
-            </div>
-            <div class="progress-detail">
-                <span class="material-icons">speed</span>
-                <span>Speed: <strong id="scan-speed">0 msg/s</strong></span>
-            </div>
-        </div>
-        
-        <!-- Live Log -->
-        <div class="live-log">
-            <div class="live-log-header">
-                <h4>Live Log</h4>
-                <button class="btn btn-small" onclick="clearLog()">Clear</button>
-            </div>
-            <div class="live-log-content" id="live-log">
-                <!-- Log entries will be added here -->
-            </div>
-        </div>
-    </div>
-    
-    <!-- Results Section -->
-    <div class="results-section" id="results-section" style="display: none;">
-        <div class="results-header">
-            <h3 class="results-title">Scan Results</h3>
-            <div class="results-actions">
-                <button class="btn btn-secondary" onclick="downloadResults('json')">
-                    <span class="material-icons">download</span>
-                    Download JSON
-                </button>
-                <button class="btn btn-secondary" onclick="downloadResults('csv')">
-                    <span class="material-icons">download</span>
-                    Download CSV
-                </button>
-                <button class="btn btn-secondary" onclick="downloadResults('excel')">
-                    <span class="material-icons">download</span>
-                    Download Excel
-                </button>
-            </div>
-        </div>
-        
-        <div class="results-summary">
-            <div class="summary-card">
-                <div class="summary-number" id="total-files-found">0</div>
-                <div class="summary-label">Files Found</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-number" id="total-messages-scanned">0</div>
-                <div class="summary-label">Messages Scanned</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-number" id="scan-duration">0s</div>
-                <div class="summary-label">Scan Duration</div>
-            </div>
-        </div>
-        
-        <div class="results-actions-bottom">
+<div class="main-content">
+    <div class="content-header">
+        <h1 class="page-title">
+            <span class="material-icons">scanner</span>
+            Channel Scanner
+        </h1>
+        <div class="header-actions">
             <button class="btn btn-primary" onclick="startNewScan()">
-                <span class="material-icons">refresh</span>
-                Start New Scan
-            </button>
-            <button class="btn btn-secondary" onclick="location.href='{{ url_for('dashboard') }}'">
-                <span class="material-icons">dashboard</span>
-                View Dashboard
+                <span class="material-icons">add</span>
+                New Scan
             </button>
         </div>
     </div>
+    
+    <div class="scan-container">
+        <!-- Scan Configuration -->
+        <div class="scan-config-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <span class="material-icons">settings</span>
+                        Scan Configuration
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="scan-form">
+                        <div class="form-group">
+                            <label for="channel-input">Channel URL or Username</label>
+                            <input type="text" id="channel-input" class="form-control" 
+                                   placeholder="@channelname or https://t.me/channelname" required>
+                            <small class="form-text">Enter the Telegram channel URL or username</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="max-messages">Max Messages to Scan</label>
+                            <input type="number" id="max-messages" class="form-control" 
+                                   placeholder="Leave empty for all messages" min="1">
+                            <small class="form-text">Limit the number of messages to scan (optional)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>File Types to Include</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="file-types" value="documents" checked>
+                                    <span class="material-icons">description</span>
+                                    Documents
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="file-types" value="photos" checked>
+                                    <span class="material-icons">image</span>
+                                    Photos
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="file-types" value="videos" checked>
+                                    <span class="material-icons">video_file</span>
+                                    Videos
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="file-types" value="audio" checked>
+                                    <span class="material-icons">audio_file</span>
+                                    Audio
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <span class="material-icons">play_arrow</span>
+                                Start Scan
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                <span class="material-icons">refresh</span>
+                                Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scan Progress -->
+        <div class="scan-progress-section" id="scan-progress-section" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <span class="material-icons">trending_up</span>
+                        Scan Progress
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="progress-info">
+                        <div class="progress-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Status:</span>
+                                <span class="stat-value" id="scan-status">Ready</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Messages Processed:</span>
+                                <span class="stat-value" id="messages-processed">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Files Found:</span>
+                                <span class="stat-value" id="files-found">0</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progress-bar">
+                                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                            </div>
+                            <span class="progress-text" id="progress-text">0%</span>
+                        </div>
+                    </div>
+                    <div class="scan-actions">
+                        <button class="btn btn-danger" id="stop-scan-btn" onclick="stopScan()" style="display: none;">
+                            <span class="material-icons">stop</span>
+                            Stop Scan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Scans -->
+        <div class="recent-scans-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <span class="material-icons">history</span>
+                        Recent Scans
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="scans-list" id="recent-scans-list">
+                        <div class="empty-state">
+                            <span class="material-icons">scanner</span>
+                            <h4>No scans yet</h4>
+                            <p>Start your first channel scan to see results here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
-let socket;
-let scanStartTime;
-let scanInterval;
-
-// Initialize page
-document.addEventListener('DOMContentLoaded', function() {
-    initializeSocket();
-    
-    // Allow Enter key to start scan
-    document.getElementById('channel-input').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            startScan();
-        }
-    });
-});
-
-// Initialize Socket.IO connection
-function initializeSocket() {
-    socket = io();
-
-    socket.on('connect', function() {
-        console.log('Connected to server');
-        updateConnectionStatus(true);
-        addLogMessage('Connected to server', 'success');
-    });
-
-    socket.on('scan_progress', function(data) {
-        updateProgress(data);
-    });
-
-    socket.on('scan_complete', function(data) {
-        handleScanComplete(data);
-    });
-
-    socket.on('scan_log', function(data) {
-        addLogMessage(data.message, data.type || 'info');
-    });
-
-    socket.on('disconnect', function() {
-        console.log('Disconnected from server');
-        updateConnectionStatus(false);
-        addLogMessage('Disconnected from server', 'warning');
-    });
-
-    socket.on('connect_error', function(error) {
-        console.error('Connection error:', error);
-        updateConnectionStatus(false);
-        addLogMessage('Connection error: ' + error.message, 'error');
-    });
-}
-
-function updateConnectionStatus(connected) {
-    const statusElement = document.querySelector('.connection-status');
-    if (statusElement) {
-        statusElement.className = `connection-status ${connected ? 'connected' : 'disconnected'}`;
-        statusElement.textContent = connected ? 'Connected' : 'Disconnected';
-    }
-}
-
-// Start scanning
-function startScan() {
-    const channelInput = document.getElementById('channel-input').value.trim();
-    
-    if (!channelInput) {
-        showToast('Please enter a channel URL or username', 'error');
-        return;
-    }
-    
-    // Reset UI
-    document.getElementById('progress-section').style.display = 'block';
-    document.getElementById('results-section').style.display = 'none';
-    document.getElementById('start-scan-btn').style.display = 'none';
-    document.getElementById('stop-scan-btn').style.display = 'inline-flex';
-    
-    // Clear previous results
-    clearLog();
-    resetProgress();
-    
-    // Start timer
-    scanStartTime = Date.now();
-    scanInterval = setInterval(updateElapsedTime, 1000);
-    
-    // Send scan request
-    fetch('/api/start_scan', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            channel: channelInput
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data.success) {
-            showToast('Error starting scan: ' + data.error, 'error');
-            resetScanUI();
-        } else {
-            addLogEntry('Scan started for: ' + channelInput, 'info');
-        }
-    })
-    .catch(error => {
-        showToast('Error starting scan: ' + error.message, 'error');
-        resetScanUI();
-    });
-}
-
-// Stop scanning
-function stopScan() {
-    fetch('/api/stop_scan', {
-        method: 'POST'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            addLogEntry('Scan stopped by user', 'warning');
-            resetScanUI();
-        }
-    })
-    .catch(error => {
-        console.error('Error stopping scan:', error);
-    });
-}
-
-// Update progress display
-function updateProgress(data) {
-    const status = data.status;
-    const current = data.current || 0;
-    const total = data.total || 0;
-    
-    // Update status
-    document.getElementById('progress-status').textContent = getStatusText(status);
-    
-    // Update progress bar
-    if (total > 0) {
-        const percentage = Math.round((current / total) * 100);
-        document.getElementById('progress-fill').style.width = percentage + '%';
-        document.getElementById('progress-current').textContent = current;
-        document.getElementById('progress-total').textContent = total;
-        document.getElementById('progress-percentage').textContent = percentage;
-    }
-    
-    // Update files found
-    if (data.files_found !== undefined) {
-        document.getElementById('files-found').textContent = data.files_found;
-    }
-    
-    // Handle completion
-    if (status === 'completed') {
-        handleScanComplete(data);
-    } else if (status === 'error') {
-        handleScanError(data);
-    }
-    
-    // Add log entry
-    addLogEntry(getStatusText(status), getLogLevel(status));
-}
-
-// Handle scan completion
-function handleScanComplete(data) {
-    clearInterval(scanInterval);
-    resetScanUI();
-
-    // Show results
-    document.getElementById('results-section').style.display = 'block';
-    document.getElementById('total-files-found').textContent = data.files_found || 0;
-    document.getElementById('total-messages-scanned').textContent = data.messages_scanned || data.current || 0;
-
-    const duration = Math.round((Date.now() - scanStartTime) / 1000);
-    document.getElementById('scan-duration').textContent = duration + 's';
-
-    // Calculate and display scan statistics
-    const messagesScanned = data.messages_scanned || data.current || 0;
-    const filesFound = data.files_found || 0;
-    const scanRate = duration > 0 ? Math.round(messagesScanned / duration) : 0;
-
-    // Update additional statistics if elements exist
-    const scanRateElement = document.getElementById('scan-rate');
-    if (scanRateElement) {
-        scanRateElement.textContent = scanRate + ' msg/s';
-    }
-
-    const successRateElement = document.getElementById('success-rate');
-    if (successRateElement && messagesScanned > 0) {
-        const successRate = ((filesFound / messagesScanned) * 100).toFixed(2);
-        successRateElement.textContent = successRate + '%';
-    }
-
-    // Show detailed completion message
-    const completionMessage = `Scan completed successfully! Found ${filesFound} files in ${messagesScanned} messages (${scanRate} msg/s)`;
-    showToast(completionMessage, 'success');
-    addLogEntry(completionMessage, 'success');
-
-    // If scan session ID is provided, add link to view files
-    if (data.scan_session_id) {
-        addLogEntry(`View scan results: <a href="/?folder=${data.folder_id}" target="_blank">Open folder</a>`, 'info');
-    }
-}
-
-// Handle scan error
-function handleScanError(data) {
-    clearInterval(scanInterval);
-    resetScanUI();
-    
-    const error = data.error || 'Unknown error';
-    showToast('Scan failed: ' + error, 'error');
-    addLogEntry('Scan failed: ' + error, 'error');
-}
-
-// Reset scan UI
-function resetScanUI() {
-    document.getElementById('start-scan-btn').style.display = 'inline-flex';
-    document.getElementById('stop-scan-btn').style.display = 'none';
-}
-
-// Reset progress display
-function resetProgress() {
-    document.getElementById('progress-fill').style.width = '0%';
-    document.getElementById('progress-current').textContent = '0';
-    document.getElementById('progress-total').textContent = '0';
-    document.getElementById('progress-percentage').textContent = '0';
-    document.getElementById('files-found').textContent = '0';
-    document.getElementById('elapsed-time').textContent = '00:00';
-    document.getElementById('scan-speed').textContent = '0 msg/s';
-}
-
-// Update elapsed time
-function updateElapsedTime() {
-    const elapsed = Math.floor((Date.now() - scanStartTime) / 1000);
-    const minutes = Math.floor(elapsed / 60);
-    const seconds = elapsed % 60;
-    document.getElementById('elapsed-time').textContent = 
-        String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-}
-
-// Add log entry
-function addLogEntry(message, level = 'info') {
-    const logContainer = document.getElementById('live-log');
-    const entry = document.createElement('div');
-    entry.className = 'log-entry log-' + level;
-    
-    const timestamp = new Date().toLocaleTimeString();
-    entry.innerHTML = `
-        <span class="log-time">${timestamp}</span>
-        <span class="log-message">${message}</span>
-    `;
-    
-    logContainer.appendChild(entry);
-    logContainer.scrollTop = logContainer.scrollHeight;
-}
-
-// Clear log
-function clearLog() {
-    document.getElementById('live-log').innerHTML = '';
-}
-
-// Get status text
-function getStatusText(status) {
-    const statusMap = {
-        'idle': 'Ready to scan',
-        'connecting': 'Connecting to Telegram...',
-        'resolving_channel': 'Resolving channel...',
-        'counting_messages': 'Counting messages...',
-        'scanning': 'Scanning messages...',
-        'saving': 'Saving results...',
-        'completed': 'Scan completed',
-        'error': 'Scan failed'
-    };
-    return statusMap[status] || status;
-}
-
-// Get log level for status
-function getLogLevel(status) {
-    if (status === 'error') return 'error';
-    if (status === 'completed') return 'success';
-    if (status === 'connecting' || status === 'resolving_channel') return 'warning';
-    return 'info';
-}
-
-// Start new scan
+// Scan functionality
 function startNewScan() {
-    document.getElementById('results-section').style.display = 'none';
-    document.getElementById('progress-section').style.display = 'none';
-    document.getElementById('channel-input').value = '';
     document.getElementById('channel-input').focus();
 }
 
-// Download results
-function downloadResults(format) {
-    // This would need to be implemented based on the actual file names
-    showToast('Download functionality will be implemented', 'info');
+function resetForm() {
+    document.getElementById('scan-form').reset();
+}
+
+function stopScan() {
+    // Implementation for stopping scan
+    console.log('Stopping scan...');
+}
+
+// Form submission
+document.getElementById('scan-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const channelInput = document.getElementById('channel-input').value.trim();
+    if (!channelInput) {
+        alert('Please enter a channel URL or username');
+        return;
+    }
+    
+    // Show progress section
+    document.getElementById('scan-progress-section').style.display = 'block';
+    document.getElementById('scan-status').textContent = 'Starting...';
+    document.getElementById('stop-scan-btn').style.display = 'inline-block';
+    
+    // Here you would implement the actual scan logic
+    console.log('Starting scan for:', channelInput);
+});
+
+// Load recent scans on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecentScans();
+});
+
+function loadRecentScans() {
+    // Implementation for loading recent scans
+    console.log('Loading recent scans...');
 }
 </script>
 {% endblock %}

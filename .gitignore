@@ -44,3 +44,28 @@ output/*
 # OS
 .DS_Store
 Thumbs.db
+
+# Ignore Python virtual environment
+.venv/
+
+# Session files
+data/session.session
+data/session.session-journal
+
+# Ignore log files
+logs/*.log
+
+# Ignore output directory
+output/
+
+# Additional TeleDrive specific ignores
+data/auth_session_*.session
+data/temp/
+data/backups/
+data/uploads/
+instance/
+temp/
+backups/
+uploads/
+
+

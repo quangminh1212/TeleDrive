@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in with Telegram - TeleDrive</title>
+    
+    <!-- Telegram-like styling -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        .logo .material-icons {
+            font-size: 48px;
+            color: #0088cc;
+            margin-right: 12px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .auth-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background: #fff;
+            min-height: 50px;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #0088cc;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+        }
+
+        .country-select {
+            position: relative;
+        }
+
+        .phone-input {
+            position: relative;
+        }
+
+        /* Country code label */
+        .country-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 16px;
+        }
+
+        /* Phone number label */
+        .phone-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px 24px;
+            background: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 24px;
+        }
+
+        .btn-primary:hover {
+            background: #006699;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .auth-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .auth-link {
+            color: #0088cc;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .auth-link:hover {
+            color: #006699;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .alert-success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #bbdefb;
+        }
+
+        .field-error {
+            color: #c62828;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .telegram-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .telegram-info h4 {
+            color: #1565c0;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .telegram-info p {
+            color: #1976d2;
+            font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 32px 24px;
+                margin: 16px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .country-select, .phone-input {
+                flex: none;
+            }
+
+            .form-control {
+                padding: 18px 20px;
+                font-size: 16px;
+                min-height: 55px;
+            }
+
+            .form-group label, .country-label, .phone-label {
+                font-size: 16px;
+            }
+        }
+
+        /* Enhanced country select styling */
+        .country-select select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 20px center;
+            background-repeat: no-repeat;
+            background-size: 18px;
+            padding-right: 50px;
+            appearance: none;
+            font-size: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .country-select select:focus {
+            border-color: #0088cc;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+        }
+
+        /* Improve dropdown options styling */
+        .country-select select option {
+            padding: 12px 16px;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        /* Search functionality for country select */
+        .country-search {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .country-search input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #f8f9fa;
+            box-sizing: border-box;
+        }
+
+        .country-search input:focus {
+            outline: none;
+            border-color: #0088cc;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+        }
+
+        .phone-hint {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+            font-style: italic;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">
+            <span class="material-icons">telegram</span>
+            <span class="logo-text">TeleDrive</span>
+        </div>
+        
+        <h1 class="auth-title">Sign in with Telegram</h1>
+        <p class="auth-subtitle">Enter your phone number to continue</p>
+        
+        <div class="telegram-info">
+            <h4>How it works:</h4>
+            <p>• Enter your phone number registered with Telegram</p>
+            <p>• We'll send you a verification code via Telegram</p>
+            <p>• Enter the code to complete sign in</p>
+        </div>
+        
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'error' if category == 'error' else category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('telegram_login') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="country-select">
+                        <label for="country_code" class="country-label">Country Code</label>
+                        <div class="country-search" style="display: none;">
+                            <input type="text" id="country_search" placeholder="Search country..." autocomplete="off">
+                        </div>
+                        {{ form.country_code(class="form-control", id="country_code") }}
+                        {% if form.country_code.errors %}
+                            {% for error in form.country_code.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="phone-input">
+                        <label for="phone_number" class="phone-label">Phone Number</label>
+                        {{ form.phone_number(class="form-control", placeholder="987654321", id="phone_number") }}
+                        <div class="phone-hint">
+                            Enter your phone number without the country code (e.g., 987654321 for +84987654321)
+                        </div>
+                        {% if form.phone_number.errors %}
+                            {% for error in form.phone_number.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            {{ form.submit(class="btn-primary") }}
+        </form>
+        
+        <p style="font-size: 14px; color: #666; text-align: center; margin-top: 24px;">
+            Enter your phone number to sign in with Telegram.<br>
+            This is the only supported authentication method.
+        </p>
+    </div>
+
+    <script>
+        // Store original options for search functionality
+        let originalOptions = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const countrySelect = document.getElementById('country_code');
+            const searchInput = document.getElementById('country_search');
+            const searchContainer = document.querySelector('.country-search');
+
+            // Store original options
+            originalOptions = Array.from(countrySelect.options).map(option => ({
+                value: option.value,
+                text: option.text
+            }));
+
+            // Show search when dropdown is focused
+            countrySelect.addEventListener('focus', function() {
+                searchContainer.style.display = 'block';
+                searchInput.focus();
+            });
+
+            // Hide search when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.country-select')) {
+                    searchContainer.style.display = 'none';
+                }
+            });
+
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filteredOptions = originalOptions.filter(option =>
+                    option.text.toLowerCase().includes(searchTerm)
+                );
+
+                // Clear current options
+                countrySelect.innerHTML = '';
+
+                // Add filtered options
+                filteredOptions.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.text;
+                    countrySelect.appendChild(optionElement);
+                });
+
+                // If no results, show message
+                if (filteredOptions.length === 0) {
+                    const noResultOption = document.createElement('option');
+                    noResultOption.textContent = 'No countries found';
+                    noResultOption.disabled = true;
+                    countrySelect.appendChild(noResultOption);
+                }
+            });
+
+            // Clear search when selecting a country
+            countrySelect.addEventListener('change', function() {
+                searchInput.value = '';
+                searchContainer.style.display = 'none';
+                document.getElementById('phone_number').focus();
+            });
+        });
+
+        // Format phone number as user types
+        document.getElementById('phone_number').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+            e.target.value = value;
+        });
+
+        // Update hint based on selected country
+        document.getElementById('country_code').addEventListener('change', function() {
+            const countryCode = this.value;
+            const hint = document.querySelector('.phone-hint');
+
+            // Update hint with example for selected country
+            const examples = {
+                '+84': 'Enter your phone number without the country code (e.g., 987654321 for +84987654321)',
+                '+1': 'Enter your phone number without the country code (e.g., 2345678901 for +12345678901)',
+                '+44': 'Enter your phone number without the country code (e.g., 7700900123 for +447700900123)',
+                '+86': 'Enter your phone number without the country code (e.g., 13800138000 for +8613800138000)',
+                '+91': 'Enter your phone number without the country code (e.g., 9876543210 for +919876543210)',
+                '+49': 'Enter your phone number without the country code (e.g., 1701234567 for +491701234567)',
+                '+33': 'Enter your phone number without the country code (e.g., 612345678 for +33612345678)',
+                '+39': 'Enter your phone number without the country code (e.g., 3123456789 for +393123456789)',
+                '+34': 'Enter your phone number without the country code (e.g., 612345678 for +34612345678)',
+                '+55': 'Enter your phone number without the country code (e.g., 11987654321 for +5511987654321)'
+            };
+
+            hint.textContent = examples[countryCode] || 'Enter your phone number without the country code';
+        });
+
+        // Trigger initial hint update
+        document.getElementById('country_code').dispatchEvent(new Event('change'));
+
+        // Keyboard navigation for better UX
+        document.addEventListener('keydown', function(e) {
+            const searchInput = document.getElementById('country_search');
+            const countrySelect = document.getElementById('country_code');
+
+            if (e.key === 'Escape') {
+                document.querySelector('.country-search').style.display = 'none';
+                countrySelect.focus();
+            }
+
+            if (e.key === 'Enter' && document.activeElement === searchInput) {
+                e.preventDefault();
+                if (countrySelect.options.length > 0 && !countrySelect.options[0].disabled) {
+                    countrySelect.selectedIndex = 0;
+                    countrySelect.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+    </script>
+</body>
+</html>

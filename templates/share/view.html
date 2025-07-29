@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ share_link.name or share_link.file.filename }} - TeleDrive Share</title>
+    
+    <!-- Google Drive-like styling -->
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .share-header {
+            background: white;
+            border-bottom: 1px solid #e8eaed;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .share-logo {
+            display: flex;
+            align-items: center;
+            color: #1a73e8;
+        }
+
+        .share-logo .material-icons {
+            font-size: 24px;
+            margin-right: 8px;
+        }
+
+        .share-logo-text {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .share-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn .material-icons {
+            font-size: 18px;
+            margin-right: 6px;
+        }
+
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1557b0;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #5f6368;
+            border: 1px solid #dadce0;
+        }
+
+        .btn-secondary:hover {
+            background: #e8eaed;
+        }
+
+        .share-content {
+            flex: 1;
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 24px;
+            gap: 24px;
+        }
+
+        .file-preview {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            min-height: 500px;
+        }
+
+        .file-info-panel {
+            width: 320px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            height: fit-content;
+        }
+
+        .file-icon {
+            width: 64px;
+            height: 64px;
+            background: #e8f0fe;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .file-icon .material-icons {
+            font-size: 32px;
+            color: #1a73e8;
+        }
+
+        .file-name {
+            font-size: 20px;
+            font-weight: 500;
+            color: #202124;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .file-details {
+            margin-bottom: 24px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #202124;
+            font-weight: 500;
+        }
+
+        .share-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .share-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #202124;
+            margin-bottom: 8px;
+        }
+
+        .share-info p {
+            font-size: 12px;
+            color: #5f6368;
+            line-height: 1.4;
+        }
+
+        .preview-container {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            color: #5f6368;
+        }
+
+        .preview-placeholder .material-icons {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .preview-placeholder h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #202124;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #5f6368;
+        }
+
+        @media (max-width: 768px) {
+            .share-content {
+                flex-direction: column;
+                padding: 16px;
+            }
+            
+            .file-info-panel {
+                width: 100%;
+            }
+            
+            .share-header {
+                padding: 12px 16px;
+            }
+            
+            .share-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="share-header">
+        <div class="share-logo">
+            <span class="material-icons">cloud_download</span>
+            <span class="share-logo-text">TeleDrive</span>
+        </div>
+        <div class="share-actions">
+            {% if share_link.can_download %}
+            <a href="/share/{{ share_link.token }}/download" class="btn btn-primary">
+                <span class="material-icons">download</span>
+                Download
+            </a>
+            {% endif %}
+            {% if share_link.can_preview %}
+            <button class="btn btn-secondary" onclick="togglePreview()">
+                <span class="material-icons">visibility</span>
+                Preview
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="share-content">
+        <div class="file-preview">
+            <div class="preview-container" id="preview-container">
+                <div class="preview-placeholder">
+                    <span class="material-icons">insert_drive_file</span>
+                    <h3>{{ share_link.file.filename }}</h3>
+                    <p>Click Preview to view the file content</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="file-info-panel">
+            <div class="file-icon">
+                <span class="material-icons" id="file-icon">insert_drive_file</span>
+            </div>
+            
+            <div class="file-name">{{ share_link.file.filename }}</div>
+            
+            <div class="file-details">
+                <div class="detail-row">
+                    <span class="detail-label">Size</span>
+                    <span class="detail-value">{{ (share_link.file.file_size / 1024 / 1024) | round(2) }} MB</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Type</span>
+                    <span class="detail-value">{{ share_link.file.mime_type or 'Unknown' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Shared</span>
+                    <span class="detail-value">{{ share_link.created_at.strftime('%B %d, %Y') }}</span>
+                </div>
+                {% if share_link.expires_at %}
+                <div class="detail-row">
+                    <span class="detail-label">Expires</span>
+                    <span class="detail-value">{{ share_link.expires_at.strftime('%B %d, %Y') }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if share_link.name or share_link.description %}
+            <div class="share-info">
+                {% if share_link.name %}
+                <h4>{{ share_link.name }}</h4>
+                {% endif %}
+                {% if share_link.description %}
+                <p>{{ share_link.description }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">{{ share_link.view_count }}</span>
+                    <span class="stat-label">Views</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ share_link.download_count }}</span>
+                    <span class="stat-label">Downloads</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Set appropriate file icon
+        function setFileIcon() {
+            const filename = '{{ share_link.file.filename }}';
+            const ext = filename.split('.').pop().toLowerCase();
+            const iconElement = document.getElementById('file-icon');
+            
+            const iconMap = {
+                'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'webp': 'image',
+                'mp4': 'movie', 'avi': 'movie', 'mov': 'movie', 'webm': 'movie',
+                'mp3': 'music_note', 'wav': 'music_note', 'flac': 'music_note', 'm4a': 'music_note',
+                'pdf': 'picture_as_pdf', 'doc': 'description', 'docx': 'description', 'txt': 'description',
+                'zip': 'archive', 'rar': 'archive', '7z': 'archive',
+                'json': 'code', 'csv': 'table_chart', 'xlsx': 'table_chart'
+            };
+            
+            iconElement.textContent = iconMap[ext] || 'insert_drive_file';
+        }
+        
+        function togglePreview() {
+            const container = document.getElementById('preview-container');
+            const filename = '{{ share_link.file.filename }}';
+            
+            // Simple preview implementation
+            container.innerHTML = `
+                <iframe src="/output/${filename}" style="width: 100%; height: 500px; border: none;">
+                    <p>Preview not available for this file type.
+                       <a href="/share/{{ share_link.token }}/download">Download the file</a> to view it.
+                    </p>
+                </iframe>
+            `;
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setFileIcon();
+        });
+    </script>
+</body>
+</html>
