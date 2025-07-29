@@ -26,7 +26,7 @@ class User(UserMixin, db.Model):
     email = Column(String(120), unique=True, nullable=False, index=True)
     password_hash = Column(String(128))
     role = Column(String(20), default='user')  # user, admin, viewer
-    is_active = Column(Boolean, default=True)
+    _is_active = Column('is_active', Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -73,9 +73,15 @@ class User(UserMixin, db.Model):
         """Return False as anonymous users aren't supported"""
         return False
 
+    @property
     def is_active(self):
         """Return True if the user account is active"""
-        return self.is_active
+        return self._is_active
+
+    @is_active.setter
+    def is_active(self, value):
+        """Set the user account active status"""
+        self._is_active = value
 
     # Password methods
     def set_password(self, password):

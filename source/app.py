@@ -1679,7 +1679,22 @@ def telegram_verify():
             # Find the user by telegram_id
             user = User.query.filter_by(telegram_id=str(result['user']['telegram_id'])).first()
             if user:
+                # Debug logging
+                print(f"DEBUG: Found user {user.username} (ID: {user.id}, Active: {user.is_active})")
+
+                # Ensure user is active
+                if not user.is_active:
+                    user.is_active = True
+                    db.session.commit()
+                    print(f"DEBUG: Activated user {user.username}")
+
+                # Record successful login
+                user.record_successful_login()
+                db.session.commit()
+
                 login_user(user, remember=True)
+                print(f"DEBUG: Logged in user {user.username}, current_user.is_authenticated: {current_user.is_authenticated}")
+
                 # Clear session data
                 session.pop('telegram_session_id', None)
                 session.pop('telegram_phone', None)
@@ -1693,6 +1708,7 @@ def telegram_verify():
             else:
                 # This should not happen since create_or_update_user was called
                 # But let's handle it gracefully by creating the user here
+                print(f"DEBUG: User not found in database, creating new user for telegram_id: {result['user']['telegram_id']}")
                 try:
                     user = User(
                         username=result['user']['username'],
@@ -1707,8 +1723,15 @@ def telegram_verify():
                     )
                     db.session.add(user)
                     db.session.commit()
+                    print(f"DEBUG: Created new user {user.username} (ID: {user.id})")
+
+                    # Record successful login
+                    user.record_successful_login()
+                    db.session.commit()
 
                     login_user(user, remember=True)
+                    print(f"DEBUG: Logged in new user {user.username}, current_user.is_authenticated: {current_user.is_authenticated}")
+
                     # Clear session data
                     session.pop('telegram_session_id', None)
                     session.pop('telegram_phone', None)
@@ -1720,6 +1743,7 @@ def telegram_verify():
                         next_page = url_for('dashboard')
                     return redirect(next_page)
                 except Exception as e:
+                    print(f"DEBUG: Error creating user account: {str(e)}")
                     flash(f'Error creating user account: {str(e)}', 'error')
         elif result.get('requires_password'):
             return render_template('auth/tg_verify.html',
