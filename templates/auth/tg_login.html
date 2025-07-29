@@ -75,12 +75,13 @@
 
         .form-row {
             display: flex;
-            gap: 12px;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .form-group label {
             display: block;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 500;
             color: #333;
             margin-bottom: 8px;
@@ -88,12 +89,14 @@
 
         .form-control {
             width: 100%;
-            padding: 12px 16px;
+            padding: 16px 20px;
             border: 2px solid #e1e5e9;
             border-radius: 8px;
             font-size: 16px;
             transition: all 0.2s ease;
             background: #fff;
+            min-height: 50px;
+            box-sizing: border-box;
         }
 
         .form-control:focus {
@@ -103,12 +106,29 @@
         }
 
         .country-select {
-            flex: 0 0 200px;
             position: relative;
         }
 
         .phone-input {
-            flex: 1;
+            position: relative;
+        }
+
+        /* Country code label */
+        .country-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 16px;
+        }
+
+        /* Phone number label */
+        .phone-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 16px;
         }
 
         .btn-primary {
@@ -212,26 +232,36 @@
                 padding: 32px 24px;
                 margin: 16px;
             }
-            
+
             .form-row {
                 flex-direction: column;
-                gap: 16px;
+                gap: 20px;
             }
-            
-            .country-select {
+
+            .country-select, .phone-input {
                 flex: none;
+            }
+
+            .form-control {
+                padding: 18px 20px;
+                font-size: 16px;
+                min-height: 55px;
+            }
+
+            .form-group label, .country-label, .phone-label {
+                font-size: 16px;
             }
         }
 
         /* Enhanced country select styling */
         .country-select select {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 12px center;
+            background-position: right 20px center;
             background-repeat: no-repeat;
-            background-size: 16px;
-            padding-right: 40px;
+            background-size: 18px;
+            padding-right: 50px;
             appearance: none;
-            font-size: 14px;
+            font-size: 16px;
             max-height: 200px;
             overflow-y: auto;
         }
@@ -243,37 +273,40 @@
 
         /* Improve dropdown options styling */
         .country-select select option {
-            padding: 8px 12px;
-            font-size: 14px;
+            padding: 12px 16px;
+            font-size: 16px;
             line-height: 1.4;
         }
 
         /* Search functionality for country select */
         .country-search {
             position: relative;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
 
         .country-search input {
             width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #e1e5e9;
-            border-radius: 6px;
-            font-size: 14px;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
             background: #f8f9fa;
+            box-sizing: border-box;
         }
 
         .country-search input:focus {
             outline: none;
             border-color: #0088cc;
             background: #fff;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
         }
 
         .phone-hint {
-            font-size: 12px;
+            font-size: 14px;
             color: #666;
-            margin-top: 4px;
+            margin-top: 8px;
             font-style: italic;
+            line-height: 1.4;
         }
     </style>
 </head>
@@ -309,31 +342,32 @@
             {{ form.hidden_tag() }}
             
             <div class="form-group">
-                <label for="phone_number">Phone Number</label>
                 <div class="form-row">
                     <div class="country-select">
+                        <label for="country_code" class="country-label">Country Code</label>
                         <div class="country-search" style="display: none;">
                             <input type="text" id="country_search" placeholder="Search country..." autocomplete="off">
                         </div>
                         {{ form.country_code(class="form-control", id="country_code") }}
+                        {% if form.country_code.errors %}
+                            {% for error in form.country_code.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
                     </div>
                     <div class="phone-input">
+                        <label for="phone_number" class="phone-label">Phone Number</label>
                         {{ form.phone_number(class="form-control", placeholder="987654321", id="phone_number") }}
+                        <div class="phone-hint">
+                            Enter your phone number without the country code (e.g., 987654321 for +84987654321)
+                        </div>
+                        {% if form.phone_number.errors %}
+                            {% for error in form.phone_number.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
                     </div>
                 </div>
-                <div class="phone-hint">
-                    Enter your phone number without the country code (e.g., 987654321 for +84987654321)
-                </div>
-                {% if form.phone_number.errors %}
-                    {% for error in form.phone_number.errors %}
-                        <div class="field-error">{{ error }}</div>
-                    {% endfor %}
-                {% endif %}
-                {% if form.country_code.errors %}
-                    {% for error in form.country_code.errors %}
-                        <div class="field-error">{{ error }}</div>
-                    {% endfor %}
-                {% endif %}
             </div>
             
             {{ form.submit(class="btn-primary") }}
