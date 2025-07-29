@@ -189,42 +189,11 @@ class TelegramAuthenticator:
                 'error': 'Invalid verification code'
             }
         except Exception as e:
-            error_str = str(e).lower()
             print(f"AUTH: Authentication failed with exception: {str(e)}")
-
-            # Handle specific error cases
-            if 'confirmation code has expired' in error_str or 'code has expired' in error_str:
-                print("AUTH: Verification code has expired")
-                # Clean up the expired session
-                if session_id in self.temp_sessions:
-                    await self.cleanup_session(session_id)
-
-                return {
-                    'success': False,
-                    'error': 'Verification code has expired. Please request a new code.',
-                    'error_type': 'code_expired',
-                    'requires_new_code': True
-                }
-            elif 'phone code invalid' in error_str or 'invalid code' in error_str:
-                print("AUTH: Invalid verification code")
-                return {
-                    'success': False,
-                    'error': 'Invalid verification code. Please check and try again.',
-                    'error_type': 'invalid_code'
-                }
-            elif 'phone number invalid' in error_str:
-                print("AUTH: Invalid phone number")
-                return {
-                    'success': False,
-                    'error': 'Invalid phone number format.',
-                    'error_type': 'invalid_phone'
-                }
-            else:
-                return {
-                    'success': False,
-                    'error': f'Authentication failed: {str(e)}',
-                    'error_type': 'general'
-                }
+            return {
+                'success': False,
+                'error': f'Authentication failed: {str(e)}'
+            }
     
     def create_or_update_user(self, telegram_user: TelegramUser, phone_number: str) -> User:
         """Create or update user in database"""
