@@ -103,7 +103,8 @@
         }
 
         .country-select {
-            flex: 0 0 140px;
+            flex: 0 0 200px;
+            position: relative;
         }
 
         .phone-input {
@@ -225,11 +226,47 @@
         /* Enhanced country select styling */
         .country-select select {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 8px center;
+            background-position: right 12px center;
             background-repeat: no-repeat;
             background-size: 16px;
-            padding-right: 32px;
+            padding-right: 40px;
             appearance: none;
+            font-size: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .country-select select:focus {
+            border-color: #0088cc;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+        }
+
+        /* Improve dropdown options styling */
+        .country-select select option {
+            padding: 8px 12px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* Search functionality for country select */
+        .country-search {
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .country-search input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #f8f9fa;
+        }
+
+        .country-search input:focus {
+            outline: none;
+            border-color: #0088cc;
+            background: #fff;
         }
 
         .phone-hint {
@@ -275,6 +312,9 @@
                 <label for="phone_number">Phone Number</label>
                 <div class="form-row">
                     <div class="country-select">
+                        <div class="country-search" style="display: none;">
+                            <input type="text" id="country_search" placeholder="Search country..." autocomplete="off">
+                        </div>
                         {{ form.country_code(class="form-control", id="country_code") }}
                     </div>
                     <div class="phone-input">
@@ -306,9 +346,66 @@
     </div>
 
     <script>
-        // Auto-focus phone number input when country is selected
-        document.getElementById('country_code').addEventListener('change', function() {
-            document.getElementById('phone_number').focus();
+        // Store original options for search functionality
+        let originalOptions = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const countrySelect = document.getElementById('country_code');
+            const searchInput = document.getElementById('country_search');
+            const searchContainer = document.querySelector('.country-search');
+
+            // Store original options
+            originalOptions = Array.from(countrySelect.options).map(option => ({
+                value: option.value,
+                text: option.text
+            }));
+
+            // Show search when dropdown is focused
+            countrySelect.addEventListener('focus', function() {
+                searchContainer.style.display = 'block';
+                searchInput.focus();
+            });
+
+            // Hide search when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.country-select')) {
+                    searchContainer.style.display = 'none';
+                }
+            });
+
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filteredOptions = originalOptions.filter(option =>
+                    option.text.toLowerCase().includes(searchTerm)
+                );
+
+                // Clear current options
+                countrySelect.innerHTML = '';
+
+                // Add filtered options
+                filteredOptions.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.text;
+                    countrySelect.appendChild(optionElement);
+                });
+
+                // If no results, show message
+                if (filteredOptions.length === 0) {
+                    const noResultOption = document.createElement('option');
+                    noResultOption.textContent = 'No countries found';
+                    noResultOption.disabled = true;
+                    countrySelect.appendChild(noResultOption);
+                }
+            });
+
+            // Clear search when selecting a country
+            countrySelect.addEventListener('change', function() {
+                searchInput.value = '';
+                searchContainer.style.display = 'none';
+                document.getElementById('phone_number').focus();
+            });
         });
 
         // Format phone number as user types
@@ -328,7 +425,12 @@
                 '+1': 'Enter your phone number without the country code (e.g., 2345678901 for +12345678901)',
                 '+44': 'Enter your phone number without the country code (e.g., 7700900123 for +447700900123)',
                 '+86': 'Enter your phone number without the country code (e.g., 13800138000 for +8613800138000)',
-                '+91': 'Enter your phone number without the country code (e.g., 9876543210 for +919876543210)'
+                '+91': 'Enter your phone number without the country code (e.g., 9876543210 for +919876543210)',
+                '+49': 'Enter your phone number without the country code (e.g., 1701234567 for +491701234567)',
+                '+33': 'Enter your phone number without the country code (e.g., 612345678 for +33612345678)',
+                '+39': 'Enter your phone number without the country code (e.g., 3123456789 for +393123456789)',
+                '+34': 'Enter your phone number without the country code (e.g., 612345678 for +34612345678)',
+                '+55': 'Enter your phone number without the country code (e.g., 11987654321 for +5511987654321)'
             };
 
             hint.textContent = examples[countryCode] || 'Enter your phone number without the country code';
@@ -336,6 +438,25 @@
 
         // Trigger initial hint update
         document.getElementById('country_code').dispatchEvent(new Event('change'));
+
+        // Keyboard navigation for better UX
+        document.addEventListener('keydown', function(e) {
+            const searchInput = document.getElementById('country_search');
+            const countrySelect = document.getElementById('country_code');
+
+            if (e.key === 'Escape') {
+                document.querySelector('.country-search').style.display = 'none';
+                countrySelect.focus();
+            }
+
+            if (e.key === 'Enter' && document.activeElement === searchInput) {
+                e.preventDefault();
+                if (countrySelect.options.length > 0 && !countrySelect.options[0].disabled) {
+                    countrySelect.selectedIndex = 0;
+                    countrySelect.dispatchEvent(new Event('change'));
+                }
+            }
+        });
     </script>
 </body>
 </html>
