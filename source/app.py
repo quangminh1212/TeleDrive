@@ -1965,7 +1965,18 @@ def telegram_verify():
                                  requires_password=True)
         else:
             app.logger.error(f"Authentication failed: {result.get('error', 'Unknown error')}")
-            flash(result['error'], 'error')
+            error_type = result.get('error_type', 'general')
+
+            # Handle different error types
+            if error_type == 'code_expired':
+                # Clear the expired session and redirect to get new code
+                session.pop('telegram_session_id', None)
+                flash('Verification code has expired. Please request a new code.', 'warning')
+                return redirect(url_for('telegram_login'))
+            elif error_type == 'invalid_code':
+                flash('Invalid verification code. Please check and try again.', 'error')
+            else:
+                flash(result['error'], 'error')
     else:
         if form.errors:
             app.logger.warning(f"Verification form validation errors: {form.errors}")
@@ -1974,6 +1985,60 @@ def telegram_verify():
                          form=form,
                          phone_number=phone_number,
                          requires_password=requires_password)
+
+@app.route('/telegram_resend_code', methods=['POST'])
+def telegram_resend_code():
+    """Resend verification code"""
+    from flask import session
+
+    if 'telegram_phone' not in session:
+        flash('Session expired. Please start over.', 'error')
+        return redirect(url_for('telegram_login'))
+
+    phone_number = session['telegram_phone']
+    country_code = session.get('telegram_country_code', '+84')
+
+    # Clear old session ID if exists
+    session.pop('telegram_session_id', None)
+
+    # Send new verification code
+    async def send_code():
+        # Extract phone number without country code for the API call
+        phone_only = phone_number.replace(country_code, '') if phone_number.startswith(country_code) else phone_number
+        result = await telegram_auth.send_code_request(phone_only, country_code)
+        return result
+
+    # Run async function with proper cleanup
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        result = loop.run_until_complete(send_code())
+    except Exception as e:
+        result = {'success': False, 'error': str(e)}
+    finally:
+        # Cancel any remaining tasks
+        try:
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
+
+            if pending:
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+        except Exception:
+            pass
+
+        try:
+            loop.close()
+        except Exception:
+            pass
+
+    if result['success']:
+        session['telegram_session_id'] = result['session_id']
+        flash('New verification code sent to your Telegram!', 'success')
+        return redirect(url_for('telegram_verify'))
+    else:
+        flash(f'Failed to send new code: {result["error"]}', 'error')
+        return redirect(url_for('telegram_login'))
 
 # File sharing routes
 @app.route('/api/files/<int:file_id>/share', methods=['POST'])
