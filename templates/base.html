@@ -4,24 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TeleDrive - Telegram File Manager{% endblock %}</title>
-
-    <!-- PWA Meta Tags -->
-    <meta name="description" content="Modern cloud file manager with Telegram integration">
-    <meta name="theme-color" content="#1a73e8">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="TeleDrive">
-    <meta name="msapplication-TileColor" content="#1a73e8">
-    <meta name="msapplication-config" content="/static/browserconfig.xml">
-
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
-
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
-    <link rel="mask-icon" href="/static/icons/safari-pinned-tab.svg" color="#1a73e8">
     
     <!-- Google Drive-like styling -->
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -57,11 +39,6 @@
         </div>
         
         <div class="header-right">
-            <!-- PWA Install Button -->
-            <button id="install-btn" class="header-btn" style="display: none;" title="Install TeleDrive">
-                <span class="material-icons">get_app</span>
-            </button>
-
             <button class="header-btn" onclick="location.href='{{ url_for('settings') }}'">
                 <span class="material-icons">settings</span>
             </button>
@@ -114,14 +91,6 @@
                 <span>Channel Scanner</span>
             </a>
 
-<<<<<<< HEAD
-            <a href="{{ url_for('analytics_dashboard') }}" class="nav-item {% if request.endpoint == 'analytics_dashboard' %}active{% endif %}">
-                <span class="material-icons">analytics</span>
-                <span>Analytics</span>
-            </a>
-
-=======
->>>>>>> 98d1e8270d2d9ce3f11bdd567a95b3f63bc29b48
             <a href="{{ url_for('settings') }}" class="nav-item {% if request.endpoint == 'settings' %}active{% endif %}">
                 <span class="material-icons">settings</span>
                 <span>Settings</span>
@@ -173,69 +142,6 @@
 
     <!-- Scripts -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-
-    <!-- PWA Service Worker Registration -->
-    <script>
-        // Register service worker for PWA functionality
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-
-                        // Check for updates
-                        registration.addEventListener('updatefound', function() {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', function() {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    // New content is available, show update notification
-                                    showUpdateNotification();
-                                }
-                            });
-                        });
-                    })
-                    .catch(function(err) {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
-            });
-        }
-
-        // Show update notification
-        function showUpdateNotification() {
-            if (confirm('A new version of TeleDrive is available. Would you like to update?')) {
-                window.location.reload();
-            }
-        }
-
-        // Install prompt for PWA
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', function(e) {
-            e.preventDefault();
-            deferredPrompt = e;
-
-            // Show install button
-            const installBtn = document.getElementById('install-btn');
-            if (installBtn) {
-                installBtn.style.display = 'block';
-                installBtn.addEventListener('click', function() {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then(function(choiceResult) {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('User accepted the install prompt');
-                        }
-                        deferredPrompt = null;
-                        installBtn.style.display = 'none';
-                    });
-                });
-            }
-        });
-
-        // Handle app installed
-        window.addEventListener('appinstalled', function(evt) {
-            console.log('TeleDrive was installed');
-            showToast('TeleDrive installed successfully!', 'success');
-        });
-    </script>
 
     <script>
     // Global search functionality
