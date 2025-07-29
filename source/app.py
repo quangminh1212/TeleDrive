@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 TeleDrive Web Interface
 Flask web application for Telegram file scanning with Google Drive-like UI
 """
 
 import os
+import sys
+import codecs
+
+# Set UTF-8 encoding for stdout and stderr
+sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
+sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
 import json
 import asyncio
 import threading
