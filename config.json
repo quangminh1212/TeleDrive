@@ -218,7 +218,7 @@
     }
   },
   "database": {
-    "url": "sqlite:///data/teledrive.db",
+    "url": "sqlite:///C:\\VF\\TeleDrive\\data\\teledrive.db",
     "track_modifications": false,
     "pool_size": 10,
     "pool_timeout": 20,
