@@ -1606,18 +1606,25 @@ def reset_password(token):
 @app.route('/telegram_login', methods=['GET', 'POST'])
 def telegram_login():
     """Telegram login - phone number input"""
+    app.logger.info("=== TELEGRAM LOGIN START ===")
+
     if current_user.is_authenticated:
+        app.logger.info(f"User already authenticated: {current_user.username}")
         return redirect(url_for('dashboard'))
 
     form = TelegramLoginForm()
     if form.validate_on_submit():
         phone_number = form.phone_number.data
         country_code = form.country_code.data
+        full_phone = f"{country_code}{phone_number}"
+
+        app.logger.info(f"Login attempt for phone: {full_phone}")
 
         # Store form data in session for the verification step
         from flask import session
-        session['telegram_phone'] = f"{country_code}{phone_number}"
+        session['telegram_phone'] = full_phone
         session['telegram_country_code'] = country_code
+        app.logger.info(f"Stored phone in session: {session.get('telegram_phone')}")
 
         # Send verification code
         async def send_code():
@@ -1628,27 +1635,40 @@ def telegram_login():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
+            app.logger.info("Sending verification code...")
             result = loop.run_until_complete(send_code())
+            app.logger.info(f"Send code result: {result}")
         finally:
             loop.close()
 
         if result['success']:
             session['telegram_session_id'] = result['session_id']
+            app.logger.info(f"Session ID stored: {result['session_id']}")
             flash('Verification code sent to your Telegram!', 'success')
             return redirect(url_for('telegram_verify'))
         else:
+            app.logger.error(f"Failed to send code: {result['error']}")
             flash(result['error'], 'error')
+    else:
+        if form.errors:
+            app.logger.warning(f"Form validation errors: {form.errors}")
 
     return render_template('auth/tg_login.html', form=form)
 
 @app.route('/telegram_verify', methods=['GET', 'POST'])
 def telegram_verify():
     """Telegram verification - code input"""
+    app.logger.info("=== TELEGRAM VERIFY START ===")
+
     if current_user.is_authenticated:
+        app.logger.info(f"User already authenticated: {current_user.username}")
         return redirect(url_for('dashboard'))
 
     from flask import session
+    app.logger.info(f"Session keys: {list(session.keys())}")
+
     if 'telegram_session_id' not in session:
+        app.logger.error("No telegram_session_id in session - session expired")
         flash('Session expired. Please try again.', 'error')
         return redirect(url_for('telegram_login'))
 
@@ -1656,10 +1676,17 @@ def telegram_verify():
     phone_number = session.get('telegram_phone', '')
     requires_password = request.args.get('requires_password', False)
 
+    app.logger.info(f"Phone from session: {phone_number}")
+    app.logger.info(f"Requires password: {requires_password}")
+
     if form.validate_on_submit():
         session_id = session['telegram_session_id']
         verification_code = form.verification_code.data
         password = form.password.data if form.password.data else None
+
+        app.logger.info(f"Verification attempt - Session ID: {session_id}")
+        app.logger.info(f"Verification code length: {len(verification_code)}")
+        app.logger.info(f"Password provided: {bool(password)}")
 
         # Verify code
         async def verify_code():
@@ -1670,39 +1697,57 @@ def telegram_verify():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
+            app.logger.info("Starting code verification...")
             result = loop.run_until_complete(verify_code())
+            app.logger.info(f"Verification result: {result}")
         finally:
             loop.close()
 
         if result['success']:
+            app.logger.info("=== AUTHENTICATION SUCCESSFUL ===")
+            telegram_id = str(result['user']['telegram_id'])
+            app.logger.info(f"Looking for user with telegram_id: {telegram_id}")
+
             # User was already created/updated in the authentication process
             # Find the user by telegram_id
-            user = User.query.filter_by(telegram_id=str(result['user']['telegram_id'])).first()
+            user = User.query.filter_by(telegram_id=telegram_id).first()
             if user:
+                app.logger.info(f"Found existing user: {user.username} (ID: {user.id})")
+                app.logger.info(f"User active status: {user.is_active}")
+                app.logger.info(f"User auth method: {user.auth_method}")
+
                 # Ensure user is active
                 if not user.is_active:
+                    app.logger.info("Activating inactive user")
                     user.is_active = True
                     db.session.commit()
 
                 # Record successful login
+                app.logger.info("Recording successful login")
                 user.record_successful_login()
                 db.session.commit()
 
+                app.logger.info("Calling login_user()")
                 login_user(user, remember=True)
+                app.logger.info(f"Login completed. current_user.is_authenticated: {current_user.is_authenticated}")
 
                 # Clear session data
                 session.pop('telegram_session_id', None)
                 session.pop('telegram_phone', None)
                 session.pop('telegram_country_code', None)
+                app.logger.info("Cleared session data")
 
                 flash('Login successful!', 'success')
                 next_page = request.args.get('next')
                 if not next_page or not next_page.startswith('/'):
                     next_page = url_for('dashboard')
+                app.logger.info(f"Redirecting to: {next_page}")
                 return redirect(next_page)
             else:
                 # This should not happen since create_or_update_user was called
                 # But let's handle it gracefully by creating the user here
+                app.logger.warning(f"User not found in database for telegram_id: {telegram_id}")
+                app.logger.info("Creating fallback user account")
                 try:
                     user = User(
                         username=result['user']['username'],
@@ -1717,12 +1762,14 @@ def telegram_verify():
                     )
                     db.session.add(user)
                     db.session.commit()
+                    app.logger.info(f"Created fallback user: {user.username} (ID: {user.id})")
 
                     # Record successful login
                     user.record_successful_login()
                     db.session.commit()
 
                     login_user(user, remember=True)
+                    app.logger.info(f"Logged in fallback user. current_user.is_authenticated: {current_user.is_authenticated}")
 
                     # Clear session data
                     session.pop('telegram_session_id', None)
@@ -1733,16 +1780,23 @@ def telegram_verify():
                     next_page = request.args.get('next')
                     if not next_page or not next_page.startswith('/'):
                         next_page = url_for('dashboard')
+                    app.logger.info(f"Redirecting fallback user to: {next_page}")
                     return redirect(next_page)
                 except Exception as e:
+                    app.logger.error(f"Error creating fallback user: {str(e)}")
                     flash(f'Error creating user account: {str(e)}', 'error')
         elif result.get('requires_password'):
+            app.logger.info("Two-factor authentication required")
             return render_template('auth/tg_verify.html',
                                  form=form,
                                  phone_number=phone_number,
                                  requires_password=True)
         else:
+            app.logger.error(f"Authentication failed: {result.get('error', 'Unknown error')}")
             flash(result['error'], 'error')
+    else:
+        if form.errors:
+            app.logger.warning(f"Verification form validation errors: {form.errors}")
 
     return render_template('auth/tg_verify.html',
                          form=form,

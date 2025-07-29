@@ -41,18 +41,24 @@ class TelegramAuthenticator:
     
     async def send_code_request(self, phone_number: str, country_code: str = "+84") -> Dict[str, Any]:
         """Send verification code to phone number"""
+        print(f"AUTH: send_code_request called with phone: {phone_number}, country: {country_code}")
         try:
             # Format phone number with country code
             if not phone_number.startswith('+'):
                 phone_number = f"{country_code}{phone_number}"
-            
+
+            print(f"AUTH: Formatted phone number: {phone_number}")
+
             # Initialize client if not already done
             if not self.client:
+                print("AUTH: Initializing Telegram client...")
                 await self.initialize_client()
-            
+
             # Send code request
+            print("AUTH: Sending code request to Telegram...")
             sent_code = await self.client.send_code_request(phone_number)
-            
+            print(f"AUTH: Code sent successfully, phone_code_hash: {sent_code.phone_code_hash[:10]}...")
+
             # Store session info temporarily
             session_id = os.urandom(16).hex()
             self.temp_sessions[session_id] = {
@@ -60,7 +66,8 @@ class TelegramAuthenticator:
                 'phone_code_hash': sent_code.phone_code_hash,
                 'client': self.client
             }
-            
+            print(f"AUTH: Session stored with ID: {session_id}")
+
             return {
                 'success': True,
                 'session_id': session_id,
@@ -81,26 +88,34 @@ class TelegramAuthenticator:
     
     async def verify_code(self, session_id: str, verification_code: str, password: str = None) -> Dict[str, Any]:
         """Verify the code and complete authentication"""
+        print(f"AUTH: verify_code called with session_id: {session_id}, code length: {len(verification_code)}")
         try:
             if session_id not in self.temp_sessions:
+                print(f"AUTH: Session {session_id} not found in temp_sessions")
+                print(f"AUTH: Available sessions: {list(self.temp_sessions.keys())}")
                 return {
                     'success': False,
                     'error': 'Invalid or expired session'
                 }
-            
+
             session_data = self.temp_sessions[session_id]
             client = session_data['client']
             phone_number = session_data['phone_number']
             phone_code_hash = session_data['phone_code_hash']
-            
+
+            print(f"AUTH: Retrieved session data for phone: {phone_number}")
+
             try:
                 # Try to sign in with the code
+                print("AUTH: Attempting to sign in with verification code...")
                 user = await client.sign_in(
                     phone=phone_number,
                     code=verification_code,
                     phone_code_hash=phone_code_hash
                 )
+                print("AUTH: Sign in with code successful")
             except SessionPasswordNeededError:
+                print("AUTH: Two-factor authentication required")
                 # Two-factor authentication is enabled
                 if not password:
                     return {
@@ -108,20 +123,27 @@ class TelegramAuthenticator:
                         'error': 'Two-factor authentication password required',
                         'requires_password': True
                     }
-                
+
                 # Sign in with password
+                print("AUTH: Attempting to sign in with 2FA password...")
                 user = await client.sign_in(password=password)
-            
+                print("AUTH: Sign in with 2FA password successful")
+
             # Get user information
+            print("AUTH: Getting user information from Telegram...")
             telegram_user = await client.get_me()
-            
+            print(f"AUTH: Retrieved Telegram user: {telegram_user.username} (ID: {telegram_user.id})")
+
             # Create or get user in database
+            print("AUTH: Creating or updating user in database...")
             db_user = self.create_or_update_user(telegram_user, phone_number)
-            
+            print(f"AUTH: Database user: {db_user.username} (ID: {db_user.id})")
+
             # Clean up temporary session
             del self.temp_sessions[session_id]
             await client.disconnect()
-            
+            print("AUTH: Cleaned up session and disconnected client")
+
             return {
                 'success': True,
                 'user': {
@@ -136,11 +158,13 @@ class TelegramAuthenticator:
             }
             
         except PhoneCodeInvalidError:
+            print("AUTH: Invalid verification code error")
             return {
                 'success': False,
                 'error': 'Invalid verification code'
             }
         except Exception as e:
+            print(f"AUTH: Authentication failed with exception: {str(e)}")
             return {
                 'success': False,
                 'error': f'Authentication failed: {str(e)}'
@@ -148,14 +172,19 @@ class TelegramAuthenticator:
     
     def create_or_update_user(self, telegram_user: TelegramUser, phone_number: str) -> User:
         """Create or update user in database"""
+        print(f"AUTH: create_or_update_user called for telegram_id: {telegram_user.id}")
+
         # Generate username from Telegram data
         username = telegram_user.username or f"user_{telegram_user.id}"
         email = f"{username}@telegram.local"
-        
+
+        print(f"AUTH: Generated username: {username}, email: {email}")
+
         # Check if user already exists by telegram_id (store as string)
         user = User.query.filter_by(telegram_id=str(telegram_user.id)).first()
 
         if not user:
+            print("AUTH: Creating new user in database")
             # Create new user
             user = User(
                 username=username,
@@ -169,14 +198,17 @@ class TelegramAuthenticator:
                 auth_method='telegram'  # Set auth method to telegram
             )
             db.session.add(user)
+            print(f"AUTH: Added new user to session: {username}")
         else:
+            print(f"AUTH: Updating existing user: {user.username}")
             # Update existing user
             user.phone_number = phone_number
             user.first_name = telegram_user.first_name or ''
             user.last_name = telegram_user.last_name or ''
             user.is_active = True
-        
+
         db.session.commit()
+        print(f"AUTH: User committed to database with ID: {user.id}")
         return user
     
     async def cleanup_session(self, session_id: str):
