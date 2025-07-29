@@ -278,7 +278,28 @@
             line-height: 1.4;
         }
 
-        /* Simplified country select - no search needed */
+        /* Search functionality for country select */
+        .country-search {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .country-search input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #f8f9fa;
+            box-sizing: border-box;
+        }
+
+        .country-search input:focus {
+            outline: none;
+            border-color: #0088cc;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+        }
 
         .phone-hint {
             font-size: 14px;
@@ -324,6 +345,9 @@
                 <div class="form-row">
                     <div class="country-select">
                         <label for="country_code" class="country-label">Country Code</label>
+                        <div class="country-search" style="display: none;">
+                            <input type="text" id="country_search" placeholder="Search country..." autocomplete="off">
+                        </div>
                         {{ form.country_code(class="form-control", id="country_code") }}
                         {% if form.country_code.errors %}
                             {% for error in form.country_code.errors %}
@@ -356,11 +380,64 @@
     </div>
 
     <script>
+        // Store original options for search functionality
+        let originalOptions = [];
+
         document.addEventListener('DOMContentLoaded', function() {
             const countrySelect = document.getElementById('country_code');
+            const searchInput = document.getElementById('country_search');
+            const searchContainer = document.querySelector('.country-search');
 
-            // Auto-focus phone number when country is selected
+            // Store original options
+            originalOptions = Array.from(countrySelect.options).map(option => ({
+                value: option.value,
+                text: option.text
+            }));
+
+            // Show search when dropdown is focused
+            countrySelect.addEventListener('focus', function() {
+                searchContainer.style.display = 'block';
+                searchInput.focus();
+            });
+
+            // Hide search when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.country-select')) {
+                    searchContainer.style.display = 'none';
+                }
+            });
+
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filteredOptions = originalOptions.filter(option =>
+                    option.text.toLowerCase().includes(searchTerm)
+                );
+
+                // Clear current options
+                countrySelect.innerHTML = '';
+
+                // Add filtered options
+                filteredOptions.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.text;
+                    countrySelect.appendChild(optionElement);
+                });
+
+                // If no results, show message
+                if (filteredOptions.length === 0) {
+                    const noResultOption = document.createElement('option');
+                    noResultOption.textContent = 'No countries found';
+                    noResultOption.disabled = true;
+                    countrySelect.appendChild(noResultOption);
+                }
+            });
+
+            // Clear search when selecting a country
             countrySelect.addEventListener('change', function() {
+                searchInput.value = '';
+                searchContainer.style.display = 'none';
                 document.getElementById('phone_number').focus();
             });
         });
@@ -395,6 +472,25 @@
 
         // Trigger initial hint update
         document.getElementById('country_code').dispatchEvent(new Event('change'));
+
+        // Keyboard navigation for better UX
+        document.addEventListener('keydown', function(e) {
+            const searchInput = document.getElementById('country_search');
+            const countrySelect = document.getElementById('country_code');
+
+            if (e.key === 'Escape') {
+                document.querySelector('.country-search').style.display = 'none';
+                countrySelect.focus();
+            }
+
+            if (e.key === 'Enter' && document.activeElement === searchInput) {
+                e.preventDefault();
+                if (countrySelect.options.length > 0 && !countrySelect.options[0].disabled) {
+                    countrySelect.selectedIndex = 0;
+                    countrySelect.dispatchEvent(new Event('change'));
+                }
+            }
+        });
     </script>
 </body>
 </html>
