@@ -717,7 +717,7 @@ class ActivityLog(db.Model):
     # Activity details
     action = Column(String(50), nullable=False, index=True)  # upload, download, view, delete, share, etc.
     description = Column(Text)  # Human-readable description
-    metadata = Column(Text)  # JSON metadata for additional details
+    activity_metadata = Column(Text)  # JSON metadata for additional details
 
     # Context
     ip_address = Column(String(45))  # IPv4 or IPv6
@@ -736,9 +736,9 @@ class ActivityLog(db.Model):
     def get_activity_info(self):
         """Get activity information"""
         metadata = {}
-        if self.metadata:
+        if self.activity_metadata:
             try:
-                metadata = json.loads(self.metadata)
+                metadata = json.loads(self.activity_metadata)
             except:
                 pass
 
@@ -763,7 +763,7 @@ class ActivityLog(db.Model):
             file_id=file_id,
             action=action,
             description=description,
-            metadata=json.dumps(metadata) if metadata else None,
+            activity_metadata=json.dumps(metadata) if metadata else None,
             ip_address=ip_address,
             user_agent=user_agent
         )
