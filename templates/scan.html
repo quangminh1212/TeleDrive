@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Channel Scanner - TeleDrive{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="content-header">
+        <h1 class="page-title">
+            <span class="material-icons">scanner</span>
+            Channel Scanner
+        </h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="startNewScan()">
+                <span class="material-icons">add</span>
+                New Scan
+            </button>
+        </div>
+    </div>
+    
+    <div class="scan-container">
+        <!-- Scan Configuration -->
+        <div class="scan-config-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <span class="material-icons">settings</span>
+                        Scan Configuration
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="scan-form">
+                        <div class="form-group">
+                            <label for="channel-input">Channel URL or Username</label>
+                            <input type="text" id="channel-input" class="form-control" 
+                                   placeholder="@channelname or https://t.me/channelname" required>
+                            <small class="form-text">Enter the Telegram channel URL or username</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="max-messages">Max Messages to Scan</label>
+                            <input type="number" id="max-messages" class="form-control" 
+                                   placeholder="Leave empty for all messages" min="1">
+                            <small class="form-text">Limit the number of messages to scan (optional)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>File Types to Include</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="file-types" value="documents" checked>
+                                    <span class="material-icons">description</span>
+                                    Documents
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="file-types" value="photos" checked>
+                                    <span class="material-icons">image</span>
+                                    Photos
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="file-types" value="videos" checked>
+                                    <span class="material-icons">video_file</span>
+                                    Videos
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="file-types" value="audio" checked>
+                                    <span class="material-icons">audio_file</span>
+                                    Audio
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <span class="material-icons">play_arrow</span>
+                                Start Scan
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                <span class="material-icons">refresh</span>
+                                Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scan Progress -->
+        <div class="scan-progress-section" id="scan-progress-section" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <span class="material-icons">trending_up</span>
+                        Scan Progress
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="progress-info">
+                        <div class="progress-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Status:</span>
+                                <span class="stat-value" id="scan-status">Ready</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Messages Processed:</span>
+                                <span class="stat-value" id="messages-processed">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Files Found:</span>
+                                <span class="stat-value" id="files-found">0</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progress-bar">
+                                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                            </div>
+                            <span class="progress-text" id="progress-text">0%</span>
+                        </div>
+                    </div>
+                    <div class="scan-actions">
+                        <button class="btn btn-danger" id="stop-scan-btn" onclick="stopScan()" style="display: none;">
+                            <span class="material-icons">stop</span>
+                            Stop Scan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Scans -->
+        <div class="recent-scans-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <span class="material-icons">history</span>
+                        Recent Scans
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="scans-list" id="recent-scans-list">
+                        <div class="empty-state">
+                            <span class="material-icons">scanner</span>
+                            <h4>No scans yet</h4>
+                            <p>Start your first channel scan to see results here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Scan functionality
+function startNewScan() {
+    document.getElementById('channel-input').focus();
+}
+
+function resetForm() {
+    document.getElementById('scan-form').reset();
+}
+
+function stopScan() {
+    // Implementation for stopping scan
+    console.log('Stopping scan...');
+}
+
+// Form submission
+document.getElementById('scan-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const channelInput = document.getElementById('channel-input').value.trim();
+    if (!channelInput) {
+        alert('Please enter a channel URL or username');
+        return;
+    }
+    
+    // Show progress section
+    document.getElementById('scan-progress-section').style.display = 'block';
+    document.getElementById('scan-status').textContent = 'Starting...';
+    document.getElementById('stop-scan-btn').style.display = 'inline-block';
+    
+    // Here you would implement the actual scan logic
+    console.log('Starting scan for:', channelInput);
+});
+
+// Load recent scans on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecentScans();
+});
+
+function loadRecentScans() {
+    // Implementation for loading recent scans
+    console.log('Loading recent scans...');
+}
+</script>
+{% endblock %}
