@@ -40,20 +40,16 @@ This section guides you through submitting an enhancement suggestion, including 
 
 1. Fork the repository
 2. Clone your fork: `git clone https://github.com/your-username/teledrive.git`
-3. Set up the development environment: `pip install -e ".[dev]"`
+3. Set up the development environment: `pip install -r requirements.txt`
 
 ### Coding Standards
 
-- Use [Black](https://black.readthedocs.io/) for code formatting: `black teledrive tests`
-- Use [isort](https://pycqa.github.io/isort/) for import sorting: `isort teledrive tests`
+- Follow consistent code formatting standards
+- Use proper import organization
 - Follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) style guide
 - Write docstrings in the [Google style](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)
 
-### Testing
 
-- Write tests for new functionality
-- Run tests before submitting a PR: `pytest`
-- Ensure test coverage is maintained or improved: `pytest --cov=teledrive`
 
 ### Documentation
 

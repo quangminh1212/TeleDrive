@@ -47,38 +47,12 @@ dependencies = [
     "email-validator>=2.0.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "mypy>=1.0.0",
-    "sphinx>=7.0.0",
-]
-docs = [
-    "sphinx>=7.0.0",
-    "sphinx-rtd-theme>=1.2.0",
-]
+
 
 [project.urls]
 "Homepage" = "https://github.com/username/teledrive"
 "Bug Tracker" = "https://github.com/username/teledrive/issues"
 "Documentation" = "https://teledrive.readthedocs.io/"
 
-[project.scripts]
-teledrive = "teledrive.cli:main"
 
-[tool.black]
-line-length = 88
-target-version = ["py38", "py39", "py310", "py311"]
-include = '\.pyi?$'
 
-[tool.isort]
-profile = "black"
-line_length = 88
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = "test_*.py"

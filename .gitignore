@@ -68,6 +68,4 @@ temp/
 backups/
 uploads/
 
-# Test files
-test_*.py
-*_test.py
+
