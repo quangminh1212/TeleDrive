@@ -155,8 +155,15 @@ class TelegramAuthenticator:
                 try:
                     await old_client.disconnect()
                     print("AUTH: Disconnected old client")
-                except:
-                    print("AUTH: Failed to disconnect old client (may already be disconnected)")
+                except Exception as e:
+                    print(f"AUTH: Failed to disconnect old client: {e}")
+
+            # Clean up the verification client
+            try:
+                await client.disconnect()
+                print("AUTH: Disconnected verification client")
+            except Exception as e:
+                print(f"AUTH: Failed to disconnect verification client: {e}")
 
             del self.temp_sessions[session_id]
             await client.disconnect()
