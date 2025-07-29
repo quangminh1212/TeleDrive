@@ -15,7 +15,7 @@ if not exist config.json (
     echo ❌ KHONG TIM THAY FILE config.json!
     echo.
     echo 🔧 Dang tao cau hinh mac dinh...
-    python -c "from teledrive.utils.config_utils import create_default_config; create_default_config(); print('✅ Da tao config.json mac dinh')" 2>nul
+    python -c "from source.config import create_default_config; create_default_config(); print('✅ Da tao config.json mac dinh')" 2>nul
     if errorlevel 1 (
         echo ❌ Khong the tao cau hinh mac dinh!
         echo 🔧 Chay setup.bat truoc khi su dung
@@ -33,7 +33,7 @@ if errorlevel 1 (
     echo ⚠️ TELEGRAM API CHUA DUOC CAU HINH!
     echo.
     echo 🔍 Dang kiem tra lai cau hinh chi tiet...
-    python -c "from teledrive.utils.config_utils import validate_configuration; result = validate_configuration(); exit(0 if result else 1)" 2>nul
+    python -c "from source.config import validate_configuration; result = validate_configuration(); exit(0 if result else 1)" 2>nul
     if not errorlevel 1 (
         echo.
         echo ✅ Cau hinh thuc te da hop le! Tiep tuc chay chuong trinh...
@@ -75,7 +75,7 @@ if errorlevel 1 (
 echo.
 echo [BUOC 3/7] Kiem tra va dong bo cau hinh...
 echo    ^> Kiem tra tinh hop le cua cau hinh...
-python -c "from teledrive.utils.config_utils import validate_configuration; result = validate_configuration(); print('✅ Cau hinh hop le' if result else '⚠️ Cau hinh co van de'); exit(0)" 2>nul
+python -c "from source.config import validate_configuration; result = validate_configuration(); print('✅ Cau hinh hop le' if result else '⚠️ Cau hinh co van de'); exit(0)" 2>nul
 if errorlevel 1 (
     echo.
     echo ⚠️ CAU HINH CO VAN DE!
@@ -84,14 +84,14 @@ if errorlevel 1 (
     REM Thu dong bo neu co file .env
     if exist .env (
         echo    ^> Tim thay file .env, dang dong bo...
-        python -c "from teledrive.utils.config_utils import sync_env_to_config; sync_env_to_config(); print('✅ Dong bo thanh cong')" 2>nul
+        python -c "from source.config import sync_env_to_config; sync_env_to_config(); print('✅ Dong bo thanh cong')" 2>nul
         if not errorlevel 1 (
             echo ✅ Da dong bo cau hinh tu .env
         )
     )
 
     REM Kiem tra lai sau khi dong bo
-    python -c "from teledrive.utils.config_utils import validate_configuration; result = validate_configuration(); exit(0 if result else 1)" 2>nul
+    python -c "from source.config import validate_configuration; result = validate_configuration(); exit(0 if result else 1)" 2>nul
     if errorlevel 1 (
         echo ❌ Cau hinh van chua hop le sau khi dong bo!
         echo 🔧 Chinh sua 'config.json' de cau hinh thu cong
@@ -105,12 +105,11 @@ if errorlevel 1 (
 echo.
 echo [BUOC 4/7] Kiem tra dependencies...
 echo    ^> Kiem tra cac thu vien Python can thiet...
-python -c "import telethon, pandas, tqdm, aiofiles, openpyxl, flask; print('✅ Tat ca dependencies da san sang')" 2>nul
+python -c "import telethon, flask, sqlalchemy, flask_socketio, flask_login, flask_wtf; print('✅ Tat ca dependencies da san sang')" 2>nul
 if errorlevel 1 (
     echo ⚠️ Thieu mot so dependencies!
-    echo    ^> Dang tu dong cai dat...
-    echo.
-    pip install -r requirements.txt --quiet
+    echo 🔧 Dang cai dat dependencies...
+    pip install -r requirements.txt >nul 2>&1
     if errorlevel 1 (
         echo ❌ Khong the cai dat dependencies!
         echo.
@@ -135,7 +134,7 @@ if not exist data mkdir data
 echo ✅ Cac thu muc da san sang
 
 echo    ^> Khoi tao he thong logging...
-python -c "from teledrive.utils.logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ Logging system ready')" 2>nul
+python -c "from source.logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ Logging system ready')" 2>nul
 if errorlevel 1 (
     echo ⚠️ Khong the khoi tao detailed logging (se su dung basic logging)
 ) else (
@@ -181,7 +180,7 @@ echo ================================================================
 echo.
 
 REM Chay web interface
-python -m teledrive.web.app
+python source/app.py
 
 echo.
 echo ================================================================
@@ -205,7 +204,7 @@ echo    • Chinh sua 'config.json' de thay doi cau hinh
 echo    • Xem file log de debug neu co loi
 echo.
 echo 🌐 Giao dien Web: http://localhost:3000
-echo 💻 CLI: Chay 'python -m teledrive.cli' de su dung Command Line
+echo 💻 CLI: Chay 'python source/main.py' de su dung Command Line
 echo.
 echo Cam on ban da su dung TeleDrive! 🚀
 echo.
