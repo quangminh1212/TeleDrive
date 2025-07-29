@@ -1971,12 +1971,10 @@ def telegram_verify():
             if error_type == 'code_expired':
                 # Clear the expired session and redirect to get new code
                 session.pop('telegram_session_id', None)
-                app.logger.warning("Verification code expired - redirecting to login")
-                flash('Your verification code has expired. Telegram codes are only valid for 5 minutes.', 'warning')
-                flash('Please enter your phone number again to get a new verification code.', 'info')
+                flash('Verification code has expired. Please request a new code.', 'warning')
                 return redirect(url_for('telegram_login'))
             elif error_type == 'invalid_code':
-                flash('Invalid verification code. Please check your Telegram app and try again.', 'error')
+                flash('Invalid verification code. Please check and try again.', 'error')
             else:
                 flash(result['error'], 'error')
     else:
@@ -1989,7 +1987,6 @@ def telegram_verify():
                          requires_password=requires_password)
 
 @app.route('/telegram_resend_code', methods=['POST'])
-@csrf.exempt
 def telegram_resend_code():
     """Resend verification code"""
     from flask import session

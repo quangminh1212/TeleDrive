@@ -19,7 +19,25 @@ class TelegramAuthenticator:
     """Handle Telegram authentication for web login"""
     
     def __init__(self):
+        self.client = None
         self.temp_sessions = {}  # Store temporary session data
+        
+    async def initialize_client(self, session_name: str = None):
+        """Initialize Telegram client for authentication"""
+        if not session_name:
+            session_name = f"auth_session_{os.urandom(8).hex()}"
+            
+        try:
+            self.client = TelegramClient(
+                f"data/{session_name}",
+                int(config.API_ID),
+                config.API_HASH
+            )
+            await self.client.connect()
+            return True
+        except Exception as e:
+            print(f"Error initializing Telegram client: {e}")
+            return False
     
     async def send_code_request(self, phone_number: str, country_code: str = "+84") -> Dict[str, Any]:
         """Send verification code to phone number"""
@@ -31,31 +49,22 @@ class TelegramAuthenticator:
 
             print(f"AUTH: Formatted phone number: {phone_number}")
 
-            # Always create a new client for each code request to avoid event loop issues
-            print("AUTH: Creating new Telegram client for code request...")
-            session_name = f"code_request_{os.urandom(8).hex()}"
-            client = TelegramClient(
-                f"data/{session_name}",
-                int(config.API_ID),
-                config.API_HASH
-            )
-            await client.connect()
-            print("AUTH: New client connected successfully")
+            # Initialize client if not already done
+            if not self.client:
+                print("AUTH: Initializing Telegram client...")
+                await self.initialize_client()
 
             # Send code request
             print("AUTH: Sending code request to Telegram...")
-            sent_code = await client.send_code_request(phone_number)
+            sent_code = await self.client.send_code_request(phone_number)
             print(f"AUTH: Code sent successfully, phone_code_hash: {sent_code.phone_code_hash[:10]}...")
 
-            # Store session info temporarily with timestamp
-            import time
+            # Store session info temporarily
             session_id = os.urandom(16).hex()
             self.temp_sessions[session_id] = {
                 'phone_number': phone_number,
                 'phone_code_hash': sent_code.phone_code_hash,
-                'client': client,  # Store the new client
-                'created_at': time.time(),
-                'expires_at': time.time() + 300  # 5 minutes from now
+                'client': self.client
             }
             print(f"AUTH: Session stored with ID: {session_id}")
 
@@ -89,21 +98,7 @@ class TelegramAuthenticator:
                     'error': 'Invalid or expired session'
                 }
 
-            # Check if session has expired
-            import time
             session_data = self.temp_sessions[session_id]
-            current_time = time.time()
-
-            if current_time > session_data.get('expires_at', 0):
-                print(f"AUTH: Session {session_id} has expired")
-                await self.cleanup_session(session_id)
-                return {
-                    'success': False,
-                    'error': 'Your session has expired. Please request a new verification code.',
-                    'error_type': 'session_expired',
-                    'requires_new_code': True
-                }
-
             phone_number = session_data['phone_number']
             phone_code_hash = session_data['phone_code_hash']
 
@@ -206,10 +201,9 @@ class TelegramAuthenticator:
 
                 return {
                     'success': False,
-                    'error': 'Your verification code has expired. Telegram codes are only valid for 5 minutes. Please request a new code to continue.',
+                    'error': 'Verification code has expired. Please request a new code.',
                     'error_type': 'code_expired',
-                    'requires_new_code': True,
-                    'user_friendly_message': 'Code expired - please get a new one'
+                    'requires_new_code': True
                 }
             elif 'phone code invalid' in error_str or 'invalid code' in error_str:
                 print("AUTH: Invalid verification code")
@@ -282,33 +276,17 @@ class TelegramAuthenticator:
             except:
                 pass
             del self.temp_sessions[session_id]
-
-    def cleanup_expired_sessions(self):
-        """Clean up expired sessions (non-async version for periodic cleanup)"""
-        import time
-        current_time = time.time()
-        expired_sessions = []
-
-        for session_id, session_data in self.temp_sessions.items():
-            if current_time > session_data.get('expires_at', 0):
-                expired_sessions.append(session_id)
-
-        for session_id in expired_sessions:
-            try:
-                client = self.temp_sessions[session_id]['client']
-                # Note: We can't await here since this is not async
-                # The client will be cleaned up when the session is accessed
-                del self.temp_sessions[session_id]
-                print(f"AUTH: Cleaned up expired session: {session_id}")
-            except Exception as e:
-                print(f"AUTH: Error cleaning up expired session {session_id}: {e}")
-
-        return len(expired_sessions)
     
     async def close(self):
         """Close all connections and clean up"""
         for session_id in list(self.temp_sessions.keys()):
             await self.cleanup_session(session_id)
+        
+        if self.client:
+            try:
+                await self.client.disconnect()
+            except:
+                pass
 
 # Global authenticator instance
 telegram_auth = TelegramAuthenticator()
