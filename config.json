@@ -236,7 +236,7 @@
     "use_reloader": false,
     "cors_allowed_origins": "*",
     "socketio_async_mode": "eventlet",
-    "login_view": "login",
+    "login_view": "telegram_login",
     "login_message": "Please log in to access this page.",
     "login_message_category": "info",
     "session_timeout": 3600,
