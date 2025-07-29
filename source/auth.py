@@ -99,11 +99,20 @@ class TelegramAuthenticator:
                 }
 
             session_data = self.temp_sessions[session_id]
-            client = session_data['client']
             phone_number = session_data['phone_number']
             phone_code_hash = session_data['phone_code_hash']
 
             print(f"AUTH: Retrieved session data for phone: {phone_number}")
+
+            # Create a new client for this verification request to avoid event loop issues
+            print("AUTH: Creating new client for verification...")
+            client = TelegramClient(
+                f"data/verify_session_{session_id}",
+                int(config.API_ID),
+                config.API_HASH
+            )
+            await client.connect()
+            print("AUTH: New client connected successfully")
 
             try:
                 # Try to sign in with the code
@@ -118,6 +127,7 @@ class TelegramAuthenticator:
                 print("AUTH: Two-factor authentication required")
                 # Two-factor authentication is enabled
                 if not password:
+                    await client.disconnect()
                     return {
                         'success': False,
                         'error': 'Two-factor authentication password required',
@@ -139,7 +149,15 @@ class TelegramAuthenticator:
             db_user = self.create_or_update_user(telegram_user, phone_number)
             print(f"AUTH: Database user: {db_user.username} (ID: {db_user.id})")
 
-            # Clean up temporary session
+            # Clean up temporary session and old client
+            old_client = session_data.get('client')
+            if old_client:
+                try:
+                    await old_client.disconnect()
+                    print("AUTH: Disconnected old client")
+                except:
+                    print("AUTH: Failed to disconnect old client (may already be disconnected)")
+
             del self.temp_sessions[session_id]
             await client.disconnect()
             print("AUTH: Cleaned up session and disconnected client")
