@@ -13,7 +13,7 @@ import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, flash, send_file
 from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
@@ -26,7 +26,7 @@ import config
 
 # Import database modules
 from database import configure_flask_app, initialize_database
-from models import db, User, File, Folder, ScanSession, ShareLink, get_or_create_user
+from models import db, User, File, Folder, ScanSession, ShareLink, FileComment, FileVersion, ActivityLog, SmartFolder, get_or_create_user
 
 # Import forms
 from forms import LoginForm, RegistrationForm, ChangePasswordForm, TelegramLoginForm, TelegramVerifyForm, RequestPasswordResetForm, ResetPasswordForm
@@ -1024,6 +1024,22 @@ def upload_file():
                     'size': file_size,
                     'type': mime_type
                 })
+
+                # Auto-tag the file
+                auto_tags = generate_auto_tags(file_record)
+                if auto_tags:
+                    file_record.tags = ', '.join(sorted(auto_tags))
+
+                # Log upload activity
+                ActivityLog.log_activity(
+                    user_id=user.id,
+                    action='upload',
+                    description=f'Uploaded file: {sanitized_filename}',
+                    file_id=file_record.id,
+                    metadata={'file_size': file_size, 'mime_type': mime_type, 'auto_tags': auto_tags},
+                    ip_address=request.remote_addr,
+                    user_agent=request.headers.get('User-Agent')
+                )
 
         db.session.commit()
 
@@ -2040,6 +2056,1429 @@ def handle_connect():
 def handle_disconnect():
     """Handle client disconnection"""
     pass
+
+@app.route('/api/bulk_operations', methods=['POST'])
+@login_required
+def bulk_operations():
+    """Perform bulk operations on multiple files"""
+    try:
+        data = request.get_json()
+        operation = data.get('operation')
+        file_ids = data.get('file_ids', [])
+
+        if not operation or not file_ids:
+            return jsonify({'success': False, 'error': 'Operation and file IDs are required'})
+
+        # Validate file ownership
+        user = get_or_create_user()
+        files = File.query.filter(
+            File.id.in_(file_ids),
+            File.user_id == user.id,
+            File.is_deleted == False
+        ).all()
+
+        if len(files) != len(file_ids):
+            return jsonify({'success': False, 'error': 'Some files not found or access denied'})
+
+        results = []
+
+        if operation == 'delete':
+            for file in files:
+                file.is_deleted = True
+                results.append({'id': file.id, 'filename': file.filename, 'status': 'deleted'})
+
+            db.session.commit()
+
+            # Invalidate cache
+            for page in range(1, 11):
+                for per_page in [20, 50, 100]:
+                    cache_delete(f"files_{user.id}_{page}_{per_page}")
+
+            return jsonify({
+                'success': True,
+                'message': f'Successfully deleted {len(files)} files',
+                'results': results
+            })
+
+        elif operation == 'move':
+            folder_id = data.get('folder_id')
+            if folder_id:
+                # Validate folder ownership
+                folder = Folder.query.filter_by(id=folder_id, user_id=user.id).first()
+                if not folder:
+                    return jsonify({'success': False, 'error': 'Folder not found or access denied'})
+
+            for file in files:
+                file.folder_id = folder_id
+                results.append({'id': file.id, 'filename': file.filename, 'status': 'moved'})
+
+            db.session.commit()
+
+            # Invalidate cache
+            for page in range(1, 11):
+                for per_page in [20, 50, 100]:
+                    cache_delete(f"files_{user.id}_{page}_{per_page}")
+
+            return jsonify({
+                'success': True,
+                'message': f'Successfully moved {len(files)} files',
+                'results': results
+            })
+
+        elif operation == 'favorite':
+            is_favorite = data.get('is_favorite', True)
+            for file in files:
+                file.is_favorite = is_favorite
+                results.append({'id': file.id, 'filename': file.filename, 'status': 'favorited' if is_favorite else 'unfavorited'})
+
+            db.session.commit()
+
+            # Invalidate cache
+            for page in range(1, 11):
+                for per_page in [20, 50, 100]:
+                    cache_delete(f"files_{user.id}_{page}_{per_page}")
+
+            return jsonify({
+                'success': True,
+                'message': f'Successfully updated {len(files)} files',
+                'results': results
+            })
+
+        else:
+            return jsonify({'success': False, 'error': 'Unsupported operation'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/bulk_download', methods=['POST'])
+@login_required
+def bulk_download():
+    """Create a ZIP archive for bulk download of multiple files"""
+    try:
+        data = request.get_json()
+        file_ids = data.get('file_ids', [])
+
+        if not file_ids:
+            return jsonify({'success': False, 'error': 'File IDs are required'})
+
+        # Validate file ownership
+        user = get_or_create_user()
+        files = File.query.filter(
+            File.id.in_(file_ids),
+            File.user_id == user.id,
+            File.is_deleted == False
+        ).all()
+
+        if not files:
+            return jsonify({'success': False, 'error': 'No files found or access denied'})
+
+        import zipfile
+        import tempfile
+        from pathlib import Path
+
+        # Create temporary ZIP file
+        temp_dir = Path(tempfile.gettempdir())
+        zip_filename = f"bulk_download_{user.id}_{int(time.time())}.zip"
+        zip_path = temp_dir / zip_filename
+
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for file in files:
+                if file.file_path and os.path.exists(file.file_path):
+                    # Add file to ZIP with original filename
+                    zipf.write(file.file_path, file.original_filename or file.filename)
+
+        # Return download URL
+        return jsonify({
+            'success': True,
+            'download_url': f'/api/download_bulk/{zip_filename}',
+            'filename': f'bulk_download_{len(files)}_files.zip',
+            'file_count': len(files)
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/download_bulk/<filename>')
+@login_required
+def download_bulk_file(filename):
+    """Download bulk ZIP file"""
+    try:
+        import tempfile
+        from pathlib import Path
+
+        temp_dir = Path(tempfile.gettempdir())
+        zip_path = temp_dir / filename
+
+        if not zip_path.exists():
+            return jsonify({'error': 'File not found'}), 404
+
+        # Verify filename format for security
+        if not filename.startswith(f'bulk_download_{get_or_create_user().id}_'):
+            return jsonify({'error': 'Access denied'}), 403
+
+        def remove_file():
+            """Remove temporary file after download"""
+            try:
+                os.remove(zip_path)
+            except:
+                pass
+
+        return send_file(
+            zip_path,
+            as_attachment=True,
+            download_name=f'bulk_download_{len(filename.split("_"))}_files.zip',
+            mimetype='application/zip'
+        )
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/file/<int:file_id>/versions', methods=['GET'])
+@login_required
+def get_file_versions(file_id):
+    """Get version history for a file"""
+    try:
+        user = get_or_create_user()
+        file = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not file:
+            return jsonify({'error': 'File not found'}), 404
+
+        versions = file.get_version_history()
+        version_data = [version.get_file_info() for version in versions]
+
+        return jsonify({
+            'success': True,
+            'file_id': file_id,
+            'current_version': file.current_version,
+            'version_count': file.version_count,
+            'versions': version_data
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/file/<int:file_id>/create_version', methods=['POST'])
+@login_required
+def create_file_version(file_id):
+    """Create a new version of a file"""
+    try:
+        data = request.get_json()
+        change_description = data.get('change_description', '')
+        version_name = data.get('version_name', '')
+
+        user = get_or_create_user()
+        file = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not file:
+            return jsonify({'error': 'File not found'}), 404
+
+        # Create version
+        version = file.create_version(change_description, version_name)
+        db.session.add(version)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Version created successfully',
+            'version': version.get_file_info(),
+            'current_version': file.current_version
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/file/<int:file_id>/restore_version/<int:version_number>', methods=['POST'])
+@login_required
+def restore_file_version(file_id, version_number):
+    """Restore a file to a specific version"""
+    try:
+        user = get_or_create_user()
+        file = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not file:
+            return jsonify({'error': 'File not found'}), 404
+
+        # Create a version of current state before restoring
+        current_version = file.create_version(f'Auto-backup before restoring to v{version_number}')
+        db.session.add(current_version)
+
+        # Restore to specified version
+        if file.restore_version(version_number):
+            db.session.commit()
+
+            # Invalidate cache
+            for page in range(1, 11):
+                for per_page in [20, 50, 100]:
+                    cache_delete(f"files_{user.id}_{page}_{per_page}")
+
+            return jsonify({
+                'success': True,
+                'message': f'File restored to version {version_number}',
+                'current_version': file.current_version
+            })
+        else:
+            db.session.rollback()
+            return jsonify({'error': 'Failed to restore version'}), 400
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/compress_files', methods=['POST'])
+@login_required
+def compress_files():
+    """Compress multiple files into a ZIP archive"""
+    try:
+        data = request.get_json()
+        file_ids = data.get('file_ids', [])
+        archive_name = data.get('archive_name', 'archive.zip')
+        compression_level = data.get('compression_level', 6)  # 0-9, 6 is default
+
+        if not file_ids:
+            return jsonify({'error': 'File IDs are required'}), 400
+
+        # Validate file ownership
+        user = get_or_create_user()
+        files = File.query.filter(
+            File.id.in_(file_ids),
+            File.user_id == user.id,
+            File.is_deleted == False
+        ).all()
+
+        if not files:
+            return jsonify({'error': 'No files found or access denied'}), 404
+
+        import zipfile
+        import tempfile
+        from pathlib import Path
+
+        # Create compressed archive
+        temp_dir = Path(tempfile.gettempdir())
+        archive_path = temp_dir / f"compressed_{user.id}_{int(time.time())}_{archive_name}"
+
+        total_original_size = 0
+        compressed_files = []
+
+        with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=compression_level) as zipf:
+            for file in files:
+                if file.file_path and os.path.exists(file.file_path):
+                    original_size = os.path.getsize(file.file_path)
+                    total_original_size += original_size
+
+                    # Add file to archive
+                    zipf.write(file.file_path, file.original_filename or file.filename)
+                    compressed_files.append({
+                        'id': file.id,
+                        'filename': file.filename,
+                        'original_size': original_size
+                    })
+
+        # Get compressed size
+        compressed_size = os.path.getsize(archive_path)
+        compression_ratio = (1 - compressed_size / total_original_size) * 100 if total_original_size > 0 else 0
+
+        # Save compressed file to database
+        compressed_file = File(
+            filename=archive_name,
+            original_filename=archive_name,
+            file_path=str(archive_path),
+            file_size=compressed_size,
+            mime_type='application/zip',
+            user_id=user.id,
+            description=f'Compressed archive of {len(files)} files'
+        )
+
+        db.session.add(compressed_file)
+        db.session.commit()
+
+        # Invalidate cache
+        for page in range(1, 11):
+            for per_page in [20, 50, 100]:
+                cache_delete(f"files_{user.id}_{page}_{per_page}")
+
+        return jsonify({
+            'success': True,
+            'message': f'Successfully compressed {len(files)} files',
+            'archive': {
+                'id': compressed_file.id,
+                'filename': archive_name,
+                'compressed_size': compressed_size,
+                'original_size': total_original_size,
+                'compression_ratio': round(compression_ratio, 2),
+                'file_count': len(compressed_files)
+            },
+            'compressed_files': compressed_files
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/extract_archive/<int:file_id>', methods=['POST'])
+@login_required
+def extract_archive(file_id):
+    """Extract files from a ZIP archive"""
+    try:
+        data = request.get_json()
+        extract_to_folder = data.get('folder_id')  # Optional folder to extract to
+
+        user = get_or_create_user()
+        archive_file = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not archive_file:
+            return jsonify({'error': 'Archive file not found'}), 404
+
+        if not archive_file.mime_type or 'zip' not in archive_file.mime_type.lower():
+            return jsonify({'error': 'File is not a ZIP archive'}), 400
+
+        import zipfile
+        from pathlib import Path
+
+        # Validate folder if specified
+        folder = None
+        if extract_to_folder:
+            folder = Folder.query.filter_by(id=extract_to_folder, user_id=user.id).first()
+            if not folder:
+                return jsonify({'error': 'Destination folder not found'}), 404
+
+        extracted_files = []
+
+        # Extract archive
+        with zipfile.ZipFile(archive_file.file_path, 'r') as zipf:
+            # Get upload directory
+            upload_dir = Path(flask_config.flask_config.get_directories()['uploads'])
+
+            for file_info in zipf.filelist:
+                if not file_info.is_dir():
+                    # Extract file
+                    extracted_data = zipf.read(file_info.filename)
+
+                    # Create unique filename
+                    safe_filename = secure_filename(file_info.filename)
+                    unique_filename = f"{int(time.time())}_{safe_filename}"
+                    file_path = upload_dir / unique_filename
+
+                    # Save extracted file
+                    with open(file_path, 'wb') as f:
+                        f.write(extracted_data)
+
+                    # Create database record
+                    extracted_file = File(
+                        filename=safe_filename,
+                        original_filename=file_info.filename,
+                        file_path=str(file_path),
+                        file_size=file_info.file_size,
+                        mime_type='application/octet-stream',  # Default mime type
+                        user_id=user.id,
+                        folder_id=folder.id if folder else None,
+                        description=f'Extracted from {archive_file.filename}'
+                    )
+
+                    db.session.add(extracted_file)
+                    extracted_files.append({
+                        'filename': safe_filename,
+                        'size': file_info.file_size,
+                        'id': extracted_file.id
+                    })
+
+        db.session.commit()
+
+        # Invalidate cache
+        for page in range(1, 11):
+            for per_page in [20, 50, 100]:
+                cache_delete(f"files_{user.id}_{page}_{per_page}")
+
+        return jsonify({
+            'success': True,
+            'message': f'Successfully extracted {len(extracted_files)} files',
+            'extracted_files': extracted_files,
+            'destination_folder': folder.name if folder else 'Root'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/share_links', methods=['GET'])
+@login_required
+def get_share_links():
+    """Get all share links created by the current user"""
+    try:
+        user = get_or_create_user()
+        page = request.args.get('page', 1, type=int)
+        per_page = min(request.args.get('per_page', 20, type=int), 100)
+
+        # Get share links with pagination
+        pagination = ShareLink.query.filter_by(user_id=user.id).order_by(ShareLink.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+
+        share_links = []
+        for link in pagination.items:
+            share_links.append({
+                'id': link.id,
+                'token': link.token,
+                'file_id': link.file_id,
+                'file_name': link.file.filename if link.file else 'Unknown',
+                'name': link.name,
+                'description': link.description,
+                'can_view': link.can_view,
+                'can_download': link.can_download,
+                'can_preview': link.can_preview,
+                'max_downloads': link.max_downloads,
+                'download_count': link.download_count,
+                'max_views': link.max_views,
+                'view_count': link.view_count,
+                'expires_at': link.expires_at.isoformat() if link.expires_at else None,
+                'is_active': link.is_active,
+                'created_at': link.created_at.isoformat() if link.created_at else None,
+                'last_accessed': link.last_accessed.isoformat() if link.last_accessed else None,
+                'has_password': bool(link.password_hash),
+                'url': f'/share/{link.token}'
+            })
+
+        return jsonify({
+            'success': True,
+            'share_links': share_links,
+            'pagination': {
+                'page': pagination.page,
+                'per_page': pagination.per_page,
+                'total': pagination.total,
+                'pages': pagination.pages,
+                'has_prev': pagination.has_prev,
+                'has_next': pagination.has_next
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/share_link/<int:link_id>/update', methods=['PUT'])
+@login_required
+def update_share_link(link_id):
+    """Update share link settings"""
+    try:
+        user = get_or_create_user()
+        share_link = ShareLink.query.filter_by(id=link_id, user_id=user.id).first()
+
+        if not share_link:
+            return jsonify({'error': 'Share link not found'}), 404
+
+        data = request.get_json()
+
+        # Update basic settings
+        if 'name' in data:
+            share_link.name = data['name']
+        if 'description' in data:
+            share_link.description = data['description']
+        if 'is_active' in data:
+            share_link.is_active = data['is_active']
+
+        # Update permissions
+        if 'can_view' in data:
+            share_link.can_view = data['can_view']
+        if 'can_download' in data:
+            share_link.can_download = data['can_download']
+        if 'can_preview' in data:
+            share_link.can_preview = data['can_preview']
+
+        # Update limits
+        if 'max_downloads' in data:
+            share_link.max_downloads = data['max_downloads']
+        if 'max_views' in data:
+            share_link.max_views = data['max_views']
+
+        # Update expiration
+        if 'expires_at' in data:
+            if data['expires_at']:
+                share_link.expires_at = datetime.fromisoformat(data['expires_at'])
+            else:
+                share_link.expires_at = None
+
+        # Update password
+        if 'password' in data:
+            share_link.set_password(data['password'])
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Share link updated successfully',
+            'share_link': {
+                'id': share_link.id,
+                'token': share_link.token,
+                'name': share_link.name,
+                'description': share_link.description,
+                'is_active': share_link.is_active,
+                'url': f'/share/{share_link.token}'
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/share_link/<int:link_id>/analytics', methods=['GET'])
+@login_required
+def get_share_link_analytics(link_id):
+    """Get analytics for a share link"""
+    try:
+        user = get_or_create_user()
+        share_link = ShareLink.query.filter_by(id=link_id, user_id=user.id).first()
+
+        if not share_link:
+            return jsonify({'error': 'Share link not found'}), 404
+
+        # Calculate analytics
+        total_views = share_link.view_count
+        total_downloads = share_link.download_count
+
+        # Calculate usage percentage
+        view_usage = 0
+        download_usage = 0
+
+        if share_link.max_views:
+            view_usage = (total_views / share_link.max_views) * 100
+        if share_link.max_downloads:
+            download_usage = (total_downloads / share_link.max_downloads) * 100
+
+        # Check if expired
+        is_expired = False
+        if share_link.expires_at:
+            is_expired = datetime.utcnow() > share_link.expires_at
+
+        # Check if limits reached
+        view_limit_reached = share_link.max_views and total_views >= share_link.max_views
+        download_limit_reached = share_link.max_downloads and total_downloads >= share_link.max_downloads
+
+        return jsonify({
+            'success': True,
+            'analytics': {
+                'total_views': total_views,
+                'total_downloads': total_downloads,
+                'view_usage_percentage': round(view_usage, 2),
+                'download_usage_percentage': round(download_usage, 2),
+                'is_expired': is_expired,
+                'view_limit_reached': view_limit_reached,
+                'download_limit_reached': download_limit_reached,
+                'is_active': share_link.is_active,
+                'created_at': share_link.created_at.isoformat() if share_link.created_at else None,
+                'last_accessed': share_link.last_accessed.isoformat() if share_link.last_accessed else None,
+                'expires_at': share_link.expires_at.isoformat() if share_link.expires_at else None
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/file/<int:file_id>/comments', methods=['GET'])
+@login_required
+def get_file_comments(file_id):
+    """Get comments for a file"""
+    try:
+        user = get_or_create_user()
+        file = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not file:
+            return jsonify({'error': 'File not found'}), 404
+
+        # Get top-level comments (not replies)
+        comments = FileComment.query.filter_by(
+            file_id=file_id,
+            parent_id=None,
+            is_deleted=False
+        ).order_by(FileComment.is_pinned.desc(), FileComment.created_at.desc()).all()
+
+        comment_threads = [comment.get_thread_info() for comment in comments]
+
+        return jsonify({
+            'success': True,
+            'file_id': file_id,
+            'comment_count': len(comment_threads),
+            'comments': comment_threads
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/file/<int:file_id>/comments', methods=['POST'])
+@login_required
+def add_file_comment(file_id):
+    """Add a comment to a file"""
+    try:
+        user = get_or_create_user()
+        file = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not file:
+            return jsonify({'error': 'File not found'}), 404
+
+        data = request.get_json()
+        content = data.get('content', '').strip()
+        parent_id = data.get('parent_id')
+        content_type = data.get('content_type', 'text')
+
+        if not content:
+            return jsonify({'error': 'Comment content is required'}), 400
+
+        # Validate parent comment if specified
+        if parent_id:
+            parent_comment = FileComment.query.filter_by(
+                id=parent_id,
+                file_id=file_id,
+                is_deleted=False
+            ).first()
+            if not parent_comment:
+                return jsonify({'error': 'Parent comment not found'}), 404
+
+        # Create comment
+        comment = FileComment(
+            file_id=file_id,
+            user_id=user.id,
+            parent_id=parent_id,
+            content=content,
+            content_type=content_type
+        )
+
+        db.session.add(comment)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Comment added successfully',
+            'comment': comment.get_comment_info()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/comment/<int:comment_id>', methods=['PUT'])
+@login_required
+def update_comment(comment_id):
+    """Update a comment"""
+    try:
+        user = get_or_create_user()
+        comment = FileComment.query.filter_by(id=comment_id, user_id=user.id, is_deleted=False).first()
+
+        if not comment:
+            return jsonify({'error': 'Comment not found or access denied'}), 404
+
+        data = request.get_json()
+        content = data.get('content', '').strip()
+
+        if not content:
+            return jsonify({'error': 'Comment content is required'}), 400
+
+        # Update comment
+        comment.content = content
+        comment.is_edited = True
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Comment updated successfully',
+            'comment': comment.get_comment_info()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/comment/<int:comment_id>', methods=['DELETE'])
+@login_required
+def delete_comment(comment_id):
+    """Delete a comment"""
+    try:
+        user = get_or_create_user()
+        comment = FileComment.query.filter_by(id=comment_id, user_id=user.id, is_deleted=False).first()
+
+        if not comment:
+            return jsonify({'error': 'Comment not found or access denied'}), 404
+
+        # Mark as deleted instead of actually deleting
+        comment.is_deleted = True
+        comment.content = '[Comment deleted]'
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Comment deleted successfully'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/comment/<int:comment_id>/pin', methods=['POST'])
+@login_required
+def pin_comment(comment_id):
+    """Pin/unpin a comment"""
+    try:
+        user = get_or_create_user()
+        comment = FileComment.query.filter_by(id=comment_id, is_deleted=False).first()
+
+        if not comment:
+            return jsonify({'error': 'Comment not found'}), 404
+
+        # Check if user owns the file
+        file = File.query.filter_by(id=comment.file_id, user_id=user.id, is_deleted=False).first()
+        if not file:
+            return jsonify({'error': 'Access denied'}), 403
+
+        data = request.get_json()
+        is_pinned = data.get('is_pinned', True)
+
+        comment.is_pinned = is_pinned
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Comment {"pinned" if is_pinned else "unpinned"} successfully',
+            'comment': comment.get_comment_info()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/activity_logs', methods=['GET'])
+@login_required
+def get_activity_logs():
+    """Get activity logs for the current user"""
+    try:
+        user = get_or_create_user()
+        page = request.args.get('page', 1, type=int)
+        per_page = min(request.args.get('per_page', 50, type=int), 100)
+        action_filter = request.args.get('action')
+        file_id_filter = request.args.get('file_id', type=int)
+
+        # Build query
+        query = ActivityLog.query.filter_by(user_id=user.id)
+
+        if action_filter:
+            query = query.filter(ActivityLog.action == action_filter)
+        if file_id_filter:
+            query = query.filter(ActivityLog.file_id == file_id_filter)
+
+        # Get activities with pagination
+        pagination = query.order_by(ActivityLog.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+
+        activities = [activity.get_activity_info() for activity in pagination.items]
+
+        return jsonify({
+            'success': True,
+            'activities': activities,
+            'pagination': {
+                'page': pagination.page,
+                'per_page': pagination.per_page,
+                'total': pagination.total,
+                'pages': pagination.pages,
+                'has_prev': pagination.has_prev,
+                'has_next': pagination.has_next
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/file/<int:file_id>/activity', methods=['GET'])
+@login_required
+def get_file_activity(file_id):
+    """Get activity logs for a specific file"""
+    try:
+        user = get_or_create_user()
+        file = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not file:
+            return jsonify({'error': 'File not found'}), 404
+
+        page = request.args.get('page', 1, type=int)
+        per_page = min(request.args.get('per_page', 20, type=int), 100)
+
+        # Get file activities
+        pagination = ActivityLog.query.filter_by(file_id=file_id).order_by(
+            ActivityLog.created_at.desc()
+        ).paginate(page=page, per_page=per_page, error_out=False)
+
+        activities = [activity.get_activity_info() for activity in pagination.items]
+
+        # Get activity summary
+        activity_counts = {}
+        for activity in ActivityLog.query.filter_by(file_id=file_id).all():
+            activity_counts[activity.action] = activity_counts.get(activity.action, 0) + 1
+
+        return jsonify({
+            'success': True,
+            'file_id': file_id,
+            'file_name': file.filename,
+            'activities': activities,
+            'activity_summary': activity_counts,
+            'pagination': {
+                'page': pagination.page,
+                'per_page': pagination.per_page,
+                'total': pagination.total,
+                'pages': pagination.pages,
+                'has_prev': pagination.has_prev,
+                'has_next': pagination.has_next
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Helper function to log activities
+def log_user_activity(action, description=None, file_id=None, metadata=None):
+    """Helper function to log user activities"""
+    try:
+        user = get_or_create_user()
+        ip_address = request.remote_addr if request else None
+        user_agent = request.headers.get('User-Agent') if request else None
+
+        ActivityLog.log_activity(
+            user_id=user.id,
+            action=action,
+            description=description,
+            file_id=file_id,
+            metadata=metadata,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+        db.session.commit()
+    except Exception as e:
+        print(f"Failed to log activity: {e}")
+
+@app.route('/api/search_suggestions', methods=['GET'])
+@login_required
+def get_search_suggestions():
+    """Get search suggestions based on user's files"""
+    try:
+        user = get_or_create_user()
+        query = request.args.get('q', '').strip()
+        limit = min(int(request.args.get('limit', 10)), 20)
+
+        suggestions = {
+            'filenames': [],
+            'tags': [],
+            'channels': [],
+            'folders': []
+        }
+
+        if query:
+            # Filename suggestions
+            filename_matches = File.query.filter(
+                File.user_id == user.id,
+                File.is_deleted == False,
+                File.filename.ilike(f'%{query}%')
+            ).limit(limit).all()
+
+            suggestions['filenames'] = [f.filename for f in filename_matches]
+
+            # Tag suggestions
+            tag_matches = File.query.filter(
+                File.user_id == user.id,
+                File.is_deleted == False,
+                File.tags.ilike(f'%{query}%'),
+                File.tags.isnot(None)
+            ).limit(limit).all()
+
+            all_tags = set()
+            for file in tag_matches:
+                if file.tags:
+                    file_tags = [tag.strip() for tag in file.tags.split(',')]
+                    all_tags.update([tag for tag in file_tags if query.lower() in tag.lower()])
+
+            suggestions['tags'] = list(all_tags)[:limit]
+
+            # Channel suggestions
+            channel_matches = File.query.filter(
+                File.user_id == user.id,
+                File.is_deleted == False,
+                File.telegram_channel.ilike(f'%{query}%'),
+                File.telegram_channel.isnot(None)
+            ).distinct(File.telegram_channel).limit(limit).all()
+
+            suggestions['channels'] = [f.telegram_channel for f in channel_matches if f.telegram_channel]
+
+            # Folder suggestions
+            folder_matches = Folder.query.filter(
+                Folder.user_id == user.id,
+                Folder.name.ilike(f'%{query}%')
+            ).limit(limit).all()
+
+            suggestions['folders'] = [{'id': f.id, 'name': f.name} for f in folder_matches]
+
+        return jsonify({
+            'success': True,
+            'query': query,
+            'suggestions': suggestions
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smart_folders', methods=['GET'])
+@login_required
+def get_smart_folders():
+    """Get all smart folders for the current user"""
+    try:
+        user = get_or_create_user()
+        smart_folders = SmartFolder.query.filter_by(user_id=user.id).order_by(SmartFolder.name).all()
+
+        folders_data = []
+        for folder in smart_folders:
+            folder_info = folder.get_folder_info()
+            folders_data.append(folder_info)
+
+        return jsonify({
+            'success': True,
+            'smart_folders': folders_data
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smart_folders', methods=['POST'])
+@login_required
+def create_smart_folder():
+    """Create a new smart folder"""
+    try:
+        user = get_or_create_user()
+        data = request.get_json()
+
+        name = data.get('name', '').strip()
+        description = data.get('description', '')
+        rules = data.get('rules', {})
+        icon = data.get('icon', 'folder')
+        color = data.get('color', '#3498db')
+
+        if not name:
+            return jsonify({'error': 'Folder name is required'}), 400
+
+        # Check if name already exists
+        existing = SmartFolder.query.filter_by(user_id=user.id, name=name).first()
+        if existing:
+            return jsonify({'error': 'Smart folder with this name already exists'}), 400
+
+        # Create smart folder
+        smart_folder = SmartFolder(
+            user_id=user.id,
+            name=name,
+            description=description,
+            icon=icon,
+            color=color
+        )
+        smart_folder.set_rules(rules)
+
+        db.session.add(smart_folder)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Smart folder created successfully',
+            'smart_folder': smart_folder.get_folder_info()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smart_folders/<int:folder_id>', methods=['PUT'])
+@login_required
+def update_smart_folder(folder_id):
+    """Update a smart folder"""
+    try:
+        user = get_or_create_user()
+        smart_folder = SmartFolder.query.filter_by(id=folder_id, user_id=user.id).first()
+
+        if not smart_folder:
+            return jsonify({'error': 'Smart folder not found'}), 404
+
+        data = request.get_json()
+
+        # Update basic properties
+        if 'name' in data:
+            name = data['name'].strip()
+            if not name:
+                return jsonify({'error': 'Folder name is required'}), 400
+
+            # Check for duplicate names
+            existing = SmartFolder.query.filter_by(user_id=user.id, name=name).filter(SmartFolder.id != folder_id).first()
+            if existing:
+                return jsonify({'error': 'Smart folder with this name already exists'}), 400
+
+            smart_folder.name = name
+
+        if 'description' in data:
+            smart_folder.description = data['description']
+        if 'icon' in data:
+            smart_folder.icon = data['icon']
+        if 'color' in data:
+            smart_folder.color = data['color']
+        if 'is_active' in data:
+            smart_folder.is_active = data['is_active']
+        if 'auto_update' in data:
+            smart_folder.auto_update = data['auto_update']
+
+        # Update rules
+        if 'rules' in data:
+            smart_folder.set_rules(data['rules'])
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Smart folder updated successfully',
+            'smart_folder': smart_folder.get_folder_info()
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smart_folders/<int:folder_id>/files', methods=['GET'])
+@login_required
+def get_smart_folder_files(folder_id):
+    """Get files that match a smart folder's criteria"""
+    try:
+        user = get_or_create_user()
+        smart_folder = SmartFolder.query.filter_by(id=folder_id, user_id=user.id).first()
+
+        if not smart_folder:
+            return jsonify({'error': 'Smart folder not found'}), 404
+
+        # Get matching files
+        files = smart_folder.get_matching_files()
+
+        # Format file data
+        files_data = []
+        for file in files:
+            files_data.append({
+                'id': file.id,
+                'filename': file.filename,
+                'original_filename': file.original_filename,
+                'file_size': file.file_size,
+                'mime_type': file.mime_type,
+                'description': file.description,
+                'tags': file.tags,
+                'is_favorite': file.is_favorite,
+                'created_at': file.created_at.isoformat() if file.created_at else None,
+                'updated_at': file.updated_at.isoformat() if file.updated_at else None
+            })
+
+        # Update last_updated timestamp
+        smart_folder.last_updated = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'smart_folder': smart_folder.get_folder_info(),
+            'files': files_data,
+            'file_count': len(files_data)
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smart_folders/<int:folder_id>', methods=['DELETE'])
+@login_required
+def delete_smart_folder(folder_id):
+    """Delete a smart folder"""
+    try:
+        user = get_or_create_user()
+        smart_folder = SmartFolder.query.filter_by(id=folder_id, user_id=user.id).first()
+
+        if not smart_folder:
+            return jsonify({'error': 'Smart folder not found'}), 404
+
+        folder_name = smart_folder.name
+        db.session.delete(smart_folder)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Smart folder "{folder_name}" deleted successfully'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Auto-tagging system
+def generate_auto_tags(file_record):
+    """Generate automatic tags for a file based on its properties"""
+    tags = set()
+
+    # File type based tags
+    if file_record.mime_type:
+        mime_type = file_record.mime_type.lower()
+
+        if mime_type.startswith('image/'):
+            tags.add('image')
+            if 'jpeg' in mime_type or 'jpg' in mime_type:
+                tags.add('photo')
+            elif 'png' in mime_type:
+                tags.add('png')
+            elif 'gif' in mime_type:
+                tags.add('gif')
+            elif 'svg' in mime_type:
+                tags.add('vector')
+
+        elif mime_type.startswith('video/'):
+            tags.add('video')
+            if 'mp4' in mime_type:
+                tags.add('mp4')
+            elif 'avi' in mime_type:
+                tags.add('avi')
+            elif 'mov' in mime_type:
+                tags.add('quicktime')
+
+        elif mime_type.startswith('audio/'):
+            tags.add('audio')
+            tags.add('music')
+            if 'mp3' in mime_type:
+                tags.add('mp3')
+            elif 'wav' in mime_type:
+                tags.add('wav')
+            elif 'flac' in mime_type:
+                tags.add('lossless')
+
+        elif mime_type.startswith('text/'):
+            tags.add('text')
+            tags.add('document')
+
+        elif 'pdf' in mime_type:
+            tags.add('pdf')
+            tags.add('document')
+
+        elif 'word' in mime_type or 'msword' in mime_type:
+            tags.add('word')
+            tags.add('document')
+
+        elif 'excel' in mime_type or 'spreadsheet' in mime_type:
+            tags.add('excel')
+            tags.add('spreadsheet')
+
+        elif 'powerpoint' in mime_type or 'presentation' in mime_type:
+            tags.add('powerpoint')
+            tags.add('presentation')
+
+        elif 'zip' in mime_type or 'rar' in mime_type or '7z' in mime_type:
+            tags.add('archive')
+            tags.add('compressed')
+
+    # File size based tags
+    if file_record.file_size:
+        size_mb = file_record.file_size / (1024 * 1024)
+
+        if size_mb < 1:
+            tags.add('small')
+        elif size_mb < 10:
+            tags.add('medium')
+        elif size_mb < 100:
+            tags.add('large')
+        else:
+            tags.add('huge')
+
+    # Filename based tags
+    if file_record.filename:
+        filename_lower = file_record.filename.lower()
+
+        # Common keywords in filenames
+        if any(word in filename_lower for word in ['screenshot', 'screen', 'capture']):
+            tags.add('screenshot')
+
+        if any(word in filename_lower for word in ['backup', 'bak', 'copy']):
+            tags.add('backup')
+
+        if any(word in filename_lower for word in ['temp', 'tmp', 'temporary']):
+            tags.add('temporary')
+
+        if any(word in filename_lower for word in ['draft', 'wip', 'work-in-progress']):
+            tags.add('draft')
+
+        if any(word in filename_lower for word in ['final', 'finished', 'complete']):
+            tags.add('final')
+
+        if any(word in filename_lower for word in ['report', 'summary', 'analysis']):
+            tags.add('report')
+
+        if any(word in filename_lower for word in ['invoice', 'receipt', 'bill']):
+            tags.add('financial')
+
+        # Date patterns
+        import re
+        if re.search(r'\d{4}[-_]\d{2}[-_]\d{2}', filename_lower):
+            tags.add('dated')
+
+        if re.search(r'\d{4}', filename_lower):
+            tags.add('yearly')
+
+    # Channel based tags
+    if file_record.telegram_channel:
+        channel_lower = file_record.telegram_channel.lower()
+        tags.add('telegram')
+
+        if any(word in channel_lower for word in ['news', 'updates', 'announcement']):
+            tags.add('news')
+
+        if any(word in channel_lower for word in ['tech', 'technology', 'programming']):
+            tags.add('tech')
+
+        if any(word in channel_lower for word in ['music', 'song', 'audio']):
+            tags.add('music')
+
+    # Time based tags
+    if file_record.created_at:
+        now = datetime.utcnow()
+        age_days = (now - file_record.created_at).days
+
+        if age_days < 1:
+            tags.add('today')
+        elif age_days < 7:
+            tags.add('recent')
+        elif age_days < 30:
+            tags.add('this-month')
+        elif age_days < 365:
+            tags.add('this-year')
+        else:
+            tags.add('old')
+
+        # Season tags
+        month = file_record.created_at.month
+        if month in [12, 1, 2]:
+            tags.add('winter')
+        elif month in [3, 4, 5]:
+            tags.add('spring')
+        elif month in [6, 7, 8]:
+            tags.add('summer')
+        elif month in [9, 10, 11]:
+            tags.add('autumn')
+
+    return list(tags)
+
+@app.route('/api/file/<int:file_id>/auto_tag', methods=['POST'])
+@login_required
+def auto_tag_file(file_id):
+    """Generate and apply automatic tags to a file"""
+    try:
+        user = get_or_create_user()
+        file_record = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+
+        if not file_record:
+            return jsonify({'error': 'File not found'}), 404
+
+        # Generate auto tags
+        auto_tags = generate_auto_tags(file_record)
+
+        # Merge with existing tags
+        existing_tags = []
+        if file_record.tags:
+            existing_tags = [tag.strip() for tag in file_record.tags.split(',') if tag.strip()]
+
+        # Combine and deduplicate
+        all_tags = list(set(existing_tags + auto_tags))
+        file_record.tags = ', '.join(sorted(all_tags))
+
+        db.session.commit()
+
+        # Log activity
+        ActivityLog.log_activity(
+            user_id=user.id,
+            action='auto_tag',
+            description=f'Auto-tagged file: {file_record.filename}',
+            file_id=file_id,
+            metadata={'generated_tags': auto_tags, 'total_tags': len(all_tags)},
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent')
+        )
+
+        return jsonify({
+            'success': True,
+            'message': 'File auto-tagged successfully',
+            'generated_tags': auto_tags,
+            'all_tags': all_tags,
+            'file_id': file_id
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auto_tag_all', methods=['POST'])
+@login_required
+def auto_tag_all_files():
+    """Apply auto-tagging to all files for the current user"""
+    try:
+        user = get_or_create_user()
+        data = request.get_json()
+        overwrite_existing = data.get('overwrite_existing', False)
+
+        # Get all files without tags or with overwrite option
+        if overwrite_existing:
+            files = File.query.filter_by(user_id=user.id, is_deleted=False).all()
+        else:
+            files = File.query.filter_by(user_id=user.id, is_deleted=False).filter(
+                db.or_(File.tags.is_(None), File.tags == '')
+            ).all()
+
+        tagged_count = 0
+        total_tags_added = 0
+
+        for file_record in files:
+            auto_tags = generate_auto_tags(file_record)
+
+            if auto_tags:
+                if overwrite_existing:
+                    # Replace all tags
+                    file_record.tags = ', '.join(sorted(auto_tags))
+                    total_tags_added += len(auto_tags)
+                else:
+                    # Merge with existing tags
+                    existing_tags = []
+                    if file_record.tags:
+                        existing_tags = [tag.strip() for tag in file_record.tags.split(',') if tag.strip()]
+
+                    all_tags = list(set(existing_tags + auto_tags))
+                    file_record.tags = ', '.join(sorted(all_tags))
+                    total_tags_added += len(auto_tags)
+
+                tagged_count += 1
+
+        db.session.commit()
+
+        # Log activity
+        ActivityLog.log_activity(
+            user_id=user.id,
+            action='bulk_auto_tag',
+            description=f'Auto-tagged {tagged_count} files',
+            metadata={
+                'files_tagged': tagged_count,
+                'total_files': len(files),
+                'tags_added': total_tags_added,
+                'overwrite_existing': overwrite_existing
+            },
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent')
+        )
+
+        return jsonify({
+            'success': True,
+            'message': f'Auto-tagged {tagged_count} files successfully',
+            'files_tagged': tagged_count,
+            'total_files': len(files),
+            'tags_added': total_tags_added
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("🌐 Starting TeleDrive Web Interface...")

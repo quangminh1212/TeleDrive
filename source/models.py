@@ -10,6 +10,7 @@ from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 import json
+import os
 import bcrypt
 import secrets
 import hashlib
@@ -51,6 +52,10 @@ class User(UserMixin, db.Model):
     files = relationship('File', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
     folders = relationship('Folder', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
     scan_sessions = relationship('ScanSession', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    file_versions = relationship('FileVersion', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    file_comments = relationship('FileComment', backref='author', lazy='dynamic', cascade='all, delete-orphan')
+    activity_logs = relationship('ActivityLog', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    smart_folders = relationship('SmartFolder', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<User {self.username}>'
@@ -240,11 +245,69 @@ class File(db.Model):
     is_favorite = Column(Boolean, default=False, index=True)  # Index for favorite files
     download_count = Column(Integer, default=0)
     
+    # Versioning
+    current_version = Column(Integer, default=1)
+    version_count = Column(Integer, default=1)
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     telegram_date = Column(DateTime)  # Original message date from Telegram
     
+    def create_version(self, change_description=None, version_name=None):
+        """Create a new version of this file"""
+        import hashlib
+        import shutil
+
+        # Calculate file hash
+        file_hash = None
+        if self.file_path and os.path.exists(self.file_path):
+            with open(self.file_path, 'rb') as f:
+                file_hash = hashlib.sha256(f.read()).hexdigest()
+
+        # Create version record
+        version = FileVersion(
+            file_id=self.id,
+            user_id=self.user_id,
+            version_number=self.current_version,
+            version_name=version_name,
+            change_description=change_description,
+            filename=self.filename,
+            file_path=self.file_path,
+            file_size=self.file_size,
+            mime_type=self.mime_type,
+            file_hash=file_hash
+        )
+
+        # Update file version info
+        self.current_version += 1
+        self.version_count += 1
+
+        return version
+
+    def get_version_history(self):
+        """Get version history for this file"""
+        return FileVersion.query.filter_by(file_id=self.id).order_by(FileVersion.version_number.desc()).all()
+
+    def restore_version(self, version_number):
+        """Restore file to a specific version"""
+        version = FileVersion.query.filter_by(file_id=self.id, version_number=version_number).first()
+        if not version:
+            return False
+
+        # Copy version file to current location
+        if version.file_path and os.path.exists(version.file_path):
+            import shutil
+            shutil.copy2(version.file_path, self.file_path)
+
+            # Update file metadata
+            self.file_size = version.file_size
+            self.mime_type = version.mime_type
+
+            return True
+
+        return False
+
     def __repr__(self):
         return f'<File {self.filename}>'
 
@@ -255,6 +318,50 @@ class File(db.Model):
         db.Index('idx_mime_deleted_created', 'mime_type', 'is_deleted', 'created_at'),
         db.Index('idx_user_favorite', 'user_id', 'is_favorite'),
     )
+
+class FileVersion(db.Model):
+    """File version model for tracking file history and changes"""
+    __tablename__ = 'file_versions'
+
+    id = Column(Integer, primary_key=True)
+    file_id = Column(Integer, ForeignKey('files.id'), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+
+    # Version information
+    version_number = Column(Integer, nullable=False, default=1)
+    version_name = Column(String(100))  # Optional version name/tag
+    change_description = Column(Text)  # Description of changes
+
+    # File metadata for this version
+    filename = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)  # Path to version file
+    file_size = Column(Integer, default=0)
+    mime_type = Column(String(100))
+    file_hash = Column(String(64))  # SHA-256 hash for integrity
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    file = relationship('File', backref='versions')
+
+    def __repr__(self):
+        return f'<FileVersion {self.filename} v{self.version_number}>'
+
+    def get_file_info(self):
+        """Get file information for this version"""
+        return {
+            'id': self.id,
+            'file_id': self.file_id,
+            'version_number': self.version_number,
+            'version_name': self.version_name,
+            'filename': self.filename,
+            'file_size': self.file_size,
+            'mime_type': self.mime_type,
+            'change_description': self.change_description,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'file_hash': self.file_hash
+        }
     
     def get_tags(self):
         """Get tags as a list"""
@@ -545,6 +652,240 @@ def init_db(app):
             db.session.add(admin_user)
             db.session.commit()
             print("✅ Created default admin user")
+
+class FileComment(db.Model):
+    """Model for file comments and discussions"""
+    __tablename__ = 'file_comments'
+
+    id = Column(Integer, primary_key=True)
+    file_id = Column(Integer, ForeignKey('files.id'), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    parent_id = Column(Integer, ForeignKey('file_comments.id'), nullable=True, index=True)  # For threaded comments
+
+    # Comment content
+    content = Column(Text, nullable=False)
+    content_type = Column(String(20), default='text')  # text, markdown, html
+
+    # Status
+    is_edited = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False)
+    is_pinned = Column(Boolean, default=False)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    file = relationship('File', backref='comments')
+    parent = relationship('FileComment', remote_side=[id], backref='replies')
+
+    def __repr__(self):
+        return f'<FileComment {self.id} on File {self.file_id}>'
+
+    def get_comment_info(self):
+        """Get comment information"""
+        return {
+            'id': self.id,
+            'file_id': self.file_id,
+            'user_id': self.user_id,
+            'author_name': self.author.username if self.author else 'Unknown',
+            'parent_id': self.parent_id,
+            'content': self.content,
+            'content_type': self.content_type,
+            'is_edited': self.is_edited,
+            'is_deleted': self.is_deleted,
+            'is_pinned': self.is_pinned,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'reply_count': len(self.replies) if self.replies else 0
+        }
+
+    def get_thread_info(self):
+        """Get comment with all replies"""
+        comment_info = self.get_comment_info()
+        comment_info['replies'] = [reply.get_comment_info() for reply in self.replies if not reply.is_deleted]
+        return comment_info
+
+class ActivityLog(db.Model):
+    """Model for tracking user activities and file operations"""
+    __tablename__ = 'activity_logs'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    file_id = Column(Integer, ForeignKey('files.id'), nullable=True, index=True)
+
+    # Activity details
+    action = Column(String(50), nullable=False, index=True)  # upload, download, view, delete, share, etc.
+    description = Column(Text)  # Human-readable description
+    metadata = Column(Text)  # JSON metadata for additional details
+
+    # Context
+    ip_address = Column(String(45))  # IPv4 or IPv6
+    user_agent = Column(Text)
+    session_id = Column(String(64))
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    file = relationship('File', backref='activity_logs')
+
+    def __repr__(self):
+        return f'<ActivityLog {self.action} by User {self.user_id}>'
+
+    def get_activity_info(self):
+        """Get activity information"""
+        metadata = {}
+        if self.metadata:
+            try:
+                metadata = json.loads(self.metadata)
+            except:
+                pass
+
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'username': self.user.username if self.user else 'Unknown',
+            'file_id': self.file_id,
+            'file_name': self.file.filename if self.file else None,
+            'action': self.action,
+            'description': self.description,
+            'metadata': metadata,
+            'ip_address': self.ip_address,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+    @staticmethod
+    def log_activity(user_id, action, description=None, file_id=None, metadata=None, ip_address=None, user_agent=None):
+        """Log an activity"""
+        activity = ActivityLog(
+            user_id=user_id,
+            file_id=file_id,
+            action=action,
+            description=description,
+            metadata=json.dumps(metadata) if metadata else None,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+
+        db.session.add(activity)
+        return activity
+
+class SmartFolder(db.Model):
+    """Model for smart/dynamic folders based on rules and criteria"""
+    __tablename__ = 'smart_folders'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+
+    # Folder details
+    name = Column(String(255), nullable=False)
+    description = Column(Text)
+    icon = Column(String(50), default='folder')
+    color = Column(String(7), default='#3498db')  # Hex color
+
+    # Rules and criteria (stored as JSON)
+    rules = Column(Text, nullable=False)  # JSON string with filter criteria
+
+    # Settings
+    is_active = Column(Boolean, default=True)
+    auto_update = Column(Boolean, default=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_updated = Column(DateTime)  # When files were last matched
+
+    def __repr__(self):
+        return f'<SmartFolder {self.name}>'
+
+    def get_rules(self):
+        """Get parsed rules"""
+        try:
+            return json.loads(self.rules) if self.rules else {}
+        except:
+            return {}
+
+    def set_rules(self, rules_dict):
+        """Set rules from dictionary"""
+        self.rules = json.dumps(rules_dict)
+
+    def get_matching_files(self):
+        """Get files that match this smart folder's criteria"""
+        rules = self.get_rules()
+
+        # Build query based on rules
+        query = File.query.filter_by(user_id=self.user_id, is_deleted=False)
+
+        # File type filter
+        if rules.get('file_types'):
+            file_types = rules['file_types']
+            mime_conditions = []
+            for file_type in file_types:
+                if file_type == 'image':
+                    mime_conditions.append(File.mime_type.like('image/%'))
+                elif file_type == 'video':
+                    mime_conditions.append(File.mime_type.like('video/%'))
+                elif file_type == 'audio':
+                    mime_conditions.append(File.mime_type.like('audio/%'))
+                elif file_type == 'document':
+                    mime_conditions.extend([
+                        File.mime_type.like('application/pdf'),
+                        File.mime_type.like('application/msword'),
+                        File.mime_type.like('application/vnd.openxmlformats-officedocument%'),
+                        File.mime_type.like('text/%')
+                    ])
+
+            if mime_conditions:
+                query = query.filter(db.or_(*mime_conditions))
+
+        # Size filter
+        if rules.get('size_min'):
+            query = query.filter(File.file_size >= rules['size_min'])
+        if rules.get('size_max'):
+            query = query.filter(File.file_size <= rules['size_max'])
+
+        # Date filter
+        if rules.get('date_from'):
+            date_from = datetime.fromisoformat(rules['date_from'])
+            query = query.filter(File.created_at >= date_from)
+        if rules.get('date_to'):
+            date_to = datetime.fromisoformat(rules['date_to'])
+            query = query.filter(File.created_at <= date_to)
+
+        # Tags filter
+        if rules.get('tags'):
+            for tag in rules['tags']:
+                query = query.filter(File.tags.ilike(f'%{tag}%'))
+
+        # Favorites filter
+        if rules.get('favorites_only'):
+            query = query.filter(File.is_favorite == True)
+
+        # Name pattern filter
+        if rules.get('name_pattern'):
+            query = query.filter(File.filename.ilike(f'%{rules["name_pattern"]}%'))
+
+        return query.all()
+
+    def get_folder_info(self):
+        """Get smart folder information"""
+        matching_files = self.get_matching_files()
+
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'icon': self.icon,
+            'color': self.color,
+            'rules': self.get_rules(),
+            'is_active': self.is_active,
+            'auto_update': self.auto_update,
+            'file_count': len(matching_files),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'last_updated': self.last_updated.isoformat() if self.last_updated else None
+        }
 
 def get_or_create_user(username='default', email='default@teledrive.local'):
     """Get or create a default user for backward compatibility"""
