@@ -6,7 +6,6 @@ Chuyên dụng cho việc quét file trong private channel/group Telegram
 
 import asyncio
 import sys
-import signal
 from engine import TelegramFileScanner
 
 # Import detailed logging
@@ -191,14 +190,6 @@ async def main():
     print("🔧 Đang khởi tạo scanner...")
     scanner = PrivateChannelScanner()
 
-    # Setup signal handler for graceful shutdown
-    def signal_handler(signum, frame):
-        print(f"\n🛑 Received signal {signum}, shutting down gracefully...")
-        raise KeyboardInterrupt()
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
     try:
         print("✅ Scanner đã sẵn sàng")
         if DETAILED_LOGGING_AVAILABLE:
@@ -234,13 +225,8 @@ async def main():
         print("\n🔧 Đang đóng kết nối...")
         if DETAILED_LOGGING_AVAILABLE:
             log_step("ĐÓNG ỨNG DỤNG", "Đang đóng kết nối và dọn dẹp")
-        try:
-            await scanner.close()
-            print("✅ Đã đóng kết nối thành công")
-        except Exception as e:
-            print(f"⚠️ Lỗi khi đóng kết nối: {e}")
-            if DETAILED_LOGGING_AVAILABLE:
-                log_error(e, "Error closing scanner")
+        await scanner.close()
+        print("✅ Đã đóng kết nối thành công")
 
 if __name__ == "__main__":
     print("🔧 Đang khởi tạo hệ thống...")

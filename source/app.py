@@ -10,9 +10,6 @@ import asyncio
 import threading
 import re
 import secrets
-import signal
-import atexit
-import weakref
 from datetime import datetime, timedelta
 from pathlib import Path
 from werkzeug.utils import secure_filename
@@ -319,86 +316,6 @@ scanner = None
 scanning_active = False
 scan_progress = {'current': 0, 'total': 0, 'status': 'idle'}
 
-# Global client tracking for proper cleanup
-active_clients = weakref.WeakSet()
-shutdown_in_progress = False
-
-def register_client(client):
-    """Register a Telegram client for cleanup tracking"""
-    if client:
-        active_clients.add(client)
-
-def cleanup_all_clients():
-    """Clean up all active Telegram clients"""
-    global shutdown_in_progress
-    if shutdown_in_progress:
-        return
-
-    shutdown_in_progress = True
-    print("\n🔧 Cleaning up Telegram clients...")
-
-    # Create a new event loop for cleanup if needed
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-    async def cleanup_clients():
-        cleanup_tasks = []
-        for client in list(active_clients):
-            if hasattr(client, 'disconnect'):
-                try:
-                    cleanup_tasks.append(client.disconnect())
-                except Exception as e:
-                    print(f"Warning: Error preparing client cleanup: {e}")
-
-        if cleanup_tasks:
-            try:
-                await asyncio.wait_for(asyncio.gather(*cleanup_tasks, return_exceptions=True), timeout=5.0)
-                print("✅ All Telegram clients cleaned up successfully")
-            except asyncio.TimeoutError:
-                print("⚠️ Client cleanup timed out, forcing shutdown")
-            except Exception as e:
-                print(f"⚠️ Error during client cleanup: {e}")
-
-    try:
-        loop.run_until_complete(cleanup_clients())
-    except Exception as e:
-        print(f"⚠️ Error in cleanup loop: {e}")
-    finally:
-        try:
-            # Cancel any remaining tasks
-            pending = asyncio.all_tasks(loop)
-            for task in pending:
-                task.cancel()
-
-            if pending:
-                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-        except Exception:
-            pass
-
-        try:
-            loop.close()
-        except Exception:
-            pass
-
-def signal_handler(signum, frame):
-    """Handle shutdown signals gracefully"""
-    print(f"\n🛑 Received signal {signum}, shutting down gracefully...")
-    cleanup_all_clients()
-    os._exit(0)
-
-# Register signal handlers
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
-
-# Register cleanup on exit
-atexit.register(cleanup_all_clients)
-
 class WebTelegramScanner(TelegramFileScanner):
     """Extended scanner with web interface support"""
 
@@ -407,36 +324,6 @@ class WebTelegramScanner(TelegramFileScanner):
         self.socketio = socketio_instance
         self.user_id = user_id or get_or_create_user().id
         self.scan_session = None
-
-    async def initialize(self):
-        """Initialize with client registration"""
-        result = await super().initialize()
-        if self.client:
-            register_client(self.client)
-        return result
-
-    async def close(self):
-        """Enhanced close method with proper cleanup"""
-        global scanning_active
-        scanning_active = False
-
-        if self.client:
-            try:
-                print("🔧 Closing Telegram client connection...")
-                await self.client.disconnect()
-                print("✅ Telegram client disconnected successfully")
-            except Exception as e:
-                print(f"⚠️ Error closing Telegram client: {e}")
-
-        # Update scan session if exists
-        if self.scan_session:
-            try:
-                if self.scan_session.status == 'running':
-                    self.scan_session.status = 'interrupted'
-                    self.scan_session.completed_at = datetime.utcnow()
-                    db.session.commit()
-            except Exception as e:
-                print(f"⚠️ Error updating scan session: {e}")
         
     async def scan_channel_with_progress(self, channel_input):
         """Scan channel with real-time progress updates"""
@@ -723,38 +610,13 @@ def start_scan():
         # Create new scanner instance
         scanner = WebTelegramScanner(socketio)
         
-        # Start scanning in background thread with proper cleanup
+        # Start scanning in background thread
         def run_scan():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            try:
-                loop.run_until_complete(scanner.scan_channel_with_progress(channel_input))
-            except Exception as e:
-                print(f"Error in scan thread: {e}")
-            finally:
-                # Ensure proper cleanup
-                try:
-                    loop.run_until_complete(scanner.close())
-                except Exception as e:
-                    print(f"Error closing scanner: {e}")
-
-                # Cancel any remaining tasks
-                try:
-                    pending = asyncio.all_tasks(loop)
-                    for task in pending:
-                        task.cancel()
-
-                    if pending:
-                        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-                except Exception as e:
-                    print(f"Error cancelling tasks: {e}")
-
-                # Close the loop
-                try:
-                    loop.close()
-                except Exception as e:
-                    print(f"Error closing loop: {e}")
-
+            loop.run_until_complete(scanner.scan_channel_with_progress(channel_input))
+            loop.close()
+        
         thread = threading.Thread(target=run_scan)
         thread.daemon = True
         thread.start()
@@ -1769,32 +1631,15 @@ def telegram_login():
             result = await telegram_auth.send_code_request(phone_number, country_code)
             return result
 
-        # Run async function with proper cleanup
+        # Run async function
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
             app.logger.info("Sending verification code...")
             result = loop.run_until_complete(send_code())
             app.logger.info(f"Send code result: {result}")
-        except Exception as e:
-            app.logger.error(f"Error in send code: {e}")
-            result = {'success': False, 'error': str(e)}
         finally:
-            # Cancel any remaining tasks
-            try:
-                pending = asyncio.all_tasks(loop)
-                for task in pending:
-                    task.cancel()
-
-                if pending:
-                    loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-            except Exception:
-                pass
-
-            try:
-                loop.close()
-            except Exception:
-                pass
+            loop.close()
 
         if result['success']:
             session['telegram_session_id'] = result['session_id']
@@ -1848,32 +1693,15 @@ def telegram_verify():
             result = await telegram_auth.verify_code(session_id, verification_code, password)
             return result
 
-        # Run async function with proper cleanup
+        # Run async function
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
             app.logger.info("Starting code verification...")
             result = loop.run_until_complete(verify_code())
             app.logger.info(f"Verification result: {result}")
-        except Exception as e:
-            app.logger.error(f"Error in verify code: {e}")
-            result = {'success': False, 'error': str(e)}
         finally:
-            # Cancel any remaining tasks
-            try:
-                pending = asyncio.all_tasks(loop)
-                for task in pending:
-                    task.cancel()
-
-                if pending:
-                    loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-            except Exception:
-                pass
-
-            try:
-                loop.close()
-            except Exception:
-                pass
+            loop.close()
 
         if result['success']:
             app.logger.info("=== AUTHENTICATION SUCCESSFUL ===")
