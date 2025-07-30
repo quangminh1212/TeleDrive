@@ -40,6 +40,20 @@ flask_config.flask_config.create_directories()
 
 print("✅ Flask app initialized successfully")
 
+# Mock user for templates
+class MockUser:
+    def __init__(self):
+        self.is_authenticated = False
+        self.username = 'Guest'
+        self.id = None
+
+mock_user = MockUser()
+
+@app.context_processor
+def inject_user():
+    """Inject current_user into all templates"""
+    return dict(current_user=mock_user)
+
 # Basic routes
 @app.route('/')
 def dashboard():
@@ -60,6 +74,21 @@ def search_page():
 def settings():
     """Settings page"""
     return render_template('settings.html', config={})
+
+@app.route('/login')
+def login():
+    """Login page"""
+    return "Login page (not implemented in simple app)"
+
+@app.route('/logout')
+def logout():
+    """Logout page"""
+    return "Logout page (not implemented in simple app)"
+
+@app.route('/register')
+def register():
+    """Register page"""
+    return "Register page (not implemented in simple app)"
 
 @app.route('/favicon.ico')
 def favicon():
