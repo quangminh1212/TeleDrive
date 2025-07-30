@@ -100,5 +100,15 @@
     "pool_recycle": -1,
     "max_overflow": 0,
     "echo": false
+  },
+  "flask": {
+    "secret_key": "teledrive_secret_key_2025",
+    "host": "localhost",
+    "port": 3000,
+    "debug": false,
+    "threaded": true,
+    "use_reloader": false,
+    "cors_allowed_origins": "*",
+    "login_view": "login"
   }
 }

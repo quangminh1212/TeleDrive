@@ -178,7 +178,7 @@ class ConfigManager:
             },
             "flask": {
                 "secret_key": "teledrive_secret_key_2025",
-                "host": "0.0.0.0",
+                "host": "localhost",
                 "port": 3000,
                 "debug": False,
                 "threaded": True,
