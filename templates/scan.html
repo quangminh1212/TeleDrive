@@ -76,7 +76,7 @@
 
                         <!-- Advanced Options Toggle -->
                         <div class="advanced-toggle">
-                            <button type="button" class="toggle-btn" onclick="toggleAdvancedOptions()"
+                            <button type="button" class="toggle-btn" id="advanced-toggle-btn"
                                     aria-expanded="false" aria-controls="advanced-options"
                                     aria-label="Toggle advanced scanning options">
                                 <span class="material-icons" aria-hidden="true">tune</span>
@@ -201,11 +201,11 @@
                                 <span class="btn-text">Start Scanning</span>
                                 <div class="btn-ripple"></div>
                             </button>
-                            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                            <button type="button" class="btn btn-secondary" id="reset-form-btn">
                                 <span class="material-icons">refresh</span>
                                 Reset
                             </button>
-                            <button type="button" class="btn btn-outline" onclick="saveAsTemplate()">
+                            <button type="button" class="btn btn-outline" id="save-template-btn">
                                 <span class="material-icons">bookmark</span>
                                 Save Template
                             </button>
@@ -242,7 +242,7 @@
                         </div>
                     </div>
                     <div class="scan-controls">
-                        <button class="btn btn-danger btn-small" id="stop-scan-btn" onclick="stopScan()">
+                        <button class="btn btn-danger btn-small" id="stop-scan-btn">
                             <span class="material-icons">stop</span>
                             Stop
                         </button>
@@ -343,7 +343,7 @@
                         </div>
                     </div>
                     <div class="header-actions">
-                        <button class="btn btn-outline btn-small" onclick="clearHistory()">
+                        <button class="btn btn-outline btn-small" id="clear-history-btn">
                             <span class="material-icons">clear_all</span>
                             Clear
                         </button>
@@ -375,11 +375,36 @@ let scanInterval;
 let startTime;
 let isScanning = false;
 
+// Performance optimization: Cache DOM elements
+const DOMCache = {
+    form: null,
+    channelInput: null,
+    progressSection: null,
+    loadingOverlay: null,
+    activityList: null,
+
+    init() {
+        this.form = document.getElementById('scan-form');
+        this.channelInput = document.getElementById('channel-input');
+        this.progressSection = document.getElementById('scan-progress-section');
+        this.loadingOverlay = document.getElementById('form-loading-overlay');
+        this.activityList = document.getElementById('activity-list');
+    },
+
+    get(elementId) {
+        return document.getElementById(elementId);
+    }
+};
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
+    DOMCache.init();
     initializePage();
     loadRecentScans();
     loadStats();
+
+    // Setup cleanup on page unload
+    window.addEventListener('beforeunload', cleanup);
 });
 
 function initializePage() {
@@ -585,14 +610,49 @@ function saveAsTemplate() {
     showToast('Template saved successfully', 'success');
 }
 
-// Form submission with enhanced validation and animation
+// Debouncing and rate limiting for form submission
+let lastSubmissionTime = 0;
+let submissionCount = 0;
+let submissionResetTimer = null;
+const SUBMISSION_COOLDOWN = 2000; // 2 seconds between submissions
+const MAX_SUBMISSIONS_PER_MINUTE = 5;
+
+// Form submission with enhanced validation, debouncing, and rate limiting
 document.getElementById('scan-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
+    const now = Date.now();
+
+    // Check if scanning is already in progress
     if (isScanning) {
         showToast('A scan is already in progress', 'warning');
         return;
     }
+
+    // Debouncing: prevent rapid submissions
+    if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
+        const remainingTime = Math.ceil((SUBMISSION_COOLDOWN - (now - lastSubmissionTime)) / 1000);
+        showToast(`Please wait ${remainingTime} seconds before submitting again`, 'warning');
+        return;
+    }
+
+    // Rate limiting: prevent too many submissions per minute
+    if (submissionCount >= MAX_SUBMISSIONS_PER_MINUTE) {
+        showToast('Too many submission attempts. Please wait a minute before trying again.', 'error');
+        return;
+    }
+
+    // Update submission tracking
+    lastSubmissionTime = now;
+    submissionCount++;
+
+    // Reset submission count after 1 minute
+    if (submissionResetTimer) {
+        clearTimeout(submissionResetTimer);
+    }
+    submissionResetTimer = setTimeout(() => {
+        submissionCount = 0;
+    }, 60000);
 
     // Comprehensive form validation
     const validationResult = validateForm();
@@ -603,7 +663,10 @@ document.getElementById('scan-form').addEventListener('submit', function(e) {
 
     const channelInput = document.getElementById('channel-input').value.trim();
 
-    startScan(channelInput);
+    // Sanitize input before processing
+    const sanitizedInput = sanitizeInput(channelInput);
+
+    startScan(sanitizedInput);
 });
 
 function validateChannelInput(input) {
@@ -693,6 +756,46 @@ function validateChannelInput(input) {
     }
 
     return validation;
+}
+
+function sanitizeInput(input) {
+    if (!input || typeof input !== 'string') {
+        return '';
+    }
+
+    // Remove potentially dangerous characters and normalize
+    let sanitized = input
+        .trim()
+        .replace(/[<>'"&]/g, '') // Remove HTML/script injection characters
+        .replace(/javascript:/gi, '') // Remove javascript: protocol
+        .replace(/data:/gi, '') // Remove data: protocol
+        .replace(/vbscript:/gi, '') // Remove vbscript: protocol
+        .replace(/on\w+=/gi, '') // Remove event handlers
+        .replace(/\s+/g, ' '); // Normalize whitespace
+
+    // Validate length
+    if (sanitized.length > 200) {
+        sanitized = sanitized.substring(0, 200);
+    }
+
+    // Additional validation for Telegram URLs/usernames
+    if (sanitized.startsWith('@')) {
+        // Username: only allow alphanumeric and underscore
+        sanitized = sanitized.replace(/[^@a-zA-Z0-9_]/g, '');
+    } else if (sanitized.startsWith('https://t.me/')) {
+        // URL: validate structure
+        try {
+            const url = new URL(sanitized);
+            if (url.hostname !== 't.me') {
+                return '';
+            }
+            sanitized = url.href;
+        } catch (e) {
+            return '';
+        }
+    }
+
+    return sanitized;
 }
 
 function validateForm() {
@@ -930,50 +1033,65 @@ async function startActualScan(channelInput) {
     }
 }
 
+// Optimized progress updates with throttling
+let lastProgressUpdate = 0;
+const PROGRESS_UPDATE_THROTTLE = 100; // Update at most every 100ms
+
 function updateProgress(progress, messages, files) {
-    // Update progress ring with smooth animation
-    const ring = document.getElementById('progress-ring');
-    if (ring) {
-        const circumference = 2 * Math.PI * 54;
-        const offset = circumference - (progress / 100) * circumference;
-        ring.style.strokeDashoffset = offset;
+    const now = Date.now();
+
+    // Throttle progress updates for better performance
+    if (now - lastProgressUpdate < PROGRESS_UPDATE_THROTTLE) {
+        return;
     }
+    lastProgressUpdate = now;
 
-    // Update percentage with animation
-    const percentageEl = document.getElementById('progress-percentage');
-    if (percentageEl) {
-        animateNumber(percentageEl, Math.round(progress), '%');
-    }
+    // Use requestAnimationFrame for smooth updates
+    requestAnimationFrame(() => {
+        // Update progress ring with smooth animation
+        const ring = DOMCache.get('progress-ring');
+        if (ring) {
+            const circumference = 2 * Math.PI * 54;
+            const offset = circumference - (progress / 100) * circumference;
+            ring.style.strokeDashoffset = offset;
+        }
 
-    // Update stats with animation
-    const messagesEl = document.getElementById('messages-processed');
-    const filesEl = document.getElementById('files-found');
+        // Update percentage with animation
+        const percentageEl = DOMCache.get('progress-percentage');
+        if (percentageEl) {
+            animateNumber(percentageEl, Math.round(progress), '%');
+        }
 
-    if (messagesEl) {
-        animateNumber(messagesEl, messages, '', true);
-    }
+        // Update stats with animation
+        const messagesEl = DOMCache.get('messages-processed');
+        const filesEl = DOMCache.get('files-found');
 
-    if (filesEl) {
-        animateNumber(filesEl, files, '', true);
-    }
+        if (messagesEl) {
+            animateNumber(messagesEl, messages, '', true);
+        }
 
-    // Update speed and time
-    const elapsed = (Date.now() - startTime) / 1000;
-    const speed = Math.round(messages / elapsed);
+        if (filesEl) {
+            animateNumber(filesEl, files, '', true);
+        }
 
-    const speedEl = document.getElementById('scan-speed');
-    const timeEl = document.getElementById('time-elapsed');
+        // Update speed and time
+        const elapsed = (Date.now() - startTime) / 1000;
+        const speed = Math.round(messages / elapsed);
 
-    if (speedEl) {
-        animateNumber(speedEl, speed, ' msg/s');
-    }
+        const speedEl = DOMCache.get('scan-speed');
+        const timeEl = DOMCache.get('time-elapsed');
 
-    if (timeEl) {
-        timeEl.textContent = formatTime(elapsed);
-    }
+        if (speedEl) {
+            animateNumber(speedEl, speed, ' msg/s');
+        }
 
-    // Add random activities
-    if (Math.random() < 0.3) {
+        if (timeEl) {
+            timeEl.textContent = formatTime(elapsed);
+        }
+    });
+
+    // Add periodic activities (less frequent for better performance)
+    if (Math.random() < 0.1) { // Reduced from 0.3 to 0.1
         const activities = [
             'Found new document',
             'Processing media files',
@@ -1256,60 +1374,8 @@ async function stopScan() {
 }
 
 function addActivity(text, type = 'info') {
-    const activityList = document.getElementById('activity-list');
-    if (!activityList) return;
-
-    const activity = document.createElement('div');
-    activity.className = 'activity-item';
-
-    const icons = {
-        info: 'info',
-        success: 'check_circle',
-        warning: 'warning',
-        error: 'error',
-        connect: 'wifi'
-    };
-
-    // Get current timestamp
-    const now = new Date();
-    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    activity.innerHTML = `
-        <div class="activity-icon ${type}">
-            <span class="material-icons">${icons[type] || 'info'}</span>
-        </div>
-        <div class="activity-content">
-            <span class="activity-text">${text}</span>
-            <span class="activity-time">${timeString}</span>
-        </div>
-    `;
-
-    // Add initial animation state
-    activity.style.opacity = '0';
-    activity.style.transform = 'translateX(20px)';
-
-    activityList.insertBefore(activity, activityList.firstChild);
-
-    // Trigger animation
-    setTimeout(() => {
-        activity.style.transition = 'all 0.3s ease';
-        activity.style.opacity = '1';
-        activity.style.transform = 'translateX(0)';
-    }, 10);
-
-    // Keep only last 10 activities with fade out animation
-    while (activityList.children.length > 10) {
-        const lastChild = activityList.lastChild;
-        lastChild.style.transition = 'all 0.3s ease';
-        lastChild.style.opacity = '0';
-        lastChild.style.transform = 'translateX(-20px)';
-
-        setTimeout(() => {
-            if (lastChild.parentNode) {
-                activityList.removeChild(lastChild);
-            }
-        }, 300);
-    }
+    // Use optimized ActivityManager
+    ActivityManager.add(text, type);
 }
 
 function animateProgress() {
@@ -1367,8 +1433,38 @@ function animateNumber(element, targetValue, suffix = '', useLocaleString = fals
     }
 }
 
+// Lazy loading for non-critical features
 function loadStats() {
-    // Load global stats (replace with actual API call)
+    // Defer stats loading to improve initial page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(loadStatsAsync, 1000); // Load after 1 second
+        });
+    } else {
+        setTimeout(loadStatsAsync, 1000);
+    }
+}
+
+async function loadStatsAsync() {
+    try {
+        // Load global stats with actual API call (when available)
+        const response = await fetch('/api/stats');
+        if (response.ok) {
+            const stats = await response.json();
+            document.getElementById('total-scans').textContent = stats.total_scans || '0';
+            document.getElementById('total-files').textContent = stats.total_files?.toLocaleString() || '0';
+            document.getElementById('total-channels').textContent = stats.total_channels || '0';
+        } else {
+            // Fallback to placeholder data
+            setPlaceholderStats();
+        }
+    } catch (error) {
+        console.warn('Failed to load stats:', error);
+        setPlaceholderStats();
+    }
+}
+
+function setPlaceholderStats() {
     document.getElementById('total-scans').textContent = '12';
     document.getElementById('total-files').textContent = '1,234';
     document.getElementById('total-channels').textContent = '8';
@@ -1439,7 +1535,7 @@ function createScanItem(scan) {
             <div class="scan-time">${timeAgo}</div>
         </div>
         <div class="scan-actions">
-            <button class="btn btn-outline btn-small" onclick="viewScanResults('${scan.channel}')">
+            <button class="btn btn-outline btn-small view-scan-results" data-channel="${scan.channel}">
                 <span class="material-icons">visibility</span>
                 View
             </button>
@@ -1476,7 +1572,7 @@ function clearHistory() {
             </div>
             <h4>No scans yet</h4>
             <p>Start your first channel scan to see results here</p>
-            <button class="btn btn-primary btn-small" onclick="document.getElementById('channel-input').focus()">
+            <button class="btn btn-primary btn-small focus-channel-input">
                 <span class="material-icons">add</span>
                 Start First Scan
             </button>
@@ -1609,7 +1705,62 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize keyboard navigation
     initializeKeyboardNavigation();
+
+    // Initialize secure event listeners (no inline handlers)
+    initializeSecureEventListeners();
 });
+
+// Secure event listeners to replace inline onclick handlers
+function initializeSecureEventListeners() {
+    // Advanced options toggle
+    const advancedToggleBtn = document.getElementById('advanced-toggle-btn');
+    if (advancedToggleBtn) {
+        advancedToggleBtn.addEventListener('click', toggleAdvancedOptions);
+    }
+
+    // Reset form button
+    const resetFormBtn = document.getElementById('reset-form-btn');
+    if (resetFormBtn) {
+        resetFormBtn.addEventListener('click', resetForm);
+    }
+
+    // Save template button
+    const saveTemplateBtn = document.getElementById('save-template-btn');
+    if (saveTemplateBtn) {
+        saveTemplateBtn.addEventListener('click', saveAsTemplate);
+    }
+
+    // Stop scan button
+    const stopScanBtn = document.getElementById('stop-scan-btn');
+    if (stopScanBtn) {
+        stopScanBtn.addEventListener('click', stopScan);
+    }
+
+    // Clear history button
+    const clearHistoryBtn = document.getElementById('clear-history-btn');
+    if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', clearHistory);
+    }
+
+    // Focus channel input buttons (will be added dynamically)
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('.focus-channel-input')) {
+            e.preventDefault();
+            const channelInput = document.getElementById('channel-input');
+            if (channelInput) {
+                channelInput.focus();
+            }
+        }
+
+        if (e.target.matches('.view-scan-results')) {
+            e.preventDefault();
+            const channel = e.target.dataset.channel;
+            if (channel) {
+                viewScanResults(channel);
+            }
+        }
+    });
+}
 
 // Keyboard Navigation Support
 function initializeKeyboardNavigation() {
@@ -1665,5 +1816,108 @@ function initializeKeyboardNavigation() {
         }
     });
 }
+
+// Performance optimization: Cleanup function to prevent memory leaks
+function cleanup() {
+    // Clear intervals and timeouts
+    if (scanInterval) {
+        clearInterval(scanInterval);
+    }
+
+    if (submissionResetTimer) {
+        clearTimeout(submissionResetTimer);
+    }
+
+    // Disconnect SocketIO
+    if (socket && socket.connected) {
+        socket.disconnect();
+    }
+
+    // Clear activity list to free memory
+    if (DOMCache.activityList) {
+        DOMCache.activityList.innerHTML = '';
+    }
+
+    // Reset global variables
+    isScanning = false;
+    scanning_active = false;
+    scan_progress = { current: 0, total: 0, status: 'idle' };
+}
+
+// Optimized activity management with memory limits
+const ActivityManager = {
+    maxActivities: 10,
+    activities: [],
+
+    add(text, type = 'info') {
+        const activityList = DOMCache.activityList;
+        if (!activityList) return;
+
+        const activity = this.createActivityElement(text, type);
+
+        // Add to beginning of list
+        activityList.insertBefore(activity, activityList.firstChild);
+        this.activities.unshift({ element: activity, timestamp: Date.now() });
+
+        // Remove excess activities
+        while (this.activities.length > this.maxActivities) {
+            const oldActivity = this.activities.pop();
+            if (oldActivity.element.parentNode) {
+                oldActivity.element.remove();
+            }
+        }
+
+        // Trigger animation
+        this.animateActivity(activity);
+    },
+
+    createActivityElement(text, type) {
+        const activity = document.createElement('div');
+        activity.className = 'activity-item';
+
+        const icons = {
+            info: 'info',
+            success: 'check_circle',
+            warning: 'warning',
+            error: 'error',
+            connect: 'wifi'
+        };
+
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        activity.innerHTML = `
+            <div class="activity-icon ${type}">
+                <span class="material-icons">${icons[type] || 'info'}</span>
+            </div>
+            <div class="activity-content">
+                <span class="activity-text">${text}</span>
+                <span class="activity-time">${timeString}</span>
+            </div>
+        `;
+
+        return activity;
+    },
+
+    animateActivity(activity) {
+        activity.style.opacity = '0';
+        activity.style.transform = 'translateX(20px)';
+
+        requestAnimationFrame(() => {
+            activity.style.transition = 'all 0.3s ease';
+            activity.style.opacity = '1';
+            activity.style.transform = 'translateX(0)';
+        });
+    },
+
+    clear() {
+        this.activities.forEach(activity => {
+            if (activity.element.parentNode) {
+                activity.element.remove();
+            }
+        });
+        this.activities = [];
+    }
+};
 </script>
 {% endblock %}
