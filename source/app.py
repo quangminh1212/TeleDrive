@@ -781,8 +781,15 @@ def search_page():
 @app.route('/favicon.ico')
 def favicon():
     """Handle favicon requests"""
-    # Return empty response to prevent 404 errors
-    return '', 204
+    try:
+        # Try to serve favicon from static folder
+        return send_from_directory(app.static_folder, 'favicon.ico')
+    except:
+        # Return a simple SVG favicon if file not found
+        svg_favicon = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1976d2">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+        </svg>'''
+        return svg_favicon, 200, {'Content-Type': 'image/svg+xml'}
 
 @app.route('/.well-known/appspecific/com.chrome.devtools.json')
 def chrome_devtools():
