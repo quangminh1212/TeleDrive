@@ -54,13 +54,15 @@
                             </label>
                             <div class="input-wrapper">
                                 <input type="text" id="channel-input" class="form-input modern-input"
-                                       placeholder="@channelname or https://t.me/channelname" required>
-                                <div class="input-icon">
+                                       placeholder="@channelname or https://t.me/channelname" required
+                                       aria-describedby="channel-help" autocomplete="off"
+                                       aria-label="Enter Telegram channel URL or username">
+                                <div class="input-icon" aria-hidden="true">
                                     <span class="material-icons">search</span>
                                 </div>
                             </div>
-                            <div class="form-help">
-                                <span class="material-icons">info</span>
+                            <div class="form-help" id="channel-help">
+                                <span class="material-icons" aria-hidden="true">info</span>
                                 <div class="help-content">
                                     <p>Supported formats:</p>
                                     <ul>
@@ -74,10 +76,12 @@
 
                         <!-- Advanced Options Toggle -->
                         <div class="advanced-toggle">
-                            <button type="button" class="toggle-btn" onclick="toggleAdvancedOptions()">
-                                <span class="material-icons">tune</span>
+                            <button type="button" class="toggle-btn" onclick="toggleAdvancedOptions()"
+                                    aria-expanded="false" aria-controls="advanced-options"
+                                    aria-label="Toggle advanced scanning options">
+                                <span class="material-icons" aria-hidden="true">tune</span>
                                 <span class="toggle-text">Advanced Options</span>
-                                <span class="material-icons toggle-arrow">expand_more</span>
+                                <span class="material-icons toggle-arrow" aria-hidden="true">expand_more</span>
                             </button>
                         </div>
 
@@ -125,11 +129,12 @@
 
                         <!-- File Types Selection -->
                         <div class="form-group">
-                            <label class="form-label">
-                                <span class="material-icons">category</span>
-                                File Types to Include
-                            </label>
-                            <div class="file-types-grid">
+                            <fieldset>
+                                <legend class="form-label">
+                                    <span class="material-icons" aria-hidden="true">category</span>
+                                    File Types to Include
+                                </legend>
+                                <div class="file-types-grid" role="group" aria-label="Select file types to scan for">
                                 <label class="file-type-card">
                                     <input type="checkbox" name="file-types" value="documents" checked>
                                     <div class="file-type-content">
@@ -185,7 +190,8 @@
                                         <span class="material-icons">check</span>
                                     </div>
                                 </label>
-                            </div>
+                                </div>
+                            </fieldset>
                         </div>
 
                         <!-- Action Buttons -->
@@ -496,15 +502,51 @@ function initializeInputAnimations() {
 function toggleAdvancedOptions() {
     const options = document.getElementById('advanced-options');
     const arrow = document.querySelector('.toggle-arrow');
+    const toggleBtn = document.querySelector('.toggle-btn');
 
-    if (options.style.display === 'none') {
+    if (!options || !arrow || !toggleBtn) return;
+
+    const isHidden = options.style.display === 'none' || !options.style.display;
+
+    if (isHidden) {
+        // Show advanced options with animation
         options.style.display = 'block';
+        options.style.maxHeight = '0';
+        options.style.opacity = '0';
+        options.style.overflow = 'hidden';
+
+        // Trigger animation
+        requestAnimationFrame(() => {
+            options.style.transition = 'all 0.3s ease';
+            options.style.maxHeight = options.scrollHeight + 'px';
+            options.style.opacity = '1';
+        });
+
+        // Update button state
         arrow.textContent = 'expand_less';
-        arrow.parentElement.classList.add('active');
+        toggleBtn.classList.add('active');
+        toggleBtn.setAttribute('aria-expanded', 'true');
+
+        // Add activity
+        addActivity('Advanced options expanded', 'info');
+
     } else {
-        options.style.display = 'none';
+        // Hide advanced options with animation
+        options.style.transition = 'all 0.3s ease';
+        options.style.maxHeight = '0';
+        options.style.opacity = '0';
+
+        setTimeout(() => {
+            options.style.display = 'none';
+            options.style.maxHeight = '';
+            options.style.opacity = '';
+            options.style.transition = '';
+        }, 300);
+
+        // Update button state
         arrow.textContent = 'expand_more';
-        arrow.parentElement.classList.remove('active');
+        toggleBtn.classList.remove('active');
+        toggleBtn.setAttribute('aria-expanded', 'false');
     }
 }
 
@@ -1564,6 +1606,64 @@ function initializeSocketIO() {
 document.addEventListener('DOMContentLoaded', function() {
     // Add a small delay to ensure the page is fully loaded
     setTimeout(initializeSocketIO, 100);
+
+    // Initialize keyboard navigation
+    initializeKeyboardNavigation();
 });
+
+// Keyboard Navigation Support
+function initializeKeyboardNavigation() {
+    // Add keyboard support for file type cards
+    const fileTypeCards = document.querySelectorAll('.file-type-card');
+    fileTypeCards.forEach(card => {
+        const checkbox = card.querySelector('input[type="checkbox"]');
+
+        // Make cards focusable
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'checkbox');
+        card.setAttribute('aria-checked', checkbox.checked);
+
+        // Handle keyboard events
+        card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                checkbox.click();
+            }
+        });
+
+        // Update aria-checked when checkbox changes
+        checkbox.addEventListener('change', function() {
+            card.setAttribute('aria-checked', this.checked);
+        });
+    });
+
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + Enter to submit form
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            const form = document.getElementById('scan-form');
+            if (form && !isScanning) {
+                form.dispatchEvent(new Event('submit'));
+            }
+        }
+
+        // Escape to close advanced options
+        if (e.key === 'Escape') {
+            const advancedOptions = document.getElementById('advanced-options');
+            const toggleBtn = document.querySelector('.toggle-btn');
+            if (advancedOptions && advancedOptions.style.display !== 'none') {
+                toggleAdvancedOptions();
+                toggleBtn.focus();
+            }
+        }
+
+        // Alt + A to toggle advanced options
+        if (e.altKey && e.key === 'a') {
+            e.preventDefault();
+            toggleAdvancedOptions();
+        }
+    });
+}
 </script>
 {% endblock %}

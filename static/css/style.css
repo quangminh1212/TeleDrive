@@ -1260,6 +1260,16 @@ body {
     background: white;
     border-radius: 12px;
     border: 1px solid var(--border-light);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.advanced-options.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+}
 }
 
 .options-grid {
@@ -1876,6 +1886,59 @@ body {
 
     .options-grid {
         grid-template-columns: 1fr;
+    }
+
+    .scan-container {
+        padding: 16px;
+    }
+
+    .scan-card {
+        margin-bottom: 16px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .advanced-options {
+        padding: 16px;
+    }
+
+    .toggle-btn {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    .progress-overview {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .progress-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .activity-feed {
+        max-height: 200px;
+    }
+
+    .form-loading-overlay .loading-content {
+        padding: 16px;
+    }
+
+    .loading-title {
+        font-size: 14px;
+    }
+
+    .loading-subtitle {
+        font-size: 12px;
     }
 
     .progress-overview {
@@ -2849,6 +2912,31 @@ body {
     background: var(--bg-secondary);
     border-color: var(--border-medium);
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+    border-color: var(--telegram-blue);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn:disabled:hover {
+    background: var(--bg-primary);
+    border-color: var(--border-light);
+    box-shadow: none;
+    transform: none;
 }
 
 .btn-primary {
@@ -3024,6 +3112,75 @@ body {
     to {
         opacity: 1;
         transform: translateX(0);
+    }
+}
+
+/* Accessibility and Focus Styles */
+.file-type-card:focus {
+    outline: 2px solid var(--telegram-blue);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.1);
+}
+
+.toggle-btn:focus {
+    outline: 2px solid var(--telegram-blue);
+    outline-offset: 2px;
+}
+
+.form-input:focus,
+.modern-input:focus {
+    outline: none;
+    border-color: var(--telegram-blue);
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+}
+
+/* Skip to content link for screen readers */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--telegram-blue);
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    border-radius: 4px;
+    z-index: 1000;
+}
+
+.skip-link:focus {
+    top: 6px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .btn {
+        border-width: 2px;
+    }
+
+    .file-type-card {
+        border-width: 2px;
+    }
+
+    .form-input,
+    .modern-input {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .loading-spinner .spinner {
+        animation: none;
+    }
+
+    .scanning .material-icons {
+        animation: none;
     }
 }
 
@@ -4309,6 +4466,64 @@ body {
 
     .btn .material-icons {
         font-size: 18px;
+    }
+
+    /* Scan form mobile improvements */
+    .hero-title {
+        font-size: 24px;
+    }
+
+    .hero-subtitle {
+        font-size: 14px;
+    }
+
+    .file-types-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .file-type-card {
+        padding: 12px;
+    }
+
+    .file-type-name {
+        font-size: 13px;
+    }
+
+    .file-type-desc {
+        font-size: 11px;
+    }
+
+    .form-help {
+        font-size: 11px;
+    }
+
+    .progress-circle {
+        width: 80px;
+        height: 80px;
+    }
+
+    .progress-ring {
+        width: 80px;
+        height: 80px;
+    }
+
+    .progress-percentage {
+        font-size: 14px;
+    }
+
+    .activity-item {
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    .activity-icon .material-icons {
+        font-size: 16px;
+    }
+
+    .scan-controls .btn {
+        padding: 6px 10px;
+        font-size: 12px;
     }
 
     .file-card {
