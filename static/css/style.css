@@ -3338,11 +3338,12 @@ body {
 
 /* Enhanced Scan Page */
 .scan-hero {
-    background: linear-gradient(135deg, var(--telegram-blue) 0%, var(--telegram-blue-dark) 100%);
-    color: white;
+    background: white;
+    color: var(--text-primary);
     padding: 48px 24px;
     margin: -24px -24px 32px -24px;
     border-radius: 0 0 16px 16px;
+    border: 2px solid var(--telegram-blue);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -3358,7 +3359,7 @@ body {
 .hero-icon {
     width: 64px;
     height: 64px;
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--telegram-blue);
     border-radius: 16px;
     display: flex;
     align-items: center;
@@ -3391,13 +3392,13 @@ body {
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
+    background: white;
     border-radius: 12px;
     padding: 20px;
     text-align: center;
     min-width: 100px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid var(--telegram-blue);
+    box-shadow: 0 2px 8px rgba(0, 136, 204, 0.1);
 }
 
 .stat-number {
@@ -3405,11 +3406,12 @@ body {
     font-size: 24px;
     font-weight: 700;
     margin-bottom: 4px;
+    color: var(--text-primary);
 }
 
 .stat-label {
     font-size: 12px;
-    opacity: 0.8;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
