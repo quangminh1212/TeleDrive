@@ -434,6 +434,50 @@ function initializeInputAnimations() {
             }
         });
     });
+
+    // Add real-time validation for channel input
+    const channelInput = document.getElementById('channel-input');
+    if (channelInput) {
+        let validationTimeout;
+
+        channelInput.addEventListener('input', function() {
+            // Clear previous validation timeout
+            if (validationTimeout) {
+                clearTimeout(validationTimeout);
+            }
+
+            // Remove error state immediately when user starts typing
+            this.classList.remove('error');
+            const wrapper = this.closest('.form-group');
+            if (wrapper) {
+                const errorElement = wrapper.querySelector('.field-error');
+                if (errorElement) {
+                    errorElement.remove();
+                }
+            }
+
+            // Validate after user stops typing (debounced)
+            validationTimeout = setTimeout(() => {
+                validateChannelInputRealTime(this.value.trim());
+            }, 500);
+        });
+
+        channelInput.addEventListener('blur', function() {
+            // Immediate validation on blur
+            if (validationTimeout) {
+                clearTimeout(validationTimeout);
+            }
+            validateChannelInputRealTime(this.value.trim());
+        });
+    }
+
+    // Add validation for max messages input
+    const maxMessagesInput = document.getElementById('max-messages');
+    if (maxMessagesInput) {
+        maxMessagesInput.addEventListener('input', function() {
+            validateMaxMessagesRealTime(this.value);
+        });
+    }
 }
 
 function toggleAdvancedOptions() {
@@ -495,38 +539,266 @@ document.getElementById('scan-form').addEventListener('submit', function(e) {
         return;
     }
 
+    // Comprehensive form validation
+    const validationResult = validateForm();
+    if (!validationResult.isValid) {
+        showValidationErrors(validationResult.errors);
+        return;
+    }
+
     const channelInput = document.getElementById('channel-input').value.trim();
-    if (!channelInput) {
-        showToast('Please enter a channel URL or username', 'error');
-        document.getElementById('channel-input').focus();
-        return;
-    }
-
-    // Validate channel format
-    if (!isValidChannelFormat(channelInput)) {
-        showToast('Please enter a valid channel format', 'error');
-        return;
-    }
-
-    // Check if at least one file type is selected
-    const selectedTypes = document.querySelectorAll('input[name="file-types"]:checked');
-    if (selectedTypes.length === 0) {
-        showToast('Please select at least one file type', 'error');
-        return;
-    }
 
     startScan(channelInput);
 });
 
-function isValidChannelFormat(input) {
+function validateChannelInput(input) {
+    const validation = {
+        isValid: false,
+        error: '',
+        suggestion: '',
+        type: ''
+    };
+
+    if (!input || input.trim().length === 0) {
+        validation.error = 'Channel input is required';
+        validation.suggestion = 'Please enter a channel username or URL';
+        return validation;
+    }
+
+    const trimmedInput = input.trim();
+
+    // Define validation patterns with more specific rules
     const patterns = [
-        /^@[a-zA-Z0-9_]+$/,  // @username
-        /^https:\/\/t\.me\/[a-zA-Z0-9_]+$/,  // https://t.me/username
-        /^https:\/\/t\.me\/joinchat\/[a-zA-Z0-9_-]+$/,  // https://t.me/joinchat/xxx
-        /^https:\/\/t\.me\/\+[a-zA-Z0-9_-]+$/  // https://t.me/+xxx
+        {
+            regex: /^@[a-zA-Z][a-zA-Z0-9_]{4,31}$/,
+            type: 'username',
+            description: 'Channel username (@channelname)'
+        },
+        {
+            regex: /^https:\/\/t\.me\/[a-zA-Z][a-zA-Z0-9_]{4,31}$/,
+            type: 'public_link',
+            description: 'Public channel link'
+        },
+        {
+            regex: /^https:\/\/t\.me\/joinchat\/[a-zA-Z0-9_-]{22}$/,
+            type: 'private_invite',
+            description: 'Private channel invite link'
+        },
+        {
+            regex: /^https:\/\/t\.me\/\+[a-zA-Z0-9_-]{22}$/,
+            type: 'private_invite_plus',
+            description: 'Private channel invite link (+format)'
+        }
     ];
 
-    return patterns.some(pattern => pattern.test(input));
+    // Check each pattern
+    for (const pattern of patterns) {
+        if (pattern.regex.test(trimmedInput)) {
+            validation.isValid = true;
+            validation.type = pattern.type;
+            return validation;
+        }
+    }
+
+    // Provide specific error messages based on input format
+    if (trimmedInput.startsWith('@')) {
+        if (trimmedInput.length < 6) {
+            validation.error = 'Username too short';
+            validation.suggestion = 'Channel usernames must be at least 5 characters long';
+        } else if (trimmedInput.length > 32) {
+            validation.error = 'Username too long';
+            validation.suggestion = 'Channel usernames must be 32 characters or less';
+        } else if (!/^@[a-zA-Z]/.test(trimmedInput)) {
+            validation.error = 'Invalid username format';
+            validation.suggestion = 'Username must start with a letter after @';
+        } else {
+            validation.error = 'Invalid username format';
+            validation.suggestion = 'Username can only contain letters, numbers, and underscores';
+        }
+    } else if (trimmedInput.startsWith('https://t.me/')) {
+        if (trimmedInput.includes('/joinchat/')) {
+            validation.error = 'Invalid invite link format';
+            validation.suggestion = 'Invite links should be exactly 22 characters after /joinchat/';
+        } else if (trimmedInput.includes('/+')) {
+            validation.error = 'Invalid invite link format';
+            validation.suggestion = 'Invite links should be exactly 22 characters after /+';
+        } else {
+            validation.error = 'Invalid channel link format';
+            validation.suggestion = 'Channel name must be 5-32 characters, start with a letter';
+        }
+    } else if (trimmedInput.startsWith('http://')) {
+        validation.error = 'Insecure URL';
+        validation.suggestion = 'Please use HTTPS (https://t.me/...)';
+    } else if (trimmedInput.includes('t.me')) {
+        validation.error = 'Invalid URL format';
+        validation.suggestion = 'URL must start with https://t.me/';
+    } else {
+        validation.error = 'Invalid format';
+        validation.suggestion = 'Please enter @username or https://t.me/... link';
+    }
+
+    return validation;
+}
+
+function validateForm() {
+    const result = {
+        isValid: true,
+        errors: []
+    };
+
+    // Clear previous validation states
+    clearValidationErrors();
+
+    // Validate channel input
+    const channelInput = document.getElementById('channel-input').value.trim();
+    const channelValidation = validateChannelInput(channelInput);
+
+    if (!channelValidation.isValid) {
+        result.isValid = false;
+        result.errors.push({
+            field: 'channel-input',
+            message: channelValidation.error,
+            suggestion: channelValidation.suggestion
+        });
+    }
+
+    // Validate file types selection
+    const selectedTypes = document.querySelectorAll('input[name="file-types"]:checked');
+    if (selectedTypes.length === 0) {
+        result.isValid = false;
+        result.errors.push({
+            field: 'file-types',
+            message: 'No file types selected',
+            suggestion: 'Please select at least one file type to scan for'
+        });
+    }
+
+    // Validate max messages if provided
+    const maxMessages = document.getElementById('max-messages').value;
+    if (maxMessages && (isNaN(maxMessages) || parseInt(maxMessages) < 1 || parseInt(maxMessages) > 100000)) {
+        result.isValid = false;
+        result.errors.push({
+            field: 'max-messages',
+            message: 'Invalid message limit',
+            suggestion: 'Message limit must be between 1 and 100,000'
+        });
+    }
+
+    return result;
+}
+
+function showValidationErrors(errors) {
+    errors.forEach(error => {
+        const field = document.getElementById(error.field);
+        if (field) {
+            // Add error class to field
+            field.classList.add('error');
+
+            // Show error message
+            showFieldError(error.field, error.message, error.suggestion);
+
+            // Focus first error field
+            if (errors.indexOf(error) === 0) {
+                field.focus();
+            }
+        } else if (error.field === 'file-types') {
+            // Special handling for file types
+            showFileTypesError(error.message, error.suggestion);
+        }
+    });
+
+    // Show general error toast
+    const firstError = errors[0];
+    showToast(firstError.message + (firstError.suggestion ? ': ' + firstError.suggestion : ''), 'error');
+}
+
+function showFieldError(fieldId, message, suggestion) {
+    const field = document.getElementById(fieldId);
+    const wrapper = field.closest('.form-group') || field.closest('.input-wrapper');
+
+    if (wrapper) {
+        // Remove existing error message
+        const existingError = wrapper.querySelector('.field-error');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        // Create error message element
+        const errorElement = document.createElement('div');
+        errorElement.className = 'field-error';
+        errorElement.innerHTML = `
+            <span class="material-icons">error</span>
+            <div class="error-content">
+                <div class="error-message">${message}</div>
+                ${suggestion ? `<div class="error-suggestion">${suggestion}</div>` : ''}
+            </div>
+        `;
+
+        // Insert error message
+        wrapper.appendChild(errorElement);
+    }
+}
+
+function showFileTypesError(message, suggestion) {
+    const fileTypesContainer = document.querySelector('.file-types-grid');
+    if (fileTypesContainer) {
+        fileTypesContainer.classList.add('error');
+
+        // Show error message above file types
+        const wrapper = fileTypesContainer.closest('.form-group');
+        if (wrapper) {
+            showFieldError('file-types-container', message, suggestion);
+        }
+    }
+}
+
+function clearValidationErrors() {
+    // Remove error classes
+    document.querySelectorAll('.error').forEach(element => {
+        element.classList.remove('error');
+    });
+
+    // Remove error messages
+    document.querySelectorAll('.field-error').forEach(element => {
+        element.remove();
+    });
+}
+
+function validateChannelInputRealTime(value) {
+    const channelInput = document.getElementById('channel-input');
+    const validation = validateChannelInput(value);
+
+    if (value && !validation.isValid) {
+        channelInput.classList.add('error');
+        showFieldError('channel-input', validation.error, validation.suggestion);
+    } else {
+        channelInput.classList.remove('error');
+        const wrapper = channelInput.closest('.form-group');
+        if (wrapper) {
+            const errorElement = wrapper.querySelector('.field-error');
+            if (errorElement) {
+                errorElement.remove();
+            }
+        }
+    }
+}
+
+function validateMaxMessagesRealTime(value) {
+    const maxMessagesInput = document.getElementById('max-messages');
+
+    if (value && (isNaN(value) || parseInt(value) < 1 || parseInt(value) > 100000)) {
+        maxMessagesInput.classList.add('error');
+        showFieldError('max-messages', 'Invalid message limit', 'Must be between 1 and 100,000');
+    } else {
+        maxMessagesInput.classList.remove('error');
+        const wrapper = maxMessagesInput.closest('.form-group');
+        if (wrapper) {
+            const errorElement = wrapper.querySelector('.field-error');
+            if (errorElement) {
+                errorElement.remove();
+            }
+        }
+    }
 }
 
 function startScan(channelInput) {
@@ -585,11 +857,18 @@ async function startActualScan(channelInput) {
             document.getElementById('scan-status').textContent = 'Connecting...';
             // SocketIO will handle progress updates from here
         } else {
-            handleScanError(data.error || 'Failed to start scan');
+            // Determine error type based on response
+            let errorType = 'general';
+            if (data.error && data.error.includes('CSRF')) {
+                errorType = 'security_error';
+            } else if (data.error && data.error.includes('already in progress')) {
+                errorType = 'scan_in_progress';
+            }
+            handleScanError(data.error || 'Failed to start scan', errorType);
         }
     } catch (error) {
         console.error('Error starting scan:', error);
-        handleScanError('Network error: Could not connect to server');
+        handleScanError('Network error: Could not connect to server', 'network_error');
     }
 }
 
@@ -650,25 +929,135 @@ function completeScan(messages, files) {
     });
 }
 
-function handleScanError(errorMessage) {
+function handleScanError(errorMessage, errorType = 'general') {
     isScanning = false;
     clearInterval(scanInterval);
 
     // Re-enable form elements
     setFormDisabled(false);
 
+    // Parse and categorize error
+    const errorInfo = parseErrorMessage(errorMessage, errorType);
+
     // Update UI
     document.getElementById('scan-status').textContent = 'Error';
-    addActivity(`Error: ${errorMessage}`, 'error');
+    addActivity(`Error: ${errorInfo.displayMessage}`, 'error');
 
-    // Show error toast
-    showToast(errorMessage, 'error');
+    // Show detailed error with recovery suggestions
+    showDetailedError(errorInfo);
 
     // Hide progress section after a delay
     setTimeout(() => {
         const progressSection = document.getElementById('scan-progress-section');
         progressSection.style.display = 'none';
-    }, 3000);
+    }, 5000); // Longer delay for error messages
+}
+
+function parseErrorMessage(errorMessage, errorType) {
+    const errorInfo = {
+        originalMessage: errorMessage,
+        displayMessage: errorMessage,
+        category: 'general',
+        suggestions: [],
+        severity: 'error'
+    };
+
+    // Categorize common errors
+    const errorPatterns = [
+        {
+            pattern: /channel.*not found|could not resolve/i,
+            category: 'channel_not_found',
+            displayMessage: 'Channel not found or inaccessible',
+            suggestions: [
+                'Check if the channel username or URL is correct',
+                'Ensure the channel is public or you have access to it',
+                'Try using the full URL format: https://t.me/channelname'
+            ]
+        },
+        {
+            pattern: /flood.*wait|rate.*limit/i,
+            category: 'rate_limit',
+            displayMessage: 'Rate limit exceeded',
+            suggestions: [
+                'Please wait a few minutes before trying again',
+                'Telegram has temporary restrictions on your account',
+                'Try scanning a smaller number of messages'
+            ]
+        },
+        {
+            pattern: /authentication|login|session/i,
+            category: 'auth_error',
+            displayMessage: 'Authentication error',
+            suggestions: [
+                'Please check your Telegram credentials',
+                'You may need to re-authenticate with Telegram',
+                'Contact support if the issue persists'
+            ]
+        },
+        {
+            pattern: /network|connection|timeout/i,
+            category: 'network_error',
+            displayMessage: 'Network connection error',
+            suggestions: [
+                'Check your internet connection',
+                'Try again in a few moments',
+                'The server may be temporarily unavailable'
+            ]
+        },
+        {
+            pattern: /csrf.*token/i,
+            category: 'security_error',
+            displayMessage: 'Security token expired',
+            suggestions: [
+                'Please refresh the page and try again',
+                'Your session may have expired'
+            ]
+        },
+        {
+            pattern: /scan.*already.*progress/i,
+            category: 'scan_in_progress',
+            displayMessage: 'Another scan is already running',
+            suggestions: [
+                'Wait for the current scan to complete',
+                'You can stop the current scan and start a new one'
+            ]
+        }
+    ];
+
+    // Find matching pattern
+    for (const pattern of errorPatterns) {
+        if (pattern.pattern.test(errorMessage)) {
+            errorInfo.category = pattern.category;
+            errorInfo.displayMessage = pattern.displayMessage;
+            errorInfo.suggestions = pattern.suggestions;
+            break;
+        }
+    }
+
+    return errorInfo;
+}
+
+function showDetailedError(errorInfo) {
+    // Show main error toast
+    showToast(errorInfo.displayMessage, 'error');
+
+    // Show detailed error with suggestions if available
+    if (errorInfo.suggestions.length > 0) {
+        const suggestionText = errorInfo.suggestions.join(' • ');
+
+        // Create a more detailed error notification
+        setTimeout(() => {
+            showToast(`💡 Suggestions: ${suggestionText}`, 'info');
+        }, 1000);
+    }
+
+    // Log detailed error for debugging
+    console.error('Scan Error Details:', {
+        category: errorInfo.category,
+        original: errorInfo.originalMessage,
+        display: errorInfo.displayMessage,
+        suggestions: errorInfo.suggestions
+    });
 }
 
 function setFormDisabled(disabled) {
@@ -988,14 +1377,25 @@ function initializeSocketIO() {
             completeScan(data.messages_scanned || 0, data.files_found || 0);
             addActivity(`Scan completed successfully! Found ${data.files_found} files`, 'success');
         } else {
-            handleScanError(data.error || 'Scan failed');
+            // Determine error type from server response
+            let errorType = 'general';
+            if (data.error) {
+                if (data.error.includes('FloodWait') || data.error.includes('rate limit')) {
+                    errorType = 'rate_limit';
+                } else if (data.error.includes('resolve') || data.error.includes('not found')) {
+                    errorType = 'channel_not_found';
+                } else if (data.error.includes('auth') || data.error.includes('login')) {
+                    errorType = 'auth_error';
+                }
+            }
+            handleScanError(data.error || 'Scan failed', errorType);
         }
     });
 
     socket.on('error', function(error) {
         console.error('SocketIO error:', error);
         if (isScanning) {
-            handleScanError('Connection error occurred');
+            handleScanError('Connection error occurred', 'network_error');
         }
     });
 }

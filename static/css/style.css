@@ -2886,6 +2886,60 @@ body {
     animation: spin 1s linear infinite;
 }
 
+/* Form Validation Styles */
+.form-input.error,
+.modern-input.error {
+    border-color: #ea4335;
+    box-shadow: 0 0 0 2px rgba(234, 67, 53, 0.1);
+}
+
+.form-input.error:focus,
+.modern-input.error:focus {
+    border-color: #ea4335;
+    box-shadow: 0 0 0 3px rgba(234, 67, 53, 0.2);
+}
+
+.file-types-grid.error {
+    border: 2px solid #ea4335;
+    border-radius: 8px;
+    padding: 8px;
+    background: rgba(234, 67, 53, 0.05);
+}
+
+.field-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(234, 67, 53, 0.1);
+    border: 1px solid rgba(234, 67, 53, 0.2);
+    border-radius: 6px;
+    font-size: 13px;
+    color: #d93025;
+}
+
+.field-error .material-icons {
+    font-size: 16px;
+    color: #ea4335;
+    margin-top: 1px;
+}
+
+.error-content {
+    flex: 1;
+}
+
+.error-message {
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.error-suggestion {
+    font-size: 12px;
+    color: #5f6368;
+    opacity: 0.8;
+}
+
 .btn-secondary {
     background: white;
     color: var(--text-primary);
