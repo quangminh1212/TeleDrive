@@ -1156,7 +1156,7 @@ body {
 }
 
 .input-wrapper.has-value .modern-input {
-    background: var(--bg-secondary);
+    background: white;
 }
 
 .input-icon {
@@ -1175,9 +1175,10 @@ body {
     right: 16px;
     font-size: 12px;
     color: var(--text-muted);
-    background: var(--bg-secondary);
+    background: white;
     padding: 4px 8px;
     border-radius: 6px;
+    border: 1px solid var(--border-light);
 }
 
 .form-help {
@@ -1222,7 +1223,7 @@ body {
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
-    background: var(--bg-secondary);
+    background: white;
     border: 1px solid var(--border-light);
     border-radius: 8px;
     cursor: pointer;
@@ -1256,7 +1257,7 @@ body {
 .advanced-options {
     margin-top: 16px;
     padding: 20px;
-    background: var(--bg-secondary);
+    background: white;
     border-radius: 12px;
     border: 1px solid var(--border-light);
 }
@@ -1489,7 +1490,7 @@ body {
 
 /* Progress Section */
 .progress-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    background: white;
     color: var(--text-primary);
     border: 2px solid var(--telegram-blue);
 }
@@ -1579,7 +1580,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: var(--bg-secondary);
+    background: white;
     padding: 16px;
     border-radius: 8px;
     border: 1px solid var(--border-light);
@@ -1817,7 +1818,8 @@ body {
 .empty-icon {
     width: 80px;
     height: 80px;
-    background: var(--bg-secondary);
+    background: white;
+    border: 2px solid var(--telegram-blue);
     border-radius: 20px;
     display: flex;
     align-items: center;
@@ -2861,8 +2863,9 @@ body {
 }
 
 .btn-secondary {
-    background: var(--bg-secondary);
+    background: white;
     color: var(--text-primary);
+    border: 1px solid var(--border-light);
 }
 
 .btn-small {
