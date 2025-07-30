@@ -4,143 +4,344 @@
 
 {% block content %}
 <div class="main-content">
-    <div class="content-header">
-        <h1 class="page-title">
-            <span class="material-icons">scanner</span>
-            Channel Scanner
-        </h1>
-        <div class="header-actions">
-            <button class="btn btn-primary" onclick="startNewScan()">
-                <span class="material-icons">add</span>
-                New Scan
-            </button>
+    <!-- Hero Section -->
+    <div class="scan-hero">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <span class="material-icons">radar</span>
+            </div>
+            <h1 class="hero-title">Channel Scanner</h1>
+            <p class="hero-subtitle">Discover and organize files from Telegram channels with ease</p>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-card">
+                <span class="stat-number" id="total-scans">0</span>
+                <span class="stat-label">Total Scans</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="total-files">0</span>
+                <span class="stat-label">Files Found</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="total-channels">0</span>
+                <span class="stat-label">Channels</span>
+            </div>
         </div>
     </div>
-    
+
     <div class="scan-container">
-        <!-- Scan Configuration -->
-        <div class="scan-config-section">
-            <div class="card">
+        <!-- Quick Start Section -->
+        <div class="quick-start-section">
+            <div class="scan-card modern-card">
                 <div class="card-header">
-                    <h3>
-                        <span class="material-icons">settings</span>
-                        Scan Configuration
-                    </h3>
+                    <div class="header-content">
+                        <div class="header-icon">
+                            <span class="material-icons">rocket_launch</span>
+                        </div>
+                        <div class="header-text">
+                            <h3>Quick Start</h3>
+                            <p>Start scanning a Telegram channel in seconds</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <form id="scan-form">
-                        <div class="form-group">
-                            <label for="channel-input">Channel URL or Username</label>
-                            <input type="text" id="channel-input" class="form-control" 
-                                   placeholder="@channelname or https://t.me/channelname" required>
-                            <small class="form-text">Enter the Telegram channel URL or username</small>
+                    <form id="scan-form" class="modern-form">
+                        <!-- Channel Input -->
+                        <div class="form-group enhanced">
+                            <label for="channel-input" class="form-label">
+                                <span class="material-icons">link</span>
+                                Channel URL or Username
+                            </label>
+                            <div class="input-wrapper">
+                                <input type="text" id="channel-input" class="form-input modern-input"
+                                       placeholder="@channelname or https://t.me/channelname" required>
+                                <div class="input-icon">
+                                    <span class="material-icons">search</span>
+                                </div>
+                            </div>
+                            <div class="form-help">
+                                <span class="material-icons">info</span>
+                                <div class="help-content">
+                                    <p>Supported formats:</p>
+                                    <ul>
+                                        <li><code>@channelname</code> - Channel username</li>
+                                        <li><code>https://t.me/channelname</code> - Public channel link</li>
+                                        <li><code>https://t.me/joinchat/xxxxx</code> - Private channel invite</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="max-messages">Max Messages to Scan</label>
-                            <input type="number" id="max-messages" class="form-control" 
-                                   placeholder="Leave empty for all messages" min="1">
-                            <small class="form-text">Limit the number of messages to scan (optional)</small>
+
+                        <!-- Advanced Options Toggle -->
+                        <div class="advanced-toggle">
+                            <button type="button" class="toggle-btn" onclick="toggleAdvancedOptions()">
+                                <span class="material-icons">tune</span>
+                                <span class="toggle-text">Advanced Options</span>
+                                <span class="material-icons toggle-arrow">expand_more</span>
+                            </button>
                         </div>
-                        
+
+                        <!-- Advanced Options -->
+                        <div class="advanced-options" id="advanced-options" style="display: none;">
+                            <div class="options-grid">
+                                <!-- Max Messages -->
+                                <div class="form-group">
+                                    <label for="max-messages" class="form-label">
+                                        <span class="material-icons">numbers</span>
+                                        Message Limit
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input type="number" id="max-messages" class="form-input modern-input"
+                                               placeholder="All messages" min="1" max="100000">
+                                        <div class="input-suffix">messages</div>
+                                    </div>
+                                    <div class="form-help">
+                                        <span class="material-icons">info</span>
+                                        Leave empty to scan all messages
+                                    </div>
+                                </div>
+
+                                <!-- Scan Direction -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <span class="material-icons">sort</span>
+                                        Scan Direction
+                                    </label>
+                                    <div class="radio-group">
+                                        <label class="radio-item">
+                                            <input type="radio" name="scan-direction" value="newest" checked>
+                                            <div class="radio-custom"></div>
+                                            <span>Newest First</span>
+                                        </label>
+                                        <label class="radio-item">
+                                            <input type="radio" name="scan-direction" value="oldest">
+                                            <div class="radio-custom"></div>
+                                            <span>Oldest First</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Types Selection -->
                         <div class="form-group">
-                            <label>File Types to Include</label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-item">
+                            <label class="form-label">
+                                <span class="material-icons">category</span>
+                                File Types to Include
+                            </label>
+                            <div class="file-types-grid">
+                                <label class="file-type-card">
                                     <input type="checkbox" name="file-types" value="documents" checked>
-                                    <span class="material-icons">description</span>
-                                    Documents
+                                    <div class="file-type-content">
+                                        <div class="file-type-icon documents">
+                                            <span class="material-icons">description</span>
+                                        </div>
+                                        <span class="file-type-name">Documents</span>
+                                        <span class="file-type-desc">PDF, DOC, TXT, etc.</span>
+                                    </div>
+                                    <div class="file-type-check">
+                                        <span class="material-icons">check</span>
+                                    </div>
                                 </label>
-                                <label class="checkbox-item">
+
+                                <label class="file-type-card">
                                     <input type="checkbox" name="file-types" value="photos" checked>
-                                    <span class="material-icons">image</span>
-                                    Photos
+                                    <div class="file-type-content">
+                                        <div class="file-type-icon photos">
+                                            <span class="material-icons">image</span>
+                                        </div>
+                                        <span class="file-type-name">Photos</span>
+                                        <span class="file-type-desc">JPG, PNG, GIF, etc.</span>
+                                    </div>
+                                    <div class="file-type-check">
+                                        <span class="material-icons">check</span>
+                                    </div>
                                 </label>
-                                <label class="checkbox-item">
+
+                                <label class="file-type-card">
                                     <input type="checkbox" name="file-types" value="videos" checked>
-                                    <span class="material-icons">video_file</span>
-                                    Videos
+                                    <div class="file-type-content">
+                                        <div class="file-type-icon videos">
+                                            <span class="material-icons">movie</span>
+                                        </div>
+                                        <span class="file-type-name">Videos</span>
+                                        <span class="file-type-desc">MP4, AVI, MKV, etc.</span>
+                                    </div>
+                                    <div class="file-type-check">
+                                        <span class="material-icons">check</span>
+                                    </div>
                                 </label>
-                                <label class="checkbox-item">
+
+                                <label class="file-type-card">
                                     <input type="checkbox" name="file-types" value="audio" checked>
-                                    <span class="material-icons">audio_file</span>
-                                    Audio
+                                    <div class="file-type-content">
+                                        <div class="file-type-icon audio">
+                                            <span class="material-icons">audiotrack</span>
+                                        </div>
+                                        <span class="file-type-name">Audio</span>
+                                        <span class="file-type-desc">MP3, WAV, FLAC, etc.</span>
+                                    </div>
+                                    <div class="file-type-check">
+                                        <span class="material-icons">check</span>
+                                    </div>
                                 </label>
                             </div>
                         </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">
+
+                        <!-- Action Buttons -->
+                        <div class="form-actions enhanced">
+                            <button type="submit" class="btn btn-primary btn-large">
                                 <span class="material-icons">play_arrow</span>
-                                Start Scan
+                                <span class="btn-text">Start Scanning</span>
+                                <div class="btn-ripple"></div>
                             </button>
                             <button type="button" class="btn btn-secondary" onclick="resetForm()">
                                 <span class="material-icons">refresh</span>
                                 Reset
+                            </button>
+                            <button type="button" class="btn btn-outline" onclick="saveAsTemplate()">
+                                <span class="material-icons">bookmark</span>
+                                Save Template
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
-        
+
         <!-- Scan Progress -->
         <div class="scan-progress-section" id="scan-progress-section" style="display: none;">
-            <div class="card">
+            <div class="scan-card modern-card progress-card">
                 <div class="card-header">
-                    <h3>
-                        <span class="material-icons">trending_up</span>
-                        Scan Progress
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="progress-info">
-                        <div class="progress-stats">
-                            <div class="stat-item">
-                                <span class="stat-label">Status:</span>
-                                <span class="stat-value" id="scan-status">Ready</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Messages Processed:</span>
-                                <span class="stat-value" id="messages-processed">0</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Files Found:</span>
-                                <span class="stat-value" id="files-found">0</span>
-                            </div>
+                    <div class="header-content">
+                        <div class="header-icon scanning">
+                            <span class="material-icons">radar</span>
                         </div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" id="progress-bar">
-                                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-                            </div>
-                            <span class="progress-text" id="progress-text">0%</span>
+                        <div class="header-text">
+                            <h3>Scanning in Progress</h3>
+                            <p id="current-channel">Analyzing channel content...</p>
                         </div>
                     </div>
-                    <div class="scan-actions">
-                        <button class="btn btn-danger" id="stop-scan-btn" onclick="stopScan()" style="display: none;">
+                    <div class="scan-controls">
+                        <button class="btn btn-danger btn-small" id="stop-scan-btn" onclick="stopScan()">
                             <span class="material-icons">stop</span>
-                            Stop Scan
+                            Stop
                         </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Progress Overview -->
+                    <div class="progress-overview">
+                        <div class="progress-circle-container">
+                            <div class="progress-circle">
+                                <svg class="progress-ring" width="120" height="120">
+                                    <circle class="progress-ring-background" cx="60" cy="60" r="54"></circle>
+                                    <circle class="progress-ring-progress" cx="60" cy="60" r="54" id="progress-ring"></circle>
+                                </svg>
+                                <div class="progress-center">
+                                    <span class="progress-percentage" id="progress-percentage">0%</span>
+                                    <span class="progress-status" id="scan-status">Starting...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="progress-stats-grid">
+                            <div class="progress-stat">
+                                <div class="stat-icon">
+                                    <span class="material-icons">message</span>
+                                </div>
+                                <div class="stat-content">
+                                    <span class="stat-number" id="messages-processed">0</span>
+                                    <span class="stat-label">Messages</span>
+                                </div>
+                            </div>
+
+                            <div class="progress-stat">
+                                <div class="stat-icon">
+                                    <span class="material-icons">folder</span>
+                                </div>
+                                <div class="stat-content">
+                                    <span class="stat-number" id="files-found">0</span>
+                                    <span class="stat-label">Files Found</span>
+                                </div>
+                            </div>
+
+                            <div class="progress-stat">
+                                <div class="stat-icon">
+                                    <span class="material-icons">speed</span>
+                                </div>
+                                <div class="stat-content">
+                                    <span class="stat-number" id="scan-speed">0</span>
+                                    <span class="stat-label">msg/sec</span>
+                                </div>
+                            </div>
+
+                            <div class="progress-stat">
+                                <div class="stat-icon">
+                                    <span class="material-icons">schedule</span>
+                                </div>
+                                <div class="stat-content">
+                                    <span class="stat-number" id="time-elapsed">00:00</span>
+                                    <span class="stat-label">Elapsed</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Activity Feed -->
+                    <div class="activity-feed">
+                        <h4>
+                            <span class="material-icons">feed</span>
+                            Live Activity
+                        </h4>
+                        <div class="activity-list" id="activity-list">
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <span class="material-icons">play_arrow</span>
+                                </div>
+                                <div class="activity-content">
+                                    <span class="activity-text">Scan initialized</span>
+                                    <span class="activity-time">Just now</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Recent Scans -->
         <div class="recent-scans-section">
-            <div class="card">
+            <div class="scan-card modern-card">
                 <div class="card-header">
-                    <h3>
-                        <span class="material-icons">history</span>
-                        Recent Scans
-                    </h3>
+                    <div class="header-content">
+                        <div class="header-icon">
+                            <span class="material-icons">history</span>
+                        </div>
+                        <div class="header-text">
+                            <h3>Recent Scans</h3>
+                            <p>Your scanning history and results</p>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-outline btn-small" onclick="clearHistory()">
+                            <span class="material-icons">clear_all</span>
+                            Clear
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="scans-list" id="recent-scans-list">
-                        <div class="empty-state">
-                            <span class="material-icons">scanner</span>
+                        <div class="empty-state modern-empty">
+                            <div class="empty-icon">
+                                <span class="material-icons">radar</span>
+                            </div>
                             <h4>No scans yet</h4>
                             <p>Start your first channel scan to see results here</p>
+                            <button class="btn btn-primary btn-small" onclick="document.getElementById('channel-input').focus()">
+                                <span class="material-icons">add</span>
+                                Start First Scan
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -150,47 +351,461 @@
 </div>
 
 <script>
-// Scan functionality
-function startNewScan() {
-    document.getElementById('channel-input').focus();
+// Enhanced scan functionality with animations and real-time updates
+let scanInterval;
+let startTime;
+let isScanning = false;
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    initializePage();
+    loadRecentScans();
+    loadStats();
+});
+
+function initializePage() {
+    // Add ripple effects to buttons
+    addRippleEffects();
+
+    // Initialize file type cards
+    initializeFileTypeCards();
+
+    // Add input animations
+    initializeInputAnimations();
+}
+
+function addRippleEffects() {
+    document.querySelectorAll('.btn-primary').forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = this.querySelector('.btn-ripple');
+            if (ripple) {
+                ripple.style.left = (e.clientX - this.offsetLeft) + 'px';
+                ripple.style.top = (e.clientY - this.offsetTop) + 'px';
+                ripple.classList.add('active');
+                setTimeout(() => ripple.classList.remove('active'), 600);
+            }
+        });
+    });
+}
+
+function initializeFileTypeCards() {
+    document.querySelectorAll('.file-type-card').forEach(card => {
+        const checkbox = card.querySelector('input[type="checkbox"]');
+
+        // Set initial state
+        if (checkbox.checked) {
+            card.classList.add('selected');
+        }
+
+        // Handle clicks
+        card.addEventListener('click', function(e) {
+            if (e.target.type !== 'checkbox') {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Handle checkbox changes
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+    });
+}
+
+function initializeInputAnimations() {
+    document.querySelectorAll('.modern-input').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.classList.add('focused');
+        });
+
+        input.addEventListener('blur', function() {
+            this.parentElement.classList.remove('focused');
+        });
+
+        input.addEventListener('input', function() {
+            if (this.value) {
+                this.parentElement.classList.add('has-value');
+            } else {
+                this.parentElement.classList.remove('has-value');
+            }
+        });
+    });
+}
+
+function toggleAdvancedOptions() {
+    const options = document.getElementById('advanced-options');
+    const arrow = document.querySelector('.toggle-arrow');
+
+    if (options.style.display === 'none') {
+        options.style.display = 'block';
+        arrow.textContent = 'expand_less';
+        arrow.parentElement.classList.add('active');
+    } else {
+        options.style.display = 'none';
+        arrow.textContent = 'expand_more';
+        arrow.parentElement.classList.remove('active');
+    }
 }
 
 function resetForm() {
     document.getElementById('scan-form').reset();
+
+    // Reset file type cards
+    document.querySelectorAll('.file-type-card').forEach(card => {
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        if (checkbox.checked) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
+
+    // Reset input states
+    document.querySelectorAll('.input-wrapper').forEach(wrapper => {
+        wrapper.classList.remove('focused', 'has-value');
+    });
+
+    // Show success message
+    showToast('Form reset successfully', 'success');
+}
+
+function saveAsTemplate() {
+    const formData = new FormData(document.getElementById('scan-form'));
+    const template = {
+        channel: formData.get('channel-input') || '',
+        maxMessages: formData.get('max-messages') || '',
+        fileTypes: formData.getAll('file-types'),
+        scanDirection: formData.get('scan-direction') || 'newest'
+    };
+
+    localStorage.setItem('scanTemplate', JSON.stringify(template));
+    showToast('Template saved successfully', 'success');
+}
+
+// Form submission with enhanced validation and animation
+document.getElementById('scan-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    if (isScanning) {
+        showToast('A scan is already in progress', 'warning');
+        return;
+    }
+
+    const channelInput = document.getElementById('channel-input').value.trim();
+    if (!channelInput) {
+        showToast('Please enter a channel URL or username', 'error');
+        document.getElementById('channel-input').focus();
+        return;
+    }
+
+    // Validate channel format
+    if (!isValidChannelFormat(channelInput)) {
+        showToast('Please enter a valid channel format', 'error');
+        return;
+    }
+
+    // Check if at least one file type is selected
+    const selectedTypes = document.querySelectorAll('input[name="file-types"]:checked');
+    if (selectedTypes.length === 0) {
+        showToast('Please select at least one file type', 'error');
+        return;
+    }
+
+    startScan(channelInput);
+});
+
+function isValidChannelFormat(input) {
+    const patterns = [
+        /^@[a-zA-Z0-9_]+$/,  // @username
+        /^https:\/\/t\.me\/[a-zA-Z0-9_]+$/,  // https://t.me/username
+        /^https:\/\/t\.me\/joinchat\/[a-zA-Z0-9_-]+$/,  // https://t.me/joinchat/xxx
+        /^https:\/\/t\.me\/\+[a-zA-Z0-9_-]+$/  // https://t.me/+xxx
+    ];
+
+    return patterns.some(pattern => pattern.test(input));
+}
+
+function startScan(channelInput) {
+    isScanning = true;
+    startTime = Date.now();
+
+    // Show progress section with animation
+    const progressSection = document.getElementById('scan-progress-section');
+    progressSection.style.display = 'block';
+    progressSection.scrollIntoView({ behavior: 'smooth' });
+
+    // Update UI
+    document.getElementById('current-channel').textContent = channelInput;
+    document.getElementById('scan-status').textContent = 'Initializing...';
+
+    // Add activity
+    addActivity('Connecting to Telegram...', 'connect');
+
+    // Start progress animation
+    animateProgress();
+
+    // Simulate scan process (replace with actual API call)
+    simulateScan();
+}
+
+function simulateScan() {
+    let progress = 0;
+    let messages = 0;
+    let files = 0;
+
+    scanInterval = setInterval(() => {
+        progress += Math.random() * 5;
+        messages += Math.floor(Math.random() * 10) + 1;
+        files += Math.floor(Math.random() * 3);
+
+        if (progress >= 100) {
+            progress = 100;
+            completeScan(messages, files);
+            return;
+        }
+
+        updateProgress(progress, messages, files);
+    }, 500);
+}
+
+function updateProgress(progress, messages, files) {
+    // Update progress ring
+    const ring = document.getElementById('progress-ring');
+    const circumference = 2 * Math.PI * 54;
+    const offset = circumference - (progress / 100) * circumference;
+    ring.style.strokeDashoffset = offset;
+
+    // Update percentage
+    document.getElementById('progress-percentage').textContent = Math.round(progress) + '%';
+
+    // Update stats
+    document.getElementById('messages-processed').textContent = messages.toLocaleString();
+    document.getElementById('files-found').textContent = files.toLocaleString();
+
+    // Update speed and time
+    const elapsed = (Date.now() - startTime) / 1000;
+    const speed = Math.round(messages / elapsed);
+    document.getElementById('scan-speed').textContent = speed;
+    document.getElementById('time-elapsed').textContent = formatTime(elapsed);
+
+    // Add random activities
+    if (Math.random() < 0.3) {
+        const activities = [
+            'Found new document',
+            'Processing media files',
+            'Analyzing message content',
+            'Extracting file metadata'
+        ];
+        addActivity(activities[Math.floor(Math.random() * activities.length)], 'info');
+    }
+}
+
+function completeScan(messages, files) {
+    clearInterval(scanInterval);
+    isScanning = false;
+
+    document.getElementById('scan-status').textContent = 'Completed';
+    addActivity(`Scan completed! Found ${files} files in ${messages} messages`, 'success');
+
+    // Update stats
+    updateGlobalStats();
+
+    // Show completion toast
+    showToast(`Scan completed! Found ${files} files`, 'success');
+
+    // Add to recent scans
+    addToRecentScans({
+        channel: document.getElementById('current-channel').textContent,
+        files: files,
+        messages: messages,
+        date: new Date()
+    });
 }
 
 function stopScan() {
-    // Implementation for stopping scan
-    console.log('Stopping scan...');
+    if (scanInterval) {
+        clearInterval(scanInterval);
+    }
+
+    isScanning = false;
+    document.getElementById('scan-status').textContent = 'Stopped';
+    addActivity('Scan stopped by user', 'warning');
+    showToast('Scan stopped', 'info');
 }
 
-// Form submission
-document.getElementById('scan-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const channelInput = document.getElementById('channel-input').value.trim();
-    if (!channelInput) {
-        alert('Please enter a channel URL or username');
-        return;
-    }
-    
-    // Show progress section
-    document.getElementById('scan-progress-section').style.display = 'block';
-    document.getElementById('scan-status').textContent = 'Starting...';
-    document.getElementById('stop-scan-btn').style.display = 'inline-block';
-    
-    // Here you would implement the actual scan logic
-    console.log('Starting scan for:', channelInput);
-});
+function addActivity(text, type = 'info') {
+    const activityList = document.getElementById('activity-list');
+    const activity = document.createElement('div');
+    activity.className = 'activity-item';
 
-// Load recent scans on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadRecentScans();
-});
+    const icons = {
+        info: 'info',
+        success: 'check_circle',
+        warning: 'warning',
+        error: 'error',
+        connect: 'wifi'
+    };
+
+    activity.innerHTML = `
+        <div class="activity-icon ${type}">
+            <span class="material-icons">${icons[type] || 'info'}</span>
+        </div>
+        <div class="activity-content">
+            <span class="activity-text">${text}</span>
+            <span class="activity-time">Just now</span>
+        </div>
+    `;
+
+    activityList.insertBefore(activity, activityList.firstChild);
+
+    // Keep only last 10 activities
+    while (activityList.children.length > 10) {
+        activityList.removeChild(activityList.lastChild);
+    }
+}
+
+function animateProgress() {
+    const ring = document.getElementById('progress-ring');
+    const circumference = 2 * Math.PI * 54;
+    ring.style.strokeDasharray = circumference;
+    ring.style.strokeDashoffset = circumference;
+}
+
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function loadStats() {
+    // Load global stats (replace with actual API call)
+    document.getElementById('total-scans').textContent = '12';
+    document.getElementById('total-files').textContent = '1,234';
+    document.getElementById('total-channels').textContent = '8';
+}
+
+function updateGlobalStats() {
+    // Update global stats after scan completion
+    const currentScans = parseInt(document.getElementById('total-scans').textContent) || 0;
+    const currentFiles = parseInt(document.getElementById('total-files').textContent.replace(',', '')) || 0;
+    const currentChannels = parseInt(document.getElementById('total-channels').textContent) || 0;
+
+    document.getElementById('total-scans').textContent = (currentScans + 1).toString();
+    document.getElementById('total-files').textContent = (currentFiles + parseInt(document.getElementById('files-found').textContent.replace(',', ''))).toLocaleString();
+}
 
 function loadRecentScans() {
-    // Implementation for loading recent scans
-    console.log('Loading recent scans...');
+    // Load recent scans (replace with actual API call)
+    const recentScans = JSON.parse(localStorage.getItem('recentScans') || '[]');
+
+    if (recentScans.length === 0) {
+        return; // Keep empty state
+    }
+
+    const scansList = document.getElementById('recent-scans-list');
+    scansList.innerHTML = '';
+
+    recentScans.slice(0, 5).forEach(scan => {
+        const scanItem = createScanItem(scan);
+        scansList.appendChild(scanItem);
+    });
+}
+
+function addToRecentScans(scan) {
+    const recentScans = JSON.parse(localStorage.getItem('recentScans') || '[]');
+    recentScans.unshift(scan);
+
+    // Keep only last 10 scans
+    if (recentScans.length > 10) {
+        recentScans.splice(10);
+    }
+
+    localStorage.setItem('recentScans', JSON.stringify(recentScans));
+    loadRecentScans();
+}
+
+function createScanItem(scan) {
+    const item = document.createElement('div');
+    item.className = 'scan-item';
+
+    const timeAgo = getTimeAgo(new Date(scan.date));
+
+    item.innerHTML = `
+        <div class="scan-icon">
+            <span class="material-icons">folder</span>
+        </div>
+        <div class="scan-content">
+            <div class="scan-channel">${scan.channel}</div>
+            <div class="scan-stats">
+                <span class="scan-stat">
+                    <span class="material-icons">description</span>
+                    ${scan.files} files
+                </span>
+                <span class="scan-stat">
+                    <span class="material-icons">message</span>
+                    ${scan.messages.toLocaleString()} messages
+                </span>
+            </div>
+            <div class="scan-time">${timeAgo}</div>
+        </div>
+        <div class="scan-actions">
+            <button class="btn btn-outline btn-small" onclick="viewScanResults('${scan.channel}')">
+                <span class="material-icons">visibility</span>
+                View
+            </button>
+        </div>
+    `;
+
+    return item;
+}
+
+function getTimeAgo(date) {
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+}
+
+function viewScanResults(channel) {
+    // Navigate to results page
+    window.location.href = `/?search=${encodeURIComponent(channel)}`;
+}
+
+function clearHistory() {
+    localStorage.removeItem('recentScans');
+    document.getElementById('recent-scans-list').innerHTML = `
+        <div class="empty-state modern-empty">
+            <div class="empty-icon">
+                <span class="material-icons">radar</span>
+            </div>
+            <h4>No scans yet</h4>
+            <p>Start your first channel scan to see results here</p>
+            <button class="btn btn-primary btn-small" onclick="document.getElementById('channel-input').focus()">
+                <span class="material-icons">add</span>
+                Start First Scan
+            </button>
+        </div>
+    `;
+    showToast('History cleared', 'success');
+}
+
+function showToast(message, type = 'info') {
+    // Use the global toast function if available
+    if (window.TeleDrive && window.TeleDrive.showToast) {
+        window.TeleDrive.showToast(message, type);
+    } else {
+        console.log(`${type.toUpperCase()}: ${message}`);
+    }
 }
 </script>
 {% endblock %}
