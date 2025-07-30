@@ -34,14 +34,20 @@ except ImportError:
     logger = logging.getLogger(__name__)
 
 class TelegramFileScanner:
-    def __init__(self):
+    def __init__(self, offline_mode=False):
         self.client = None
         self.files_data = []
         self.output_dir = Path(config.OUTPUT_DIR)
         self.output_dir.mkdir(exist_ok=True)
+        self.offline_mode = offline_mode
         
     async def initialize(self):
-        """Khởi tạo Telegram client"""
+        """Khởi tạo Telegram client với retry mechanism và session handling"""
+        if self.offline_mode:
+            print("🔌 Running in OFFLINE MODE - Telegram features disabled")
+            print("📁 Testing file management features only")
+            return
+            
         if DETAILED_LOGGING_AVAILABLE:
             log_step("KHỞI TẠO CLIENT", "Bắt đầu khởi tạo Telegram client")
 
@@ -51,6 +57,13 @@ class TelegramFileScanner:
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("VALIDATION ERROR", error_msg, "ERROR")
             raise ValueError(error_msg)
+
+        # Kiểm tra session file tồn tại
+        session_path = Path(f"{config.SESSION_NAME}.session")
+        session_exists = session_path.exists()
+        
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("SESSION CHECK", f"Session file exists: {session_exists}")
 
         try:
             if DETAILED_LOGGING_AVAILABLE:
@@ -62,15 +75,84 @@ class TelegramFileScanner:
                 config.API_HASH
             )
 
-            if DETAILED_LOGGING_AVAILABLE:
-                log_step("ĐĂNG NHẬP", f"Đăng nhập với số: {config.PHONE_NUMBER}")
-                log_api_call("client.start", {"phone": config.PHONE_NUMBER})
+            # Thử kết nối với retry mechanism
+            max_retries = 3
+            retry_delay = 5
+            
+            for attempt in range(max_retries):
+                try:
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("ĐĂNG NHẬP", f"Lần thử {attempt + 1}/{max_retries} - Số: {config.PHONE_NUMBER}")
+                        log_api_call("client.start", {"phone": config.PHONE_NUMBER, "attempt": attempt + 1})
 
-            await self.client.start(phone=config.PHONE_NUMBER)
+                    # Thử kết nối với session có sẵn trước
+                    if session_exists:
+                        try:
+                            await self.client.start()
+                            print("✅ Kết nối thành công với session có sẵn!")
+                        except Exception as session_error:
+                            print(f"⚠️ Session không hợp lệ: {session_error}")
+                            print("🔄 Thử tạo session mới...")
+                            # Xóa session file hỏng
+                            try:
+                                session_path.unlink()
+                                print("🗑️ Đã xóa session file hỏng")
+                            except:
+                                pass
+                            # Tạo session mới
+                            await self.client.start(phone=config.PHONE_NUMBER)
+                            print("✅ Tạo session mới thành công!")
+                    else:
+                        await self.client.start(phone=config.PHONE_NUMBER)
+                        print("✅ Tạo session mới thành công!")
 
-            print("Da ket noi thanh cong voi Telegram!")
-            if DETAILED_LOGGING_AVAILABLE:
-                log_step("KHỞI TẠO THÀNH CÔNG", "Đã kết nối thành công với Telegram")
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("KHỞI TẠO THÀNH CÔNG", "Đã kết nối thành công với Telegram")
+                    
+                    # Test connection
+                    me = await self.client.get_me()
+                    print(f"👤 Đăng nhập với: {me.first_name} (@{me.username})")
+                    return
+
+                except Exception as e:
+                    error_msg = str(e)
+                    
+                    # Xử lý FloodWaitError
+                    if "FloodWaitError" in error_msg:
+                        wait_time = 0
+                        try:
+                            # Extract wait time from error message
+                            import re
+                            match = re.search(r'(\d+) seconds', error_msg)
+                            if match:
+                                wait_time = int(match.group(1))
+                        except:
+                            wait_time = 60  # Default wait time
+                        
+                        if DETAILED_LOGGING_AVAILABLE:
+                            log_error(e, f"FloodWaitError - Wait {wait_time} seconds")
+                        
+                        if attempt < max_retries - 1:
+                            print(f"⏳ FloodWaitError: Chờ {wait_time} giây trước khi thử lại...")
+                            await asyncio.sleep(min(wait_time, 300))  # Max wait 5 minutes
+                            continue
+                        else:
+                            print(f"❌ FloodWaitError sau {max_retries} lần thử")
+                            print("💡 Gợi ý: Chờ {wait_time} giây hoặc sử dụng offline mode")
+                            raise e
+                    
+                    # Xử lý các lỗi khác
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_error(e, f"Client initialization attempt {attempt + 1}")
+                    
+                    if attempt < max_retries - 1:
+                        print(f"⚠️ Lỗi kết nối (lần {attempt + 1}): {error_msg}")
+                        print(f"⏳ Chờ {retry_delay} giây trước khi thử lại...")
+                        await asyncio.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                    else:
+                        print(f"❌ Không thể kết nối sau {max_retries} lần thử")
+                        raise e
 
         except ValueError as e:
             if "invalid literal for int()" in str(e):

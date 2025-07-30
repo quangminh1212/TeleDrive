@@ -135,9 +135,139 @@ class TelegramVerifyForm(FlaskForm):
     """Telegram verification form - code input"""
     verification_code = StringField('Verification Code', validators=[
         DataRequired(message='Verification code is required'),
-        Length(min=5, max=6, message='Verification code must be 5-6 digits')
+        Length(min=5, max=6, message='Verification code must be 5-6 digits'),
+        Regexp(r'^\d{5,6}$', message='Verification code must contain only digits')
     ])
     password = PasswordField('Two-Factor Password', validators=[
         # Optional field for 2FA
     ])
     submit = SubmitField('Verify')
+
+class FileUploadForm(FlaskForm):
+    """File upload form with comprehensive validation"""
+    files = None  # Will be handled by request.files
+    folder_id = StringField('Folder ID', validators=[
+        # Optional field for folder selection
+    ])
+    description = StringField('Description', validators=[
+        Length(max=500, message='Description must be less than 500 characters')
+    ])
+    tags = StringField('Tags', validators=[
+        Length(max=200, message='Tags must be less than 200 characters')
+    ])
+
+    def validate_files(self, files):
+        """Validate uploaded files"""
+        if not files:
+            raise ValidationError('No files selected for upload')
+
+        # Import here to avoid circular imports
+        from flask_config import flask_config
+
+        upload_config = flask_config.get_upload_config()
+        max_file_size = upload_config['max_file_size']
+        allowed_extensions = upload_config['allowed_extensions']
+
+        for file in files:
+            # Check file size
+            if hasattr(file, 'content_length') and file.content_length > max_file_size:
+                raise ValidationError(f'File {file.filename} is too large. Maximum size is {max_file_size} bytes.')
+
+            # Check file extension
+            if file.filename:
+                file_ext = file.filename.rsplit('.', 1)[-1].lower()
+                if file_ext not in allowed_extensions:
+                    raise ValidationError(f'File type .{file_ext} is not allowed. Allowed types: {", ".join(allowed_extensions)}')
+
+            # Check for malicious filenames
+            if file.filename and ('..' in file.filename or '/' in file.filename or '\\' in file.filename):
+                raise ValidationError(f'Invalid filename: {file.filename}')
+
+class ChannelScanForm(FlaskForm):
+    """Channel scanning form with validation"""
+    channel_input = StringField('Channel URL or Username', validators=[
+        DataRequired(message='Channel URL or username is required'),
+        Length(min=2, max=200, message='Channel input must be between 2 and 200 characters')
+    ])
+    scan_type = SelectField('Scan Type', choices=[
+        ('all', 'All Files'),
+        ('images', 'Images Only'),
+        ('videos', 'Videos Only'),
+        ('documents', 'Documents Only'),
+        ('audio', 'Audio Only')
+    ], default='all')
+    max_files = StringField('Maximum Files', validators=[
+        Regexp(r'^\d*$', message='Maximum files must be a number')
+    ])
+    submit = SubmitField('Start Scan')
+
+    def validate_channel_input(self, channel_input):
+        """Validate channel input format"""
+        channel = channel_input.data.strip()
+
+        # Check for valid Telegram channel formats
+        if not (channel.startswith('@') or
+                channel.startswith('https://t.me/') or
+                channel.startswith('t.me/') or
+                channel.startswith('telegram.me/')):
+            raise ValidationError('Please enter a valid Telegram channel URL or username (starting with @)')
+
+        # Remove common prefixes for validation
+        clean_channel = channel
+        for prefix in ['https://t.me/', 't.me/', 'telegram.me/', '@']:
+            if clean_channel.startswith(prefix):
+                clean_channel = clean_channel[len(prefix):]
+                break
+
+        # Validate channel name format
+        if not clean_channel or not clean_channel.replace('_', '').replace('-', '').isalnum():
+            raise ValidationError('Invalid channel name format')
+
+    def validate_max_files(self, max_files):
+        """Validate maximum files limit"""
+        if max_files.data:
+            try:
+                max_val = int(max_files.data)
+                if max_val < 1:
+                    raise ValidationError('Maximum files must be at least 1')
+                if max_val > 10000:
+                    raise ValidationError('Maximum files cannot exceed 10,000')
+            except ValueError:
+                raise ValidationError('Maximum files must be a valid number')
+
+class SearchForm(FlaskForm):
+    """Search form with validation"""
+    query = StringField('Search Query', validators=[
+        DataRequired(message='Search query is required'),
+        Length(min=1, max=200, message='Search query must be between 1 and 200 characters')
+    ])
+    search_type = SelectField('Search In', choices=[
+        ('all', 'All Fields'),
+        ('filename', 'Filename'),
+        ('description', 'Description'),
+        ('tags', 'Tags'),
+        ('content', 'File Content')
+    ], default='all')
+    file_type = SelectField('File Type', choices=[
+        ('all', 'All Types'),
+        ('image', 'Images'),
+        ('video', 'Videos'),
+        ('document', 'Documents'),
+        ('audio', 'Audio'),
+        ('archive', 'Archives')
+    ], default='all')
+    submit = SubmitField('Search')
+
+    def validate_query(self, query):
+        """Validate search query"""
+        # Prevent SQL injection attempts
+        dangerous_chars = ['--', ';', '/*', '*/', 'xp_', 'sp_']
+        query_lower = query.data.lower()
+
+        for char in dangerous_chars:
+            if char in query_lower:
+                raise ValidationError('Invalid characters in search query')
+
+        # Prevent excessively long queries
+        if len(query.data.strip()) > 200:
+            raise ValidationError('Search query is too long')

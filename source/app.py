@@ -95,24 +95,28 @@ def check_session_timeout():
                            request.endpoint in ['login', 'register', 'forgot_password', 'reset_password']):
         return
 
-    # Skip session timeout check - allow access without authentication
-    # if current_user.is_authenticated:
-    #     # Check if session has expired
-    #     last_activity = session.get('last_activity')
-    #     if last_activity:
-    #         from datetime import datetime, timedelta
-    #         last_activity_time = datetime.fromisoformat(last_activity)
-    #         session_timeout = timedelta(seconds=app.config.get('PERMANENT_SESSION_LIFETIME', 86400))
+    # Session timeout check - enforce session expiration
+    if current_user.is_authenticated:
+        # Check if session has expired
+        last_activity = session.get('last_activity')
+        if last_activity:
+            from datetime import datetime, timedelta
+            try:
+                last_activity_time = datetime.fromisoformat(last_activity)
+                session_timeout = timedelta(seconds=app.config.get('PERMANENT_SESSION_LIFETIME', 1800))  # 30 minutes default
 
-    #         if datetime.utcnow() - last_activity_time > session_timeout:
-    #             logout_user()
-    #             session.clear()
-    #             flash('Your session has expired. Please log in again.', 'info')
-    #             return redirect(url_for('login'))
+                if datetime.utcnow() - last_activity_time > session_timeout:
+                    logout_user()
+                    session.clear()
+                    flash('Your session has expired. Please log in again.', 'info')
+                    return redirect(url_for('telegram_login'))
+            except ValueError:
+                # Invalid timestamp format, reset session
+                session.pop('last_activity', None)
 
-    #     # Update last activity time
-    #     session['last_activity'] = datetime.utcnow().isoformat()
-    #     session.permanent = True
+        # Update last activity time
+        session['last_activity'] = datetime.utcnow().isoformat()
+        session.permanent = True
 
 @app.after_request
 def add_security_headers(response):
@@ -146,6 +150,160 @@ def add_security_headers(response):
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
 
     return response
+
+# Global Error Handlers
+@app.errorhandler(400)
+def bad_request_error(error):
+    """Handle 400 Bad Request errors"""
+    app.logger.warning(f"Bad request: {request.url} - {error}")
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'Bad request',
+            'message': 'The request could not be understood by the server'
+        }), 400
+    return render_template('errors/400.html'), 400
+
+@app.errorhandler(401)
+def unauthorized_error(error):
+    """Handle 401 Unauthorized errors"""
+    app.logger.warning(f"Unauthorized access: {request.url} - {error}")
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'Unauthorized',
+            'message': 'Authentication required'
+        }), 401
+    return render_template('errors/401.html'), 401
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    """Handle 403 Forbidden errors"""
+    app.logger.warning(f"Forbidden access: {request.url} - {error}")
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'Forbidden',
+            'message': 'You do not have permission to access this resource'
+        }), 403
+    return render_template('errors/403.html'), 403
+
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handle 404 Not Found errors"""
+    app.logger.info(f"Page not found: {request.url}")
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'Not found',
+            'message': 'The requested resource was not found'
+        }), 404
+    return render_template('errors/404.html'), 404
+
+@app.errorhandler(413)
+def request_entity_too_large_error(error):
+    """Handle 413 Request Entity Too Large errors"""
+    app.logger.warning(f"File too large: {request.url}")
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'File too large',
+            'message': 'The uploaded file is too large'
+        }), 413
+    flash('The uploaded file is too large. Please choose a smaller file.', 'error')
+    return redirect(request.referrer or url_for('dashboard'))
+
+@app.errorhandler(429)
+def rate_limit_error(error):
+    """Handle 429 Too Many Requests errors"""
+    app.logger.warning(f"Rate limit exceeded: {request.url}")
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'Rate limit exceeded',
+            'message': 'Too many requests. Please try again later.'
+        }), 429
+    return render_template('errors/429.html'), 429
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 Internal Server errors"""
+    db.session.rollback()
+    app.logger.error(f"Internal server error: {request.url} - {error}")
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error',
+            'message': 'An unexpected error occurred. Please try again later.'
+        }), 500
+    return render_template('errors/500.html'), 500
+
+@app.errorhandler(502)
+def bad_gateway_error(error):
+    """Handle 502 Bad Gateway errors"""
+    app.logger.error(f"Bad gateway: {request.url} - {error}")
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'Bad gateway',
+            'message': 'The server received an invalid response from an upstream server'
+        }), 502
+    return render_template('errors/502.html'), 502
+
+@app.errorhandler(503)
+def service_unavailable_error(error):
+    """Handle 503 Service Unavailable errors"""
+    app.logger.error(f"Service unavailable: {request.url} - {error}")
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'Service unavailable',
+            'message': 'The service is temporarily unavailable. Please try again later.'
+        }), 503
+    return render_template('errors/503.html'), 503
+
+# Database Error Handlers
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError, OperationalError
+
+@app.errorhandler(SQLAlchemyError)
+def handle_database_error(error):
+    """Handle database errors"""
+    db.session.rollback()
+    app.logger.error(f"Database error: {str(error)}")
+
+    if isinstance(error, IntegrityError):
+        message = "Data integrity error. Please check your input and try again."
+    elif isinstance(error, OperationalError):
+        message = "Database connection error. Please try again later."
+    else:
+        message = "A database error occurred. Please try again later."
+
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'Database error',
+            'message': message
+        }), 500
+
+    flash(message, 'error')
+    return redirect(request.referrer or url_for('dashboard'))
+
+# CSRF Error Handler
+from flask_wtf.csrf import CSRFError
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(error):
+    """Handle CSRF token errors"""
+    app.logger.warning(f"CSRF error: {request.url} - {error.description}")
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'error': 'CSRF token error',
+            'message': 'Security token expired. Please refresh the page and try again.'
+        }), 400
+
+    flash('Security token expired. Please try again.', 'error')
+    return redirect(request.referrer or url_for('dashboard'))
 
 # Initialize SocketIO
 socketio_config = flask_config.flask_config.get_socketio_config()
@@ -183,6 +341,62 @@ def log_security_event(event_type, user_id=None, username=None, ip_address=None,
         log_message += f" | Details: {details}"
 
     security_logger.info(log_message)
+
+# Utility functions for error handling
+def create_error_response(error_type, message, status_code=400, details=None):
+    """Create standardized error response"""
+    response_data = {
+        'success': False,
+        'error': error_type,
+        'message': message
+    }
+
+    if details and app.debug:
+        response_data['details'] = details
+
+    return jsonify(response_data), status_code
+
+def create_success_response(data=None, message=None):
+    """Create standardized success response"""
+    response_data = {
+        'success': True
+    }
+
+    if message:
+        response_data['message'] = message
+
+    if data:
+        response_data.update(data)
+
+    return jsonify(response_data)
+
+def handle_api_error(func):
+    """Decorator for consistent API error handling"""
+    from functools import wraps
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ValueError as e:
+            app.logger.warning(f"Validation error in {func.__name__}: {str(e)}")
+            return create_error_response('validation_error', str(e), 400)
+        except PermissionError as e:
+            app.logger.warning(f"Permission error in {func.__name__}: {str(e)}")
+            return create_error_response('permission_error', 'Access denied', 403)
+        except FileNotFoundError as e:
+            app.logger.warning(f"File not found in {func.__name__}: {str(e)}")
+            return create_error_response('not_found', 'Resource not found', 404)
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            app.logger.error(f"Database error in {func.__name__}: {str(e)}")
+            return create_error_response('database_error', 'Database operation failed', 500)
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Unexpected error in {func.__name__}: {str(e)}")
+            return create_error_response('internal_error', 'An unexpected error occurred', 500, str(e) if app.debug else None)
+
+    return wrapper
 
 # Rate limiting functionality
 from collections import defaultdict
@@ -936,264 +1150,293 @@ def bulk_file_operations():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/upload', methods=['POST'])
+@handle_api_error
 def upload_file():
-    """Upload files to the system"""
+    """Upload files to the system with comprehensive validation"""
+    # Rate limiting check
+    user_ip = request.remote_addr
+    if is_rate_limited(f"upload_{user_ip}", max_requests=10, window_seconds=300):
+        return create_error_response('rate_limit', 'Too many upload attempts. Please try again later.', 429)
+
+    # CSRF protection for AJAX uploads
+    csrf_token = request.headers.get('X-CSRFToken') or request.form.get('csrf_token')
+    if not csrf_token:
+        return create_error_response('csrf_error', 'CSRF token missing', 400)
+
     try:
-        if 'files' not in request.files:
-            return jsonify({'success': False, 'error': 'No files provided'})
+        from flask_wtf.csrf import validate_csrf
+        validate_csrf(csrf_token)
+    except Exception:
+        return create_error_response('csrf_error', 'Invalid CSRF token', 400)
 
-        files = request.files.getlist('files')
-        folder_id = request.form.get('folder_id')
+    if 'files' not in request.files:
+        return create_error_response('validation_error', 'No files provided', 400)
 
-        if not files or all(f.filename == '' for f in files):
-            return jsonify({'success': False, 'error': 'No files selected'})
+    files = request.files.getlist('files')
+    folder_id = request.form.get('folder_id')
 
-        user = get_or_create_user()
-        uploaded_files = []
+    if not files or all(f.filename == '' for f in files):
+        return create_error_response('validation_error', 'No files selected', 400)
 
-        # Validate folder if specified
-        if folder_id:
-            folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
-            if not folder:
-                return jsonify({'success': False, 'error': 'Invalid folder'})
+    # Validate file count
+    if len(files) > 50:  # Limit to 50 files per upload
+        return create_error_response('validation_error', 'Too many files. Maximum 50 files per upload.', 400)
 
-        # Create uploads directory if it doesn't exist
-        upload_config = flask_config.flask_config.get_upload_config()
-        upload_dir = Path(upload_config['upload_directory'])
-        upload_dir.mkdir(parents=True, exist_ok=True)
+    user = get_or_create_user()
+    uploaded_files = []
 
-        for file in files:
-            if file.filename:
-                # Sanitize and validate filename
-                original_filename = file.filename
-                sanitized_filename = sanitize_filename(original_filename)
+    # Validate folder if specified
+    if folder_id:
+        folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+        if not folder:
+            return create_error_response('validation_error', 'Invalid folder', 400)
 
-                if not sanitized_filename:
-                    return jsonify({'success': False, 'error': f'Invalid filename: {original_filename}'})
+    # Create uploads directory if it doesn't exist
+    upload_config = flask_config.flask_config.get_upload_config()
+    upload_dir = Path(upload_config['upload_directory'])
+    upload_dir.mkdir(parents=True, exist_ok=True)
 
-                # Check if file type is allowed
-                if not is_allowed_file(sanitized_filename):
-                    return jsonify({'success': False, 'error': f'File type not allowed: {sanitized_filename}'})
+    for file in files:
+        if file.filename:
+            # Sanitize and validate filename
+            original_filename = file.filename
+            sanitized_filename = sanitize_filename(original_filename)
 
-                # Generate unique filename to avoid conflicts if configured
-                if upload_config['timestamp_filenames']:
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    unique_filename = f"{timestamp}_{sanitized_filename}"
-                else:
-                    unique_filename = sanitized_filename
+            if not sanitized_filename:
+                return jsonify({'success': False, 'error': f'Invalid filename: {original_filename}'})
 
-                file_path = upload_dir / unique_filename
+            # Check if file type is allowed
+            if not is_allowed_file(sanitized_filename):
+                return jsonify({'success': False, 'error': f'File type not allowed: {sanitized_filename}'})
 
-                # Ensure the file path is within the upload directory (prevent path traversal)
-                try:
-                    file_path = file_path.resolve()
-                    upload_dir_resolved = upload_dir.resolve()
-                    if not str(file_path).startswith(str(upload_dir_resolved)):
-                        return jsonify({'success': False, 'error': 'Invalid file path'})
-                except Exception:
+            # Generate unique filename to avoid conflicts if configured
+            if upload_config['timestamp_filenames']:
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                unique_filename = f"{timestamp}_{sanitized_filename}"
+            else:
+                unique_filename = sanitized_filename
+
+            file_path = upload_dir / unique_filename
+
+            # Ensure the file path is within the upload directory (prevent path traversal)
+            try:
+                file_path = file_path.resolve()
+                upload_dir_resolved = upload_dir.resolve()
+                if not str(file_path).startswith(str(upload_dir_resolved)):
                     return jsonify({'success': False, 'error': 'Invalid file path'})
+            except Exception:
+                return jsonify({'success': False, 'error': 'Invalid file path'})
 
-                # Save file
-                file.save(str(file_path))
+            # Save file
+            file.save(str(file_path))
 
-                # Validate file content after saving
-                is_valid, validation_message = validate_file_content(file_path)
-                if not is_valid:
-                    # Remove the invalid file
-                    try:
-                        os.remove(file_path)
-                    except:
-                        pass
-                    return jsonify({'success': False, 'error': validation_message})
+            # Validate file content after saving
+            is_valid, validation_message = validate_file_content(file_path)
+            if not is_valid:
+                # Remove the invalid file
+                try:
+                    os.remove(file_path)
+                except:
+                    pass
+                return jsonify({'success': False, 'error': validation_message})
 
-                # Get file info
-                file_size = file_path.stat().st_size
-                mime_type = file.content_type or 'application/octet-stream'
+            # Get file info
+            file_size = file_path.stat().st_size
+            mime_type = file.content_type or 'application/octet-stream'
 
-                # Create database record
-                file_record = File(
-                    filename=sanitized_filename,
-                    original_filename=original_filename,
-                    file_path=str(file_path),
-                    file_size=file_size,
-                    mime_type=mime_type,
-                    folder_id=folder_id,
-                    user_id=user.id,
-                    description=f'Uploaded file: {original_filename}'
-                )
+            # Create database record
+            file_record = File(
+                filename=sanitized_filename,
+                original_filename=original_filename,
+                file_path=str(file_path),
+                file_size=file_size,
+                mime_type=mime_type,
+                folder_id=folder_id,
+                user_id=user.id,
+                description=f'Uploaded file: {original_filename}'
+            )
 
-                db.session.add(file_record)
-                uploaded_files.append({
-                    'filename': sanitized_filename,
-                    'size': file_size,
-                    'type': mime_type
-                })
+            db.session.add(file_record)
+            uploaded_files.append({
+                'filename': sanitized_filename,
+                'size': file_size,
+                'type': mime_type
+            })
 
-                # Auto-tag the file
-                auto_tags = generate_auto_tags(file_record)
-                if auto_tags:
-                    file_record.tags = ', '.join(sorted(auto_tags))
+            # Auto-tag the file
+            auto_tags = generate_auto_tags(file_record)
+            if auto_tags:
+                file_record.tags = ', '.join(sorted(auto_tags))
 
-                # Log upload activity
-                ActivityLog.log_activity(
-                    user_id=user.id,
-                    action='upload',
-                    description=f'Uploaded file: {sanitized_filename}',
-                    file_id=file_record.id,
-                    metadata={'file_size': file_size, 'mime_type': mime_type, 'auto_tags': auto_tags},
-                    ip_address=request.remote_addr,
-                    user_agent=request.headers.get('User-Agent')
-                )
+            # Log upload activity
+            ActivityLog.log_activity(
+                user_id=user.id,
+                action='upload',
+                description=f'Uploaded file: {sanitized_filename}',
+                file_id=file_record.id,
+                metadata={'file_size': file_size, 'mime_type': mime_type, 'auto_tags': auto_tags},
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent')
+            )
 
-        db.session.commit()
+    db.session.commit()
 
-        # Invalidate file list cache for this user
-        user = get_or_create_user()
-        for page in range(1, 11):  # Clear first 10 pages of cache
-            for per_page in [20, 50, 100]:
-                cache_delete(f"files_{user.id}_{page}_{per_page}")
+    # Invalidate file list cache for this user
+    user = get_or_create_user()
+    for page in range(1, 11):  # Clear first 10 pages of cache
+        for per_page in [20, 50, 100]:
+            cache_delete(f"files_{user.id}_{page}_{per_page}")
 
-        return jsonify({
-            'success': True,
+        return create_success_response({
             'message': f'Successfully uploaded {len(uploaded_files)} files',
             'files': uploaded_files
         })
 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)})
+@app.route('/api/csrf-token', methods=['GET'])
+def get_csrf_token():
+    """Get CSRF token for AJAX requests"""
+    from flask_wtf.csrf import generate_csrf
+    return jsonify({
+        'success': True,
+        'csrf_token': generate_csrf()
+    })
 
 @app.route('/api/search', methods=['GET'])
+@handle_api_error
 def search_files():
     """Advanced search files by name, tags, content, and metadata"""
-    try:
-        query = request.args.get('q', '').strip()
-        file_type = request.args.get('type', '')
-        folder_id = request.args.get('folder_id')
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        size_min = request.args.get('size_min', '')
-        size_max = request.args.get('size_max', '')
-        channel = request.args.get('channel', '')
-        tags = request.args.get('tags', '')
-        sort_by = request.args.get('sort_by', 'date')
-        sort_order = request.args.get('sort_order', 'desc')
-        page = request.args.get('page', 1, type=int)
-        per_page = min(int(request.args.get('per_page', 20)), 100)
+    # Rate limiting for search
+    user_ip = request.remote_addr
+    if is_rate_limited(f"search_{user_ip}", max_requests=30, window_seconds=60):
+        return create_error_response('rate_limit', 'Too many search requests. Please try again later.', 429)
 
-        if not query:
-            return jsonify({'success': False, 'error': 'Search query is required'})
+    query = request.args.get('q', '').strip()
+    file_type = request.args.get('type', '')
+    folder_id = request.args.get('folder_id')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    size_min = request.args.get('size_min', '')
+    size_max = request.args.get('size_max', '')
+    channel = request.args.get('channel', '')
+    tags = request.args.get('tags', '')
+    sort_by = request.args.get('sort_by', 'date')
+    sort_order = request.args.get('sort_order', 'desc')
+    page = request.args.get('page', 1, type=int)
+    per_page = min(int(request.args.get('per_page', 20)), 100)
 
-        user = get_or_create_user()
+    if not query:
+        return create_error_response('validation_error', 'Search query is required', 400)
 
-        # Build search query
-        search_query = File.query.options(
-            db.joinedload(File.owner),
-            db.joinedload(File.folder)
-        ).filter_by(user_id=user.id, is_deleted=False)
+    user = get_or_create_user()
 
-        # Full-text search across multiple fields
-        search_terms = query.lower().split()
-        for term in search_terms:
-            search_query = search_query.filter(
-                db.or_(
-                    File.filename.ilike(f'%{term}%'),
-                    File.description.ilike(f'%{term}%'),
-                    File.telegram_channel.ilike(f'%{term}%'),
-                    File.tags.ilike(f'%{term}%')
-                )
+    # Build search query
+    search_query = File.query.options(
+        db.joinedload(File.owner),
+        db.joinedload(File.folder)
+    ).filter_by(user_id=user.id, is_deleted=False)
+
+    # Full-text search across multiple fields
+    search_terms = query.lower().split()
+    for term in search_terms:
+        search_query = search_query.filter(
+            db.or_(
+                File.filename.ilike(f'%{term}%'),
+                File.description.ilike(f'%{term}%'),
+                File.telegram_channel.ilike(f'%{term}%'),
+                File.tags.ilike(f'%{term}%')
             )
+        )
 
-        # Filter by file type if specified
-        if file_type:
-            if file_type == 'image':
-                search_query = search_query.filter(File.mime_type.like('image/%'))
-            elif file_type == 'video':
-                search_query = search_query.filter(File.mime_type.like('video/%'))
-            elif file_type == 'audio':
-                search_query = search_query.filter(File.mime_type.like('audio/%'))
-            elif file_type == 'document':
-                search_query = search_query.filter(File.mime_type.in_([
-                    'application/pdf', 'application/msword',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'text/plain', 'application/json'
-                ]))
-            elif file_type == 'archive':
-                search_query = search_query.filter(File.mime_type.in_([
-                    'application/zip', 'application/x-rar-compressed',
-                    'application/x-7z-compressed', 'application/gzip'
-                ]))
+    # Filter by file type if specified
+    if file_type:
+        if file_type == 'image':
+            search_query = search_query.filter(File.mime_type.like('image/%'))
+        elif file_type == 'video':
+            search_query = search_query.filter(File.mime_type.like('video/%'))
+        elif file_type == 'audio':
+            search_query = search_query.filter(File.mime_type.like('audio/%'))
+        elif file_type == 'document':
+            search_query = search_query.filter(File.mime_type.in_([
+                'application/pdf', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'text/plain', 'application/json'
+            ]))
+        elif file_type == 'archive':
+            search_query = search_query.filter(File.mime_type.in_([
+                'application/zip', 'application/x-rar-compressed',
+                'application/x-7z-compressed', 'application/gzip'
+            ]))
 
-        # Filter by folder if specified
-        if folder_id:
-            if folder_id == 'root':
-                search_query = search_query.filter(File.folder_id.is_(None))
-            else:
-                search_query = search_query.filter_by(folder_id=folder_id)
+    # Filter by folder if specified
+    if folder_id:
+        if folder_id == 'root':
+            search_query = search_query.filter(File.folder_id.is_(None))
+        else:
+            search_query = search_query.filter_by(folder_id=folder_id)
 
-        # Filter by date range
-        if date_from:
-            try:
-                from_date = datetime.strptime(date_from, '%Y-%m-%d')
-                search_query = search_query.filter(File.created_at >= from_date)
-            except ValueError:
-                pass
+    # Filter by date range
+    if date_from:
+        try:
+            from_date = datetime.strptime(date_from, '%Y-%m-%d')
+            search_query = search_query.filter(File.created_at >= from_date)
+        except ValueError:
+            pass
 
-        if date_to:
-            try:
-                to_date = datetime.strptime(date_to, '%Y-%m-%d')
-                # Add one day to include the entire day
-                to_date = to_date.replace(hour=23, minute=59, second=59)
-                search_query = search_query.filter(File.created_at <= to_date)
-            except ValueError:
-                pass
+    if date_to:
+        try:
+            to_date = datetime.strptime(date_to, '%Y-%m-%d')
+            # Add one day to include the entire day
+            to_date = to_date.replace(hour=23, minute=59, second=59)
+            search_query = search_query.filter(File.created_at <= to_date)
+        except ValueError:
+            pass
 
-        # Filter by file size
-        if size_min:
-            try:
-                min_size = int(size_min)
-                search_query = search_query.filter(File.file_size >= min_size)
-            except ValueError:
-                pass
+    # Filter by file size
+    if size_min:
+        try:
+            min_size = int(size_min)
+            search_query = search_query.filter(File.file_size >= min_size)
+        except ValueError:
+            pass
 
-        if size_max:
-            try:
-                max_size = int(size_max)
-                search_query = search_query.filter(File.file_size <= max_size)
-            except ValueError:
-                pass
+    if size_max:
+        try:
+            max_size = int(size_max)
+            search_query = search_query.filter(File.file_size <= max_size)
+        except ValueError:
+            pass
 
-        # Filter by channel
-        if channel:
-            search_query = search_query.filter(File.telegram_channel.ilike(f'%{channel}%'))
+    # Filter by channel
+    if channel:
+        search_query = search_query.filter(File.telegram_channel.ilike(f'%{channel}%'))
 
-        # Filter by tags
-        if tags:
-            tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
-            for tag in tag_list:
-                search_query = search_query.filter(File.tags.ilike(f'%{tag}%'))
+    # Filter by tags
+    if tags:
+        tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
+        for tag in tag_list:
+            search_query = search_query.filter(File.tags.ilike(f'%{tag}%'))
 
-        # Apply sorting
-        if sort_by == 'name':
-            if sort_order == 'asc':
-                search_query = search_query.order_by(File.filename.asc())
-            else:
-                search_query = search_query.order_by(File.filename.desc())
-        elif sort_by == 'size':
-            if sort_order == 'asc':
-                search_query = search_query.order_by(File.file_size.asc())
-            else:
-                search_query = search_query.order_by(File.file_size.desc())
-        elif sort_by == 'type':
-            if sort_order == 'asc':
-                search_query = search_query.order_by(File.mime_type.asc())
-            else:
-                search_query = search_query.order_by(File.mime_type.desc())
-        else:  # Default to date
-            if sort_order == 'asc':
-                search_query = search_query.order_by(File.created_at.asc())
-            else:
-                search_query = search_query.order_by(File.created_at.desc())
+    # Apply sorting
+    if sort_by == 'name':
+        if sort_order == 'asc':
+            search_query = search_query.order_by(File.filename.asc())
+        else:
+            search_query = search_query.order_by(File.filename.desc())
+    elif sort_by == 'size':
+        if sort_order == 'asc':
+            search_query = search_query.order_by(File.file_size.asc())
+        else:
+            search_query = search_query.order_by(File.file_size.desc())
+    elif sort_by == 'type':
+        if sort_order == 'asc':
+            search_query = search_query.order_by(File.mime_type.asc())
+        else:
+            search_query = search_query.order_by(File.mime_type.desc())
+    else:  # Default to date
+        if sort_order == 'asc':
+            search_query = search_query.order_by(File.created_at.asc())
+        else:
+            search_query = search_query.order_by(File.created_at.desc())
 
         # Execute search with pagination
         pagination = search_query.paginate(page=page, per_page=per_page, error_out=False)
@@ -1253,9 +1496,6 @@ def search_files():
                 'sort_order': sort_order
             }
         })
-
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/search/suggestions', methods=['GET'])
 def search_suggestions():
