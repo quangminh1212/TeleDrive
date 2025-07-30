@@ -1489,12 +1489,13 @@ body {
 
 /* Progress Section */
 .progress-card {
-    background: linear-gradient(135deg, var(--telegram-blue) 0%, var(--telegram-blue-dark) 100%);
-    color: white;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    color: var(--text-primary);
+    border: 2px solid var(--telegram-blue);
 }
 
 .progress-card .header-icon {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--telegram-blue);
 }
 
 .progress-card .header-icon .material-icons {
@@ -1503,7 +1504,7 @@ body {
 
 .progress-card .header-text h3,
 .progress-card .header-text p {
-    color: white;
+    color: var(--text-primary);
 }
 
 .progress-overview {
@@ -1531,13 +1532,13 @@ body {
 
 .progress-ring-background {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.2);
+    stroke: var(--border-light);
     stroke-width: 8;
 }
 
 .progress-ring-progress {
     fill: none;
-    stroke: white;
+    stroke: var(--telegram-blue);
     stroke-width: 8;
     stroke-linecap: round;
     stroke-dasharray: 339.292;
@@ -1577,16 +1578,16 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-secondary);
     padding: 16px;
     border-radius: 8px;
-    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-light);
 }
 
 .progress-stat .stat-icon {
     width: 40px;
     height: 40px;
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--telegram-blue);
     border-radius: 8px;
     display: flex;
     align-items: center;
