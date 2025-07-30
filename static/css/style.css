@@ -1559,11 +1559,12 @@ body {
     font-size: 24px;
     font-weight: 700;
     margin-bottom: 4px;
+    color: var(--text-primary);
 }
 
 .progress-status {
     font-size: 12px;
-    opacity: 0.8;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -1609,11 +1610,12 @@ body {
     font-size: 18px;
     font-weight: 700;
     margin-bottom: 2px;
+    color: var(--text-primary);
 }
 
 .progress-stat .stat-label {
     font-size: 12px;
-    opacity: 0.8;
+    color: var(--text-secondary);
 }
 
 /* Activity Feed */
