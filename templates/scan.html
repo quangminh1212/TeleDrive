@@ -548,28 +548,49 @@ function startScan(channelInput) {
     // Start progress animation
     animateProgress();
 
-    // Simulate scan process (replace with actual API call)
-    simulateScan();
+    // Disable form elements during scan
+    setFormDisabled(true);
+
+    // Make actual API call to start scan
+    startActualScan(channelInput);
 }
 
-function simulateScan() {
-    let progress = 0;
-    let messages = 0;
-    let files = 0;
+async function startActualScan(channelInput) {
+    try {
+        // Prepare scan data
+        const scanData = {
+            channel: channelInput,
+            max_messages: document.getElementById('max-messages').value || null,
+            scan_direction: document.querySelector('input[name="scan-direction"]:checked').value,
+            file_types: Array.from(document.querySelectorAll('input[name="file-types"]:checked')).map(cb => cb.value)
+        };
 
-    scanInterval = setInterval(() => {
-        progress += Math.random() * 5;
-        messages += Math.floor(Math.random() * 10) + 1;
-        files += Math.floor(Math.random() * 3);
+        // Get CSRF token
+        const csrfToken = await getCSRFToken();
 
-        if (progress >= 100) {
-            progress = 100;
-            completeScan(messages, files);
-            return;
+        // Make API call to start scan
+        const response = await fetch('/api/start_scan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(scanData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            addActivity('Scan started successfully', 'success');
+            document.getElementById('scan-status').textContent = 'Connecting...';
+            // SocketIO will handle progress updates from here
+        } else {
+            handleScanError(data.error || 'Failed to start scan');
         }
-
-        updateProgress(progress, messages, files);
-    }, 500);
+    } catch (error) {
+        console.error('Error starting scan:', error);
+        handleScanError('Network error: Could not connect to server');
+    }
 }
 
 function updateProgress(progress, messages, files) {
@@ -611,6 +632,9 @@ function completeScan(messages, files) {
     document.getElementById('scan-status').textContent = 'Completed';
     addActivity(`Scan completed! Found ${files} files in ${messages} messages`, 'success');
 
+    // Re-enable form elements
+    setFormDisabled(false);
+
     // Update stats
     updateGlobalStats();
 
@@ -626,15 +650,113 @@ function completeScan(messages, files) {
     });
 }
 
-function stopScan() {
-    if (scanInterval) {
-        clearInterval(scanInterval);
+function handleScanError(errorMessage) {
+    isScanning = false;
+    clearInterval(scanInterval);
+
+    // Re-enable form elements
+    setFormDisabled(false);
+
+    // Update UI
+    document.getElementById('scan-status').textContent = 'Error';
+    addActivity(`Error: ${errorMessage}`, 'error');
+
+    // Show error toast
+    showToast(errorMessage, 'error');
+
+    // Hide progress section after a delay
+    setTimeout(() => {
+        const progressSection = document.getElementById('scan-progress-section');
+        progressSection.style.display = 'none';
+    }, 3000);
+}
+
+function setFormDisabled(disabled) {
+    const form = document.getElementById('scan-form');
+    const inputs = form.querySelectorAll('input, button, select');
+    inputs.forEach(input => {
+        input.disabled = disabled;
+    });
+
+    // Update submit button text
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        const btnText = submitBtn.querySelector('.btn-text');
+        if (disabled) {
+            btnText.textContent = 'Scanning...';
+            submitBtn.classList.add('loading');
+        } else {
+            btnText.textContent = 'Start Scanning';
+            submitBtn.classList.remove('loading');
+        }
+    }
+}
+
+async function getCSRFToken() {
+    // Try to get CSRF token from meta tag first
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfMeta) {
+        return csrfMeta.getAttribute('content');
     }
 
-    isScanning = false;
-    document.getElementById('scan-status').textContent = 'Stopped';
-    addActivity('Scan stopped by user', 'warning');
-    showToast('Scan stopped', 'info');
+    // Try to get from cookie
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrf_token') {
+            return value;
+        }
+    }
+
+    // Fetch from API as fallback
+    try {
+        const response = await fetch('/api/csrf-token');
+        const data = await response.json();
+        if (data.success) {
+            return data.csrf_token;
+        }
+    } catch (error) {
+        console.warn('Could not fetch CSRF token:', error);
+    }
+
+    return '';
+}
+
+async function stopScan() {
+    if (!isScanning) return;
+
+    try {
+        // Make API call to stop scan
+        const csrfToken = await getCSRFToken();
+        const response = await fetch('/api/stop_scan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            isScanning = false;
+            setFormDisabled(false);
+            document.getElementById('scan-status').textContent = 'Stopped';
+            addActivity('Scan stopped by user', 'warning');
+            showToast('Scan stopped', 'info');
+
+            // Hide progress section after a delay
+            setTimeout(() => {
+                const progressSection = document.getElementById('scan-progress-section');
+                progressSection.style.display = 'none';
+            }, 2000);
+        } else {
+            showToast('Failed to stop scan: ' + (data.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('Error stopping scan:', error);
+        showToast('Network error: Could not stop scan', 'error');
+    }
 }
 
 function addActivity(text, type = 'info') {
@@ -807,5 +929,81 @@ function showToast(message, type = 'info') {
         console.log(`${type.toUpperCase()}: ${message}`);
     }
 }
+
+// SocketIO Integration for Real-time Progress Updates
+let socket;
+
+function initializeSocketIO() {
+    // Initialize SocketIO connection
+    socket = io();
+
+    socket.on('connect', function() {
+        console.log('Connected to server');
+        addActivity('Connected to server', 'info');
+    });
+
+    socket.on('disconnect', function() {
+        console.log('Disconnected from server');
+        if (isScanning) {
+            addActivity('Connection lost - attempting to reconnect...', 'warning');
+        }
+    });
+
+    socket.on('scan_progress', function(data) {
+        if (!isScanning) return;
+
+        // Update progress based on server data
+        const progress = data.total > 0 ? (data.current / data.total) * 100 : 0;
+        const messages = data.current || 0;
+        const files = data.files_found || 0;
+
+        // Update status text based on scan phase
+        let statusText = 'Scanning...';
+        switch(data.status) {
+            case 'resolving_channel':
+                statusText = 'Resolving channel...';
+                break;
+            case 'scanning_messages':
+                statusText = 'Scanning messages...';
+                break;
+            case 'processing_files':
+                statusText = 'Processing files...';
+                break;
+            case 'saving_data':
+                statusText = 'Saving data...';
+                break;
+        }
+
+        document.getElementById('scan-status').textContent = statusText;
+        updateProgress(progress, messages, files);
+
+        // Add activity updates
+        if (data.status === 'scanning_messages' && messages % 100 === 0) {
+            addActivity(`Processed ${messages} messages, found ${files} files`, 'info');
+        }
+    });
+
+    socket.on('scan_complete', function(data) {
+        if (data.success) {
+            completeScan(data.messages_scanned || 0, data.files_found || 0);
+            addActivity(`Scan completed successfully! Found ${data.files_found} files`, 'success');
+        } else {
+            handleScanError(data.error || 'Scan failed');
+        }
+    });
+
+    socket.on('error', function(error) {
+        console.error('SocketIO error:', error);
+        if (isScanning) {
+            handleScanError('Connection error occurred');
+        }
+    });
+}
+
+// Initialize SocketIO when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Add a small delay to ensure the page is fully loaded
+    setTimeout(initializeSocketIO, 100);
+});
 </script>
 {% endblock %}
