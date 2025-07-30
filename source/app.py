@@ -778,6 +778,18 @@ def search_page():
     """Advanced search page"""
     return render_template('search.html')
 
+@app.route('/favicon.ico')
+def favicon():
+    """Handle favicon requests"""
+    # Return empty response to prevent 404 errors
+    return '', 204
+
+@app.route('/.well-known/appspecific/com.chrome.devtools.json')
+def chrome_devtools():
+    """Handle Chrome DevTools requests"""
+    # Return empty response to prevent 404 errors
+    return '', 204
+
 @app.route('/api/save_settings', methods=['POST'])
 def save_settings():
     """Save API settings"""
