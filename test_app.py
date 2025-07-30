@@ -141,4 +141,4 @@ if __name__ == '__main__':
     print(f"📁 Static folder: {static_folder}")
     print("📱 Access at: http://localhost:3000")
     
-    app.run(host='localhost', port=3000, debug=True)
+    app.run(host='127.0.0.1', port=3000, debug=True)

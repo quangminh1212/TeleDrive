@@ -129,7 +129,7 @@ class FlaskConfigLoader:
 
     def get_server_config(self) -> Dict[str, Any]:
         """Get server configuration for running the Flask app"""
-        host = self.get('flask.host', 'localhost')
+        host = self.get('flask.host', '127.0.0.1')
         preferred_port = self.get('flask.port', 3000)
 
         # Check if preferred port is available
@@ -236,7 +236,7 @@ class FlaskConfigLoader:
             "_last_updated": "2025-01-11",
             "flask": {
                 "secret_key": "",  # Will be auto-generated if empty
-                "host": "localhost",
+                "host": "127.0.0.1",
                 "port": 3000,
                 "debug": False,
                 "threaded": True,
