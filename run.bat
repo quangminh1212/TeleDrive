@@ -179,8 +179,8 @@ echo ⏹️  Nhan Ctrl+C de dung web server
 echo ================================================================
 echo.
 
-REM Chay web interface
-python source/app.py
+REM Chay web interface (simplified version to avoid logging issues)
+python app_simple.py
 
 echo.
 echo ================================================================
