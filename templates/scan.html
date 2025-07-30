@@ -205,6 +205,19 @@
                             </button>
                         </div>
                     </form>
+
+                    <!-- Loading Overlay -->
+                    <div class="form-loading-overlay" id="form-loading-overlay" style="display: none;">
+                        <div class="loading-content">
+                            <div class="loading-spinner">
+                                <div class="spinner"></div>
+                            </div>
+                            <div class="loading-text">
+                                <div class="loading-title">Starting Scan...</div>
+                                <div class="loading-subtitle">Connecting to Telegram servers</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -815,16 +828,19 @@ function startScan(channelInput) {
     document.getElementById('scan-status').textContent = 'Initializing...';
 
     // Add activity
-    addActivity('Connecting to Telegram...', 'connect');
+    addActivity('Starting scan request...', 'connect');
 
     // Start progress animation
     animateProgress();
 
-    // Disable form elements during scan
-    setFormDisabled(true);
+    // Disable form elements and show loading overlay
+    setFormDisabled(true, 'Initializing Scan...', 'Preparing to connect to Telegram servers');
 
-    // Make actual API call to start scan
-    startActualScan(channelInput);
+    // Add a small delay to show the loading state
+    setTimeout(() => {
+        // Make actual API call to start scan
+        startActualScan(channelInput);
+    }, 500);
 }
 
 async function startActualScan(channelInput) {
@@ -873,24 +889,46 @@ async function startActualScan(channelInput) {
 }
 
 function updateProgress(progress, messages, files) {
-    // Update progress ring
+    // Update progress ring with smooth animation
     const ring = document.getElementById('progress-ring');
-    const circumference = 2 * Math.PI * 54;
-    const offset = circumference - (progress / 100) * circumference;
-    ring.style.strokeDashoffset = offset;
+    if (ring) {
+        const circumference = 2 * Math.PI * 54;
+        const offset = circumference - (progress / 100) * circumference;
+        ring.style.strokeDashoffset = offset;
+    }
 
-    // Update percentage
-    document.getElementById('progress-percentage').textContent = Math.round(progress) + '%';
+    // Update percentage with animation
+    const percentageEl = document.getElementById('progress-percentage');
+    if (percentageEl) {
+        animateNumber(percentageEl, Math.round(progress), '%');
+    }
 
-    // Update stats
-    document.getElementById('messages-processed').textContent = messages.toLocaleString();
-    document.getElementById('files-found').textContent = files.toLocaleString();
+    // Update stats with animation
+    const messagesEl = document.getElementById('messages-processed');
+    const filesEl = document.getElementById('files-found');
+
+    if (messagesEl) {
+        animateNumber(messagesEl, messages, '', true);
+    }
+
+    if (filesEl) {
+        animateNumber(filesEl, files, '', true);
+    }
 
     // Update speed and time
     const elapsed = (Date.now() - startTime) / 1000;
     const speed = Math.round(messages / elapsed);
-    document.getElementById('scan-speed').textContent = speed;
-    document.getElementById('time-elapsed').textContent = formatTime(elapsed);
+
+    const speedEl = document.getElementById('scan-speed');
+    const timeEl = document.getElementById('time-elapsed');
+
+    if (speedEl) {
+        animateNumber(speedEl, speed, ' msg/s');
+    }
+
+    if (timeEl) {
+        timeEl.textContent = formatTime(elapsed);
+    }
 
     // Add random activities
     if (Math.random() < 0.3) {
@@ -1060,14 +1098,16 @@ function showDetailedError(errorInfo) {
     });
 }
 
-function setFormDisabled(disabled) {
+function setFormDisabled(disabled, loadingMessage = 'Starting Scan...', loadingSubtitle = 'Connecting to Telegram servers') {
     const form = document.getElementById('scan-form');
     const inputs = form.querySelectorAll('input, button, select');
+    const loadingOverlay = document.getElementById('form-loading-overlay');
+
     inputs.forEach(input => {
         input.disabled = disabled;
     });
 
-    // Update submit button text
+    // Update submit button text and state
     const submitBtn = form.querySelector('button[type="submit"]');
     if (submitBtn) {
         const btnText = submitBtn.querySelector('.btn-text');
@@ -1077,6 +1117,31 @@ function setFormDisabled(disabled) {
         } else {
             btnText.textContent = 'Start Scanning';
             submitBtn.classList.remove('loading');
+        }
+    }
+
+    // Show/hide loading overlay
+    if (loadingOverlay) {
+        if (disabled) {
+            // Update loading text
+            const loadingTitle = loadingOverlay.querySelector('.loading-title');
+            const loadingSubtitleEl = loadingOverlay.querySelector('.loading-subtitle');
+
+            if (loadingTitle) loadingTitle.textContent = loadingMessage;
+            if (loadingSubtitleEl) loadingSubtitleEl.textContent = loadingSubtitle;
+
+            // Show overlay with animation
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+                loadingOverlay.style.opacity = '1';
+            }, 10);
+        } else {
+            // Hide overlay with animation
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+            }, 300);
         }
     }
 }
@@ -1150,6 +1215,8 @@ async function stopScan() {
 
 function addActivity(text, type = 'info') {
     const activityList = document.getElementById('activity-list');
+    if (!activityList) return;
+
     const activity = document.createElement('div');
     activity.className = 'activity-item';
 
@@ -1161,21 +1228,45 @@ function addActivity(text, type = 'info') {
         connect: 'wifi'
     };
 
+    // Get current timestamp
+    const now = new Date();
+    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     activity.innerHTML = `
         <div class="activity-icon ${type}">
             <span class="material-icons">${icons[type] || 'info'}</span>
         </div>
         <div class="activity-content">
             <span class="activity-text">${text}</span>
-            <span class="activity-time">Just now</span>
+            <span class="activity-time">${timeString}</span>
         </div>
     `;
 
+    // Add initial animation state
+    activity.style.opacity = '0';
+    activity.style.transform = 'translateX(20px)';
+
     activityList.insertBefore(activity, activityList.firstChild);
 
-    // Keep only last 10 activities
+    // Trigger animation
+    setTimeout(() => {
+        activity.style.transition = 'all 0.3s ease';
+        activity.style.opacity = '1';
+        activity.style.transform = 'translateX(0)';
+    }, 10);
+
+    // Keep only last 10 activities with fade out animation
     while (activityList.children.length > 10) {
-        activityList.removeChild(activityList.lastChild);
+        const lastChild = activityList.lastChild;
+        lastChild.style.transition = 'all 0.3s ease';
+        lastChild.style.opacity = '0';
+        lastChild.style.transform = 'translateX(-20px)';
+
+        setTimeout(() => {
+            if (lastChild.parentNode) {
+                activityList.removeChild(lastChild);
+            }
+        }, 300);
     }
 }
 
@@ -1190,6 +1281,48 @@ function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function animateNumber(element, targetValue, suffix = '', useLocaleString = false) {
+    if (!element) return;
+
+    const currentValue = parseInt(element.textContent.replace(/[^\d]/g, '')) || 0;
+    const difference = targetValue - currentValue;
+    const duration = 500; // Animation duration in ms
+    const steps = 20; // Number of animation steps
+    const stepValue = difference / steps;
+    const stepDuration = duration / steps;
+
+    // Add animation class
+    element.classList.add('updated');
+    setTimeout(() => element.classList.remove('updated'), duration);
+
+    let currentStep = 0;
+    const animate = () => {
+        currentStep++;
+        const newValue = Math.round(currentValue + (stepValue * currentStep));
+
+        if (useLocaleString) {
+            element.textContent = newValue.toLocaleString() + suffix;
+        } else {
+            element.textContent = newValue + suffix;
+        }
+
+        if (currentStep < steps && newValue !== targetValue) {
+            setTimeout(animate, stepDuration);
+        } else {
+            // Ensure final value is exact
+            if (useLocaleString) {
+                element.textContent = targetValue.toLocaleString() + suffix;
+            } else {
+                element.textContent = targetValue + suffix;
+            }
+        }
+    };
+
+    if (difference !== 0) {
+        animate();
+    }
 }
 
 function loadStats() {
@@ -1346,29 +1479,56 @@ function initializeSocketIO() {
         const messages = data.current || 0;
         const files = data.files_found || 0;
 
-        // Update status text based on scan phase
+        // Update status text and loading overlay based on scan phase
         let statusText = 'Scanning...';
+        let loadingMessage = 'Scanning in progress...';
+        let loadingSubtitle = 'Please wait while we process your request';
+
         switch(data.status) {
             case 'resolving_channel':
                 statusText = 'Resolving channel...';
+                loadingMessage = 'Connecting to Channel';
+                loadingSubtitle = 'Verifying channel access and permissions';
                 break;
             case 'scanning_messages':
                 statusText = 'Scanning messages...';
+                loadingMessage = 'Scanning Messages';
+                loadingSubtitle = `Processing ${messages.toLocaleString()} messages...`;
                 break;
             case 'processing_files':
                 statusText = 'Processing files...';
+                loadingMessage = 'Processing Files';
+                loadingSubtitle = `Found ${files.toLocaleString()} files, extracting metadata...`;
                 break;
             case 'saving_data':
                 statusText = 'Saving data...';
+                loadingMessage = 'Saving Results';
+                loadingSubtitle = 'Storing scan results to database...';
                 break;
         }
 
+        // Update UI elements
         document.getElementById('scan-status').textContent = statusText;
         updateProgress(progress, messages, files);
 
-        // Add activity updates
-        if (data.status === 'scanning_messages' && messages % 100 === 0) {
-            addActivity(`Processed ${messages} messages, found ${files} files`, 'info');
+        // Update loading overlay if visible
+        const loadingOverlay = document.getElementById('form-loading-overlay');
+        if (loadingOverlay && loadingOverlay.style.display !== 'none') {
+            const loadingTitle = loadingOverlay.querySelector('.loading-title');
+            const loadingSubtitleEl = loadingOverlay.querySelector('.loading-subtitle');
+
+            if (loadingTitle) loadingTitle.textContent = loadingMessage;
+            if (loadingSubtitleEl) loadingSubtitleEl.textContent = loadingSubtitle;
+        }
+
+        // Add activity updates with more detailed information
+        if (data.status === 'scanning_messages' && messages % 100 === 0 && messages > 0) {
+            addActivity(`Processed ${messages.toLocaleString()} messages, found ${files.toLocaleString()} files`, 'info');
+        }
+
+        // Add milestone activities
+        if (files > 0 && files % 50 === 0 && data.status === 'processing_files') {
+            addActivity(`Processed ${files} files, extracting metadata...`, 'info');
         }
     });
 
