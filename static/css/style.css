@@ -46,6 +46,114 @@ body {
     line-height: 1.5;
 }
 
+/* Network Error Banner */
+.network-error-banner {
+    background: #fce8e6;
+    border: 1px solid #ea4335;
+    border-radius: 8px;
+    margin: 16px 0;
+    animation: slideDown 0.3s ease;
+}
+
+.network-error-banner .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: #d93025;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.network-error-banner .material-icons {
+    font-size: 20px;
+}
+
+.network-error-banner .banner-close {
+    background: none;
+    border: none;
+    color: #d93025;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    margin-left: auto;
+    transition: background-color 0.2s;
+}
+
+.network-error-banner .banner-close:hover {
+    background: rgba(217, 48, 37, 0.1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Single Line Utility Classes */
+.single-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.single-line-flex {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    min-width: 0; /* Allows flex items to shrink below content size */
+}
+
+.single-line-flex > * {
+    flex-shrink: 0;
+}
+
+.single-line-flex .text-content {
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.single-line-truncate {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.single-line-scroll {
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+.single-line-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+
+.single-line-scroll::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+}
+
+.single-line-scroll::-webkit-scrollbar-thumb {
+    background: var(--border-dark);
+    border-radius: 2px;
+}
+
+.single-line-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
 /* Header */
 .header {
     background: var(--bg-primary);
@@ -1307,6 +1415,33 @@ body {
     gap: 24px;
 }
 
+/* Filter Groups */
+.size-filter-group,
+.date-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.range-separator {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding: 0 4px;
+}
+
+.input-label {
+    position: absolute;
+    top: -8px;
+    left: 12px;
+    background: white;
+    padding: 0 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
 /* Radio Group */
 .radio-group {
     display: flex;
@@ -1353,10 +1488,12 @@ body {
 
 /* File Type Cards */
 .file-types-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
     gap: 16px;
     margin-top: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
 }
 
 .file-type-card {
@@ -1368,6 +1505,8 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     display: block;
+    min-width: 140px;
+    flex-shrink: 0;
 }
 
 .file-type-card:hover {
@@ -1404,23 +1543,23 @@ body {
 }
 
 .file-type-icon.documents {
-    background: #e3f2fd;
-    color: #1976d2;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-icon.photos {
-    background: #f3e5f5;
-    color: #7b1fa2;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-icon.videos {
-    background: #fff3e0;
-    color: #f57c00;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-icon.audio {
-    background: #e8f5e8;
-    color: #388e3c;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-icon .material-icons {
@@ -1720,28 +1859,28 @@ body {
 }
 
 .activity-icon.info {
-    background: rgba(33, 150, 243, 0.2);
-    color: #2196f3;
+    background: rgba(95, 99, 104, 0.2);
+    color: #5f6368;
 }
 
 .activity-icon.success {
-    background: rgba(76, 175, 80, 0.2);
-    color: #4caf50;
+    background: rgba(95, 99, 104, 0.2);
+    color: #5f6368;
 }
 
 .activity-icon.warning {
-    background: rgba(255, 193, 7, 0.2);
-    color: #ffc107;
+    background: rgba(95, 99, 104, 0.2);
+    color: #5f6368;
 }
 
 .activity-icon.error {
-    background: rgba(244, 67, 54, 0.2);
-    color: #f44336;
+    background: rgba(95, 99, 104, 0.2);
+    color: #5f6368;
 }
 
 .activity-icon.connect {
-    background: rgba(0, 188, 212, 0.2);
-    color: #00bcd4;
+    background: rgba(95, 99, 104, 0.2);
+    color: #5f6368;
 }
 
 .activity-icon .material-icons {
@@ -1910,11 +2049,24 @@ body {
     }
 
     .file-types-grid {
-        grid-template-columns: repeat(2, 1fr);
+        flex-wrap: nowrap;
+        overflow-x: auto;
     }
 
     .options-grid {
         grid-template-columns: 1fr;
+    }
+
+    .size-filter-group,
+    .date-filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .range-separator {
+        text-align: center;
+        padding: 4px 0;
     }
 
     .scan-container {
@@ -4112,18 +4264,18 @@ body {
 }
 
 .file-type-badge.json {
-    background: #e8f0fe;
-    color: #1a73e8;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-badge.csv {
-    background: #e6f4ea;
-    color: #137333;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-badge.excel {
-    background: #fef7e0;
-    color: #f57c00;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-badge.generic {
@@ -4132,28 +4284,28 @@ body {
 }
 
 .file-type-badge.image {
-    background: #e8f5e8;
-    color: #2e7d32;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-badge.video {
-    background: #fff3e0;
-    color: #ef6c00;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-badge.audio {
-    background: #f3e5f5;
-    color: #7b1fa2;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-badge.text {
-    background: #e3f2fd;
-    color: #1976d2;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-type-badge.pdf {
-    background: #ffebee;
-    color: #c62828;
+    background: #f1f3f4;
+    color: #5f6368;
 }
 
 .file-info {
@@ -4507,7 +4659,8 @@ body {
     }
 
     .file-types-grid {
-        grid-template-columns: 1fr;
+        flex-wrap: nowrap;
+        overflow-x: auto;
         gap: 8px;
     }
 

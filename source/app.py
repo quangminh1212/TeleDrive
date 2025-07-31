@@ -151,116 +151,54 @@ def add_security_headers(response):
 
     return response
 
-# Global Error Handlers
-@app.errorhandler(400)
-def bad_request_error(error):
-    """Handle 400 Bad Request errors"""
-    app.logger.warning(f"Bad request: {request.url} - {error}")
-    if request.is_json:
-        return jsonify({
-            'success': False,
-            'error': 'Bad request',
-            'message': 'The request could not be understood by the server'
-        }), 400
-    return render_template('errors/400.html'), 400
+# Global Error Handlers - Refactored for DRY principle
+def create_error_handler(status_code, error_type, message, log_level='warning', special_action=None):
+    """Factory function to create standardized error handlers"""
+    def error_handler(error):
+        # Log the error
+        log_message = f"{error_type}: {request.url} - {error}"
+        getattr(app.logger, log_level)(log_message)
 
-@app.errorhandler(401)
-def unauthorized_error(error):
-    """Handle 401 Unauthorized errors"""
-    app.logger.warning(f"Unauthorized access: {request.url} - {error}")
-    if request.is_json:
-        return jsonify({
-            'success': False,
-            'error': 'Unauthorized',
-            'message': 'Authentication required'
-        }), 401
-    return render_template('errors/401.html'), 401
+        # Execute special action if provided
+        if special_action:
+            special_action()
 
-@app.errorhandler(403)
-def forbidden_error(error):
-    """Handle 403 Forbidden errors"""
-    app.logger.warning(f"Forbidden access: {request.url} - {error}")
-    if request.is_json:
-        return jsonify({
-            'success': False,
-            'error': 'Forbidden',
-            'message': 'You do not have permission to access this resource'
-        }), 403
-    return render_template('errors/403.html'), 403
+        # Return JSON response for API requests
+        if request.is_json:
+            return jsonify({
+                'success': False,
+                'error': error_type.lower().replace(' ', '_'),
+                'message': message
+            }), status_code
 
-@app.errorhandler(404)
-def not_found_error(error):
-    """Handle 404 Not Found errors"""
-    app.logger.info(f"Page not found: {request.url}")
-    if request.is_json:
-        return jsonify({
-            'success': False,
-            'error': 'Not found',
-            'message': 'The requested resource was not found'
-        }), 404
-    return render_template('errors/404.html'), 404
+        # Handle special cases for non-JSON requests
+        if status_code == 413:
+            flash('The uploaded file is too large. Please choose a smaller file.', 'error')
+            return redirect(request.referrer or url_for('dashboard'))
 
-@app.errorhandler(413)
-def request_entity_too_large_error(error):
-    """Handle 413 Request Entity Too Large errors"""
-    app.logger.warning(f"File too large: {request.url}")
-    if request.is_json:
-        return jsonify({
-            'success': False,
-            'error': 'File too large',
-            'message': 'The uploaded file is too large'
-        }), 413
-    flash('The uploaded file is too large. Please choose a smaller file.', 'error')
-    return redirect(request.referrer or url_for('dashboard'))
+        # Return HTML template for regular requests
+        return render_template(f'errors/{status_code}.html'), status_code
 
-@app.errorhandler(429)
-def rate_limit_error(error):
-    """Handle 429 Too Many Requests errors"""
-    app.logger.warning(f"Rate limit exceeded: {request.url}")
-    if request.is_json:
-        return jsonify({
-            'success': False,
-            'error': 'Rate limit exceeded',
-            'message': 'Too many requests. Please try again later.'
-        }), 429
-    return render_template('errors/429.html'), 429
+    return error_handler
 
-@app.errorhandler(500)
-def internal_error(error):
-    """Handle 500 Internal Server errors"""
-    db.session.rollback()
-    app.logger.error(f"Internal server error: {request.url} - {error}")
-    if request.is_json:
-        return jsonify({
-            'success': False,
-            'error': 'Internal server error',
-            'message': 'An unexpected error occurred. Please try again later.'
-        }), 500
-    return render_template('errors/500.html'), 500
+# Error configuration mapping
+ERROR_CONFIGS = {
+    400: ('Bad request', 'The request could not be understood by the server', 'warning'),
+    401: ('Unauthorized', 'Authentication required', 'warning'),
+    403: ('Forbidden', 'You do not have permission to access this resource', 'warning'),
+    404: ('Not found', 'The requested resource was not found', 'info'),
+    413: ('File too large', 'The uploaded file is too large', 'warning'),
+    429: ('Rate limit exceeded', 'Too many requests. Please try again later.', 'warning'),
+    500: ('Internal server error', 'An unexpected error occurred. Please try again later.', 'error', lambda: db.session.rollback()),
+    502: ('Bad gateway', 'The server received an invalid response from an upstream server', 'error'),
+    503: ('Service unavailable', 'The service is temporarily unavailable. Please try again later.', 'error')
+}
 
-@app.errorhandler(502)
-def bad_gateway_error(error):
-    """Handle 502 Bad Gateway errors"""
-    app.logger.error(f"Bad gateway: {request.url} - {error}")
-    if request.is_json:
-        return jsonify({
-            'success': False,
-            'error': 'Bad gateway',
-            'message': 'The server received an invalid response from an upstream server'
-        }), 502
-    return render_template('errors/502.html'), 502
-
-@app.errorhandler(503)
-def service_unavailable_error(error):
-    """Handle 503 Service Unavailable errors"""
-    app.logger.error(f"Service unavailable: {request.url} - {error}")
-    if request.is_json:
-        return jsonify({
-            'success': False,
-            'error': 'Service unavailable',
-            'message': 'The service is temporarily unavailable. Please try again later.'
-        }), 503
-    return render_template('errors/503.html'), 503
+# Register error handlers using the factory function
+for status_code, config in ERROR_CONFIGS.items():
+    error_type, message, log_level = config[:3]
+    special_action = config[3] if len(config) > 3 else None
+    app.errorhandler(status_code)(create_error_handler(status_code, error_type, message, log_level, special_action))
 
 # Database Error Handlers
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError, OperationalError

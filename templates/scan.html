@@ -10,21 +10,21 @@
             <div class="hero-icon">
                 <span class="material-icons">radar</span>
             </div>
-            <h1 class="hero-title">Channel Scanner</h1>
-            <p class="hero-subtitle">Discover and organize files from Telegram channels with ease</p>
+            <h1 class="hero-title single-line">Channel Scanner</h1>
+            <p class="hero-subtitle single-line">Discover and organize files from Telegram channels with ease</p>
         </div>
         <div class="hero-stats">
             <div class="stat-card">
                 <span class="stat-number" id="total-scans">0</span>
-                <span class="stat-label">Total Scans</span>
+                <span class="stat-label single-line">Total Scans</span>
             </div>
             <div class="stat-card">
                 <span class="stat-number" id="total-files">0</span>
-                <span class="stat-label">Files Found</span>
+                <span class="stat-label single-line">Files Found</span>
             </div>
             <div class="stat-card">
                 <span class="stat-number" id="total-channels">0</span>
-                <span class="stat-label">Channels</span>
+                <span class="stat-label single-line">Channels</span>
             </div>
         </div>
     </div>
@@ -125,6 +125,54 @@
                                         </label>
                                     </div>
                                 </div>
+
+                                <!-- File Size Filter -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <span class="material-icons">storage</span>
+                                        File Size Filter
+                                    </label>
+                                    <div class="size-filter-group">
+                                        <div class="input-wrapper">
+                                            <input type="number" id="min-file-size" class="form-input modern-input"
+                                                   placeholder="Min size" min="0" step="0.1">
+                                            <div class="input-suffix">MB</div>
+                                        </div>
+                                        <span class="range-separator">to</span>
+                                        <div class="input-wrapper">
+                                            <input type="number" id="max-file-size" class="form-input modern-input"
+                                                   placeholder="Max size" min="0" step="0.1">
+                                            <div class="input-suffix">MB</div>
+                                        </div>
+                                    </div>
+                                    <div class="form-help">
+                                        <span class="material-icons">info</span>
+                                        Leave empty for no size restrictions
+                                    </div>
+                                </div>
+
+                                <!-- Date Range Filter -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <span class="material-icons">date_range</span>
+                                        Date Range Filter
+                                    </label>
+                                    <div class="date-filter-group">
+                                        <div class="input-wrapper">
+                                            <input type="date" id="start-date" class="form-input modern-input">
+                                            <label for="start-date" class="input-label">From</label>
+                                        </div>
+                                        <span class="range-separator">to</span>
+                                        <div class="input-wrapper">
+                                            <input type="date" id="end-date" class="form-input modern-input">
+                                            <label for="end-date" class="input-label">To</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-help">
+                                        <span class="material-icons">info</span>
+                                        Filter messages by date range
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -142,8 +190,8 @@
                                         <div class="file-type-icon documents">
                                             <span class="material-icons">description</span>
                                         </div>
-                                        <span class="file-type-name">Documents</span>
-                                        <span class="file-type-desc">PDF, DOC, TXT, etc.</span>
+                                        <span class="file-type-name single-line">Documents</span>
+                                        <span class="file-type-desc single-line">PDF, DOC, TXT, etc.</span>
                                     </div>
                                     <div class="file-type-check">
                                         <span class="material-icons">check</span>
@@ -156,8 +204,8 @@
                                         <div class="file-type-icon photos">
                                             <span class="material-icons">image</span>
                                         </div>
-                                        <span class="file-type-name">Photos</span>
-                                        <span class="file-type-desc">JPG, PNG, GIF, etc.</span>
+                                        <span class="file-type-name single-line">Photos</span>
+                                        <span class="file-type-desc single-line">JPG, PNG, GIF, etc.</span>
                                     </div>
                                     <div class="file-type-check">
                                         <span class="material-icons">check</span>
@@ -170,8 +218,8 @@
                                         <div class="file-type-icon videos">
                                             <span class="material-icons">movie</span>
                                         </div>
-                                        <span class="file-type-name">Videos</span>
-                                        <span class="file-type-desc">MP4, AVI, MKV, etc.</span>
+                                        <span class="file-type-name single-line">Videos</span>
+                                        <span class="file-type-desc single-line">MP4, AVI, MKV, etc.</span>
                                     </div>
                                     <div class="file-type-check">
                                         <span class="material-icons">check</span>
@@ -184,8 +232,8 @@
                                         <div class="file-type-icon audio">
                                             <span class="material-icons">audiotrack</span>
                                         </div>
-                                        <span class="file-type-name">Audio</span>
-                                        <span class="file-type-desc">MP3, WAV, FLAC, etc.</span>
+                                        <span class="file-type-name single-line">Audio</span>
+                                        <span class="file-type-desc single-line">MP3, WAV, FLAC, etc.</span>
                                     </div>
                                     <div class="file-type-check">
                                         <span class="material-icons">check</span>
@@ -272,7 +320,7 @@
                                 </div>
                                 <div class="stat-content">
                                     <span class="stat-number" id="messages-processed">0</span>
-                                    <span class="stat-label">Messages</span>
+                                    <span class="stat-label single-line">Messages</span>
                                 </div>
                             </div>
 
@@ -282,7 +330,7 @@
                                 </div>
                                 <div class="stat-content">
                                     <span class="stat-number" id="files-found">0</span>
-                                    <span class="stat-label">Files Found</span>
+                                    <span class="stat-label single-line">Files Found</span>
                                 </div>
                             </div>
 
@@ -292,7 +340,7 @@
                                 </div>
                                 <div class="stat-content">
                                     <span class="stat-number" id="scan-speed">0</span>
-                                    <span class="stat-label">msg/sec</span>
+                                    <span class="stat-label single-line">msg/sec</span>
                                 </div>
                             </div>
 
@@ -302,7 +350,7 @@
                                 </div>
                                 <div class="stat-content">
                                     <span class="stat-number" id="time-elapsed">00:00</span>
-                                    <span class="stat-label">Elapsed</span>
+                                    <span class="stat-label single-line">Elapsed</span>
                                 </div>
                             </div>
                         </div>
@@ -1103,8 +1151,16 @@ function startScan(channelInput) {
     }, 500);
 }
 
-async function startActualScan(channelInput) {
+async function startActualScan(channelInput, retryCount = 0) {
+    const maxRetries = 2;
+
     try {
+        // Check network connectivity first
+        if (!navigator.onLine) {
+            handleScanError('No internet connection detected', 'network_error');
+            return;
+        }
+
         // Prepare scan data
         const scanData = {
             channel: channelInput,
@@ -1116,15 +1172,32 @@ async function startActualScan(channelInput) {
         // Get CSRF token
         const csrfToken = await getCSRFToken();
 
-        // Make API call to start scan
+        // Make API call to start scan with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
         const response = await fetch('/api/start_scan', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken
             },
-            body: JSON.stringify(scanData)
+            body: JSON.stringify(scanData),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
+
+        // Check if response is ok
+        if (!response.ok) {
+            if (response.status >= 500) {
+                throw new Error(`Server error: ${response.status}`);
+            } else if (response.status === 404) {
+                throw new Error('API endpoint not found');
+            } else if (response.status === 403) {
+                throw new Error('Access forbidden - check authentication');
+            }
+        }
 
         const data = await response.json();
 
@@ -1144,7 +1217,38 @@ async function startActualScan(channelInput) {
         }
     } catch (error) {
         console.error('Error starting scan:', error);
-        handleScanError('Network error: Could not connect to server', 'network_error');
+
+        // Determine the actual error type
+        let errorType = 'general';
+        let errorMessage = 'Failed to start scan';
+
+        if (error.name === 'AbortError') {
+            errorType = 'network_error';
+            errorMessage = 'Request timeout - server took too long to respond';
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            errorType = 'network_error';
+            errorMessage = 'Network connection failed';
+        } else if (error.message.includes('Server error')) {
+            errorType = 'general';
+            errorMessage = 'Server is experiencing issues';
+        } else if (error.message.includes('API endpoint not found')) {
+            errorType = 'general';
+            errorMessage = 'Service temporarily unavailable';
+        } else if (error.message.includes('Access forbidden')) {
+            errorType = 'auth_error';
+            errorMessage = 'Authentication required';
+        }
+
+        // Retry logic for network errors
+        if (errorType === 'network_error' && retryCount < maxRetries) {
+            addActivity(`Connection failed, retrying... (${retryCount + 1}/${maxRetries})`, 'warning');
+            setTimeout(() => {
+                startActualScan(channelInput, retryCount + 1);
+            }, 2000 * (retryCount + 1)); // Exponential backoff
+            return;
+        }
+
+        handleScanError(errorMessage, errorType);
     }
 }
 
@@ -1340,7 +1444,8 @@ function parseErrorMessage(errorMessage, errorType) {
             suggestions: [
                 'Check your internet connection',
                 'Try again in a few moments',
-                'The server may be temporarily unavailable'
+                'The server may be temporarily unavailable',
+                'Check if you can access other websites'
             ]
         },
         {
@@ -1465,13 +1570,38 @@ async function getCSRFToken() {
 
     // Fetch from API as fallback
     try {
-        const response = await fetch('/api/csrf-token');
+        // Check network connectivity
+        if (!navigator.onLine) {
+            console.warn('No internet connection, skipping CSRF token fetch');
+            return '';
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+        const response = await fetch('/api/csrf-token', {
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            console.warn(`CSRF token fetch failed: HTTP ${response.status}`);
+            return '';
+        }
+
         const data = await response.json();
         if (data.success) {
             return data.csrf_token;
         }
     } catch (error) {
-        console.warn('Could not fetch CSRF token:', error);
+        if (error.name === 'AbortError') {
+            console.warn('CSRF token request timed out');
+        } else if (error.message.includes('Failed to fetch')) {
+            console.warn('Network error fetching CSRF token');
+        } else {
+            console.warn('Could not fetch CSRF token:', error);
+        }
     }
 
     return '';
@@ -1866,6 +1996,64 @@ function initializeSocketIO() {
     });
 }
 
+// Network connectivity monitoring
+function initializeNetworkMonitoring() {
+    // Monitor online/offline status
+    window.addEventListener('online', function() {
+        console.log('Network connection restored');
+        addActivity('Network connection restored', 'success');
+
+        // Hide any network error messages
+        const errorElements = document.querySelectorAll('.network-error-banner');
+        errorElements.forEach(el => el.remove());
+    });
+
+    window.addEventListener('offline', function() {
+        console.log('Network connection lost');
+        addActivity('Network connection lost', 'error');
+
+        // Show network error banner
+        showNetworkErrorBanner();
+
+        // Stop any ongoing scans
+        if (isScanning) {
+            handleScanError('Network connection lost', 'network_error');
+        }
+    });
+
+    // Initial connectivity check
+    if (!navigator.onLine) {
+        showNetworkErrorBanner();
+    }
+}
+
+function showNetworkErrorBanner() {
+    // Remove existing banner if any
+    const existingBanner = document.querySelector('.network-error-banner');
+    if (existingBanner) {
+        existingBanner.remove();
+    }
+
+    // Create network error banner
+    const banner = document.createElement('div');
+    banner.className = 'network-error-banner';
+    banner.innerHTML = `
+        <div class="banner-content">
+            <span class="material-icons">wifi_off</span>
+            <span>No internet connection. Please check your network and try again.</span>
+            <button class="banner-close" onclick="this.parentElement.parentElement.remove()">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+    `;
+
+    // Insert at the top of the main content
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+        mainContent.insertBefore(banner, mainContent.firstChild);
+    }
+}
+
 // Initialize SocketIO when page loads
 document.addEventListener('DOMContentLoaded', function() {
     // Add a small delay to ensure the page is fully loaded
@@ -1873,6 +2061,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize keyboard navigation
     initializeKeyboardNavigation();
+
+    // Initialize network monitoring
+    initializeNetworkMonitoring();
 
     // Initialize secure event listeners (no inline handlers)
     initializeSecureEventListeners();
