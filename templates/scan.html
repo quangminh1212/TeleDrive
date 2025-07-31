@@ -751,15 +751,15 @@ function validateChannelInput(input) {
 
     const trimmedInput = input.trim();
 
-    // Define validation patterns with more specific rules
+    // Define validation patterns with more flexible rules
     const patterns = [
         {
-            regex: /^@[a-zA-Z][a-zA-Z0-9_]{4,31}$/,
+            regex: /^@[a-zA-Z][a-zA-Z0-9_]{2,31}$/,
             type: 'username',
             description: 'Channel username (@channelname)'
         },
         {
-            regex: /^https:\/\/t\.me\/[a-zA-Z][a-zA-Z0-9_]{4,31}$/,
+            regex: /^https:\/\/t\.me\/[a-zA-Z][a-zA-Z0-9_]{2,31}$/,
             type: 'public_link',
             description: 'Public channel link'
         },
@@ -786,9 +786,9 @@ function validateChannelInput(input) {
 
     // Provide specific error messages based on input format
     if (trimmedInput.startsWith('@')) {
-        if (trimmedInput.length < 6) {
+        if (trimmedInput.length < 4) {
             validation.error = 'Username too short';
-            validation.suggestion = 'Channel usernames must be at least 5 characters long';
+            validation.suggestion = 'Channel usernames must be at least 3 characters long';
         } else if (trimmedInput.length > 32) {
             validation.error = 'Username too long';
             validation.suggestion = 'Channel usernames must be 32 characters or less';
@@ -808,7 +808,7 @@ function validateChannelInput(input) {
             validation.suggestion = 'Invite links should be exactly 22 characters after /+';
         } else {
             validation.error = 'Invalid channel link format';
-            validation.suggestion = 'Channel name must be 5-32 characters, start with a letter';
+            validation.suggestion = 'Channel name must be 3-32 characters, start with a letter';
         }
     } else if (trimmedInput.startsWith('http://')) {
         validation.error = 'Insecure URL';
