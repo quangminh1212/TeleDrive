@@ -1111,6 +1111,14 @@ body {
 
 .form-group.enhanced {
     position: relative;
+    margin-bottom: 24px;
+}
+
+.form-group.enhanced .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 48px;
 }
 
 .form-label {
@@ -1144,11 +1152,23 @@ body {
     background: var(--bg-primary);
     transition: all 0.3s ease;
     outline: none;
+    position: relative;
+    z-index: 1;
 }
 
 .modern-input:focus {
     border-color: var(--telegram-blue);
     box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+}
+
+.modern-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+    font-size: 14px;
+}
+
+.modern-input:focus::placeholder {
+    opacity: 0.5;
 }
 
 .input-wrapper.focused .modern-input {
@@ -1164,6 +1184,8 @@ body {
     left: 16px;
     color: var(--text-muted);
     transition: color 0.3s ease;
+    z-index: 2;
+    pointer-events: none;
 }
 
 .input-wrapper.focused .input-icon {
@@ -1179,6 +1201,8 @@ body {
     padding: 4px 8px;
     border-radius: 6px;
     border: 1px solid var(--border-light);
+    z-index: 2;
+    pointer-events: none;
 }
 
 .form-help {
