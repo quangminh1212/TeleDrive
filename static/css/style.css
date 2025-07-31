@@ -1153,7 +1153,7 @@ body {
     transition: all 0.3s ease;
     outline: none;
     position: relative;
-    z-index: 1;
+    z-index: 3;
 }
 
 .modern-input:focus {
@@ -1182,10 +1182,15 @@ body {
 .input-icon {
     position: absolute;
     left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--text-muted);
     transition: color 0.3s ease;
-    z-index: 2;
+    z-index: 1;
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .input-wrapper.focused .input-icon {
