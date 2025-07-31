@@ -208,20 +208,38 @@ class ChannelScanForm(FlaskForm):
         # Check for valid Telegram channel formats
         if not (channel.startswith('@') or
                 channel.startswith('https://t.me/') or
+                channel.startswith('https://telegram.me/') or
                 channel.startswith('t.me/') or
                 channel.startswith('telegram.me/')):
             raise ValidationError('Please enter a valid Telegram channel URL or username (starting with @)')
 
         # Remove common prefixes for validation
         clean_channel = channel
-        for prefix in ['https://t.me/', 't.me/', 'telegram.me/', '@']:
+        for prefix in ['https://telegram.me/', 'https://t.me/', 't.me/', 'telegram.me/', '@']:
             if clean_channel.startswith(prefix):
                 clean_channel = clean_channel[len(prefix):]
                 break
 
-        # Validate channel name format
-        if not clean_channel or not clean_channel.replace('_', '').replace('-', '').isalnum():
+        # Validate channel name format (skip validation for invite links with + or joinchat)
+        if not clean_channel:
             raise ValidationError('Invalid channel name format')
+
+        # For invite links, allow more flexible validation
+        if channel.startswith('https://t.me/+') or 'joinchat' in channel:
+            # Invite links can have various formats, just check minimum length
+            if len(clean_channel) < 10:
+                raise ValidationError('Invite link too short')
+        else:
+            # For regular channels, validate format and length
+            # Channel names must be 5-32 characters, start with letter/number, contain only letters, numbers, underscores
+            if len(clean_channel) < 5:
+                raise ValidationError('Channel name too short (minimum 5 characters)')
+            elif len(clean_channel) > 32:
+                raise ValidationError('Channel name too long (maximum 32 characters)')
+            elif not clean_channel[0].isalnum():
+                raise ValidationError('Channel name must start with a letter or number')
+            elif not clean_channel.replace('_', '').isalnum():
+                raise ValidationError('Channel name can only contain letters, numbers, and underscores')
 
     def validate_max_files(self, max_files):
         """Validate maximum files limit"""

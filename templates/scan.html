@@ -69,6 +69,7 @@
                                         <li><code>@channelname</code> - Channel username</li>
                                         <li><code>https://t.me/channelname</code> - Public channel link</li>
                                         <li><code>https://t.me/joinchat/xxxxx</code> - Private channel invite</li>
+                                        <li><code>https://t.me/+xxxxx</code> - Private channel invite (+format)</li>
                                     </ul>
                                 </div>
                             </div>
@@ -754,22 +755,32 @@ function validateChannelInput(input) {
     // Define validation patterns with more flexible rules
     const patterns = [
         {
-            regex: /^@[a-zA-Z][a-zA-Z0-9_]{2,31}$/,
+            regex: /^@[a-zA-Z0-9][a-zA-Z0-9_]{4,31}$/,
             type: 'username',
             description: 'Channel username (@channelname)'
         },
         {
-            regex: /^https:\/\/t\.me\/[a-zA-Z][a-zA-Z0-9_]{2,31}$/,
+            regex: /^https:\/\/t\.me\/[a-zA-Z0-9][a-zA-Z0-9_]{4,31}$/,
             type: 'public_link',
             description: 'Public channel link'
         },
         {
-            regex: /^https:\/\/t\.me\/joinchat\/[a-zA-Z0-9_-]{22}$/,
+            regex: /^https:\/\/telegram\.me\/[a-zA-Z0-9][a-zA-Z0-9_]{4,31}$/,
+            type: 'public_link_legacy',
+            description: 'Public channel link (legacy)'
+        },
+        {
+            regex: /^t\.me\/[a-zA-Z0-9][a-zA-Z0-9_]{4,31}$/,
+            type: 'public_link_short',
+            description: 'Public channel link (short format)'
+        },
+        {
+            regex: /^https:\/\/t\.me\/joinchat\/[a-zA-Z0-9_-]{10,50}$/,
             type: 'private_invite',
             description: 'Private channel invite link'
         },
         {
-            regex: /^https:\/\/t\.me\/\+[a-zA-Z0-9_-]{22}$/,
+            regex: /^https:\/\/t\.me\/\+[a-zA-Z0-9_-]{10,50}$/,
             type: 'private_invite_plus',
             description: 'Private channel invite link (+format)'
         }
@@ -786,36 +797,39 @@ function validateChannelInput(input) {
 
     // Provide specific error messages based on input format
     if (trimmedInput.startsWith('@')) {
-        if (trimmedInput.length < 4) {
+        if (trimmedInput.length < 6) {
             validation.error = 'Username too short';
-            validation.suggestion = 'Channel usernames must be at least 3 characters long';
-        } else if (trimmedInput.length > 32) {
+            validation.suggestion = 'Channel usernames must be at least 5 characters long';
+        } else if (trimmedInput.length > 33) {
             validation.error = 'Username too long';
             validation.suggestion = 'Channel usernames must be 32 characters or less';
-        } else if (!/^@[a-zA-Z]/.test(trimmedInput)) {
+        } else if (!/^@[a-zA-Z0-9]/.test(trimmedInput)) {
             validation.error = 'Invalid username format';
-            validation.suggestion = 'Username must start with a letter after @';
+            validation.suggestion = 'Username must start with a letter or number after @';
         } else {
             validation.error = 'Invalid username format';
             validation.suggestion = 'Username can only contain letters, numbers, and underscores';
         }
-    } else if (trimmedInput.startsWith('https://t.me/')) {
+    } else if (trimmedInput.startsWith('https://t.me/') || trimmedInput.startsWith('https://telegram.me/')) {
         if (trimmedInput.includes('/joinchat/')) {
             validation.error = 'Invalid invite link format';
-            validation.suggestion = 'Invite links should be exactly 22 characters after /joinchat/';
+            validation.suggestion = 'Invite links should be 10-50 characters after /joinchat/';
         } else if (trimmedInput.includes('/+')) {
             validation.error = 'Invalid invite link format';
-            validation.suggestion = 'Invite links should be exactly 22 characters after /+';
+            validation.suggestion = 'Invite links should be 10-50 characters after /+';
         } else {
             validation.error = 'Invalid channel link format';
-            validation.suggestion = 'Channel name must be 3-32 characters, start with a letter';
+            validation.suggestion = 'Channel name must be 5-32 characters, start with a letter or number';
         }
+    } else if (trimmedInput.startsWith('t.me/')) {
+        validation.error = 'Invalid URL format';
+        validation.suggestion = 'URL should start with https:// (https://t.me/...)';
     } else if (trimmedInput.startsWith('http://')) {
         validation.error = 'Insecure URL';
         validation.suggestion = 'Please use HTTPS (https://t.me/...)';
     } else if (trimmedInput.includes('t.me')) {
         validation.error = 'Invalid URL format';
-        validation.suggestion = 'URL must start with https://t.me/';
+        validation.suggestion = 'URL must start with https://t.me/ or https://telegram.me/';
     } else {
         validation.error = 'Invalid format';
         validation.suggestion = 'Please enter @username or https://t.me/... link';

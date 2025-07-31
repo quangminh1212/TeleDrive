@@ -46,10 +46,12 @@ The frontend integrates with the Flask backend through:
 - `sanitizeInput(input)`: Prevents XSS attacks through input sanitization
 
 **Features**:
-- Supports multiple channel formats (@username, https://t.me/channel, invite links)
+- Supports multiple channel formats (@username, https://t.me/channel, https://telegram.me/channel, t.me/channel, invite links)
+- Allows channel names starting with letters or numbers (5-32 characters)
 - Real-time validation with 500ms debouncing
 - Contextual error messages with recovery suggestions
 - Visual feedback with CSS classes and ARIA attributes
+- Consistent validation between client-side JavaScript and server-side Python
 
 ### 2. API Integration Layer
 
