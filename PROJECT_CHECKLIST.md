@@ -17,7 +17,7 @@
 ### **Dependencies & Setup**
 - ✅ Fixed dependency conflicts
 - ✅ Updated package versions
-- ✅ Web server running on port 3003
+- ✅ Web server running on port 3000
 - ✅ Database initialization
 - ✅ Directory structure setup
 
@@ -33,7 +33,7 @@
 - [ ] **Kiểm tra session validity** - Verify session còn hoạt động
 
 ### **2. Web Interface Issues** 🟡 **MEDIUM PRIORITY**
-- [ ] **Port conflict resolved** - Đã chuyển sang port 3003
+- [ ] **Port conflict resolved** - Đã chuyển sang port 3000
 - [ ] **Static files serving** - Cần kiểm tra CSS/JS loading
 - [ ] **Template rendering** - Cần kiểm tra tất cả templates
 - [ ] **AJAX error handling** - Cần improve
@@ -148,7 +148,7 @@
 
 ### **Next Priority Actions**
 1. **Fix FloodWaitError** - Sửa lỗi authentication critical
-2. **Test web interface** - Kiểm tra hoạt động trên port 3003
+2. **Test web interface** - Kiểm tra hoạt động trên port 3000
 3. **Improve error handling** - Thêm retry mechanism
 4. **Test file operations** - Đảm bảo upload/download hoạt động
 5. **Prepare for production** - Security và deployment setup
@@ -166,7 +166,7 @@
 ### **Today (Critical Fixes)**
 1. ✅ **Session file exists** - telegram_scanner_session.session found
 2. [ ] **Fix FloodWaitError** - Sửa logic authentication
-3. [ ] **Kiểm tra web interface** - Access http://localhost:3003
+3. [ ] **Kiểm tra web interface** - Access http://localhost:3000
 4. [ ] **Kiểm tra file scan** - Đảm bảo scan hoạt động
 5. [ ] **Kiểm tra database** - Kiểm tra database operations
 
@@ -205,7 +205,7 @@
 4. **Implement offline mode** - Test các tính năng khác trong khi chờ
 
 ### **Web Interface Status**
-- **Port**: Changed from 3002 to 3003 (conflict resolved)
+- **Port**: Changed from 3002 to 3000 (conflict resolved)
 - **Status**: Server starts successfully
 - **Issues**: Need to kiểm tra all functionality
 

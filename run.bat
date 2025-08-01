@@ -158,7 +158,30 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 7/7] Khoi dong Web Interface voi Logging...
+echo [BUOC 7/8] Kill cac port khac dang chay...
+echo    ^> Kiem tra va dong cac port khac...
+
+REM Kill port 3001, 3002, 3003, 3004, 3005 neu dang chay
+for %%p in (3001 3002 3003 3004 3005) do (
+    echo    ^> Kiem tra port %%p...
+    for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":%%p "') do (
+        if not "%%a"=="" (
+            echo       - Dong port %%p (PID: %%a)
+            taskkill /PID %%a /F >nul 2>&1
+            if not errorlevel 1 (
+                echo       ✅ Da dong port %%p thanh cong
+            ) else (
+                echo       ⚠️ Khong the dong port %%p
+            )
+        )
+    )
+)
+
+echo ✅ Da kiem tra va dong tat ca port khac
+echo    ^> Port 3000 se duoc su dung cho TeleDrive
+
+echo.
+echo [BUOC 8/8] Khoi dong Web Interface voi Logging...
 echo ================================================================
 echo 🌐 DANG KHOI DONG TELEDRIVE WEB INTERFACE...
 echo ================================================================
@@ -168,10 +191,10 @@ echo 🎨 Google Drive-like Design
 echo 🔐 Ho tro Private ^& Public Channels
 echo 📊 Logging chi tiet cho tung buoc
 echo.
-echo 🌐 Truy cap tai: http://localhost:3002
-echo 📊 Dashboard: http://localhost:3002
-echo ⚙️  Settings: http://localhost:3002/settings
-echo 🔍 Scanner: http://localhost:3002/scan
+echo 🌐 Truy cap tai: http://localhost:3000
+echo 📊 Dashboard: http://localhost:3000
+echo ⚙️  Settings: http://localhost:3000/settings
+echo 🔍 Scanner: http://localhost:3000/scan
 echo.
 echo 📊 Theo doi logs:
 echo    • Log chinh: logs/teledrive.log
@@ -180,7 +203,7 @@ echo    • Log files: logs/files.log
 echo    • Log loi: logs/errors.log
 echo.
 echo 💡 Meo:
-echo    • Mo trinh duyet va truy cap http://localhost:3002
+echo    • Mo trinh duyet va truy cap http://localhost:3000
 echo    • Cau hinh API credentials trong Settings
 echo    • Su dung Scanner de quet channel
 echo    • Xem ket qua trong Dashboard
@@ -214,7 +237,7 @@ echo    • Chay lai 'run.bat' de khoi dong lai Web Interface
 echo    • Chinh sua 'config.json' de thay doi cau hinh
 echo    • Xem file log de debug neu co loi
 echo.
-echo 🌐 Giao dien Web: http://localhost:3002
+echo 🌐 Giao dien Web: http://localhost:3000
 echo 💻 CLI: Chay 'python source/main.py' de su dung Command Line
 echo 📊 Logs: Xem thu muc 'logs/' de theo doi chi tiet
 echo.
