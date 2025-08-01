@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Demo - TeleDrive</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        /* Demo specific styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .demo-header {
+            background: #1a73e8;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .demo-content {
+            padding: 30px;
+        }
+        
+        /* Settings styles */
+        .settings-section {
+            margin-bottom: 40px;
+            border: 1px solid #e8eaed;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .settings-section-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e8eaed;
+        }
+        
+        .settings-section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #202124;
+        }
+        
+        .settings-section-description {
+            margin: 0;
+            color: #5f6368;
+            font-size: 14px;
+        }
+        
+        .settings-form {
+            padding: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #202124;
+        }
+        
+        /* File type cards styles */
+        .file-types-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 16px;
+            margin-top: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        
+        .file-type-card {
+            position: relative;
+            background: white;
+            border: 2px solid #e8eaed;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+        
+        .file-type-card:hover {
+            border-color: #1a73e8;
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .file-type-card.selected {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+        }
+        
+        .file-type-card input[type="checkbox"] {
+            display: none;
+        }
+        
+        .file-type-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 8px;
+        }
+        
+        .file-type-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 4px;
+            background: #f1f3f4;
+            color: #5f6368;
+        }
+        
+        .file-type-icon .material-icons {
+            font-size: 24px;
+        }
+        
+        .file-type-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #202124;
+        }
+        
+        .file-type-desc {
+            font-size: 12px;
+            color: #5f6368;
+        }
+        
+        .file-type-check {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background: #1a73e8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+        
+        .file-type-card.selected .file-type-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .file-type-check .material-icons {
+            font-size: 16px;
+            color: white;
+        }
+        
+        .single-line {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            background: #1557b0;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>TeleDrive Settings - Advanced Options Demo</h1>
+            <p>Phần cài đặt "File Types to Include" đã được thêm vào Advanced Options</p>
+        </div>
+        
+        <div class="demo-content">
+            <!-- Advanced Options -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h2 class="settings-section-title">
+                        <span class="material-icons">tune</span>
+                        Advanced Options
+                    </h2>
+                    <p class="settings-section-description">
+                        Configure advanced scanning and processing options
+                    </p>
+                </div>
+                
+                <div class="settings-form">
+                    <!-- File Types to Include -->
+                    <div class="form-group">
+                        <fieldset>
+                            <legend class="form-label">
+                                <span class="material-icons" aria-hidden="true">category</span>
+                                File Types to Include
+                            </legend>
+                            <div class="file-types-grid" role="group" aria-label="Select file types to scan for">
+                                <label class="file-type-card selected">
+                                    <input type="checkbox" name="advanced-file-types" value="documents" checked>
+                                    <div class="file-type-content">
+                                        <div class="file-type-icon documents">
+                                            <span class="material-icons">description</span>
+                                        </div>
+                                        <span class="file-type-name single-line">Documents</span>
+                                        <span class="file-type-desc single-line">PDF, DOC, TXT, etc.</span>
+                                    </div>
+                                    <div class="file-type-check">
+                                        <span class="material-icons">check</span>
+                                    </div>
+                                </label>
+
+                                <label class="file-type-card selected">
+                                    <input type="checkbox" name="advanced-file-types" value="photos" checked>
+                                    <div class="file-type-content">
+                                        <div class="file-type-icon photos">
+                                            <span class="material-icons">image</span>
+                                        </div>
+                                        <span class="file-type-name single-line">Photos</span>
+                                        <span class="file-type-desc single-line">JPG, PNG, GIF, etc.</span>
+                                    </div>
+                                    <div class="file-type-check">
+                                        <span class="material-icons">check</span>
+                                    </div>
+                                </label>
+
+                                <label class="file-type-card selected">
+                                    <input type="checkbox" name="advanced-file-types" value="videos" checked>
+                                    <div class="file-type-content">
+                                        <div class="file-type-icon videos">
+                                            <span class="material-icons">video_file</span>
+                                        </div>
+                                        <span class="file-type-name single-line">Videos</span>
+                                        <span class="file-type-desc single-line">MP4, AVI, MKV, etc.</span>
+                                    </div>
+                                    <div class="file-type-check">
+                                        <span class="material-icons">check</span>
+                                    </div>
+                                </label>
+
+                                <label class="file-type-card selected">
+                                    <input type="checkbox" name="advanced-file-types" value="audio" checked>
+                                    <div class="file-type-content">
+                                        <div class="file-type-icon audio">
+                                            <span class="material-icons">audio_file</span>
+                                        </div>
+                                        <span class="file-type-name single-line">Audio</span>
+                                        <span class="file-type-desc single-line">MP3, WAV, FLAC, etc.</span>
+                                    </div>
+                                    <div class="file-type-check">
+                                        <span class="material-icons">check</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </fieldset>
+                    </div>
+                    
+                    <button class="btn" onclick="saveSettings()">
+                        <span class="material-icons">save</span>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle file type card selection
+        document.querySelectorAll('.file-type-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                const isChecked = !checkbox.checked;
+                
+                checkbox.checked = isChecked;
+                
+                if (isChecked) {
+                    this.classList.add('selected');
+                } else {
+                    this.classList.remove('selected');
+                }
+            });
+        });
+        
+        function saveSettings() {
+            const selectedTypes = [];
+            document.querySelectorAll('input[name="advanced-file-types"]:checked').forEach(input => {
+                selectedTypes.push(input.value);
+            });
+            
+            alert('Selected file types: ' + selectedTypes.join(', '));
+        }
+    </script>
+</body>
+</html>

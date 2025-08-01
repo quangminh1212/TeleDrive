@@ -162,6 +162,92 @@
         </div>
     </div>
     
+    <!-- Advanced Options -->
+    <div class="settings-section">
+        <div class="settings-section-header">
+            <h2 class="settings-section-title">
+                <span class="material-icons">tune</span>
+                Advanced Options
+            </h2>
+            <p class="settings-section-description">
+                Configure advanced scanning and processing options
+            </p>
+        </div>
+
+        <div class="settings-form">
+            <!-- File Types to Include -->
+            <div class="form-group">
+                <fieldset>
+                    <legend class="form-label">
+                        <span class="material-icons" aria-hidden="true">category</span>
+                        File Types to Include
+                    </legend>
+                    <div class="file-types-grid" role="group" aria-label="Select file types to scan for">
+                        <label class="file-type-card {% if config.scanning.file_types.documents %}selected{% endif %}">
+                            <input type="checkbox" name="advanced-file-types" value="documents"
+                                   {% if config.scanning.file_types.documents %}checked{% endif %}>
+                            <div class="file-type-content">
+                                <div class="file-type-icon documents">
+                                    <span class="material-icons">description</span>
+                                </div>
+                                <span class="file-type-name single-line">Documents</span>
+                                <span class="file-type-desc single-line">PDF, DOC, TXT, etc.</span>
+                            </div>
+                            <div class="file-type-check">
+                                <span class="material-icons">check</span>
+                            </div>
+                        </label>
+
+                        <label class="file-type-card {% if config.scanning.file_types.photos %}selected{% endif %}">
+                            <input type="checkbox" name="advanced-file-types" value="photos"
+                                   {% if config.scanning.file_types.photos %}checked{% endif %}>
+                            <div class="file-type-content">
+                                <div class="file-type-icon photos">
+                                    <span class="material-icons">image</span>
+                                </div>
+                                <span class="file-type-name single-line">Photos</span>
+                                <span class="file-type-desc single-line">JPG, PNG, GIF, etc.</span>
+                            </div>
+                            <div class="file-type-check">
+                                <span class="material-icons">check</span>
+                            </div>
+                        </label>
+
+                        <label class="file-type-card {% if config.scanning.file_types.videos %}selected{% endif %}">
+                            <input type="checkbox" name="advanced-file-types" value="videos"
+                                   {% if config.scanning.file_types.videos %}checked{% endif %}>
+                            <div class="file-type-content">
+                                <div class="file-type-icon videos">
+                                    <span class="material-icons">video_file</span>
+                                </div>
+                                <span class="file-type-name single-line">Videos</span>
+                                <span class="file-type-desc single-line">MP4, AVI, MKV, etc.</span>
+                            </div>
+                            <div class="file-type-check">
+                                <span class="material-icons">check</span>
+                            </div>
+                        </label>
+
+                        <label class="file-type-card {% if config.scanning.file_types.audio %}selected{% endif %}">
+                            <input type="checkbox" name="advanced-file-types" value="audio"
+                                   {% if config.scanning.file_types.audio %}checked{% endif %}>
+                            <div class="file-type-content">
+                                <div class="file-type-icon audio">
+                                    <span class="material-icons">audio_file</span>
+                                </div>
+                                <span class="file-type-name single-line">Audio</span>
+                                <span class="file-type-desc single-line">MP3, WAV, FLAC, etc.</span>
+                            </div>
+                            <div class="file-type-check">
+                                <span class="material-icons">check</span>
+                            </div>
+                        </label>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+
     <!-- Output Configuration -->
     <div class="settings-section">
         <div class="settings-section-header">
@@ -173,11 +259,11 @@
                 Configure output formats and file settings
             </p>
         </div>
-        
+
         <div class="settings-form">
             <div class="checkbox-grid">
                 <label class="checkbox-item">
-                    <input type="checkbox" id="output-csv" 
+                    <input type="checkbox" id="output-csv"
                            {% if config.output.formats.csv.enabled %}checked{% endif %}>
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">
@@ -185,9 +271,9 @@
                         CSV Format
                     </span>
                 </label>
-                
+
                 <label class="checkbox-item">
-                    <input type="checkbox" id="output-json" 
+                    <input type="checkbox" id="output-json"
                            {% if config.output.formats.json.enabled %}checked{% endif %}>
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">
@@ -195,9 +281,9 @@
                         JSON Format
                     </span>
                 </label>
-                
+
                 <label class="checkbox-item">
-                    <input type="checkbox" id="output-excel" 
+                    <input type="checkbox" id="output-excel"
                            {% if config.output.formats.excel.enabled %}checked{% endif %}>
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">
@@ -218,23 +304,51 @@ function saveSettings() {
     const settings = {
         api_id: document.getElementById('api-id').value.trim(),
         api_hash: document.getElementById('api-hash').value.trim(),
-        phone_number: document.getElementById('phone-number').value.trim()
+        phone_number: document.getElementById('phone-number').value.trim(),
+        scanning: {
+            max_messages: document.getElementById('max-messages').value || null,
+            batch_size: parseInt(document.getElementById('batch-size').value) || 100,
+            file_types: {
+                documents: document.getElementById('scan-documents').checked,
+                photos: document.getElementById('scan-photos').checked,
+                videos: document.getElementById('scan-videos').checked,
+                audio: document.getElementById('scan-audio').checked,
+                voice: document.getElementById('scan-voice').checked,
+                stickers: document.getElementById('scan-stickers').checked
+            }
+        },
+        output: {
+            formats: {
+                csv: { enabled: document.getElementById('output-csv').checked },
+                json: { enabled: document.getElementById('output-json').checked },
+                excel: { enabled: document.getElementById('output-excel').checked }
+            }
+        }
     };
-    
+
+    // Collect advanced file types
+    const advancedFileTypes = {};
+    document.querySelectorAll('input[name="advanced-file-types"]').forEach(input => {
+        advancedFileTypes[input.value] = input.checked;
+    });
+
+    // Merge advanced file types with scanning file types
+    Object.assign(settings.scanning.file_types, advancedFileTypes);
+
     // Validate required fields
     if (!settings.api_id || !settings.api_hash || !settings.phone_number) {
         showToast('Please fill in all required fields', 'error');
         return;
     }
-    
+
     // Validate phone number format
     if (!settings.phone_number.startsWith('+')) {
         showToast('Phone number must include country code (e.g., +84987654321)', 'error');
         return;
     }
-    
+
     showLoading('Saving settings...');
-    
+
     fetch('/api/save_settings', {
         method: 'POST',
         headers: {
@@ -256,6 +370,37 @@ function saveSettings() {
         showToast('Error saving settings: ' + error.message, 'error');
     });
 }
+
+// Initialize file type cards on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial state for file type cards based on checkbox state
+    document.querySelectorAll('.file-type-card').forEach(card => {
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        if (checkbox && checkbox.checked) {
+            card.classList.add('selected');
+        }
+    });
+});
+
+// Handle file type card selection
+document.querySelectorAll('.file-type-card').forEach(card => {
+    card.addEventListener('click', function(e) {
+        e.preventDefault();
+        const checkbox = this.querySelector('input[type="checkbox"]');
+        const isChecked = !checkbox.checked;
+
+        checkbox.checked = isChecked;
+
+        if (isChecked) {
+            this.classList.add('selected');
+        } else {
+            this.classList.remove('selected');
+        }
+
+        // Trigger change event for auto-save
+        checkbox.dispatchEvent(new Event('change'));
+    });
+});
 
 // Auto-save on input change (debounced)
 let saveTimeout;

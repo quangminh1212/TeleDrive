@@ -737,21 +737,46 @@ def chrome_devtools():
 
 @app.route('/api/save_settings', methods=['POST'])
 def save_settings():
-    """Save API settings"""
+    """Save API settings and configuration"""
     try:
         data = request.get_json()
-        
+
         cm = ConfigManager()
         current_config = cm.load_config()
-        
+
         # Update telegram settings
         current_config['telegram']['api_id'] = data.get('api_id', '')
         current_config['telegram']['api_hash'] = data.get('api_hash', '')
         current_config['telegram']['phone_number'] = data.get('phone_number', '')
-        
+
+        # Update scanning settings if provided
+        if 'scanning' in data:
+            scanning_data = data['scanning']
+
+            # Update max_messages and batch_size
+            if 'max_messages' in scanning_data:
+                current_config['scanning']['max_messages'] = scanning_data['max_messages']
+            if 'batch_size' in scanning_data:
+                current_config['scanning']['batch_size'] = scanning_data['batch_size']
+
+            # Update file types
+            if 'file_types' in scanning_data:
+                for file_type, enabled in scanning_data['file_types'].items():
+                    current_config['scanning']['file_types'][file_type] = enabled
+
+        # Update output settings if provided
+        if 'output' in data:
+            output_data = data['output']
+
+            # Update output formats
+            if 'formats' in output_data:
+                for format_name, format_config in output_data['formats'].items():
+                    if format_name in current_config['output']['formats']:
+                        current_config['output']['formats'][format_name]['enabled'] = format_config.get('enabled', True)
+
         # Save config
         cm.save_config(current_config)
-        
+
         # Also update .env file
         env_content = f"""# Telegram API Credentials
 # Get from https://my.telegram.org/apps
@@ -761,9 +786,9 @@ TELEGRAM_PHONE={data.get('phone_number', '')}
 """
         with open('.env', 'w', encoding='utf-8') as f:
             f.write(env_content)
-        
+
         return jsonify({'success': True, 'message': 'Settings saved successfully'})
-        
+
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
