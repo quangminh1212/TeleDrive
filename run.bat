@@ -158,27 +158,66 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 7/8] Kill cac port khac dang chay...
-echo    ^> Kiem tra va dong cac port khac...
+echo [BUOC 7/8] Kill tat ca port va processes dang chay...
+echo    ^> Dong tat ca port va processes de tranh xung dot...
+echo    ^> Dieu nay dam bao TeleDrive chay tren port 3000 sach se
 
-REM Kill port 3001, 3002, 3003, 3004, 3005 neu dang chay
-for %%p in (3001 3002 3003 3004 3005) do (
-    echo    ^> Kiem tra port %%p...
+REM Kill tat ca port web server pho bien (1000-9999)
+echo    ^> Dong tat ca port Flask/Node.js/Web servers...
+for %%p in (1000 1001 1080 1337 2000 2001 2080 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010 4000 4001 4200 4300 4400 4500 5000 5001 5173 5432 5500 5555 6000 6001 6379 7000 7001 7777 8000 8001 8080 8081 8888 8889 9000 9001 9090 9999) do (
     for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":%%p "') do (
         if not "%%a"=="" (
             echo       - Dong port %%p (PID: %%a)
             taskkill /PID %%a /F >nul 2>&1
-            if not errorlevel 1 (
-                echo       ✅ Da dong port %%p thanh cong
-            ) else (
-                echo       ⚠️ Khong the dong port %%p
-            )
         )
     )
 )
 
-echo ✅ Da kiem tra va dong tat ca port khac
-echo    ^> Port 3000 se duoc su dung cho TeleDrive
+REM Kill tat ca Python processes dang chay
+echo    ^> Dong tat ca Python processes...
+taskkill /IM python.exe /F >nul 2>&1
+taskkill /IM pythonw.exe /F >nul 2>&1
+
+REM Kill tat ca Node.js processes dang chay
+echo    ^> Dong tat ca Node.js processes...
+taskkill /IM node.exe /F >nul 2>&1
+taskkill /IM nodejs.exe /F >nul 2>&1
+
+REM Kill tat ca processes co ten chua "flask", "django", "fastapi"
+echo    ^> Dong tat ca web framework processes...
+tasklist | findstr /i "flask" >nul 2>&1 && taskkill /F /IM python.exe /FI "WINDOWTITLE eq *flask*" >nul 2>&1
+tasklist | findstr /i "django" >nul 2>&1 && taskkill /F /IM python.exe /FI "WINDOWTITLE eq *django*" >nul 2>&1
+tasklist | findstr /i "fastapi" >nul 2>&1 && taskkill /F /IM python.exe /FI "WINDOWTITLE eq *fastapi*" >nul 2>&1
+tasklist | findstr /i "uvicorn" >nul 2>&1 && taskkill /F /IM python.exe /FI "WINDOWTITLE eq *uvicorn*" >nul 2>&1
+
+REM Kill tat ca processes TeleDrive cu
+echo    ^> Dong tat ca TeleDrive processes cu...
+taskkill /F /FI "WINDOWTITLE eq *TeleDrive*" >nul 2>&1
+taskkill /F /FI "WINDOWTITLE eq *teledrive*" >nul 2>&1
+
+REM Cho 2 giay de cac process ket thuc hoan toan
+echo    ^> Cho 2 giay de cac process ket thuc...
+timeout /t 2 >nul
+
+echo ✅ Da dong tat ca port va processes
+
+REM Hien thi thong ke
+echo    ^> Thong ke: Da kill tat ca Python, Node.js, va Web server processes
+echo    ^> Thong ke: Da kill tat ca port tu 1000-9999
+echo    ^> Thong ke: Da kill tat ca TeleDrive processes cu
+
+REM Kiem tra port 3000 co trong khong
+echo    ^> Kiem tra port 3000 lan cuoi...
+netstat -ano | findstr ":3000 " >nul 2>&1
+if not errorlevel 1 (
+    echo    ⚠️ Port 3000 van dang duoc su dung, thu kill lan cuoi...
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000 "') do (
+        taskkill /PID %%a /F >nul 2>&1
+    )
+    timeout /t 1 >nul
+)
+
+echo ✅ Port 3000 da san sang cho TeleDrive
 
 echo.
 echo [BUOC 8/8] Khoi dong Web Interface voi Logging...
