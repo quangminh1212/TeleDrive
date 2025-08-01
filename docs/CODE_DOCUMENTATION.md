@@ -171,31 +171,7 @@ The frontend integrates with the Flask backend through:
 3. **Memory Management**: Proper cleanup and garbage collection
 4. **Network Efficiency**: Debounced requests and error retry logic
 
-## Testing Strategy
 
-### Unit Tests
-- Form validation functions
-- Input sanitization
-- Error message parsing
-- Utility functions
-
-### Integration Tests
-- Complete scan workflow
-- API endpoint integration
-- SocketIO communication
-- Error handling scenarios
-
-### Accessibility Tests
-- Keyboard navigation
-- Screen reader compatibility
-- ARIA attribute validation
-- Focus management
-
-### Cross-Browser Tests
-- Chrome, Firefox, Edge compatibility
-- JavaScript functionality
-- CSS rendering consistency
-- Responsive design validation
 
 ## Deployment Considerations
 
@@ -219,7 +195,7 @@ The frontend integrates with the Flask backend through:
 
 ### Code Updates
 1. Update JSDoc comments when modifying functions
-2. Run tests before committing changes
+2. Review code changes before committing
 3. Update version numbers in documentation headers
 4. Maintain backward compatibility where possible
 
@@ -246,7 +222,7 @@ The frontend integrates with the Flask backend through:
 
 ### Technical Debt
 1. Migrate to TypeScript for better type safety
-2. Implement automated accessibility testing
+2. Implement automated accessibility checking
 3. Add comprehensive error logging
 4. Optimize bundle size with code splitting
 
@@ -255,15 +231,15 @@ The frontend integrates with the Flask backend through:
 When contributing to this codebase:
 
 1. Follow existing code style and documentation standards
-2. Add comprehensive tests for new functionality
+2. Review functionality thoroughly before submitting
 3. Update documentation for any API changes
 4. Ensure accessibility compliance for UI changes
-5. Test across multiple browsers and devices
+5. Verify compatibility across multiple browsers and devices
 
 ## Support
 
 For questions about this codebase:
 - Check the inline JSDoc comments for function-specific documentation
-- Review the test files for usage examples
+- Review the code examples for usage patterns
 - Consult the API documentation for backend integration
 - Follow the accessibility guidelines for UI modifications

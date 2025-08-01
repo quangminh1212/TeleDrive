@@ -143,9 +143,9 @@ Thay đổi level trong config.json:
 ```
 
 ### Kiểm tra Log Files
-```python
-# Chạy test logging
-python test_logging.py
+```bash
+# Kiểm tra log files có được tạo không
+dir logs\
 ```
 
 ### Các vấn đề thường gặp

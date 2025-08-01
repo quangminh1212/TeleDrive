@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project structure optimization following international standards
 - Packaging with pyproject.toml and setup.py
 - Comprehensive documentation
-- Testing framework
+
 
 ## [0.1.0] - 2025-07-29
 
