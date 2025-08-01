@@ -38,6 +38,11 @@ TeleDrive là ứng dụng quản lý file Telegram với giao diện Google Dri
 2. **Configure**: Run `config.bat` (option 2 for phone number)
 3. **Scan**: Run `run.bat`
 
+### Logging Chi tiết
+- **Tự động**: `run.bat` đã tích hợp logging chi tiết
+- **Log files**: Tự động tạo trong thư mục `logs/`
+- **Theo dõi**: Xem `LOGGING_GUIDE.md` để biết cách sử dụng
+
 ---
 
 ## 🛠️ Tối ưu hóa & cải tiến
@@ -202,6 +207,56 @@ TeleDrive/
 │   ├── files.log     # Log file operations
 │   └── errors.log    # Log loi chi tiet
 └── output/           # Ket qua scan
+```
+
+---
+
+## 📊 Hệ thống Logging Chi tiết
+
+### Cấu hình Logging
+Logging được cấu hình trong `source/config.json`:
+```json
+{
+  "logging": {
+    "enabled": true,
+    "level": "INFO",
+    "console_output": true,
+    "detailed_steps": true,
+    "log_config_changes": true,
+    "log_api_calls": true,
+    "log_file_operations": true,
+    "show_progress_details": true,
+    "separate_files": {
+      "enabled": true,
+      "config_log": "logs/config.log",
+      "api_log": "logs/api.log",
+      "files_log": "logs/files.log",
+      "errors_log": "logs/errors.log"
+    }
+  }
+}
+```
+
+### Các loại Log
+- **scanner.log**: Log chính của ứng dụng
+- **config.log**: Thay đổi cấu hình
+- **api.log**: Các API call đến Telegram
+- **files.log**: Thao tác file (tạo, xóa, di chuyển)
+- **errors.log**: Lỗi chi tiết với stack trace
+
+### Sử dụng Logging
+```bash
+# Khởi động bình thường (đã tích hợp logging)
+run.bat
+
+# Logging được tự động bật trong config.json
+# Xem logs trong thư mục logs/
+```
+
+### Log Format
+```
+2025-01-01 10:30:45 - engine - INFO - scan_channel:123 - BƯỚC: KHỞI TẠO CLIENT
+Chi tiết: Bắt đầu khởi tạo Telegram client
 ```
 
 ---

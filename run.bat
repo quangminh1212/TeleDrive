@@ -1,11 +1,13 @@
 @echo off
-title TeleDrive - Telegram File Scanner
+chcp 65001 >nul
+title TeleDrive - Telegram File Scanner with Detailed Logging
 color 0B
 
 echo.
 echo ================================================================
 echo                    TELEDRIVE PROJECT
 echo              Telegram File Scanner ^& Manager
+echo                   với Logging Chi tiết
 echo ================================================================
 echo.
 
@@ -133,12 +135,13 @@ if not exist logs mkdir logs
 if not exist data mkdir data
 echo ✅ Cac thu muc da san sang
 
-echo    ^> Khoi tao he thong logging...
-python -c "from source.logger import setup_detailed_logging; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); print('✅ Logging system ready')" 2>nul
+echo    ^> Khoi tao he thong logging chi tiet...
+python -c "from source.logger import setup_detailed_logging, log_step; import json; config = json.load(open('config.json', 'r', encoding='utf-8')); setup_detailed_logging(config.get('logging', {})); log_step('KHỞI TẠO HỆ THỐNG', 'TeleDrive đang khởi động với logging chi tiết'); print('✅ Detailed logging system ready')" 2>nul
 if errorlevel 1 (
     echo ⚠️ Khong the khoi tao detailed logging (se su dung basic logging)
 ) else (
     echo ✅ He thong logging chi tiet da san sang
+    echo    📊 Log files: logs/teledrive.log, logs/api.log, logs/files.log, logs/errors.log
 )
 
 echo.
@@ -155,7 +158,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [BUOC 7/7] Khoi dong Web Interface...
+echo [BUOC 7/7] Khoi dong Web Interface voi Logging...
 echo ================================================================
 echo 🌐 DANG KHOI DONG TELEDRIVE WEB INTERFACE...
 echo ================================================================
@@ -163,17 +166,25 @@ echo.
 echo 📱 TeleDrive - Modern Web Interface
 echo 🎨 Google Drive-like Design
 echo 🔐 Ho tro Private ^& Public Channels
+echo 📊 Logging chi tiet cho tung buoc
 echo.
-echo 🌐 Truy cap tai: http://localhost:3000
-echo 📊 Dashboard: http://localhost:3000
-echo ⚙️  Settings: http://localhost:3000/settings
-echo 🔍 Scanner: http://localhost:3000/scan
+echo 🌐 Truy cap tai: http://localhost:3002
+echo 📊 Dashboard: http://localhost:3002
+echo ⚙️  Settings: http://localhost:3002/settings
+echo 🔍 Scanner: http://localhost:3002/scan
+echo.
+echo 📊 Theo doi logs:
+echo    • Log chinh: logs/teledrive.log
+echo    • Log API: logs/api.log
+echo    • Log files: logs/files.log
+echo    • Log loi: logs/errors.log
 echo.
 echo 💡 Meo:
-echo    • Mo trinh duyet va truy cap http://localhost:3000
+echo    • Mo trinh duyet va truy cap http://localhost:3002
 echo    • Cau hinh API credentials trong Settings
 echo    • Su dung Scanner de quet channel
 echo    • Xem ket qua trong Dashboard
+echo    • Theo doi logs de debug
 echo.
 echo ⏹️  Nhan Ctrl+C de dung web server
 echo ================================================================
@@ -203,8 +214,9 @@ echo    • Chay lai 'run.bat' de khoi dong lai Web Interface
 echo    • Chinh sua 'config.json' de thay doi cau hinh
 echo    • Xem file log de debug neu co loi
 echo.
-echo 🌐 Giao dien Web: http://localhost:3000
+echo 🌐 Giao dien Web: http://localhost:3002
 echo 💻 CLI: Chay 'python source/main.py' de su dung Command Line
+echo 📊 Logs: Xem thu muc 'logs/' de theo doi chi tiet
 echo.
 echo Cam on ban da su dung TeleDrive! 🚀
 echo.

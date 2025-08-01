@@ -1325,6 +1325,12 @@ function completeScan(messages, files) {
     clearInterval(scanInterval);
     isScanning = false;
 
+    // Clear any existing scan timeout
+    if (window.scanTimeoutId) {
+        clearTimeout(window.scanTimeoutId);
+        window.scanTimeoutId = null;
+    }
+
     document.getElementById('scan-status').textContent = 'Completed';
     addActivity(`Scan completed! Found ${files} files in ${messages} messages`, 'success');
 
@@ -1375,6 +1381,12 @@ function completeScan(messages, files) {
 function handleScanError(errorMessage, errorType = 'general') {
     isScanning = false;
     clearInterval(scanInterval);
+
+    // Clear any existing scan timeout
+    if (window.scanTimeoutId) {
+        clearTimeout(window.scanTimeoutId);
+        window.scanTimeoutId = null;
+    }
 
     // Re-enable form elements
     setFormDisabled(false);
@@ -1969,14 +1981,26 @@ function initializeSocketIO() {
     });
 
     socket.on('scan_complete', function(data) {
+        // Clear any existing scan timeout
+        if (window.scanTimeoutId) {
+            clearTimeout(window.scanTimeoutId);
+            window.scanTimeoutId = null;
+        }
+
         if (data.success) {
             completeScan(data.messages_scanned || 0, data.files_found || 0);
             addActivity(`Scan completed successfully! Found ${data.files_found} files`, 'success');
         } else {
             // Determine error type from server response
-            let errorType = 'general';
-            if (data.error) {
-                if (data.error.includes('FloodWait') || data.error.includes('rate limit')) {
+            let errorType = data.error_type || 'general';
+
+            // Fallback error type detection if not provided
+            if (!data.error_type && data.error) {
+                if (data.error.includes('timeout') || data.error.includes('Timeout')) {
+                    errorType = 'timeout';
+                } else if (data.error.includes('Connection') || data.error.includes('connection')) {
+                    errorType = 'connection_error';
+                } else if (data.error.includes('FloodWait') || data.error.includes('rate limit')) {
                     errorType = 'rate_limit';
                 } else if (data.error.includes('resolve') || data.error.includes('not found')) {
                     errorType = 'channel_not_found';
@@ -1984,6 +2008,7 @@ function initializeSocketIO() {
                     errorType = 'auth_error';
                 }
             }
+
             handleScanError(data.error || 'Scan failed', errorType);
         }
     });

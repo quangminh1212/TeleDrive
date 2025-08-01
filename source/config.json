@@ -110,5 +110,26 @@
     "use_reloader": false,
     "cors_allowed_origins": "*",
     "login_view": "login"
+  },
+  "logging": {
+    "enabled": true,
+    "level": "INFO",
+    "console_output": true,
+    "detailed_steps": true,
+    "log_config_changes": true,
+    "log_api_calls": true,
+    "log_file_operations": true,
+    "show_progress_details": true,
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s",
+    "file": "logs/teledrive.log",
+    "max_size_mb": 10,
+    "backup_count": 5,
+    "separate_files": {
+      "enabled": true,
+      "config_log": "logs/config.log",
+      "api_log": "logs/api.log",
+      "files_log": "logs/files.log",
+      "errors_log": "logs/errors.log"
+    }
   }
 }

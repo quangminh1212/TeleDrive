@@ -488,7 +488,7 @@ class WebTelegramScanner(TelegramFileScanner):
     async def scan_channel_with_progress(self, channel_input):
         """Scan channel with real-time progress updates"""
         global scan_progress, scanning_active
-        
+
         try:
             scanning_active = True
             scan_progress = {'current': 0, 'total': 0, 'status': 'connecting'}
@@ -503,11 +503,42 @@ class WebTelegramScanner(TelegramFileScanner):
             db.session.add(self.scan_session)
             db.session.commit()
 
-            # Initialize scanner
-            await self.initialize()
+            # Initialize scanner with timeout
+            try:
+                scan_progress['status'] = 'connecting'
+                scan_progress['message'] = 'Connecting to Telegram...'
+                self.socketio.emit('scan_progress', scan_progress)
+
+                await asyncio.wait_for(self.initialize(), timeout=120)  # 2 phút timeout
+
+                scan_progress['status'] = 'connected'
+                scan_progress['message'] = 'Connected successfully!'
+                self.socketio.emit('scan_progress', scan_progress)
+
+            except asyncio.TimeoutError:
+                error_msg = 'Connection timeout - please check your internet connection and try again'
+                scan_progress['status'] = 'error'
+                scan_progress['error'] = error_msg
+                self.scan_session.status = 'failed'
+                self.scan_session.error_message = error_msg
+                self.scan_session.completed_at = datetime.utcnow()
+                db.session.commit()
+                self.socketio.emit('scan_progress', scan_progress)
+                return False
+            except ConnectionError as e:
+                error_msg = f'Connection failed: {str(e)}'
+                scan_progress['status'] = 'error'
+                scan_progress['error'] = error_msg
+                self.scan_session.status = 'failed'
+                self.scan_session.error_message = error_msg
+                self.scan_session.completed_at = datetime.utcnow()
+                db.session.commit()
+                self.socketio.emit('scan_progress', scan_progress)
+                return False
 
             # Get channel entity
             scan_progress['status'] = 'resolving_channel'
+            scan_progress['message'] = 'Resolving channel...'
             self.socketio.emit('scan_progress', scan_progress)
 
             entity = await self.resolve_channel(channel_input)
@@ -638,20 +669,60 @@ class WebTelegramScanner(TelegramFileScanner):
 
             return True
 
-        except Exception as e:
-            # Update scan session as failed
+        except asyncio.TimeoutError as e:
+            # Handle timeout specifically
+            error_msg = 'Operation timeout - the scan took too long to complete'
             if self.scan_session:
                 self.scan_session.status = 'failed'
-                self.scan_session.error_message = str(e)
+                self.scan_session.error_message = error_msg
                 self.scan_session.completed_at = datetime.now()
                 db.session.commit()
 
             scan_progress['status'] = 'error'
-            scan_progress['error'] = str(e)
+            scan_progress['error'] = error_msg
             self.socketio.emit('scan_progress', scan_progress)
             self.socketio.emit('scan_complete', {
                 'success': False,
-                'error': str(e)
+                'error': error_msg,
+                'error_type': 'timeout'
+            })
+            return False
+
+        except ConnectionError as e:
+            # Handle connection errors specifically
+            error_msg = f'Connection error: {str(e)}'
+            if self.scan_session:
+                self.scan_session.status = 'failed'
+                self.scan_session.error_message = error_msg
+                self.scan_session.completed_at = datetime.now()
+                db.session.commit()
+
+            scan_progress['status'] = 'error'
+            scan_progress['error'] = error_msg
+            self.socketio.emit('scan_progress', scan_progress)
+            self.socketio.emit('scan_complete', {
+                'success': False,
+                'error': error_msg,
+                'error_type': 'connection_error'
+            })
+            return False
+
+        except Exception as e:
+            # Handle all other errors
+            error_msg = str(e)
+            if self.scan_session:
+                self.scan_session.status = 'failed'
+                self.scan_session.error_message = error_msg
+                self.scan_session.completed_at = datetime.now()
+                db.session.commit()
+
+            scan_progress['status'] = 'error'
+            scan_progress['error'] = error_msg
+            self.socketio.emit('scan_progress', scan_progress)
+            self.socketio.emit('scan_complete', {
+                'success': False,
+                'error': error_msg,
+                'error_type': 'general'
             })
             return False
         finally:

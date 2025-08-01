@@ -43,11 +43,16 @@ class TelegramFileScanner:
         
     async def initialize(self):
         """Khởi tạo Telegram client với retry mechanism và session handling"""
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("KHỞI TẠO CLIENT", "Bắt đầu khởi tạo Telegram client")
+
         if self.offline_mode:
             print("🔌 Running in OFFLINE MODE - Telegram features disabled")
             print("📁 Testing file management features only")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("OFFLINE MODE", "Chạy ở chế độ offline", "WARNING")
             return
-            
+
         if DETAILED_LOGGING_AVAILABLE:
             log_step("KHỞI TẠO CLIENT", "Bắt đầu khởi tạo Telegram client")
 
@@ -61,7 +66,7 @@ class TelegramFileScanner:
         # Kiểm tra session file tồn tại
         session_path = Path(f"{config.SESSION_NAME}.session")
         session_exists = session_path.exists()
-        
+
         if DETAILED_LOGGING_AVAILABLE:
             log_step("SESSION CHECK", f"Session file exists: {session_exists}")
 
@@ -72,39 +77,66 @@ class TelegramFileScanner:
             self.client = TelegramClient(
                 config.SESSION_NAME,
                 int(config.API_ID),
-                config.API_HASH
+                config.API_HASH,
+                connection_retries=3,
+                retry_delay=5,
+                timeout=60,
+                flood_sleep_threshold=60
             )
 
-            # Thử kết nối với retry mechanism
+            # Thử kết nối với retry mechanism và timeout
             max_retries = 3
             retry_delay = 5
-            
+            connection_timeout = 90  # 90 giây timeout cho toàn bộ quá trình
+
             for attempt in range(max_retries):
                 try:
                     if DETAILED_LOGGING_AVAILABLE:
                         log_step("ĐĂNG NHẬP", f"Lần thử {attempt + 1}/{max_retries} - Số: {config.PHONE_NUMBER}")
                         log_api_call("client.start", {"phone": config.PHONE_NUMBER, "attempt": attempt + 1})
 
-                    # Thử kết nối với session có sẵn trước
-                    if session_exists:
-                        try:
-                            await self.client.start()
-                            print("✅ Kết nối thành công với session có sẵn!")
-                        except Exception as session_error:
-                            print(f"⚠️ Session không hợp lệ: {session_error}")
-                            print("🔄 Thử tạo session mới...")
-                            # Xóa session file hỏng
+                    # Wrap connection attempt with timeout
+                    async def connect_with_timeout():
+                        # Thử kết nối với session có sẵn trước
+                        if session_exists:
                             try:
-                                session_path.unlink()
-                                print("🗑️ Đã xóa session file hỏng")
-                            except:
-                                pass
-                            # Tạo session mới
+                                if DETAILED_LOGGING_AVAILABLE:
+                                    log_step("SỬ DỤNG SESSION", "Thử kết nối với session có sẵn")
+                                await self.client.start()
+                                print("✅ Kết nối thành công với session có sẵn!")
+                                if DETAILED_LOGGING_AVAILABLE:
+                                    log_step("SESSION SUCCESS", "Kết nối thành công với session có sẵn", "SUCCESS")
+                                return True
+                            except Exception as session_error:
+                                print(f"⚠️ Session không hợp lệ: {session_error}")
+                                print("🔄 Thử tạo session mới...")
+                                if DETAILED_LOGGING_AVAILABLE:
+                                    log_step("SESSION INVALID", f"Session không hợp lệ: {session_error}", "WARNING")
+                                # Xóa session file hỏng
+                                try:
+                                    session_path.unlink()
+                                    print("🗑️ Đã xóa session file hỏng")
+                                    if DETAILED_LOGGING_AVAILABLE:
+                                        log_file_operation("DELETE", str(session_path), "Xóa session file hỏng")
+                                except:
+                                    pass
+                                # Tạo session mới
+                                if DETAILED_LOGGING_AVAILABLE:
+                                    log_step("TẠO SESSION MỚI", "Đang tạo session mới với số điện thoại")
+                                await self.client.start(phone=config.PHONE_NUMBER)
+                                print("✅ Tạo session mới thành công!")
+                                if DETAILED_LOGGING_AVAILABLE:
+                                    log_step("NEW SESSION SUCCESS", "Tạo session mới thành công", "SUCCESS")
+                                return True
+                        else:
+                            if DETAILED_LOGGING_AVAILABLE:
+                                log_step("TẠO SESSION ĐẦU TIÊN", "Tạo session lần đầu với số điện thoại")
                             await self.client.start(phone=config.PHONE_NUMBER)
                             print("✅ Tạo session mới thành công!")
-                    else:
-                        await self.client.start(phone=config.PHONE_NUMBER)
-                        print("✅ Tạo session mới thành công!")
+                            return True
+
+                    # Apply timeout to connection attempt
+                    await asyncio.wait_for(connect_with_timeout(), timeout=connection_timeout)
 
                     if DETAILED_LOGGING_AVAILABLE:
                         log_step("KHỞI TẠO THÀNH CÔNG", "Đã kết nối thành công với Telegram")
@@ -114,9 +146,23 @@ class TelegramFileScanner:
                     print(f"👤 Đăng nhập với: {me.first_name} (@{me.username})")
                     return
 
+                except asyncio.TimeoutError:
+                    error_msg = f"Connection timeout after {connection_timeout} seconds"
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("TIMEOUT ERROR", error_msg, "ERROR")
+
+                    if attempt < max_retries - 1:
+                        print(f"⏳ Timeout (lần {attempt + 1}): {error_msg}")
+                        print(f"⏳ Chờ {retry_delay} giây trước khi thử lại...")
+                        await asyncio.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                    else:
+                        print(f"❌ Connection timeout sau {max_retries} lần thử")
+                        raise ConnectionError(f"Failed to connect to Telegram after {max_retries} attempts: {error_msg}")
+
                 except Exception as e:
                     error_msg = str(e)
-                    
+
                     # Xử lý FloodWaitError
                     if "FloodWaitError" in error_msg:
                         wait_time = 0
@@ -128,10 +174,10 @@ class TelegramFileScanner:
                                 wait_time = int(match.group(1))
                         except:
                             wait_time = 60  # Default wait time
-                        
+
                         if DETAILED_LOGGING_AVAILABLE:
                             log_error(e, f"FloodWaitError - Wait {wait_time} seconds")
-                        
+
                         if attempt < max_retries - 1:
                             print(f"⏳ FloodWaitError: Chờ {wait_time} giây trước khi thử lại...")
                             await asyncio.sleep(min(wait_time, 300))  # Max wait 5 minutes
@@ -139,12 +185,27 @@ class TelegramFileScanner:
                         else:
                             print(f"❌ FloodWaitError sau {max_retries} lần thử")
                             print("💡 Gợi ý: Chờ {wait_time} giây hoặc sử dụng offline mode")
-                            raise e
-                    
+                            raise ConnectionError(f"Rate limited by Telegram: wait {wait_time} seconds")
+
+                    # Xử lý connection errors
+                    if any(keyword in error_msg.lower() for keyword in ['connection', 'network', 'timeout', 'unreachable']):
+                        if DETAILED_LOGGING_AVAILABLE:
+                            log_error(e, f"Network error attempt {attempt + 1}")
+
+                        if attempt < max_retries - 1:
+                            print(f"⚠️ Lỗi mạng (lần {attempt + 1}): {error_msg}")
+                            print(f"⏳ Chờ {retry_delay} giây trước khi thử lại...")
+                            await asyncio.sleep(retry_delay)
+                            retry_delay *= 2  # Exponential backoff
+                            continue
+                        else:
+                            print(f"❌ Không thể kết nối sau {max_retries} lần thử")
+                            raise ConnectionError(f"Network connection failed after {max_retries} attempts: {error_msg}")
+
                     # Xử lý các lỗi khác
                     if DETAILED_LOGGING_AVAILABLE:
                         log_error(e, f"Client initialization attempt {attempt + 1}")
-                    
+
                     if attempt < max_retries - 1:
                         print(f"⚠️ Lỗi kết nối (lần {attempt + 1}): {error_msg}")
                         print(f"⏳ Chờ {retry_delay} giây trước khi thử lại...")
@@ -152,7 +213,7 @@ class TelegramFileScanner:
                         retry_delay *= 2  # Exponential backoff
                     else:
                         print(f"❌ Không thể kết nối sau {max_retries} lần thử")
-                        raise e
+                        raise ConnectionError(f"Failed to initialize Telegram client: {error_msg}")
 
         except ValueError as e:
             if "invalid literal for int()" in str(e):
@@ -170,34 +231,57 @@ class TelegramFileScanner:
         
     async def get_channel_entity(self, channel_input: str):
         """Lấy entity của kênh từ username hoặc invite link"""
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("RESOLVE CHANNEL", f"Đang phân giải channel: {channel_input}")
+
         try:
             # Xử lý invite link cho private channel
             if 'joinchat' in channel_input or '+' in channel_input:
                 print("🔐 Phát hiện private channel invite link")
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("PRIVATE CHANNEL", "Phát hiện private channel invite link")
+                    log_api_call("get_entity", {"type": "private_invite", "input": channel_input})
                 entity = await self.client.get_entity(channel_input)
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("ENTITY RESOLVED", f"Private channel: {getattr(entity, 'title', 'Unknown')}", "SUCCESS")
                 return entity
 
             # Xử lý username hoặc public link
             if channel_input.startswith('https://t.me/'):
+                original_input = channel_input
                 channel_input = channel_input.replace('https://t.me/', '')
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("URL PROCESSING", f"Chuyển đổi URL: {original_input} -> {channel_input}")
                 # Xử lý private channel link với +
                 if channel_input.startswith('+'):
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_api_call("get_entity", {"type": "private_plus", "input": channel_input})
                     entity = await self.client.get_entity(channel_input)
                     return entity
 
             if channel_input.startswith('@'):
                 channel_input = channel_input[1:]
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("USERNAME PROCESSING", f"Loại bỏ @ từ username: @{channel_input}")
 
+            if DETAILED_LOGGING_AVAILABLE:
+                log_api_call("get_entity", {"type": "public", "input": channel_input})
             entity = await self.client.get_entity(channel_input)
 
             # Kiểm tra quyền truy cập
             try:
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("ACCESS CHECK", "Kiểm tra quyền truy cập channel")
                 # Thử lấy thông tin cơ bản để kiểm tra quyền
                 await self.client.get_messages(entity, limit=1)
                 print(f"✅ Có quyền truy cập kênh: {getattr(entity, 'title', 'Unknown')}")
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("ACCESS SUCCESS", f"Có quyền truy cập: {getattr(entity, 'title', 'Unknown')}", "SUCCESS")
             except Exception as access_error:
                 print(f"⚠️ Cảnh báo quyền truy cập: {access_error}")
                 print("💡 Đảm bảo bạn là thành viên của kênh private này")
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("ACCESS WARNING", f"Cảnh báo quyền truy cập: {access_error}", "WARNING")
 
             return entity
 
@@ -207,6 +291,8 @@ class TelegramFileScanner:
             print("   - Đối với public channel: @channelname hoặc https://t.me/channelname")
             print("   - Đối với private channel: https://t.me/joinchat/xxxxx hoặc https://t.me/+xxxxx")
             print("   - Đảm bảo bạn đã join kênh private trước")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_error(e, f"Channel resolution failed for: {channel_input}")
             return None
             
     def extract_file_info(self, message) -> Optional[Dict]:
