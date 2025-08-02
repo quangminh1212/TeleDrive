@@ -883,11 +883,12 @@ def start_scan():
         
         # Start scanning in background thread
         def run_scan():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(scanner.scan_channel_with_progress(channel_input))
-            loop.close()
-        
+            with app.app_context():  # Ensure Flask application context
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(scanner.scan_channel_with_progress(channel_input))
+                loop.close()
+
         thread = threading.Thread(target=run_scan)
         thread.daemon = True
         thread.start()
