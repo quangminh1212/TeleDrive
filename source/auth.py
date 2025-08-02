@@ -15,6 +15,17 @@ import config
 from models import db, User, get_or_create_user
 from flask import current_app
 
+# Import detailed logging
+try:
+    from logger import (log_step, log_authentication_event, log_security_event,
+                       log_error, log_performance_metric, get_logger)
+    DETAILED_LOGGING_AVAILABLE = True
+    logger = get_logger('auth')
+except ImportError:
+    DETAILED_LOGGING_AVAILABLE = False
+    import logging
+    logger = logging.getLogger(__name__)
+
 class TelegramAuthenticator:
     """Handle Telegram authentication for web login"""
     
@@ -41,23 +52,37 @@ class TelegramAuthenticator:
     
     async def send_code_request(self, phone_number: str, country_code: str = "+84") -> Dict[str, Any]:
         """Send verification code to phone number"""
-        print(f"AUTH: send_code_request called with phone: {phone_number}, country: {country_code}")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("AUTH REQUEST", f"Sending verification code to {phone_number[:3]}***{phone_number[-3:]}")
+            log_authentication_event("CODE_REQUEST_START", {
+                'phone_masked': phone_number[:3] + '***' + phone_number[-3:],
+                'country_code': country_code
+            })
+
         try:
             # Format phone number with country code
             if not phone_number.startswith('+'):
                 phone_number = f"{country_code}{phone_number}"
 
-            print(f"AUTH: Formatted phone number: {phone_number}")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("PHONE FORMAT", f"Formatted phone: {phone_number[:3]}***{phone_number[-3:]}")
 
             # Initialize client if not already done
             if not self.client:
-                print("AUTH: Initializing Telegram client...")
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("CLIENT INIT", "Initializing Telegram client...")
                 await self.initialize_client()
 
             # Send code request
-            print("AUTH: Sending code request to Telegram...")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("SEND CODE", "Sending code request to Telegram...")
             sent_code = await self.client.send_code_request(phone_number)
-            print(f"AUTH: Code sent successfully, phone_code_hash: {sent_code.phone_code_hash[:10]}...")
+
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("CODE SENT", "Verification code sent successfully")
+                log_authentication_event("CODE_REQUEST_SUCCESS", {
+                    'phone_masked': phone_number[:3] + '***' + phone_number[-3:]
+                })
 
             # Store session info temporarily
             session_id = os.urandom(16).hex()
@@ -66,7 +91,9 @@ class TelegramAuthenticator:
                 'phone_code_hash': sent_code.phone_code_hash,
                 'client': self.client
             }
-            print(f"AUTH: Session stored with ID: {session_id}")
+
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("SESSION STORE", f"Session stored with ID: {session_id}")
 
             return {
                 'success': True,
@@ -75,12 +102,26 @@ class TelegramAuthenticator:
                 'message': 'Verification code sent successfully'
             }
             
-        except PhoneNumberInvalidError:
+        except PhoneNumberInvalidError as e:
+            if DETAILED_LOGGING_AVAILABLE:
+                log_authentication_event("CODE_REQUEST_FAILED", {
+                    'error': 'Invalid phone number format',
+                    'phone_masked': phone_number[:3] + '***' + phone_number[-3:] if len(phone_number) > 6 else 'invalid'
+                }, success=False)
+                log_security_event("INVALID_PHONE_FORMAT", {
+                    'phone_masked': phone_number[:3] + '***' + phone_number[-3:] if len(phone_number) > 6 else 'invalid'
+                }, "WARNING")
             return {
                 'success': False,
                 'error': 'Invalid phone number format'
             }
         except Exception as e:
+            if DETAILED_LOGGING_AVAILABLE:
+                log_error(e, "send_code_request")
+                log_authentication_event("CODE_REQUEST_ERROR", {
+                    'error': str(e),
+                    'phone_masked': phone_number[:3] + '***' + phone_number[-3:] if len(phone_number) > 6 else 'unknown'
+                }, success=False)
             return {
                 'success': False,
                 'error': f'Failed to send verification code: {str(e)}'
@@ -88,11 +129,25 @@ class TelegramAuthenticator:
     
     async def verify_code(self, session_id: str, verification_code: str, password: str = None) -> Dict[str, Any]:
         """Verify the code and complete authentication"""
-        print(f"AUTH: verify_code called with session_id: {session_id}, code length: {len(verification_code)}")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("VERIFY CODE", f"Verifying code for session: {session_id}")
+            log_authentication_event("CODE_VERIFY_START", {
+                'session_id': session_id,
+                'code_length': len(verification_code)
+            })
+
         try:
             if session_id not in self.temp_sessions:
-                print(f"AUTH: Session {session_id} not found in temp_sessions")
-                print(f"AUTH: Available sessions: {list(self.temp_sessions.keys())}")
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_authentication_event("CODE_VERIFY_FAILED", {
+                        'error': 'Invalid or expired session',
+                        'session_id': session_id,
+                        'available_sessions': len(self.temp_sessions)
+                    }, success=False)
+                    log_security_event("INVALID_SESSION_ACCESS", {
+                        'session_id': session_id,
+                        'available_sessions': len(self.temp_sessions)
+                    }, "WARNING")
                 return {
                     'success': False,
                     'error': 'Invalid or expired session'
@@ -102,17 +157,21 @@ class TelegramAuthenticator:
             phone_number = session_data['phone_number']
             phone_code_hash = session_data['phone_code_hash']
 
-            print(f"AUTH: Retrieved session data for phone: {phone_number}")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("SESSION DATA", f"Retrieved session data for phone: {phone_number[:3]}***{phone_number[-3:]}")
 
             # Create a new client for this verification request to avoid event loop issues
-            print("AUTH: Creating new client for verification...")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("CLIENT CREATE", "Creating new client for verification...")
             client = TelegramClient(
                 f"data/verify_session_{session_id}",
                 int(config.API_ID),
                 config.API_HASH
             )
             await client.connect()
-            print("AUTH: New client connected successfully")
+
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("CLIENT CONNECT", "New client connected successfully")
 
             try:
                 # Try to sign in with the code

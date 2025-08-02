@@ -174,20 +174,107 @@ class DetailedLogger:
     def log_error(self, error: Exception, context: str = ""):
         """Log lỗi chi tiết"""
         import traceback
-        
+
         error_details = {
             'error_type': type(error).__name__,
             'error_message': str(error),
             'context': context,
             'traceback': traceback.format_exc()
         }
-        
+
         if hasattr(self, 'errors_logger'):
             self.errors_logger.error(f"ERROR: {json.dumps(error_details, ensure_ascii=False, indent=2)}")
         else:
             self.main_logger.error(f"ERROR in {context}: {error}")
             self.main_logger.debug(traceback.format_exc())
-    
+
+    def log_authentication_event(self, event_type: str, details: Dict[str, Any], success: bool = True):
+        """Log authentication events"""
+        if not self.config.get('log_auth_events', True):
+            return
+
+        auth_details = {
+            'event_type': event_type,
+            'success': success,
+            'timestamp': datetime.now().isoformat(),
+            'details': details
+        }
+
+        level = 'INFO' if success else 'WARNING'
+        if hasattr(self, 'api_logger'):
+            getattr(self.api_logger, level.lower())(f"AUTH {event_type}: {json.dumps(auth_details, ensure_ascii=False)}")
+        else:
+            getattr(self.main_logger, level.lower())(f"AUTH {event_type}: {details}")
+
+    def log_database_operation(self, operation: str, table: str, details: Dict[str, Any] = None):
+        """Log database operations"""
+        if not self.config.get('log_db_operations', True):
+            return
+
+        db_details = {
+            'operation': operation,
+            'table': table,
+            'timestamp': datetime.now().isoformat(),
+            'details': details or {}
+        }
+
+        if hasattr(self, 'files_logger'):
+            self.files_logger.debug(f"DB {operation}: {json.dumps(db_details, ensure_ascii=False)}")
+        else:
+            self.main_logger.debug(f"DB {operation} on {table}: {details}")
+
+    def log_performance_metric(self, metric_name: str, value: float, unit: str = "ms", context: str = ""):
+        """Log performance metrics"""
+        if not self.config.get('log_performance', True):
+            return
+
+        perf_details = {
+            'metric': metric_name,
+            'value': value,
+            'unit': unit,
+            'context': context,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        self.main_logger.info(f"PERFORMANCE {metric_name}: {value}{unit} - {context}")
+
+        if hasattr(self, 'api_logger'):
+            self.api_logger.debug(f"PERF METRIC: {json.dumps(perf_details, ensure_ascii=False)}")
+
+    def log_security_event(self, event_type: str, details: Dict[str, Any], severity: str = "INFO"):
+        """Log security events"""
+        if not self.config.get('log_security_events', True):
+            return
+
+        security_details = {
+            'event_type': event_type,
+            'severity': severity,
+            'timestamp': datetime.now().isoformat(),
+            'details': details
+        }
+
+        if hasattr(self, 'errors_logger') and severity in ['WARNING', 'ERROR']:
+            getattr(self.errors_logger, severity.lower())(f"SECURITY {event_type}: {json.dumps(security_details, ensure_ascii=False)}")
+        else:
+            getattr(self.main_logger, severity.lower())(f"SECURITY {event_type}: {details}")
+
+    def log_user_action(self, action: str, user_id: str, details: Dict[str, Any] = None):
+        """Log user actions"""
+        if not self.config.get('log_user_actions', True):
+            return
+
+        action_details = {
+            'action': action,
+            'user_id': user_id,
+            'timestamp': datetime.now().isoformat(),
+            'details': details or {}
+        }
+
+        if hasattr(self, 'files_logger'):
+            self.files_logger.info(f"USER ACTION {action}: {json.dumps(action_details, ensure_ascii=False)}")
+        else:
+            self.main_logger.info(f"USER {user_id} - {action}: {details}")
+
     def get_logger(self, name: str = 'main') -> logging.Logger:
         """Lấy logger theo tên"""
         return self.loggers.get(name, self.main_logger)
@@ -247,3 +334,33 @@ def log_error(error: Exception, context: str = ""):
     """Log error với global logger"""
     if _detailed_logger:
         _detailed_logger.log_error(error, context)
+
+
+def log_authentication_event(event_type: str, details: Dict[str, Any], success: bool = True):
+    """Log authentication event với global logger"""
+    if _detailed_logger:
+        _detailed_logger.log_authentication_event(event_type, details, success)
+
+
+def log_database_operation(operation: str, table: str, details: Dict[str, Any] = None):
+    """Log database operation với global logger"""
+    if _detailed_logger:
+        _detailed_logger.log_database_operation(operation, table, details)
+
+
+def log_performance_metric(metric_name: str, value: float, unit: str = "ms", context: str = ""):
+    """Log performance metric với global logger"""
+    if _detailed_logger:
+        _detailed_logger.log_performance_metric(metric_name, value, unit, context)
+
+
+def log_security_event(event_type: str, details: Dict[str, Any], severity: str = "INFO"):
+    """Log security event với global logger"""
+    if _detailed_logger:
+        _detailed_logger.log_security_event(event_type, details, severity)
+
+
+def log_user_action(action: str, user_id: str, details: Dict[str, Any] = None):
+    """Log user action với global logger"""
+    if _detailed_logger:
+        _detailed_logger.log_user_action(action, user_id, details)

@@ -187,6 +187,11 @@
     "log_api_calls": true,
     "log_file_operations": true,
     "log_config_changes": true,
+    "log_auth_events": true,
+    "log_db_operations": true,
+    "log_performance": true,
+    "log_security_events": true,
+    "log_user_actions": true,
     "separate_files": {
       "enabled": true,
       "config_log": "logs/config.log",

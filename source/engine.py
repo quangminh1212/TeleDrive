@@ -25,7 +25,8 @@ import config
 
 # Import detailed logging
 try:
-    from logger import log_step, log_api_call, log_file_operation, log_progress, log_error, get_logger
+    from logger import (log_step, log_api_call, log_file_operation, log_progress, log_error,
+                       log_performance_metric, log_database_operation, get_logger)
     DETAILED_LOGGING_AVAILABLE = True
     logger = get_logger('engine')
 except ImportError:
@@ -441,19 +442,48 @@ class TelegramFileScanner:
         # Quét các tin nhắn và tìm file
         progress_bar = tqdm(total=total_messages, desc="Đang quét")
         processed_count = 0
+        files_found = 0
+        files_filtered = 0
+        start_time = datetime.now()
 
         async for message in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
-            file_info = self.extract_file_info(message)
+            try:
+                file_info = self.extract_file_info(message)
 
-            if file_info and self.should_include_file_type(file_info['file_type']):
-                self.files_data.append(file_info)
-                if DETAILED_LOGGING_AVAILABLE and len(self.files_data) % 10 == 0:
-                    log_progress(len(self.files_data), total_messages, "files found")
+                if file_info:
+                    if self.should_include_file_type(file_info['file_type']):
+                        self.files_data.append(file_info)
+                        files_found += 1
 
-            processed_count += 1
-            progress_bar.update(1)
+                        if DETAILED_LOGGING_AVAILABLE and files_found % 50 == 0:
+                            log_step("FILE PROGRESS", f"Đã tìm thấy {files_found} file phù hợp từ {processed_count} tin nhắn")
+                            log_performance_metric("files_per_message", files_found/processed_count, "ratio", f"Channel: {entity.title}")
+                    else:
+                        files_filtered += 1
+                        if DETAILED_LOGGING_AVAILABLE and files_filtered % 100 == 0:
+                            log_step("FILTER INFO", f"Đã lọc bỏ {files_filtered} file không phù hợp")
+
+                processed_count += 1
+                progress_bar.update(1)
+
+                # Log performance every 1000 messages
+                if DETAILED_LOGGING_AVAILABLE and processed_count % 1000 == 0:
+                    elapsed = (datetime.now() - start_time).total_seconds()
+                    log_performance_metric("message_processing_rate", processed_count/elapsed, "msg/sec", f"Channel: {entity.title}")
+
+            except Exception as e:
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_error(e, f"Error processing message {message.id}")
+                continue
 
         progress_bar.close()
+
+        # Log final performance metrics
+        if DETAILED_LOGGING_AVAILABLE:
+            total_time = (datetime.now() - start_time).total_seconds()
+            log_performance_metric("total_scan_time", total_time, "seconds", f"Channel: {entity.title}")
+            log_performance_metric("final_processing_rate", processed_count/total_time, "msg/sec", f"Channel: {entity.title}")
+            log_step("SCAN STATISTICS", f"Processed: {processed_count}, Found: {files_found}, Filtered: {files_filtered}")
 
         print(f"✅ Hoàn thành! Tìm thấy {len(self.files_data)} file")
         if DETAILED_LOGGING_AVAILABLE:

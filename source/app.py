@@ -44,6 +44,17 @@ from auth import telegram_auth
 # Import Flask configuration loader
 import flask_config
 
+# Import detailed logging
+try:
+    from logger import (log_step, log_user_action, log_database_operation,
+                       log_error, log_performance_metric, log_security_event, get_logger)
+    DETAILED_LOGGING_AVAILABLE = True
+    logger = get_logger('webapp')
+except ImportError:
+    DETAILED_LOGGING_AVAILABLE = False
+    import logging
+    logger = logging.getLogger(__name__)
+
 # Initialize Flask app with absolute paths
 import os
 from pathlib import Path
@@ -3203,6 +3214,7 @@ def log_user_activity(action, description=None, file_id=None, metadata=None):
         ip_address = request.remote_addr if request else None
         user_agent = request.headers.get('User-Agent') if request else None
 
+        # Log to database
         ActivityLog.log_activity(
             user_id=user.id,
             action=action,
@@ -3213,7 +3225,24 @@ def log_user_activity(action, description=None, file_id=None, metadata=None):
             user_agent=user_agent
         )
         db.session.commit()
+
+        # Log to detailed logging system
+        if DETAILED_LOGGING_AVAILABLE:
+            log_user_action(action, str(user.id), {
+                'description': description,
+                'file_id': file_id,
+                'metadata': metadata,
+                'ip_address': ip_address,
+                'user_agent': user_agent[:100] if user_agent else None  # Truncate user agent
+            })
+            log_database_operation("INSERT", "activity_log", {
+                'user_id': user.id,
+                'action': action
+            })
+
     except Exception as e:
+        if DETAILED_LOGGING_AVAILABLE:
+            log_error(e, "log_user_activity")
         print(f"Failed to log activity: {e}")
 
 @app.route('/api/search_suggestions', methods=['GET'])

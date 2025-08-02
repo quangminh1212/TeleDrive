@@ -10,6 +10,17 @@ import re
 from datetime import datetime
 from dotenv import load_dotenv
 
+# Import detailed logging
+try:
+    from logger import (log_step, log_config_change, log_file_operation,
+                       log_error, log_performance_metric, get_logger)
+    DETAILED_LOGGING_AVAILABLE = True
+    logger = get_logger('manager')
+except ImportError:
+    DETAILED_LOGGING_AVAILABLE = False
+    import logging
+    logger = logging.getLogger(__name__)
+
 
 class ConfigValidator:
     """Validator cho config.json và .env"""
@@ -138,29 +149,63 @@ class ConfigManager:
     
     def save_config(self):
         """Save configuration to JSON file with validation"""
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step("CONFIG SAVE", f"Saving configuration to {self.config_file}")
+            log_config_change("SAVE_START", {"file": self.config_file})
+
         try:
             # Validate before saving
             validator = ConfigValidator()
             temp_file = self.config_file + '.tmp'
 
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("CONFIG VALIDATE", "Validating configuration before save")
+
             # Save to temp file first
             with open(temp_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=2, ensure_ascii=False)
+
+            if DETAILED_LOGGING_AVAILABLE:
+                log_file_operation("CREATE", temp_file, "Temporary config file created")
 
             # Validate temp file
             if validator.validate_config_json(temp_file):
                 # Move temp file to actual file
                 os.rename(temp_file, self.config_file)
+
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_file_operation("MOVE", self.config_file, "Config file saved successfully")
+                    log_config_change("SAVE_SUCCESS", {
+                        "file": self.config_file,
+                        "validation": "passed"
+                    })
+                    log_step("CONFIG SAVED", f"Configuration saved and validated successfully")
+
                 print(f"✅ Đã lưu và validate cấu hình vào {self.config_file}")
                 return True
             else:
                 # Remove temp file and show errors
                 os.remove(temp_file)
+
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_file_operation("DELETE", temp_file, "Invalid config temp file removed")
+                    log_config_change("SAVE_FAILED", {
+                        "file": self.config_file,
+                        "validation": "failed",
+                        "errors": validator.get_validation_report()
+                    })
+
                 print("❌ Cấu hình không hợp lệ:")
                 print(validator.get_validation_report())
                 return False
 
         except Exception as e:
+            if DETAILED_LOGGING_AVAILABLE:
+                log_error(e, "save_config")
+                log_config_change("SAVE_ERROR", {
+                    "file": self.config_file,
+                    "error": str(e)
+                })
             print(f"Lỗi lưu {self.config_file}: {e}")
             return False
     
