@@ -1008,6 +1008,7 @@ def download_file(filename):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/delete_file', methods=['POST'])
+@login_required
 def delete_file():
     """Delete a file from database or output directory"""
     try:
@@ -1047,6 +1048,7 @@ def delete_file():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/files/<int:file_id>/rename', methods=['POST'])
+@login_required
 def rename_file(file_id):
     """Rename a file"""
     try:
@@ -1077,6 +1079,7 @@ def rename_file(file_id):
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/files/<int:file_id>/tags', methods=['POST'])
+@login_required
 def update_file_tags(file_id):
     """Update file tags"""
     try:
@@ -1114,6 +1117,7 @@ def update_file_tags(file_id):
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/files/<int:file_id>/move', methods=['POST'])
+@login_required
 def move_file(file_id):
     """Move file to a different folder"""
     try:
@@ -1149,6 +1153,7 @@ def move_file(file_id):
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/files/bulk', methods=['POST'])
+@login_required
 def bulk_file_operations():
     """Perform bulk operations on files"""
     try:
@@ -1356,6 +1361,7 @@ def upload_file():
         })
 
 @app.route('/api/csrf-token', methods=['GET'])
+@login_required
 def get_csrf_token():
     """Get CSRF token for AJAX requests"""
     from flask_wtf.csrf import generate_csrf
@@ -1561,6 +1567,7 @@ def search_files():
         })
 
 @app.route('/api/search/suggestions', methods=['GET'])
+@login_required
 def search_suggestions():
     """Get intelligent search suggestions based on partial query"""
     try:
@@ -1689,6 +1696,7 @@ def search_suggestions():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/folders', methods=['GET'])
+@login_required
 def get_folders():
     """Get folder hierarchy for current user"""
     try:
@@ -1718,6 +1726,7 @@ def get_folders():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/folders', methods=['POST'])
+@login_required
 def create_folder():
     """Create a new folder"""
     try:
@@ -1779,6 +1788,7 @@ def create_folder():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/folders/<int:folder_id>', methods=['DELETE'])
+@login_required
 def delete_folder(folder_id):
     """Delete a folder (mark as deleted)"""
     try:
@@ -1809,6 +1819,7 @@ def delete_folder(folder_id):
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/folders/<int:folder_id>/rename', methods=['POST'])
+@login_required
 def rename_folder(folder_id):
     """Rename a folder"""
     try:
