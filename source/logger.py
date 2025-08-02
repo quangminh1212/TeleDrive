@@ -275,6 +275,134 @@ class DetailedLogger:
         else:
             self.main_logger.info(f"USER {user_id} - {action}: {details}")
 
+    def log_step_start(self, step_name: str, context: str = "", step_id: str = None):
+        """Log the start of a detailed step"""
+        if not self.config.get('detailed_steps', True):
+            return
+
+        step_id = step_id or f"step_{datetime.now().strftime('%H%M%S_%f')}"
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+
+        step_details = {
+            'step_id': step_id,
+            'step_name': step_name,
+            'context': context,
+            'status': 'STARTED',
+            'timestamp': timestamp
+        }
+
+        message = f"🚀 STEP START [{step_id}]: {step_name}"
+        if context:
+            message += f" | Context: {context}"
+
+        self.main_logger.info(message)
+
+        if hasattr(self, 'api_logger'):
+            self.api_logger.debug(f"STEP START: {json.dumps(step_details, ensure_ascii=False)}")
+
+        return step_id
+
+    def log_step_end(self, step_id: str, step_name: str, success: bool = True, result: str = "", error: str = ""):
+        """Log the end of a detailed step"""
+        if not self.config.get('detailed_steps', True):
+            return
+
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        status = "SUCCESS" if success else "FAILED"
+        icon = "✅" if success else "❌"
+
+        step_details = {
+            'step_id': step_id,
+            'step_name': step_name,
+            'status': status,
+            'success': success,
+            'result': result,
+            'error': error,
+            'timestamp': timestamp
+        }
+
+        message = f"{icon} STEP END [{step_id}]: {step_name} - {status}"
+        if result:
+            message += f" | Result: {result}"
+        if error:
+            message += f" | Error: {error}"
+
+        level = 'info' if success else 'error'
+        getattr(self.main_logger, level)(message)
+
+        if hasattr(self, 'api_logger'):
+            self.api_logger.debug(f"STEP END: {json.dumps(step_details, ensure_ascii=False)}")
+
+    def log_detailed_error(self, error: Exception, context: str = "", step_id: str = None, additional_info: Dict[str, Any] = None):
+        """Log detailed error with enhanced context"""
+        import traceback
+
+        error_id = f"err_{datetime.now().strftime('%H%M%S_%f')}"
+
+        error_details = {
+            'error_id': error_id,
+            'step_id': step_id,
+            'error_type': type(error).__name__,
+            'error_message': str(error),
+            'context': context,
+            'timestamp': datetime.now().isoformat(),
+            'traceback': traceback.format_exc(),
+            'additional_info': additional_info or {}
+        }
+
+        # Log to errors logger with full details
+        if hasattr(self, 'errors_logger'):
+            self.errors_logger.error(f"DETAILED ERROR [{error_id}]: {json.dumps(error_details, ensure_ascii=False, indent=2)}")
+        else:
+            self.main_logger.error(f"ERROR [{error_id}] in {context}: {error}")
+            self.main_logger.debug(traceback.format_exc())
+
+        # Log summary to main logger
+        summary = f"❌ ERROR [{error_id}]: {type(error).__name__} in {context}"
+        if step_id:
+            summary += f" | Step: {step_id}"
+        self.main_logger.error(summary)
+
+        return error_id
+
+    def log_function_entry(self, function_name: str, args: Dict[str, Any] = None, kwargs: Dict[str, Any] = None):
+        """Log function entry with parameters"""
+        if not self.config.get('log_function_calls', False):
+            return
+
+        call_details = {
+            'function': function_name,
+            'args': args or {},
+            'kwargs': kwargs or {},
+            'timestamp': datetime.now().isoformat()
+        }
+
+        self.main_logger.debug(f"🔵 FUNCTION ENTRY: {function_name}")
+
+        if hasattr(self, 'api_logger'):
+            self.api_logger.debug(f"FUNCTION ENTRY: {json.dumps(call_details, ensure_ascii=False)}")
+
+    def log_function_exit(self, function_name: str, result: Any = None, execution_time: float = None):
+        """Log function exit with result and timing"""
+        if not self.config.get('log_function_calls', False):
+            return
+
+        exit_details = {
+            'function': function_name,
+            'result_type': type(result).__name__ if result is not None else 'None',
+            'execution_time_ms': execution_time * 1000 if execution_time else None,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        message = f"🔴 FUNCTION EXIT: {function_name}"
+        if execution_time:
+            message += f" | Time: {execution_time*1000:.2f}ms"
+
+        self.main_logger.debug(message)
+
+        if hasattr(self, 'api_logger'):
+            self.api_logger.debug(f"FUNCTION EXIT: {json.dumps(exit_details, ensure_ascii=False)}")
+
     def get_logger(self, name: str = 'main') -> logging.Logger:
         """Lấy logger theo tên"""
         return self.loggers.get(name, self.main_logger)
@@ -364,3 +492,103 @@ def log_user_action(action: str, user_id: str, details: Dict[str, Any] = None):
     """Log user action với global logger"""
     if _detailed_logger:
         _detailed_logger.log_user_action(action, user_id, details)
+
+
+def log_step_start(step_name: str, context: str = "", step_id: str = None):
+    """Log step start với global logger"""
+    if _detailed_logger:
+        return _detailed_logger.log_step_start(step_name, context, step_id)
+    return None
+
+
+def log_step_end(step_id: str, step_name: str, success: bool = True, result: str = "", error: str = ""):
+    """Log step end với global logger"""
+    if _detailed_logger:
+        _detailed_logger.log_step_end(step_id, step_name, success, result, error)
+
+
+def log_detailed_error(error: Exception, context: str = "", step_id: str = None, additional_info: Dict[str, Any] = None):
+    """Log detailed error với global logger"""
+    if _detailed_logger:
+        return _detailed_logger.log_detailed_error(error, context, step_id, additional_info)
+    return None
+
+
+def log_function_entry(function_name: str, args: Dict[str, Any] = None, kwargs: Dict[str, Any] = None):
+    """Log function entry với global logger"""
+    if _detailed_logger:
+        _detailed_logger.log_function_entry(function_name, args, kwargs)
+
+
+def log_function_exit(function_name: str, result: Any = None, execution_time: float = None):
+    """Log function exit với global logger"""
+    if _detailed_logger:
+        _detailed_logger.log_function_exit(function_name, result, execution_time)
+
+
+def log_function_calls(include_args: bool = False, include_result: bool = False):
+    """Decorator to automatically log function calls"""
+    def decorator(func):
+        import functools
+        import time
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            function_name = f"{func.__module__}.{func.__name__}"
+
+            # Log function entry
+            if include_args:
+                log_function_entry(function_name,
+                                 {'args': str(args)[:200] if args else None},
+                                 {'kwargs': str(kwargs)[:200] if kwargs else None})
+            else:
+                log_function_entry(function_name)
+
+            start_time = time.time()
+
+            try:
+                result = func(*args, **kwargs)
+                execution_time = time.time() - start_time
+
+                # Log function exit
+                if include_result:
+                    log_function_exit(function_name, str(result)[:200] if result else None, execution_time)
+                else:
+                    log_function_exit(function_name, None, execution_time)
+
+                return result
+
+            except Exception as e:
+                execution_time = time.time() - start_time
+                log_detailed_error(e, f"Function: {function_name}", additional_info={
+                    'execution_time': execution_time,
+                    'args_count': len(args),
+                    'kwargs_count': len(kwargs)
+                })
+                raise
+
+        return wrapper
+    return decorator
+
+
+def log_step_execution(step_name: str, context: str = ""):
+    """Decorator to automatically log step execution"""
+    def decorator(func):
+        import functools
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            step_id = log_step_start(step_name, context)
+
+            try:
+                result = func(*args, **kwargs)
+                log_step_end(step_id, step_name, success=True, result=str(result)[:100] if result else "")
+                return result
+
+            except Exception as e:
+                log_step_end(step_id, step_name, success=False, error=str(e))
+                log_detailed_error(e, f"Step: {step_name}", step_id)
+                raise
+
+        return wrapper
+    return decorator

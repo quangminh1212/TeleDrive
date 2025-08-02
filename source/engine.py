@@ -26,7 +26,8 @@ import config
 # Import detailed logging
 try:
     from logger import (log_step, log_api_call, log_file_operation, log_progress, log_error,
-                       log_performance_metric, log_database_operation, get_logger)
+                       log_performance_metric, log_database_operation, log_step_start, log_step_end,
+                       log_detailed_error, log_function_calls, log_step_execution, get_logger)
     DETAILED_LOGGING_AVAILABLE = True
     logger = get_logger('engine')
 except ImportError:
@@ -408,36 +409,61 @@ class TelegramFileScanner:
         
     async def scan_channel(self, channel_input: str):
         """Quét tất cả file trong kênh"""
+        scan_step_id = None
         if DETAILED_LOGGING_AVAILABLE:
+            scan_step_id = log_step_start("SCAN_CHANNEL", f"Scanning channel: {channel_input}")
             log_step("BẮT ĐẦU QUÉT", f"Kênh: {channel_input}")
 
-        entity = await self.get_channel_entity(channel_input)
-        if not entity:
+        try:
+            # Step 1: Get channel entity
+            entity_step_id = None
             if DETAILED_LOGGING_AVAILABLE:
-                log_step("LỖI ENTITY", "Không thể lấy thông tin kênh", "ERROR")
-            return
+                entity_step_id = log_step_start("GET_CHANNEL_ENTITY", f"Resolving channel: {channel_input}")
 
-        print(f"📡 Bắt đầu quét kênh: {entity.title}")
-        if DETAILED_LOGGING_AVAILABLE:
-            log_step("THÔNG TIN KÊNH", f"Tên: {entity.title}, ID: {entity.id}")
+            entity = await self.get_channel_entity(channel_input)
 
-        print(f"📊 Đang đếm tổng số tin nhắn...")
-        if DETAILED_LOGGING_AVAILABLE:
-            log_step("ĐẾM TIN NHẮN", "Bắt đầu đếm tổng số tin nhắn")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step_end(entity_step_id, "GET_CHANNEL_ENTITY", success=True,
+                           result=f"Resolved to: {entity.title if hasattr(entity, 'title') else 'Unknown'}")
+            if not entity:
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step_end(entity_step_id, "GET_CHANNEL_ENTITY", success=False, error="Không thể lấy thông tin kênh")
+                    log_step_end(scan_step_id, "SCAN_CHANNEL", success=False, error="Entity resolution failed")
+                    log_step("LỖI ENTITY", "Không thể lấy thông tin kênh", "ERROR")
+                return
 
-        # Đếm tổng số tin nhắn
-        total_messages = 0
-        async for _ in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
-            total_messages += 1
+            print(f"📡 Bắt đầu quét kênh: {entity.title}")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("THÔNG TIN KÊNH", f"Tên: {entity.title}, ID: {entity.id}")
 
-        print(f"📝 Tổng số tin nhắn: {total_messages:,}")
-        if DETAILED_LOGGING_AVAILABLE:
-            log_step("TỔNG TIN NHẮN", f"Tìm thấy {total_messages:,} tin nhắn")
-            log_api_call("iter_messages", {"entity": entity.title, "limit": config.MAX_MESSAGES}, f"{total_messages} messages")
+            # Step 2: Count total messages
+            count_step_id = None
+            if DETAILED_LOGGING_AVAILABLE:
+                count_step_id = log_step_start("COUNT_MESSAGES", f"Counting messages in {entity.title}")
 
-        print(f"🔍 Bắt đầu quét file...")
-        if DETAILED_LOGGING_AVAILABLE:
-            log_step("BẮT ĐẦU QUÉT FILE", f"Quét {total_messages:,} tin nhắn để tìm file")
+            print(f"📊 Đang đếm tổng số tin nhắn...")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("ĐẾM TIN NHẮN", "Bắt đầu đếm tổng số tin nhắn")
+
+            # Đếm tổng số tin nhắn
+            total_messages = 0
+            async for _ in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
+                total_messages += 1
+
+            print(f"📝 Tổng số tin nhắn: {total_messages:,}")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step_end(count_step_id, "COUNT_MESSAGES", success=True, result=f"{total_messages:,} messages")
+                log_step("TỔNG TIN NHẮN", f"Tìm thấy {total_messages:,} tin nhắn")
+                log_api_call("iter_messages", {"entity": entity.title, "limit": config.MAX_MESSAGES}, f"{total_messages} messages")
+
+            # Step 3: Start file scanning
+            scan_files_step_id = None
+            if DETAILED_LOGGING_AVAILABLE:
+                scan_files_step_id = log_step_start("SCAN_FILES", f"Scanning {total_messages:,} messages for files")
+
+            print(f"🔍 Bắt đầu quét file...")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("BẮT ĐẦU QUÉT FILE", f"Quét {total_messages:,} tin nhắn để tìm file")
 
         # Quét các tin nhắn và tìm file
         progress_bar = tqdm(total=total_messages, desc="Đang quét")
@@ -485,9 +511,26 @@ class TelegramFileScanner:
             log_performance_metric("final_processing_rate", processed_count/total_time, "msg/sec", f"Channel: {entity.title}")
             log_step("SCAN STATISTICS", f"Processed: {processed_count}, Found: {files_found}, Filtered: {files_filtered}")
 
-        print(f"✅ Hoàn thành! Tìm thấy {len(self.files_data)} file")
-        if DETAILED_LOGGING_AVAILABLE:
-            log_step("HOÀN THÀNH QUÉT", f"Đã quét {processed_count:,} tin nhắn, tìm thấy {len(self.files_data)} file")
+            print(f"✅ Hoàn thành! Tìm thấy {len(self.files_data)} file")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step_end(scan_files_step_id, "SCAN_FILES", success=True,
+                           result=f"Found {files_found} files, filtered {files_filtered}")
+                log_step_end(scan_step_id, "SCAN_CHANNEL", success=True,
+                           result=f"Scanned {processed_count:,} messages, found {len(self.files_data)} files")
+                log_step("HOÀN THÀNH QUÉT", f"Đã quét {processed_count:,} tin nhắn, tìm thấy {len(self.files_data)} file")
+
+        except Exception as e:
+            if DETAILED_LOGGING_AVAILABLE:
+                error_id = log_detailed_error(e, "scan_channel", scan_step_id, {
+                    'channel_input': channel_input,
+                    'processed_count': processed_count if 'processed_count' in locals() else 0,
+                    'files_found': files_found if 'files_found' in locals() else 0
+                })
+                if 'scan_files_step_id' in locals():
+                    log_step_end(scan_files_step_id, "SCAN_FILES", success=False, error=str(e))
+                if scan_step_id:
+                    log_step_end(scan_step_id, "SCAN_CHANNEL", success=False, error=str(e))
+            raise
         
     async def save_results(self):
         """Lưu kết quả ra các file"""

@@ -10,7 +10,8 @@ from engine import TelegramFileScanner
 
 # Import detailed logging
 try:
-    from logger import log_step, log_error, get_logger
+    from logger import (log_step, log_error, log_step_start, log_step_end,
+                       log_detailed_error, get_logger)
     DETAILED_LOGGING_AVAILABLE = True
     logger = get_logger('main')
 except ImportError:
@@ -181,11 +182,17 @@ class PrivateChannelScanner(TelegramFileScanner):
 
 async def main():
     """Main function cho private channel scanner"""
+    main_step_id = None
+    if DETAILED_LOGGING_AVAILABLE:
+        main_step_id = log_step_start("MAIN_APPLICATION", "Starting Private Channel Scanner")
+
     print("🔐 PRIVATE CHANNEL SCANNER")
     print("=" * 50)
 
     if DETAILED_LOGGING_AVAILABLE:
         log_step("KHỞI ĐỘNG ỨNG DỤNG", "Bắt đầu Private Channel Scanner")
+
+    try:
 
     print("🔧 Đang khởi tạo scanner...")
     scanner = PrivateChannelScanner()
@@ -204,12 +211,17 @@ async def main():
     except KeyboardInterrupt:
         print("\n⏹️ Đã dừng bởi người dùng")
         if DETAILED_LOGGING_AVAILABLE:
+            log_step_end(main_step_id, "MAIN_APPLICATION", success=False, error="Interrupted by user")
             log_step("DỪNG BỞI NGƯỜI DÙNG", "Ứng dụng bị dừng bởi Ctrl+C", "WARNING")
 
     except Exception as e:
         print(f"\n❌ LỖI: {e}")
         if DETAILED_LOGGING_AVAILABLE:
-            log_error(e, "Main application error")
+            error_id = log_detailed_error(e, "Main application error", main_step_id, {
+                'error_type': type(e).__name__,
+                'error_location': 'main_function'
+            })
+            log_step_end(main_step_id, "MAIN_APPLICATION", success=False, error=str(e))
 
         if "CHUA CAU HINH PHONE_NUMBER" in str(e):
             print("\n📋 HƯỚNG DẪN CẤU HÌNH SỐ ĐIỆN THOẠI:")
@@ -225,8 +237,12 @@ async def main():
         print("\n🔧 Đang đóng kết nối...")
         if DETAILED_LOGGING_AVAILABLE:
             log_step("ĐÓNG ỨNG DỤNG", "Đang đóng kết nối và dọn dẹp")
-        await scanner.close()
+        if 'scanner' in locals():
+            await scanner.close()
         print("✅ Đã đóng kết nối thành công")
+
+        if DETAILED_LOGGING_AVAILABLE and main_step_id:
+            log_step_end(main_step_id, "MAIN_APPLICATION", success=True, result="Application completed")
 
 if __name__ == "__main__":
     print("🔧 Đang khởi tạo hệ thống...")

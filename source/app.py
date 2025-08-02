@@ -47,7 +47,8 @@ import flask_config
 # Import detailed logging
 try:
     from logger import (log_step, log_user_action, log_database_operation,
-                       log_error, log_performance_metric, log_security_event, get_logger)
+                       log_error, log_performance_metric, log_security_event,
+                       log_step_start, log_step_end, log_detailed_error, get_logger)
     DETAILED_LOGGING_AVAILABLE = True
     logger = get_logger('webapp')
 except ImportError:
@@ -1232,10 +1233,26 @@ def bulk_file_operations():
 @handle_api_error
 def upload_file():
     """Upload files to the system with comprehensive validation"""
-    # Rate limiting check
-    user_ip = request.remote_addr
-    if is_rate_limited(f"upload_{user_ip}", max_requests=10, window_seconds=300):
-        return create_error_response('rate_limit', 'Too many upload attempts. Please try again later.', 429)
+    upload_step_id = None
+    if DETAILED_LOGGING_AVAILABLE:
+        upload_step_id = log_step_start("FILE_UPLOAD", f"User IP: {request.remote_addr}")
+
+    try:
+        # Rate limiting check
+        rate_limit_step_id = None
+        if DETAILED_LOGGING_AVAILABLE:
+            rate_limit_step_id = log_step_start("RATE_LIMIT_CHECK", f"Checking rate limit for {request.remote_addr}")
+
+        user_ip = request.remote_addr
+        if is_rate_limited(f"upload_{user_ip}", max_requests=10, window_seconds=300):
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step_end(rate_limit_step_id, "RATE_LIMIT_CHECK", success=False, error="Rate limit exceeded")
+                log_step_end(upload_step_id, "FILE_UPLOAD", success=False, error="Rate limit exceeded")
+                log_security_event("RATE_LIMIT_EXCEEDED", {'ip': user_ip, 'endpoint': '/api/upload'}, "WARNING")
+            return create_error_response('rate_limit', 'Too many upload attempts. Please try again later.', 429)
+
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step_end(rate_limit_step_id, "RATE_LIMIT_CHECK", success=True, result="Rate limit OK")
 
     # CSRF protection for AJAX uploads
     csrf_token = request.headers.get('X-CSRFToken') or request.form.get('csrf_token')
@@ -1935,11 +1952,27 @@ def reset_password(token):
 @app.route('/telegram_login', methods=['GET', 'POST'])
 def telegram_login():
     """Telegram login - phone number input"""
+    login_step_id = None
+    if DETAILED_LOGGING_AVAILABLE:
+        login_step_id = log_step_start("TELEGRAM_LOGIN", f"Method: {request.method}, IP: {request.remote_addr}")
+
     app.logger.info("=== TELEGRAM LOGIN START ===")
 
-    if current_user.is_authenticated:
-        app.logger.info(f"User already authenticated: {current_user.username}")
-        return redirect(url_for('dashboard'))
+    try:
+        # Check if user is already authenticated
+        auth_check_step_id = None
+        if DETAILED_LOGGING_AVAILABLE:
+            auth_check_step_id = log_step_start("AUTH_CHECK", "Checking if user is already authenticated")
+
+        if current_user.is_authenticated:
+            app.logger.info(f"User already authenticated: {current_user.username}")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step_end(auth_check_step_id, "AUTH_CHECK", success=True, result="User already authenticated")
+                log_step_end(login_step_id, "TELEGRAM_LOGIN", success=True, result="Redirected to dashboard")
+            return redirect(url_for('dashboard'))
+
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step_end(auth_check_step_id, "AUTH_CHECK", success=True, result="User not authenticated")
 
     form = TelegramLoginForm()
     if form.validate_on_submit():

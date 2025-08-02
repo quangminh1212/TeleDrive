@@ -192,6 +192,8 @@
     "log_performance": true,
     "log_security_events": true,
     "log_user_actions": true,
+    "log_function_calls": true,
+    "log_detailed_steps": true,
     "separate_files": {
       "enabled": true,
       "config_log": "logs/config.log",
