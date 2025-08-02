@@ -1254,6 +1254,12 @@ def upload_file():
         if DETAILED_LOGGING_AVAILABLE:
             log_step_end(rate_limit_step_id, "RATE_LIMIT_CHECK", success=True, result="Rate limit OK")
 
+    except Exception as e:
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step_end(rate_limit_step_id, "RATE_LIMIT_CHECK", success=False, error=str(e))
+            log_step_end(upload_step_id, "FILE_UPLOAD", success=False, error=str(e))
+        return create_error_response('rate_limit_error', 'Rate limit check failed', 500)
+
     # CSRF protection for AJAX uploads
     csrf_token = request.headers.get('X-CSRFToken') or request.form.get('csrf_token')
     if not csrf_token:
