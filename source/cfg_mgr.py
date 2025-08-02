@@ -98,7 +98,7 @@ class ConfigManager:
                 "api_id": "",
                 "api_hash": "",
                 "phone_number": "",
-                "session_name": "telegram_scanner_session",
+                "session_name": "session",
                 "connection_timeout": 30,
                 "request_timeout": 60,
                 "retry_attempts": 3,
