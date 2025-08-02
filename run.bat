@@ -64,15 +64,44 @@ REM Kill Python processes (simple approach)
 taskkill /f /im python.exe >nul 2>&1
 taskkill /f /im pythonw.exe >nul 2>&1
 
-REM Kill processes using port 3000 (simple approach)
+REM Kill processes using common ports (comprehensive cleanup)
+echo Cleaning up ports: 3000, 3001, 5000, 8000, 8080...
+
+REM Kill processes using port 3000
 for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":3000 "') do (
+    echo Killing process on port 3000: %%a
     taskkill /f /pid %%a >nul 2>&1
 )
 
-REM Wait 2 seconds for processes to terminate
-ping 127.0.0.1 -n 3 >nul
+REM Kill processes using port 3001
+for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":3001 "') do (
+    echo Killing process on port 3001: %%a
+    taskkill /f /pid %%a >nul 2>&1
+)
 
-echo OK: Existing processes stopped
+REM Kill processes using port 5000 (common Flask default)
+for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":5000 "') do (
+    echo Killing process on port 5000: %%a
+    taskkill /f /pid %%a >nul 2>&1
+)
+
+REM Kill processes using port 8000
+for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":8000 "') do (
+    echo Killing process on port 8000: %%a
+    taskkill /f /pid %%a >nul 2>&1
+)
+
+REM Kill processes using port 8080
+for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":8080 "') do (
+    echo Killing process on port 8080: %%a
+    taskkill /f /pid %%a >nul 2>&1
+)
+
+REM Wait 3 seconds for processes to terminate
+echo Waiting for processes to terminate...
+ping 127.0.0.1 -n 4 >nul
+
+echo OK: All existing processes stopped
 
 echo.
 echo ================================================================
