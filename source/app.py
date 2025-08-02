@@ -1980,6 +1980,14 @@ def telegram_login():
         if DETAILED_LOGGING_AVAILABLE:
             log_step_end(auth_check_step_id, "AUTH_CHECK", success=True, result="User not authenticated")
 
+    except Exception as e:
+        app.logger.error(f"Error during authentication check: {str(e)}")
+        if DETAILED_LOGGING_AVAILABLE:
+            log_step_end(auth_check_step_id, "AUTH_CHECK", success=False, error=str(e))
+            log_step_end(login_step_id, "TELEGRAM_LOGIN", success=False, error=str(e))
+        flash('An error occurred during authentication check. Please try again.', 'error')
+        return redirect(url_for('telegram_login'))
+
     form = TelegramLoginForm()
     if form.validate_on_submit():
         phone_number = form.phone_number.data
