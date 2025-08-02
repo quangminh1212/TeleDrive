@@ -50,11 +50,34 @@ if errorlevel 1 (
 )
 
 echo.
-echo [STEP 4/4] Creating directories...
+echo [STEP 4/5] Creating directories...
 if not exist output mkdir output
 if not exist logs mkdir logs
 if not exist data mkdir data
 echo OK: Directories ready
+
+echo.
+echo [STEP 5/5] Killing existing processes...
+echo Stopping any existing TeleDrive processes...
+
+REM Kill Python processes that might be running TeleDrive
+for /f "tokens=2" %%i in ('tasklist /fi "imagename eq python.exe" /fo csv ^| find "python.exe"') do (
+    echo Stopping Python process %%i
+    taskkill /pid %%i /f >nul 2>&1
+)
+
+REM Kill processes using port 3000
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000 "') do (
+    if not "%%a"=="" (
+        echo Stopping process on port 3000: %%a
+        taskkill /pid %%a /f >nul 2>&1
+    )
+)
+
+REM Wait a moment for processes to terminate
+timeout /t 2 >nul
+
+echo OK: Existing processes stopped
 
 echo.
 echo ================================================================
