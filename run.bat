@@ -60,22 +60,17 @@ echo.
 echo [STEP 5/5] Killing existing processes...
 echo Stopping any existing TeleDrive processes...
 
-REM Kill Python processes that might be running TeleDrive
-for /f "tokens=2" %%i in ('tasklist /fi "imagename eq python.exe" /fo csv ^| find "python.exe"') do (
-    echo Stopping Python process %%i
-    taskkill /pid %%i /f >nul 2>&1
+REM Kill Python processes (simple approach)
+taskkill /f /im python.exe >nul 2>&1
+taskkill /f /im pythonw.exe >nul 2>&1
+
+REM Kill processes using port 3000 (simple approach)
+for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":3000 "') do (
+    taskkill /f /pid %%a >nul 2>&1
 )
 
-REM Kill processes using port 3000
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000 "') do (
-    if not "%%a"=="" (
-        echo Stopping process on port 3000: %%a
-        taskkill /pid %%a /f >nul 2>&1
-    )
-)
-
-REM Wait a moment for processes to terminate
-timeout /t 2 >nul
+REM Wait 2 seconds for processes to terminate
+ping 127.0.0.1 -n 3 >nul
 
 echo OK: Existing processes stopped
 
