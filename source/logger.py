@@ -111,16 +111,27 @@ class DetailedLogger:
         """Log một bước cụ thể với format đặc biệt"""
         if not self.config.get('detailed_steps', True):
             return
-            
+
         separator = "=" * 60
         timestamp = datetime.now().strftime("%H:%M:%S")
-        
+
         message = f"\n{separator}\n[{timestamp}] BƯỚC: {step_name}\n{separator}"
         if details:
             message += f"\nChi tiết: {details}"
         message += f"\n{separator}"
-        
-        getattr(self.main_logger, level.lower())(message)
+
+        # Map custom levels to standard logging levels
+        level_mapping = {
+            'success': 'info',
+            'debug': 'debug',
+            'info': 'info',
+            'warning': 'warning',
+            'error': 'error',
+            'critical': 'critical'
+        }
+
+        actual_level = level_mapping.get(level.lower(), 'info')
+        getattr(self.main_logger, actual_level)(message)
     
     def log_config_change(self, action: str, details: Dict[str, Any]):
         """Log thay đổi cấu hình"""

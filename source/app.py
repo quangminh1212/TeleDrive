@@ -729,6 +729,7 @@ class WebTelegramScanner(TelegramFileScanner):
             scanning_active = False
 
 @app.route('/')
+@login_required
 def dashboard():
     """Main dashboard page"""
     # Get recent files from database
@@ -770,6 +771,7 @@ def dashboard():
     return render_template('index.html', files=all_files)
 
 @app.route('/settings')
+@login_required
 def settings():
     """Settings page for API configuration"""
     cm = ConfigManager()
@@ -778,11 +780,13 @@ def settings():
     return render_template('settings.html', config=current_config)
 
 @app.route('/scan')
+@login_required
 def scan_page():
     """Channel scanning page"""
     return render_template('scan.html')
 
 @app.route('/search')
+@login_required
 def search_page():
     """Advanced search page"""
     return render_template('search.html')
@@ -807,6 +811,7 @@ def chrome_devtools():
     return '', 204
 
 @app.route('/api/save_settings', methods=['POST'])
+@login_required
 def save_settings():
     """Save API settings and configuration"""
     try:
@@ -864,6 +869,7 @@ TELEGRAM_PHONE={data.get('phone_number', '')}
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/start_scan', methods=['POST'])
+@login_required
 def start_scan():
     """Start channel scanning"""
     global scanner, scanning_active
@@ -899,6 +905,7 @@ def start_scan():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/stop_scan', methods=['POST'])
+@login_required
 def stop_scan():
     """Stop current scan"""
     global scanning_active
@@ -907,6 +914,7 @@ def stop_scan():
     return jsonify({'success': True, 'message': 'Scan stopped'})
 
 @app.route('/api/get_files')
+@login_required
 def get_files():
     """Get list of files from database and output directory with pagination"""
     # Get pagination parameters
@@ -981,6 +989,7 @@ def get_files():
     return jsonify(response_data)
 
 @app.route('/download/<filename>')
+@login_required
 def download_file(filename):
     """Download output files"""
     try:
