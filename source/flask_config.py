@@ -98,7 +98,7 @@ class FlaskConfigLoader:
         flask_config['SESSION_COOKIE_SECURE'] = self.get('security.session_cookie_secure', False)  # Set to True in production with HTTPS
         flask_config['SESSION_COOKIE_HTTPONLY'] = self.get('security.session_cookie_httponly', True)
         flask_config['SESSION_COOKIE_SAMESITE'] = self.get('security.session_cookie_samesite', 'Lax')
-        flask_config['WTF_CSRF_TIME_LIMIT'] = self.get('security.csrf_time_limit', 3600)  # 1 hour CSRF token lifetime
+        flask_config['WTF_CSRF_TIME_LIMIT'] = self.get('security.csrf_time_limit', 86400)  # 24 hours CSRF token lifetime
         
         return flask_config
     
@@ -266,7 +266,7 @@ class FlaskConfigLoader:
                 "session_cookie_secure": False,
                 "session_cookie_httponly": True,
                 "session_cookie_samesite": "Lax",
-                "csrf_time_limit": 3600,
+                "csrf_time_limit": 86400,
                 "max_login_attempts": 5,
                 "lockout_duration": 900
             }

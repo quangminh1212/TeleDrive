@@ -273,17 +273,22 @@ from flask_wtf.csrf import CSRFError
 
 @app.errorhandler(CSRFError)
 def handle_csrf_error(error):
-    """Handle CSRF token errors"""
+    """Handle CSRF token errors with auto-refresh"""
     app.logger.warning(f"CSRF error: {request.url} - {error.description}")
+
     if request.is_json:
+        # For AJAX requests, provide new token
+        from flask_wtf.csrf import generate_csrf
         return jsonify({
             'success': False,
-            'error': 'CSRF token error',
-            'message': 'Security token expired. Please refresh the page and try again.'
+            'error': 'csrf_token_expired',
+            'message': 'Security token expired. Please try again.',
+            'new_csrf_token': generate_csrf()
         }), 400
 
+    # For form submissions, redirect back with new token
     flash('Security token expired. Please try again.', 'error')
-    return redirect(request.referrer or url_for('dashboard'))
+    return redirect(request.url)
 
 # Initialize SocketIO
 socketio_config = flask_config.flask_config.get_socketio_config()
@@ -1458,9 +1463,8 @@ def upload_file():
         })
 
 @app.route('/api/csrf-token', methods=['GET'])
-@login_required
 def get_csrf_token():
-    """Get CSRF token for AJAX requests"""
+    """Get CSRF token for AJAX requests - no login required for auth pages"""
     from flask_wtf.csrf import generate_csrf
     return jsonify({
         'success': True,
@@ -2086,10 +2090,29 @@ def telegram_login():
             return redirect(url_for('telegram_verify'))
         else:
             app.logger.error(f"Failed to send code: {result['error']}")
-            flash(result['error'], 'error')
+            error_message = result['error']
+
+            # Return JSON for AJAX requests
+            if request.is_json or request.headers.get('Content-Type') == 'application/x-www-form-urlencoded':
+                return jsonify({
+                    'success': False,
+                    'error': 'send_code_failed',
+                    'message': error_message
+                }), 400
+
+            flash(error_message, 'error')
     else:
         if form.errors:
             app.logger.warning(f"Form validation errors: {form.errors}")
+
+            # Return JSON for AJAX requests with validation errors
+            if request.is_json or request.headers.get('Content-Type') == 'application/x-www-form-urlencoded':
+                return jsonify({
+                    'success': False,
+                    'error': 'validation_error',
+                    'message': 'Please check your input and try again.',
+                    'errors': form.errors
+                }), 400
 
     return render_template('auth/tg_login.html', form=form)
 
