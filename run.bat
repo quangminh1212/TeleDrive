@@ -118,7 +118,7 @@ echo ================================================================
 echo.
 
 REM Start web interface
-python start_server.py
+python source/app.py
 
 echo.
 echo ================================================================

@@ -131,7 +131,13 @@ class DetailedLogger:
         }
 
         actual_level = level_mapping.get(level.lower(), 'info')
-        getattr(self.main_logger, actual_level)(message)
+
+        # Ensure the level method exists
+        if hasattr(self.main_logger, actual_level):
+            getattr(self.main_logger, actual_level)(message)
+        else:
+            # Fallback to info level
+            self.main_logger.info(message)
     
     def log_config_change(self, action: str, details: Dict[str, Any]):
         """Log thay đổi cấu hình"""

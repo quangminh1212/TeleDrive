@@ -24,6 +24,9 @@ flask-wtf==1.2.2
 wtforms==3.0.0
 email-validator==2.0.0
 
+# Testing and HTTP requests
+requests>=2.31.0
+
 
 
 

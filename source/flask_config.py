@@ -130,23 +130,18 @@ class FlaskConfigLoader:
     def get_server_config(self) -> Dict[str, Any]:
         """Get server configuration for running the Flask app"""
         host = self.get('flask.host', '127.0.0.1')
-        preferred_port = self.get('flask.port', 3000)
+        port = 3000  # FIXED: Always use port 3000 only
 
-        # Check if preferred port is available
-        if not self._is_port_available(host, preferred_port):
-            available_port = self._find_available_port(host, preferred_port + 1)
-            print(f"⚠️ Port {preferred_port} is already in use")
-            print(f"✅ Using alternative port: {available_port}")
-
-            # Update config with new port for future reference
-            if self._config and 'flask' in self._config:
-                self._config['flask']['port'] = available_port
-                self.save_config()
-
-            port = available_port
+        # Check if port 3000 is available
+        if not self._is_port_available(host, port):
+            print(f"⚠️ Port {port} is already in use")
+            print("❌ TeleDrive is configured to use ONLY port 3000")
+            print("🔧 Please stop any processes using port 3000 and try again")
+            print("💡 You can use: netstat -ano | findstr :3000")
+            print("💡 Then kill the process with: taskkill /f /pid <PID>")
+            raise RuntimeError(f"Port {port} is required but already in use. TeleDrive uses ONLY port 3000.")
         else:
-            port = preferred_port
-            print(f"✅ Using port: {port}")
+            print(f"✅ Using port: {port} (FIXED PORT - NO ALTERNATIVES)")
 
         return {
             'host': host,

@@ -44,17 +44,22 @@ from auth import telegram_auth
 # Import Flask configuration loader
 import flask_config
 
-# Import detailed logging
-try:
-    from logger import (log_step, log_user_action, log_database_operation,
-                       log_error, log_performance_metric, log_security_event,
-                       log_step_start, log_step_end, log_detailed_error, get_logger)
-    DETAILED_LOGGING_AVAILABLE = True
-    logger = get_logger('webapp')
-except ImportError:
-    DETAILED_LOGGING_AVAILABLE = False
-    import logging
-    logger = logging.getLogger(__name__)
+# Import detailed logging - with fallback
+DETAILED_LOGGING_AVAILABLE = False
+import logging
+logger = logging.getLogger(__name__)
+
+# Only enable detailed logging if explicitly requested
+if os.environ.get('ENABLE_DETAILED_LOGGING') == '1':
+    try:
+        from logger import (log_step, log_user_action, log_database_operation,
+                           log_error, log_performance_metric, log_security_event,
+                           log_step_start, log_step_end, log_detailed_error, get_logger)
+        DETAILED_LOGGING_AVAILABLE = True
+        logger = get_logger('webapp')
+        print("✅ Detailed logging enabled")
+    except ImportError:
+        print("⚠️ Detailed logging not available, using standard logging")
 
 # Initialize Flask app with absolute paths
 import os
@@ -3845,22 +3850,11 @@ if __name__ == '__main__':
     except OSError as e:
         if "address already in use" in str(e).lower() or "10048" in str(e):
             print(f"❌ Port {server_config['port']} is already in use")
-            print("🔄 Trying to find an alternative port...")
-
-            # Force a new port selection
-            alternative_port = flask_config.flask_config._find_available_port(
-                server_config['host'], server_config['port'] + 1
-            )
-
-            print(f"✅ Using alternative port: {alternative_port}")
-            socketio_config['port'] = alternative_port
-
-            # Update config with new port
-            if flask_config.flask_config._config and 'flask' in flask_config.flask_config._config:
-                flask_config.flask_config._config['flask']['port'] = alternative_port
-                flask_config.flask_config.save_config()
-
-            # Try again with new port
-            socketio.run(app, **socketio_config)
+            print("❌ TeleDrive is configured to use ONLY port 3000")
+            print("🔧 Please stop any processes using port 3000 and try again")
+            print("💡 You can use: netstat -ano | findstr :3000")
+            print("💡 Then kill the process with: taskkill /f /pid <PID>")
+            print("🚫 NO ALTERNATIVE PORTS WILL BE USED")
+            raise RuntimeError("Port 3000 is required but already in use. TeleDrive uses ONLY port 3000.")
         else:
             raise
