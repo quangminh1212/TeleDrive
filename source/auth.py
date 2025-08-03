@@ -5,6 +5,7 @@ Handles Telegram login authentication using phone number and verification code
 """
 
 import asyncio
+import hashlib
 import json
 import os
 import time
@@ -36,6 +37,8 @@ class TelegramAuthenticator:
         self.temp_sessions = {}  # Store temporary session data
         # Get verification code timeout from config (default 20 minutes)
         self.session_timeout = getattr(config, 'VERIFICATION_CODE_TIMEOUT', 1200)
+        # Clean up old session files on startup
+        self._cleanup_old_session_files()
 
     async def __aenter__(self):
         """Async context manager entry"""
@@ -86,7 +89,9 @@ class TelegramAuthenticator:
                 log_step("CLIENT CREATE", "Creating new client for code request to avoid event loop conflicts...")
 
             # Create a new client with a unique session name for this request
-            request_session = f"code_request_{os.urandom(8).hex()}"
+            # Use phone number hash to avoid creating too many session files
+            phone_hash = hashlib.md5(phone_number.encode()).hexdigest()[:8]
+            request_session = f"code_req_{phone_hash}"
             client = TelegramClient(
                 f"data/{request_session}",
                 int(config.API_ID),
@@ -270,7 +275,8 @@ class TelegramAuthenticator:
                 log_step("CLIENT CREATE", "Creating new client for verification to avoid event loop conflicts...")
 
             # Create a new client with a unique session name for verification
-            verification_session = f"verify_{session_id}_{os.urandom(4).hex()}"
+            # Use a simpler session name to avoid potential issues
+            verification_session = f"verify_{session_id[:8]}"
             client = TelegramClient(
                 f"data/{verification_session}",
                 int(config.API_ID),
@@ -290,10 +296,35 @@ class TelegramAuthenticator:
                     log_step("SIGN IN PARAMS", f"phone_code_hash: {phone_code_hash[:10]}...{phone_code_hash[-10:] if len(phone_code_hash) > 20 else phone_code_hash}")
                     print(f"AUTH: Sign in params - phone: {phone_number}, code: {verification_code}, hash length: {len(phone_code_hash)}")
 
+                # Validate verification code format
+                if not verification_code or not verification_code.isdigit():
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("CODE VALIDATION", f"Invalid code format: '{verification_code}' - must be numeric")
+                    return {
+                        'success': False,
+                        'error': 'Mã xác thực phải là số. Vui lòng kiểm tra lại mã từ Telegram.',
+                        'user_friendly_message': 'Mã xác thực không đúng định dạng'
+                    }
+
+                # Check code length (Telegram codes are typically 5-6 digits)
+                if len(verification_code) < 4 or len(verification_code) > 6:
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("CODE LENGTH", f"Unusual code length: {len(verification_code)} digits")
+
                 # Check if this looks like a test code
                 is_test_code = verification_code in ['12345', '00000', '11111', '22222', '33333', '44444', '55555', '66666', '77777', '88888', '99999', '123456', '000000']
                 if is_test_code and DETAILED_LOGGING_AVAILABLE:
                     log_step("TEST CODE DETECTED", f"Code {verification_code} appears to be a test code - this will likely fail")
+
+                # Validate phone_code_hash
+                if not phone_code_hash or len(phone_code_hash) < 10:
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("HASH VALIDATION", f"Invalid phone_code_hash: length {len(phone_code_hash) if phone_code_hash else 0}")
+                    return {
+                        'success': False,
+                        'error': 'Phiên xác thực không hợp lệ. Vui lòng yêu cầu mã mới.',
+                        'user_friendly_message': 'Phiên hết hạn - vui lòng lấy mã mới'
+                    }
 
                 sign_in_start_time = time.time()
                 user = await client.sign_in(
@@ -415,7 +446,8 @@ class TelegramAuthenticator:
                 }, success=False)
             return {
                 'success': False,
-                'error': 'Invalid verification code'
+                'error': 'Mã xác thực không đúng. Vui lòng kiểm tra lại mã từ Telegram.',
+                'user_friendly_message': 'Mã xác thực sai'
             }
         except PhoneCodeExpiredError:
             print("AUTH: Telegram API reports verification code expired")
@@ -454,14 +486,23 @@ class TelegramAuthenticator:
                 }, success=False)
                 print(f"AUTH: Telegram code expired after {session_age:.1f}s - Send code took {send_code_duration:.2f}s")
                 print(f"AUTH: Session details - Created: {created_at}, Current: {current_time}, Hash length: {len(session_data.get('phone_code_hash', ''))}")
+
+                # Additional debugging for quick expiration
+                if session_age < 120:  # Less than 2 minutes
+                    print(f"AUTH: WARNING - Code expired very quickly ({session_age:.1f}s). This might indicate:")
+                    print(f"AUTH: 1. Incorrect verification code entered")
+                    print(f"AUTH: 2. Phone code hash mismatch")
+                    print(f"AUTH: 3. Multiple authentication attempts causing conflicts")
+                    print(f"AUTH: 4. Telegram server-side issues")
+
             # Clean up expired session
             if session_id in self.temp_sessions:
                 await self.cleanup_session(session_id)
             return {
                 'success': False,
-                'error': 'The verification code has expired on Telegram\'s servers. This can happen if the code is incorrect or if too much time has passed. Please request a new verification code.',
+                'error': 'Mã xác thực đã hết hạn hoặc không đúng. Vui lòng kiểm tra lại mã từ Telegram hoặc yêu cầu mã mới.',
                 'code_expired': True,
-                'user_friendly_message': 'Code expired or incorrect - please get a new one'
+                'user_friendly_message': 'Mã hết hạn hoặc sai - vui lòng lấy mã mới'
             }
         except Exception as e:
             print(f"AUTH: Authentication failed with exception: {str(e)}")
@@ -579,6 +620,33 @@ class TelegramAuthenticator:
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("SESSION CLEANUP", f"Removed session {session_id} from temp_sessions")
     
+    def _cleanup_old_session_files(self):
+        """Clean up old session files to prevent accumulation"""
+        try:
+            data_dir = Path("data")
+            if not data_dir.exists():
+                return
+
+            current_time = time.time()
+            cleaned_count = 0
+
+            # Clean up session files older than 1 hour
+            for session_file in data_dir.glob("*.session"):
+                try:
+                    # Check if file is older than 1 hour
+                    file_age = current_time - session_file.stat().st_mtime
+                    if file_age > 3600:  # 1 hour
+                        session_file.unlink()
+                        cleaned_count += 1
+                except Exception as e:
+                    print(f"AUTH: Error cleaning up session file {session_file}: {e}")
+
+            if cleaned_count > 0:
+                print(f"AUTH: Cleaned up {cleaned_count} old session files")
+
+        except Exception as e:
+            print(f"AUTH: Error during session file cleanup: {e}")
+
     async def close(self):
         """Close all connections and clean up with improved error handling"""
         # Clean up all temporary sessions first
@@ -602,6 +670,9 @@ class TelegramAuthenticator:
                 print(f"AUTH: Error disconnecting main client: {e}")
             finally:
                 self.client = None
+
+        # Final cleanup of session files
+        self._cleanup_old_session_files()
 
 # Global authenticator instance
 telegram_auth = TelegramAuthenticator()
