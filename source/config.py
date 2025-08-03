@@ -11,13 +11,10 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Import detailed logging
-try:
-    from logger import setup_detailed_logging, log_step, log_config_change, get_logger
-    DETAILED_LOGGING_AVAILABLE = True
-except ImportError:
-    DETAILED_LOGGING_AVAILABLE = False
-    logging.basicConfig(level=logging.INFO)
+# Production mode - no detailed logging
+DETAILED_LOGGING_AVAILABLE = False
+import logging
+logging.basicConfig(level=logging.WARNING)  # Only warnings and errors
 
 logger = logging.getLogger(__name__)
 
@@ -29,18 +26,11 @@ class ConfigManager:
         self._config = None
         self._detailed_logger = None
         self._load_config()
-        self._setup_detailed_logging()
+        # Production mode - no detailed logging setup
 
     def _setup_detailed_logging(self):
-        """Setup detailed logging system"""
-        if DETAILED_LOGGING_AVAILABLE and self._config:
-            logging_config = self._config.get('logging', {})
-            if logging_config.get('enabled', True):
-                try:
-                    self._detailed_logger = setup_detailed_logging(logging_config)
-                    log_step("KHỞI TẠO LOGGING", "Đã thiết lập logging chi tiết")
-                except Exception as e:
-                    logger.warning(f"Không thể setup detailed logging: {e}")
+        """Production mode - no detailed logging"""
+        pass
 
     def _load_config(self):
         """Load configuration from config.json with error handling"""
@@ -110,12 +100,6 @@ class ConfigManager:
                 "app_title": "Telegram Unlimited Driver",
                 "short_name": "TeleDrive",
                 "mtproto_servers": {
-                    "test": {
-                        "dc_id": 2,
-                        "ip": "149.154.167.40",
-                        "port": 443,
-                        "public_key": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAyMEdY1aR+sCR3ZSJrtztKTKqigvO/vBfqACJLZtS7QMgCGXJ6XIR\nyy7mx66W0/sOFa7/1mAZtEoIokDP3ShoqF4fVNb6XeqgQfaUHd8wJpDWHcR2OFwv\nplUUI1PLTktZ9uW2WE23b+ixNwJjJGwBDJPQEQFBE+vfmH0JP503wr5INS1poWg/\nj25sIWeYPHYeOrFp/eXaqhISP6G+q2IeTaWTXpwZj4LzXq5YOpk4bYEQ6mvRq7D1\naHWfYmlEGepfaYR8Q0YqvvhYtMte3ITnuSJs171+GDqpdKcSwHnd6FudwGO4pcCO\nj4WcDuXc2CTHgH8gFTNhp/Y8/SpDOhvn9QIDAQAB\n-----END RSA PUBLIC KEY-----"
-                    },
                     "production": {
                         "dc_id": 2,
                         "ip": "149.154.167.50",
@@ -192,13 +176,7 @@ class ConfigManager:
                 config = config[key]
             config[keys[-1]] = value
 
-            # Log thay đổi
-            if DETAILED_LOGGING_AVAILABLE:
-                log_config_change("SET", {
-                    "path": path,
-                    "old_value": old_value,
-                    "new_value": value
-                })
+            # Production mode - no config change logging
 
             return self._save_config()
         except Exception as e:
@@ -464,10 +442,8 @@ RATE_LIMITING_ENABLED = get_safe(CONFIG, 'advanced.rate_limiting.enabled', True)
 REQUESTS_PER_SECOND = int(get_safe(CONFIG, 'advanced.rate_limiting.requests_per_second', 10))
 BURST_LIMIT = int(get_safe(CONFIG, 'advanced.rate_limiting.burst_limit', 20))
 
-# Experimental features
-PARALLEL_SCANNING = get_safe(CONFIG, 'advanced.experimental.parallel_scanning', False)
-SMART_RETRY = get_safe(CONFIG, 'advanced.experimental.smart_retry', True)
-ADAPTIVE_BATCH_SIZE = get_safe(CONFIG, 'advanced.experimental.adaptive_batch_size', False)
+# Production features only
+SMART_RETRY = True  # Always enabled in production
 
 # ================================================================
 # VALIDATION AND ERROR CHECKING

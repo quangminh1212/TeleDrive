@@ -80,17 +80,11 @@ def run_async_in_thread(coro):
         raise result['error']
     return result['value']
 
-# Only enable detailed logging if explicitly requested
-if os.environ.get('ENABLE_DETAILED_LOGGING') == '1':
-    try:
-        from logger import (log_step, log_user_action, log_database_operation,
-                           log_error, log_performance_metric, log_security_event,
-                           log_step_start, log_step_end, log_detailed_error, get_logger)
-        DETAILED_LOGGING_AVAILABLE = True
-        logger = get_logger('webapp')
-        print("✅ Detailed logging enabled")
-    except ImportError:
-        print("⚠️ Detailed logging not available, using standard logging")
+# Production mode - minimal logging
+DETAILED_LOGGING_AVAILABLE = False
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.WARNING)  # Only warnings and errors
 
 # Initialize Flask app with absolute paths
 import os

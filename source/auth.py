@@ -137,7 +137,6 @@ class TelegramAuthenticator:
                 if DETAILED_LOGGING_AVAILABLE:
                     log_step("SESSION STORE", f"Session stored with ID: {session_id}, expires in {self.session_timeout} seconds ({self.session_timeout/60:.1f} minutes)")
                     log_step("PHONE CODE HASH", f"Stored phone_code_hash: {sent_code.phone_code_hash[:10]}...{sent_code.phone_code_hash[-10:] if len(sent_code.phone_code_hash) > 20 else sent_code.phone_code_hash}")
-                    print(f"AUTH: Session {session_id} created at {session_created_time}, phone_code_hash length: {len(sent_code.phone_code_hash)}")
 
                 return {
                     'success': True,
@@ -242,7 +241,7 @@ class TelegramAuthenticator:
                         'expires_at': expires_at,
                         'current_time': current_time
                     }, success=False)
-                    print(f"AUTH: Session {session_id} expired - Age: {session_age:.1f}s, Expired by: {current_time - expires_at:.1f}s")
+
                 await self.cleanup_session(session_id)
                 return {
                     'success': False,
@@ -252,7 +251,7 @@ class TelegramAuthenticator:
                 }
             else:
                 if DETAILED_LOGGING_AVAILABLE:
-                    print(f"AUTH: Session {session_id} is valid - Age: {session_age:.1f}s, Time until expiry: {time_until_expiry:.1f}s")
+                    pass  # Session is valid
 
             session_data = self.temp_sessions[session_id]
             phone_number = session_data['phone_number']
@@ -267,7 +266,6 @@ class TelegramAuthenticator:
                 log_step("SESSION VALIDATION", f"Session created: {session_data.get('created_at', 0)}, Current time: {verify_start_time}")
                 log_step("PHONE CODE HASH RETRIEVE", f"Retrieved phone_code_hash: {phone_code_hash[:10]}...{phone_code_hash[-10:] if len(phone_code_hash) > 20 else phone_code_hash}")
                 log_step("TIMING", f"Time since session created: {verify_start_time - session_data.get('created_at', 0):.2f}s")
-                print(f"AUTH: Verifying session {session_id}, phone_code_hash length: {len(phone_code_hash)}, age: {verify_start_time - session_data.get('created_at', 0):.2f}s")
 
             # Create a new client for verification to avoid event loop issues
             # Don't reuse the stored client as it may be tied to a different event loop
@@ -290,11 +288,10 @@ class TelegramAuthenticator:
                     log_step("CLIENT CONNECTED", "New verification client connected successfully")
 
                 # Try to sign in with the code using the new client
-                print("AUTH: Attempting to sign in with verification code...")
+
                 if DETAILED_LOGGING_AVAILABLE:
                     log_step("SIGN IN ATTEMPT", f"Phone: {phone_number[:3]}***{phone_number[-3:]}, Code length: {len(verification_code)}")
                     log_step("SIGN IN PARAMS", f"phone_code_hash: {phone_code_hash[:10]}...{phone_code_hash[-10:] if len(phone_code_hash) > 20 else phone_code_hash}")
-                    print(f"AUTH: Sign in params - phone: {phone_number}, code: {verification_code}, hash length: {len(phone_code_hash)}")
 
                 # Validate verification code format
                 if not verification_code or not verification_code.isdigit():
@@ -310,11 +307,6 @@ class TelegramAuthenticator:
                 if len(verification_code) < 4 or len(verification_code) > 6:
                     if DETAILED_LOGGING_AVAILABLE:
                         log_step("CODE LENGTH", f"Unusual code length: {len(verification_code)} digits")
-
-                # Check if this looks like a test code
-                is_test_code = verification_code in ['12345', '00000', '11111', '22222', '33333', '44444', '55555', '66666', '77777', '88888', '99999', '123456', '000000']
-                if is_test_code and DETAILED_LOGGING_AVAILABLE:
-                    log_step("TEST CODE DETECTED", f"Code {verification_code} appears to be a test code - this will likely fail")
 
                 # Validate phone_code_hash
                 if not phone_code_hash or len(phone_code_hash) < 10:
@@ -334,11 +326,10 @@ class TelegramAuthenticator:
                 )
                 sign_in_end_time = time.time()
 
-                print(f"AUTH: Sign in with code successful in {sign_in_end_time - sign_in_start_time:.2f}s")
                 if DETAILED_LOGGING_AVAILABLE:
                     log_step("SIGN IN SUCCESS", f"Authentication completed in {sign_in_end_time - sign_in_start_time:.2f}s")
             except SessionPasswordNeededError:
-                print("AUTH: Two-factor authentication required")
+
                 # Two-factor authentication is enabled
                 if not password:
                     # Clean up clients before returning
@@ -367,19 +358,16 @@ class TelegramAuthenticator:
                     }
 
                 # Sign in with password
-                print("AUTH: Attempting to sign in with 2FA password...")
+
                 user = await client.sign_in(password=password)
-                print("AUTH: Sign in with 2FA password successful")
 
             # Get user information
-            print("AUTH: Getting user information from Telegram...")
+
             telegram_user = await client.get_me()
-            print(f"AUTH: Retrieved Telegram user: {telegram_user.username} (ID: {telegram_user.id})")
 
             # Create or get user in database
-            print("AUTH: Creating or updating user in database...")
+
             db_user = self.create_or_update_user(telegram_user, phone_number)
-            print(f"AUTH: Database user: {db_user.username} (ID: {db_user.id})")
 
             # Clean up temporary session and disconnect both clients
             old_client = session_data.get('client')
@@ -388,29 +376,24 @@ class TelegramAuthenticator:
             # Disconnect the new verification client
             try:
                 await client.disconnect()
-                print("AUTH: Disconnected verification client")
             except Exception as e:
-                print(f"AUTH: Failed to disconnect verification client: {e}")
+                pass  # Ignore disconnect errors
 
             # Clean up the old stored client if it exists
             if old_client:
                 try:
                     if old_client.is_connected():
                         await old_client.disconnect()
-                        print("AUTH: Disconnected old stored client")
                 except Exception as e:
-                    print(f"AUTH: Failed to disconnect old stored client: {e}")
+                    pass  # Ignore disconnect errors
 
             # Clean up the verification session file
             try:
                 session_file = f"data/{verification_session}.session"
                 if os.path.exists(session_file):
                     os.remove(session_file)
-                    print("AUTH: Cleaned up verification session file")
             except Exception as e:
-                print(f"AUTH: Failed to clean up verification session file: {e}")
-
-            print("AUTH: Session cleanup completed")
+                pass  # Ignore cleanup errors
 
             return {
                 'success': True,
@@ -426,7 +409,7 @@ class TelegramAuthenticator:
             }
             
         except PhoneCodeInvalidError:
-            print("AUTH: Invalid verification code error")
+
             # Clean up verification client
             try:
                 await client.disconnect()
@@ -450,7 +433,7 @@ class TelegramAuthenticator:
                 'user_friendly_message': 'Mã xác thực sai'
             }
         except PhoneCodeExpiredError:
-            print("AUTH: Telegram API reports verification code expired")
+
             # Clean up verification client
             try:
                 await client.disconnect()
@@ -484,16 +467,6 @@ class TelegramAuthenticator:
                     'phone_code_hash_length': len(session_data.get('phone_code_hash', '')),
                     'note': 'This is a Telegram API error, not our session timeout'
                 }, success=False)
-                print(f"AUTH: Telegram code expired after {session_age:.1f}s - Send code took {send_code_duration:.2f}s")
-                print(f"AUTH: Session details - Created: {created_at}, Current: {current_time}, Hash length: {len(session_data.get('phone_code_hash', ''))}")
-
-                # Additional debugging for quick expiration
-                if session_age < 120:  # Less than 2 minutes
-                    print(f"AUTH: WARNING - Code expired very quickly ({session_age:.1f}s). This might indicate:")
-                    print(f"AUTH: 1. Incorrect verification code entered")
-                    print(f"AUTH: 2. Phone code hash mismatch")
-                    print(f"AUTH: 3. Multiple authentication attempts causing conflicts")
-                    print(f"AUTH: 4. Telegram server-side issues")
 
             # Clean up expired session
             if session_id in self.temp_sessions:
@@ -505,29 +478,26 @@ class TelegramAuthenticator:
                 'user_friendly_message': 'Mã hết hạn hoặc sai - vui lòng lấy mã mới'
             }
         except Exception as e:
-            print(f"AUTH: Authentication failed with exception: {str(e)}")
             # Clean up verification client first
             try:
                 await client.disconnect()
-                print("AUTH: Disconnected verification client after error")
             except Exception as client_error:
-                print(f"AUTH: Error disconnecting verification client: {client_error}")
+                pass  # Ignore disconnect errors
 
             # Clean up verification session file
             try:
                 session_file = f"data/{verification_session}.session"
                 if os.path.exists(session_file):
                     os.remove(session_file)
-                    print("AUTH: Cleaned up verification session file after error")
             except Exception as file_error:
-                print(f"AUTH: Error cleaning up verification session file: {file_error}")
+                pass  # Ignore cleanup errors
 
             # Clean up session on any error
             if session_id in self.temp_sessions:
                 try:
                     await self.cleanup_session(session_id)
                 except Exception as cleanup_error:
-                    print(f"AUTH: Error during session cleanup: {cleanup_error}")
+                    pass  # Ignore cleanup errors
 
             if DETAILED_LOGGING_AVAILABLE:
                 log_authentication_event("CODE_VERIFY_FAILED", {
@@ -542,19 +512,16 @@ class TelegramAuthenticator:
     
     def create_or_update_user(self, telegram_user: TelegramUser, phone_number: str) -> User:
         """Create or update user in database"""
-        print(f"AUTH: create_or_update_user called for telegram_id: {telegram_user.id}")
 
         # Generate username from Telegram data
         username = telegram_user.username or f"user_{telegram_user.id}"
         email = f"{username}@telegram.local"
 
-        print(f"AUTH: Generated username: {username}, email: {email}")
-
         # Check if user already exists by telegram_id (store as string)
         user = User.query.filter_by(telegram_id=str(telegram_user.id)).first()
 
         if not user:
-            print("AUTH: Creating new user in database")
+
             # Create new user
             user = User(
                 username=username,
@@ -568,9 +535,9 @@ class TelegramAuthenticator:
                 auth_method='telegram'  # Set auth method to telegram
             )
             db.session.add(user)
-            print(f"AUTH: Added new user to session: {username}")
+
         else:
-            print(f"AUTH: Updating existing user: {user.username}")
+
             # Update existing user
             user.phone_number = phone_number
             user.first_name = telegram_user.first_name or ''
@@ -578,7 +545,7 @@ class TelegramAuthenticator:
             user.is_active = True
 
         db.session.commit()
-        print(f"AUTH: User committed to database with ID: {user.id}")
+
         return user
     
     async def cleanup_expired_sessions(self):
@@ -594,20 +561,19 @@ class TelegramAuthenticator:
             if current_time > expires_at:
                 expired_sessions.append(session_id)
                 if DETAILED_LOGGING_AVAILABLE:
-                    print(f"AUTH: Found expired session {session_id} - Age: {session_age:.1f}s, Expired by: {current_time - expires_at:.1f}s")
+                    pass  # Session expired
             else:
                 time_until_expiry = expires_at - current_time
                 if DETAILED_LOGGING_AVAILABLE:
-                    print(f"AUTH: Session {session_id} still valid - Age: {session_age:.1f}s, Expires in: {time_until_expiry:.1f}s")
+                    pass  # Session still valid
 
         # Clean up expired sessions properly
         if expired_sessions:
-            print(f"AUTH: Cleaning up {len(expired_sessions)} expired sessions")
             for session_id in expired_sessions:
                 await self.cleanup_session(session_id)
         else:
             if DETAILED_LOGGING_AVAILABLE:
-                print(f"AUTH: No expired sessions found. Total active sessions: {len(self.temp_sessions)}")
+                pass  # No expired sessions
 
     async def cleanup_session(self, session_id: str):
         """Clean up temporary session with improved error handling"""
@@ -615,7 +581,6 @@ class TelegramAuthenticator:
             # Since we no longer store client objects in session data,
             # we only need to remove the session from temp_sessions
             del self.temp_sessions[session_id]
-            print(f"AUTH: Cleaned up session {session_id}")
 
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("SESSION CLEANUP", f"Removed session {session_id} from temp_sessions")
@@ -639,13 +604,13 @@ class TelegramAuthenticator:
                         session_file.unlink()
                         cleaned_count += 1
                 except Exception as e:
-                    print(f"AUTH: Error cleaning up session file {session_file}: {e}")
+                    pass  # Ignore file cleanup errors
 
             if cleaned_count > 0:
-                print(f"AUTH: Cleaned up {cleaned_count} old session files")
+                pass  # Files cleaned up
 
         except Exception as e:
-            print(f"AUTH: Error during session file cleanup: {e}")
+            pass  # Ignore cleanup errors
 
     async def close(self):
         """Close all connections and clean up with improved error handling"""
@@ -654,20 +619,20 @@ class TelegramAuthenticator:
             try:
                 await self.cleanup_session(session_id)
             except Exception as e:
-                print(f"AUTH: Error cleaning up session {session_id}: {e}")
+                pass  # Ignore cleanup errors
 
         # Clean up main client
         if self.client:
             try:
                 if self.client.is_connected():
                     await asyncio.wait_for(self.client.disconnect(), timeout=10.0)
-                    print("AUTH: Successfully disconnected main client")
                 else:
-                    print("AUTH: Main client was already disconnected")
+                    pass  # Already disconnected
+
             except asyncio.TimeoutError:
-                print("AUTH: Timeout disconnecting main client")
+                pass  # Timeout disconnecting
             except Exception as e:
-                print(f"AUTH: Error disconnecting main client: {e}")
+                pass  # Error disconnecting
             finally:
                 self.client = None
 

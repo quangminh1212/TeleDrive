@@ -1,9 +1,8 @@
 {
   "_schema_version": "1.0",
   "_description": "Telegram File Scanner Configuration",
-  "_last_updated": "2025-08-02",
+  "_last_updated": "2025-08-03",
   "telegram": {
-    "_description": "Telegram API configuration - Get credentials from https://my.telegram.org/apps",
     "api_id": "21272067",
     "api_hash": "b7690dc86952dbc9b16717b101164af3",
     "phone_number": "+84936374950",
@@ -21,12 +20,6 @@
     "app_title": "Telegram Unlimited Driver",
     "short_name": "TeleDrive",
     "mtproto_servers": {
-      "test": {
-        "dc_id": 2,
-        "ip": "149.154.167.40",
-        "port": 443,
-        "public_key": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAyMEdY1aR+sCR3ZSJrtztKTKqigvO/vBfqACJLZtS7QMgCGXJ6XIR\nyy7mx66W0/sOFa7/1mAZtEoIokDP3ShoqF4fVNb6XeqgQfaUHd8wJpDWHcR2OFwv\nplUUI1PLTktZ9uW2WE23b+ixNwJjJGwBDJPQEQFBE+vfmH0JP503wr5INS1poWg/\nj25sIWeYPHYeOrFp/eXaqhISP6G+q2IeTaWTXpwZj4LzXq5YOpk4bYEQ6mvRq7D1\naHWfYmlEGepfaYR8Q0YqvvhYtMte3ITnuSJs171+GDqpdKcSwHnd6FudwGO4pcCO\nj4WcDuXc2CTHgH8gFTNhp/Y8/SpDOhvn9QIDAQAB\n-----END RSA PUBLIC KEY-----"
-      },
       "production": {
         "dc_id": 2,
         "ip": "149.154.167.50",
@@ -37,7 +30,6 @@
     "server_environment": "production"
   },
   "output": {
-    "_description": "Output file configuration",
     "directory": "output",
     "create_subdirs": true,
     "timestamp_folders": false,
@@ -46,46 +38,25 @@
       "csv": {
         "enabled": true,
         "filename": "telegram_files.csv",
-        "encoding": "utf-8-sig",
-        "delimiter": ",",
-        "include_headers": true
+        "encoding": "utf-8-sig"
       },
       "json": {
         "enabled": true,
         "filename": "telegram_files.json",
-        "encoding": "utf-8",
-        "indent": 2,
-        "ensure_ascii": false
+        "encoding": "utf-8"
       },
       "excel": {
         "enabled": true,
         "filename": "telegram_files.xlsx",
-        "sheet_name": "Telegram Files",
-        "auto_filter": true,
-        "freeze_panes": true
-      },
-      "simple_json": {
-        "enabled": false,
-        "filename": "simple_files.json",
-        "encoding": "utf-8",
-        "fields": [
-          "name",
-          "download_link"
-        ]
+        "sheet_name": "Telegram Files"
       }
     }
   },
   "scanning": {
-    "_description": "Scanning behavior configuration",
     "max_messages": null,
     "batch_size": 100,
     "scan_direction": "newest_first",
-    "include_deleted": false,
     "skip_duplicates": true,
-    "scan_replies": true,
-    "scan_forwards": true,
-    "min_message_id": null,
-    "max_message_id": null,
     "file_types": {
       "documents": true,
       "photos": true,
@@ -93,137 +64,27 @@
       "audio": true,
       "voice": true,
       "stickers": true,
-      "animations": true,
-      "video_notes": true,
-      "contacts": false,
-      "locations": false
-    },
-    "performance": {
-      "concurrent_downloads": 3,
-      "sleep_between_batches": 1,
-      "memory_limit_mb": 512,
-      "cache_size": 1000
+      "animations": true
     }
   },
   "download": {
-    "_description": "Download and link generation settings",
     "generate_links": true,
     "include_preview": false,
     "auto_download": false,
-    "download_directory": "downloads",
-    "create_date_folders": true,
-    "preserve_filename": true,
-    "max_file_size_mb": 100,
-    "allowed_extensions": [],
-    "blocked_extensions": [
-      ".exe",
-      ".bat",
-      ".cmd",
-      ".scr"
-    ],
-    "download_timeout": 300,
-    "verify_downloads": true,
-    "resume_downloads": true
+    "download_directory": "downloads"
   },
   "display": {
-    "_description": "Display and UI configuration",
     "show_progress": true,
     "show_file_details": true,
-    "show_statistics": true,
     "language": "vi",
     "date_format": "DD/MM/YYYY HH:mm:ss",
-    "file_size_format": "auto",
-    "progress_bar_style": "bar",
-    "console_width": 80,
-    "log_level": "INFO",
-    "colors": {
-      "success": "green",
-      "error": "red",
-      "warning": "yellow",
-      "info": "blue"
-    }
+    "log_level": "INFO"
   },
   "filters": {
-    "_description": "File filtering configuration",
     "min_file_size": 0,
     "max_file_size": null,
     "file_extensions": [],
-    "exclude_extensions": [],
-    "date_from": null,
-    "date_to": null,
-    "filename_patterns": [],
-    "exclude_patterns": [],
-    "sender_filter": [],
-    "exclude_senders": [],
-    "message_text_filter": "",
-    "case_sensitive": false
-  },
-  "security": {
-    "_description": "Security and authentication settings",
-    "password_min_length": 6,
-    "password_require_uppercase": false,
-    "password_require_lowercase": false,
-    "password_require_numbers": false,
-    "password_require_symbols": false,
-    "session_protection": "strong",
-    "remember_cookie_duration": 2592000,
-    "max_login_attempts": 5,
-    "lockout_duration": 900,
-    "csrf_protection": true,
-    "secure_cookies": false,
-    "httponly_cookies": true,
-    "verification_code_timeout": 1200
-  },
-  "logging": {
-    "_description": "Logging configuration",
-    "enabled": true,
-    "level": "DEBUG",
-    "file": "logs/scanner.log",
-    "max_size_mb": 10,
-    "backup_count": 5,
-    "format": "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s",
-    "console_output": true,
-    "detailed_steps": true,
-    "show_progress_details": true,
-    "log_api_calls": true,
-    "log_file_operations": true,
-    "log_config_changes": true,
-    "log_auth_events": true,
-    "log_db_operations": true,
-    "log_performance": true,
-    "log_security_events": true,
-    "log_user_actions": true,
-    "log_function_calls": true,
-    "log_detailed_steps": true,
-    "separate_files": {
-      "enabled": true,
-      "config_log": "logs/config.log",
-      "api_log": "logs/api.log",
-      "files_log": "logs/files.log",
-      "errors_log": "logs/errors.log"
-    }
-  },
-  "advanced": {
-    "_description": "Advanced configuration options",
-    "use_ipv6": false,
-    "proxy": {
-      "enabled": false,
-      "type": "socks5",
-      "host": "",
-      "port": 1080,
-      "username": "",
-      "password": ""
-    },
-    "rate_limiting": {
-      "enabled": true,
-      "requests_per_second": 10,
-      "burst_limit": 20
-    },
-    "experimental": {
-      "parallel_scanning": false,
-      "smart_retry": true,
-      "adaptive_batch_size": false
-    }
+    "exclude_extensions": []
   },
   "database": {
     "url": "sqlite:///C:\\VF\\0\\TeleDrive\\data\\teledrive.db",
@@ -233,76 +94,5 @@
     "pool_recycle": -1,
     "max_overflow": 0,
     "echo": false
-  },
-  "flask": {
-    "_description": "Flask web server configuration",
-    "secret_key": "teledrive_secret_key_2025",
-    "host": "127.0.0.1",
-    "port": 3000,
-    "debug": false,
-    "threaded": true,
-    "use_reloader": false,
-    "cors_allowed_origins": "*",
-    "socketio_async_mode": "eventlet",
-    "login_view": "telegram_login",
-    "login_message": "Please log in to access this page.",
-    "login_message_category": "info",
-    "session_timeout": 3600,
-    "permanent_session_lifetime": 86400
-  },
-  "upload": {
-    "_description": "File upload configuration",
-    "max_file_size": 104857600,
-    "max_content_length": 104857600,
-    "upload_directory": "data/uploads",
-    "allowed_extensions": [
-      "txt",
-      "pdf",
-      "png",
-      "jpg",
-      "jpeg",
-      "gif",
-      "doc",
-      "docx",
-      "xls",
-      "xlsx",
-      "ppt",
-      "pptx",
-      "zip",
-      "rar",
-      "7z",
-      "mp3",
-      "mp4",
-      "avi",
-      "mkv",
-      "mov",
-      "wav",
-      "flac",
-      "json",
-      "csv",
-      "xml"
-    ],
-    "create_subdirs": true,
-    "timestamp_filenames": true,
-    "backup_existing": true
-  },
-  "directories": {
-    "_description": "Application directory structure",
-    "data": "data",
-    "uploads": "data/uploads",
-    "backups": "data/backups",
-    "temp": "data/temp",
-    "output": "output",
-    "logs": "logs",
-    "templates": "templates",
-    "static": "static"
-  },
-  "admin": {
-    "_description": "Default admin user configuration",
-    "username": "admin",
-    "email": "admin@teledrive.local",
-    "default_password": "admin123",
-    "role": "admin",
-    "auto_create": true
   }
 }
