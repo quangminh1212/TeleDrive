@@ -33,7 +33,8 @@ class TelegramAuthenticator:
     def __init__(self):
         self.client = None
         self.temp_sessions = {}  # Store temporary session data
-        self.session_timeout = 300  # 5 minutes timeout for verification codes
+        # Get verification code timeout from config (default 20 minutes)
+        self.session_timeout = getattr(config, 'VERIFICATION_CODE_TIMEOUT', 1200)
 
     async def __aenter__(self):
         """Async context manager entry"""
@@ -102,11 +103,11 @@ class TelegramAuthenticator:
                 'phone_code_hash': sent_code.phone_code_hash,
                 'client': self.client,
                 'created_at': time.time(),
-                'expires_at': time.time() + 600  # 10 minutes expiry (increased from 5 minutes)
+                'expires_at': time.time() + self.session_timeout  # Use configurable timeout
             }
 
             if DETAILED_LOGGING_AVAILABLE:
-                log_step("SESSION STORE", f"Session stored with ID: {session_id}")
+                log_step("SESSION STORE", f"Session stored with ID: {session_id}, expires in {self.session_timeout} seconds ({self.session_timeout/60:.1f} minutes)")
 
             return {
                 'success': True,

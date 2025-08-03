@@ -171,7 +171,8 @@
     "lockout_duration": 900,
     "csrf_protection": true,
     "secure_cookies": false,
-    "httponly_cookies": true
+    "httponly_cookies": true,
+    "verification_code_timeout": 1200
   },
   "logging": {
     "_description": "Logging configuration",

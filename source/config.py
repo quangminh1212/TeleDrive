@@ -440,6 +440,7 @@ EXCLUDE_PERSONAL_INFO = get_safe(CONFIG, 'security.exclude_personal_info', True)
 SECURE_SESSION = get_safe(CONFIG, 'security.secure_session', True)
 AUTO_LOGOUT = get_safe(CONFIG, 'security.auto_logout', False)
 SESSION_TIMEOUT = int(get_safe(CONFIG, 'security.session_timeout', 3600))
+VERIFICATION_CODE_TIMEOUT = int(get_safe(CONFIG, 'security.verification_code_timeout', 1200))  # 20 minutes default
 
 # Logging settings
 LOGGING_ENABLED = get_safe(CONFIG, 'logging.enabled', True)
