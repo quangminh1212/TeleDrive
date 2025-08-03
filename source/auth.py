@@ -285,12 +285,27 @@ class TelegramAuthenticator:
 
                 # Try to sign in with the code using the new client
                 print("AUTH: Attempting to sign in with verification code...")
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("SIGN IN ATTEMPT", f"Phone: {phone_number[:3]}***{phone_number[-3:]}, Code length: {len(verification_code)}")
+                    log_step("SIGN IN PARAMS", f"phone_code_hash: {phone_code_hash[:10]}...{phone_code_hash[-10:] if len(phone_code_hash) > 20 else phone_code_hash}")
+                    print(f"AUTH: Sign in params - phone: {phone_number}, code: {verification_code}, hash length: {len(phone_code_hash)}")
+
+                # Check if this looks like a test code
+                is_test_code = verification_code in ['12345', '00000', '11111', '22222', '33333', '44444', '55555', '66666', '77777', '88888', '99999', '123456', '000000']
+                if is_test_code and DETAILED_LOGGING_AVAILABLE:
+                    log_step("TEST CODE DETECTED", f"Code {verification_code} appears to be a test code - this will likely fail")
+
+                sign_in_start_time = time.time()
                 user = await client.sign_in(
                     phone=phone_number,
                     code=verification_code,
                     phone_code_hash=phone_code_hash
                 )
-                print("AUTH: Sign in with code successful")
+                sign_in_end_time = time.time()
+
+                print(f"AUTH: Sign in with code successful in {sign_in_end_time - sign_in_start_time:.2f}s")
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("SIGN IN SUCCESS", f"Authentication completed in {sign_in_end_time - sign_in_start_time:.2f}s")
             except SessionPasswordNeededError:
                 print("AUTH: Two-factor authentication required")
                 # Two-factor authentication is enabled
@@ -422,22 +437,31 @@ class TelegramAuthenticator:
                 created_at = session_data.get('created_at', 0)
                 current_time = time.time()
                 session_age = current_time - created_at if created_at > 0 else 0
+                send_code_duration = session_data.get('send_code_duration', 0)
+
+                log_step("CODE EXPIRED ANALYSIS", f"Session age: {session_age:.2f}s, Send code took: {send_code_duration:.2f}s")
+                log_step("CODE EXPIRED DETAILS", f"Created at: {created_at}, Current: {current_time}, Phone code hash: {session_data.get('phone_code_hash', 'N/A')[:20]}...")
 
                 log_authentication_event("CODE_VERIFY_FAILED", {
                     'error': 'Telegram verification code expired (from API)',
                     'session_id': session_id,
                     'session_age_seconds': round(session_age, 2),
+                    'send_code_duration_seconds': round(send_code_duration, 2),
+                    'created_at': created_at,
+                    'current_time': current_time,
+                    'phone_code_hash_length': len(session_data.get('phone_code_hash', '')),
                     'note': 'This is a Telegram API error, not our session timeout'
                 }, success=False)
-                print(f"AUTH: Telegram code expired after {session_age:.1f}s - This is normal if user took too long")
+                print(f"AUTH: Telegram code expired after {session_age:.1f}s - Send code took {send_code_duration:.2f}s")
+                print(f"AUTH: Session details - Created: {created_at}, Current: {current_time}, Hash length: {len(session_data.get('phone_code_hash', ''))}")
             # Clean up expired session
             if session_id in self.temp_sessions:
                 await self.cleanup_session(session_id)
             return {
                 'success': False,
-                'error': 'The verification code has expired on Telegram\'s servers. This happens if you wait too long to enter the code. Please request a new verification code.',
+                'error': 'The verification code has expired on Telegram\'s servers. This can happen if the code is incorrect or if too much time has passed. Please request a new verification code.',
                 'code_expired': True,
-                'user_friendly_message': 'Code expired - please get a new one'
+                'user_friendly_message': 'Code expired or incorrect - please get a new one'
             }
         except Exception as e:
             print(f"AUTH: Authentication failed with exception: {str(e)}")
