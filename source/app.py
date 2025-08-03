@@ -105,7 +105,7 @@ app.config.update(flask_app_config)
 flask_config.flask_config.create_directories()
 
 # Configure database
-configure_flask_app(app)
+db.init_app(app)
 
 # Initialize CSRF Protection
 csrf = CSRFProtect(app)

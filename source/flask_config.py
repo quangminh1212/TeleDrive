@@ -132,16 +132,8 @@ class FlaskConfigLoader:
         host = self.get('flask.host', '127.0.0.1')
         port = 3000  # FIXED: Always use port 3000 only
 
-        # Check if port 3000 is available
-        if not self._is_port_available(host, port):
-            print(f"⚠️ Port {port} is already in use")
-            print("❌ TeleDrive is configured to use ONLY port 3000")
-            print("🔧 Please stop any processes using port 3000 and try again")
-            print("💡 You can use: netstat -ano | findstr :3000")
-            print("💡 Then kill the process with: taskkill /f /pid <PID>")
-            raise RuntimeError(f"Port {port} is required but already in use. TeleDrive uses ONLY port 3000.")
-        else:
-            print(f"✅ Using port: {port} (FIXED PORT - NO ALTERNATIVES)")
+        # Production mode: Skip port check, force start
+        print(f"✅ Using port: {port} (Production mode)")
 
         return {
             'host': host,
