@@ -2174,7 +2174,19 @@ def telegram_verify():
                                  requires_password=True)
         else:
             app.logger.error(f"Authentication failed: {result.get('error', 'Unknown error')}")
-            flash(result['error'], 'error')
+            error_message = result['error']
+
+            # Handle specific error cases with better user guidance
+            if result.get('code_expired') or result.get('session_expired'):
+                app.logger.info("Code or session expired - redirecting to login")
+                flash(error_message, 'error')
+                # Clear session data
+                session.pop('telegram_session_id', None)
+                session.pop('telegram_phone', None)
+                session.pop('telegram_country_code', None)
+                return redirect(url_for('telegram_login'))
+            else:
+                flash(error_message, 'error')
     else:
         if form.errors:
             app.logger.warning(f"Verification form validation errors: {form.errors}")

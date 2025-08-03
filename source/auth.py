@@ -7,9 +7,10 @@ Handles Telegram login authentication using phone number and verification code
 import asyncio
 import json
 import os
+import time
 from typing import Optional, Dict, Any
 from telethon import TelegramClient
-from telethon.errors import PhoneCodeInvalidError, PhoneNumberInvalidError, SessionPasswordNeededError
+from telethon.errors import PhoneCodeInvalidError, PhoneNumberInvalidError, SessionPasswordNeededError, PhoneCodeExpiredError
 from telethon.tl.types import User as TelegramUser
 import config
 from models import db, User, get_or_create_user
@@ -84,12 +85,14 @@ class TelegramAuthenticator:
                     'phone_masked': phone_number[:3] + '***' + phone_number[-3:]
                 })
 
-            # Store session info temporarily
+            # Store session info temporarily with timestamp
             session_id = os.urandom(16).hex()
             self.temp_sessions[session_id] = {
                 'phone_number': phone_number,
                 'phone_code_hash': sent_code.phone_code_hash,
-                'client': self.client
+                'client': self.client,
+                'created_at': time.time(),
+                'expires_at': time.time() + 300  # 5 minutes expiry
             }
 
             if DETAILED_LOGGING_AVAILABLE:
@@ -137,6 +140,9 @@ class TelegramAuthenticator:
             })
 
         try:
+            # Clean up expired sessions first
+            self._cleanup_expired_sessions()
+
             if session_id not in self.temp_sessions:
                 if DETAILED_LOGGING_AVAILABLE:
                     log_authentication_event("CODE_VERIFY_FAILED", {
@@ -150,7 +156,24 @@ class TelegramAuthenticator:
                     }, "WARNING")
                 return {
                     'success': False,
-                    'error': 'Invalid or expired session'
+                    'error': 'Invalid or expired session. Please request a new verification code.',
+                    'session_expired': True
+                }
+
+            session_data = self.temp_sessions[session_id]
+
+            # Check if session has expired
+            if time.time() > session_data.get('expires_at', 0):
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_authentication_event("CODE_VERIFY_FAILED", {
+                        'error': 'Session expired',
+                        'session_id': session_id
+                    }, success=False)
+                await self.cleanup_session(session_id)
+                return {
+                    'success': False,
+                    'error': 'Session has expired. Please request a new verification code.',
+                    'session_expired': True
                 }
 
             session_data = self.temp_sessions[session_id]
@@ -160,21 +183,13 @@ class TelegramAuthenticator:
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("SESSION DATA", f"Retrieved session data for phone: {phone_number[:3]}***{phone_number[-3:]}")
 
-            # Create a new client for this verification request to avoid event loop issues
+            # Use the existing client from the session to maintain consistency
+            client = session_data['client']
             if DETAILED_LOGGING_AVAILABLE:
-                log_step("CLIENT CREATE", "Creating new client for verification...")
-            client = TelegramClient(
-                f"data/verify_session_{session_id}",
-                int(config.API_ID),
-                config.API_HASH
-            )
-            await client.connect()
-
-            if DETAILED_LOGGING_AVAILABLE:
-                log_step("CLIENT CONNECT", "New client connected successfully")
+                log_step("CLIENT REUSE", "Reusing existing client for verification...")
 
             try:
-                # Try to sign in with the code
+                # Try to sign in with the code using the same client that requested it
                 print("AUTH: Attempting to sign in with verification code...")
                 user = await client.sign_in(
                     phone=phone_number,
@@ -208,18 +223,13 @@ class TelegramAuthenticator:
             db_user = self.create_or_update_user(telegram_user, phone_number)
             print(f"AUTH: Database user: {db_user.username} (ID: {db_user.id})")
 
-            # Clean up temporary session and old client
-            old_client = session_data.get('client')
-            if old_client:
-                try:
-                    await old_client.disconnect()
-                    print("AUTH: Disconnected old client")
-                except:
-                    print("AUTH: Failed to disconnect old client (may already be disconnected)")
-
+            # Clean up temporary session and disconnect client
             del self.temp_sessions[session_id]
-            await client.disconnect()
-            print("AUTH: Cleaned up session and disconnected client")
+            try:
+                await client.disconnect()
+                print("AUTH: Disconnected client and cleaned up session")
+            except:
+                print("AUTH: Failed to disconnect client (may already be disconnected)")
 
             return {
                 'success': True,
@@ -236,9 +246,29 @@ class TelegramAuthenticator:
             
         except PhoneCodeInvalidError:
             print("AUTH: Invalid verification code error")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_authentication_event("CODE_VERIFY_FAILED", {
+                    'error': 'Invalid verification code',
+                    'session_id': session_id
+                }, success=False)
             return {
                 'success': False,
                 'error': 'Invalid verification code'
+            }
+        except PhoneCodeExpiredError:
+            print("AUTH: Verification code expired error")
+            if DETAILED_LOGGING_AVAILABLE:
+                log_authentication_event("CODE_VERIFY_FAILED", {
+                    'error': 'Verification code expired',
+                    'session_id': session_id
+                }, success=False)
+            # Clean up expired session
+            if session_id in self.temp_sessions:
+                await self.cleanup_session(session_id)
+            return {
+                'success': False,
+                'error': 'Verification code has expired. Please request a new code.',
+                'code_expired': True
             }
         except Exception as e:
             print(f"AUTH: Authentication failed with exception: {str(e)}")
@@ -288,6 +318,20 @@ class TelegramAuthenticator:
         print(f"AUTH: User committed to database with ID: {user.id}")
         return user
     
+    def _cleanup_expired_sessions(self):
+        """Clean up expired sessions (synchronous)"""
+        current_time = time.time()
+        expired_sessions = []
+
+        for session_id, session_data in self.temp_sessions.items():
+            if current_time > session_data.get('expires_at', 0):
+                expired_sessions.append(session_id)
+
+        for session_id in expired_sessions:
+            # Mark for async cleanup but remove from temp_sessions immediately
+            if session_id in self.temp_sessions:
+                del self.temp_sessions[session_id]
+
     async def cleanup_session(self, session_id: str):
         """Clean up temporary session"""
         if session_id in self.temp_sessions:
