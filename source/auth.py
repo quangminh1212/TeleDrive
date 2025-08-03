@@ -229,6 +229,13 @@ class TelegramAuthenticator:
                         await client.disconnect()
                     except:
                         pass
+                    # Clean up verification session file
+                    try:
+                        session_file = f"data/{verification_session}.session"
+                        if os.path.exists(session_file):
+                            os.remove(session_file)
+                    except:
+                        pass
                     old_client = session_data.get('client')
                     if old_client:
                         try:
@@ -279,7 +286,6 @@ class TelegramAuthenticator:
 
             # Clean up the verification session file
             try:
-                import os
                 session_file = f"data/{verification_session}.session"
                 if os.path.exists(session_file):
                     os.remove(session_file)
@@ -309,6 +315,13 @@ class TelegramAuthenticator:
                 await client.disconnect()
             except:
                 pass
+            # Clean up verification session file
+            try:
+                session_file = f"data/{verification_session}.session"
+                if os.path.exists(session_file):
+                    os.remove(session_file)
+            except:
+                pass
             if DETAILED_LOGGING_AVAILABLE:
                 log_authentication_event("CODE_VERIFY_FAILED", {
                     'error': 'Invalid verification code',
@@ -323,6 +336,13 @@ class TelegramAuthenticator:
             # Clean up verification client
             try:
                 await client.disconnect()
+            except:
+                pass
+            # Clean up verification session file
+            try:
+                session_file = f"data/{verification_session}.session"
+                if os.path.exists(session_file):
+                    os.remove(session_file)
             except:
                 pass
             if DETAILED_LOGGING_AVAILABLE:
@@ -346,6 +366,15 @@ class TelegramAuthenticator:
                 print("AUTH: Disconnected verification client after error")
             except Exception as client_error:
                 print(f"AUTH: Error disconnecting verification client: {client_error}")
+
+            # Clean up verification session file
+            try:
+                session_file = f"data/{verification_session}.session"
+                if os.path.exists(session_file):
+                    os.remove(session_file)
+                    print("AUTH: Cleaned up verification session file after error")
+            except Exception as file_error:
+                print(f"AUTH: Error cleaning up verification session file: {file_error}")
 
             # Clean up session on any error
             if session_id in self.temp_sessions:
