@@ -102,7 +102,7 @@ class TelegramAuthenticator:
                 'phone_code_hash': sent_code.phone_code_hash,
                 'client': self.client,
                 'created_at': time.time(),
-                'expires_at': time.time() + 300  # 5 minutes expiry
+                'expires_at': time.time() + 600  # 10 minutes expiry (increased from 5 minutes)
             }
 
             if DETAILED_LOGGING_AVAILABLE:
@@ -172,23 +172,42 @@ class TelegramAuthenticator:
 
             session_data = self.temp_sessions[session_id]
 
-            # Check if session has expired
-            if time.time() > session_data.get('expires_at', 0):
+            # Check if session has expired with detailed logging
+            current_time = time.time()
+            expires_at = session_data.get('expires_at', 0)
+            created_at = session_data.get('created_at', 0)
+            session_age = current_time - created_at
+            time_until_expiry = expires_at - current_time
+
+            if current_time > expires_at:
                 if DETAILED_LOGGING_AVAILABLE:
                     log_authentication_event("CODE_VERIFY_FAILED", {
                         'error': 'Session expired',
-                        'session_id': session_id
+                        'session_id': session_id,
+                        'session_age_seconds': round(session_age, 2),
+                        'expired_by_seconds': round(current_time - expires_at, 2),
+                        'created_at': created_at,
+                        'expires_at': expires_at,
+                        'current_time': current_time
                     }, success=False)
+                    print(f"AUTH: Session {session_id} expired - Age: {session_age:.1f}s, Expired by: {current_time - expires_at:.1f}s")
                 await self.cleanup_session(session_id)
                 return {
                     'success': False,
-                    'error': 'Session has expired. Please request a new verification code.',
-                    'session_expired': True
+                    'error': 'Your verification session has expired. This can happen if you wait too long to enter the code. Please request a new verification code.',
+                    'session_expired': True,
+                    'user_friendly_message': 'Session expired - please get a new code'
                 }
+            else:
+                if DETAILED_LOGGING_AVAILABLE:
+                    print(f"AUTH: Session {session_id} is valid - Age: {session_age:.1f}s, Time until expiry: {time_until_expiry:.1f}s")
 
             session_data = self.temp_sessions[session_id]
             phone_number = session_data['phone_number']
             phone_code_hash = session_data['phone_code_hash']
+
+            # Update last activity timestamp to show user is actively trying to verify
+            session_data['last_activity'] = time.time()
 
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("SESSION DATA", f"Retrieved session data for phone: {phone_number[:3]}***{phone_number[-3:]}")
@@ -332,7 +351,7 @@ class TelegramAuthenticator:
                 'error': 'Invalid verification code'
             }
         except PhoneCodeExpiredError:
-            print("AUTH: Verification code expired error")
+            print("AUTH: Telegram API reports verification code expired")
             # Clean up verification client
             try:
                 await client.disconnect()
@@ -346,17 +365,27 @@ class TelegramAuthenticator:
             except:
                 pass
             if DETAILED_LOGGING_AVAILABLE:
+                # Get session info for detailed logging
+                session_data = self.temp_sessions.get(session_id, {})
+                created_at = session_data.get('created_at', 0)
+                current_time = time.time()
+                session_age = current_time - created_at if created_at > 0 else 0
+
                 log_authentication_event("CODE_VERIFY_FAILED", {
-                    'error': 'Verification code expired',
-                    'session_id': session_id
+                    'error': 'Telegram verification code expired (from API)',
+                    'session_id': session_id,
+                    'session_age_seconds': round(session_age, 2),
+                    'note': 'This is a Telegram API error, not our session timeout'
                 }, success=False)
+                print(f"AUTH: Telegram code expired after {session_age:.1f}s - This is normal if user took too long")
             # Clean up expired session
             if session_id in self.temp_sessions:
                 await self.cleanup_session(session_id)
             return {
                 'success': False,
-                'error': 'Verification code has expired. Please request a new code.',
-                'code_expired': True
+                'error': 'The verification code has expired on Telegram\'s servers. This happens if you wait too long to enter the code. Please request a new verification code.',
+                'code_expired': True,
+                'user_friendly_message': 'Code expired - please get a new one'
             }
         except Exception as e:
             print(f"AUTH: Authentication failed with exception: {str(e)}")
@@ -436,18 +465,32 @@ class TelegramAuthenticator:
         return user
     
     async def cleanup_expired_sessions(self):
-        """Clean up expired sessions asynchronously"""
+        """Clean up expired sessions asynchronously with detailed logging"""
         current_time = time.time()
         expired_sessions = []
 
         for session_id, session_data in self.temp_sessions.items():
-            if current_time > session_data.get('expires_at', 0):
+            expires_at = session_data.get('expires_at', 0)
+            created_at = session_data.get('created_at', 0)
+            session_age = current_time - created_at
+
+            if current_time > expires_at:
                 expired_sessions.append(session_id)
+                if DETAILED_LOGGING_AVAILABLE:
+                    print(f"AUTH: Found expired session {session_id} - Age: {session_age:.1f}s, Expired by: {current_time - expires_at:.1f}s")
+            else:
+                time_until_expiry = expires_at - current_time
+                if DETAILED_LOGGING_AVAILABLE:
+                    print(f"AUTH: Session {session_id} still valid - Age: {session_age:.1f}s, Expires in: {time_until_expiry:.1f}s")
 
         # Clean up expired sessions properly
-        for session_id in expired_sessions:
-            print(f"AUTH: Cleaning up expired session: {session_id}")
-            await self.cleanup_session(session_id)
+        if expired_sessions:
+            print(f"AUTH: Cleaning up {len(expired_sessions)} expired sessions")
+            for session_id in expired_sessions:
+                await self.cleanup_session(session_id)
+        else:
+            if DETAILED_LOGGING_AVAILABLE:
+                print(f"AUTH: No expired sessions found. Total active sessions: {len(self.temp_sessions)}")
 
     async def cleanup_session(self, session_id: str):
         """Clean up temporary session with improved error handling"""
