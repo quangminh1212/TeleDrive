@@ -8,6 +8,7 @@ import asyncio
 import json
 import os
 import time
+from pathlib import Path
 from typing import Optional, Dict, Any
 from telethon import TelegramClient
 from telethon.errors import PhoneCodeInvalidError, PhoneNumberInvalidError, SessionPasswordNeededError, PhoneCodeExpiredError
@@ -79,42 +80,76 @@ class TelegramAuthenticator:
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("PHONE FORMAT", f"Formatted phone: {phone_number[:3]}***{phone_number[-3:]}")
 
-            # Initialize client if not already done
-            if not self.client:
+            # Create a new client for each request to avoid event loop issues
+            # Don't reuse self.client as it may be tied to a different event loop
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("CLIENT CREATE", "Creating new client for code request to avoid event loop conflicts...")
+
+            # Create a new client with a unique session name for this request
+            request_session = f"code_request_{os.urandom(8).hex()}"
+            client = TelegramClient(
+                f"data/{request_session}",
+                int(config.API_ID),
+                config.API_HASH
+            )
+
+            try:
+                # Connect the new client
+                await client.connect()
                 if DETAILED_LOGGING_AVAILABLE:
-                    log_step("CLIENT INIT", "Initializing Telegram client...")
-                await self.initialize_client()
+                    log_step("CLIENT CONNECTED", "New code request client connected successfully")
 
-            # Send code request
-            if DETAILED_LOGGING_AVAILABLE:
-                log_step("SEND CODE", "Sending code request to Telegram...")
-            sent_code = await self.client.send_code_request(phone_number)
+                # Send code request
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("SEND CODE", "Sending code request to Telegram...")
+                sent_code = await client.send_code_request(phone_number)
 
-            if DETAILED_LOGGING_AVAILABLE:
-                log_step("CODE SENT", "Verification code sent successfully")
-                log_authentication_event("CODE_REQUEST_SUCCESS", {
-                    'phone_masked': phone_number[:3] + '***' + phone_number[-3:]
-                })
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("CODE SENT", "Verification code sent successfully")
+                    log_authentication_event("CODE_REQUEST_SUCCESS", {
+                        'phone_masked': phone_number[:3] + '***' + phone_number[-3:]
+                    })
 
-            # Store session info temporarily with timestamp
-            session_id = os.urandom(16).hex()
-            self.temp_sessions[session_id] = {
-                'phone_number': phone_number,
-                'phone_code_hash': sent_code.phone_code_hash,
-                'client': self.client,
-                'created_at': time.time(),
-                'expires_at': time.time() + self.session_timeout  # Use configurable timeout
-            }
+                # Store session info temporarily with timestamp
+                # Don't store the client object to avoid event loop issues
+                session_id = os.urandom(16).hex()
+                self.temp_sessions[session_id] = {
+                    'phone_number': phone_number,
+                    'phone_code_hash': sent_code.phone_code_hash,
+                    'created_at': time.time(),
+                    'expires_at': time.time() + self.session_timeout  # Use configurable timeout
+                }
 
-            if DETAILED_LOGGING_AVAILABLE:
-                log_step("SESSION STORE", f"Session stored with ID: {session_id}, expires in {self.session_timeout} seconds ({self.session_timeout/60:.1f} minutes)")
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("SESSION STORE", f"Session stored with ID: {session_id}, expires in {self.session_timeout} seconds ({self.session_timeout/60:.1f} minutes)")
 
-            return {
-                'success': True,
-                'session_id': session_id,
-                'phone_number': phone_number,
-                'message': 'Verification code sent successfully'
-            }
+                return {
+                    'success': True,
+                    'session_id': session_id,
+                    'phone_number': phone_number,
+                    'message': 'Verification code sent successfully'
+                }
+
+            finally:
+                # Always disconnect and cleanup the client
+                try:
+                    await client.disconnect()
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("CLIENT CLEANUP", "Code request client disconnected successfully")
+                except Exception as cleanup_error:
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("CLIENT CLEANUP ERROR", f"Error disconnecting client: {cleanup_error}")
+
+                # Clean up session file
+                try:
+                    session_file = Path(f"data/{request_session}.session")
+                    if session_file.exists():
+                        session_file.unlink()
+                        if DETAILED_LOGGING_AVAILABLE:
+                            log_step("SESSION CLEANUP", f"Cleaned up session file: {request_session}.session")
+                except Exception as file_cleanup_error:
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("SESSION CLEANUP ERROR", f"Error cleaning up session file: {file_cleanup_error}")
             
         except PhoneNumberInvalidError as e:
             if DETAILED_LOGGING_AVAILABLE:
@@ -496,25 +531,13 @@ class TelegramAuthenticator:
     async def cleanup_session(self, session_id: str):
         """Clean up temporary session with improved error handling"""
         if session_id in self.temp_sessions:
-            session_data = self.temp_sessions[session_id]
-            client = session_data.get('client')
-
-            if client:
-                try:
-                    # Check if client is connected before trying to disconnect
-                    if client.is_connected():
-                        await asyncio.wait_for(client.disconnect(), timeout=5.0)
-                        print(f"AUTH: Successfully disconnected client for session {session_id}")
-                    else:
-                        print(f"AUTH: Client for session {session_id} was already disconnected")
-                except asyncio.TimeoutError:
-                    print(f"AUTH: Timeout disconnecting client for session {session_id}")
-                except Exception as e:
-                    print(f"AUTH: Error disconnecting client for session {session_id}: {e}")
-
-            # Always remove from temp_sessions even if disconnect failed
+            # Since we no longer store client objects in session data,
+            # we only need to remove the session from temp_sessions
             del self.temp_sessions[session_id]
             print(f"AUTH: Cleaned up session {session_id}")
+
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("SESSION CLEANUP", f"Removed session {session_id} from temp_sessions")
     
     async def close(self):
         """Close all connections and clean up with improved error handling"""
