@@ -29,10 +29,20 @@ except ImportError:
 
 class TelegramAuthenticator:
     """Handle Telegram authentication for web login"""
-    
+
     def __init__(self):
         self.client = None
         self.temp_sessions = {}  # Store temporary session data
+        self.session_timeout = 300  # 5 minutes timeout for verification codes
+
+    async def __aenter__(self):
+        """Async context manager entry"""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit with proper cleanup"""
+        await self.close()
+        return False
         
     async def initialize_client(self, session_name: str = None):
         """Initialize Telegram client for authentication"""
@@ -141,7 +151,7 @@ class TelegramAuthenticator:
 
         try:
             # Clean up expired sessions first
-            self._cleanup_expired_sessions()
+            await self.cleanup_expired_sessions()
 
             if session_id not in self.temp_sessions:
                 if DETAILED_LOGGING_AVAILABLE:
@@ -272,6 +282,19 @@ class TelegramAuthenticator:
             }
         except Exception as e:
             print(f"AUTH: Authentication failed with exception: {str(e)}")
+            # Clean up session on any error
+            if session_id in self.temp_sessions:
+                try:
+                    await self.cleanup_session(session_id)
+                except Exception as cleanup_error:
+                    print(f"AUTH: Error during session cleanup: {cleanup_error}")
+
+            if DETAILED_LOGGING_AVAILABLE:
+                log_authentication_event("CODE_VERIFY_FAILED", {
+                    'error': str(e),
+                    'session_id': session_id
+                }, success=False)
+
             return {
                 'success': False,
                 'error': f'Authentication failed: {str(e)}'
@@ -318,8 +341,8 @@ class TelegramAuthenticator:
         print(f"AUTH: User committed to database with ID: {user.id}")
         return user
     
-    def _cleanup_expired_sessions(self):
-        """Clean up expired sessions (synchronous)"""
+    async def cleanup_expired_sessions(self):
+        """Clean up expired sessions asynchronously"""
         current_time = time.time()
         expired_sessions = []
 
@@ -327,31 +350,57 @@ class TelegramAuthenticator:
             if current_time > session_data.get('expires_at', 0):
                 expired_sessions.append(session_id)
 
+        # Clean up expired sessions properly
         for session_id in expired_sessions:
-            # Mark for async cleanup but remove from temp_sessions immediately
-            if session_id in self.temp_sessions:
-                del self.temp_sessions[session_id]
+            print(f"AUTH: Cleaning up expired session: {session_id}")
+            await self.cleanup_session(session_id)
 
     async def cleanup_session(self, session_id: str):
-        """Clean up temporary session"""
+        """Clean up temporary session with improved error handling"""
         if session_id in self.temp_sessions:
-            client = self.temp_sessions[session_id]['client']
-            try:
-                await client.disconnect()
-            except:
-                pass
+            session_data = self.temp_sessions[session_id]
+            client = session_data.get('client')
+
+            if client:
+                try:
+                    # Check if client is connected before trying to disconnect
+                    if client.is_connected():
+                        await asyncio.wait_for(client.disconnect(), timeout=5.0)
+                        print(f"AUTH: Successfully disconnected client for session {session_id}")
+                    else:
+                        print(f"AUTH: Client for session {session_id} was already disconnected")
+                except asyncio.TimeoutError:
+                    print(f"AUTH: Timeout disconnecting client for session {session_id}")
+                except Exception as e:
+                    print(f"AUTH: Error disconnecting client for session {session_id}: {e}")
+
+            # Always remove from temp_sessions even if disconnect failed
             del self.temp_sessions[session_id]
+            print(f"AUTH: Cleaned up session {session_id}")
     
     async def close(self):
-        """Close all connections and clean up"""
+        """Close all connections and clean up with improved error handling"""
+        # Clean up all temporary sessions first
         for session_id in list(self.temp_sessions.keys()):
-            await self.cleanup_session(session_id)
-        
+            try:
+                await self.cleanup_session(session_id)
+            except Exception as e:
+                print(f"AUTH: Error cleaning up session {session_id}: {e}")
+
+        # Clean up main client
         if self.client:
             try:
-                await self.client.disconnect()
-            except:
-                pass
+                if self.client.is_connected():
+                    await asyncio.wait_for(self.client.disconnect(), timeout=10.0)
+                    print("AUTH: Successfully disconnected main client")
+                else:
+                    print("AUTH: Main client was already disconnected")
+            except asyncio.TimeoutError:
+                print("AUTH: Timeout disconnecting main client")
+            except Exception as e:
+                print(f"AUTH: Error disconnecting main client: {e}")
+            finally:
+                self.client = None
 
 # Global authenticator instance
 telegram_auth = TelegramAuthenticator()

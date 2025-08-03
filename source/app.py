@@ -49,6 +49,37 @@ DETAILED_LOGGING_AVAILABLE = False
 import logging
 logger = logging.getLogger(__name__)
 
+# Async utility functions
+async def run_async_safely(coro):
+    """Run async coroutine with proper error handling and cleanup"""
+    try:
+        return await coro
+    except Exception as e:
+        logger.error(f"Async operation failed: {e}")
+        raise
+
+def run_async_in_thread(coro):
+    """Run async coroutine in a new thread with proper event loop management"""
+    import asyncio
+    import threading
+
+    result = {'value': None, 'error': None}
+
+    def run_in_thread():
+        try:
+            # Use asyncio.run() which properly manages the event loop
+            result['value'] = asyncio.run(run_async_safely(coro))
+        except Exception as e:
+            result['error'] = e
+
+    thread = threading.Thread(target=run_in_thread)
+    thread.start()
+    thread.join()
+
+    if result['error']:
+        raise result['error']
+    return result['value']
+
 # Only enable detailed logging if explicitly requested
 if os.environ.get('ENABLE_DETAILED_LOGGING') == '1':
     try:
@@ -493,6 +524,29 @@ scanner = None
 scanning_active = False
 scan_progress = {'current': 0, 'total': 0, 'status': 'idle'}
 
+# Periodic cleanup task
+def start_cleanup_task():
+    """Start periodic cleanup of expired sessions"""
+    import threading
+    import time
+
+    def cleanup_worker():
+        while True:
+            try:
+                # Run cleanup every 5 minutes
+                time.sleep(300)
+                # Clean up expired sessions
+                asyncio.run(telegram_auth.cleanup_expired_sessions())
+            except Exception as e:
+                logger.error(f"Error in cleanup worker: {e}")
+
+    cleanup_thread = threading.Thread(target=cleanup_worker, daemon=True)
+    cleanup_thread.start()
+    print("🧹 Started periodic cleanup task")
+
+# Start cleanup task
+start_cleanup_task()
+
 class WebTelegramScanner(TelegramFileScanner):
     """Extended scanner with web interface support"""
 
@@ -904,13 +958,23 @@ def start_scan():
         # Create new scanner instance
         scanner = WebTelegramScanner(socketio)
         
-        # Start scanning in background thread
+        # Start scanning in background thread with proper async handling
         def run_scan():
             with app.app_context():  # Ensure Flask application context
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(scanner.scan_channel_with_progress(channel_input))
-                loop.close()
+                async def scan_with_context():
+                    async with scanner:  # Use context manager for proper cleanup
+                        await scanner.scan_channel_with_progress(channel_input)
+
+                try:
+                    # Use asyncio.run() for proper event loop management
+                    asyncio.run(run_async_safely(scan_with_context()))
+                except Exception as e:
+                    logger.error(f"Scanner error: {e}")
+                    # Ensure scanner is cleaned up even on error
+                    try:
+                        asyncio.run(scanner.close())
+                    except:
+                        pass
 
         thread = threading.Thread(target=run_scan)
         thread.daemon = True
@@ -2012,15 +2076,14 @@ def telegram_login():
             result = await telegram_auth.send_code_request(phone_number, country_code)
             return result
 
-        # Run async function
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        # Run async function with proper event loop management
         try:
             app.logger.info("Sending verification code...")
-            result = loop.run_until_complete(send_code())
+            result = run_async_in_thread(send_code())
             app.logger.info(f"Send code result: {result}")
-        finally:
-            loop.close()
+        except Exception as e:
+            app.logger.error(f"Failed to send verification code: {e}")
+            result = {'success': False, 'error': str(e)}
 
         if result['success']:
             session['telegram_session_id'] = result['session_id']
@@ -2074,15 +2137,14 @@ def telegram_verify():
             result = await telegram_auth.verify_code(session_id, verification_code, password)
             return result
 
-        # Run async function
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        # Run async function with proper event loop management
         try:
             app.logger.info("Starting code verification...")
-            result = loop.run_until_complete(verify_code())
+            result = run_async_in_thread(verify_code())
             app.logger.info(f"Verification result: {result}")
-        finally:
-            loop.close()
+        except Exception as e:
+            app.logger.error(f"Failed to verify code: {e}")
+            result = {'success': False, 'error': str(e)}
 
         if result['success']:
             app.logger.info("=== AUTHENTICATION SUCCESSFUL ===")
@@ -3835,8 +3897,43 @@ def auto_tag_all_files():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+async def cleanup_resources():
+    """Clean up all resources on shutdown"""
+    print("🧹 Cleaning up resources...")
+    try:
+        # Clean up global telegram authenticator
+        await telegram_auth.close()
+        print("✅ Telegram authenticator cleaned up")
+    except Exception as e:
+        print(f"⚠️ Error cleaning up telegram authenticator: {e}")
+
+def setup_signal_handlers():
+    """Setup signal handlers for graceful shutdown"""
+    import signal
+    import atexit
+
+    def signal_handler(signum, frame):
+        print(f"\n🛑 Received signal {signum}, shutting down gracefully...")
+        try:
+            # Run cleanup in a new event loop since we might not have one
+            asyncio.run(cleanup_resources())
+        except Exception as e:
+            print(f"⚠️ Error during cleanup: {e}")
+        finally:
+            sys.exit(0)
+
+    # Register signal handlers
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    # Register cleanup on normal exit
+    atexit.register(lambda: asyncio.run(cleanup_resources()) if not asyncio.get_event_loop().is_running() else None)
+
 if __name__ == '__main__':
     print("🌐 Starting TeleDrive Web Interface...")
+
+    # Setup signal handlers for graceful shutdown
+    setup_signal_handlers()
 
     # Create necessary directories from config
     directories = flask_config.flask_config.get_directories()
@@ -3859,6 +3956,8 @@ if __name__ == '__main__':
     try:
         # Start server with configuration
         socketio.run(app, **socketio_config)
+    except KeyboardInterrupt:
+        print("\n🛑 Keyboard interrupt received, shutting down...")
     except OSError as e:
         if "address already in use" in str(e).lower() or "10048" in str(e):
             print(f"❌ Port {server_config['port']} is already in use")
@@ -3870,3 +3969,9 @@ if __name__ == '__main__':
             raise RuntimeError("Port 3000 is required but already in use. TeleDrive uses ONLY port 3000.")
         else:
             raise
+    finally:
+        # Final cleanup
+        try:
+            asyncio.run(cleanup_resources())
+        except Exception as e:
+            print(f"⚠️ Error during final cleanup: {e}")

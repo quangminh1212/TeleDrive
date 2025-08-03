@@ -42,6 +42,16 @@ class TelegramFileScanner:
         self.output_dir = Path(config.OUTPUT_DIR)
         self.output_dir.mkdir(exist_ok=True)
         self.offline_mode = offline_mode
+
+    async def __aenter__(self):
+        """Async context manager entry"""
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit with proper cleanup"""
+        await self.close()
+        return False
         
     async def initialize(self):
         """Khởi tạo Telegram client với retry mechanism và session handling"""
@@ -668,9 +678,31 @@ class TelegramFileScanner:
         return f"{size_bytes:.1f} PB"
         
     async def close(self):
-        """Đóng kết nối"""
+        """Đóng kết nối với proper cleanup"""
         if self.client:
-            await self.client.disconnect()
+            try:
+                # Check if client is connected before trying to disconnect
+                if self.client.is_connected():
+                    # Wait for any pending operations to complete
+                    await asyncio.sleep(0.1)
+
+                    # Disconnect with timeout
+                    await asyncio.wait_for(self.client.disconnect(), timeout=10.0)
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("CLIENT DISCONNECT", "Successfully disconnected Telegram client")
+                else:
+                    if DETAILED_LOGGING_AVAILABLE:
+                        log_step("CLIENT DISCONNECT", "Client was already disconnected")
+            except asyncio.TimeoutError:
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("CLIENT DISCONNECT", "Timeout during disconnect", "WARNING")
+                print("⚠️ Client disconnect timeout - forcing cleanup")
+            except Exception as e:
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_error(e, "Client disconnect error")
+                print(f"⚠️ Error during client disconnect: {e}")
+            finally:
+                self.client = None
 
 async def main():
     scanner = TelegramFileScanner()
