@@ -102,26 +102,37 @@ class TelegramAuthenticator:
                 # Send code request
                 if DETAILED_LOGGING_AVAILABLE:
                     log_step("SEND CODE", "Sending code request to Telegram...")
+
+                send_code_start_time = time.time()
                 sent_code = await client.send_code_request(phone_number)
+                send_code_end_time = time.time()
 
                 if DETAILED_LOGGING_AVAILABLE:
-                    log_step("CODE SENT", "Verification code sent successfully")
+                    log_step("CODE SENT", f"Verification code sent successfully in {send_code_end_time - send_code_start_time:.2f}s")
+                    log_step("SENT CODE DETAILS", f"Type: {type(sent_code)}, Phone code hash length: {len(sent_code.phone_code_hash) if sent_code.phone_code_hash else 'None'}")
                     log_authentication_event("CODE_REQUEST_SUCCESS", {
-                        'phone_masked': phone_number[:3] + '***' + phone_number[-3:]
+                        'phone_masked': phone_number[:3] + '***' + phone_number[-3:],
+                        'send_duration_seconds': round(send_code_end_time - send_code_start_time, 2),
+                        'phone_code_hash_length': len(sent_code.phone_code_hash) if sent_code.phone_code_hash else 0
                     })
 
                 # Store session info temporarily with timestamp
                 # Don't store the client object to avoid event loop issues
                 session_id = os.urandom(16).hex()
+                session_created_time = time.time()
+
                 self.temp_sessions[session_id] = {
                     'phone_number': phone_number,
                     'phone_code_hash': sent_code.phone_code_hash,
-                    'created_at': time.time(),
-                    'expires_at': time.time() + self.session_timeout  # Use configurable timeout
+                    'created_at': session_created_time,
+                    'expires_at': session_created_time + self.session_timeout,  # Use configurable timeout
+                    'send_code_duration': send_code_end_time - send_code_start_time
                 }
 
                 if DETAILED_LOGGING_AVAILABLE:
                     log_step("SESSION STORE", f"Session stored with ID: {session_id}, expires in {self.session_timeout} seconds ({self.session_timeout/60:.1f} minutes)")
+                    log_step("PHONE CODE HASH", f"Stored phone_code_hash: {sent_code.phone_code_hash[:10]}...{sent_code.phone_code_hash[-10:] if len(sent_code.phone_code_hash) > 20 else sent_code.phone_code_hash}")
+                    print(f"AUTH: Session {session_id} created at {session_created_time}, phone_code_hash length: {len(sent_code.phone_code_hash)}")
 
                 return {
                     'success': True,
@@ -243,10 +254,15 @@ class TelegramAuthenticator:
             phone_code_hash = session_data['phone_code_hash']
 
             # Update last activity timestamp to show user is actively trying to verify
-            session_data['last_activity'] = time.time()
+            verify_start_time = time.time()
+            session_data['last_activity'] = verify_start_time
 
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("SESSION DATA", f"Retrieved session data for phone: {phone_number[:3]}***{phone_number[-3:]}")
+                log_step("SESSION VALIDATION", f"Session created: {session_data.get('created_at', 0)}, Current time: {verify_start_time}")
+                log_step("PHONE CODE HASH RETRIEVE", f"Retrieved phone_code_hash: {phone_code_hash[:10]}...{phone_code_hash[-10:] if len(phone_code_hash) > 20 else phone_code_hash}")
+                log_step("TIMING", f"Time since session created: {verify_start_time - session_data.get('created_at', 0):.2f}s")
+                print(f"AUTH: Verifying session {session_id}, phone_code_hash length: {len(phone_code_hash)}, age: {verify_start_time - session_data.get('created_at', 0):.2f}s")
 
             # Create a new client for verification to avoid event loop issues
             # Don't reuse the stored client as it may be tied to a different event loop
