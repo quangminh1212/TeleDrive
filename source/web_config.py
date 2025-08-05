@@ -132,8 +132,36 @@ class FlaskConfigLoader:
         host = self.get('flask.host', '127.0.0.1')
         port = 3000  # FIXED: Always use port 3000 only
 
-        # Production mode: Skip port check, force start
-        print(f"✅ Using port: {port} (Production mode)")
+        # Check if port is available
+        if not self._is_port_available(host, port):
+            print(f"⚠️ Port {port} is in use, attempting to kill existing process...")
+            # Try to find and kill the process using port 3000
+            import subprocess
+            try:
+                # Find PID using port 3000
+                result = subprocess.run(['netstat', '-ano'], capture_output=True, text=True)
+                for line in result.stdout.split('\n'):
+                    if f':{port}' in line and 'LISTENING' in line:
+                        parts = line.split()
+                        if len(parts) >= 5:
+                            pid = parts[-1]
+                            print(f"🔍 Found process {pid} using port {port}")
+                            # Kill the process
+                            subprocess.run(['taskkill', '/f', '/pid', pid], capture_output=True)
+                            print(f"✅ Killed process {pid}")
+                            break
+            except Exception as e:
+                print(f"⚠️ Could not kill existing process: {e}")
+
+        # Check again after attempting to kill
+        if not self._is_port_available(host, port):
+            print(f"❌ Port {port} is still in use after cleanup attempt")
+            print(f"🔧 Please manually stop any process using port {port}")
+            print(f"💡 You can use: netstat -ano | findstr :{port}")
+            print(f"💡 Then kill with: taskkill /f /pid <PID>")
+            raise RuntimeError(f"Port {port} is required but still in use after cleanup attempt")
+
+        print(f"✅ Using port: {port} (Port available)")
 
         return {
             'host': host,

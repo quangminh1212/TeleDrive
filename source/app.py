@@ -3910,7 +3910,17 @@ def setup_signal_handlers():
     signal.signal(signal.SIGTERM, signal_handler)
 
     # Register cleanup on normal exit
-    atexit.register(lambda: asyncio.run(cleanup_resources()) if not asyncio.get_event_loop().is_running() else None)
+    def safe_cleanup():
+        try:
+            if not asyncio.get_event_loop().is_running():
+                asyncio.run(cleanup_resources())
+        except RuntimeError:
+            # No event loop in current thread, skip cleanup
+            pass
+        except Exception as e:
+            print(f"⚠️ Error during atexit cleanup: {e}")
+    
+    atexit.register(safe_cleanup)
 
 if __name__ == '__main__':
     print("🌐 Starting TeleDrive Web Interface...")
