@@ -98,11 +98,11 @@ app = Flask(__name__,
            static_folder=str(static_folder.absolute()))
 
 # Load configuration from config.json
-flask_app_config = flask_config.flask_config.get_flask_config()
+flask_app_config = web_config.flask_config.get_flask_config()
 app.config.update(flask_app_config)
 
 # Create necessary directories
-flask_config.flask_config.create_directories()
+web_config.flask_config.create_directories()
 
 # Configure database
 db.init_app(app)
@@ -115,7 +115,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 # Configure Flask-Login from config file
-login_config = flask_config.flask_config.get_login_config()
+login_config = web_config.flask_config.get_login_config()
 login_manager.login_view = login_config['login_view']
 login_manager.login_message = login_config['login_message']
 login_manager.login_message_category = login_config['login_message_category']
@@ -289,7 +289,7 @@ def handle_csrf_error(error):
     return redirect(request.url)
 
 # Initialize SocketIO
-socketio_config = flask_config.flask_config.get_socketio_config()
+socketio_config = web_config.flask_config.get_socketio_config()
 socketio = SocketIO(app,
                    cors_allowed_origins=socketio_config['cors_allowed_origins'],
                    async_mode=socketio_config['async_mode'])
@@ -463,7 +463,7 @@ def is_allowed_file(filename, allowed_extensions=None):
         return False
 
     if allowed_extensions is None:
-        upload_config = flask_config.flask_config.get_upload_config()
+        upload_config = web_config.flask_config.get_upload_config()
         allowed_extensions = upload_config.get('allowed_extensions', [])
 
     # Get file extension
@@ -477,7 +477,7 @@ def validate_file_content(file_path):
     try:
         # Check file size
         file_size = os.path.getsize(file_path)
-        max_size = flask_config.flask_config.get('upload.max_file_size', 104857600)  # 100MB default
+        max_size = web_config.flask_config.get('upload.max_file_size', 104857600)  # 100MB default
 
         if file_size > max_size:
             return False, f"File size ({file_size} bytes) exceeds maximum allowed size ({max_size} bytes)"
@@ -495,7 +495,7 @@ try:
         db.create_all()
 
         # Create default admin user with password from config
-        admin_config = flask_config.flask_config.get_admin_config()
+        admin_config = web_config.flask_config.get_admin_config()
         if admin_config['auto_create']:
             admin_user = User.query.filter_by(username=admin_config['username']).first()
             if not admin_user:
@@ -818,7 +818,7 @@ def dashboard():
 
     # Also get traditional output files for backward compatibility
     output_files = []
-    output_dir = flask_config.flask_config.get('directories.output', 'output')
+    output_dir = web_config.flask_config.get('directories.output', 'output')
     if os.path.exists(output_dir):
         for file in os.listdir(output_dir):
             if file.endswith(('.json', '.csv', '.xlsx')):
@@ -998,7 +998,7 @@ def get_files():
         })
 
     # Also include output files for backward compatibility
-    output_dir = flask_config.flask_config.get('directories.output', 'output')
+    output_dir = web_config.flask_config.get('directories.output', 'output')
     if os.path.exists(output_dir):
         for file in os.listdir(output_dir):
             if file.endswith(('.json', '.csv', '.xlsx')):
@@ -1044,7 +1044,7 @@ def download_file(filename):
             return jsonify({'error': 'Invalid file type'}), 400
 
         # Check if file exists
-        output_dir = flask_config.flask_config.get('directories.output', 'output')
+        output_dir = web_config.flask_config.get('directories.output', 'output')
         file_path = os.path.join(output_dir, filename)
         if not os.path.exists(file_path):
             return jsonify({'error': 'File not found'}), 404
@@ -1081,7 +1081,7 @@ def delete_file():
                 return jsonify({'success': False, 'error': 'Invalid file type'})
 
             # Check if file exists
-            output_dir = flask_config.flask_config.get('directories.output', 'output')
+            output_dir = web_config.flask_config.get('directories.output', 'output')
             file_path = os.path.join(output_dir, filename)
             if os.path.exists(file_path):
                 # Delete the file
@@ -1328,7 +1328,7 @@ def upload_file():
             return create_error_response('validation_error', 'Invalid folder', 400)
 
     # Create uploads directory if it doesn't exist
-    upload_config = flask_config.flask_config.get_upload_config()
+    upload_config = web_config.flask_config.get_upload_config()
     upload_dir = Path(upload_config['upload_directory'])
     upload_dir.mkdir(parents=True, exist_ok=True)
 
@@ -2419,7 +2419,7 @@ def download_shared_file(token):
         share_link.increment_download_count()
 
         # Serve the file
-        output_dir = flask_config.flask_config.get('directories.output', 'output')
+        output_dir = web_config.flask_config.get('directories.output', 'output')
         file_path = os.path.join(output_dir, share_link.file.filename)
         if os.path.exists(file_path):
             return send_from_directory(output_dir, share_link.file.filename, as_attachment=True)
@@ -2831,7 +2831,7 @@ def extract_archive(file_id):
         # Extract archive
         with zipfile.ZipFile(archive_file.file_path, 'r') as zipf:
             # Get upload directory
-            upload_dir = Path(flask_config.flask_config.get_directories()['uploads'])
+            upload_dir = Path(web_config.flask_config.get_directories()['uploads'])
 
             for file_info in zipf.filelist:
                 if not file_info.is_dir():
