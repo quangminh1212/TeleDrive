@@ -15,12 +15,12 @@ from telethon import TelegramClient
 from telethon.errors import PhoneCodeInvalidError, PhoneNumberInvalidError, SessionPasswordNeededError, PhoneCodeExpiredError
 from telethon.tl.types import User as TelegramUser
 import config
-from models import db, User, get_or_create_user
+from db import db, User, get_or_create_user
 from flask import current_app
 
 # Import detailed logging
 try:
-    from logger import (log_step, log_authentication_event, log_security_event,
+    from log import (log_step, log_authentication_event, log_security_event,
                        log_error, log_performance_metric, get_logger)
     DETAILED_LOGGING_AVAILABLE = True
     logger = get_logger('auth')

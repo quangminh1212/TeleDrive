@@ -7,7 +7,7 @@ Forms for user registration, login, and other authentication-related operations
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, Regexp
-from models import User
+from db import User
 from auth import get_country_codes
 
 class LoginForm(FlaskForm):
@@ -162,7 +162,7 @@ class FileUploadForm(FlaskForm):
             raise ValidationError('No files selected for upload')
 
         # Import here to avoid circular imports
-        from flask_config import flask_config
+        from web_config import flask_config
 
         upload_config = flask_config.get_upload_config()
         max_file_size = upload_config['max_file_size']

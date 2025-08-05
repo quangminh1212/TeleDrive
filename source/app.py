@@ -27,11 +27,11 @@ from flask_wtf.csrf import CSRFProtect
 import eventlet
 
 # Import existing modules
-from engine import TelegramFileScanner
+from scanner import TelegramFileScanner
 import config
 
 # Import database modules
-from models import db, User, File, Folder, ScanSession, ShareLink, FileComment, FileVersion, ActivityLog, SmartFolder, get_or_create_user
+from db import db, User, File, Folder, ScanSession, ShareLink, FileComment, FileVersion, ActivityLog, SmartFolder, get_or_create_user
 
 # Import forms
 from forms import TelegramLoginForm, TelegramVerifyForm
@@ -40,7 +40,7 @@ from forms import TelegramLoginForm, TelegramVerifyForm
 from auth import telegram_auth
 
 # Import Flask configuration loader
-import flask_config
+import web_config
 
 # Import detailed logging - with fallback
 DETAILED_LOGGING_AVAILABLE = False
@@ -2080,7 +2080,7 @@ def telegram_login():
                     'errors': form.errors
                 }), 400
 
-    return render_template('auth/tg_login.html', form=form)
+            return render_template('auth/telegram_login.html', form=form)
 
 @app.route('/telegram_verify', methods=['GET', 'POST'])
 def telegram_verify():
@@ -2213,7 +2213,7 @@ def telegram_verify():
                     flash(f'Error creating user account: {str(e)}', 'error')
         elif result.get('requires_password'):
             app.logger.info("Two-factor authentication required")
-            return render_template('auth/tg_verify.html',
+            return render_template('auth/telegram_verify.html',
                                  form=form,
                                  phone_number=phone_number,
                                  requires_password=True)
@@ -2236,7 +2236,7 @@ def telegram_verify():
         if form.errors:
             app.logger.warning(f"Verification form validation errors: {form.errors}")
 
-    return render_template('auth/tg_verify.html',
+    return render_template('auth/telegram_verify.html',
                          form=form,
                          phone_number=phone_number,
                          requires_password=requires_password)
@@ -3919,12 +3919,12 @@ if __name__ == '__main__':
     setup_signal_handlers()
 
     # Create necessary directories from config
-    directories = flask_config.flask_config.get_directories()
+    directories = web_config.flask_config.get_directories()
     for name, path in directories.items():
         os.makedirs(path, exist_ok=True)
 
     # Get server configuration with port availability checking
-    server_config = flask_config.flask_config.get_server_config()
+    server_config = web_config.flask_config.get_server_config()
 
     print(f"📱 Access at: http://{server_config['host']}:{server_config['port']}")
     print("⏹️  Press Ctrl+C to stop")

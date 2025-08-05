@@ -25,7 +25,7 @@ import config
 
 # Import detailed logging
 try:
-    from logger import (log_step, log_api_call, log_file_operation, log_progress, log_error,
+    from log import (log_step, log_api_call, log_file_operation, log_progress, log_error,
                        log_performance_metric, log_database_operation, log_step_start, log_step_end,
                        log_detailed_error, log_function_calls, log_step_execution, get_logger)
     DETAILED_LOGGING_AVAILABLE = True
