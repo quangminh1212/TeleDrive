@@ -1,0 +1,16 @@
+---
+alwaysApply: true
+---
+hạn chế tạo file mới nhất có thể, tập trung vào cải tiến logic,
+lấy html từ page để học hỏi và điều chỉnh, 
+thêm vào gitignore các file được gen ra khi dự án đang chạy
+viết để chạy 1 lần ra kết quả luôn, không cần chọn giữa chừng
+lấy đầy đủ thông tin bao gồm nội dung, bình luận, tương tác, chia sẻ, link bài viết
+dùng tiếng việt nhé nhưng phải commit bằng tiếng anh theo chuẩn quốc tế ngắn gọn 1 dòng, tư git add git commit
+hạn chế tạo file mới nhất có thể, tập trung cải tiến và tối ưu những file cũ
+luôn chỉnh sửa trực tiếp vào dự án, không đưa ra những lựa chọn để mình apply và tự apply luôn
+chạy thử và sửa đến khi hoàn thành dự án
+thêm những file sinh ra khi dự án chạy vào gitignore
+xóa bỏ những file dư thừa ra khỏi dự án
+tự động làm tuần tự từng bước , bước này không lỗi thì mối làm bước tiếp theo. chậm mà chắc nhưng vẫn cần cố gắng hết sức khi làm
+ưu tiên đơn giản trước chạy ok rồi mới làm phức tạp
