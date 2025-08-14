@@ -28,6 +28,7 @@ import eventlet
 
 # Import existing modules
 from scanner import TelegramFileScanner
+from telegram_storage import telegram_storage
 import config
 
 # Import database modules
@@ -77,6 +78,28 @@ def run_async_in_thread(coro):
     if result['error']:
         raise result['error']
     return result['value']
+
+async def upload_to_telegram_async(file_path: str, filename: str, user_id: int):
+    """Async helper to upload file to Telegram"""
+    try:
+        await telegram_storage.initialize()
+        result = await telegram_storage.upload_file(file_path, filename, user_id)
+        await telegram_storage.close()
+        return result
+    except Exception as e:
+        logger.error(f"Telegram upload error: {e}")
+        return None
+
+async def download_from_telegram_async(file_record, output_path: str = None):
+    """Async helper to download file from Telegram"""
+    try:
+        await telegram_storage.initialize()
+        result = await telegram_storage.download_file(file_record, output_path)
+        await telegram_storage.close()
+        return result
+    except Exception as e:
+        logger.error(f"Telegram download error: {e}")
+        return None
 
 # Production mode - minimal logging
 DETAILED_LOGGING_AVAILABLE = False
@@ -1063,19 +1086,72 @@ def download_file(filename):
             app.logger.info(f"Current user ID: {current_user.id}")
 
         if file_record:
-            # Download from upload directory - use the same config as upload
-            upload_config = web_config.flask_config.get_upload_config()
-            upload_dir = Path(upload_config['upload_directory'])
-            file_path = upload_dir / filename
+            app.logger.info(f"File storage type: {file_record.storage_type}")
 
-            app.logger.info(f"Looking for file: {file_path}")
+            # Check if file is stored on Telegram
+            if file_record.is_stored_on_telegram():
+                app.logger.info(f"Downloading from Telegram: {filename}")
+                try:
+                    # Download from Telegram to temp file
+                    import tempfile
+                    temp_dir = tempfile.gettempdir()
+                    temp_file_path = os.path.join(temp_dir, f"teledrive_download_{file_record.id}_{filename}")
 
-            if file_path.exists():
-                app.logger.info(f"File found, sending: {file_path}")
-                return send_from_directory(str(upload_dir), filename, as_attachment=True)
+                    downloaded_path = run_async_in_thread(
+                        download_from_telegram_async(file_record, temp_file_path)
+                    )
+
+                    if downloaded_path and os.path.exists(downloaded_path):
+                        app.logger.info(f"Successfully downloaded from Telegram: {downloaded_path}")
+
+                        # Send file and clean up temp file after sending
+                        def remove_temp_file():
+                            try:
+                                os.remove(downloaded_path)
+                                app.logger.info(f"Cleaned up temp file: {downloaded_path}")
+                            except:
+                                pass
+
+                        # Use send_file with callback to clean up
+                        response = send_file(
+                            downloaded_path,
+                            as_attachment=True,
+                            download_name=filename,
+                            mimetype=file_record.mime_type
+                        )
+
+                        # Schedule cleanup (note: this might not work perfectly in all cases)
+                        import atexit
+                        atexit.register(remove_temp_file)
+
+                        return response
+                    else:
+                        app.logger.error(f"Failed to download from Telegram: {filename}")
+                        return jsonify({'error': 'Failed to download from Telegram'}), 500
+
+                except Exception as e:
+                    app.logger.error(f"Telegram download error: {e}")
+                    return jsonify({'error': f'Telegram download failed: {str(e)}'}), 500
+
+            # Check if file is stored locally
+            elif file_record.is_stored_locally():
+                app.logger.info(f"Downloading from local storage: {filename}")
+                upload_config = web_config.flask_config.get_upload_config()
+                upload_dir = Path(upload_config['upload_directory'])
+                file_path = upload_dir / filename
+
+                app.logger.info(f"Looking for local file: {file_path}")
+
+                if file_path.exists():
+                    app.logger.info(f"Local file found, sending: {file_path}")
+                    return send_from_directory(str(upload_dir), filename, as_attachment=True)
+                else:
+                    app.logger.error(f"Local file not found on disk: {file_path}")
+                    return jsonify({'error': 'File not found on disk'}), 404
+
             else:
-                app.logger.error(f"File not found on disk: {file_path}")
-                return jsonify({'error': 'File not found on disk'}), 404
+                app.logger.error(f"File has unknown storage type: {file_record.storage_type}")
+                return jsonify({'error': 'File storage type unknown'}), 500
 
         # Fallback: check output directory for generated files
         if filename.endswith(('.json', '.csv', '.xlsx')):
@@ -1435,6 +1511,10 @@ def upload_file():
             file_size = file_path.stat().st_size
             mime_type = file.content_type or 'application/octet-stream'
 
+            # Check storage backend configuration
+            storage_backend = web_config.flask_config.get('upload.storage_backend', 'local')
+            fallback_to_local = web_config.flask_config.get('upload.fallback_to_local', True)
+
             # Create database record
             file_record = File(
                 filename=unique_filename,  # Use the actual filename saved to disk
@@ -1444,8 +1524,50 @@ def upload_file():
                 mime_type=mime_type,
                 folder_id=folder_id,
                 user_id=user.id,
-                description=f'Uploaded file: {original_filename}'
+                description=f'Uploaded file: {original_filename}',
+                storage_type='local'  # Initially local, will update if Telegram upload succeeds
             )
+
+            # Try to upload to Telegram if configured
+            if storage_backend == 'telegram':
+                app.logger.info(f"Attempting to upload {unique_filename} to Telegram...")
+                try:
+                    telegram_result = run_async_in_thread(
+                        upload_to_telegram_async(str(file_path), unique_filename, user.id)
+                    )
+
+                    if telegram_result:
+                        app.logger.info(f"Successfully uploaded to Telegram: {telegram_result}")
+                        # Update file record with Telegram info
+                        file_record.set_telegram_storage(
+                            message_id=telegram_result['message_id'],
+                            channel=telegram_result['channel'],
+                            channel_id=telegram_result['channel_id'],
+                            file_id=telegram_result.get('file_id'),
+                            unique_id=telegram_result.get('unique_id'),
+                            access_hash=telegram_result.get('access_hash'),
+                            file_reference=telegram_result.get('file_reference')
+                        )
+
+                        # Remove local file since it's now on Telegram
+                        try:
+                            os.remove(file_path)
+                            app.logger.info(f"Removed local file after Telegram upload: {file_path}")
+                        except Exception as e:
+                            app.logger.warning(f"Failed to remove local file: {e}")
+                    else:
+                        app.logger.warning(f"Telegram upload failed for {unique_filename}")
+                        if not fallback_to_local:
+                            return jsonify({'success': False, 'error': 'Failed to upload to Telegram and fallback disabled'})
+                        app.logger.info(f"Falling back to local storage for {unique_filename}")
+
+                except Exception as e:
+                    app.logger.error(f"Telegram upload error for {unique_filename}: {e}")
+                    if not fallback_to_local:
+                        return jsonify({'success': False, 'error': f'Telegram upload failed: {str(e)}'})
+                    app.logger.info(f"Falling back to local storage for {unique_filename}")
+            else:
+                app.logger.info(f"Using local storage for {unique_filename}")
 
             db.session.add(file_record)
             uploaded_files.append({

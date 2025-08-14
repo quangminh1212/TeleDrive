@@ -7,7 +7,7 @@ SQLAlchemy models for users, files, folders, and scan sessions
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, LargeBinary, Index, Float, JSON
 from sqlalchemy.orm import relationship
 import json
 import os
@@ -236,10 +236,15 @@ class File(db.Model):
     folder_id = Column(Integer, ForeignKey('folders.id'), nullable=True, index=True)  # Index for folder queries
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)  # Index for user queries
     
-    # Telegram-specific fields
-    telegram_message_id = Column(Integer)
-    telegram_channel = Column(String(255))
-    telegram_channel_id = Column(String(100))
+    # Telegram-specific fields for storage
+    telegram_message_id = Column(Integer)  # Message ID in Telegram channel
+    telegram_channel = Column(String(255))  # Channel username/name
+    telegram_channel_id = Column(String(100))  # Channel ID
+    telegram_file_id = Column(String(255))  # Telegram file ID for direct access
+    telegram_unique_id = Column(String(255))  # Telegram unique file ID
+    telegram_access_hash = Column(String(255))  # Access hash for file
+    telegram_file_reference = Column(LargeBinary)  # File reference for download
+    storage_type = Column(String(20), default='local')  # 'local' or 'telegram'
     
     # File metadata and organization
     tags = Column(Text)  # JSON array of tags
@@ -437,8 +442,44 @@ class FileVersion(db.Model):
             'download_count': self.download_count,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'telegram_date': self.telegram_date.isoformat() if self.telegram_date else None
+            'telegram_date': self.telegram_date.isoformat() if self.telegram_date else None,
+            'storage_type': self.storage_type
         }
+
+    def is_stored_on_telegram(self):
+        """Check if file is stored on Telegram"""
+        return self.storage_type == 'telegram' and self.telegram_message_id is not None
+
+    def is_stored_locally(self):
+        """Check if file is stored locally"""
+        return self.storage_type == 'local' and self.file_path is not None
+
+    def get_telegram_info(self):
+        """Get Telegram storage information"""
+        if not self.is_stored_on_telegram():
+            return None
+
+        return {
+            'message_id': self.telegram_message_id,
+            'channel': self.telegram_channel,
+            'channel_id': self.telegram_channel_id,
+            'file_id': self.telegram_file_id,
+            'unique_id': self.telegram_unique_id,
+            'access_hash': self.telegram_access_hash
+        }
+
+    def set_telegram_storage(self, message_id, channel, channel_id, file_id=None, unique_id=None, access_hash=None, file_reference=None):
+        """Set Telegram storage information"""
+        self.storage_type = 'telegram'
+        self.telegram_message_id = message_id
+        self.telegram_channel = channel
+        self.telegram_channel_id = channel_id
+        self.telegram_file_id = file_id
+        self.telegram_unique_id = unique_id
+        self.telegram_access_hash = access_hash
+        self.telegram_file_reference = file_reference
+        # Clear local file path since it's now on Telegram
+        self.file_path = None
 
 class ScanSession(db.Model):
     """Scan session model for tracking Telegram channel scans"""
