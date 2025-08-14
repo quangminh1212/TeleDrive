@@ -1,0 +1,19 @@
+
+🧪 TeleDrive Telegram Storage Test File (Fallback Mode)
+Created at: 14/08/2025 10:06 CH
+Content: Testing Telegram storage backend with local fallback
+Size: Medium test file for storage validation
+
+This file tests the Telegram storage with fallback:
+1. Attempt upload to Telegram channel (will fail without auth)
+2. Fallback to local storage
+3. Verify file is stored locally
+4. Test download from local storage
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Ut enim ad minim veniam, quis nostrud exercitation ullamco.
+Duis aute irure dolor in reprehenderit in voluptate velit esse.
+Cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat.
+
+Test completed successfully! 🎉

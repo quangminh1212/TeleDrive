@@ -319,6 +319,41 @@ class File(db.Model):
 
         return False
 
+    def is_stored_on_telegram(self):
+        """Check if file is stored on Telegram"""
+        return self.storage_type == 'telegram' and self.telegram_message_id is not None
+
+    def is_stored_locally(self):
+        """Check if file is stored locally"""
+        return self.storage_type == 'local' and self.file_path is not None
+
+    def get_telegram_info(self):
+        """Get Telegram storage information"""
+        if not self.is_stored_on_telegram():
+            return None
+
+        return {
+            'message_id': self.telegram_message_id,
+            'channel': self.telegram_channel,
+            'channel_id': self.telegram_channel_id,
+            'file_id': self.telegram_file_id,
+            'unique_id': self.telegram_unique_id,
+            'access_hash': self.telegram_access_hash
+        }
+
+    def set_telegram_storage(self, message_id, channel, channel_id, file_id=None, unique_id=None, access_hash=None, file_reference=None):
+        """Set Telegram storage information"""
+        self.storage_type = 'telegram'
+        self.telegram_message_id = message_id
+        self.telegram_channel = channel
+        self.telegram_channel_id = channel_id
+        self.telegram_file_id = file_id
+        self.telegram_unique_id = unique_id
+        self.telegram_access_hash = access_hash
+        self.telegram_file_reference = file_reference
+        # Clear local file path since it's now on Telegram
+        self.file_path = None
+
     def __repr__(self):
         return f'<File {self.filename}>'
 
@@ -445,41 +480,6 @@ class FileVersion(db.Model):
             'telegram_date': self.telegram_date.isoformat() if self.telegram_date else None,
             'storage_type': self.storage_type
         }
-
-    def is_stored_on_telegram(self):
-        """Check if file is stored on Telegram"""
-        return self.storage_type == 'telegram' and self.telegram_message_id is not None
-
-    def is_stored_locally(self):
-        """Check if file is stored locally"""
-        return self.storage_type == 'local' and self.file_path is not None
-
-    def get_telegram_info(self):
-        """Get Telegram storage information"""
-        if not self.is_stored_on_telegram():
-            return None
-
-        return {
-            'message_id': self.telegram_message_id,
-            'channel': self.telegram_channel,
-            'channel_id': self.telegram_channel_id,
-            'file_id': self.telegram_file_id,
-            'unique_id': self.telegram_unique_id,
-            'access_hash': self.telegram_access_hash
-        }
-
-    def set_telegram_storage(self, message_id, channel, channel_id, file_id=None, unique_id=None, access_hash=None, file_reference=None):
-        """Set Telegram storage information"""
-        self.storage_type = 'telegram'
-        self.telegram_message_id = message_id
-        self.telegram_channel = channel
-        self.telegram_channel_id = channel_id
-        self.telegram_file_id = file_id
-        self.telegram_unique_id = unique_id
-        self.telegram_access_hash = access_hash
-        self.telegram_file_reference = file_reference
-        # Clear local file path since it's now on Telegram
-        self.file_path = None
 
 class ScanSession(db.Model):
     """Scan session model for tracking Telegram channel scans"""
