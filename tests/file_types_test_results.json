@@ -1,0 +1,172 @@
+[
+  {
+    "timestamp": "2025-08-15 02:20:05",
+    "status": "INFO",
+    "message": "🚀 Starting TeleDrive File Types Testing"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:05",
+    "status": "INFO",
+    "message": "============================================================"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "SUCCESS",
+    "message": "✅ TeleDrive server is running"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "\n📤 Testing File Uploads"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "------------------------------"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "SUCCESS",
+    "message": "✅ CSRF token obtained"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "ERROR",
+    "message": "❌ Upload failed for test_text.txt: HTTP 400"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "SUCCESS",
+    "message": "✅ CSRF token obtained"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "ERROR",
+    "message": "❌ Upload failed for test_data.json: HTTP 400"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "SUCCESS",
+    "message": "✅ CSRF token obtained"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "ERROR",
+    "message": "❌ Upload failed for test_data.csv: HTTP 400"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "SUCCESS",
+    "message": "✅ CSRF token obtained"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "ERROR",
+    "message": "❌ Upload failed for test_markdown.md: HTTP 400"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "SUCCESS",
+    "message": "✅ CSRF token obtained"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "ERROR",
+    "message": "❌ Upload failed for test_xml.xml: HTTP 400"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "\n📋 Testing File List"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "------------------------------"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "ERROR",
+    "message": "❌ Error getting file list: Expecting value: line 1 column 1 (char 0)"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "\n📥 Testing File Downloads"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "------------------------------"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "\n🔍 Testing Search Functionality"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "------------------------------"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "ERROR",
+    "message": "❌ Search failed for 'test': HTTP 500"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "SUCCESS",
+    "message": "✅ Search for 'TeleDrive' returned 6 results"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "ERROR",
+    "message": "❌ Search failed for '.txt': HTTP 500"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "SUCCESS",
+    "message": "✅ Search for '.json' returned 6 results"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "SUCCESS",
+    "message": "✅ Search for 'data' returned 6 results"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "\n============================================================"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "📊 TEST SUMMARY"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "============================================================"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "INFO",
+    "message": "Total Tests: 17"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "SUCCESS",
+    "message": "Successful: 9"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "ERROR",
+    "message": "Failed: 8"
+  },
+  {
+    "timestamp": "2025-08-15 02:20:08",
+    "status": "ERROR",
+    "message": "Success Rate: 52.9%"
+  }
+]
