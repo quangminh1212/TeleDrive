@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Code - TeleDrive</title>
+    
+    <!-- Telegram-like styling -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        .logo .material-icons {
+            font-size: 48px;
+            color: #0088cc;
+            margin-right: 12px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .auth-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 32px;
+        }
+
+        .phone-display {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+            font-family: monospace;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background: #fff;
+            text-align: center;
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #0088cc;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+        }
+
+        .form-control.password-field {
+            text-align: left;
+            font-family: inherit;
+            letter-spacing: normal;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px 24px;
+            background: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 24px;
+        }
+
+        .btn-primary:hover {
+            background: #006699;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .auth-links {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-link {
+            color: #0088cc;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .auth-link:hover {
+            color: #006699;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .alert-success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #bbdefb;
+        }
+
+        .field-error {
+            color: #c62828;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .telegram-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .telegram-info h4 {
+            color: #1565c0;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .telegram-info p {
+            color: #1976d2;
+            font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+
+        .two-factor-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .two-factor-info {
+            background: #fff3e0;
+            border: 1px solid #ffcc02;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #e65100;
+        }
+
+        .timing-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+
+        .timing-info strong {
+            color: #0d47a1;
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 32px 24px;
+                margin: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">
+            <span class="material-icons">telegram</span>
+            <span class="logo-text">TeleDrive</span>
+        </div>
+        
+        <h1 class="auth-title">Enter Verification Code</h1>
+        <p class="auth-subtitle">We sent a code to your Telegram</p>
+        
+        {% if phone_number %}
+        <div class="phone-display">{{ phone_number }}</div>
+        {% endif %}
+        
+        <div class="telegram-info">
+            <h4>Check your Telegram app:</h4>
+            <p>• Open Telegram on your phone or computer</p>
+            <p>• Look for a message with your verification code</p>
+            <p>• Enter the 5-6 digit code below</p>
+        </div>
+
+        <div class="timing-info">
+            <strong>⏰ Important:</strong> Verification codes expire after a few minutes. If you get an "expired" error even with the correct code, simply request a new code - this is normal and happens when too much time has passed.
+        </div>
+        
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'error' if category == 'error' else category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('telegram_verify') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                <label for="verification_code">Verification Code</label>
+                {{ form.verification_code(class="form-control", placeholder="12345", maxlength="6", autocomplete="off") }}
+                {% if form.verification_code.errors %}
+                    {% for error in form.verification_code.errors %}
+                        <div class="field-error">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            {% if requires_password %}
+            <div class="two-factor-section">
+                <div class="two-factor-info">
+                    Two-factor authentication is enabled on your account. Please enter your password.
+                </div>
+                <div class="form-group">
+                    <label for="password">Two-Factor Password</label>
+                    {{ form.password(class="form-control password-field", placeholder="Enter your 2FA password") }}
+                    {% if form.password.errors %}
+                        {% for error in form.password.errors %}
+                            <div class="field-error">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {{ form.submit(class="btn-primary") }}
+        </form>
+        
+        <div class="auth-links">
+            <a href="{{ url_for('telegram_login') }}" class="auth-link">← Try different number</a>
+            <a href="{{ url_for('telegram_login') }}" class="auth-link">Request new code</a>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh CSRF token every 30 minutes
+        document.addEventListener('DOMContentLoaded', function() {
+            setInterval(function() {
+                fetch('/api/csrf-token')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.csrf_token) {
+                            const csrfInput = document.querySelector('input[name="csrf_token"]');
+                            if (csrfInput) {
+                                csrfInput.value = data.csrf_token;
+                                console.log('CSRF token refreshed automatically');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.warn('Failed to refresh CSRF token:', error);
+                    });
+            }, 30 * 60 * 1000); // 30 minutes
+        });
+
+        // Auto-refresh CSRF token on form submission if expired
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const form = this;
+            const formData = new FormData(form);
+
+            // Check if this is a retry after CSRF error
+            if (form.dataset.csrfRetry) {
+                delete form.dataset.csrfRetry;
+                return; // Allow normal submission
+            }
+
+            e.preventDefault();
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Success - redirect to dashboard
+                    window.location.href = response.url || '/dashboard';
+                } else if (response.status === 400) {
+                    return response.json();
+                } else {
+                    throw new Error('Network response was not ok');
+                }
+            })
+            .then(data => {
+                if (data && data.error === 'csrf_token_expired' && data.new_csrf_token) {
+                    // Update CSRF token and retry
+                    const csrfInput = form.querySelector('input[name="csrf_token"]');
+                    if (csrfInput) {
+                        csrfInput.value = data.new_csrf_token;
+                        form.dataset.csrfRetry = 'true';
+                        form.submit(); // Retry submission
+                    }
+                } else if (data && data.message) {
+                    // Show error message
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Fallback to normal form submission
+                form.dataset.csrfRetry = 'true';
+                form.submit();
+            });
+        });
+    </script>
+</body>
+</html>

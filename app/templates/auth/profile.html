@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - TeleDrive{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="content-header">
+        <h1 class="page-title">
+            <span class="material-icons">account_circle</span>
+            User Profile
+        </h1>
+    </div>
+    
+    <div class="profile-container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <span class="material-icons">account_circle</span>
+                </div>
+                <div class="profile-info">
+                    <h2 class="profile-name">{{ user.username }}</h2>
+                    <p class="profile-email">{{ user.email }}</p>
+                    <span class="profile-role role-{{ user.role }}">{{ user.role.title() }}</span>
+                </div>
+            </div>
+            
+            <div class="profile-details">
+                <div class="detail-row">
+                    <span class="detail-label">Member since:</span>
+                    <span class="detail-value">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'Unknown' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Account status:</span>
+                    <span class="detail-value status-{{ 'active' if user.is_active else 'inactive' }}">
+                        {{ 'Active' if user.is_active else 'Inactive' }}
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Last updated:</span>
+                    <span class="detail-value">{{ user.updated_at.strftime('%B %d, %Y at %I:%M %p') if user.updated_at else 'Unknown' }}</span>
+                </div>
+            </div>
+            
+            <div class="profile-actions">
+                <a href="{{ url_for('change_password') }}" class="btn btn-primary">
+                    <span class="material-icons">lock</span>
+                    Change Password
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">
+                    <span class="material-icons">logout</span>
+                    Sign Out
+                </a>
+            </div>
+        </div>
+        
+        <div class="stats-card">
+            <h3 class="stats-title">Account Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">{{ user.files.count() }}</span>
+                    <span class="stat-label">Files</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ user.folders.count() }}</span>
+                    <span class="stat-label">Folders</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ user.scan_sessions.count() }}</span>
+                    <span class="stat-label">Scans</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    padding: 24px;
+}
+
+.profile-card, .stats-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e8eaed;
+}
+
+.profile-avatar {
+    margin-right: 24px;
+}
+
+.profile-avatar .material-icons {
+    font-size: 64px;
+    color: #5f6368;
+    background: #f8f9fa;
+    border-radius: 50%;
+    padding: 16px;
+}
+
+.profile-name {
+    font-size: 24px;
+    font-weight: 500;
+    color: #202124;
+    margin-bottom: 4px;
+}
+
+.profile-email {
+    font-size: 16px;
+    color: #5f6368;
+    margin-bottom: 8px;
+}
+
+.profile-role {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.role-admin {
+    background: #fce8e6;
+    color: #d93025;
+}
+
+.role-user {
+    background: #e8f0fe;
+    color: #1a73e8;
+}
+
+.role-viewer {
+    background: #e6f4ea;
+    color: #137333;
+}
+
+.profile-details {
+    margin-bottom: 32px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: #5f6368;
+}
+
+.detail-value {
+    color: #202124;
+}
+
+.status-active {
+    color: #137333;
+    font-weight: 500;
+}
+
+.status-inactive {
+    color: #d93025;
+    font-weight: 500;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn .material-icons {
+    font-size: 18px;
+    margin-right: 8px;
+}
+
+.btn-primary {
+    background: #1a73e8;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #1557b0;
+}
+
+.btn-secondary {
+    background: #f8f9fa;
+    color: #5f6368;
+    border: 1px solid #dadce0;
+}
+
+.btn-secondary:hover {
+    background: #e8eaed;
+}
+
+.stats-card {
+    height: fit-content;
+}
+
+.stats-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: #202124;
+    margin-bottom: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.stat-number {
+    display: block;
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a73e8;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #5f6368;
+}
+
+@media (max-width: 768px) {
+    .profile-container {
+        grid-template-columns: 1fr;
+        padding: 16px;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-avatar {
+        margin-right: 0;
+        margin-bottom: 16px;
+    }
+    
+    .profile-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Unauthorized - TeleDrive{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="error-page">
+                <h1 class="display-1 text-warning">401</h1>
+                <h2 class="mb-4">Unauthorized</h2>
+                <p class="lead mb-4">
+                    You need to be logged in to access this resource.
+                </p>
+                <div class="mb-4">
+                    <i class="fas fa-lock fa-3x text-warning"></i>
+                </div>
+                <div class="d-grid gap-2 d-md-block">
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                        <i class="fas fa-home"></i> Go to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-page {
+    padding: 2rem;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.error-page h1 {
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+</style>
+{% endblock %}

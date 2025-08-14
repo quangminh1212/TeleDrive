@@ -21,7 +21,7 @@ echo ✅ Python found
 python --version
 
 :: Check if we're in the correct directory
-if not exist "source\app.py" (
+if not exist "app\app.py" (
     echo ❌ Please run this script from the TeleDrive project root directory
     echo Current directory: %CD%
     pause
@@ -118,9 +118,9 @@ if not exist "data\teledrive.db" (
 :: Set environment variables
 echo.
 echo 🔧 Setting environment variables...
-set FLASK_APP=source.app
+set FLASK_APP=app.app
 set FLASK_ENV=development
-set PYTHONPATH=%CD%\source;%PYTHONPATH%
+set PYTHONPATH=%CD%\app;%PYTHONPATH%
 
 :: Start the application
 echo.
@@ -138,8 +138,8 @@ echo.
 echo ========================================
 echo.
 
-:: Change to source directory and run the app
-cd source
+:: Change to app directory and run the app
+cd app
 python app.py
 
 :: If we get here, the app has stopped
