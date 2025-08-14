@@ -287,7 +287,8 @@ body {
 .header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    padding-right: 8px;
 }
 
 /* User Menu */
@@ -306,10 +307,16 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     color: #5f6368;
+    height: 40px;
+    min-width: auto;
 }
 
 .user-avatar:hover {
     background-color: #f1f3f4;
+}
+
+.user-avatar .material-icons {
+    font-size: 20px;
 }
 
 .user-name {
@@ -319,6 +326,17 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--text-primary);
+}
+
+/* Header icon alignment */
+.header-right .material-icons {
+    vertical-align: middle;
+}
+
+/* Ensure consistent icon sizes in header */
+.header .material-icons {
+    font-size: 20px !important;
 }
 
 .user-dropdown {
@@ -2850,23 +2868,18 @@ body {
     justify-content: center;
     cursor: pointer;
     transition: background-color 0.2s;
+    color: #5f6368;
 }
 
 .header-btn:hover {
     background-color: #f1f3f4;
 }
 
-.user-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #1a73e8;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+.header-btn .material-icons {
+    font-size: 20px;
 }
+
+
 
 /* Sidebar */
 .sidebar {
