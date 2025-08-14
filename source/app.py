@@ -1935,6 +1935,88 @@ def rename_folder(folder_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
 
+# Development routes (only available in debug mode)
+@app.route('/dev/auto-login')
+def dev_auto_login():
+    """Development only: Auto-login without Telegram authentication"""
+    if not app.debug:
+        return "Development routes are only available in debug mode", 403
+
+    try:
+        # Create or get test user
+        test_user = User.query.filter_by(username='testuser').first()
+        if not test_user:
+            test_user = User(
+                username='testuser',
+                email='test@teledrive.local',
+                role='user',
+                auth_method='development',
+                first_name='Test',
+                last_name='User',
+                _is_active=True
+            )
+            db.session.add(test_user)
+            db.session.commit()
+            app.logger.info("Created test user for development")
+
+        # Login the test user
+        login_user(test_user, remember=True)
+        flash('Development auto-login successful!', 'success')
+        return redirect(url_for('dashboard'))
+
+    except Exception as e:
+        app.logger.error(f"Development auto-login failed: {e}")
+        flash(f'Development auto-login failed: {str(e)}', 'error')
+        return redirect(url_for('telegram_login'))
+
+@app.route('/dev/reset-rate-limit')
+def dev_reset_rate_limit():
+    """Development only: Reset rate limiting"""
+    if not app.debug:
+        return "Development routes are only available in debug mode", 403
+
+    try:
+        # Clear rate limiting storage
+        global rate_limit_storage
+        rate_limit_storage.clear()
+
+        # Reset all user failed login attempts
+        users_with_failed_attempts = User.query.filter(User.failed_login_attempts > 0).all()
+        for user in users_with_failed_attempts:
+            user.failed_login_attempts = 0
+            user.locked_until = None
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Rate limiting reset successfully',
+            'users_reset': len(users_with_failed_attempts)
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/dev/status')
+def dev_status():
+    """Development only: Show development status"""
+    if not app.debug:
+        return "Development routes are only available in debug mode", 403
+
+    return jsonify({
+        'debug_mode': app.debug,
+        'current_user': current_user.username if current_user.is_authenticated else None,
+        'rate_limit_entries': len(rate_limit_storage),
+        'available_routes': [
+            '/dev/auto-login - Auto login as test user',
+            '/dev/reset-rate-limit - Reset rate limiting',
+            '/dev/status - Show this status'
+        ]
+    })
+
 # Authentication routes
 @app.route('/login', methods=['GET', 'POST'])
 def login():

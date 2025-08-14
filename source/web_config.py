@@ -18,11 +18,20 @@ class FlaskConfigLoader:
         self._config = None
         # Get project root directory (parent of source directory)
         self.project_root = Path(__file__).parent.parent
+        self.dev_config_file = self.project_root / 'source' / 'web_config_dev.json'
         self.load_config()
     
     def load_config(self) -> Dict[str, Any]:
         """Load configuration from JSON file"""
         try:
+            # Check for development config first
+            if self.dev_config_file.exists():
+                print(f"🔧 Using development config: {self.dev_config_file}")
+                with open(self.dev_config_file, 'r', encoding='utf-8') as f:
+                    self._config = json.load(f)
+                return self._config
+
+            # Use regular config
             if self.config_file.exists():
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     self._config = json.load(f)
