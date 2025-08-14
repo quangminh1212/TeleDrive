@@ -287,8 +287,10 @@ body {
 .header-right {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding-right: 8px;
+    gap: 8px;
+    padding-right: 16px;
+    min-width: 200px;
+    justify-content: flex-end;
 }
 
 /* User Menu */
@@ -329,7 +331,7 @@ body {
     color: var(--text-primary);
 }
 
-/* Header icon alignment */
+/* Header icon alignment and consistency */
 .header-right .material-icons {
     vertical-align: middle;
 }
@@ -337,6 +339,22 @@ body {
 /* Ensure consistent icon sizes in header */
 .header .material-icons {
     font-size: 20px !important;
+}
+
+/* Better visual balance for header buttons */
+.header-btn,
+.user-avatar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Consistent hover effects */
+.header-btn:hover,
+.user-avatar:hover {
+    background-color: rgba(60, 64, 67, 0.08);
+    transform: none;
 }
 
 .user-dropdown {
