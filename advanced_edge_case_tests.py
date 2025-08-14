@@ -26,15 +26,15 @@ class AdvancedTestSuite:
         self.warnings = []
         
     def log_error(self, test_name, error):
-        self.errors.append(f"❌ {test_name}: {error}")
-        print(f"❌ {test_name}: {error}")
+        self.errors.append(f"[FAIL] {test_name}: {error}")
+        print(f"[FAIL] {test_name}: {error}")
     
     def log_warning(self, test_name, warning):
-        self.warnings.append(f"⚠️ {test_name}: {warning}")
-        print(f"⚠️ {test_name}: {warning}")
+        self.warnings.append(f"[WARN] {test_name}: {warning}")
+        print(f"[WARN] {test_name}: {warning}")
     
     def log_success(self, test_name, details=""):
-        print(f"✅ {test_name}{': ' + details if details else ''}")
+        print(f"[PASS] {test_name}{': ' + details if details else ''}")
     
     def setup_session(self):
         """Setup authenticated session"""
@@ -50,7 +50,7 @@ class AdvancedTestSuite:
     
     def test_concurrent_uploads(self):
         """Test concurrent file uploads"""
-        print("\n🔍 TESTING CONCURRENT UPLOADS")
+        print("\n[CHECK] TESTING CONCURRENT UPLOADS")
         print("=" * 50)
         
         def upload_file(file_id):
@@ -105,7 +105,7 @@ class AdvancedTestSuite:
     
     def test_large_file_upload(self):
         """Test large file upload"""
-        print("\n🔍 TESTING LARGE FILE UPLOAD")
+        print("\n[CHECK] TESTING LARGE FILE UPLOAD")
         print("=" * 50)
         
         try:
@@ -149,7 +149,7 @@ class AdvancedTestSuite:
     
     def test_special_characters_filenames(self):
         """Test files with special characters in names"""
-        print("\n🔍 TESTING SPECIAL CHARACTER FILENAMES")
+        print("\n[CHECK] TESTING SPECIAL CHARACTER FILENAMES")
         print("=" * 50)
         
         special_names = [
@@ -201,7 +201,7 @@ class AdvancedTestSuite:
     
     def test_api_rate_limiting(self):
         """Test API rate limiting"""
-        print("\n🔍 TESTING API RATE LIMITING")
+        print("\n[CHECK] TESTING API RATE LIMITING")
         print("=" * 50)
         
         try:
@@ -234,7 +234,7 @@ class AdvancedTestSuite:
     
     def test_database_stress(self):
         """Test database under stress"""
-        print("\n🔍 TESTING DATABASE STRESS")
+        print("\n[CHECK] TESTING DATABASE STRESS")
         print("=" * 50)
         
         try:
@@ -263,7 +263,7 @@ class AdvancedTestSuite:
     
     def test_memory_usage(self):
         """Test for memory leaks"""
-        print("\n🔍 TESTING MEMORY USAGE")
+        print("\n[CHECK] TESTING MEMORY USAGE")
         print("=" * 50)
         
         try:
@@ -306,7 +306,7 @@ class AdvancedTestSuite:
     
     def test_error_recovery(self):
         """Test error recovery mechanisms"""
-        print("\n🔍 TESTING ERROR RECOVERY")
+        print("\n[CHECK] TESTING ERROR RECOVERY")
         print("=" * 50)
         
         try:
@@ -334,24 +334,24 @@ class AdvancedTestSuite:
     
     def cleanup(self):
         """Clean up test files"""
-        print("\n🧹 CLEANING UP TEST FILES")
+        print("\n[CLEANUP] CLEANING UP TEST FILES")
         print("=" * 50)
         
         for file_path in self.test_files:
             try:
                 if os.path.exists(file_path):
                     os.remove(file_path)
-                    print(f"✅ Removed: {file_path}")
+                    print(f"[PASS] Removed: {file_path}")
             except Exception as e:
-                print(f"⚠️ Could not remove {file_path}: {e}")
+                print(f"[WARN] Could not remove {file_path}: {e}")
     
     def run_all_tests(self):
         """Run all advanced tests"""
-        print("🧪 ADVANCED EDGE CASE TEST SUITE")
+        print("[TEST] ADVANCED EDGE CASE TEST SUITE")
         print("=" * 60)
         
         if not self.setup_session():
-            print("❌ Failed to setup authenticated session")
+            print("[FAIL] Failed to setup authenticated session")
             return False
         
         self.test_concurrent_uploads()
@@ -364,19 +364,19 @@ class AdvancedTestSuite:
         
         # Summary
         print("\n" + "=" * 60)
-        print("📊 ADVANCED TEST SUMMARY")
+        print("[REPORT] ADVANCED TEST SUMMARY")
         print("=" * 60)
         
         if not self.errors and not self.warnings:
-            print("🎉 ALL ADVANCED TESTS PASSED - NO ISSUES FOUND!")
+            print("[SUCCESS] ALL ADVANCED TESTS PASSED - NO ISSUES FOUND!")
         else:
             if self.errors:
-                print(f"❌ ERRORS FOUND: {len(self.errors)}")
+                print(f"[FAIL] ERRORS FOUND: {len(self.errors)}")
                 for error in self.errors:
                     print(f"   {error}")
             
             if self.warnings:
-                print(f"⚠️ WARNINGS: {len(self.warnings)}")
+                print(f"[WARN] WARNINGS: {len(self.warnings)}")
                 for warning in self.warnings:
                     print(f"   {warning}")
         
@@ -389,7 +389,7 @@ if __name__ == "__main__":
     success = test_suite.run_all_tests()
     
     if success:
-        print("\n✅ ADVANCED TESTING COMPLETED SUCCESSFULLY")
+        print("\n[PASS] ADVANCED TESTING COMPLETED SUCCESSFULLY")
     else:
-        print("\n❌ ADVANCED TESTING FOUND ISSUES")
+        print("\n[FAIL] ADVANCED TESTING FOUND ISSUES")
         exit(1)

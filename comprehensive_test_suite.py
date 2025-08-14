@@ -26,21 +26,21 @@ class TeleDriveTestSuite:
         
     def log_error(self, test_name, error):
         """Log an error"""
-        self.errors.append(f"❌ {test_name}: {error}")
-        print(f"❌ {test_name}: {error}")
+        self.errors.append(f"[FAIL] {test_name}: {error}")
+        print(f"[FAIL] {test_name}: {error}")
     
     def log_warning(self, test_name, warning):
         """Log a warning"""
-        self.warnings.append(f"⚠️ {test_name}: {warning}")
-        print(f"⚠️ {test_name}: {warning}")
+        self.warnings.append(f"[WARN] {test_name}: {warning}")
+        print(f"[WARN] {test_name}: {warning}")
     
     def log_success(self, test_name, details=""):
         """Log a success"""
-        print(f"✅ {test_name}{': ' + details if details else ''}")
+        print(f"[PASS] {test_name}{': ' + details if details else ''}")
     
     def test_server_connectivity(self):
         """Test basic server connectivity"""
-        print("\n🔍 TESTING SERVER CONNECTIVITY")
+        print("\n[CHECK] TESTING SERVER CONNECTIVITY")
         print("=" * 50)
         
         try:
@@ -68,7 +68,7 @@ class TeleDriveTestSuite:
     
     def test_authentication_system(self):
         """Test authentication system thoroughly"""
-        print("\n🔍 TESTING AUTHENTICATION SYSTEM")
+        print("\n[CHECK] TESTING AUTHENTICATION SYSTEM")
         print("=" * 50)
         
         try:
@@ -105,7 +105,7 @@ class TeleDriveTestSuite:
     
     def test_file_upload_comprehensive(self):
         """Test file upload with various scenarios"""
-        print("\n🔍 TESTING FILE UPLOAD (COMPREHENSIVE)")
+        print("\n[CHECK] TESTING FILE UPLOAD (COMPREHENSIVE)")
         print("=" * 50)
         
         test_cases = [
@@ -157,7 +157,7 @@ class TeleDriveTestSuite:
     
     def test_file_download_comprehensive(self):
         """Test file download functionality"""
-        print("\n🔍 TESTING FILE DOWNLOAD (COMPREHENSIVE)")
+        print("\n[CHECK] TESTING FILE DOWNLOAD (COMPREHENSIVE)")
         print("=" * 50)
         
         try:
@@ -195,7 +195,7 @@ class TeleDriveTestSuite:
     
     def test_api_endpoints(self):
         """Test all API endpoints"""
-        print("\n🔍 TESTING API ENDPOINTS")
+        print("\n[CHECK] TESTING API ENDPOINTS")
         print("=" * 50)
         
         endpoints = [
@@ -228,7 +228,7 @@ class TeleDriveTestSuite:
     
     def test_web_pages(self):
         """Test all web pages"""
-        print("\n🔍 TESTING WEB PAGES")
+        print("\n[CHECK] TESTING WEB PAGES")
         print("=" * 50)
         
         pages = [
@@ -258,7 +258,7 @@ class TeleDriveTestSuite:
     
     def test_error_handling(self):
         """Test error handling"""
-        print("\n🔍 TESTING ERROR HANDLING")
+        print("\n[CHECK] TESTING ERROR HANDLING")
         print("=" * 50)
         
         error_tests = [
@@ -287,7 +287,7 @@ class TeleDriveTestSuite:
     
     def test_security_features(self):
         """Test security features"""
-        print("\n🔍 TESTING SECURITY FEATURES")
+        print("\n[CHECK] TESTING SECURITY FEATURES")
         print("=" * 50)
         
         try:
@@ -337,7 +337,7 @@ class TeleDriveTestSuite:
     
     def test_database_operations(self):
         """Test database operations"""
-        print("\n🔍 TESTING DATABASE OPERATIONS")
+        print("\n[CHECK] TESTING DATABASE OPERATIONS")
         print("=" * 50)
         
         try:
@@ -365,20 +365,20 @@ class TeleDriveTestSuite:
     
     def cleanup(self):
         """Clean up test files"""
-        print("\n🧹 CLEANING UP TEST FILES")
+        print("\n[CLEANUP] CLEANING UP TEST FILES")
         print("=" * 50)
         
         for file_path in self.test_files:
             try:
                 if os.path.exists(file_path):
                     os.remove(file_path)
-                    print(f"✅ Removed: {file_path}")
+                    print(f"[PASS] Removed: {file_path}")
             except Exception as e:
-                print(f"⚠️ Could not remove {file_path}: {e}")
+                print(f"[WARN] Could not remove {file_path}: {e}")
     
     def run_all_tests(self):
         """Run all tests"""
-        print("🧪 COMPREHENSIVE TELEDRIVE TEST SUITE")
+        print("[TEST] COMPREHENSIVE TELEDRIVE TEST SUITE")
         print("=" * 60)
         
         self.test_server_connectivity()
@@ -393,19 +393,19 @@ class TeleDriveTestSuite:
         
         # Summary
         print("\n" + "=" * 60)
-        print("📊 TEST SUMMARY")
+        print("[REPORT] TEST SUMMARY")
         print("=" * 60)
         
         if not self.errors and not self.warnings:
-            print("🎉 ALL TESTS PASSED - NO ISSUES FOUND!")
+            print("[SUCCESS] ALL TESTS PASSED - NO ISSUES FOUND!")
         else:
             if self.errors:
-                print(f"❌ ERRORS FOUND: {len(self.errors)}")
+                print(f"[FAIL] ERRORS FOUND: {len(self.errors)}")
                 for error in self.errors:
                     print(f"   {error}")
             
             if self.warnings:
-                print(f"⚠️ WARNINGS: {len(self.warnings)}")
+                print(f"[WARN] WARNINGS: {len(self.warnings)}")
                 for warning in self.warnings:
                     print(f"   {warning}")
         
@@ -418,7 +418,7 @@ if __name__ == "__main__":
     success = test_suite.run_all_tests()
     
     if success:
-        print("\n✅ COMPREHENSIVE TEST COMPLETED SUCCESSFULLY")
+        print("\n[PASS] COMPREHENSIVE TEST COMPLETED SUCCESSFULLY")
     else:
-        print("\n❌ COMPREHENSIVE TEST FOUND ISSUES")
+        print("\n[FAIL] COMPREHENSIVE TEST FOUND ISSUES")
         exit(1)

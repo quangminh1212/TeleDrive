@@ -10,7 +10,7 @@ sys.path.append('source')
 
 def check_config_files():
     """Check configuration files"""
-    print('🔍 CHECKING CONFIGURATION FILES')
+    print('[CHECK] CHECKING CONFIGURATION FILES')
     print('=' * 50)
     
     # Check main config files
@@ -22,22 +22,22 @@ def check_config_files():
     
     for config_file in config_files:
         if os.path.exists(config_file):
-            print(f'✅ {config_file} exists')
+            print(f'[PASS] {config_file} exists')
             try:
                 with open(config_file, 'r', encoding='utf-8') as f:
                     config_data = json.load(f)
-                print(f'   Valid JSON: ✅')
+                print(f'   Valid JSON: [PASS]')
                 print(f'   Keys: {list(config_data.keys())}')
             except json.JSONDecodeError as e:
-                print(f'   Invalid JSON: ❌ {e}')
+                print(f'   Invalid JSON: [FAIL] {e}')
             except Exception as e:
-                print(f'   Error reading: ❌ {e}')
+                print(f'   Error reading: [FAIL] {e}')
         else:
-            print(f'❌ {config_file} missing')
+            print(f'[FAIL] {config_file} missing')
 
 def check_telegram_config():
     """Check Telegram configuration"""
-    print('\n🔍 CHECKING TELEGRAM CONFIGURATION')
+    print('\n[CHECK] CHECKING TELEGRAM CONFIGURATION')
     print('=' * 50)
     
     try:
@@ -54,31 +54,31 @@ def check_telegram_config():
         for field, value in telegram_fields.items():
             if value:
                 if field == 'API_HASH':
-                    print(f'✅ {field}: {"*" * 10}... (hidden)')
+                    print(f'[PASS] {field}: {"*" * 10}... (hidden)')
                 elif field == 'PHONE_NUMBER':
-                    print(f'✅ {field}: {value[:3]}***{value[-3:] if len(value) > 6 else "***"}')
+                    print(f'[PASS] {field}: {value[:3]}***{value[-3:] if len(value) > 6 else "***"}')
                 else:
-                    print(f'✅ {field}: {value}')
+                    print(f'[PASS] {field}: {value}')
             else:
-                print(f'❌ {field}: Not set')
+                print(f'[FAIL] {field}: Not set')
         
         # Check session file
         session_file = f'source/{config.SESSION_NAME}.session'
         if os.path.exists(session_file):
             size = os.path.getsize(session_file)
-            print(f'✅ Session file: {session_file} ({size} bytes)')
+            print(f'[PASS] Session file: {session_file} ({size} bytes)')
         else:
-            print(f'⚠️ Session file: {session_file} (not found - need to authenticate)')
+            print(f'[WARN] Session file: {session_file} (not found - need to authenticate)')
         
         return True
         
     except Exception as e:
-        print(f'❌ Telegram config error: {e}')
+        print(f'[FAIL] Telegram config error: {e}')
         return False
 
 def check_web_config():
     """Check web configuration"""
-    print('\n🔍 CHECKING WEB CONFIGURATION')
+    print('\n[CHECK] CHECKING WEB CONFIGURATION')
     print('=' * 50)
     
     try:
@@ -86,7 +86,7 @@ def check_web_config():
         
         # Check upload configuration
         upload_config = web_config.get_upload_config()
-        print(f'✅ Upload config loaded')
+        print(f'[PASS] Upload config loaded')
         print(f'   Max file size: {upload_config.get("max_file_size", "Not set")}')
         print(f'   Upload directory: {upload_config.get("upload_directory", "Not set")}')
         print(f'   Storage backend: {upload_config.get("storage_backend", "Not set")}')
@@ -95,29 +95,29 @@ def check_web_config():
         
         # Check Flask config
         flask_config = web_config.get_flask_config()
-        print(f'\n✅ Flask config loaded')
+        print(f'\n[PASS] Flask config loaded')
         print(f'   Debug: {flask_config.get("DEBUG", "Not set")}')
         print(f'   Secret key set: {"Yes" if flask_config.get("SECRET_KEY") else "No"}')
         print(f'   Database URI set: {"Yes" if flask_config.get("SQLALCHEMY_DATABASE_URI") else "No"}')
         
         # Check directories
         directories = web_config.get_directories()
-        print(f'\n✅ Directory config:')
+        print(f'\n[PASS] Directory config:')
         for name, path in directories.items():
             exists = os.path.exists(path)
-            print(f'   {name}: {path} {"✅" if exists else "❌"}')
+            print(f'   {name}: {path} {"[PASS]" if exists else "[FAIL]"}')
         
         return True
         
     except Exception as e:
-        print(f'❌ Web config error: {e}')
+        print(f'[FAIL] Web config error: {e}')
         import traceback
         traceback.print_exc()
         return False
 
 def check_security_config():
     """Check security configuration"""
-    print('\n🔍 CHECKING SECURITY CONFIGURATION')
+    print('\n[CHECK] CHECKING SECURITY CONFIGURATION')
     print('=' * 50)
     
     try:
@@ -126,7 +126,7 @@ def check_security_config():
         # Check security settings
         security_config = web_config._config.get('security', {})
         
-        print(f'✅ Security config loaded')
+        print(f'[PASS] Security config loaded')
         print(f'   Session timeout: {security_config.get("session_timeout_minutes", "Not set")} minutes')
         print(f'   Max login attempts: {security_config.get("max_login_attempts", "Not set")}')
         print(f'   Lockout duration: {security_config.get("lockout_duration", "Not set")} seconds')
@@ -138,26 +138,26 @@ def check_security_config():
         
         if secret_key:
             if len(secret_key) >= 32:
-                print(f'✅ Secret key length: {len(secret_key)} characters (secure)')
+                print(f'[PASS] Secret key length: {len(secret_key)} characters (secure)')
             else:
-                print(f'⚠️ Secret key length: {len(secret_key)} characters (should be >= 32)')
+                print(f'[WARN] Secret key length: {len(secret_key)} characters (should be >= 32)')
             
             if secret_key == 'dev-secret-key-change-in-production':
-                print(f'⚠️ Using default secret key - should change in production')
+                print(f'[WARN] Using default secret key - should change in production')
             else:
-                print(f'✅ Custom secret key in use')
+                print(f'[PASS] Custom secret key in use')
         else:
-            print(f'❌ No secret key set')
+            print(f'[FAIL] No secret key set')
         
         return True
         
     except Exception as e:
-        print(f'❌ Security config error: {e}')
+        print(f'[FAIL] Security config error: {e}')
         return False
 
 def check_file_permissions():
     """Check file permissions and access"""
-    print('\n🔍 CHECKING FILE PERMISSIONS')
+    print('\n[CHECK] CHECKING FILE PERMISSIONS')
     print('=' * 50)
     
     # Check critical files and directories
@@ -181,12 +181,12 @@ def check_file_permissions():
             if writable:
                 status.append('W')
             
-            print(f'✅ {path}: {"/".join(status) if status else "No access"}')
+            print(f'[PASS] {path}: {"/".join(status) if status else "No access"}')
         else:
-            print(f'❌ {path}: Not found')
+            print(f'[FAIL] {path}: Not found')
 
 if __name__ == "__main__":
-    print('🧪 TELEDRIVE CONFIGURATION CHECK')
+    print('[TEST] TELEDRIVE CONFIGURATION CHECK')
     print('=' * 60)
     
     check_config_files()
@@ -196,13 +196,13 @@ if __name__ == "__main__":
     check_file_permissions()
     
     print('\n' + '=' * 60)
-    print('📊 CONFIGURATION SUMMARY')
+    print('[REPORT] CONFIGURATION SUMMARY')
     print('=' * 60)
     
     if telegram_ok and web_ok and security_ok:
-        print('✅ Configuration check PASSED - All systems configured correctly')
+        print('[PASS] Configuration check PASSED - All systems configured correctly')
     else:
-        print('❌ Configuration check FAILED - Issues found')
+        print('[FAIL] Configuration check FAILED - Issues found')
         if not telegram_ok:
             print('   - Telegram configuration issues')
         if not web_ok:
