@@ -1048,20 +1048,32 @@ def get_files():
 @app.route('/download/<filename>')
 @login_required
 def download_file(filename):
-    """Download output files"""
+    """Download uploaded files"""
     try:
-        # Security check - only allow files from output directory
-        if not filename.endswith(('.json', '.csv', '.xlsx')):
-            return jsonify({'error': 'Invalid file type'}), 400
+        # First check if it's an uploaded file in database
+        file_record = File.query.filter_by(filename=filename, user_id=current_user.id).first()
 
-        # Check if file exists
-        output_dir = web_config.flask_config.get('directories.output', 'output')
-        file_path = os.path.join(output_dir, filename)
-        if not os.path.exists(file_path):
-            return jsonify({'error': 'File not found'}), 404
+        if file_record:
+            # Download from upload directory
+            upload_dir = web_config.flask_config.get('directories.uploads', 'data/uploads')
+            file_path = os.path.join(upload_dir, filename)
 
-        return send_from_directory(output_dir, filename, as_attachment=True)
+            if os.path.exists(file_path):
+                return send_from_directory(upload_dir, filename, as_attachment=True)
+            else:
+                return jsonify({'error': 'File not found on disk'}), 404
+
+        # Fallback: check output directory for generated files
+        if filename.endswith(('.json', '.csv', '.xlsx')):
+            output_dir = web_config.flask_config.get('directories.output', 'output')
+            file_path = os.path.join(output_dir, filename)
+            if os.path.exists(file_path):
+                return send_from_directory(output_dir, filename, as_attachment=True)
+
+        return jsonify({'error': 'File not found'}), 404
+
     except Exception as e:
+        app.logger.error(f"Download error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/delete_file', methods=['POST'])
