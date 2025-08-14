@@ -19,7 +19,7 @@
   "upload": {
     "max_file_size": 104857600,
     "upload_directory": "data/uploads",
-    "allowed_extensions": ["txt", "pdf", "png", "jpg", "jpeg", "gif", "doc", "docx", "xls", "xlsx", "zip", "rar", "mp4", "mp3"],
+    "allowed_extensions": ["txt", "pdf", "png", "jpg", "jpeg", "gif", "doc", "docx", "xls", "xlsx", "zip", "rar", "mp4", "mp3", "json", "csv", "xml"],
     "storage_backend": "telegram",
     "fallback_to_local": true
   },

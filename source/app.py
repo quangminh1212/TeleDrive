@@ -1425,7 +1425,7 @@ def upload_file():
             rate_limit_step_id = log_step_start("RATE_LIMIT_CHECK", f"Checking rate limit for {request.remote_addr}")
 
         user_ip = request.remote_addr
-        if is_rate_limited(f"upload_{user_ip}", max_requests=10, window_seconds=300):
+        if is_rate_limited(f"upload_{user_ip}", max_requests=50, window_seconds=300):
             if DETAILED_LOGGING_AVAILABLE:
                 log_step_end(rate_limit_step_id, "RATE_LIMIT_CHECK", success=False, error="Rate limit exceeded")
                 log_step_end(upload_step_id, "FILE_UPLOAD", success=False, error="Rate limit exceeded")
@@ -1648,13 +1648,82 @@ def get_csrf_token():
         'csrf_token': generate_csrf()
     })
 
+@app.route('/api/scan_status', methods=['GET'])
+@login_required
+def get_scan_status():
+    """Get current scan status"""
+    try:
+        # Check if there's an active scan session
+        from db import ScanSession
+        active_scan = ScanSession.query.filter_by(
+            user_id=current_user.id,
+            status='running'
+        ).first()
+
+        if active_scan:
+            return jsonify({
+                'status': 'running',
+                'session_id': active_scan.id,
+                'channel': active_scan.channel_username,
+                'progress': {
+                    'processed': active_scan.processed_messages or 0,
+                    'total': active_scan.total_messages or 0
+                },
+                'started_at': active_scan.started_at.isoformat() if active_scan.started_at else None
+            })
+        else:
+            return jsonify({
+                'status': 'idle',
+                'last_scan': None
+            })
+
+    except Exception as e:
+        app.logger.error(f"Error getting scan status: {e}")
+        return jsonify({'error': 'Failed to get scan status'}), 500
+
+@app.route('/api/get_channels', methods=['GET'])
+@login_required
+def get_channels():
+    """Get list of available Telegram channels"""
+    try:
+        # Get channels from database
+        from db import File
+        channels = db.session.query(File.telegram_channel).filter(
+            File.telegram_channel.isnot(None),
+            File.user_id == current_user.id
+        ).distinct().all()
+
+        channel_list = []
+        for (channel,) in channels:
+            if channel:
+                # Get file count for this channel
+                file_count = File.query.filter_by(
+                    telegram_channel=channel,
+                    user_id=current_user.id
+                ).count()
+
+                channel_list.append({
+                    'name': channel,
+                    'file_count': file_count,
+                    'type': 'telegram'
+                })
+
+        return jsonify({
+            'channels': channel_list,
+            'total': len(channel_list)
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error getting channels: {e}")
+        return jsonify({'error': 'Failed to get channels'}), 500
+
 @app.route('/api/search', methods=['GET'])
 @handle_api_error
 def search_files():
     """Advanced search files by name, tags, content, and metadata"""
     # Rate limiting for search
     user_ip = request.remote_addr
-    if is_rate_limited(f"search_{user_ip}", max_requests=30, window_seconds=60):
+    if is_rate_limited(f"search_{user_ip}", max_requests=100, window_seconds=60):
         return create_error_response('rate_limit', 'Too many search requests. Please try again later.', 429)
 
     query = request.args.get('q', '').strip()
