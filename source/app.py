@@ -155,7 +155,8 @@ def check_session_timeout():
                 session.pop('last_activity', None)
 
         # Update last activity time
-        session['last_activity'] = datetime.utcnow().isoformat()
+        import datetime as dt
+        session['last_activity'] = dt.datetime.utcnow().isoformat()
         session.permanent = True
 
 @app.after_request
@@ -806,13 +807,18 @@ def dashboard():
     # Convert to format expected by template
     files = []
     for file_record in recent_files:
+        try:
+            file_type = file_record.get_file_type() if hasattr(file_record, 'get_file_type') else 'unknown'
+        except:
+            file_type = 'unknown'
+
         files.append({
             'id': file_record.id,
             'name': file_record.filename,
             'size': file_record.file_size or 0,
             'modified': file_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if file_record.created_at else '',
             'folder_name': file_record.folder.name if file_record.folder else 'Root',
-            'file_type': file_record.get_file_type(),
+            'file_type': file_type,
             'telegram_channel': file_record.telegram_channel
         })
 
@@ -985,16 +991,21 @@ def get_files():
 
     files = []
     for file_record in db_files:
+        try:
+            file_type = file_record.get_file_type() if hasattr(file_record, 'get_file_type') else 'unknown'
+        except:
+            file_type = 'unknown'
+
         files.append({
             'id': file_record.id,
             'name': file_record.filename,
             'size': file_record.file_size or 0,
             'modified': file_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if file_record.created_at else '',
             'folder_name': file_record.folder.name if file_record.folder else 'Root',
-            'file_type': file_record.get_file_type(),
+            'file_type': file_type,
             'telegram_channel': file_record.telegram_channel,
             'source': 'database',
-            'type': file_record.get_file_type().upper()
+            'type': file_type.upper()
         })
 
     # Also include output files for backward compatibility

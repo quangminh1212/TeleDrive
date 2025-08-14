@@ -3,7 +3,7 @@
   "_description": "TeleDrive Development Configuration",
   "_last_updated": "2025-01-14",
   "flask": {
-    "secret_key": "",
+    "secret_key": "dev-secret-key-for-testing-only-not-secure",
     "host": "127.0.0.1",
     "port": 3000,
     "debug": true,
