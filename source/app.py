@@ -1405,7 +1405,7 @@ def upload_file():
 
             # Create database record
             file_record = File(
-                filename=sanitized_filename,
+                filename=unique_filename,  # Use the actual filename saved to disk
                 original_filename=original_filename,
                 file_path=str(file_path),
                 file_size=file_size,
@@ -1417,7 +1417,7 @@ def upload_file():
 
             db.session.add(file_record)
             uploaded_files.append({
-                'filename': sanitized_filename,
+                'filename': unique_filename,  # Return the actual filename
                 'size': file_size,
                 'type': mime_type
             })
@@ -1431,7 +1431,7 @@ def upload_file():
             ActivityLog.log_activity(
                 user_id=user.id,
                 action='upload',
-                description=f'Uploaded file: {sanitized_filename}',
+                description=f'Uploaded file: {unique_filename}',
                 file_id=file_record.id,
                 metadata={'file_size': file_size, 'mime_type': mime_type, 'auto_tags': auto_tags},
                 ip_address=request.remote_addr,
