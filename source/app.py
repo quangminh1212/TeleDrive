@@ -1050,17 +1050,31 @@ def get_files():
 def download_file(filename):
     """Download uploaded files"""
     try:
+        app.logger.info(f"Download request for: {filename} by user: {current_user.id}")
+
         # First check if it's an uploaded file in database
         file_record = File.query.filter_by(filename=filename, user_id=current_user.id).first()
+        app.logger.info(f"Database query result: {file_record}")
+
+        if not file_record:
+            # Try without user_id filter for debugging
+            all_files = File.query.filter_by(filename=filename).all()
+            app.logger.info(f"All files with name {filename}: {[f.id for f in all_files]}")
+            app.logger.info(f"Current user ID: {current_user.id}")
 
         if file_record:
-            # Download from upload directory
-            upload_dir = web_config.flask_config.get('directories.uploads', 'data/uploads')
-            file_path = os.path.join(upload_dir, filename)
+            # Download from upload directory - use the same config as upload
+            upload_config = web_config.flask_config.get_upload_config()
+            upload_dir = Path(upload_config['upload_directory'])
+            file_path = upload_dir / filename
 
-            if os.path.exists(file_path):
-                return send_from_directory(upload_dir, filename, as_attachment=True)
+            app.logger.info(f"Looking for file: {file_path}")
+
+            if file_path.exists():
+                app.logger.info(f"File found, sending: {file_path}")
+                return send_from_directory(str(upload_dir), filename, as_attachment=True)
             else:
+                app.logger.error(f"File not found on disk: {file_path}")
                 return jsonify({'error': 'File not found on disk'}), 404
 
         # Fallback: check output directory for generated files
@@ -1341,7 +1355,11 @@ def upload_file():
     if len(files) > 50:  # Limit to 50 files per upload
         return create_error_response('validation_error', 'Too many files. Maximum 50 files per upload.', 400)
 
-    user = get_or_create_user()
+    # Use current_user instead of get_or_create_user()
+    if not current_user.is_authenticated:
+        return create_error_response('auth_error', 'User not authenticated', 401)
+
+    user = current_user
     uploaded_files = []
 
     # Validate folder if specified
@@ -1387,7 +1405,21 @@ def upload_file():
                 return jsonify({'success': False, 'error': 'Invalid file path'})
 
             # Save file
-            file.save(str(file_path))
+            try:
+                app.logger.info(f"Saving file to: {file_path}")
+                file.save(str(file_path))
+                app.logger.info(f"File saved successfully: {file_path}")
+
+                # Verify file was saved
+                if not file_path.exists():
+                    app.logger.error(f"File was not saved to disk: {file_path}")
+                    return jsonify({'success': False, 'error': f'Failed to save file: {unique_filename}'})
+                else:
+                    app.logger.info(f"File verified on disk: {file_path} ({file_path.stat().st_size} bytes)")
+
+            except Exception as save_error:
+                app.logger.error(f"Error saving file {unique_filename}: {save_error}")
+                return jsonify({'success': False, 'error': f'Failed to save file: {str(save_error)}'})
 
             # Validate file content after saving
             is_valid, validation_message = validate_file_content(file_path)
