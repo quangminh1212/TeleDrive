@@ -2080,7 +2080,8 @@ def telegram_login():
                     'errors': form.errors
                 }), 400
 
-            return render_template('auth/telegram_login.html', form=form)
+    # Render the template for GET requests or when form validation fails
+    return render_template('auth/telegram_login.html', form=form)
 
 @app.route('/telegram_verify', methods=['GET', 'POST'])
 def telegram_verify():
