@@ -1,0 +1,11 @@
+This is a test text file for TeleDrive.
+It contains multiple lines of text to test file upload and preview functionality.
+
+Features to test:
+- File upload
+- File preview
+- File download
+- File management
+- Search functionality
+
+This file should be properly handled by the TeleDrive system.

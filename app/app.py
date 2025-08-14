@@ -111,10 +111,10 @@ logging.basicConfig(level=logging.WARNING)  # Only warnings and errors
 import os
 from pathlib import Path
 
-# Get project root directory (parent of source directory)
-project_root = Path(__file__).parent.parent
-template_folder = project_root / 'templates'
-static_folder = project_root / 'static'
+# Get app directory (current directory)
+app_root = Path(__file__).parent
+template_folder = app_root / 'templates'
+static_folder = app_root / 'static'
 
 app = Flask(__name__,
            template_folder=str(template_folder.absolute()),

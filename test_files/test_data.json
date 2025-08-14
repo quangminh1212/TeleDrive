@@ -1,0 +1,29 @@
+{
+  "project": "TeleDrive",
+  "version": "1.0.0",
+  "description": "Modern Telegram File Management System",
+  "features": [
+    "File upload and download",
+    "Telegram integration",
+    "Google Drive-like UI",
+    "File preview",
+    "Search functionality",
+    "Real-time updates"
+  ],
+  "technologies": {
+    "backend": "Flask",
+    "database": "SQLAlchemy",
+    "frontend": "Bootstrap",
+    "telegram": "Telethon"
+  },
+  "test_data": {
+    "numbers": [1, 2, 3, 4, 5],
+    "boolean": true,
+    "null_value": null,
+    "nested": {
+      "level1": {
+        "level2": "deep value"
+      }
+    }
+  }
+}

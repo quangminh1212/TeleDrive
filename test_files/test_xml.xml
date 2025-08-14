@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+    <name>TeleDrive</name>
+    <version>1.0.0</version>
+    <description>Modern Telegram File Management System</description>
+    
+    <features>
+        <feature id="1" priority="high">File Upload</feature>
+        <feature id="2" priority="high">File Download</feature>
+        <feature id="3" priority="medium">File Preview</feature>
+        <feature id="4" priority="medium">Search</feature>
+        <feature id="5" priority="low">Analytics</feature>
+    </features>
+    
+    <technologies>
+        <backend>Flask</backend>
+        <database>SQLAlchemy</database>
+        <frontend>Bootstrap</frontend>
+        <telegram>Telethon</telegram>
+    </technologies>
+    
+    <metadata>
+        <created>2024-08-14</created>
+        <author>TeleDrive Team</author>
+        <license>MIT</license>
+    </metadata>
+</project>
