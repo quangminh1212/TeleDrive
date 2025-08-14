@@ -4,7 +4,7 @@ Database Models for TeleDrive
 SQLAlchemy models for users, files, folders, and scan sessions
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, LargeBinary, Index, Float, JSON
@@ -27,8 +27,8 @@ class User(UserMixin, db.Model):
     password_hash = Column(String(128))
     role = Column(String(20), default='user')  # user, admin, viewer
     _is_active = Column('is_active', Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Telegram-specific fields
     telegram_id = Column(String(50), unique=True, nullable=True, index=True)
@@ -102,7 +102,7 @@ class User(UserMixin, db.Model):
     def generate_reset_token(self):
         """Generate a password reset token"""
         self.reset_token = secrets.token_urlsafe(32)
-        self.reset_token_expires = datetime.utcnow() + timedelta(hours=1)  # Token expires in 1 hour
+        self.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)  # Token expires in 1 hour
         return self.reset_token
 
     def verify_reset_token(self, token):
@@ -111,7 +111,7 @@ class User(UserMixin, db.Model):
             return False
         if self.reset_token != token:
             return False
-        if datetime.utcnow() > self.reset_token_expires:
+        if datetime.now(timezone.utc) > self.reset_token_expires:
             return False
         return True
 
@@ -124,25 +124,25 @@ class User(UserMixin, db.Model):
         """Check if account is currently locked"""
         if not self.locked_until:
             return False
-        return datetime.utcnow() < self.locked_until
+        return datetime.now(timezone.utc) < self.locked_until
 
     def record_failed_login(self):
         """Record a failed login attempt"""
         self.failed_login_attempts = (self.failed_login_attempts or 0) + 1
-        self.last_login_attempt = datetime.utcnow()
+        self.last_login_attempt = datetime.now(timezone.utc)
 
         # Lock account after 5 failed attempts for 15 minutes
         max_attempts = 5
         lockout_duration = timedelta(minutes=15)
 
         if self.failed_login_attempts >= max_attempts:
-            self.locked_until = datetime.utcnow() + lockout_duration
+            self.locked_until = datetime.now(timezone.utc) + lockout_duration
 
     def record_successful_login(self):
         """Record a successful login and clear failed attempts"""
         self.failed_login_attempts = 0
         self.locked_until = None
-        self.last_login_attempt = datetime.utcnow()
+        self.last_login_attempt = datetime.now(timezone.utc)
 
     def generate_email_verification_token(self):
         """Generate an email verification token"""
@@ -188,8 +188,8 @@ class Folder(db.Model):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     path = Column(String(1000))  # Full path for quick lookups
     is_deleted = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     parent = relationship('Folder', remote_side=[id], backref='children')
@@ -261,8 +261,8 @@ class File(db.Model):
     version_count = Column(Integer, default=1)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     telegram_date = Column(DateTime)  # Original message date from Telegram
     
     def create_version(self, change_description=None, version_name=None):
@@ -386,7 +386,7 @@ class FileVersion(db.Model):
     file_hash = Column(String(64))  # SHA-256 hash for integrity
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
     # Relationships
     file = relationship('File', backref='versions')
@@ -500,7 +500,7 @@ class ScanSession(db.Model):
     error_message = Column(Text)
     
     # Timestamps
-    started_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime)
     
     def __repr__(self):
@@ -515,7 +515,7 @@ class ScanSession(db.Model):
     def get_duration(self):
         """Get scan duration in seconds"""
         if self.started_at:
-            end_time = self.completed_at or datetime.utcnow()
+            end_time = self.completed_at or datetime.now(timezone.utc)
             return (end_time - self.started_at).total_seconds()
         return 0
     
@@ -567,8 +567,8 @@ class ShareLink(db.Model):
 
     # Tracking
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     last_accessed = Column(DateTime)
 
     # Relationships
@@ -608,7 +608,7 @@ class ShareLink(db.Model):
         """Check if the share link has expired"""
         if not self.expires_at:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
     def is_download_limit_reached(self):
         """Check if download limit has been reached"""
@@ -638,13 +638,13 @@ class ShareLink(db.Model):
     def increment_view_count(self):
         """Increment the view count and update last accessed time"""
         self.view_count += 1
-        self.last_accessed = datetime.utcnow()
+        self.last_accessed = datetime.now(timezone.utc)
         db.session.commit()
 
     def increment_download_count(self):
         """Increment the download count and update last accessed time"""
         self.download_count += 1
-        self.last_accessed = datetime.utcnow()
+        self.last_accessed = datetime.now(timezone.utc)
         db.session.commit()
 
     def get_share_url(self, base_url):
@@ -719,8 +719,8 @@ class FileComment(db.Model):
     is_pinned = Column(Boolean, default=False)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
     file = relationship('File', backref='comments')
@@ -772,7 +772,7 @@ class ActivityLog(db.Model):
     session_id = Column(String(64))
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
     # Relationships
     file = relationship('File', backref='activity_logs')
@@ -839,8 +839,8 @@ class SmartFolder(db.Model):
     auto_update = Column(Boolean, default=True)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     last_updated = Column(DateTime)  # When files were last matched
 
     def __repr__(self):

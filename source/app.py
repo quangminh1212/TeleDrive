@@ -17,7 +17,7 @@ import asyncio
 import threading
 import re
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, flash, send_file
@@ -168,7 +168,7 @@ def check_session_timeout():
                 last_activity_time = datetime.fromisoformat(last_activity)
                 session_timeout = timedelta(seconds=app.config.get('PERMANENT_SESSION_LIFETIME', 1800))  # 30 minutes default
 
-                if datetime.utcnow() - last_activity_time > session_timeout:
+                if datetime.now(timezone.utc) - last_activity_time > session_timeout:
                     logout_user()
                     session.clear()
                     flash('Your session has expired. Please log in again.', 'info')
@@ -179,7 +179,7 @@ def check_session_timeout():
 
         # Update last activity time
         import datetime as dt
-        session['last_activity'] = dt.datetime.utcnow().isoformat()
+        session['last_activity'] = dt.datetime.now(dt.timezone.utc).isoformat()
         session.permanent = True
 
 @app.after_request
@@ -613,7 +613,7 @@ class WebTelegramScanner(TelegramFileScanner):
                 scan_progress['error'] = error_msg
                 self.scan_session.status = 'failed'
                 self.scan_session.error_message = error_msg
-                self.scan_session.completed_at = datetime.utcnow()
+                self.scan_session.completed_at = datetime.now(timezone.utc)
                 db.session.commit()
                 self.socketio.emit('scan_progress', scan_progress)
                 return False
@@ -623,7 +623,7 @@ class WebTelegramScanner(TelegramFileScanner):
                 scan_progress['error'] = error_msg
                 self.scan_session.status = 'failed'
                 self.scan_session.error_message = error_msg
-                self.scan_session.completed_at = datetime.utcnow()
+                self.scan_session.completed_at = datetime.now(timezone.utc)
                 db.session.commit()
                 self.socketio.emit('scan_progress', scan_progress)
                 return False
@@ -639,7 +639,7 @@ class WebTelegramScanner(TelegramFileScanner):
                 scan_progress['error'] = 'Could not resolve channel'
                 self.scan_session.status = 'failed'
                 self.scan_session.error_message = 'Could not resolve channel'
-                self.scan_session.completed_at = datetime.utcnow()
+                self.scan_session.completed_at = datetime.now(timezone.utc)
                 db.session.commit()
                 self.socketio.emit('scan_progress', scan_progress)
                 return False
@@ -2637,7 +2637,7 @@ def create_share_link(file_id):
         if data.get('expires_in_days'):
             days = int(data['expires_in_days'])
             from datetime import timedelta
-            share_link.expires_at = datetime.utcnow() + timedelta(days=days)
+            share_link.expires_at = datetime.now(timezone.utc) + timedelta(days=days)
         elif data.get('expires_at'):
             share_link.expires_at = datetime.fromisoformat(data['expires_at'])
 
@@ -3393,7 +3393,7 @@ def get_share_link_analytics(link_id):
         # Check if expired
         is_expired = False
         if share_link.expires_at:
-            is_expired = datetime.utcnow() > share_link.expires_at
+            is_expired = datetime.now(timezone.utc) > share_link.expires_at
 
         # Check if limits reached
         view_limit_reached = share_link.max_views and total_views >= share_link.max_views
@@ -3936,7 +3936,7 @@ def get_smart_folder_files(folder_id):
             })
 
         # Update last_updated timestamp
-        smart_folder.last_updated = datetime.utcnow()
+        smart_folder.last_updated = datetime.now(timezone.utc)
         db.session.commit()
 
         return jsonify({
@@ -4099,7 +4099,7 @@ def generate_auto_tags(file_record):
 
     # Time based tags
     if file_record.created_at:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         age_days = (now - file_record.created_at).days
 
         if age_days < 1:
