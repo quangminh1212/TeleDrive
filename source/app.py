@@ -871,14 +871,45 @@ def dashboard():
 @login_required
 def settings():
     """Settings page for API configuration"""
-    # Use config module directly
-    current_config = {
-        'telegram': {
-            'api_id': config.API_ID,
-            'api_hash': config.API_HASH,
-            'phone_number': config.PHONE_NUMBER
+    try:
+        # Load full config from config.json file
+        import json
+        from pathlib import Path
+        config_file = Path(__file__).parent / 'config.json'
+
+        if config_file.exists():
+            with open(config_file, 'r', encoding='utf-8') as f:
+                current_config = json.load(f)
+        else:
+            # Fallback to basic config
+            current_config = {
+                'telegram': {
+                    'api_id': getattr(config, 'API_ID', ''),
+                    'api_hash': getattr(config, 'API_HASH', ''),
+                    'phone_number': getattr(config, 'PHONE_NUMBER', '')
+                }
+            }
+    except Exception as e:
+        app.logger.error(f"Error loading config for settings: {e}")
+        current_config = {
+            'telegram': {
+                'api_id': '',
+                'api_hash': '',
+                'phone_number': ''
+            },
+            'scanning': {
+                'max_messages': None,
+                'batch_size': 100,
+                'file_types': {
+                    'documents': True,
+                    'photos': True,
+                    'videos': True,
+                    'audio': True,
+                    'voice': True,
+                    'stickers': True
+                }
+            }
         }
-    }
 
     return render_template('settings.html', config=current_config)
 
@@ -1022,11 +1053,14 @@ def get_files():
         files.append({
             'id': file_record.id,
             'name': file_record.filename,
+            'filename': file_record.filename,  # Add for compatibility
             'size': file_record.file_size or 0,
+            'file_size': file_record.file_size or 0,  # Add for compatibility
             'modified': file_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if file_record.created_at else '',
             'folder_name': file_record.folder.name if file_record.folder else 'Root',
             'file_type': file_type,
             'telegram_channel': file_record.telegram_channel,
+            'storage_type': file_record.storage_type or 'local',  # Add storage type
             'source': 'database',
             'type': file_type.upper()
         })

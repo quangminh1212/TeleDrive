@@ -206,7 +206,9 @@ class FlaskConfigLoader:
                 'mp4', 'avi', 'mkv', 'mov', 'wav', 'flac', 'json', 'csv', 'xml'
             ]),
             'create_subdirs': self.get('upload.create_subdirs', True),
-            'timestamp_filenames': self.get('upload.timestamp_filenames', True)
+            'timestamp_filenames': self.get('upload.timestamp_filenames', True),
+            'storage_backend': self.get('upload.storage_backend', 'local'),
+            'fallback_to_local': self.get('upload.fallback_to_local', True)
         }
     
     def get_admin_config(self) -> Dict[str, Any]:
@@ -303,3 +305,4 @@ class FlaskConfigLoader:
 
 # Global instance
 flask_config = FlaskConfigLoader()
+web_config = flask_config  # Alias for backward compatibility
