@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verify Code - TeleDrive</title>
-    
+
     <!-- Telegram-like styling -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
+
     <style>
         * {
             margin: 0;
@@ -317,14 +317,14 @@
             <span class="material-icons">telegram</span>
             <span class="logo-text">TeleDrive</span>
         </div>
-        
+
         <h1 class="auth-title">Enter Verification Code</h1>
         <p class="auth-subtitle">We sent a code to your Telegram</p>
-        
+
         {% if phone_number %}
         <div class="phone-display">{{ phone_number }}</div>
         {% endif %}
-        
+
         <div class="telegram-info">
             <h4>Check your Telegram app:</h4>
             <p>• Open Telegram on your phone or computer</p>
@@ -343,7 +343,7 @@
         <div class="debug-info" id="debugInfo" style="display:none;">
             Debug info will appear here during testing
         </div>
-        
+
         <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -354,10 +354,10 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        
+
         <form method="POST" action="{{ url_for('telegram_verify') }}">
             {{ form.hidden_tag() }}
-            
+
             <div class="form-group">
                 <label for="verification_code">Verification Code</label>
                 {{ form.verification_code(class="form-control", placeholder="12345", maxlength="6", autocomplete="off") }}
@@ -367,7 +367,7 @@
                     {% endfor %}
                 {% endif %}
             </div>
-            
+
             {% if requires_password %}
             <div class="two-factor-section">
                 <div class="two-factor-info">
@@ -384,16 +384,16 @@
                 </div>
             </div>
             {% endif %}
-            
+
             <button type="submit" class="btn-primary" id="submitBtn">
                 <div class="loading-spinner"></div>
                 <span class="btn-text">Verify Code</span>
             </button>
         </form>
-        
+
         <div class="auth-links">
             <a href="{{ url_for('telegram_login') }}" class="auth-link">← Try different number</a>
-            <a href="{{ url_for('telegram_login') }}" class="auth-link">Request new code</a>
+            <button id="resendBtn" type="button" class="auth-link" style="border:none;background:none;cursor:pointer;padding:0;">Request new code</button>
         </div>
     </div>
 
@@ -418,26 +418,112 @@
             }, 30 * 60 * 1000); // 30 minutes
         });
 
+
+            // Countdown for code validity and Resend handler
+            (function() {
+                const validitySeconds = {{ validity_seconds|default(180) }};
+                const codeSentAt = {{ code_sent_at or 0 }};
+                const serverTime = {{ server_time or 0 }};
+                let skew = 0;
+                if (serverTime > 0) {
+                    // estimate clock skew
+                    skew = Math.floor(Date.now()/1000) - serverTime;
+                }
+
+                // Inject a small hint under the form
+                const formEl = document.querySelector('form');
+                const hint = document.createElement('div');
+                hint.style.cssText = 'font-size:13px;color:#666;margin-top:8px;';
+                hint.id = 'codeValidityHint';
+                formEl.parentNode.insertBefore(hint, formEl.nextSibling);
+
+                function updateCountdown() {
+                    if (!codeSentAt) return;
+                    const now = Math.floor(Date.now()/1000) - skew;
+                    const elapsed = now - codeSentAt;
+                    const remaining = Math.max(validitySeconds - elapsed, 0);
+                    const mm = Math.floor(remaining/60);
+                    const ss = remaining % 60;
+                    hint.textContent = remaining > 0
+                        ? `Code is valid for about ${mm}m ${ss}s. If it fails, use Request new code.`
+                        : 'The code may have expired. Please click Request new code.';
+                }
+                setInterval(updateCountdown, 1000);
+                updateCountdown();
+
+                const resendBtn = document.getElementById('resendBtn');
+                if (resendBtn) {
+                    resendBtn.addEventListener('click', function() {
+                        resendBtn.disabled = true;
+                        resendBtn.textContent = 'Sending...';
+                        const csrf = (document.querySelector('input[name="csrf_token"]').value || '');
+                        fetch('/telegram_resend', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: { 'X-CSRFToken': csrf, 'Accept': 'application/json' }
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                showErrorNotification('✅ New code sent. Please check Telegram and enter the new code.');
+                                // Refresh CSRF and update sent time via API
+                                return fetch('/api/csrf-token', { credentials: 'same-origin' })
+                                       .then(r=>r.json())
+                                       .then(tok => { if (tok.success) { document.querySelector('input[name="csrf_token"]').value = tok.csrf_token; }})
+                                       .finally(() => {
+                                           // Reset countdown starting now (best-effort)
+                                           const now = Math.floor(Date.now()/1000) - skew;
+                                           window.__codeSentAt = now;
+                                           // Replace codeSentAt for the countdown
+                                           // Not re-rendering template, so override local variable via closure
+                                           // Recompute using new baseline
+                                           const newBase = now;
+                                           setInterval(()=>{
+                                               const cur = Math.floor(Date.now()/1000) - skew;
+                                               const rem = Math.max(validitySeconds - (cur - newBase), 0);
+                                               const mm = Math.floor(rem/60);
+                                               const ss = rem % 60;
+                                               hint.textContent = rem > 0
+                                                   ? `Code is valid for about ${mm}m ${ss}s. If it fails, use Request new code.`
+                                                   : 'The code may have expired. Please click Request new code.';
+                                           }, 1000);
+                                       });
+                            } else {
+                                showErrorNotification(data.message || 'Failed to resend code.');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Resend error:', err);
+                            showErrorNotification('Network error while resending code.');
+                        })
+                        .finally(() => {
+                            resendBtn.disabled = false;
+                            resendBtn.textContent = 'Request new code';
+                        });
+                    });
+                }
+            })();
+
         // Auto-refresh CSRF token on form submission if expired
         document.querySelector('form').addEventListener('submit', function(e) {
             const form = this;
             const submitBtn = document.getElementById('submitBtn');
             const btnText = submitBtn.querySelector('.btn-text');
-            
+
             // Prevent double submission
             if (submitBtn.disabled || form.dataset.submitting === 'true') {
                 console.log('[FORM] Form already being submitted, ignoring');
                 e.preventDefault();
                 return false;
             }
-            
+
             // Mark form as submitting
             form.dataset.submitting = 'true';
-            
+
             // Show loading state immediately
             showLoadingState(submitBtn, btnText);
             console.log('[FORM] Form submitted, showing loading state');
-            
+
             // Check if this is a retry after CSRF error
             if (form.dataset.csrfRetry) {
                 delete form.dataset.csrfRetry;
@@ -505,17 +591,17 @@
             btn.classList.add('btn-loading');
             btn.disabled = true;
             textElement.textContent = 'Verifying...';
-            
+
             // Show processing info
             const processingInfo = document.getElementById('processingInfo');
             if (processingInfo) {
                 processingInfo.style.display = 'block';
             }
-            
+
             // Store start time for debugging
             window.verificationStartTime = startTime;
             updateDebugInfo(`Verification started at: ${startTime.toLocaleTimeString()}`);
-            
+
             // Update processing info with timer
             const timerInterval = setInterval(() => {
                 const elapsed = Math.floor((new Date() - startTime) / 1000);
@@ -524,7 +610,7 @@
                 }
                 updateDebugInfo(`Verification started at: ${startTime.toLocaleTimeString()}\nElapsed: ${elapsed} seconds`);
             }, 1000);
-            
+
             window.processingTimerInterval = timerInterval;
         }
 
@@ -532,24 +618,24 @@
             btn.classList.remove('btn-loading');
             btn.disabled = false;
             textElement.textContent = 'Verify Code';
-            
+
             // Reset submitting flag
             const form = document.querySelector('form');
             if (form) {
                 delete form.dataset.submitting;
             }
-            
+
             // Hide processing info
             const processingInfo = document.getElementById('processingInfo');
             if (processingInfo) {
                 processingInfo.style.display = 'none';
             }
-            
+
             // Clear timer
             if (window.processingTimerInterval) {
                 clearInterval(window.processingTimerInterval);
             }
-            
+
             // Update debug info with completion time
             if (window.verificationStartTime) {
                 const elapsed = new Date() - window.verificationStartTime;
@@ -561,9 +647,9 @@
             btn.classList.remove('btn-loading');
             btn.style.background = '#4caf50';
             textElement.textContent = 'Success! Redirecting...';
-            
+
             // Don't reset submitting flag on success - we want to prevent further submissions
-            
+
             // Clear processing state
             const processingInfo = document.getElementById('processingInfo');
             if (processingInfo) {
@@ -572,12 +658,12 @@
                 processingInfo.style.color = '#2e7d32';
                 processingInfo.style.borderColor = '#4caf50';
             }
-            
+
             // Clear timer
             if (window.processingTimerInterval) {
                 clearInterval(window.processingTimerInterval);
             }
-            
+
             // Update debug info with success
             if (window.verificationStartTime) {
                 const elapsed = new Date() - window.verificationStartTime;
@@ -596,7 +682,7 @@
             }
             errorDiv.textContent = message;
             errorDiv.scrollIntoView({ behavior: 'smooth' });
-            
+
             // Update processing info with error
             const processingInfo = document.getElementById('processingInfo');
             if (processingInfo) {

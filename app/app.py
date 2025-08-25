@@ -577,7 +577,7 @@ class WebTelegramScanner(TelegramFileScanner):
         self.socketio = socketio_instance
         self.user_id = user_id or get_or_create_user().id
         self.scan_session = None
-        
+
     async def scan_channel_with_progress(self, channel_input):
         """Scan channel with real-time progress updates"""
         global scan_progress, scanning_active
@@ -651,7 +651,7 @@ class WebTelegramScanner(TelegramFileScanner):
             if hasattr(entity, 'title'):
                 self.scan_session.channel_name = entity.title
             db.session.commit()
-                
+
             # Get total messages
             scan_progress['status'] = 'counting_messages'
             self.socketio.emit('scan_progress', scan_progress)
@@ -730,7 +730,7 @@ class WebTelegramScanner(TelegramFileScanner):
                 if processed % 10 == 0:
                     self.socketio.emit('scan_progress', scan_progress)
                     db.session.commit()
-            
+
             # Final commit and save results
             scan_progress['status'] = 'saving'
             self.socketio.emit('scan_progress', scan_progress)
@@ -970,20 +970,20 @@ def save_settings():
 def start_scan():
     """Start channel scanning"""
     global scanner, scanning_active
-    
+
     try:
         data = request.get_json()
         channel_input = data.get('channel', '').strip()
-        
+
         if not channel_input:
             return jsonify({'success': False, 'error': 'Channel input is required'})
-        
+
         if scanning_active:
             return jsonify({'success': False, 'error': 'Scan already in progress'})
-        
+
         # Create new scanner instance
         scanner = WebTelegramScanner(socketio)
-        
+
         # Start scanning in background thread with proper async handling
         def run_scan():
             with app.app_context():  # Ensure Flask application context
@@ -1005,9 +1005,9 @@ def start_scan():
         thread = threading.Thread(target=run_scan)
         thread.daemon = True
         thread.start()
-        
+
         return jsonify({'success': True, 'message': 'Scan started'})
-        
+
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
@@ -1016,7 +1016,7 @@ def start_scan():
 def stop_scan():
     """Stop current scan"""
     global scanning_active
-    
+
     scanning_active = False
     return jsonify({'success': True, 'message': 'Scan stopped'})
 
@@ -2401,7 +2401,7 @@ def telegram_login():
         # Send verification code
         app.logger.info(f"Using telegram_auth instance: {getattr(telegram_auth, 'instance_id', 'NO_ID')}")
         app.logger.info(f"Current session count before send: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
-        
+
         async def send_code():
             result = await telegram_auth.send_code_request(phone_number, country_code)
             return result
@@ -2492,7 +2492,7 @@ def telegram_verify():
         # Verify code
         app.logger.info(f"Using telegram_auth instance for verify: {getattr(telegram_auth, 'instance_id', 'NO_ID')}")
         app.logger.info(f"Current session count before verify: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
-        
+
         async def verify_code():
             result = await telegram_auth.verify_code(session_id, verification_code, password)
             return result
@@ -2504,7 +2504,7 @@ def telegram_verify():
             result = run_async_in_thread(verify_code())
             verify_end_time = time.time()
             verify_duration = verify_end_time - verify_start_time
-            
+
             app.logger.info(f"Verification completed in {verify_duration*1000:.1f}ms")
             app.logger.info(f"Verification result: {result}")
             app.logger.info(f"Current session count after verify: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
@@ -2597,10 +2597,23 @@ def telegram_verify():
                     flash(f'Error creating user account: {str(e)}', 'error')
         elif result.get('requires_password'):
             app.logger.info("Two-factor authentication required")
+            # Pass code timing info also in 2FA branch
+            code_sent_at = None
+            try:
+                from auth import telegram_auth as _ta
+                sid = session.get('telegram_session_id')
+                if sid and hasattr(_ta, 'temp_sessions') and sid in _ta.temp_sessions:
+                    code_sent_at = int(_ta.temp_sessions[sid].get('created_at', 0) or 0)
+            except Exception:
+                code_sent_at = None
+
             return render_template('auth/telegram_verify.html',
                                  form=form,
                                  phone_number=phone_number,
-                                 requires_password=True)
+                                 requires_password=True,
+                                 code_sent_at=code_sent_at,
+                                 validity_seconds=180,
+                                 server_time=int(time.time()))
         else:
             app.logger.error(f"Authentication failed: {result.get('error', 'Unknown error')}")
             error_message = result['error']
@@ -2615,15 +2628,34 @@ def telegram_verify():
                 session.pop('telegram_country_code', None)
                 return redirect(url_for('telegram_login'))
             else:
+                if 'application/json' in (request.headers.get('Accept') or ''):
+                    return jsonify({
+                        'success': False,
+                        'error': 'verification_failed',
+                        'message': error_message
+                    }), 400
                 flash(error_message, 'error')
     else:
         if form.errors:
             app.logger.warning(f"Verification form validation errors: {form.errors}")
 
+    # Provide code timing info to template for better UX
+    code_sent_at = None
+    try:
+        from auth import telegram_auth as _ta
+        sid = session.get('telegram_session_id')
+        if sid and hasattr(_ta, 'temp_sessions') and sid in _ta.temp_sessions:
+            code_sent_at = int(_ta.temp_sessions[sid].get('created_at', 0) or 0)
+    except Exception:
+        code_sent_at = None
+
     return render_template('auth/telegram_verify.html',
                          form=form,
                          phone_number=phone_number,
-                         requires_password=requires_password)
+                         requires_password=requires_password,
+                         code_sent_at=code_sent_at,
+                         validity_seconds=180,
+                         server_time=int(time.time()))
 
 # File sharing routes
 @app.route('/api/files/<int:file_id>/share', methods=['POST'])
@@ -2661,6 +2693,30 @@ def create_share_link(file_id):
             share_link.expires_at = datetime.now(timezone.utc) + timedelta(days=days)
         elif data.get('expires_at'):
             share_link.expires_at = datetime.fromisoformat(data['expires_at'])
+
+@app.route('/telegram_resend', methods=['POST'])
+@csrf.exempt
+def telegram_resend():
+    """Resend Telegram verification code using phone in session"""
+    from flask import session
+    phone_number = session.get('telegram_phone')
+    country_code = session.get('telegram_country_code', '+84')
+    if not phone_number:
+        return jsonify({'success': False, 'error': 'no_phone', 'message': 'Session expired. Please enter your phone number again.'}), 400
+
+    async def send_code():
+        return await telegram_auth.send_code_request(phone_number, country_code)
+
+    try:
+        result = run_async_in_thread(send_code())
+        if result.get('success'):
+            session['telegram_session_id'] = result['session_id']
+            return jsonify({'success': True, 'message': 'Verification code resent successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'send_failed', 'message': result.get('error', 'Failed to resend code')}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'exception', 'message': str(e)}), 500
+
 
         db.session.add(share_link)
         db.session.commit()
@@ -4303,7 +4359,7 @@ def setup_signal_handlers():
             pass
         except Exception as e:
             print(f"⚠️ Error during atexit cleanup: {e}")
-    
+
     atexit.register(safe_cleanup)
 
 if __name__ == '__main__':
