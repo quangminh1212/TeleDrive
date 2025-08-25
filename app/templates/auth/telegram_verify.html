@@ -465,6 +465,21 @@
                         .then(r => r.json())
                         .then(data => {
                             if (data.success) {
+                                // Start local cooldown UI for 30s
+                                let cool = 30;
+                                const origText = 'Request new code';
+                                resendBtn.disabled = true;
+                                resendBtn.textContent = `Wait ${cool}s`;
+                                const t = setInterval(()=>{
+                                    cool -= 1;
+                                    if (cool <= 0) {
+                                        clearInterval(t);
+                                        resendBtn.disabled = false;
+                                        resendBtn.textContent = origText;
+                                    } else {
+                                        resendBtn.textContent = `Wait ${cool}s`;
+                                    }
+                                }, 1000);
                                 showErrorNotification('✅ New code sent. Please check Telegram and enter the new code.');
                                 // Refresh CSRF and update sent time via API
                                 return fetch('/api/csrf-token', { credentials: 'same-origin' })

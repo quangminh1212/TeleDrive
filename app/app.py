@@ -2704,6 +2704,11 @@ def telegram_resend():
     if not phone_number:
         return jsonify({'success': False, 'error': 'no_phone', 'message': 'Session expired. Please enter your phone number again.'}), 400
 
+    # Apply 30s cooldown per IP to prevent spam
+    user_ip = request.remote_addr
+    if is_rate_limited(f"resend_{user_ip}", max_requests=1, window_seconds=30):
+        return jsonify({'success': False, 'error': 'cooldown', 'message': 'Please wait 30 seconds before requesting a new code.'}), 429
+
     async def send_code():
         return await telegram_auth.send_code_request(phone_number, country_code)
 
