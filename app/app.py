@@ -2642,6 +2642,15 @@ def telegram_verify():
             except Exception:
                 resend_remaining = 0
 
+            # Compute resend quota info
+            try:
+                user_ip = request.remote_addr
+                recent_count = get_recent_count(f"resend_hist_{user_ip}", window_seconds=600)
+            except Exception:
+                recent_count = 0
+            resend_quota_max = 5
+            resend_quota_remaining = max(0, resend_quota_max - recent_count)
+
             return render_template('auth/telegram_verify.html',
                                  form=form,
                                  phone_number=phone_number,
@@ -2649,7 +2658,9 @@ def telegram_verify():
                                  code_sent_at=code_sent_at,
                                  validity_seconds=180,
                                  server_time=int(time.time()),
-                                 resend_remaining=resend_remaining)
+                                 resend_remaining=resend_remaining,
+                                 resend_quota_remaining=resend_quota_remaining,
+                                 resend_quota_max=resend_quota_max)
         else:
             app.logger.error(f"Authentication failed: {result.get('error', 'Unknown error')}")
             error_message = result['error']
@@ -2692,6 +2703,15 @@ def telegram_verify():
     except Exception:
         resend_remaining = 0
 
+    # Compute resend quota info
+    try:
+        user_ip = request.remote_addr
+        recent_count = get_recent_count(f"resend_hist_{user_ip}", window_seconds=600)
+    except Exception:
+        recent_count = 0
+    resend_quota_max = 5
+    resend_quota_remaining = max(0, resend_quota_max - recent_count)
+
     return render_template('auth/telegram_verify.html',
                          form=form,
                          phone_number=phone_number,
@@ -2699,7 +2719,9 @@ def telegram_verify():
                          code_sent_at=code_sent_at,
                          validity_seconds=180,
                          server_time=int(time.time()),
-                         resend_remaining=resend_remaining)
+                         resend_remaining=resend_remaining,
+                         resend_quota_remaining=resend_quota_remaining,
+                         resend_quota_max=resend_quota_max)
 
 
 @app.route('/telegram_resend', methods=['POST'])

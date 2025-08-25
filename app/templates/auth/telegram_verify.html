@@ -414,9 +414,20 @@
                     }, 1000);
                 });
             </script>
+            <script>
+                // Initialize resend quota hint from server values
+                document.addEventListener('DOMContentLoaded', function() {
+                    const hint = document.getElementById('resendQuotaHint');
+                    if (!hint) return;
+                    const max = {{ resend_quota_max|default(5) }};
+                    const remaining = {{ resend_quota_remaining|default(5) }};
+                    hint.textContent = `You can resend ${remaining} of ${max} times within 10 minutes.`;
+                });
+            </script>
             {% endif %}
             <a href="{{ url_for('telegram_login') }}" class="auth-link">← Try different number</a>
             <button id="resendBtn" type="button" class="auth-link" style="border:none;background:none;cursor:pointer;padding:0;">Request new code</button>
+            <div id="resendQuotaHint" style="font-size:12px;color:#888;margin-top:4px;"></div>
         </div>
     </div>
 
@@ -488,6 +499,13 @@
                         .then(r => r.json())
                         .then(data => {
                             if (data.success) {
+                                // Update quota hint using server response
+                                try {
+                                    const hint = document.getElementById('resendQuotaHint');
+                                    if (hint && typeof data.remaining === 'number' && typeof data.max === 'number') {
+                                        hint.textContent = `You can resend ${data.remaining} of ${data.max} times within 10 minutes.`;
+                                    }
+                                } catch (e) { console.warn('Quota hint update failed', e); }
                                 // Start local cooldown UI for 30s
                                 let cool = 30;
                                 const origText = 'Request new code';
