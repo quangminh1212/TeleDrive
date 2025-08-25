@@ -148,17 +148,29 @@ login_manager.login_message_category = login_config['login_message_category']
 # Inject i18n helper into templates
 @app.context_processor
 def inject_i18n():
+    from flask import session
+    # Decide language from config or user settings (default 'vi')
+    selected_lang = session.get('lang', getattr(config, 'LANGUAGE', 'vi'))
     def i18n_t_template(key, **kwargs):
-        # Decide language from config or user settings (default 'vi')
-        lang = getattr(config, 'LANGUAGE', 'vi')
-        from flask import session
-        lang = session.get('lang', lang)
-        return i18n_t(key, lang=lang, **kwargs)
-    return dict(i18n_t=i18n_t_template)
+        return i18n_t(key, lang=selected_lang, **kwargs)
+    return dict(i18n_t=i18n_t_template, current_lang=selected_lang)
 
 @login_manager.user_loader
 def load_user(user_id):
     """Load user by ID for Flask-Login"""
+    return User.query.get(int(user_id))
+
+@app.route('/set_lang/<lang>')
+def set_lang(lang):
+    from flask import session, request
+    lang = (lang or '').lower()
+    if lang not in ('vi', 'en'):
+        lang = getattr(config, 'LANGUAGE', 'vi')
+    session['lang'] = lang
+    # Redirect back
+    ref = request.headers.get('Referer') or url_for('dashboard')
+    return redirect(ref)
+
     return User.query.get(int(user_id))
 
 @app.before_request

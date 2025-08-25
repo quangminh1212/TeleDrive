@@ -49,6 +49,15 @@
                     <span class="user-name">{{ current_user.username }}</span>
                 </button>
                 <div class="user-dropdown" id="user-dropdown">
+                    <a href="{{ url_for('set_lang', lang='vi') }}" class="dropdown-item">
+                        <span class="material-icons">language</span>
+                        Tiếng Việt
+                    </a>
+                    <a href="{{ url_for('set_lang', lang='en') }}" class="dropdown-item">
+                        <span class="material-icons">translate</span>
+                        English
+                    </a>
+                    <div class="dropdown-divider"></div>
                     <a href="{{ url_for('profile') }}" class="dropdown-item">
                         <span class="material-icons">person</span>
                         Profile
