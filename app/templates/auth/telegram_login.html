@@ -367,7 +367,7 @@
 
             // Auto-refresh CSRF token every 30 minutes to prevent expiration
             setInterval(function() {
-                fetch('/api/csrf-token')
+                fetch('/api/csrf-token', { credentials: 'same-origin' })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success && data.csrf_token) {
@@ -430,7 +430,12 @@
 
             fetch(form.action, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRFToken': formData.get('csrf_token') || (document.querySelector('input[name="csrf_token"]').value || ''),
+                    'Accept': 'application/json'
+                }
             })
             .then(response => {
                 if (response.ok) {
@@ -476,7 +481,7 @@
             .catch(error => {
                 console.error('Error:', error);
                 // Try to get a fresh CSRF token
-                fetch('/api/csrf-token')
+                fetch('/api/csrf-token', { credentials: 'same-origin' })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success && data.csrf_token) {

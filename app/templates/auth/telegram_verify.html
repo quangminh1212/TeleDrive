@@ -401,7 +401,7 @@
         // Auto-refresh CSRF token every 30 minutes
         document.addEventListener('DOMContentLoaded', function() {
             setInterval(function() {
-                fetch('/api/csrf-token')
+                fetch('/api/csrf-token', { credentials: 'same-origin' })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success && data.csrf_token) {
