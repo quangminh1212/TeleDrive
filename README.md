@@ -147,15 +147,14 @@ Edit `app/config.json` to customize:
 Run the comprehensive test suite:
 
 ```bash
-cd tests
-python comprehensive_test_suite.py
+python tests/comprehensive_test_suite.py
 ```
 
-Individual test modules:
+Quick HTTP checks (no pytest):
 ```bash
-python tests/test_database_schema.py
-python tests/test_telegram_storage.py
-python tests/test_upload_download.py
+python tests/test_share_and_delete_http.py
+python tests/test_delete_unit.py
+python tests/test_download_unit.py
 ```
 
 ## 📚 Documentation
