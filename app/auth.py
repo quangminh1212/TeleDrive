@@ -37,8 +37,11 @@ class TelegramAuthenticator:
         self.temp_sessions = {}  # Store temporary session data
         # Get verification code timeout from config (default 20 minutes)
         self.session_timeout = getattr(config, 'VERIFICATION_CODE_TIMEOUT', 1200)
+        # Instance ID for debugging
+        self.instance_id = os.urandom(8).hex()
         # Clean up old session files on startup
         self._cleanup_old_session_files()
+        print(f"[INIT] TelegramAuthenticator instance {self.instance_id} created")
 
     async def __aenter__(self):
         """Async context manager entry"""
@@ -68,6 +71,9 @@ class TelegramAuthenticator:
     
     async def send_code_request(self, phone_number: str, country_code: str = "+84") -> Dict[str, Any]:
         """Send verification code to phone number"""
+        print(f"[SEND_CODE] Instance {self.instance_id} - Sending code to {phone_number[:3]}***{phone_number[-3:]}")
+        print(f"[SEND_CODE] Instance {self.instance_id} - Current session count: {len(self.temp_sessions)}")
+        
         if DETAILED_LOGGING_AVAILABLE:
             log_step("AUTH REQUEST", f"Sending verification code to {phone_number[:3]}***{phone_number[-3:]}")
             log_authentication_event("CODE_REQUEST_START", {
@@ -205,6 +211,10 @@ class TelegramAuthenticator:
     
     async def verify_code(self, session_id: str, verification_code: str, password: str = None) -> Dict[str, Any]:
         """Verify the code and complete authentication"""
+        print(f"[VERIFY_CODE] Instance {self.instance_id} - Verifying session: {session_id}")
+        print(f"[VERIFY_CODE] Instance {self.instance_id} - Current session count: {len(self.temp_sessions)}")
+        print(f"[VERIFY_CODE] Instance {self.instance_id} - Code length: {len(verification_code)}")
+        
         if DETAILED_LOGGING_AVAILABLE:
             log_step("VERIFY CODE", f"Verifying code for session: {session_id}")
             log_authentication_event("CODE_VERIFY_START", {
@@ -434,8 +444,11 @@ class TelegramAuthenticator:
                 'message': 'Authentication successful'
             }
             
-        except PhoneCodeInvalidError:
-
+        except PhoneCodeInvalidError as e:
+            print(f"[ERROR] PhoneCodeInvalidError: {e}")
+            print(f"[ERROR] Instance {self.instance_id} - Invalid verification code")
+            print(f"[ERROR] Session ID: {session_id}, Code: {verification_code}")
+            
             # Clean up verification client
             try:
                 await client.disconnect()
@@ -458,7 +471,21 @@ class TelegramAuthenticator:
                 'error': 'Mã xác thực không đúng. Vui lòng kiểm tra lại mã từ Telegram và đảm bảo nhập đúng 5-6 chữ số.',
                 'user_friendly_message': 'Mã xác thực sai - vui lòng kiểm tra lại'
             }
-        except PhoneCodeExpiredError:
+        except PhoneCodeExpiredError as e:
+            print(f"[ERROR] PhoneCodeExpiredError: {e}")
+            print(f"[ERROR] Instance {self.instance_id} - Telegram code expired")
+            print(f"[ERROR] Session ID: {session_id}, Code: {verification_code}")
+            
+            # Get session info for debugging
+            session_data = self.temp_sessions.get(session_id, {})
+            created_at = session_data.get('created_at', 0)
+            current_time = time.time()
+            session_age = current_time - created_at if created_at > 0 else 0
+            send_code_duration = session_data.get('send_code_duration', 0)
+            
+            print(f"[ERROR] Session age: {session_age:.2f}s, Send code took: {send_code_duration:.2f}s")
+            print(f"[ERROR] Session created at: {created_at}, Current time: {current_time}")
+            print(f"[ERROR] Phone code hash: {session_data.get('phone_code_hash', 'N/A')[:20]}...")
 
             # Clean up verification client
             try:
@@ -473,13 +500,6 @@ class TelegramAuthenticator:
             except:
                 pass
             if DETAILED_LOGGING_AVAILABLE:
-                # Get session info for detailed logging
-                session_data = self.temp_sessions.get(session_id, {})
-                created_at = session_data.get('created_at', 0)
-                current_time = time.time()
-                session_age = current_time - created_at if created_at > 0 else 0
-                send_code_duration = session_data.get('send_code_duration', 0)
-
                 log_step("CODE EXPIRED ANALYSIS", f"Session age: {session_age:.2f}s, Send code took: {send_code_duration:.2f}s")
                 log_step("CODE EXPIRED DETAILS", f"Created at: {created_at}, Current: {current_time}, Phone code hash: {session_data.get('phone_code_hash', 'N/A')[:20]}...")
 
@@ -504,11 +524,16 @@ class TelegramAuthenticator:
                 'user_friendly_message': 'Mã Telegram hết hạn - vui lòng lấy mã mới'
             }
         except Exception as e:
+            print(f"[ERROR] General Exception: {e}")
+            print(f"[ERROR] Exception type: {type(e).__name__}")
+            print(f"[ERROR] Instance {self.instance_id} - General authentication error")
+            print(f"[ERROR] Session ID: {session_id}, Code: {verification_code}")
+            
             # Clean up verification client first
             try:
                 await client.disconnect()
             except Exception as client_error:
-                pass  # Ignore disconnect errors
+                print(f"[ERROR] Client disconnect failed: {client_error}")
 
             # Clean up verification session file
             try:
@@ -516,14 +541,14 @@ class TelegramAuthenticator:
                 if os.path.exists(session_file):
                     os.remove(session_file)
             except Exception as file_error:
-                pass  # Ignore cleanup errors
+                print(f"[ERROR] Session file cleanup failed: {file_error}")
 
             # Clean up session on any error
             if session_id in self.temp_sessions:
                 try:
                     await self.cleanup_session(session_id)
                 except Exception as cleanup_error:
-                    pass  # Ignore cleanup errors
+                    print(f"[ERROR] Session cleanup failed: {cleanup_error}")
 
             if DETAILED_LOGGING_AVAILABLE:
                 log_authentication_event("CODE_VERIFY_FAILED", {

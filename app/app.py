@@ -39,6 +39,7 @@ from forms import TelegramLoginForm, TelegramVerifyForm
 
 # Import Telegram authentication
 from auth import telegram_auth
+print(f"[APP_IMPORT] telegram_auth instance imported: {telegram_auth.instance_id}")
 
 # Import Flask configuration loader
 import web_config
@@ -2398,6 +2399,9 @@ def telegram_login():
         app.logger.info(f"Stored phone in session: {session.get('telegram_phone')}")
 
         # Send verification code
+        app.logger.info(f"Using telegram_auth instance: {getattr(telegram_auth, 'instance_id', 'NO_ID')}")
+        app.logger.info(f"Current session count before send: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
+        
         async def send_code():
             result = await telegram_auth.send_code_request(phone_number, country_code)
             return result
@@ -2407,6 +2411,7 @@ def telegram_login():
             app.logger.info("Sending verification code...")
             result = run_async_in_thread(send_code())
             app.logger.info(f"Send code result: {result}")
+            app.logger.info(f"Current session count after send: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
         except Exception as e:
             app.logger.error(f"Failed to send verification code: {e}")
             result = {'success': False, 'error': str(e)}
@@ -2483,6 +2488,9 @@ def telegram_verify():
         app.logger.info(f"Flask session telegram_session_id exists: {'telegram_session_id' in session}")
 
         # Verify code
+        app.logger.info(f"Using telegram_auth instance for verify: {getattr(telegram_auth, 'instance_id', 'NO_ID')}")
+        app.logger.info(f"Current session count before verify: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
+        
         async def verify_code():
             result = await telegram_auth.verify_code(session_id, verification_code, password)
             return result
@@ -2492,6 +2500,7 @@ def telegram_verify():
             app.logger.info("Starting code verification...")
             result = run_async_in_thread(verify_code())
             app.logger.info(f"Verification result: {result}")
+            app.logger.info(f"Current session count after verify: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
         except Exception as e:
             app.logger.error(f"Failed to verify code: {e}")
             result = {'success': False, 'error': str(e)}
