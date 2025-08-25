@@ -52,12 +52,12 @@ class TelegramAuthenticator:
         """Async context manager exit with proper cleanup"""
         await self.close()
         return False
-        
+
     async def initialize_client(self, session_name: str = None):
         """Initialize Telegram client for authentication"""
         if not session_name:
             session_name = f"auth_session_{os.urandom(8).hex()}"
-            
+
         try:
             self.client = TelegramClient(
                 f"data/{session_name}",
@@ -69,7 +69,7 @@ class TelegramAuthenticator:
         except Exception as e:
             print(f"Error initializing Telegram client: {e}")
             return False
-    
+
     async def send_code_request(self, phone_number: str, country_code: str = "+84", force_sms: bool = False) -> Dict[str, Any]:
         """Send verification code to phone number
         :param phone_number: phone without country code or full international
@@ -78,7 +78,7 @@ class TelegramAuthenticator:
         """
         print(f"[SEND_CODE] Instance {self.instance_id} - Sending code to {phone_number[:3]}***{phone_number[-3:]}")
         print(f"[SEND_CODE] Instance {self.instance_id} - Current session count: {len(self.temp_sessions)}")
-        
+
         if DETAILED_LOGGING_AVAILABLE:
             log_step("AUTH REQUEST", f"Sending verification code to {phone_number[:3]}***{phone_number[-3:]}")
             log_authentication_event("CODE_REQUEST_START", {
@@ -137,6 +137,20 @@ class TelegramAuthenticator:
                 send_code_start_time = time.time()
                 sent_code = await client.send_code_request(phone_number, force_sms=force_sms)
                 send_code_end_time = time.time()
+
+
+                # Basic stdout logging of delivery type for debugging even without detailed logging
+                try:
+                    delivery_type = getattr(sent_code, 'type', None)
+                    next_type = getattr(sent_code, 'next_type', None)
+                    timeout = getattr(sent_code, 'timeout', None)
+                    print(f"[SEND_CODE] Delivery type: {delivery_type}")
+                    if next_type is not None:
+                        print(f"[SEND_CODE] Next type hint: {next_type}")
+                    if timeout is not None:
+                        print(f"[SEND_CODE] Code timeout (s): {timeout}")
+                except Exception as _log_err:
+                    print(f"[SEND_CODE] Could not log delivery details: {_log_err}")
 
                 if DETAILED_LOGGING_AVAILABLE:
                     log_step("CODE SENT", f"Verification code sent successfully in {send_code_end_time - send_code_start_time:.2f}s")
@@ -198,7 +212,7 @@ class TelegramAuthenticator:
                 # We keep data/{request_session}.session so that verification can reuse
                 # the same session context, improving reliability with Telegram API.
                 # Cleanup will occur after verification or on error.
-            
+
         except PhoneNumberInvalidError as e:
             if DETAILED_LOGGING_AVAILABLE:
                 log_authentication_event("CODE_REQUEST_FAILED", {
@@ -223,7 +237,7 @@ class TelegramAuthenticator:
                 'success': False,
                 'error': f'Failed to send verification code: {str(e)}'
             }
-    
+
     async def verify_code(self, session_id: str, verification_code: str, password: str = None) -> Dict[str, Any]:
         """Verify the code and complete authentication"""
         import threading
@@ -231,7 +245,7 @@ class TelegramAuthenticator:
         print(f"[VERIFY_CODE] Thread {request_id} - Instance {self.instance_id} - Verifying session: {session_id}")
         print(f"[VERIFY_CODE] Thread {request_id} - Instance {self.instance_id} - Current session count: {len(self.temp_sessions)}")
         print(f"[VERIFY_CODE] Thread {request_id} - Instance {self.instance_id} - Code length: {len(verification_code)}")
-        
+
         # Check if this session is already being processed
         processing_key = f"{session_id}_processing"
         if hasattr(self, '_processing_sessions') and processing_key in self._processing_sessions:
@@ -241,13 +255,13 @@ class TelegramAuthenticator:
                 'error': 'Verification already in progress. Please wait...',
                 'already_processing': True
             }
-        
+
         # Mark session as being processed
         if not hasattr(self, '_processing_sessions'):
             self._processing_sessions = set()
         self._processing_sessions.add(processing_key)
         print(f"[VERIFY_CODE] Thread {request_id} - Marked session {session_id} as processing")
-        
+
         if DETAILED_LOGGING_AVAILABLE:
             log_step("VERIFY CODE", f"Verifying code for session: {session_id}")
             log_authentication_event("CODE_VERIFY_START", {
@@ -275,7 +289,7 @@ class TelegramAuthenticator:
             print(f"[DEBUG] Thread {request_id} - Completed sessions: {list(self.completed_sessions.keys())}")
             print(f"[DEBUG] Thread {request_id} - Looking for session: {session_id}")
             print(f"[DEBUG] Thread {request_id} - Session exists: {session_id in self.temp_sessions}")
-            
+
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("DEBUG SESSIONS", f"Available sessions: {list(self.temp_sessions.keys())}")
                 log_step("DEBUG TARGET", f"Looking for session: {session_id}")
@@ -300,7 +314,7 @@ class TelegramAuthenticator:
 
             session_data = self.temp_sessions[session_id]
 
-            # Check if session has expired with detailed logging  
+            # Check if session has expired with detailed logging
             current_time = time.time()
             expires_at = session_data.get('expires_at', 0)
             created_at = session_data.get('created_at', 0)
@@ -454,7 +468,7 @@ class TelegramAuthenticator:
             completion_time = time.time()
             session_data['completed'] = True
             session_data['completed_at'] = completion_time
-            
+
             # Store in completed sessions for race condition prevention (keep for 5 minutes)
             self.completed_sessions[session_id] = {
                 'completed_at': completion_time,
@@ -462,7 +476,7 @@ class TelegramAuthenticator:
                 'user_id': db_user.id
             }
             print(f"[VERIFY_CODE] Thread {request_id} - Marked session {session_id} as completed")
-            
+
             # Clean up temporary session and disconnect both clients
             old_client = session_data.get('client')
             del self.temp_sessions[session_id]
@@ -501,12 +515,12 @@ class TelegramAuthenticator:
                 },
                 'message': 'Authentication successful'
             }
-            
+
         except PhoneCodeInvalidError as e:
             print(f"[ERROR] PhoneCodeInvalidError: {e}")
             print(f"[ERROR] Instance {self.instance_id} - Invalid verification code")
             print(f"[ERROR] Session ID: {session_id}, Code: {verification_code}")
-            
+
             # Clean up verification client
             try:
                 await client.disconnect()
@@ -533,14 +547,14 @@ class TelegramAuthenticator:
             print(f"[ERROR] PhoneCodeExpiredError: {e}")
             print(f"[ERROR] Instance {self.instance_id} - Telegram code expired")
             print(f"[ERROR] Session ID: {session_id}, Code: {verification_code}")
-            
+
             # Get session info for debugging
             session_data = self.temp_sessions.get(session_id, {})
             created_at = session_data.get('created_at', 0)
             current_time = time.time()
             session_age = current_time - created_at if created_at > 0 else 0
             send_code_duration = session_data.get('send_code_duration', 0)
-            
+
             print(f"[ERROR] Session age: {session_age:.2f}s, Send code took: {send_code_duration:.2f}s")
             print(f"[ERROR] Session created at: {created_at}, Current time: {current_time}")
             print(f"[ERROR] Phone code hash: {session_data.get('phone_code_hash', 'N/A')[:20]}...")
@@ -586,7 +600,7 @@ class TelegramAuthenticator:
             print(f"[ERROR] Exception type: {type(e).__name__}")
             print(f"[ERROR] Instance {self.instance_id} - General authentication error")
             print(f"[ERROR] Session ID: {session_id}, Code: {verification_code}")
-            
+
             # Clean up verification client first
             try:
                 await client.disconnect()
@@ -623,7 +637,7 @@ class TelegramAuthenticator:
             if hasattr(self, '_processing_sessions') and processing_key in self._processing_sessions:
                 self._processing_sessions.remove(processing_key)
                 print(f"[VERIFY_CODE] Thread {request_id} - Cleaned up processing lock for session {session_id}")
-    
+
     def create_or_update_user(self, telegram_user: TelegramUser, phone_number: str) -> User:
         """Create or update user in database"""
 
@@ -661,7 +675,7 @@ class TelegramAuthenticator:
         db.session.commit()
 
         return user
-    
+
     async def cleanup_expired_sessions(self):
         """Clean up expired sessions asynchronously with detailed logging"""
         current_time = time.time()
@@ -688,18 +702,18 @@ class TelegramAuthenticator:
         else:
             if DETAILED_LOGGING_AVAILABLE:
                 pass  # No expired sessions
-                
+
         # Also cleanup old completed sessions (older than 5 minutes)
         expired_completed = []
         for session_id, completion_info in self.completed_sessions.items():
             completed_at = completion_info.get('completed_at', 0)
             if current_time - completed_at > 300:  # 5 minutes
                 expired_completed.append(session_id)
-        
+
         for session_id in expired_completed:
             del self.completed_sessions[session_id]
             print(f"[CLEANUP] Removed old completed session: {session_id}")
-            
+
         if expired_completed:
             print(f"[CLEANUP] Cleaned up {len(expired_completed)} old completed sessions")
 
@@ -712,7 +726,7 @@ class TelegramAuthenticator:
 
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("SESSION CLEANUP", f"Removed session {session_id} from temp_sessions")
-    
+
     def _cleanup_old_session_files(self):
         """Clean up old session files to prevent accumulation"""
         try:

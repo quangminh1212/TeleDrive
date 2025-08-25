@@ -2558,7 +2558,8 @@ def telegram_login():
         app.logger.info(f"Current session count before send: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
 
         async def send_code():
-            result = await telegram_auth.send_code_request(phone_number, country_code, force_sms=False)
+            # Force SMS delivery on first attempt to improve reliability in regions where in-app delivery is inconsistent
+            result = await telegram_auth.send_code_request(phone_number, country_code, force_sms=True)
             return result
 
         # Run async function with proper event loop management
