@@ -48,13 +48,18 @@ if not exist ".venv" (
 :: Activate virtual environment
 echo.
 echo 🔄 Activating virtual environment...
-call .venv\Scripts\activate.bat
-if errorlevel 1 (
-    echo ❌ Failed to activate virtual environment
-    pause
-    exit /b 1
+if exist ".venv\Scripts\activate.bat" (
+    call .venv\Scripts\activate.bat
+    echo ✅ Virtual environment activated
+) else if exist ".venv\Scripts\Activate.ps1" (
+    powershell -ExecutionPolicy Bypass -File .venv\Scripts\Activate.ps1
+    echo ✅ Virtual environment activated
+) else (
+    echo ❌ Virtual environment activation script not found
+    echo Trying to continue without explicit activation...
+    set PATH=.venv\Scripts;%PATH%
+    set VIRTUAL_ENV=%CD%\.venv
 )
-echo ✅ Virtual environment activated
 
 :: Upgrade pip
 echo.
@@ -73,28 +78,13 @@ if errorlevel 1 (
 )
 echo ✅ Dependencies installed
 
-:: Check if port 3000 is available
+:: Cleanup ports function
 echo.
-echo 🔍 Checking port availability...
-netstat -an | findstr ":3000" >nul 2>&1
-if not errorlevel 1 (
-    echo ⚠️  Port 3000 is already in use
-    echo.
-    echo 🔧 To free up port 3000, run these commands:
-    echo    netstat -ano ^| findstr :3000
-    echo    taskkill /f /pid ^<PID^>
-    echo.
-    echo Or close any applications using port 3000
-    echo.
-    set /p choice="Do you want to continue anyway? (y/N): "
-    if /i not "!choice!"=="y" (
-        echo Cancelled by user
-        pause
-        exit /b 1
-    )
-) else (
-    echo ✅ Port 3000 is available
-)
+echo 🔍 Cleaning up ports...
+call :cleanup_port 3000
+call :cleanup_port 5000
+call :cleanup_port 8000
+echo ✅ Port cleanup completed
 
 :: Create necessary directories
 echo.
@@ -121,6 +111,9 @@ echo 🔧 Setting environment variables...
 set FLASK_APP=app.app
 set FLASK_ENV=development
 set PYTHONPATH=%CD%\app;%PYTHONPATH%
+
+:: Ensure Python uses UTF-8 encoding
+set PYTHONIOENCODING=utf-8
 
 :: Start the application
 echo.
@@ -150,4 +143,49 @@ echo ========================================
 echo.
 echo 💡 To restart, run run.bat again
 echo.
-pause 
+pause
+exit /b 0
+
+:: Port cleanup function
+:cleanup_port
+set port=%1
+echo 🔧 Checking port %port%...
+
+:: Find processes using the port
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%port% "') do (
+    set pid=%%a
+    if defined pid (
+        if not "!pid!"=="0" (
+            echo ⚠️  Found process !pid! using port %port%
+            echo 🗡️  Killing process !pid!...
+            taskkill /f /pid !pid! >nul 2>&1
+            if errorlevel 1 (
+                echo ❌ Failed to kill process !pid!
+            ) else (
+                echo ✅ Process !pid! killed successfully
+            )
+        )
+    )
+)
+
+:: Additional cleanup for listening sockets
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr "LISTENING" ^| findstr ":%port% "') do (
+    set pid=%%a
+    if defined pid (
+        if not "!pid!"=="0" (
+            echo ⚠️  Found listening process !pid! on port %port%
+            echo 🗡️  Killing listening process !pid!...
+            taskkill /f /pid !pid! >nul 2>&1
+            if errorlevel 1 (
+                echo ❌ Failed to kill listening process !pid!
+            ) else (
+                echo ✅ Listening process !pid! killed successfully
+            )
+        )
+    )
+)
+
+:: Wait a moment for ports to be fully released
+timeout /t 1 >nul 2>&1
+echo ✅ Port %port% cleanup completed
+exit /b 0 
