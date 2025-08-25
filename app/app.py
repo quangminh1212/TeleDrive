@@ -1308,35 +1308,69 @@ def download_file(filename):
 @app.route('/api/delete_file', methods=['POST'])
 @login_required
 def delete_file():
-    """Delete a file from database or output directory"""
+    """Delete a file from database (soft delete) and optionally remove local disk file safely.
+    Also supports deleting legacy output files by filename (json/csv/xlsx)."""
     try:
-        data = request.get_json()
-        filename = data.get('filename', '').strip()
+        data = request.get_json() or {}
+        filename = (data.get('filename') or '').strip()
         file_id = data.get('id')
 
         if not filename and not file_id:
             return jsonify({'success': False, 'error': 'Filename or file ID is required'})
 
-        # Try to delete from database first
-        if file_id:
-            file_record = File.query.get(file_id)
-            if file_record:
-                # Mark as deleted instead of actually deleting
-                file_record.is_deleted = True
-                db.session.commit()
-                return jsonify({'success': True, 'message': f'File {file_record.filename} deleted successfully'})
+        # Prepare roots
+        from flask import current_app as _current_app
+        base_root = Path(_current_app.root_path).parent
+        dirs = web_config.flask_config.get_directories()
+        uploads_root = Path(dirs.get('uploads', 'data/uploads'))
+        output_root = Path(dirs.get('output', 'output'))
+        if not uploads_root.is_absolute():
+            uploads_root = (base_root / uploads_root).resolve()
+        if not output_root.is_absolute():
+            output_root = (base_root / output_root).resolve()
 
-        # If not found in database, try output directory (backward compatibility)
+        def _is_within(root: Path, p: Path) -> bool:
+            try:
+                return str(p).startswith(str(root))
+            except Exception:
+                return False
+
+        # Try to delete from database first (by id or by filename for current user)
+        file_record = None
+        if file_id:
+            file_record = File.query.filter_by(id=file_id, user_id=current_user.id, is_deleted=False).first()
+        elif filename:
+            file_record = File.query.filter_by(filename=filename, user_id=current_user.id, is_deleted=False).first()
+
+        if file_record:
+            # Soft delete in DB
+            file_record.is_deleted = True
+            db.session.commit()
+
+            removed_physical = False
+            # Attempt to remove physical file if it's local and path is safe
+            if (file_record.storage_type or 'local') == 'local' and file_record.file_path:
+                try:
+                    fp = Path(file_record.file_path)
+                    if not fp.is_absolute():
+                        fp = (base_root / fp).resolve()
+                    if fp.exists() and (_is_within(uploads_root, fp) or _is_within(output_root, fp)):
+                        os.remove(fp)
+                        removed_physical = True
+                except Exception:
+                    removed_physical = False
+
+            return jsonify({'success': True,
+                            'message': f'File {file_record.filename} deleted successfully',
+                            'removed_physical': removed_physical})
+
+        # Legacy: delete by filename in output directory only for specific types
         if filename:
-            # Security check - only allow files from output directory
             if not filename.endswith(('.json', '.csv', '.xlsx')):
                 return jsonify({'success': False, 'error': 'Invalid file type'})
 
-            # Check if file exists
-            output_dir = web_config.flask_config.get('directories.output', 'output')
-            file_path = os.path.join(output_dir, filename)
-            if os.path.exists(file_path):
-                # Delete the file
+            file_path = (output_root / filename).resolve()
+            if file_path.exists() and _is_within(output_root, file_path):
                 os.remove(file_path)
                 return jsonify({'success': True, 'message': f'File {filename} deleted successfully'})
 
