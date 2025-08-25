@@ -429,6 +429,20 @@ def is_rate_limited(key, max_requests=5, window_seconds=300):
     rate_limit_storage[key].append(now)
     return False
 
+def get_cooldown_remaining(key, window_seconds=30, max_requests=1):
+    """Return remaining cooldown seconds for a key under a fixed window.
+    Does not mutate storage. For max_requests=1, remaining is window - (now - last).
+    """
+    now = time.time()
+    timestamps = [ts for ts in rate_limit_storage.get(key, []) if now - ts < window_seconds]
+    if len(timestamps) >= max_requests:
+        # Use the most recent attempt
+        last = max(timestamps)
+        remaining = int(max(0, window_seconds - (now - last)))
+        return remaining
+    return 0
+
+
 # Simple caching system (use Redis in production)
 cache_storage = {}
 cache_ttl = {}
@@ -2614,6 +2628,9 @@ def telegram_verify():
                                  code_sent_at=code_sent_at,
                                  validity_seconds=180,
                                  server_time=int(time.time()))
+        except Exception as e:
+            app.logger.error(f"Failed to verify code: {e}")
+            flash('Verification error. Please try again.', 'error')
         else:
             app.logger.error(f"Authentication failed: {result.get('error', 'Unknown error')}")
             error_message = result['error']
