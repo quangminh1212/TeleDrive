@@ -171,7 +171,35 @@ def set_lang(lang):
     ref = request.headers.get('Referer') or url_for('dashboard')
     return redirect(ref)
 
-    return User.query.get(int(user_id))
+# Template filter for date/time formatting based on current language
+@app.template_filter('format_dt')
+def format_dt(value, pattern=None):
+    try:
+        from flask import session
+        lang = session.get('lang', getattr(config, 'LANGUAGE', 'vi')).lower()
+        from datetime import datetime
+        # If value is already datetime, use it; otherwise try parse common formats
+        dt = value
+        if not isinstance(value, datetime):
+            # Try ISO
+            try:
+                dt = datetime.fromisoformat(str(value))
+            except Exception:
+                # Try common patterns
+                for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
+                    try:
+                        dt = datetime.strptime(str(value), fmt)
+                        break
+                    except Exception:
+                        dt = None
+                if dt is None:
+                    return str(value)
+        # Choose pattern if not provided
+        if not pattern:
+            pattern = "%d/%m/%Y %H:%M:%S" if lang == 'vi' else "%Y-%m-%d %I:%M %p"
+        return dt.strftime(pattern)
+    except Exception:
+        return str(value)
 
 @app.before_request
 def check_session_timeout():
