@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Channel Scanner - TeleDrive{% endblock %}
+{% block title %}{{ i18n_t('page.scan.title') }} - TeleDrive{% endblock %}
 
 {% block content %}
 <div class="main-content">
@@ -10,21 +10,21 @@
             <div class="hero-icon">
                 <span class="material-icons">radar</span>
             </div>
-            <h1 class="hero-title single-line">Channel Scanner</h1>
-            <p class="hero-subtitle single-line">Discover and organize files from Telegram channels with ease</p>
+            <h1 class="hero-title single-line">{{ i18n_t('scan.hero.title') }}</h1>
+            <p class="hero-subtitle single-line">{{ i18n_t('scan.hero.subtitle') }}</p>
         </div>
         <div class="hero-stats">
             <div class="stat-card">
                 <span class="stat-number" id="total-scans">0</span>
-                <span class="stat-label single-line">Total Scans</span>
+                <span class="stat-label single-line">{{ i18n_t('scan.stats.total_scans') }}</span>
             </div>
             <div class="stat-card">
                 <span class="stat-number" id="total-files">0</span>
-                <span class="stat-label single-line">Files Found</span>
+                <span class="stat-label single-line">{{ i18n_t('scan.stats.files_found') }}</span>
             </div>
             <div class="stat-card">
                 <span class="stat-number" id="total-channels">0</span>
-                <span class="stat-label single-line">Channels</span>
+                <span class="stat-label single-line">{{ i18n_t('scan.stats.channels') }}</span>
             </div>
         </div>
     </div>
@@ -39,8 +39,8 @@
                             <span class="material-icons">rocket_launch</span>
                         </div>
                         <div class="header-text">
-                            <h3>Quick Start</h3>
-                            <p>Start scanning a Telegram channel in seconds</p>
+                            <h3>{{ i18n_t('scan.quick_start.title') }}</h3>
+                            <p>{{ i18n_t('scan.quick_start.desc') }}</p>
                         </div>
                     </div>
                 </div>
@@ -50,13 +50,13 @@
                         <div class="form-group enhanced">
                             <label for="channel-input" class="form-label">
                                 <span class="material-icons">link</span>
-                                Channel URL or Username
+                                {{ i18n_t('scan.input.channel.label') }}
                             </label>
                             <div class="input-wrapper">
                                 <input type="text" id="channel-input" class="form-input modern-input"
-                                       placeholder="@channelname or https://t.me/channelname" required
+                                       placeholder="{{ i18n_t('scan.input.channel.placeholder') }}" required
                                        aria-describedby="channel-help" autocomplete="off"
-                                       aria-label="Enter Telegram channel URL or username">
+                                       aria-label="{{ i18n_t('scan.input.channel.label') }}">
                                 <div class="input-icon" aria-hidden="true">
                                     <span class="material-icons">search</span>
                                 </div>
@@ -81,7 +81,7 @@
                                     aria-expanded="false" aria-controls="advanced-options"
                                     aria-label="Toggle advanced scanning options">
                                 <span class="material-icons" aria-hidden="true">tune</span>
-                                <span class="toggle-text">Advanced Options</span>
+                                <span class="toggle-text">{{ i18n_t('scan.advanced_options') }}</span>
                                 <span class="material-icons toggle-arrow" aria-hidden="true">expand_more</span>
                             </button>
                         </div>
@@ -93,16 +93,16 @@
                                 <div class="form-group">
                                     <label for="max-messages" class="form-label">
                                         <span class="material-icons">numbers</span>
-                                        Message Limit
+                                        {{ i18n_t('scan.message_limit.label') }}
                                     </label>
                                     <div class="input-wrapper">
                                         <input type="number" id="max-messages" class="form-input modern-input"
-                                               placeholder="All messages" min="1" max="100000">
-                                        <div class="input-suffix">messages</div>
+                                               placeholder="{{ i18n_t('scan.message_limit.placeholder_all') }}" min="1" max="100000">
+                                        <div class="input-suffix">{{ i18n_t('scan.message_limit.suffix_messages') }}</div>
                                     </div>
                                     <div class="form-help">
                                         <span class="material-icons">info</span>
-                                        Leave empty to scan all messages
+                                        {{ i18n_t('scan.message_limit.help') }}
                                     </div>
                                 </div>
 
@@ -110,18 +110,18 @@
                                 <div class="form-group">
                                     <label class="form-label">
                                         <span class="material-icons">sort</span>
-                                        Scan Direction
+                                        {{ i18n_t('scan.direction.label') }}
                                     </label>
                                     <div class="radio-group">
                                         <label class="radio-item">
                                             <input type="radio" name="scan-direction" value="newest" checked>
                                             <div class="radio-custom"></div>
-                                            <span>Newest First</span>
+                                            <span>{{ i18n_t('scan.direction.newest_first') }}</span>
                                         </label>
                                         <label class="radio-item">
                                             <input type="radio" name="scan-direction" value="oldest">
                                             <div class="radio-custom"></div>
-                                            <span>Oldest First</span>
+                                            <span>{{ i18n_t('scan.direction.oldest_first') }}</span>
                                         </label>
                                     </div>
                                 </div>
@@ -130,19 +130,19 @@
                                 <div class="form-group">
                                     <label class="form-label">
                                         <span class="material-icons">storage</span>
-                                        File Size Filter
+                                        {{ i18n_t('scan.file_size_filter.label') }}
                                     </label>
                                     <div class="size-filter-group">
                                         <div class="input-wrapper">
                                             <input type="number" id="min-file-size" class="form-input modern-input"
-                                                   placeholder="Min size" min="0" step="0.1">
+                                                   placeholder="{{ i18n_t('scan.file_size_filter.min') }}" min="0" step="0.1">
                                             <div class="input-suffix">MB</div>
                                         </div>
-                                        <span class="range-separator">to</span>
+                                        <span class="range-separator">{{ i18n_t('common.to') }}</span>
                                         <div class="input-wrapper">
                                             <input type="number" id="max-file-size" class="form-input modern-input"
-                                                   placeholder="Max size" min="0" step="0.1">
-                                            <div class="input-suffix">MB</div>
+                                                   placeholder="{{ i18n_t('scan.file_size_filter.max') }}" min="0" step="0.1">
+                                            <div class="input-suffix">{{ i18n_t('scan.file_size_filter.unit_mb') }}</div>
                                         </div>
                                     </div>
                                     <div class="form-help">
@@ -155,22 +155,22 @@
                                 <div class="form-group">
                                     <label class="form-label">
                                         <span class="material-icons">date_range</span>
-                                        Date Range Filter
+                                        {{ i18n_t('scan.date_range_filter.label') }}
                                     </label>
                                     <div class="date-filter-group">
                                         <div class="input-wrapper">
                                             <input type="date" id="start-date" class="form-input modern-input">
-                                            <label for="start-date" class="input-label">From</label>
+                                            <label for="start-date" class="input-label">{{ i18n_t('scan.date_range_filter.from') }}</label>
                                         </div>
-                                        <span class="range-separator">to</span>
+                                        <span class="range-separator">{{ i18n_t('common.to') }}</span>
                                         <div class="input-wrapper">
                                             <input type="date" id="end-date" class="form-input modern-input">
-                                            <label for="end-date" class="input-label">To</label>
+                                            <label for="end-date" class="input-label">{{ i18n_t('scan.date_range_filter.to') }}</label>
                                         </div>
                                     </div>
                                     <div class="form-help">
                                         <span class="material-icons">info</span>
-                                        Filter messages by date range
+                                        {{ i18n_t('scan.date_range_filter.help') }}
                                     </div>
                                 </div>
                             </div>
@@ -181,7 +181,7 @@
                             <fieldset>
                                 <legend class="form-label">
                                     <span class="material-icons" aria-hidden="true">category</span>
-                                    File Types to Include
+                                    {{ i18n_t('scan.file_types.legend') }}
                                 </legend>
                                 <div class="file-types-grid" role="group" aria-label="Select file types to scan for">
                                 <label class="file-type-card">
@@ -190,8 +190,8 @@
                                         <div class="file-type-icon documents">
                                             <span class="material-icons">description</span>
                                         </div>
-                                        <span class="file-type-name single-line">Documents</span>
-                                        <span class="file-type-desc single-line">PDF, DOC, TXT, etc.</span>
+                                        <span class="file-type-name single-line">{{ i18n_t('scan.file_types.documents') }}</span>
+                                        <span class="file-type-desc single-line">{{ i18n_t('scan.file_types.desc.docs') }}</span>
                                     </div>
                                     <div class="file-type-check">
                                         <span class="material-icons">check</span>
@@ -204,8 +204,8 @@
                                         <div class="file-type-icon photos">
                                             <span class="material-icons">image</span>
                                         </div>
-                                        <span class="file-type-name single-line">Photos</span>
-                                        <span class="file-type-desc single-line">JPG, PNG, GIF, etc.</span>
+                                        <span class="file-type-name single-line">{{ i18n_t('scan.file_types.photos') }}</span>
+                                        <span class="file-type-desc single-line">{{ i18n_t('scan.file_types.desc.photos') }}</span>
                                     </div>
                                     <div class="file-type-check">
                                         <span class="material-icons">check</span>
@@ -218,8 +218,8 @@
                                         <div class="file-type-icon videos">
                                             <span class="material-icons">movie</span>
                                         </div>
-                                        <span class="file-type-name single-line">Videos</span>
-                                        <span class="file-type-desc single-line">MP4, AVI, MKV, etc.</span>
+                                        <span class="file-type-name single-line">{{ i18n_t('scan.file_types.videos') }}</span>
+                                        <span class="file-type-desc single-line">{{ i18n_t('scan.file_types.desc.videos') }}</span>
                                     </div>
                                     <div class="file-type-check">
                                         <span class="material-icons">check</span>
@@ -232,8 +232,8 @@
                                         <div class="file-type-icon audio">
                                             <span class="material-icons">audiotrack</span>
                                         </div>
-                                        <span class="file-type-name single-line">Audio</span>
-                                        <span class="file-type-desc single-line">MP3, WAV, FLAC, etc.</span>
+                                        <span class="file-type-name single-line">{{ i18n_t('scan.file_types.audio') }}</span>
+                                        <span class="file-type-desc single-line">{{ i18n_t('scan.file_types.desc.audio') }}</span>
                                     </div>
                                     <div class="file-type-check">
                                         <span class="material-icons">check</span>
@@ -247,16 +247,16 @@
                         <div class="form-actions enhanced">
                             <button type="submit" class="btn btn-primary btn-large">
                                 <span class="material-icons">play_arrow</span>
-                                <span class="btn-text">Start Scanning</span>
+                                <span class="btn-text">{{ i18n_t('scan.actions.start') }}</span>
                                 <div class="btn-ripple"></div>
                             </button>
                             <button type="button" class="btn btn-secondary" id="reset-form-btn">
                                 <span class="material-icons">refresh</span>
-                                Reset
+                                {{ i18n_t('scan.actions.reset') }}
                             </button>
                             <button type="button" class="btn btn-outline" id="save-template-btn">
                                 <span class="material-icons">bookmark</span>
-                                Save Template
+                                {{ i18n_t('scan.actions.save_template') }}
                             </button>
                         </div>
                     </form>

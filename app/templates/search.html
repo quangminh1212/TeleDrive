@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Advanced Search - TeleDrive{% endblock %}
+{% block title %}{{ i18n_t('page.search.title') }} - TeleDrive{% endblock %}
 
 {% block content %}
 <div class="main-content">
     <div class="content-header">
         <h1 class="page-title">
             <span class="material-icons">search</span>
-            Advanced Search
+            {{ i18n_t('page.search.title') }}
         </h1>
     </div>
     
@@ -17,10 +17,10 @@
             <div class="search-input-wrapper">
                 <span class="material-icons search-icon">search</span>
                 <input type="text" id="advanced-search-input" class="search-input-advanced" 
-                       placeholder="Search files, folders, and content..." autocomplete="off">
+                       placeholder="{{ i18n_t('search.placeholder') }}" autocomplete="off">
                 <button class="btn btn-primary" onclick="performAdvancedSearch()">
                     <span class="material-icons">search</span>
-                    Search
+                    {{ i18n_t('search.button') }}
                 </button>
             </div>
             <div class="search-suggestions-advanced" id="search-suggestions-advanced"></div>
@@ -29,7 +29,7 @@
         <!-- Advanced Filters -->
         <div class="filters-section">
             <div class="filters-header">
-                <h3>Filters</h3>
+                <h3>{{ i18n_t('filters.title') }}</h3>
                 <button class="btn btn-small" onclick="clearAllFilters()">
                     <span class="material-icons">clear</span>
                     Clear All
@@ -39,7 +39,7 @@
             <div class="filters-grid">
                 <!-- File Type Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">File Type</label>
+                    <label class="filter-label">{{ i18n_t('filter.file_type') }}</label>
                     <select id="file-type-filter" class="filter-select">
                         <option value="">All Types</option>
                         <option value="image">Images</option>
@@ -52,7 +52,7 @@
                 
                 <!-- Folder Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">Folder</label>
+                    <label class="filter-label">{{ i18n_t('filter.folder') }}</label>
                     <select id="folder-filter" class="filter-select">
                         <option value="">All Folders</option>
                         <option value="root">Root Folder</option>
@@ -61,34 +61,34 @@
                 
                 <!-- Date Range Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">Date Range</label>
+                    <label class="filter-label">{{ i18n_t('filter.date_range') }}</label>
                     <div class="date-range">
                         <input type="date" id="date-from" class="filter-input">
-                        <span>to</span>
+                        <span>{{ i18n_t('common.to') }}</span>
                         <input type="date" id="date-to" class="filter-input">
                     </div>
                 </div>
                 
                 <!-- File Size Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">File Size (MB)</label>
+                    <label class="filter-label">{{ i18n_t('filter.file_size_mb') }}</label>
                     <div class="size-range">
-                        <input type="number" id="size-min" class="filter-input" placeholder="Min" min="0">
-                        <span>to</span>
-                        <input type="number" id="size-max" class="filter-input" placeholder="Max" min="0">
+                        <input type="number" id="size-min" class="filter-input" placeholder="{{ i18n_t('common.min') }}" min="0">
+                        <span>{{ i18n_t('common.to') }}</span>
+                        <input type="number" id="size-max" class="filter-input" placeholder="{{ i18n_t('common.max') }}" min="0">
                     </div>
                 </div>
                 
                 <!-- Channel Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">Telegram Channel</label>
-                    <input type="text" id="channel-filter" class="filter-input" placeholder="Channel name">
+                    <label class="filter-label">{{ i18n_t('filter.channel') }}</label>
+                    <input type="text" id="channel-filter" class="filter-input" placeholder="{{ i18n_t('filter.channel_placeholder') }}">
                 </div>
                 
                 <!-- Tags Filter -->
                 <div class="filter-group">
-                    <label class="filter-label">Tags</label>
-                    <input type="text" id="tags-filter" class="filter-input" placeholder="tag1, tag2, tag3">
+                    <label class="filter-label">{{ i18n_t('filter.tags') }}</label>
+                    <input type="text" id="tags-filter" class="filter-input" placeholder="{{ i18n_t('filter.tags_placeholder') }}">
                 </div>
             </div>
         </div>
@@ -96,20 +96,20 @@
         <!-- Sort Options -->
         <div class="sort-section">
             <div class="sort-group">
-                <label class="filter-label">Sort by</label>
+                <label class="filter-label">{{ i18n_t('sort.by') }}</label>
                 <select id="sort-by" class="filter-select">
-                    <option value="relevance">Relevance</option>
-                    <option value="date">Date</option>
-                    <option value="name">Name</option>
-                    <option value="size">Size</option>
-                    <option value="type">Type</option>
+                    <option value="relevance">{{ i18n_t('sort.relevance') }}</option>
+                    <option value="date">{{ i18n_t('sort.date') }}</option>
+                    <option value="name">{{ i18n_t('sort.name') }}</option>
+                    <option value="size">{{ i18n_t('sort.size') }}</option>
+                    <option value="type">{{ i18n_t('sort.type') }}</option>
                 </select>
             </div>
             <div class="sort-group">
-                <label class="filter-label">Order</label>
+                <label class="filter-label">{{ i18n_t('sort.order') }}</label>
                 <select id="sort-order" class="filter-select">
-                    <option value="desc">Descending</option>
-                    <option value="asc">Ascending</option>
+                    <option value="desc">{{ i18n_t('order.desc') }}</option>
+                    <option value="asc">{{ i18n_t('order.asc') }}</option>
                 </select>
             </div>
         </div>
@@ -119,13 +119,13 @@
     <div class="search-results-section">
         <div class="results-header" id="results-header" style="display: none;">
             <div class="results-info">
-                <span id="results-count">0</span> results found
+                <span id="results-count">0</span> {{ i18n_t('search.results_found') }}
                 <span id="search-query-display"></span>
             </div>
             <div class="results-actions">
                 <button class="btn btn-small" onclick="exportSearchResults()">
                     <span class="material-icons">download</span>
-                    Export Results
+                    {{ i18n_t('search.export_results') }}
                 </button>
             </div>
         </div>
@@ -133,15 +133,15 @@
         <div class="search-results" id="search-results">
             <div class="search-placeholder">
                 <span class="material-icons">search</span>
-                <h3>Start searching to see results</h3>
-                <p>Use the search box above or apply filters to find your files</p>
+                <h3>{{ i18n_t('search.start_title') }}</h3>
+                <p>{{ i18n_t('search.start_desc') }}</p>
             </div>
         </div>
         
         <!-- Loading State -->
         <div class="search-loading" id="search-loading" style="display: none;">
             <div class="loading-spinner"></div>
-            <p>Searching...</p>
+            <p>{{ i18n_t('search.loading') }}</p>
         </div>
     </div>
 </div>

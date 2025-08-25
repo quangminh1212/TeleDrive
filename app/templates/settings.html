@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Settings - TeleDrive{% endblock %}
+{% block title %}{{ i18n_t('page.settings.title') }} - TeleDrive{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1 class="page-title">Settings</h1>
+    <h1 class="page-title">{{ i18n_t('page.settings.title') }}</h1>
     <div class="page-actions">
         <button class="btn btn-primary" onclick="saveSettings()">
             <span class="material-icons">save</span>
-            Save Changes
+            {{ i18n_t('settings.save_changes') }}
         </button>
     </div>
 </div>
@@ -19,37 +19,37 @@
         <div class="settings-section-header">
             <h2 class="settings-section-title">
                 <span class="material-icons">telegram</span>
-                Telegram API Configuration
+                {{ i18n_t('settings.section.telegram.title') }}
             </h2>
             <p class="settings-section-description">
-                Configure your Telegram API credentials. Get them from 
+                {{ i18n_t('settings.section.telegram.desc') }}
                 <a href="https://my.telegram.org/apps" target="_blank">my.telegram.org/apps</a>
             </p>
         </div>
         
         <div class="settings-form">
             <div class="form-group">
-                <label for="api-id" class="form-label">API ID</label>
+                <label for="api-id" class="form-label">{{ i18n_t('settings.telegram.api_id.label') }}</label>
                 <input type="text" id="api-id" class="form-input" 
                        value="{{ config.telegram.api_id }}" 
-                       placeholder="Enter your API ID">
-                <div class="form-help">Your unique API ID from Telegram</div>
+                       placeholder="{{ i18n_t('settings.telegram.api_id.placeholder') }}">
+                <div class="form-help">{{ i18n_t('settings.telegram.api_id.help') }}</div>
             </div>
             
             <div class="form-group">
-                <label for="api-hash" class="form-label">API Hash</label>
+                <label for="api-hash" class="form-label">{{ i18n_t('settings.telegram.api_hash.label') }}</label>
                 <input type="text" id="api-hash" class="form-input" 
                        value="{{ config.telegram.api_hash }}" 
-                       placeholder="Enter your API Hash">
-                <div class="form-help">Your API Hash from Telegram</div>
+                       placeholder="{{ i18n_t('settings.telegram.api_hash.placeholder') }}">
+                <div class="form-help">{{ i18n_t('settings.telegram.api_hash.help') }}</div>
             </div>
             
             <div class="form-group">
-                <label for="phone-number" class="form-label">Phone Number</label>
+                <label for="phone-number" class="form-label">{{ i18n_t('settings.telegram.phone.label') }}</label>
                 <input type="tel" id="phone-number" class="form-input" 
                        value="{{ config.telegram.phone_number }}" 
-                       placeholder="+84xxxxxxxxx">
-                <div class="form-help">Your phone number with country code (e.g., +84987654321)</div>
+                       placeholder="{{ i18n_t('settings.telegram.phone.placeholder') }}">
+                <div class="form-help">{{ i18n_t('settings.telegram.phone.help') }}</div>
             </div>
         </div>
     </div>
@@ -59,28 +59,28 @@
         <div class="settings-section-header">
             <h2 class="settings-section-title">
                 <span class="material-icons">scanner</span>
-                Scanning Configuration
+                {{ i18n_t('settings.section.scanning.title') }}
             </h2>
             <p class="settings-section-description">
-                Configure how files are scanned and processed
+                {{ i18n_t('settings.section.scanning.desc') }}
             </p>
         </div>
         
         <div class="settings-form">
             <div class="form-group">
-                <label for="max-messages" class="form-label">Max Messages</label>
+                <label for="max-messages" class="form-label">{{ i18n_t('settings.max_messages.label') }}</label>
                 <input type="number" id="max-messages" class="form-input" 
                        value="{{ config.scanning.max_messages or '' }}" 
-                       placeholder="Leave empty for unlimited">
-                <div class="form-help">Maximum number of messages to scan (leave empty for all)</div>
+                       placeholder="{{ i18n_t('settings.max_messages.placeholder') }}">
+                <div class="form-help">{{ i18n_t('settings.max_messages.help') }}</div>
             </div>
             
             <div class="form-group">
-                <label for="batch-size" class="form-label">Batch Size</label>
+                <label for="batch-size" class="form-label">{{ i18n_t('settings.batch_size.label') }}</label>
                 <input type="number" id="batch-size" class="form-input" 
                        value="{{ config.scanning.batch_size }}" 
                        min="10" max="1000">
-                <div class="form-help">Number of messages to process at once</div>
+                <div class="form-help">{{ i18n_t('settings.batch_size.help') }}</div>
             </div>
         </div>
     </div>
@@ -90,10 +90,10 @@
         <div class="settings-section-header">
             <h2 class="settings-section-title">
                 <span class="material-icons">file_copy</span>
-                File Types to Scan
+                {{ i18n_t('settings.section.file_types.title') }}
             </h2>
             <p class="settings-section-description">
-                Choose which types of files to include in scans
+                {{ i18n_t('settings.section.file_types.desc') }}
             </p>
         </div>
         
@@ -105,7 +105,7 @@
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">
                         <span class="material-icons">description</span>
-                        Documents
+                        {{ i18n_t('settings.file_types.documents') }}
                     </span>
                 </label>
                 
@@ -115,7 +115,7 @@
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">
                         <span class="material-icons">image</span>
-                        Photos
+                        {{ i18n_t('settings.file_types.photos') }}
                     </span>
                 </label>
                 
@@ -125,7 +125,7 @@
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">
                         <span class="material-icons">video_file</span>
-                        Videos
+                        {{ i18n_t('settings.file_types.videos') }}
                     </span>
                 </label>
                 
@@ -135,7 +135,7 @@
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">
                         <span class="material-icons">audio_file</span>
-                        Audio
+                        {{ i18n_t('settings.file_types.audio') }}
                     </span>
                 </label>
                 
@@ -145,7 +145,7 @@
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">
                         <span class="material-icons">mic</span>
-                        Voice Messages
+                        {{ i18n_t('settings.file_types.voice') }}
                     </span>
                 </label>
                 
@@ -155,7 +155,7 @@
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">
                         <span class="material-icons">emoji_emotions</span>
-                        Stickers
+                        {{ i18n_t('settings.file_types.stickers') }}
                     </span>
                 </label>
             </div>
@@ -167,10 +167,10 @@
         <div class="settings-section-header">
             <h2 class="settings-section-title">
                 <span class="material-icons">tune</span>
-                Advanced Options
+                {{ i18n_t('settings.section.advanced.title') }}
             </h2>
             <p class="settings-section-description">
-                Configure advanced scanning and processing options
+                {{ i18n_t('settings.section.advanced.desc') }}
             </p>
         </div>
 
@@ -180,7 +180,7 @@
                 <fieldset>
                     <legend class="form-label">
                         <span class="material-icons" aria-hidden="true">category</span>
-                        File Types to Include
+                        {{ i18n_t('settings.advanced.file_types.legend') }}
                     </legend>
                     <div class="file-types-grid" role="group" aria-label="Select file types to scan for">
                         <label class="file-type-card {% if config.scanning.file_types.documents %}selected{% endif %}">
@@ -191,7 +191,7 @@
                                     <span class="material-icons">description</span>
                                 </div>
                                 <span class="file-type-name single-line">Documents</span>
-                                <span class="file-type-desc single-line">PDF, DOC, TXT, etc.</span>
+                                <span class="file-type-desc single-line">{{ i18n_t('settings.advanced.file_types.desc.docs') }}</span>
                             </div>
                             <div class="file-type-check">
                                 <span class="material-icons">check</span>
@@ -206,7 +206,7 @@
                                     <span class="material-icons">image</span>
                                 </div>
                                 <span class="file-type-name single-line">Photos</span>
-                                <span class="file-type-desc single-line">JPG, PNG, GIF, etc.</span>
+                                <span class="file-type-desc single-line">{{ i18n_t('settings.advanced.file_types.desc.photos') }}</span>
                             </div>
                             <div class="file-type-check">
                                 <span class="material-icons">check</span>
@@ -221,7 +221,7 @@
                                     <span class="material-icons">video_file</span>
                                 </div>
                                 <span class="file-type-name single-line">Videos</span>
-                                <span class="file-type-desc single-line">MP4, AVI, MKV, etc.</span>
+                                <span class="file-type-desc single-line">{{ i18n_t('settings.advanced.file_types.desc.videos') }}</span>
                             </div>
                             <div class="file-type-check">
                                 <span class="material-icons">check</span>
@@ -253,10 +253,10 @@
         <div class="settings-section-header">
             <h2 class="settings-section-title">
                 <span class="material-icons">save_alt</span>
-                Output Configuration
+                {{ i18n_t('settings.section.output.title') }}
             </h2>
             <p class="settings-section-description">
-                Configure output formats and file settings
+                {{ i18n_t('settings.section.output.desc') }}
             </p>
         </div>
 
