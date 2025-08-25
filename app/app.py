@@ -2650,9 +2650,6 @@ def telegram_verify():
                                  validity_seconds=180,
                                  server_time=int(time.time()),
                                  resend_remaining=resend_remaining)
-        except Exception as e:
-            app.logger.error(f"Failed to verify code: {e}")
-            flash('Verification error. Please try again.', 'error')
         else:
             app.logger.error(f"Authentication failed: {result.get('error', 'Unknown error')}")
             error_message = result['error']
@@ -2704,6 +2701,58 @@ def telegram_verify():
                          server_time=int(time.time()),
                          resend_remaining=resend_remaining)
 
+
+@app.route('/telegram_resend', methods=['POST'])
+@csrf.exempt
+def telegram_resend():
+    """Resend Telegram verification code using phone in session"""
+    from flask import session
+    phone_number = session.get('telegram_phone')
+    country_code = session.get('telegram_country_code', '+84')
+    if not phone_number:
+        return jsonify({'success': False, 'error': 'no_phone', 'message': 'Session expired. Please enter your phone number again.'}), 400
+
+    # Apply 30s cooldown per IP and 5 resends per 10 minutes
+    user_ip = request.remote_addr
+    recent_key = f"resend_hist_{user_ip}"
+    recent_count = get_recent_count(recent_key, window_seconds=600)
+    if recent_count >= 5:
+        return jsonify({'success': False,
+                        'error': 'too_many_resends',
+                        'message': 'You have requested too many codes. Please try again later.',
+                        'remaining': 0,
+                        'max': 5,
+                        'window_seconds': 600}), 429
+
+    cooldown_key = f"resend_{user_ip}"
+    if is_rate_limited(cooldown_key, max_requests=1, window_seconds=30):
+        remaining_cd = get_cooldown_remaining(cooldown_key, window_seconds=30, max_requests=1)
+        return jsonify({'success': False,
+                        'error': 'cooldown',
+                        'message': 'Please wait before requesting a new code.',
+                        'cooldown_remaining': remaining_cd,
+                        'max': 5,
+                        'remaining': max(0, 5 - recent_count)}), 429
+
+    async def send_code():
+        return await telegram_auth.send_code_request(phone_number, country_code)
+
+    try:
+        result = run_async_in_thread(send_code())
+        if result.get('success'):
+            session['telegram_session_id'] = result['session_id']
+            record_rate_event(recent_key)
+            remaining_quota = max(0, 5 - get_recent_count(recent_key, window_seconds=600))
+            return jsonify({'success': True,
+                            'message': 'Verification code resent successfully',
+                            'remaining': remaining_quota,
+                            'max': 5,
+                            'cooldown': 30})
+        else:
+            return jsonify({'success': False, 'error': 'send_failed', 'message': result.get('error', 'Failed to resend code')}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'exception', 'message': str(e)}), 500
+
 # File sharing routes
 @app.route('/api/files/<int:file_id>/share', methods=['POST'])
 @login_required
@@ -2741,40 +2790,7 @@ def create_share_link(file_id):
         elif data.get('expires_at'):
             share_link.expires_at = datetime.fromisoformat(data['expires_at'])
 
-@app.route('/telegram_resend', methods=['POST'])
-@csrf.exempt
-def telegram_resend():
-    """Resend Telegram verification code using phone in session"""
-    from flask import session
-    phone_number = session.get('telegram_phone')
-    country_code = session.get('telegram_country_code', '+84')
-    if not phone_number:
-        return jsonify({'success': False, 'error': 'no_phone', 'message': 'Session expired. Please enter your phone number again.'}), 400
 
-    # Apply 30s cooldown per IP to prevent spam
-    user_ip = request.remote_addr
-    # Optional: enforce max resends in 10 minutes (e.g., 5)
-    recent_key = f"resend_hist_{user_ip}"
-    if get_recent_count(recent_key, window_seconds=600) >= 5:
-        return jsonify({'success': False, 'error': 'too_many_resends', 'message': 'You have requested too many codes. Please try again later.'}), 429
-
-    if is_rate_limited(f"resend_{user_ip}", max_requests=1, window_seconds=30):
-        return jsonify({'success': False, 'error': 'cooldown', 'message': 'Please wait 30 seconds before requesting a new code.'}), 429
-
-    async def send_code():
-        return await telegram_auth.send_code_request(phone_number, country_code)
-
-    try:
-        result = run_async_in_thread(send_code())
-        if result.get('success'):
-            session['telegram_session_id'] = result['session_id']
-            # Record resend event
-            record_rate_event(recent_key)
-            return jsonify({'success': True, 'message': 'Verification code resent successfully'})
-        else:
-            return jsonify({'success': False, 'error': 'send_failed', 'message': result.get('error', 'Failed to resend code')}), 400
-    except Exception as e:
-        return jsonify({'success': False, 'error': 'exception', 'message': str(e)}), 500
 
 
         db.session.add(share_link)
