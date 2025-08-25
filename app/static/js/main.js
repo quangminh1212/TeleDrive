@@ -4,6 +4,10 @@
 let toastTimeout;
 
 // Initialize when DOM is loaded
+
+// Simple language helper
+function L(vi, en) { try { return (window.current_lang === 'vi') ? vi : en; } catch (_) { return en; } }
+
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
 });
@@ -12,10 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeApp() {
     // Setup global event listeners
     setupGlobalEventListeners();
-    
+
     // Initialize tooltips and other UI components
     initializeUIComponents();
-    
+
     console.log('TeleDrive Web Interface initialized');
 }
 
@@ -51,19 +55,19 @@ function setupGlobalEventListeners() {
 function initializeUIComponents() {
     // Add ripple effect to buttons
     document.querySelectorAll('.btn').forEach(addRippleEffect);
-    
+
     // Initialize file drag and drop
     initializeFileDragDrop();
-    
+
     // Initialize context menus
     initializeContextMenus();
-    
+
     // Initialize file actions
     initializeFileActions();
-    
+
     // Initialize view toggle (grid/list)
     initializeViewToggle();
-    
+
     // Initialize breadcrumb navigation
     initializeBreadcrumbs();
 }
@@ -76,14 +80,14 @@ function addRippleEffect(button) {
         const size = Math.max(rect.width, rect.height);
         const x = e.clientX - rect.left - size / 2;
         const y = e.clientY - rect.top - size / 2;
-        
+
         ripple.style.width = ripple.style.height = size + 'px';
         ripple.style.left = x + 'px';
         ripple.style.top = y + 'px';
         ripple.classList.add('ripple');
-        
+
         this.appendChild(ripple);
-        
+
         setTimeout(() => {
             ripple.remove();
         }, 600);
@@ -94,17 +98,17 @@ function addRippleEffect(button) {
 function initializeFileDragDrop() {
     // Global drag drop for file uploads
     const dropZones = document.querySelectorAll('.files-container, .scan-form');
-    
+
     // Prevent default browser behavior for drag events document-wide
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         document.body.addEventListener(eventName, preventDefaults, false);
     });
-    
+
     function preventDefaults(e) {
         e.preventDefault();
         e.stopPropagation();
     }
-    
+
     // Highlight drop area when item is dragged over it
     ['dragenter', 'dragover'].forEach(eventName => {
         dropZones.forEach(zone => {
@@ -121,7 +125,7 @@ function initializeFileDragDrop() {
     function highlight(e) {
         const target = getDropTarget(e.target);
         if (target) target.classList.add('drag-over');
-        
+
         // Show drop placeholder
         const placeholder = document.querySelector('.drag-placeholder');
         if (placeholder) placeholder.classList.add('active');
@@ -130,12 +134,12 @@ function initializeFileDragDrop() {
     function unhighlight(e) {
         const target = getDropTarget(e.target);
         if (target) target.classList.remove('drag-over');
-        
+
         // Hide drop placeholder
         const placeholder = document.querySelector('.drag-placeholder');
         if (placeholder) placeholder.classList.remove('active');
     }
-    
+
     // Find appropriate drop target parent element
     function getDropTarget(element) {
         if (element.classList.contains('files-container')) return element;
@@ -148,7 +152,7 @@ function initializeFileDragDrop() {
     dropZones.forEach(zone => {
         zone.addEventListener('drop', handleFileDrop, false);
     });
-    
+
     // Initialize folder drag & drop
     initializeFolderDragDrop();
 }
@@ -160,13 +164,13 @@ function handleFileDrop(e) {
         // Check if dropped on a folder card
         const folderCard = e.target.closest('.folder-card');
         let targetFolder = null;
-        
+
         if (folderCard) {
             targetFolder = folderCard.dataset.folderId;
         } else if (window.currentFolder) {
             targetFolder = window.currentFolder;
         }
-        
+
         uploadFiles(files, targetFolder);
         showToast(`Uploading ${files.length} file(s)${targetFolder ? ' to folder' : ''}`, 'info');
     }
@@ -175,45 +179,45 @@ function handleFileDrop(e) {
 // Initialize folder drag & drop functionality
 function initializeFolderDragDrop() {
     const fileCards = document.querySelectorAll('.file-card[data-type="folder"]');
-    
+
     fileCards.forEach(card => {
         // Make folders draggable
         card.setAttribute('draggable', 'true');
-        
+
         card.addEventListener('dragstart', function(e) {
             e.dataTransfer.setData('text/plain', card.dataset.folderId);
             e.dataTransfer.effectAllowed = 'move';
             card.classList.add('dragging');
-            
+
             // Create drag image
             const dragIcon = document.createElement('div');
             dragIcon.classList.add('drag-icon');
             dragIcon.innerHTML = '<span class="material-icons">folder</span>';
             document.body.appendChild(dragIcon);
             e.dataTransfer.setDragImage(dragIcon, 20, 20);
-            
+
             // Remove drag icon after dragstart
             setTimeout(() => {
                 document.body.removeChild(dragIcon);
             }, 0);
         });
-        
+
         card.addEventListener('dragend', function() {
             card.classList.remove('dragging');
         });
-        
+
         // Handle folder drop target
         card.addEventListener('drop', function(e) {
             const sourceId = e.dataTransfer.getData('text/plain');
             const targetId = card.dataset.folderId;
-            
+
             // Prevent dropping folder into itself
             if (sourceId !== targetId) {
                 moveFolder(sourceId, targetId);
             }
         });
     });
-    
+
     // Make all folder areas drop targets for other folders
     const folderContainers = document.querySelectorAll('.files-container');
     folderContainers.forEach(container => {
@@ -268,7 +272,7 @@ function uploadFiles(files, targetFolder = null) {
             <span class="upload-size">0% (0/${formatFileSize(totalSize)})</span>
         </div>
     `;
-    
+
     const toastContainer = document.getElementById('toast-container');
     if (toastContainer) {
         toastContainer.appendChild(progressContainer);
@@ -277,21 +281,21 @@ function uploadFiles(files, targetFolder = null) {
     }
 
     // Show loading state
-    showLoading(window.I18N?.['loading.processing'] || 'Uploading files...');
+    showLoading(window.I18N?.['loading.processing'] || L('Đang tải lên tệp...', 'Uploading files...'));
 
     // Upload files with progress tracking
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/upload', true);
-    
+
     xhr.upload.addEventListener('progress', function(e) {
         if (e.lengthComputable) {
             const percent = Math.round((e.loaded / e.total) * 100);
             uploadedSize = e.loaded;
-            
+
             // Update progress bar
             const progressFill = progressContainer.querySelector('.progress-fill');
             if (progressFill) progressFill.style.width = percent + '%';
-            
+
             // Update info
             const fileInfo = progressContainer.querySelector('.upload-size');
             if (fileInfo) {
@@ -299,10 +303,10 @@ function uploadFiles(files, targetFolder = null) {
             }
         }
     });
-    
+
     xhr.addEventListener('load', function() {
         hideLoading();
-        
+
         if (xhr.status === 200) {
             try {
                 const data = JSON.parse(xhr.responseText);
@@ -311,12 +315,12 @@ function uploadFiles(files, targetFolder = null) {
                     progressContainer.classList.add('upload-success');
                     progressContainer.querySelector('.upload-progress-header').innerHTML = `<span>Upload Complete</span>`;
                     progressContainer.querySelector('.upload-file-name').textContent = `${files.length} file(s) uploaded successfully`;
-                    
+
                     // Auto-remove progress after delay
                     setTimeout(() => {
                         progressContainer.remove();
                     }, 5000);
-                    
+
                     // Refresh file list
                     if (typeof refreshFiles === 'function') {
                         refreshFiles();
@@ -333,17 +337,17 @@ function uploadFiles(files, targetFolder = null) {
             showUploadError(progressContainer, `Server error: ${xhr.status}`);
         }
     });
-    
+
     xhr.addEventListener('error', function() {
         hideLoading();
         showUploadError(progressContainer, 'Connection error');
     });
-    
+
     xhr.addEventListener('abort', function() {
         hideLoading();
         showUploadError(progressContainer, 'Upload aborted');
     });
-    
+
     xhr.send(formData);
 }
 
@@ -364,7 +368,7 @@ function handleSearch(query) {
         });
         return;
     }
-    
+
     // Filter files
     document.querySelectorAll('.file-card').forEach(card => {
         const filename = card.dataset.filename || '';
@@ -379,14 +383,14 @@ function showToast(message, type = 'info', duration = 5000) {
     if (toastTimeout) {
         clearTimeout(toastTimeout);
     }
-    
+
     // Remove existing toasts
     document.querySelectorAll('.toast').forEach(toast => toast.remove());
-    
+
     // Create toast element
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
+
     // Add icon based on type
     const icons = {
         success: 'check_circle',
@@ -394,7 +398,7 @@ function showToast(message, type = 'info', duration = 5000) {
         warning: 'warning',
         info: 'info'
     };
-    
+
     toast.innerHTML = `
         <span class="material-icons">${icons[type] || 'info'}</span>
         <span class="toast-message">${message}</span>
@@ -402,12 +406,12 @@ function showToast(message, type = 'info', duration = 5000) {
             <span class="material-icons">close</span>
         </button>
     `;
-    
+
     // Add to container
     const container = document.getElementById('toast-container');
     if (container) {
         container.appendChild(toast);
-        
+
         // Auto-remove after duration
         toastTimeout = setTimeout(() => {
             toast.remove();
@@ -437,21 +441,21 @@ function initializeContextMenus() {
     document.querySelectorAll('.file-card').forEach(card => {
         card.addEventListener('contextmenu', function(e) {
             e.preventDefault();
-            
+
             // Hide any visible context menus
             hideAllContextMenus();
-            
+
             // Create context menu
             const contextMenu = createContextMenu(card);
-            
+
             // Position context menu
             positionContextMenu(contextMenu, e.pageX, e.pageY);
-            
+
             // Show context menu
             document.body.appendChild(contextMenu);
         });
     });
-    
+
     // Close context menu when clicking elsewhere
     document.addEventListener('click', hideAllContextMenus);
     document.addEventListener('scroll', hideAllContextMenus);
@@ -463,13 +467,13 @@ function createContextMenu(fileCard) {
     const filename = fileCard.dataset.filename;
     const fileId = fileCard.dataset.fileId;
     const folderId = fileCard.dataset.folderId;
-    
+
     const menu = document.createElement('div');
     menu.className = 'context-menu';
-    
+
     // Common menu items
     let menuItems = '';
-    
+
     if (isFolder) {
         menuItems += `
             <div class="context-menu-item" onclick="openFolder('${folderId}')">
@@ -527,7 +531,7 @@ function createContextMenu(fileCard) {
             </div>
         `;
     }
-    
+
     menu.innerHTML = menuItems;
     return menu;
 }
@@ -536,24 +540,24 @@ function createContextMenu(fileCard) {
 function positionContextMenu(menu, x, y) {
     // First append to get dimensions
     document.body.appendChild(menu);
-    
+
     // Get menu dimensions
     const menuWidth = menu.offsetWidth;
     const menuHeight = menu.offsetHeight;
-    
+
     // Get window dimensions
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
-    
+
     // Adjust position if menu would go outside window
     if (x + menuWidth > windowWidth) {
         x = windowWidth - menuWidth - 10;
     }
-    
+
     if (y + menuHeight > windowHeight) {
         y = windowHeight - menuHeight - 10;
     }
-    
+
     // Set menu position
     menu.style.left = x + 'px';
     menu.style.top = y + 'px';
@@ -592,7 +596,7 @@ function formatDate(dateString) {
     const now = new Date();
     const diffTime = Math.abs(now - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 1) {
         return 'Yesterday';
     } else if (diffDays < 7) {
@@ -612,11 +616,11 @@ async function apiRequest(url, options = {}) {
             },
             ...options
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         return await response.json();
     } catch (error) {
         console.error('API request failed:', error);
@@ -626,8 +630,8 @@ async function apiRequest(url, options = {}) {
 
 // Move folder to another folder
 function moveFolder(sourceId, targetId) {
-    showLoading((window.current_lang==='vi'?'Đang di chuyển thư mục...':'Moving folder...'));
-    
+    showLoading(L('Đang di chuyển thư mục...','Moving folder...'));
+
     apiRequest('/api/folders/move', {
         method: 'POST',
         body: JSON.stringify({
@@ -638,7 +642,7 @@ function moveFolder(sourceId, targetId) {
     .then(response => {
         hideLoading();
         if (response.success) {
-            showToast((window.current_lang==='vi'?'Đã di chuyển thư mục thành công':'Folder moved successfully'), 'success');
+            showToast(L('Đã di chuyển thư mục thành công','Folder moved successfully'), 'success');
             // Refresh file list
             if (typeof refreshFiles === 'function') {
                 refreshFiles();
@@ -646,12 +650,12 @@ function moveFolder(sourceId, targetId) {
                 location.reload();
             }
         } else {
-            showToast((window.current_lang==='vi'?'Di chuyển thư mục thất bại: ':'Failed to move folder: ') + (response.error || 'Unknown error'), 'error');
+            showToast(L('Di chuyển thư mục thất bại: ','Failed to move folder: ') + (response.error || 'Unknown error'), 'error');
         }
     })
     .catch(error => {
         hideLoading();
-        showToast((window.current_lang==='vi'?'Lỗi khi di chuyển thư mục: ':'Error moving folder: ') + error.message, 'error');
+        showToast(L('Lỗi khi di chuyển thư mục: ','Error moving folder: ') + error.message, 'error');
     });
 }
 
@@ -664,7 +668,7 @@ function downloadFile(filename) {
     link.click();
     document.body.removeChild(link);
 
-    showToast((window.current_lang==='vi'?`Đang tải xuống ${filename}`:`Downloading ${filename}`), 'success');
+    showToast(L(`Đang tải xuống ${filename}`,`Downloading ${filename}`), 'success');
 }
 
 function previewFile(filename) {
@@ -701,7 +705,7 @@ function previewFile(filename) {
 function deleteFile(filename) {
     if (confirm(`Are you sure you want to delete ${filename}?`)) {
         showLoading('Deleting file...');
-        
+
         apiRequest('/api/delete_file', {
             method: 'POST',
             body: JSON.stringify({ filename: filename })
@@ -709,7 +713,7 @@ function deleteFile(filename) {
             .then(response => {
                 hideLoading();
                 if (response.success) {
-                    showToast((window.current_lang==='vi'?`Đã xóa tệp ${filename} thành công`:`File ${filename} deleted successfully`), 'success');
+                    showToast(L(`Đã xóa tệp ${filename} thành công`,`File ${filename} deleted successfully`), 'success');
                     // Remove file card from UI
                     const fileCard = document.querySelector(`[data-filename="${filename}"]`);
                     if (fileCard) {
@@ -734,13 +738,13 @@ function deleteFile(filename) {
 function renameFolder(folderId) {
     const folderCard = document.querySelector(`.file-card[data-folder-id="${folderId}"]`);
     if (!folderCard) return;
-    
+
     const currentName = folderCard.querySelector('.file-name').textContent.trim();
     const newName = prompt('Enter new folder name:', currentName);
-    
+
     if (newName && newName !== currentName) {
         showLoading('Renaming folder...');
-        
+
         apiRequest('/api/rename_folder', {
             method: 'POST',
             body: JSON.stringify({
@@ -751,7 +755,7 @@ function renameFolder(folderId) {
         .then(response => {
             hideLoading();
             if (response.success) {
-                showToast((window.current_lang==='vi'?'Đã đổi tên thư mục thành công':'Folder renamed successfully'), 'success');
+                showToast(L('Đã đổi tên thư mục thành công','Folder renamed successfully'), 'success');
                 // Update folder name in UI
                 const folderName = folderCard.querySelector('.file-name');
                 if (folderName) {
@@ -761,12 +765,12 @@ function renameFolder(folderId) {
                     location.reload();
                 }
             } else {
-                showToast((window.current_lang==='vi'?'Đổi tên thư mục thất bại: ':'Failed to rename folder: ') + (response.error || 'Unknown error'), 'error');
+                showToast(L('Đổi tên thư mục thất bại: ','Failed to rename folder: ') + (response.error || 'Unknown error'), 'error');
             }
         })
         .catch(error => {
             hideLoading();
-            showToast((window.current_lang==='vi'?'Lỗi khi đổi tên thư mục: ':'Error renaming folder: ') + error.message, 'error');
+            showToast(L('Lỗi khi đổi tên thư mục: ','Error renaming folder: ') + error.message, 'error');
         });
     }
 }
@@ -775,12 +779,12 @@ function renameFolder(folderId) {
 function deleteFolder(folderId) {
     const folderCard = document.querySelector(`.file-card[data-folder-id="${folderId}"]`);
     if (!folderCard) return;
-    
+
     const folderName = folderCard.querySelector('.file-name').textContent.trim();
-    
+
     if (confirm(`Are you sure you want to delete the folder "${folderName}" and all its contents? This action cannot be undone.`)) {
         showLoading('Deleting folder...');
-        
+
         apiRequest('/api/delete_folder', {
             method: 'POST',
             body: JSON.stringify({
@@ -811,7 +815,7 @@ function deleteFolder(folderId) {
 // Share a file
 function shareFile(fileId) {
     showLoading('Preparing share...');
-    
+
     apiRequest('/api/get_share_link', {
         method: 'POST',
         body: JSON.stringify({
@@ -835,7 +839,7 @@ function shareFile(fileId) {
 // Share a folder
 function shareFolder(folderId) {
     showLoading('Preparing share...');
-    
+
     apiRequest('/api/get_folder_share_link', {
         method: 'POST',
         body: JSON.stringify({
@@ -862,7 +866,7 @@ function showShareModal(shareLink, itemName, isFolder = false) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.id = modalId;
-    
+
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
@@ -878,7 +882,7 @@ function showShareModal(shareLink, itemName, isFolder = false) {
                         Copy
                     </button>
                 </div>
-                
+
                 <div class="share-options" style="margin-top: 20px;">
                     <h4>Share Options</h4>
                     <div class="form-group">
@@ -886,12 +890,12 @@ function showShareModal(shareLink, itemName, isFolder = false) {
                             <input type="checkbox" id="share-require-password-${modalId}" />
                             Require password
                         </label>
-                        
+
                         <div id="password-fields-${modalId}" style="display: none; margin-top: 10px;">
                             <input type="password" class="form-input" id="share-password-${modalId}" placeholder="Enter password" />
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Link expiration:</label>
                         <select class="form-select" id="share-expiration-${modalId}">
@@ -911,13 +915,13 @@ function showShareModal(shareLink, itemName, isFolder = false) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // Add event listener for password checkbox
     const passwordCheckbox = document.getElementById(`share-require-password-${modalId}`);
     const passwordFields = document.getElementById(`password-fields-${modalId}`);
-    
+
     if (passwordCheckbox && passwordFields) {
         passwordCheckbox.addEventListener('change', function() {
             passwordFields.style.display = this.checked ? 'block' : 'none';
@@ -929,10 +933,10 @@ function showShareModal(shareLink, itemName, isFolder = false) {
 function copyShareLink(inputId) {
     const input = document.getElementById(inputId);
     if (!input) return;
-    
+
     input.select();
     document.execCommand('copy');
-    
+
     // Show feedback
     showToast(window.I18N?.['toast.link_copied'] || 'Link copied to clipboard', 'success');
 }
@@ -942,14 +946,14 @@ function updateShareSettings(modalId, isFolder, itemName) {
     const requirePassword = document.getElementById(`share-require-password-${modalId}`).checked;
     const password = requirePassword ? document.getElementById(`share-password-${modalId}`).value : '';
     const expiration = document.getElementById(`share-expiration-${modalId}`).value;
-    
+
     if (requirePassword && !password) {
         showToast((current_lang==='vi'?'Vui lòng nhập mật khẩu':'Please enter a password'), 'warning');
         return;
     }
-    
+
     showLoading('Updating share settings...');
-    
+
     apiRequest('/api/update_share_settings', {
         method: 'POST',
         body: JSON.stringify({
@@ -978,9 +982,9 @@ function updateShareSettings(modalId, isFolder, itemName) {
 function copyFileLink(fileId) {
     const fileCard = document.querySelector(`.file-card[data-file-id="${fileId}"]`);
     if (!fileCard) return;
-    
+
     const fileName = fileCard.dataset.filename;
-    
+
     apiRequest('/api/get_direct_link', {
         method: 'POST',
         body: JSON.stringify({
@@ -996,7 +1000,7 @@ function copyFileLink(fileId) {
             tempInput.select();
             document.execCommand('copy');
             document.body.removeChild(tempInput);
-            
+
             showToast(`Link for "${fileName}" copied to clipboard`, 'success');
         } else {
             showToast('Failed to get direct link: ' + (response.error || 'Unknown error'), 'error');
@@ -1015,12 +1019,12 @@ function moveFileToFolder(fileId) {
 // Show folder selection modal
 function showFolderSelectionModal(fileId) {
     const modalId = 'folder-select-modal-' + Date.now();
-    
+
     // Create modal structure
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.id = modalId;
-    
+
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
@@ -1038,12 +1042,12 @@ function showFolderSelectionModal(fileId) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // Load folder tree
     loadFolderTree(modalId, fileId);
-    
+
     // Add event listener for move button
     document.getElementById(`move-confirm-btn-${modalId}`).addEventListener('click', function() {
         const selectedFolder = document.querySelector(`#folder-tree-${modalId} .folder-tree-item.selected`);
@@ -1057,38 +1061,38 @@ function showFolderSelectionModal(fileId) {
 // Load folder tree for selection
 function loadFolderTree(modalId, fileId) {
     const treeContainer = document.getElementById(`folder-tree-${modalId}`);
-    
+
     apiRequest('/api/get_folder_tree')
         .then(response => {
             if (response.success && response.folders) {
                 treeContainer.innerHTML = buildFolderTreeHtml(response.folders, fileId);
-                
+
                 // Add click event listeners to folder items
                 document.querySelectorAll(`#folder-tree-${modalId} .folder-tree-item`).forEach(item => {
                     item.addEventListener('click', function(e) {
                         e.stopPropagation(); // Prevent parent folder clicks
-                        
+
                         // Deselect all folders
                         document.querySelectorAll(`#folder-tree-${modalId} .folder-tree-item`).forEach(i => {
                             i.classList.remove('selected');
                         });
-                        
+
                         // Select clicked folder
                         this.classList.add('selected');
-                        
+
                         // Enable move button
                         document.getElementById(`move-confirm-btn-${modalId}`).disabled = false;
                     });
-                    
+
                     // Add click event for expand/collapse
                     const expandIcon = item.querySelector('.folder-expand-icon');
                     if (expandIcon) {
                         expandIcon.addEventListener('click', function(e) {
                             e.stopPropagation(); // Don't select the folder when clicking expand icon
-                            
+
                             const folderItem = this.closest('.folder-tree-item');
                             const subFolder = folderItem.nextElementSibling;
-                            
+
                             if (subFolder && subFolder.classList.contains('folder-tree-children')) {
                                 const isExpanded = subFolder.style.display !== 'none';
                                 subFolder.style.display = isExpanded ? 'none' : 'block';
@@ -1109,24 +1113,24 @@ function loadFolderTree(modalId, fileId) {
 // Build HTML for folder tree
 function buildFolderTreeHtml(folders, fileId, level = 0) {
     let html = '';
-    
+
     folders.forEach(folder => {
         // Skip the folder that contains the file (can't move to self)
         const isCurrentFolder = folder.files && folder.files.some(file => file.id === fileId);
         const isDisabled = isCurrentFolder ? 'disabled' : '';
-        
+
         // Create folder item
         html += `
             <div class="folder-tree-item ${isDisabled}" data-folder-id="${folder.id}" style="padding-left: ${level * 20}px">
-                ${folder.children && folder.children.length > 0 ? 
-                    `<span class="material-icons folder-expand-icon">chevron_right</span>` : 
+                ${folder.children && folder.children.length > 0 ?
+                    `<span class="material-icons folder-expand-icon">chevron_right</span>` :
                     `<span class="folder-expand-spacer"></span>`
                 }
                 <span class="material-icons folder-icon">folder</span>
                 <span class="folder-name">${folder.name}</span>
             </div>
         `;
-        
+
         // Add children if any
         if (folder.children && folder.children.length > 0) {
             html += `<div class="folder-tree-children" style="display: none">`;
@@ -1134,14 +1138,14 @@ function buildFolderTreeHtml(folders, fileId, level = 0) {
             html += `</div>`;
         }
     });
-    
+
     return html;
 }
 
 // Move file to selected folder
 function moveFile(fileId, targetFolderId, modalId) {
-    showLoading((window.current_lang==='vi'?'Đang di chuyển tệp...':'Moving file...'));
-    
+    showLoading(L('Đang di chuyển tệp...','Moving file...'));
+
     apiRequest('/api/move_file', {
         method: 'POST',
         body: JSON.stringify({
@@ -1154,13 +1158,13 @@ function moveFile(fileId, targetFolderId, modalId) {
         if (response.success) {
             document.getElementById(modalId).remove();
             showToast('File moved successfully', 'success');
-            
+
             // Remove file card from UI if we're in a folder view
             const fileCard = document.querySelector(`.file-card[data-file-id="${fileId}"]`);
             if (fileCard) {
                 fileCard.remove();
             }
-            
+
             // Refresh stats
             if (typeof loadStats === 'function') {
                 loadStats();
@@ -1981,7 +1985,7 @@ function initializeFileActions() {
     if (selectModeBtn) {
         selectModeBtn.addEventListener('click', toggleSelectMode);
     }
-    
+
     // Handle multi-select checkboxes
     document.querySelectorAll('.file-select-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
@@ -1989,7 +1993,7 @@ function initializeFileActions() {
             updateBulkActionButtonsState();
         });
     });
-    
+
     // Handle bulk action buttons
     document.querySelectorAll('.bulk-action-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -2006,28 +2010,28 @@ function initializeViewToggle() {
     const gridViewBtn = document.getElementById('grid-view-btn');
     const listViewBtn = document.getElementById('list-view-btn');
     const filesContainer = document.querySelector('.files-container');
-    
+
     if (gridViewBtn && listViewBtn && filesContainer) {
         gridViewBtn.addEventListener('click', function() {
             filesContainer.classList.remove('files-list');
             filesContainer.classList.add('files-grid');
-            
+
             gridViewBtn.classList.add('active');
             listViewBtn.classList.remove('active');
-            
+
             localStorage.setItem('files-view', 'grid');
         });
-        
+
         listViewBtn.addEventListener('click', function() {
             filesContainer.classList.remove('files-grid');
             filesContainer.classList.add('files-list');
-            
+
             listViewBtn.classList.add('active');
             gridViewBtn.classList.remove('active');
-            
+
             localStorage.setItem('files-view', 'list');
         });
-        
+
         // Apply saved view preference
         const savedView = localStorage.getItem('files-view');
         if (savedView === 'list') {
@@ -2060,23 +2064,23 @@ function toggleSelectMode() {
     const filesContainer = document.querySelector('.files-container');
     const bulkToolbar = document.querySelector('.bulk-toolbar');
     const selectModeBtn = document.getElementById('select-mode-btn');
-    
+
     if (filesContainer && bulkToolbar && selectModeBtn) {
         const isSelectMode = filesContainer.classList.toggle('select-mode');
-        
+
         // Show/hide checkboxes
         document.querySelectorAll('.file-checkbox').forEach(checkbox => {
             checkbox.style.display = isSelectMode ? 'flex' : 'none';
         });
-        
+
         // Show/hide bulk toolbar
         bulkToolbar.style.display = isSelectMode ? 'flex' : 'none';
-        
+
         // Update button
         selectModeBtn.classList.toggle('active', isSelectMode);
-        selectModeBtn.querySelector('.material-icons').textContent = 
+        selectModeBtn.querySelector('.material-icons').textContent =
             isSelectMode ? 'close' : 'check_box_outline_blank';
-        
+
         // Reset selections if exiting select mode
         if (!isSelectMode) {
             document.querySelectorAll('.file-select-checkbox').forEach(cb => {
@@ -2086,7 +2090,7 @@ function toggleSelectMode() {
                 card.classList.remove('selected');
             });
         }
-        
+
         // Update bulk info
         updateSelectedFilesCount();
     }
@@ -2096,7 +2100,7 @@ function toggleSelectMode() {
 function updateSelectedFilesCount() {
     const bulkInfo = document.querySelector('.bulk-info');
     const checkboxes = document.querySelectorAll('.file-select-checkbox:checked');
-    
+
     if (bulkInfo) {
         bulkInfo.textContent = `${checkboxes.length} item${checkboxes.length === 1 ? '' : 's'} selected`;
     }
@@ -2105,7 +2109,7 @@ function updateSelectedFilesCount() {
 // Enable/disable bulk action buttons based on selection
 function updateBulkActionButtonsState() {
     const hasSelection = document.querySelectorAll('.file-select-checkbox:checked').length > 0;
-    
+
     document.querySelectorAll('.bulk-action-btn').forEach(btn => {
         btn.disabled = !hasSelection;
     });
@@ -2115,12 +2119,12 @@ function updateBulkActionButtonsState() {
 function performBulkAction(action) {
     const selectedFiles = Array.from(document.querySelectorAll('.file-select-checkbox:checked'))
         .map(checkbox => checkbox.closest('.file-card').dataset.fileId);
-    
+
     if (selectedFiles.length === 0) {
         showToast(window.I18N?.['toast.no_files_selected'] || 'No files selected', 'warning');
         return;
     }
-    
+
     switch(action) {
         case 'download':
             downloadMultipleFiles(selectedFiles);
@@ -2153,10 +2157,10 @@ function openFolder(folderId) {
 function renameFile(fileId) {
     const fileCard = document.querySelector(`.file-card[data-file-id="${fileId}"]`);
     if (!fileCard) return;
-    
+
     const currentName = fileCard.dataset.filename;
     const newName = prompt('Enter new filename:', currentName);
-    
+
     if (newName && newName !== currentName) {
         apiRequest('/api/rename_file', {
             method: 'POST',
@@ -2471,7 +2475,7 @@ function closePreviewModal() {
 function toggleTheme() {
     const body = document.body;
     const isDark = body.classList.contains('dark-theme');
-    
+
     if (isDark) {
         body.classList.remove('dark-theme');
         localStorage.setItem('theme', 'light');
@@ -2493,7 +2497,7 @@ function initializeTheme() {
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const isOpen = sidebar.classList.contains('open');
-    
+
     if (isOpen) {
         sidebar.classList.remove('open');
     } else {
@@ -2511,7 +2515,7 @@ document.addEventListener('keydown', function(e) {
             searchInput.focus();
         }
     }
-    
+
     // Ctrl/Cmd + N for new scan
     if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
@@ -2519,7 +2523,7 @@ document.addEventListener('keydown', function(e) {
             window.location.href = '/scan';
         }
     }
-    
+
     // Ctrl/Cmd + , for settings
     if ((e.ctrlKey || e.metaKey) && e.key === ',') {
         e.preventDefault();
@@ -2532,7 +2536,7 @@ document.addEventListener('keydown', function(e) {
 // Bulk Operations
 function downloadMultipleFiles(fileIds) {
     if (!fileIds || fileIds.length === 0) return;
-    
+
     if (fileIds.length === 1) {
         // Just download the single file directly
         const fileCard = document.querySelector(`.file-card[data-file-id="${fileIds[0]}"]`);
@@ -2541,9 +2545,9 @@ function downloadMultipleFiles(fileIds) {
         }
         return;
     }
-    
-    showLoading((window.current_lang==='vi'?'Đang chuẩn bị tải xuống...':'Preparing download...'));
-    
+
+    showLoading(L('Đang chuẩn bị tải xuống...','Preparing download...'));
+
     apiRequest('/api/prepare_bulk_download', {
         method: 'POST',
         body: JSON.stringify({
@@ -2560,7 +2564,7 @@ function downloadMultipleFiles(fileIds) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             showToast(`Downloading ${fileIds.length} files as ZIP archive`, 'success');
         } else {
             showToast('Failed to prepare download: ' + (response.error || 'Unknown error'), 'error');
@@ -2574,21 +2578,21 @@ function downloadMultipleFiles(fileIds) {
 
 function moveMultipleFiles(fileIds) {
     if (!fileIds || fileIds.length === 0) return;
-    
+
     // If just one file, use the regular move function
     if (fileIds.length === 1) {
         moveFileToFolder(fileIds[0]);
         return;
     }
-    
+
     // Show folder selection modal for multiple files
     const modalId = 'multi-folder-select-modal-' + Date.now();
-    
+
     // Create modal structure
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.id = modalId;
-    
+
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
@@ -2606,12 +2610,12 @@ function moveMultipleFiles(fileIds) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // Load folder tree (using null for fileId to show all folders)
     loadFolderTree(modalId, null);
-    
+
     // Add event listener for move button
     document.getElementById(`move-confirm-btn-${modalId}`).addEventListener('click', function() {
         const selectedFolder = document.querySelector(`#folder-tree-${modalId} .folder-tree-item.selected`);
@@ -2623,8 +2627,8 @@ function moveMultipleFiles(fileIds) {
 }
 
 function moveMultipleFilesToFolder(fileIds, targetFolderId, modalId) {
-    showLoading((window.current_lang==='vi'?`Đang di chuyển ${fileIds.length} tệp...`:`Moving ${fileIds.length} files...`));
-    
+    showLoading(L(`Đang di chuyển ${fileIds.length} tệp...`,`Moving ${fileIds.length} files...`));
+
     apiRequest('/api/move_multiple_files', {
         method: 'POST',
         body: JSON.stringify({
@@ -2636,8 +2640,8 @@ function moveMultipleFilesToFolder(fileIds, targetFolderId, modalId) {
         hideLoading();
         if (response.success) {
             document.getElementById(modalId).remove();
-            showToast((window.current_lang==='vi'?`${fileIds.length} tệp đã được di chuyển thành công`:`${fileIds.length} files moved successfully`), 'success');
-            
+            showToast(L(`${fileIds.length} tệp đã được di chuyển thành công`,`${fileIds.length} files moved successfully`), 'success');
+
             // Remove file cards from UI
             fileIds.forEach(fileId => {
                 const fileCard = document.querySelector(`.file-card[data-file-id="${fileId}"]`);
@@ -2645,33 +2649,33 @@ function moveMultipleFilesToFolder(fileIds, targetFolderId, modalId) {
                     fileCard.remove();
                 }
             });
-            
+
             // Exit select mode
             toggleSelectMode();
-            
+
             // Refresh stats
             if (typeof loadStats === 'function') {
                 loadStats();
             }
         } else {
-            showToast((window.current_lang==='vi'?'Di chuyển tệp thất bại: ':'Failed to move files: ') + (response.error || 'Unknown error'), 'error');
+            showToast(L('Di chuyển tệp thất bại: ','Failed to move files: ') + (response.error || 'Unknown error'), 'error');
         }
     })
     .catch(error => {
         hideLoading();
-        showToast((window.current_lang==='vi'?'Lỗi khi di chuyển tệp: ':'Error moving files: ') + error.message, 'error');
+        showToast(L('Lỗi khi di chuyển tệp: ','Error moving files: ') + error.message, 'error');
     });
 }
 
 function deleteMultipleFiles(fileIds) {
     if (!fileIds || fileIds.length === 0) return;
-    
+
     if (!confirm(`Are you sure you want to delete ${fileIds.length} selected file(s)? This action cannot be undone.`)) {
         return;
     }
-    
+
     showLoading((window.current_lang==='vi'?`Đang xóa ${fileIds.length} tệp...`:`Deleting ${fileIds.length} files...`));
-    
+
     apiRequest('/api/delete_multiple_files', {
         method: 'POST',
         body: JSON.stringify({
@@ -2681,8 +2685,8 @@ function deleteMultipleFiles(fileIds) {
     .then(response => {
         hideLoading();
         if (response.success) {
-            showToast((window.current_lang==='vi'?`${fileIds.length} tệp đã được xóa thành công`:`${fileIds.length} files deleted successfully`), 'success');
-            
+            showToast(L(`${fileIds.length} tệp đã được xóa thành công`,`${fileIds.length} files deleted successfully`), 'success');
+
             // Remove file cards from UI
             fileIds.forEach(fileId => {
                 const fileCard = document.querySelector(`.file-card[data-file-id="${fileId}"]`);
@@ -2690,29 +2694,29 @@ function deleteMultipleFiles(fileIds) {
                     fileCard.remove();
                 }
             });
-            
+
             // Exit select mode
             toggleSelectMode();
-            
+
             // Refresh stats
             if (typeof loadStats === 'function') {
                 loadStats();
             }
         } else {
-            showToast((window.current_lang==='vi'?'Xóa tệp thất bại: ':'Failed to delete files: ') + (response.error || 'Unknown error'), 'error');
+            showToast(L('Xóa tệp thất bại: ','Failed to delete files: ') + (response.error || 'Unknown error'), 'error');
         }
     })
     .catch(error => {
         hideLoading();
-        showToast((window.current_lang==='vi'?'Lỗi khi xóa tệp: ':'Error deleting files: ') + error.message, 'error');
+        showToast(L('Lỗi khi xóa tệp: ','Error deleting files: ') + error.message, 'error');
     });
 }
 
 function shareMultipleFiles(fileIds) {
     if (!fileIds || fileIds.length === 0) return;
-    
+
     showLoading('Preparing share link...');
-    
+
     apiRequest('/api/share_multiple_files', {
         method: 'POST',
         body: JSON.stringify({
