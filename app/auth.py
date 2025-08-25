@@ -70,8 +70,12 @@ class TelegramAuthenticator:
             print(f"Error initializing Telegram client: {e}")
             return False
     
-    async def send_code_request(self, phone_number: str, country_code: str = "+84") -> Dict[str, Any]:
-        """Send verification code to phone number"""
+    async def send_code_request(self, phone_number: str, country_code: str = "+84", force_sms: bool = False) -> Dict[str, Any]:
+        """Send verification code to phone number
+        :param phone_number: phone without country code or full international
+        :param country_code: like '+84'
+        :param force_sms: attempt to force SMS delivery when supported
+        """
         print(f"[SEND_CODE] Instance {self.instance_id} - Sending code to {phone_number[:3]}***{phone_number[-3:]}")
         print(f"[SEND_CODE] Instance {self.instance_id} - Current session count: {len(self.temp_sessions)}")
         
@@ -83,12 +87,27 @@ class TelegramAuthenticator:
             })
 
         try:
-            # Format phone number with country code
-            if not phone_number.startswith('+'):
-                phone_number = f"{country_code}{phone_number}"
+            # Normalize number: handle local '0' and ensure correct international format
+            original_input = phone_number
+            try:
+                if phone_number.startswith('+'):
+                    # If full international provided, fix accidental leading 0 after country code
+                    if country_code and phone_number.startswith(country_code + '0'):
+                        phone_number = country_code + phone_number[len(country_code)+1:]
+                else:
+                    # Local number: drop leading 0 when using international code
+                    if country_code.startswith('+') and phone_number.startswith('0'):
+                        phone_number = phone_number[1:]
+                    phone_number = f"{country_code}{phone_number}"
+            except Exception:
+                # Fallback: best-effort formatting
+                if not phone_number.startswith('+'):
+                    phone_number = f"{country_code}{phone_number}"
 
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("PHONE FORMAT", f"Formatted phone: {phone_number[:3]}***{phone_number[-3:]}")
+                if original_input != phone_number:
+                    log_step("PHONE NORMALIZED", f"From input '{original_input}' with CC '{country_code}' -> '{phone_number[:3]}***{phone_number[-3:]}'")
 
             # Create a new client for each request to avoid event loop issues
             # Don't reuse self.client as it may be tied to a different event loop
@@ -116,7 +135,7 @@ class TelegramAuthenticator:
                     log_step("SEND CODE", "Sending code request to Telegram...")
 
                 send_code_start_time = time.time()
-                sent_code = await client.send_code_request(phone_number)
+                sent_code = await client.send_code_request(phone_number, force_sms=force_sms)
                 send_code_end_time = time.time()
 
                 if DETAILED_LOGGING_AVAILABLE:

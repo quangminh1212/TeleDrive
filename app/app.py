@@ -2535,9 +2535,17 @@ def telegram_login():
     if form.validate_on_submit():
         phone_number = form.phone_number.data
         country_code = form.country_code.data
+        # Normalize local format: if user typed leading 0 with an international code, drop the 0
+        try:
+            if isinstance(phone_number, str) and isinstance(country_code, str):
+                if phone_number.startswith('0') and country_code.startswith('+'):
+                    phone_number = phone_number[1:]
+        except Exception:
+            # Non-fatal: keep original if anything goes wrong
+            pass
         full_phone = f"{country_code}{phone_number}"
 
-        app.logger.info(f"Login attempt for phone: {full_phone}")
+        app.logger.info(f"Login attempt for phone (normalized): {full_phone}")
 
         # Store form data in session for the verification step
         from flask import session
@@ -2550,7 +2558,7 @@ def telegram_login():
         app.logger.info(f"Current session count before send: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
 
         async def send_code():
-            result = await telegram_auth.send_code_request(phone_number, country_code)
+            result = await telegram_auth.send_code_request(phone_number, country_code, force_sms=False)
             return result
 
         # Run async function with proper event loop management
@@ -2876,7 +2884,8 @@ def telegram_resend():
                         'remaining': max(0, 5 - recent_count)}), 429
 
     async def send_code():
-        return await telegram_auth.send_code_request(phone_number, country_code)
+        # On resend, try to force SMS delivery as a fallback
+        return await telegram_auth.send_code_request(phone_number, country_code, force_sms=True)
 
     try:
         result = run_async_in_thread(send_code())
