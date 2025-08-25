@@ -16,20 +16,26 @@ class FlaskConfigLoader:
     def __init__(self, config_file: str = 'config.json'):
         self.config_file = Path(config_file)
         self._config = None
-        # Get project root directory (parent of source directory)
+        # Get project root directory (parent of app directory)
         self.project_root = Path(__file__).parent.parent
-        self.dev_config_file = self.project_root / 'source' / 'web_config_dev.json'
+        # Support multiple possible dev config locations for compatibility
+        self.dev_config_candidates = [
+            self.project_root / 'app' / 'web_config_dev.json',
+            self.project_root / 'web_config_dev.json',
+            self.project_root / 'source' / 'web_config_dev.json',
+        ]
         self.load_config()
-    
+
     def load_config(self) -> Dict[str, Any]:
         """Load configuration from JSON file"""
         try:
-            # Check for development config first
-            if self.dev_config_file.exists():
-                print(f"🔧 Using development config: {self.dev_config_file}")
-                with open(self.dev_config_file, 'r', encoding='utf-8') as f:
-                    self._config = json.load(f)
-                return self._config
+            # Check for development config first (prefer app/web_config_dev.json)
+            for dev_path in self.dev_config_candidates:
+                if dev_path.exists():
+                    print(f"🔧 Using development config: {dev_path}")
+                    with open(dev_path, 'r', encoding='utf-8') as f:
+                        self._config = json.load(f)
+                    return self._config
 
             # Use regular config
             if self.config_file.exists():
@@ -42,7 +48,7 @@ class FlaskConfigLoader:
         except Exception as e:
             print(f"❌ Error loading config: {e}")
             self._config = self._get_default_config()
-        
+
         return self._config
     
     def save_config(self) -> None:
