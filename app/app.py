@@ -48,9 +48,23 @@ import web_config
 from i18n import t as i18n_t
 
 # Import detailed logging - with fallback
-DETAILED_LOGGING_AVAILABLE = False
 import logging
 logger = logging.getLogger(__name__)
+
+# Try to import detailed logging helpers; if missing, define no-op fallbacks
+DETAILED_LOGGING_AVAILABLE = False
+try:
+    from detailed_logging import log_step_start, log_step_end, log_error, log_user_action
+    DETAILED_LOGGING_AVAILABLE = True
+except Exception:
+    def log_step_start(*args, **kwargs):
+        return None
+    def log_step_end(*args, **kwargs):
+        return None
+    def log_error(*args, **kwargs):
+        logger.debug("log_error called but detailed logging not available")
+    def log_user_action(*args, **kwargs):
+        logger.debug("log_user_action called but detailed logging not available")
 
 # Async utility functions
 async def run_async_safely(coro):
@@ -105,10 +119,7 @@ async def download_from_telegram_async(file_record, output_path: str = None):
         logger.error(f"Telegram download error: {e}")
         return None
 
-# Production mode - minimal logging
-DETAILED_LOGGING_AVAILABLE = False
-import logging
-logger = logging.getLogger(__name__)
+# Production mode - minimal logging baseline
 logging.basicConfig(level=logging.WARNING)  # Only warnings and errors
 
 # Initialize Flask app with absolute paths
