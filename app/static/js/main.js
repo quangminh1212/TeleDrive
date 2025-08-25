@@ -268,7 +268,7 @@ function uploadFiles(files, targetFolder = null) {
             <div class="progress-fill" style="width: 0%"></div>
         </div>
         <div class="upload-progress-info">
-            <span class="upload-file-name">Preparing...</span>
+            <span class="upload-file-name">${L('Đang chuẩn bị...','Preparing...')}</span>
             <span class="upload-size">0% (0/${formatFileSize(totalSize)})</span>
         </div>
     `;
@@ -313,8 +313,8 @@ function uploadFiles(files, targetFolder = null) {
                 if (data.success) {
                     // Update progress container to success state
                     progressContainer.classList.add('upload-success');
-                    progressContainer.querySelector('.upload-progress-header').innerHTML = `<span>Upload Complete</span>`;
-                    progressContainer.querySelector('.upload-file-name').textContent = `${files.length} file(s) uploaded successfully`;
+                    progressContainer.querySelector('.upload-progress-header').innerHTML = `<span>${L('Tải lên hoàn tất','Upload Complete')}</span>`;
+                    progressContainer.querySelector('.upload-file-name').textContent = `${L(`${files.length} tệp đã được tải lên thành công`,`${files.length} file(s) uploaded successfully`)}`;
 
                     // Auto-remove progress after delay
                     setTimeout(() => {
@@ -328,24 +328,24 @@ function uploadFiles(files, targetFolder = null) {
                         location.reload();
                     }
                 } else {
-                    showUploadError(progressContainer, 'Upload failed: ' + (data.error || 'Unknown error'));
+                    showUploadError(progressContainer, L('Tải lên thất bại: ','Upload failed: ') + (data.error || 'Unknown error'));
                 }
             } catch (e) {
-                showUploadError(progressContainer, 'Invalid response from server');
+                showUploadError(progressContainer, L('Phản hồi không hợp lệ từ máy chủ','Invalid response from server'));
             }
         } else {
-            showUploadError(progressContainer, `Server error: ${xhr.status}`);
+            showUploadError(progressContainer, L('Lỗi máy chủ: ','Server error: ') + xhr.status);
         }
     });
 
     xhr.addEventListener('error', function() {
         hideLoading();
-        showUploadError(progressContainer, 'Connection error');
+        showUploadError(progressContainer, L('Lỗi kết nối','Connection error'));
     });
 
     xhr.addEventListener('abort', function() {
         hideLoading();
-        showUploadError(progressContainer, 'Upload aborted');
+        showUploadError(progressContainer, L('Đã hủy tải lên','Upload aborted'));
     });
 
     xhr.send(formData);
@@ -354,7 +354,7 @@ function uploadFiles(files, targetFolder = null) {
 // Helper function to show upload errors
 function showUploadError(progressContainer, errorMessage) {
     progressContainer.classList.add('upload-error');
-    progressContainer.querySelector('.upload-progress-header').innerHTML = `<span>Upload Failed</span>`;
+    progressContainer.querySelector('.upload-progress-header').innerHTML = `<span>${L('Tải lên thất bại','Upload Failed')}</span>`;
     progressContainer.querySelector('.upload-file-name').textContent = errorMessage;
     showToast(errorMessage, 'error');
 }
@@ -1001,13 +1001,13 @@ function copyFileLink(fileId) {
             document.execCommand('copy');
             document.body.removeChild(tempInput);
 
-            showToast(`Link for "${fileName}" copied to clipboard`, 'success');
+            showToast(L(`Đã sao chép liên kết cho \"${fileName}\"`,`Link for \"${fileName}\" copied to clipboard`), 'success');
         } else {
-            showToast('Failed to get direct link: ' + (response.error || 'Unknown error'), 'error');
+            showToast(L('Không lấy được liên kết trực tiếp: ','Failed to get direct link: ') + (response.error || 'Unknown error'), 'error');
         }
     })
     .catch(error => {
-        showToast('Error getting direct link: ' + error.message, 'error');
+        showToast(L('Lỗi khi lấy liên kết trực tiếp: ','Error getting direct link: ') + error.message, 'error');
     });
 }
 
@@ -1102,11 +1102,11 @@ function loadFolderTree(modalId, fileId) {
                     }
                 });
             } else {
-                treeContainer.innerHTML = `<div class="error-message">Failed to load folders</div>`;
+                treeContainer.innerHTML = `<div class="error-message">${L('Tải danh sách thư mục thất bại','Failed to load folders')}</div>`;
             }
         })
         .catch(error => {
-            treeContainer.innerHTML = `<div class="error-message">Error loading folders: ${error.message}</div>`;
+            treeContainer.innerHTML = `<div class="error-message">${L('Lỗi tải danh sách thư mục: ','Error loading folders: ')}${error.message}</div>`;
         });
 }
 
@@ -1403,7 +1403,7 @@ function handleImageError(img) {
     container.innerHTML = `
         <div class="preview-error">
             <span class="material-icons">broken_image</span>
-            <p>Failed to load image</p>
+            <p>${L('Tải ảnh thất bại','Failed to load image')}</p>
         </div>
     `;
 }
@@ -1601,7 +1601,7 @@ function loadVideoPreview(filename, container) {
         <div class="video-preview">
             <div class="preview-header">
                 <span class="file-type-badge video">VIDEO</span>
-                <span class="file-info" id="video-info-${videoId}">Loading video...</span>
+                <span class="file-info" id="video-info-${videoId}">${L('Đang tải video...','Loading video...')}</span>
             </div>
             <div class="video-player">
                 <div class="video-container">
@@ -1662,7 +1662,7 @@ function loadAudioPreview(filename, container) {
         <div class="audio-preview">
             <div class="preview-header">
                 <span class="file-type-badge audio">AUDIO</span>
-                <span class="file-info" id="audio-info-${audioId}">Loading audio...</span>
+                <span class="file-info" id="audio-info-${audioId}">${L('Đang tải âm thanh...','Loading audio...')}</span>
             </div>
             <div class="audio-player">
                 <div class="audio-visualizer">
@@ -2220,7 +2220,7 @@ function loadTextPreview(filename, container) {
             container.innerHTML = `
                 <div class="preview-error">
                     <span class="material-icons">error</span>
-                    <p>Error loading text preview: ${error.message}</p>
+                    <p>${L('Lỗi tải xem trước văn bản: ','Error loading text preview: ')}${error.message}</p>
                 </div>
             `;
         });
@@ -2231,7 +2231,7 @@ function loadPdfPreview(filename, container) {
         <div class="pdf-preview">
             <div class="preview-header">
                 <span class="file-type-badge pdf">PDF</span>
-                <span class="file-info" id="pdf-info">Loading PDF...</span>
+                <span class="file-info" id="pdf-info">${L('Đang tải PDF...','Loading PDF...')}</span>
             </div>
             <div class="pdf-viewer">
                 <div class="pdf-controls">
@@ -2339,8 +2339,8 @@ function initializePdfViewer(filename) {
         document.getElementById('pdf-container').innerHTML = `
             <div class="preview-error">
                 <span class="material-icons">error</span>
-                <p>Failed to load PDF</p>
-                <a href="${url}" target="_blank" class="btn btn-primary">Open in new tab</a>
+                <p>${L('Tải PDF thất bại','Failed to load PDF')}</p>
+                <a href="${url}" target="_blank" class="btn btn-primary">${L('Mở tab mới','Open in new tab')}</a>
             </div>
         `;
     });
@@ -2596,7 +2596,7 @@ function moveMultipleFiles(fileIds) {
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Move ${fileIds.length} Files</h3>
+                <h3>${L('Di chuyển','Move')} ${fileIds.length} ${L('tệp','Files')}</h3>
                 <button class="modal-close" onclick="document.getElementById('${modalId}').remove();">&times;</button>
             </div>
             <div class="modal-body">
@@ -2670,7 +2670,7 @@ function moveMultipleFilesToFolder(fileIds, targetFolderId, modalId) {
 function deleteMultipleFiles(fileIds) {
     if (!fileIds || fileIds.length === 0) return;
 
-    if (!confirm(`Are you sure you want to delete ${fileIds.length} selected file(s)? This action cannot be undone.`)) {
+    if (!confirm(L(`Bạn có chắc muốn xóa ${fileIds.length} tệp đã chọn? Hành động này không thể hoàn tác.`,`Are you sure you want to delete ${fileIds.length} selected file(s)? This action cannot be undone.`))) {
         return;
     }
 
