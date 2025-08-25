@@ -3066,18 +3066,40 @@ def download_shared_file(token):
         # Increment download count
         share_link.increment_download_count()
 
-        # Serve the file (resolve absolute path and use send_file)
-        output_dir = web_config.flask_config.get('directories.output', 'output')
+        # Serve the file: prefer the actual file_path if available, else fallback to output dir
         from flask import current_app as _current_app
         base_root = Path(_current_app.root_path).parent
-        output_path = Path(output_dir)
-        if not output_path.is_absolute():
-            output_path = (base_root / output_path).resolve()
-        file_path = (output_path / share_link.file.filename).resolve()
-        if file_path.exists():
-            return send_file(str(file_path), as_attachment=True, download_name=share_link.file.filename)
-        else:
-            return jsonify({'error': 'File not found on disk'}), 404
+
+        # Compute allowed roots (uploads and output) as absolute paths
+        dirs = web_config.flask_config.get_directories()
+        uploads_root = Path(dirs.get('uploads', 'data/uploads'))
+        output_root = Path(dirs.get('output', 'output'))
+        if not uploads_root.is_absolute():
+            uploads_root = (base_root / uploads_root).resolve()
+        if not output_root.is_absolute():
+            output_root = (base_root / output_root).resolve()
+
+        def _is_within(root: Path, p: Path) -> bool:
+            try:
+                return str(p).startswith(str(root))
+            except Exception:
+                return False
+
+        # 1) Try file.file_path if present (local storage)
+        if getattr(share_link.file, 'file_path', None):
+            file_path = Path(share_link.file.file_path)
+            if not file_path.is_absolute():
+                file_path = (base_root / file_path).resolve()
+            if file_path.exists() and (_is_within(uploads_root, file_path) or _is_within(output_root, file_path)):
+                return send_file(str(file_path), as_attachment=True, download_name=share_link.file.filename)
+
+        # 2) Fallback: serve from output directory by filename
+        output_path = output_root / share_link.file.filename
+        output_path = output_path.resolve()
+        if output_path.exists():
+            return send_file(str(output_path), as_attachment=True, download_name=share_link.file.filename)
+
+        return jsonify({'error': 'File not found on disk'}), 404
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
