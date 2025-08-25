@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access Denied - TeleDrive Share</title>
+    <title>{{ i18n_t('share.denied.title') }} - TeleDrive Share</title>
     
     <!-- Google Drive-like styling -->
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -149,9 +149,9 @@
             <span class="material-icons">block</span>
         </div>
         
-        <h1 class="error-title">Access Denied</h1>
+        <h1 class="error-title">{{ i18n_t('share.denied.title') }}</h1>
         <p class="error-message">
-            You don't have permission to access this shared file.
+            {{ i18n_t('share.denied.message') }}
         </p>
         
         {% if message %}
@@ -162,7 +162,7 @@
         
         <a href="/" class="btn btn-primary">
             <span class="material-icons">home</span>
-            Go to TeleDrive
+            {{ i18n_t('share.goto') }}
         </a>
     </div>
 </body>

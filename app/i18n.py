@@ -353,6 +353,30 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
     'share.not_found.reason.disabled': {'en': 'The share link has been disabled', 'vi': 'Liên kết đã bị vô hiệu hoá'},
     'share.not_found.reason.incorrect': {'en': 'The link URL is incorrect or incomplete', 'vi': 'URL liên kết không đúng hoặc không đầy đủ'},
     'share.not_found.goto': {'en': 'Go to TeleDrive', 'vi': 'Về TeleDrive'},
+
+    'share.password.title': {'en': 'Password Required', 'vi': 'Yêu cầu mật khẩu'},
+    'share.password.subtitle': {'en': 'This shared file is password protected', 'vi': 'Tệp chia sẻ này được bảo vệ bằng mật khẩu'},
+    'share.password.enter_label': {'en': 'Enter Password', 'vi': 'Nhập mật khẩu'},
+    'share.password.placeholder': {'en': 'Enter the password to access this file', 'vi': 'Nhập mật khẩu để truy cập tệp'},
+    'share.password.access_button': {'en': 'Access File', 'vi': 'Truy cập tệp'},
+    'share.password.help': {'en': "Contact the person who shared this file if you don't have the password.", 'vi': 'Liên hệ người đã chia sẻ nếu bạn không có mật khẩu.'},
+
+    'share.denied.title': {'en': 'Access Denied', 'vi': 'Từ chối truy cập'},
+    'share.denied.message': { 'en': "You don't have permission to access this shared file.", 'vi': 'Bạn không có quyền truy cập tệp chia sẻ này.' },
+    'share.goto': {'en': 'Go to TeleDrive', 'vi': 'Về TeleDrive'},
+
+    'share.view.download': {'en': 'Download', 'vi': 'Tải xuống'},
+    'share.view.preview': {'en': 'Preview', 'vi': 'Xem trước'},
+    'share.view.click_preview': {'en': 'Click Preview to view the file content', 'vi': 'Bấm Xem trước để xem nội dung tệp'},
+    'share.view.size': {'en': 'Size', 'vi': 'Dung lượng'},
+    'share.view.type': {'en': 'Type', 'vi': 'Loại'},
+    'share.view.shared': {'en': 'Shared', 'vi': 'Chia sẻ lúc'},
+    'share.view.expires': {'en': 'Expires', 'vi': 'Hết hạn'},
+    'share.view.views': {'en': 'Views', 'vi': 'Lượt xem'},
+    'share.view.downloads': {'en': 'Downloads', 'vi': 'Lượt tải'},
+    'share.view.preview_na': {'en': 'Preview not available for this file type.', 'vi': 'Không hỗ trợ xem trước cho loại tệp này.'},
+    'share.view.download_to_view': {'en': 'Download the file', 'vi': 'Tải tệp'},
+    'share.view.to_view_it': {'en': 'to view it.', 'vi': 'để xem.'},
 }
 
 DEFAULT_LANG = 'vi'

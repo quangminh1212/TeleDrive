@@ -273,13 +273,13 @@
             {% if share_link.can_download %}
             <a href="/share/{{ share_link.token }}/download" class="btn btn-primary">
                 <span class="material-icons">download</span>
-                Download
+                {{ i18n_t('share.view.download') }}
             </a>
             {% endif %}
             {% if share_link.can_preview %}
             <button class="btn btn-secondary" onclick="togglePreview()">
                 <span class="material-icons">visibility</span>
-                Preview
+                {{ i18n_t('share.view.preview') }}
             </button>
             {% endif %}
         </div>
@@ -291,7 +291,7 @@
                 <div class="preview-placeholder">
                     <span class="material-icons">insert_drive_file</span>
                     <h3>{{ share_link.file.filename }}</h3>
-                    <p>Click Preview to view the file content</p>
+                    <p>{{ i18n_t('share.view.click_preview') }}</p>
                 </div>
             </div>
         </div>
@@ -305,20 +305,20 @@
             
             <div class="file-details">
                 <div class="detail-row">
-                    <span class="detail-label">Size</span>
+                    <span class="detail-label">{{ i18n_t('share.view.size') }}</span>
                     <span class="detail-value">{{ (share_link.file.file_size / 1024 / 1024) | round(2) }} MB</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Type</span>
+                    <span class="detail-label">{{ i18n_t('share.view.type') }}</span>
                     <span class="detail-value">{{ share_link.file.mime_type or 'Unknown' }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Shared</span>
+                    <span class="detail-label">{{ i18n_t('share.view.shared') }}</span>
                     <span class="detail-value">{{ share_link.created_at.strftime('%B %d, %Y') }}</span>
                 </div>
                 {% if share_link.expires_at %}
                 <div class="detail-row">
-                    <span class="detail-label">Expires</span>
+                    <span class="detail-label">{{ i18n_t('share.view.expires') }}</span>
                     <span class="detail-value">{{ share_link.expires_at.strftime('%B %d, %Y') }}</span>
                 </div>
                 {% endif %}
@@ -338,11 +338,11 @@
             <div class="stats-grid">
                 <div class="stat-item">
                     <span class="stat-number">{{ share_link.view_count }}</span>
-                    <span class="stat-label">Views</span>
+                    <span class="stat-label">{{ i18n_t('share.view.views') }}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number">{{ share_link.download_count }}</span>
-                    <span class="stat-label">Downloads</span>
+                    <span class="stat-label">{{ i18n_t('share.view.downloads') }}</span>
                 </div>
             </div>
         </div>
@@ -374,8 +374,8 @@
             // Simple preview implementation
             container.innerHTML = `
                 <iframe src="/output/${filename}" style="width: 100%; height: 500px; border: none;">
-                    <p>Preview not available for this file type.
-                       <a href="/share/{{ share_link.token }}/download">Download the file</a> to view it.
+                    <p>{{ i18n_t('share.view.preview_na') }}
+                       <a href="/share/{{ share_link.token }}/download">{{ i18n_t('share.view.download_to_view') }}</a> {{ i18n_t('share.view.to_view_it') }}
                     </p>
                 </iframe>
             `;
