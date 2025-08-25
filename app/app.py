@@ -3063,6 +3063,7 @@ def view_shared_file(token):
         return render_template('share/error.html', error=str(e)), 500
 
 @app.route('/share/<token>/password', methods=['POST'])
+@csrf.exempt
 def verify_share_password(token):
     """Verify password for protected share"""
     try:
