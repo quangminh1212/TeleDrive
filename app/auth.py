@@ -35,6 +35,7 @@ class TelegramAuthenticator:
     def __init__(self):
         self.client = None
         self.temp_sessions = {}  # Store temporary session data
+        self.completed_sessions = {}  # Store completed sessions for race condition prevention
         # Get verification code timeout from config (default 20 minutes)
         self.session_timeout = getattr(config, 'VERIFICATION_CODE_TIMEOUT', 1200)
         # Instance ID for debugging
@@ -245,8 +246,19 @@ class TelegramAuthenticator:
             # Clean up expired sessions first
             await self.cleanup_expired_sessions()
 
+            # Check completed sessions first
+            if session_id in self.completed_sessions:
+                completed_info = self.completed_sessions[session_id]
+                print(f"[DEBUG] Thread {request_id} - Session {session_id} was already completed at {completed_info.get('completed_at', 0)}")
+                return {
+                    'success': True,
+                    'message': 'Verification already completed successfully',
+                    'already_completed': True
+                }
+
             # Debug: List all available sessions (always print for debugging timeout issue)
             print(f"[DEBUG] Thread {request_id} - Available sessions: {list(self.temp_sessions.keys())}")
+            print(f"[DEBUG] Thread {request_id} - Completed sessions: {list(self.completed_sessions.keys())}")
             print(f"[DEBUG] Thread {request_id} - Looking for session: {session_id}")
             print(f"[DEBUG] Thread {request_id} - Session exists: {session_id in self.temp_sessions}")
             
@@ -424,6 +436,19 @@ class TelegramAuthenticator:
 
             db_user = self.create_or_update_user(telegram_user, phone_number)
 
+            # Mark session as completed before cleanup to prevent race conditions
+            completion_time = time.time()
+            session_data['completed'] = True
+            session_data['completed_at'] = completion_time
+            
+            # Store in completed sessions for race condition prevention (keep for 5 minutes)
+            self.completed_sessions[session_id] = {
+                'completed_at': completion_time,
+                'phone_number': phone_number,
+                'user_id': db_user.id
+            }
+            print(f"[VERIFY_CODE] Thread {request_id} - Marked session {session_id} as completed")
+            
             # Clean up temporary session and disconnect both clients
             old_client = session_data.get('client')
             del self.temp_sessions[session_id]
@@ -649,6 +674,20 @@ class TelegramAuthenticator:
         else:
             if DETAILED_LOGGING_AVAILABLE:
                 pass  # No expired sessions
+                
+        # Also cleanup old completed sessions (older than 5 minutes)
+        expired_completed = []
+        for session_id, completion_info in self.completed_sessions.items():
+            completed_at = completion_info.get('completed_at', 0)
+            if current_time - completed_at > 300:  # 5 minutes
+                expired_completed.append(session_id)
+        
+        for session_id in expired_completed:
+            del self.completed_sessions[session_id]
+            print(f"[CLEANUP] Removed old completed session: {session_id}")
+            
+        if expired_completed:
+            print(f"[CLEANUP] Cleaned up {len(expired_completed)} old completed sessions")
 
     async def cleanup_session(self, session_id: str):
         """Clean up temporary session with improved error handling"""
