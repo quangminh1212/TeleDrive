@@ -678,20 +678,20 @@ function previewFile(filename) {
     modal.innerHTML = `
         <div class="modal-content file-preview-modal">
             <div class="modal-header">
-                <h3>File Preview: ${filename}</h3>
+                <h3>${L('Xem trước tệp:','File Preview:')} ${filename}</h3>
                 <button class="modal-close" onclick="closePreviewModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="preview-container" id="preview-container">
                     <div class="loading-spinner">
                         <div class="spinner"></div>
-                        <p>Loading preview...</p>
+                        <p>${L('Đang tải xem trước...','Loading preview...')}</p>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closePreviewModal()">Close</button>
-                <button class="btn btn-primary" onclick="downloadFile('${filename}')">Download</button>
+                <button class="btn btn-secondary" onclick="closePreviewModal()">${L('Đóng','Close')}</button>
+                <button class="btn btn-primary" onclick="downloadFile('${filename}')">${L('Tải xuống','Download')}</button>
             </div>
         </div>
     `;
@@ -703,8 +703,8 @@ function previewFile(filename) {
 }
 
 function deleteFile(filename) {
-    if (confirm(`Are you sure you want to delete ${filename}?`)) {
-        showLoading('Deleting file...');
+    if (confirm(L(`Bạn có chắc muốn xóa ${filename}?`,`Are you sure you want to delete ${filename}?`))) {
+        showLoading(L('Đang xóa tệp...','Deleting file...'));
 
         apiRequest('/api/delete_file', {
             method: 'POST',
@@ -724,7 +724,7 @@ function deleteFile(filename) {
                         loadStats();
                     }
                 } else {
-                    showToast(`Error deleting file: ${response.error}`, 'error');
+                    showToast(L('Lỗi xóa tệp: ','Error deleting file: ') + (response.error || 'Unknown error'), 'error');
                 }
             })
             .catch(error => {
