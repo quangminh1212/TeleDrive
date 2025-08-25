@@ -1255,14 +1255,19 @@ def download_file(filename):
             elif file_record.is_stored_locally():
                 app.logger.info(f"Downloading from local storage: {filename}")
                 upload_config = web_config.flask_config.get_upload_config()
+                # Resolve upload directory relative to project root (parent of app)
+                from flask import current_app as _current_app
+                base_root = Path(_current_app.root_path).parent  # c:\...\TeleDrive
                 upload_dir = Path(upload_config['upload_directory'])
-                file_path = upload_dir / filename
+                if not upload_dir.is_absolute():
+                    upload_dir = (base_root / upload_dir).resolve()
+                file_path = (upload_dir / filename).resolve()
 
                 app.logger.info(f"Looking for local file: {file_path}")
 
                 if file_path.exists():
                     app.logger.info(f"Local file found, sending: {file_path}")
-                    return send_from_directory(str(upload_dir), filename, as_attachment=True)
+                    return send_file(str(file_path), as_attachment=True, download_name=filename)
                 else:
                     app.logger.error(f"Local file not found on disk: {file_path}")
                     return jsonify({'error': 'File not found on disk'}), 404
@@ -1274,9 +1279,14 @@ def download_file(filename):
         # Fallback: check output directory for generated files
         if filename.endswith(('.json', '.csv', '.xlsx')):
             output_dir = web_config.flask_config.get('directories.output', 'output')
-            file_path = os.path.join(output_dir, filename)
-            if os.path.exists(file_path):
-                return send_from_directory(output_dir, filename, as_attachment=True)
+            output_path = Path(output_dir)
+            from flask import current_app as _current_app
+            base_root = Path(_current_app.root_path).parent
+            if not output_path.is_absolute():
+                output_path = (base_root / output_path).resolve()
+            file_path = (output_path / filename).resolve()
+            if file_path.exists():
+                return send_file(str(file_path), as_attachment=True, download_name=filename)
 
         return jsonify({'error': 'File not found'}), 404
 
@@ -1495,6 +1505,7 @@ def bulk_file_operations():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/upload', methods=['POST'])
+@csrf.exempt  # Use explicit token check below for JSON 400 behavior
 @handle_api_error
 def upload_file():
     """Upload files to the system with comprehensive validation"""
