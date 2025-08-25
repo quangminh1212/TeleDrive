@@ -1028,7 +1028,7 @@ function showFolderSelectionModal(fileId) {
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Move to Folder</h3>
+                <h3>${L('Di chuyển đến thư mục','Move to Folder')}</h3>
                 <button class="modal-close" onclick="document.getElementById('${modalId}').remove();">&times;</button>
             </div>
             <div class="modal-body">
@@ -1037,8 +1037,8 @@ function showFolderSelectionModal(fileId) {
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove();">Cancel</button>
-                <button class="btn btn-primary" id="move-confirm-btn-${modalId}" disabled>Move</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove();">${L('Hủy','Cancel')}</button>
+                <button class="btn btn-primary" id="move-confirm-btn-${modalId}" disabled>${L('Di chuyển','Move')}</button>
             </div>
         </div>
     `;
@@ -1224,7 +1224,7 @@ function loadJsonPreview(filename, container) {
             container.innerHTML = `
                 <div class="preview-error">
                     <span class="material-icons">error</span>
-                    <p>Error loading JSON preview: ${error.message}</p>
+                    <p>${L('Lỗi tải xem trước JSON: ','Error loading JSON preview: ')}${error.message}</p>
                 </div>
             `;
         });
@@ -1267,7 +1267,7 @@ function loadCsvPreview(filename, container) {
             container.innerHTML = `
                 <div class="preview-error">
                     <span class="material-icons">error</span>
-                    <p>Error loading CSV preview: ${error.message}</p>
+                    <p>${L('Lỗi tải xem trước CSV: ','Error loading CSV preview: ')}${error.message}</p>
                 </div>
             `;
         });
@@ -1773,7 +1773,7 @@ function handleVideoLoad(videoId) {
 function handleVideoError(videoId) {
     const info = document.getElementById(`video-info-${videoId}`);
     if (info) {
-        info.textContent = 'Error loading video';
+        info.textContent = L('Lỗi tải video','Error loading video');
     }
 }
 
@@ -1898,7 +1898,7 @@ function handleAudioLoad(audioId) {
 function handleAudioError(audioId) {
     const info = document.getElementById(`audio-info-${audioId}`);
     if (info) {
-        info.textContent = 'Error loading audio';
+        info.textContent = L('Lỗi tải âm thanh','Error loading audio');
     }
 }
 
@@ -2605,8 +2605,8 @@ function moveMultipleFiles(fileIds) {
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove();">Cancel</button>
-                <button class="btn btn-primary" id="move-confirm-btn-${modalId}" disabled>Move</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove();">${L('Hủy','Cancel')}</button>
+                <button class="btn btn-primary" id="move-confirm-btn-${modalId}" disabled>${L('Di chuyển','Move')}</button>
             </div>
         </div>
     `;

@@ -87,7 +87,7 @@
     "exclude_extensions": []
   },
   "database": {
-    "url": "sqlite:///C:\\VF\\0\\TeleDrive\\data\\teledrive.db",
+    "url": "sqlite:///data/teledrive.db",
     "track_modifications": false,
     "pool_size": 10,
     "pool_timeout": 20,
