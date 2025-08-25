@@ -320,6 +320,39 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
     'settings.advanced.file_types.desc.audio': {'en': 'MP3, WAV, FLAC, etc.', 'vi': 'MP3, WAV, FLAC,...'},
     'settings.section.output.title': {'en': 'Output Configuration', 'vi': 'Cấu hình xuất'},
     'settings.section.output.desc': {'en': 'Configure output formats and file settings', 'vi': 'Cài đặt định dạng và tệp xuất'},
+
+    # Auth pages
+    'auth.login.title': {'en': 'Sign in', 'vi': 'Đăng nhập'},
+    'auth.login.subtitle': {'en': 'to continue to TeleDrive', 'vi': 'để tiếp tục vào TeleDrive'},
+    'auth.login.via_telegram': {'en': 'Sign in with Telegram', 'vi': 'Đăng nhập với Telegram'},
+    'auth.login.only_telegram': {'en': 'Only Telegram authentication is supported.', 'vi': 'Chỉ hỗ trợ đăng nhập bằng Telegram.'},
+    'auth.login.use_telegram': {'en': 'Please use your Telegram account to sign in.', 'vi': 'Vui lòng dùng tài khoản Telegram để đăng nhập.'},
+
+    'profile.title': {'en': 'User Profile', 'vi': 'Hồ sơ người dùng'},
+    'profile.member_since': {'en': 'Member since:', 'vi': 'Thành viên từ:'},
+    'profile.account_status': {'en': 'Account status:', 'vi': 'Trạng thái tài khoản:'},
+    'profile.last_updated': {'en': 'Last updated:', 'vi': 'Cập nhật lần cuối:'},
+    'profile.active': {'en': 'Active', 'vi': 'Hoạt động'},
+    'profile.inactive': {'en': 'Inactive', 'vi': 'Không hoạt động'},
+    'profile.change_password': {'en': 'Change Password', 'vi': 'Đổi mật khẩu'},
+    'profile.sign_out': {'en': 'Sign Out', 'vi': 'Đăng xuất'},
+    'profile.stats.title': {'en': 'Account Statistics', 'vi': 'Thống kê tài khoản'},
+    'profile.stats.files': {'en': 'Files', 'vi': 'Tệp'},
+    'profile.stats.folders': {'en': 'Folders', 'vi': 'Thư mục'},
+    'profile.stats.scans': {'en': 'Scans', 'vi': 'Quét'},
+
+    # Share pages (public)
+    'share.not_found.title': {'en': 'Share Not Found', 'vi': 'Liên kết không tồn tại'},
+    'share.not_found.message': {
+        'en': "The shared file you're looking for doesn't exist or has been removed.",
+        'vi': 'Tệp được chia sẻ không tồn tại hoặc đã bị xoá.'
+    },
+    'share.not_found.reasons.title': {'en': 'This could happen if:', 'vi': 'Có thể do:'},
+    'share.not_found.reason.expired': {'en': 'The share link has expired', 'vi': 'Liên kết chia sẻ đã hết hạn'},
+    'share.not_found.reason.deleted': {'en': 'The file has been deleted by the owner', 'vi': 'Tệp đã bị chủ sở hữu xoá'},
+    'share.not_found.reason.disabled': {'en': 'The share link has been disabled', 'vi': 'Liên kết đã bị vô hiệu hoá'},
+    'share.not_found.reason.incorrect': {'en': 'The link URL is incorrect or incomplete', 'vi': 'URL liên kết không đúng hoặc không đầy đủ'},
+    'share.not_found.goto': {'en': 'Go to TeleDrive', 'vi': 'Về TeleDrive'},
 }
 
 DEFAULT_LANG = 'vi'

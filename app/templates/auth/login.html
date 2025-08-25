@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - TeleDrive</title>
+    <title>{{ i18n_t('auth.login.title') }} - TeleDrive</title>
     
     <!-- Telegram-like styling -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
@@ -211,8 +211,8 @@
             <span class="logo-text">TeleDrive</span>
         </div>
         
-        <h1 class="auth-title">Sign in</h1>
-        <p class="auth-subtitle">to continue to TeleDrive</p>
+        <h1 class="auth-title">{{ i18n_t('auth.login.title') }}</h1>
+        <p class="auth-subtitle">{{ i18n_t('auth.login.subtitle') }}</p>
 
         <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -227,12 +227,12 @@
 
         <a href="{{ url_for('telegram_login') }}" style="display: inline-flex; align-items: center; justify-content: center; width: 100%; padding: 14px 24px; background: #0088cc; color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; margin-bottom: 16px;">
             <span class="material-icons" style="margin-right: 8px; font-size: 20px;">telegram</span>
-            Sign in with Telegram
+            {{ i18n_t('auth.login.via_telegram') }}
         </a>
 
         <p style="font-size: 14px; color: #666; text-align: center; margin-top: 24px;">
-            Only Telegram authentication is supported.<br>
-            Please use your Telegram account to sign in.
+            {{ i18n_t('auth.login.only_telegram') }}<br>
+            {{ i18n_t('auth.login.use_telegram') }}
         </p>
     </div>
 </body>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Share Not Found - TeleDrive</title>
+    <title>{{ i18n_t('share.not_found.title') }} - TeleDrive</title>
     
     <!-- Google Drive-like styling -->
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -169,24 +169,24 @@
             <span class="material-icons">link_off</span>
         </div>
         
-        <h1 class="error-title">Share Not Found</h1>
+        <h1 class="error-title">{{ i18n_t('share.not_found.title') }}</h1>
         <p class="error-message">
-            The shared file you're looking for doesn't exist or has been removed.
+            {{ i18n_t('share.not_found.message') }}
         </p>
         
         <div class="error-details">
-            <h4>This could happen if:</h4>
+            <h4>{{ i18n_t('share.not_found.reasons.title') }}</h4>
             <ul>
-                <li>The share link has expired</li>
-                <li>The file has been deleted by the owner</li>
-                <li>The share link has been disabled</li>
-                <li>The link URL is incorrect or incomplete</li>
+                <li>{{ i18n_t('share.not_found.reason.expired') }}</li>
+                <li>{{ i18n_t('share.not_found.reason.deleted') }}</li>
+                <li>{{ i18n_t('share.not_found.reason.disabled') }}</li>
+                <li>{{ i18n_t('share.not_found.reason.incorrect') }}</li>
             </ul>
         </div>
         
         <a href="/" class="btn btn-primary">
             <span class="material-icons">home</span>
-            Go to TeleDrive
+            {{ i18n_t('share.not_found.goto') }}
         </a>
     </div>
 </body>

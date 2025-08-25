@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Profile - TeleDrive{% endblock %}
+{% block title %}{{ i18n_t('header.profile') }} - TeleDrive{% endblock %}
 
 {% block content %}
 <div class="main-content">
     <div class="content-header">
         <h1 class="page-title">
             <span class="material-icons">account_circle</span>
-            User Profile
+            {{ i18n_t('profile.title') }}
         </h1>
     </div>
     
@@ -26,47 +26,47 @@
             
             <div class="profile-details">
                 <div class="detail-row">
-                    <span class="detail-label">Member since:</span>
-                    <span class="detail-value">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'Unknown' }}</span>
+                    <span class="detail-label">{{ i18n_t('profile.member_since') }}</span>
+                    <span class="detail-value">{{ user.created_at|format_dt if user.created_at else 'Unknown' }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Account status:</span>
+                    <span class="detail-label">{{ i18n_t('profile.account_status') }}</span>
                     <span class="detail-value status-{{ 'active' if user.is_active else 'inactive' }}">
-                        {{ 'Active' if user.is_active else 'Inactive' }}
+                        {{ i18n_t('profile.active') if user.is_active else i18n_t('profile.inactive') }}
                     </span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Last updated:</span>
-                    <span class="detail-value">{{ user.updated_at.strftime('%B %d, %Y at %I:%M %p') if user.updated_at else 'Unknown' }}</span>
+                    <span class="detail-label">{{ i18n_t('profile.last_updated') }}</span>
+                    <span class="detail-value">{{ user.updated_at|format_dt if user.updated_at else 'Unknown' }}</span>
                 </div>
             </div>
             
             <div class="profile-actions">
                 <a href="{{ url_for('change_password') }}" class="btn btn-primary">
                     <span class="material-icons">lock</span>
-                    Change Password
+                    {{ i18n_t('profile.change_password') }}
                 </a>
                 <a href="{{ url_for('logout') }}" class="btn btn-secondary">
                     <span class="material-icons">logout</span>
-                    Sign Out
+                    {{ i18n_t('profile.sign_out') }}
                 </a>
             </div>
         </div>
         
         <div class="stats-card">
-            <h3 class="stats-title">Account Statistics</h3>
+            <h3 class="stats-title">{{ i18n_t('profile.stats.title') }}</h3>
             <div class="stats-grid">
                 <div class="stat-item">
                     <span class="stat-number">{{ user.files.count() }}</span>
-                    <span class="stat-label">Files</span>
+                    <span class="stat-label">{{ i18n_t('profile.stats.files') }}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number">{{ user.folders.count() }}</span>
-                    <span class="stat-label">Folders</span>
+                    <span class="stat-label">{{ i18n_t('profile.stats.folders') }}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number">{{ user.scan_sessions.count() }}</span>
-                    <span class="stat-label">Scans</span>
+                    <span class="stat-label">{{ i18n_t('profile.stats.scans') }}</span>
                 </div>
             </div>
         </div>
