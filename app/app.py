@@ -3066,11 +3066,16 @@ def download_shared_file(token):
         # Increment download count
         share_link.increment_download_count()
 
-        # Serve the file
+        # Serve the file (resolve absolute path and use send_file)
         output_dir = web_config.flask_config.get('directories.output', 'output')
-        file_path = os.path.join(output_dir, share_link.file.filename)
-        if os.path.exists(file_path):
-            return send_from_directory(output_dir, share_link.file.filename, as_attachment=True)
+        from flask import current_app as _current_app
+        base_root = Path(_current_app.root_path).parent
+        output_path = Path(output_dir)
+        if not output_path.is_absolute():
+            output_path = (base_root / output_path).resolve()
+        file_path = (output_path / share_link.file.filename).resolve()
+        if file_path.exists():
+            return send_file(str(file_path), as_attachment=True, download_name=share_link.file.filename)
         else:
             return jsonify({'error': 'File not found on disk'}), 404
 
