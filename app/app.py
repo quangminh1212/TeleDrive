@@ -2453,7 +2453,8 @@ def telegram_login():
 @app.route('/telegram_verify', methods=['GET', 'POST'])
 def telegram_verify():
     """Telegram verification - code input"""
-    app.logger.info("=== TELEGRAM VERIFY START ===")
+    request_start_time = time.time()
+    app.logger.info(f"=== TELEGRAM VERIFY START at {time.time():.3f} ===")
 
     if current_user.is_authenticated:
         app.logger.info(f"User already authenticated: {current_user.username}")
@@ -2473,6 +2474,7 @@ def telegram_verify():
 
     app.logger.info(f"Phone from session: {phone_number}")
     app.logger.info(f"Requires password: {requires_password}")
+    app.logger.info(f"Initial processing time: {(time.time() - request_start_time)*1000:.1f}ms")
 
     if form.validate_on_submit():
         session_id = session['telegram_session_id']
@@ -2497,10 +2499,16 @@ def telegram_verify():
 
         # Run async function with proper event loop management
         try:
-            app.logger.info("Starting code verification...")
+            verify_start_time = time.time()
+            app.logger.info(f"Starting code verification at {verify_start_time:.3f}...")
             result = run_async_in_thread(verify_code())
+            verify_end_time = time.time()
+            verify_duration = verify_end_time - verify_start_time
+            
+            app.logger.info(f"Verification completed in {verify_duration*1000:.1f}ms")
             app.logger.info(f"Verification result: {result}")
             app.logger.info(f"Current session count after verify: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
+            app.logger.info(f"Total request time so far: {(verify_end_time - request_start_time)*1000:.1f}ms")
         except Exception as e:
             app.logger.error(f"Failed to verify code: {e}")
             result = {'success': False, 'error': str(e)}

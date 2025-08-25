@@ -128,16 +128,55 @@
             cursor: pointer;
             transition: all 0.2s ease;
             margin-bottom: 24px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: #006699;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
         }
 
-        .btn-primary:active {
+        .btn-primary:active:not(:disabled) {
             transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-loading {
+            background: #006699 !important;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        .btn-loading .loading-spinner {
+            display: inline-block;
+        }
+
+        .btn-loading .btn-text {
+            opacity: 0.8;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .auth-links {
@@ -242,6 +281,28 @@
             color: #0d47a1;
         }
 
+        .debug-info {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .processing-info {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #e65100;
+            display: none;
+        }
+
         @media (max-width: 480px) {
             .auth-container {
                 padding: 32px 24px;
@@ -273,6 +334,14 @@
 
         <div class="timing-info">
             <strong>⏰ Important:</strong> Verification codes expire after a few minutes. If you get an "expired" error even with the correct code, simply request a new code - this is normal and happens when too much time has passed.
+        </div>
+
+        <div class="processing-info" id="processingInfo">
+            🔄 Processing verification... This may take a few seconds.
+        </div>
+
+        <div class="debug-info" id="debugInfo" style="display:none;">
+            Debug info will appear here during testing
         </div>
         
         <!-- Flash messages -->
@@ -316,7 +385,10 @@
             </div>
             {% endif %}
             
-            {{ form.submit(class="btn-primary") }}
+            <button type="submit" class="btn-primary" id="submitBtn">
+                <div class="loading-spinner"></div>
+                <span class="btn-text">Verify Code</span>
+            </button>
         </form>
         
         <div class="auth-links">
@@ -349,24 +421,37 @@
         // Auto-refresh CSRF token on form submission if expired
         document.querySelector('form').addEventListener('submit', function(e) {
             const form = this;
-            const formData = new FormData(form);
-
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = submitBtn.querySelector('.btn-text');
+            
+            // Show loading state immediately
+            showLoadingState(submitBtn, btnText);
+            console.log('[FORM] Form submitted, showing loading state');
+            
             // Check if this is a retry after CSRF error
             if (form.dataset.csrfRetry) {
                 delete form.dataset.csrfRetry;
+                console.log('[FORM] Retry submission, allowing normal flow');
                 return; // Allow normal submission
             }
 
             e.preventDefault();
+            console.log('[FORM] Prevented default, starting verification');
+
+            const formData = new FormData(form);
 
             fetch(form.action, {
                 method: 'POST',
                 body: formData
             })
             .then(response => {
+                console.log('[FORM] Response received:', response.status);
                 if (response.ok) {
-                    // Success - redirect to dashboard
-                    window.location.href = response.url || '/dashboard';
+                    // Success - show success state briefly then redirect
+                    showSuccessState(submitBtn, btnText);
+                    setTimeout(() => {
+                        window.location.href = response.url || '/dashboard';
+                    }, 1000);
                 } else if (response.status === 400) {
                     return response.json();
                 } else {
@@ -376,6 +461,7 @@
             .then(data => {
                 if (data && data.error === 'csrf_token_expired' && data.new_csrf_token) {
                     // Update CSRF token and retry
+                    console.log('[FORM] CSRF token expired, refreshing and retrying');
                     const csrfInput = form.querySelector('input[name="csrf_token"]');
                     if (csrfInput) {
                         csrfInput.value = data.new_csrf_token;
@@ -383,17 +469,128 @@
                         form.submit(); // Retry submission
                     }
                 } else if (data && data.message) {
-                    // Show error message
-                    alert(data.message);
+                    // Show error message and restore button
+                    console.log('[FORM] Error received:', data.message);
+                    hideLoadingState(submitBtn, btnText);
+                    showErrorNotification(data.message);
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('[FORM] Error:', error);
                 // Fallback to normal form submission
+                hideLoadingState(submitBtn, btnText);
                 form.dataset.csrfRetry = 'true';
                 form.submit();
             });
         });
+
+        // Loading state functions
+        function showLoadingState(btn, textElement) {
+            const startTime = new Date();
+            btn.classList.add('btn-loading');
+            btn.disabled = true;
+            textElement.textContent = 'Verifying...';
+            
+            // Show processing info
+            const processingInfo = document.getElementById('processingInfo');
+            if (processingInfo) {
+                processingInfo.style.display = 'block';
+            }
+            
+            // Store start time for debugging
+            window.verificationStartTime = startTime;
+            updateDebugInfo(`Verification started at: ${startTime.toLocaleTimeString()}`);
+            
+            // Update processing info with timer
+            const timerInterval = setInterval(() => {
+                const elapsed = Math.floor((new Date() - startTime) / 1000);
+                if (processingInfo) {
+                    processingInfo.innerHTML = `🔄 Processing verification... ${elapsed}s elapsed`;
+                }
+                updateDebugInfo(`Verification started at: ${startTime.toLocaleTimeString()}\nElapsed: ${elapsed} seconds`);
+            }, 1000);
+            
+            window.processingTimerInterval = timerInterval;
+        }
+
+        function hideLoadingState(btn, textElement) {
+            btn.classList.remove('btn-loading');
+            btn.disabled = false;
+            textElement.textContent = 'Verify Code';
+            
+            // Hide processing info
+            const processingInfo = document.getElementById('processingInfo');
+            if (processingInfo) {
+                processingInfo.style.display = 'none';
+            }
+            
+            // Clear timer
+            if (window.processingTimerInterval) {
+                clearInterval(window.processingTimerInterval);
+            }
+            
+            // Update debug info with completion time
+            if (window.verificationStartTime) {
+                const elapsed = new Date() - window.verificationStartTime;
+                updateDebugInfo(`Verification completed. Total time: ${(elapsed/1000).toFixed(2)} seconds`);
+            }
+        }
+
+        function showSuccessState(btn, textElement) {
+            btn.classList.remove('btn-loading');
+            btn.style.background = '#4caf50';
+            textElement.textContent = 'Success! Redirecting...';
+            
+            // Clear processing state
+            const processingInfo = document.getElementById('processingInfo');
+            if (processingInfo) {
+                processingInfo.innerHTML = '✅ Verification successful! Redirecting...';
+                processingInfo.style.background = '#e8f5e8';
+                processingInfo.style.color = '#2e7d32';
+                processingInfo.style.borderColor = '#4caf50';
+            }
+            
+            // Clear timer
+            if (window.processingTimerInterval) {
+                clearInterval(window.processingTimerInterval);
+            }
+            
+            // Update debug info with success
+            if (window.verificationStartTime) {
+                const elapsed = new Date() - window.verificationStartTime;
+                updateDebugInfo(`✅ SUCCESS! Total time: ${(elapsed/1000).toFixed(2)} seconds`);
+            }
+        }
+
+        function showErrorNotification(message) {
+            // Create or update error notification
+            let errorDiv = document.querySelector('.error-notification');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-error error-notification';
+                const form = document.querySelector('form');
+                form.insertBefore(errorDiv, form.firstChild);
+            }
+            errorDiv.textContent = message;
+            errorDiv.scrollIntoView({ behavior: 'smooth' });
+            
+            // Update processing info with error
+            const processingInfo = document.getElementById('processingInfo');
+            if (processingInfo) {
+                processingInfo.innerHTML = '❌ Verification failed. Please try again.';
+                processingInfo.style.background = '#ffebee';
+                processingInfo.style.color = '#c62828';
+                processingInfo.style.borderColor = '#f44336';
+            }
+        }
+
+        function updateDebugInfo(text) {
+            const debugDiv = document.getElementById('debugInfo');
+            if (debugDiv) {
+                debugDiv.style.display = 'block';
+                debugDiv.textContent = text;
+            }
+        }
     </script>
 </body>
 </html>
