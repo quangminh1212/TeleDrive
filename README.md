@@ -162,6 +162,7 @@ python tests/test_download_unit.py
 - [Test Reports](docs/TEST_REPORT.md)
 - [Project Health](docs/PROJECT_HEALTH_REPORT.md)
 - [Testing Checklist](docs/TESTING_CHECKLIST.md)
+- [API: Share & Delete](docs/API_SHARE_DELETE.md)
 
 ## 🤝 Contributing
 
