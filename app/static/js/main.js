@@ -230,7 +230,7 @@ function initializeFolderDragDrop() {
 // Upload files function with folder support
 function uploadFiles(files, targetFolder = null) {
     if (!files || files.length === 0) {
-        showToast('No files selected', 'error');
+        showToast(window.I18N?.['toast.no_files_selected'] || 'No files selected', 'error');
         return;
     }
 
@@ -277,7 +277,7 @@ function uploadFiles(files, targetFolder = null) {
     }
 
     // Show loading state
-    showLoading('Uploading files...');
+    showLoading(window.I18N?.['loading.processing'] || 'Uploading files...');
 
     // Upload files with progress tracking
     const xhr = new XMLHttpRequest();
@@ -934,7 +934,7 @@ function copyShareLink(inputId) {
     document.execCommand('copy');
     
     // Show feedback
-    showToast('Link copied to clipboard', 'success');
+    showToast(window.I18N?.['toast.link_copied'] || 'Link copied to clipboard', 'success');
 }
 
 // Update share settings
@@ -944,7 +944,7 @@ function updateShareSettings(modalId, isFolder, itemName) {
     const expiration = document.getElementById(`share-expiration-${modalId}`).value;
     
     if (requirePassword && !password) {
-        showToast('Please enter a password', 'warning');
+        showToast((current_lang==='vi'?'Vui lòng nhập mật khẩu':'Please enter a password'), 'warning');
         return;
     }
     
@@ -1029,7 +1029,7 @@ function showFolderSelectionModal(fileId) {
             </div>
             <div class="modal-body">
                 <div class="folder-tree-container" id="folder-tree-${modalId}">
-                    <div class="loading-placeholder">Loading folders...</div>
+                    <div class="loading-placeholder">${(window.current_lang||'en')==='vi'?'Đang tải danh sách thư mục...':'Loading folders...'}</div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -2117,7 +2117,7 @@ function performBulkAction(action) {
         .map(checkbox => checkbox.closest('.file-card').dataset.fileId);
     
     if (selectedFiles.length === 0) {
-        showToast('No files selected', 'warning');
+        showToast(window.I18N?.['toast.no_files_selected'] || 'No files selected', 'warning');
         return;
     }
     
@@ -2135,7 +2135,7 @@ function performBulkAction(action) {
             shareMultipleFiles(selectedFiles);
             break;
         default:
-            showToast('Action not implemented', 'error');
+            showToast(window.I18N?.['toast.action_not_implemented'] || 'Action not implemented', 'error');
     }
 }
 
@@ -2597,7 +2597,7 @@ function moveMultipleFiles(fileIds) {
             </div>
             <div class="modal-body">
                 <div class="folder-tree-container" id="folder-tree-${modalId}">
-                    <div class="loading-placeholder">Loading folders...</div>
+                    <div class="loading-placeholder">${(window.current_lang||'en')==='vi'?'Đang tải danh sách thư mục...':'Loading folders...'}</div>
                 </div>
             </div>
             <div class="modal-footer">
