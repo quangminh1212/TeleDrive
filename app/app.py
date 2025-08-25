@@ -443,6 +443,20 @@ def get_cooldown_remaining(key, window_seconds=30, max_requests=1):
     return 0
 
 
+def get_recent_count(key, window_seconds=600):
+    """Return count of recent events for key within window_seconds, without appending."""
+    now = time.time()
+    timestamps = [ts for ts in rate_limit_storage.get(key, []) if now - ts < window_seconds]
+    return len(timestamps)
+
+def record_rate_event(key):
+    """Record a rate-limit event timestamp for key, with cleanup of old entries."""
+    now = time.time()
+    # Cleanup
+    rate_limit_storage[key] = [ts for ts in rate_limit_storage.get(key, []) if now - ts < 3600]
+    rate_limit_storage[key].append(now)
+
+
 # Simple caching system (use Redis in production)
 cache_storage = {}
 cache_ttl = {}
@@ -2739,6 +2753,11 @@ def telegram_resend():
 
     # Apply 30s cooldown per IP to prevent spam
     user_ip = request.remote_addr
+    # Optional: enforce max resends in 10 minutes (e.g., 5)
+    recent_key = f"resend_hist_{user_ip}"
+    if get_recent_count(recent_key, window_seconds=600) >= 5:
+        return jsonify({'success': False, 'error': 'too_many_resends', 'message': 'You have requested too many codes. Please try again later.'}), 429
+
     if is_rate_limited(f"resend_{user_ip}", max_requests=1, window_seconds=30):
         return jsonify({'success': False, 'error': 'cooldown', 'message': 'Please wait 30 seconds before requesting a new code.'}), 429
 
@@ -2749,6 +2768,8 @@ def telegram_resend():
         result = run_async_in_thread(send_code())
         if result.get('success'):
             session['telegram_session_id'] = result['session_id']
+            # Record resend event
+            record_rate_event(recent_key)
             return jsonify({'success': True, 'message': 'Verification code resent successfully'})
         else:
             return jsonify({'success': False, 'error': 'send_failed', 'message': result.get('error', 'Failed to resend code')}), 400
