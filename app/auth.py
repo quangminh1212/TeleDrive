@@ -211,9 +211,27 @@ class TelegramAuthenticator:
     
     async def verify_code(self, session_id: str, verification_code: str, password: str = None) -> Dict[str, Any]:
         """Verify the code and complete authentication"""
-        print(f"[VERIFY_CODE] Instance {self.instance_id} - Verifying session: {session_id}")
-        print(f"[VERIFY_CODE] Instance {self.instance_id} - Current session count: {len(self.temp_sessions)}")
-        print(f"[VERIFY_CODE] Instance {self.instance_id} - Code length: {len(verification_code)}")
+        import threading
+        request_id = threading.current_thread().ident
+        print(f"[VERIFY_CODE] Thread {request_id} - Instance {self.instance_id} - Verifying session: {session_id}")
+        print(f"[VERIFY_CODE] Thread {request_id} - Instance {self.instance_id} - Current session count: {len(self.temp_sessions)}")
+        print(f"[VERIFY_CODE] Thread {request_id} - Instance {self.instance_id} - Code length: {len(verification_code)}")
+        
+        # Check if this session is already being processed
+        processing_key = f"{session_id}_processing"
+        if hasattr(self, '_processing_sessions') and processing_key in self._processing_sessions:
+            print(f"[VERIFY_CODE] Thread {request_id} - Session {session_id} is already being processed!")
+            return {
+                'success': False,
+                'error': 'Verification already in progress. Please wait...',
+                'already_processing': True
+            }
+        
+        # Mark session as being processed
+        if not hasattr(self, '_processing_sessions'):
+            self._processing_sessions = set()
+        self._processing_sessions.add(processing_key)
+        print(f"[VERIFY_CODE] Thread {request_id} - Marked session {session_id} as processing")
         
         if DETAILED_LOGGING_AVAILABLE:
             log_step("VERIFY CODE", f"Verifying code for session: {session_id}")
@@ -222,14 +240,15 @@ class TelegramAuthenticator:
                 'code_length': len(verification_code)
             })
 
+        # Use try-finally to ensure processing lock is always cleaned up
         try:
             # Clean up expired sessions first
             await self.cleanup_expired_sessions()
 
             # Debug: List all available sessions (always print for debugging timeout issue)
-            print(f"[DEBUG] Available sessions: {list(self.temp_sessions.keys())}")
-            print(f"[DEBUG] Looking for session: {session_id}")
-            print(f"[DEBUG] Session exists: {session_id in self.temp_sessions}")
+            print(f"[DEBUG] Thread {request_id} - Available sessions: {list(self.temp_sessions.keys())}")
+            print(f"[DEBUG] Thread {request_id} - Looking for session: {session_id}")
+            print(f"[DEBUG] Thread {request_id} - Session exists: {session_id in self.temp_sessions}")
             
             if DETAILED_LOGGING_AVAILABLE:
                 log_step("DEBUG SESSIONS", f"Available sessions: {list(self.temp_sessions.keys())}")
@@ -560,6 +579,11 @@ class TelegramAuthenticator:
                 'success': False,
                 'error': f'Authentication failed: {str(e)}'
             }
+        finally:
+            # Always cleanup processing lock
+            if hasattr(self, '_processing_sessions') and processing_key in self._processing_sessions:
+                self._processing_sessions.remove(processing_key)
+                print(f"[VERIFY_CODE] Thread {request_id} - Cleaned up processing lock for session {session_id}")
     
     def create_or_update_user(self, telegram_user: TelegramUser, phone_number: str) -> User:
         """Create or update user in database"""

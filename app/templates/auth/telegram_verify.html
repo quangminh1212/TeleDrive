@@ -424,6 +424,16 @@
             const submitBtn = document.getElementById('submitBtn');
             const btnText = submitBtn.querySelector('.btn-text');
             
+            // Prevent double submission
+            if (submitBtn.disabled || form.dataset.submitting === 'true') {
+                console.log('[FORM] Form already being submitted, ignoring');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Mark form as submitting
+            form.dataset.submitting = 'true';
+            
             // Show loading state immediately
             showLoadingState(submitBtn, btnText);
             console.log('[FORM] Form submitted, showing loading state');
@@ -518,6 +528,12 @@
             btn.disabled = false;
             textElement.textContent = 'Verify Code';
             
+            // Reset submitting flag
+            const form = document.querySelector('form');
+            if (form) {
+                delete form.dataset.submitting;
+            }
+            
             // Hide processing info
             const processingInfo = document.getElementById('processingInfo');
             if (processingInfo) {
@@ -540,6 +556,8 @@
             btn.classList.remove('btn-loading');
             btn.style.background = '#4caf50';
             textElement.textContent = 'Success! Redirecting...';
+            
+            // Don't reset submitting flag on success - we want to prevent further submissions
             
             // Clear processing state
             const processingInfo = document.getElementById('processingInfo');
