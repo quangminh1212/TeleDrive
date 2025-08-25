@@ -143,9 +143,43 @@
         // Expose minimal i18n strings for JS
         window.I18N = Object.assign(window.I18N || {}, {
             'loading.processing': '{{ i18n_t("loading.processing") }}',
+            // Generic
             'toast.no_files_selected': '{{ current_lang=="vi" and "Chưa chọn tệp nào" or "No files selected" }}',
             'toast.link_copied': '{{ current_lang=="vi" and "Đã sao chép liên kết" or "Link copied to clipboard" }}',
-            'toast.action_not_implemented': '{{ current_lang=="vi" and "Hành động chưa hỗ trợ" or "Action not implemented" }}'
+            'toast.action_not_implemented': '{{ current_lang=="vi" and "Hành động chưa hỗ trợ" or "Action not implemented" }}',
+            // Upload
+            'upload.preparing': '{{ current_lang=="vi" and "Đang chuẩn bị..." or "Preparing..." }}',
+            'upload.complete': '{{ current_lang=="vi" and "Tải lên hoàn tất" or "Upload Complete" }}',
+            'upload.success_n': '{{ current_lang=="vi" and "{n} tệp đã được tải lên thành công" or "{n} file(s) uploaded successfully" }}',
+            'upload.failed_prefix': '{{ current_lang=="vi" and "Tải lên thất bại: " or "Upload failed: " }}',
+            'upload.invalid_response': '{{ current_lang=="vi" and "Phản hồi không hợp lệ từ máy chủ" or "Invalid response from server" }}',
+            'upload.server_error_prefix': '{{ current_lang=="vi" and "Lỗi máy chủ: " or "Server error: " }}',
+            'upload.connection_error': '{{ current_lang=="vi" and "Lỗi kết nối" or "Connection error" }}',
+            'upload.aborted': '{{ current_lang=="vi" and "Đã hủy tải lên" or "Upload aborted" }}',
+            'upload.failed_header': '{{ current_lang=="vi" and "Tải lên thất bại" or "Upload Failed" }}',
+            // Folder
+            'folders.loading': '{{ current_lang=="vi" and "Đang tải danh sách thư mục..." or "Loading folders..." }}',
+            'folders.failed': '{{ current_lang=="vi" and "Tải danh sách thư mục thất bại" or "Failed to load folders" }}',
+            'folders.error_prefix': '{{ current_lang=="vi" and "Lỗi tải danh sách thư mục: " or "Error loading folders: " }}',
+            // Preview
+            'preview.loading': '{{ current_lang=="vi" and "Đang tải xem trước..." or "Loading preview..." }}',
+            'preview.loading_image': '{{ current_lang=="vi" and "Đang tải..." or "Loading..." }}',
+            'preview.failed_image': '{{ current_lang=="vi" and "Tải ảnh thất bại" or "Failed to load image" }}',
+            'preview.loading_video': '{{ current_lang=="vi" and "Đang tải video..." or "Loading video..." }}',
+            'preview.loading_audio': '{{ current_lang=="vi" and "Đang tải âm thanh..." or "Loading audio..." }}',
+            'preview.error_text_prefix': '{{ current_lang=="vi" and "Lỗi tải xem trước văn bản: " or "Error loading text preview: " }}',
+            'preview.loading_pdf': '{{ current_lang=="vi" and "Đang tải PDF..." or "Loading PDF..." }}',
+            'preview.failed_pdf': '{{ current_lang=="vi" and "Tải PDF thất bại" or "Failed to load PDF" }}',
+            'preview.open_new_tab': '{{ current_lang=="vi" and "Mở tab mới" or "Open in new tab" }}',
+            // Modals
+            'modal.close': '{{ current_lang=="vi" and "Đóng" or "Close" }}',
+            'modal.download': '{{ current_lang=="vi" and "Tải xuống" or "Download" }}',
+            'modal.move_to_folder': '{{ current_lang=="vi" and "Di chuyển đến thư mục" or "Move to Folder" }}',
+            'modal.cancel': '{{ current_lang=="vi" and "Hủy" or "Cancel" }}',
+            'modal.move': '{{ current_lang=="vi" and "Di chuyển" or "Move" }}',
+            'modal.move_n_files': '{{ current_lang=="vi" and "Di chuyển {n} tệp" or "Move {n} Files" }}',
+            // Delete confirm
+            'delete.confirm_n': '{{ current_lang=="vi" and "Bạn có chắc muốn xóa {n} tệp đã chọn? Hành động này không thể hoàn tác." or "Are you sure you want to delete {n} selected file(s)? This action cannot be undone." }}'
         });
     </script>
     <script>
