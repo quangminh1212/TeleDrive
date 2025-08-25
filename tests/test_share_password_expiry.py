@@ -29,8 +29,9 @@ r = s.get(url)
 print('[view pw]', r.status_code)
 assert r.status_code == 200
 
-# verify password via form
-rv = s.post(f'{BASE}/share/{token}/password', data={'password':'123'})
+# verify password via form (with CSRF)
+csrf3 = s.get(f'{BASE}/api/csrf-token').json()['csrf_token']
+rv = s.post(f'{BASE}/share/{token}/password', data={'password':'123', 'csrf_token': csrf3}, headers={'X-CSRFToken': csrf3})
 print('[verify pw]', rv.status_code)
 assert rv.status_code in (200, 302)
 
