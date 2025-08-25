@@ -626,7 +626,7 @@ async function apiRequest(url, options = {}) {
 
 // Move folder to another folder
 function moveFolder(sourceId, targetId) {
-    showLoading('Moving folder...');
+    showLoading((window.current_lang==='vi'?'Đang di chuyển thư mục...':'Moving folder...'));
     
     apiRequest('/api/folders/move', {
         method: 'POST',
@@ -638,7 +638,7 @@ function moveFolder(sourceId, targetId) {
     .then(response => {
         hideLoading();
         if (response.success) {
-            showToast('Folder moved successfully', 'success');
+            showToast((window.current_lang==='vi'?'Đã di chuyển thư mục thành công':'Folder moved successfully'), 'success');
             // Refresh file list
             if (typeof refreshFiles === 'function') {
                 refreshFiles();
@@ -646,12 +646,12 @@ function moveFolder(sourceId, targetId) {
                 location.reload();
             }
         } else {
-            showToast('Failed to move folder: ' + (response.error || 'Unknown error'), 'error');
+            showToast((window.current_lang==='vi'?'Di chuyển thư mục thất bại: ':'Failed to move folder: ') + (response.error || 'Unknown error'), 'error');
         }
     })
     .catch(error => {
         hideLoading();
-        showToast('Error moving folder: ' + error.message, 'error');
+        showToast((window.current_lang==='vi'?'Lỗi khi di chuyển thư mục: ':'Error moving folder: ') + error.message, 'error');
     });
 }
 
@@ -664,7 +664,7 @@ function downloadFile(filename) {
     link.click();
     document.body.removeChild(link);
 
-    showToast(`Downloading ${filename}`, 'success');
+    showToast((window.current_lang==='vi'?`Đang tải xuống ${filename}`:`Downloading ${filename}`), 'success');
 }
 
 function previewFile(filename) {
@@ -709,7 +709,7 @@ function deleteFile(filename) {
             .then(response => {
                 hideLoading();
                 if (response.success) {
-                    showToast(`File ${filename} deleted successfully`, 'success');
+                    showToast((window.current_lang==='vi'?`Đã xóa tệp ${filename} thành công`:`File ${filename} deleted successfully`), 'success');
                     // Remove file card from UI
                     const fileCard = document.querySelector(`[data-filename="${filename}"]`);
                     if (fileCard) {
@@ -725,7 +725,7 @@ function deleteFile(filename) {
             })
             .catch(error => {
                 hideLoading();
-                showToast(`Error deleting file: ${error.message}`, 'error');
+                showToast((window.current_lang==='vi'?`Lỗi khi xóa tệp: ${error.message}`:`Error deleting file: ${error.message}`), 'error');
             });
     }
 }
@@ -751,7 +751,7 @@ function renameFolder(folderId) {
         .then(response => {
             hideLoading();
             if (response.success) {
-                showToast('Folder renamed successfully', 'success');
+                showToast((window.current_lang==='vi'?'Đã đổi tên thư mục thành công':'Folder renamed successfully'), 'success');
                 // Update folder name in UI
                 const folderName = folderCard.querySelector('.file-name');
                 if (folderName) {
@@ -761,12 +761,12 @@ function renameFolder(folderId) {
                     location.reload();
                 }
             } else {
-                showToast('Failed to rename folder: ' + (response.error || 'Unknown error'), 'error');
+                showToast((window.current_lang==='vi'?'Đổi tên thư mục thất bại: ':'Failed to rename folder: ') + (response.error || 'Unknown error'), 'error');
             }
         })
         .catch(error => {
             hideLoading();
-            showToast('Error renaming folder: ' + error.message, 'error');
+            showToast((window.current_lang==='vi'?'Lỗi khi đổi tên thư mục: ':'Error renaming folder: ') + error.message, 'error');
         });
     }
 }
@@ -1140,7 +1140,7 @@ function buildFolderTreeHtml(folders, fileId, level = 0) {
 
 // Move file to selected folder
 function moveFile(fileId, targetFolderId, modalId) {
-    showLoading('Moving file...');
+    showLoading((window.current_lang==='vi'?'Đang di chuyển tệp...':'Moving file...'));
     
     apiRequest('/api/move_file', {
         method: 'POST',
@@ -2542,7 +2542,7 @@ function downloadMultipleFiles(fileIds) {
         return;
     }
     
-    showLoading('Preparing download...');
+    showLoading((window.current_lang==='vi'?'Đang chuẩn bị tải xuống...':'Preparing download...'));
     
     apiRequest('/api/prepare_bulk_download', {
         method: 'POST',
@@ -2623,7 +2623,7 @@ function moveMultipleFiles(fileIds) {
 }
 
 function moveMultipleFilesToFolder(fileIds, targetFolderId, modalId) {
-    showLoading(`Moving ${fileIds.length} files...`);
+    showLoading((window.current_lang==='vi'?`Đang di chuyển ${fileIds.length} tệp...`:`Moving ${fileIds.length} files...`));
     
     apiRequest('/api/move_multiple_files', {
         method: 'POST',
@@ -2636,7 +2636,7 @@ function moveMultipleFilesToFolder(fileIds, targetFolderId, modalId) {
         hideLoading();
         if (response.success) {
             document.getElementById(modalId).remove();
-            showToast(`${fileIds.length} files moved successfully`, 'success');
+            showToast((window.current_lang==='vi'?`${fileIds.length} tệp đã được di chuyển thành công`:`${fileIds.length} files moved successfully`), 'success');
             
             // Remove file cards from UI
             fileIds.forEach(fileId => {
@@ -2654,12 +2654,12 @@ function moveMultipleFilesToFolder(fileIds, targetFolderId, modalId) {
                 loadStats();
             }
         } else {
-            showToast('Failed to move files: ' + (response.error || 'Unknown error'), 'error');
+            showToast((window.current_lang==='vi'?'Di chuyển tệp thất bại: ':'Failed to move files: ') + (response.error || 'Unknown error'), 'error');
         }
     })
     .catch(error => {
         hideLoading();
-        showToast('Error moving files: ' + error.message, 'error');
+        showToast((window.current_lang==='vi'?'Lỗi khi di chuyển tệp: ':'Error moving files: ') + error.message, 'error');
     });
 }
 
@@ -2670,7 +2670,7 @@ function deleteMultipleFiles(fileIds) {
         return;
     }
     
-    showLoading(`Deleting ${fileIds.length} files...`);
+    showLoading((window.current_lang==='vi'?`Đang xóa ${fileIds.length} tệp...`:`Deleting ${fileIds.length} files...`));
     
     apiRequest('/api/delete_multiple_files', {
         method: 'POST',
@@ -2681,7 +2681,7 @@ function deleteMultipleFiles(fileIds) {
     .then(response => {
         hideLoading();
         if (response.success) {
-            showToast(`${fileIds.length} files deleted successfully`, 'success');
+            showToast((window.current_lang==='vi'?`${fileIds.length} tệp đã được xóa thành công`:`${fileIds.length} files deleted successfully`), 'success');
             
             // Remove file cards from UI
             fileIds.forEach(fileId => {
@@ -2699,12 +2699,12 @@ function deleteMultipleFiles(fileIds) {
                 loadStats();
             }
         } else {
-            showToast('Failed to delete files: ' + (response.error || 'Unknown error'), 'error');
+            showToast((window.current_lang==='vi'?'Xóa tệp thất bại: ':'Failed to delete files: ') + (response.error || 'Unknown error'), 'error');
         }
     })
     .catch(error => {
         hideLoading();
-        showToast('Error deleting files: ' + error.message, 'error');
+        showToast((window.current_lang==='vi'?'Lỗi khi xóa tệp: ':'Error deleting files: ') + error.message, 'error');
     });
 }
 

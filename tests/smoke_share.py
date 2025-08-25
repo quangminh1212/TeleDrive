@@ -27,6 +27,9 @@ else:
 @contextmanager
 def client_with_lang(lang: str):
     with app.test_client() as c:
+        # Enable testing bypass for share view to avoid DB
+        import os
+        os.environ['TESTING_SHARE'] = '1'
         # Set language via route to ensure session is set properly
         c.get(f"/set_lang/{lang}")
         yield c
@@ -47,15 +50,35 @@ def check_path(c, path: str):
 if __name__ == "__main__":
     paths = [f"/share/{TOKEN}", f"/share/{TOKEN}/password"]
 
+    import os
+
     print("==== VI language ====")
     with client_with_lang('vi') as c:
+        # View mode
+        os.environ['TESTING_SHARE_MODE'] = 'view'
         for p in paths:
             check_path(c, p)
+        # Not found mode
+        os.environ['TESTING_SHARE_MODE'] = 'not_found'
+        check_path(c, f"/share/{TOKEN}")
+        # Password mode
+        os.environ['TESTING_SHARE_MODE'] = 'password'
+        check_path(c, f"/share/{TOKEN}")
+        # Denied mode
+        os.environ['TESTING_SHARE_MODE'] = 'denied'
+        check_path(c, f"/share/{TOKEN}")
 
     print("\n==== EN language ====")
     with client_with_lang('en') as c:
+        os.environ['TESTING_SHARE_MODE'] = 'view'
         for p in paths:
             check_path(c, p)
+        os.environ['TESTING_SHARE_MODE'] = 'not_found'
+        check_path(c, f"/share/{TOKEN}")
+        os.environ['TESTING_SHARE_MODE'] = 'password'
+        check_path(c, f"/share/{TOKEN}")
+        os.environ['TESTING_SHARE_MODE'] = 'denied'
+        check_path(c, f"/share/{TOKEN}")
 
     print("Done.")
 

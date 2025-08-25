@@ -2940,7 +2940,41 @@ def delete_share_link(share_id):
 def view_shared_file(token):
     """View a shared file (public access)"""
     try:
-        share_link = ShareLink.query.filter_by(token=token).first()
+        # Testing hook: bypass DB when TESTING_SHARE is set
+        if os.environ.get('TESTING_SHARE') == '1':
+            mode = os.environ.get('TESTING_SHARE_MODE', 'view').lower()
+            if mode == 'not_found':
+                return render_template('share/not_found.html'), 404
+            if mode == 'password':
+                return render_template('share/password.html', token=token, error=None)
+            if mode == 'denied':
+                return render_template('share/denied.html', message='Access restricted'), 403
+            # default: view
+            class DummyFile:
+                filename = 'example.pdf'
+                file_size = 1024 * 1024 * 2
+                mime_type = 'application/pdf'
+            class DummyShare:
+                def __init__(self, tok):
+                    self.token = tok
+                    self.name = 'Sample Share'
+                    self.description = 'Demo share (testing mode)'
+                    self.file = DummyFile()
+                    self.can_download = True
+                    self.can_preview = True
+                    self.view_count = 0
+                    self.download_count = 0
+                    self.created_at = datetime.now()
+                    self.expires_at = None
+                def can_access(self, password=None):
+                    return True, ''
+                def is_view_limit_reached(self):
+                    return False
+                def increment_view_count(self):
+                    self.view_count += 1
+            share_link = DummyShare(token)
+        else:
+            share_link = ShareLink.query.filter_by(token=token).first()
         if not share_link:
             return render_template('share/not_found.html'), 404
 
