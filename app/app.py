@@ -144,6 +144,18 @@ login_manager.login_view = login_config['login_view']
 login_manager.login_message = login_config['login_message']
 login_manager.login_message_category = login_config['login_message_category']
 
+
+# Inject i18n helper into templates
+@app.context_processor
+def inject_i18n():
+    def i18n_t_template(key, **kwargs):
+        # Decide language from config or user settings (default 'vi')
+        lang = getattr(config, 'LANGUAGE', 'vi')
+        from flask import session
+        lang = session.get('lang', lang)
+        return i18n_t(key, lang=lang, **kwargs)
+    return dict(i18n_t=i18n_t_template)
+
 @login_manager.user_loader
 def load_user(user_id):
     """Load user by ID for Flask-Login"""
