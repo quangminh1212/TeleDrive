@@ -74,6 +74,126 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         'en': 'Two-Factor Password',
         'vi': 'Mật khẩu 2FA',
     },
+
+    # Base/header/sidebar
+    'header.search_placeholder': {
+        'en': 'Search files...',
+        'vi': 'Tìm kiếm tệp...'
+    },
+    'header.profile': {
+        'en': 'Profile',
+        'vi': 'Hồ sơ'
+    },
+    'header.change_password': {
+        'en': 'Change Password',
+        'vi': 'Đổi mật khẩu'
+    },
+    'header.sign_out': {
+        'en': 'Sign Out',
+        'vi': 'Đăng xuất'
+    },
+    'header.sign_in': {
+        'en': 'Sign In',
+        'vi': 'Đăng nhập'
+    },
+    'header.sign_up': {
+        'en': 'Sign Up',
+        'vi': 'Đăng ký'
+    },
+    'sidebar.dashboard': {
+        'en': 'Dashboard',
+        'vi': 'Bảng điều khiển'
+    },
+    'sidebar.advanced_search': {
+        'en': 'Advanced Search',
+        'vi': 'Tìm kiếm nâng cao'
+    },
+    'sidebar.channel_scanner': {
+        'en': 'Channel Scanner',
+        'vi': 'Quét kênh'
+    },
+    'sidebar.settings': {
+        'en': 'Settings',
+        'vi': 'Cài đặt'
+    },
+    'sidebar.recent_files': {
+        'en': 'Recent Files',
+        'vi': 'Tệp gần đây'
+    },
+    'sidebar.storage': {
+        'en': 'Storage',
+        'vi': 'Dung lượng'
+    },
+    'loading.processing': {
+        'en': 'Processing...',
+        'vi': 'Đang xử lý...'
+    },
+
+    # Dashboard page
+    'page.dashboard.title': {
+        'en': 'Dashboard',
+        'vi': 'Bảng điều khiển'
+    },
+    'actions.upload_files': {
+        'en': 'Upload Files',
+        'vi': 'Tải tệp lên'
+    },
+    'actions.new_folder': {
+        'en': 'New Folder',
+        'vi': 'Thư mục mới'
+    },
+    'actions.new_scan': {
+        'en': 'New Scan',
+        'vi': 'Quét mới'
+    },
+    'stats.total_files': {
+        'en': 'Total Files',
+        'vi': 'Tổng số tệp'
+    },
+    'stats.scans_completed': {
+        'en': 'Scans Completed',
+        'vi': 'Lượt quét hoàn tất'
+    },
+    'stats.total_size': {
+        'en': 'Total Size',
+        'vi': 'Tổng dung lượng'
+    },
+    'stats.last_scan': {
+        'en': 'Last Scan',
+        'vi': 'Lần quét gần nhất'
+    },
+    'breadcrumb.home': {
+        'en': 'Home',
+        'vi': 'Trang chủ'
+    },
+    'section.files_and_folders': {
+        'en': 'Files & Folders',
+        'vi': 'Tệp và Thư mục'
+    },
+    'buttons.select': {
+        'en': 'Select',
+        'vi': 'Chọn'
+    },
+    'buttons.list_view': {
+        'en': 'List View',
+        'vi': 'Chế độ danh sách'
+    },
+    'buttons.refresh': {
+        'en': 'Refresh',
+        'vi': 'Làm mới'
+    },
+    'empty.no_files': {
+        'en': 'No files yet',
+        'vi': 'Chưa có tệp'
+    },
+    'empty.start_scan_desc': {
+        'en': 'Start by scanning a Telegram channel to see files here',
+        'vi': 'Bắt đầu bằng cách quét một kênh Telegram để thấy tệp ở đây'
+    },
+    'empty.start_scanning': {
+        'en': 'Start Scanning',
+        'vi': 'Bắt đầu quét'
+    },
 }
 
 DEFAULT_LANG = 'vi'

@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - TeleDrive{% endblock %}
+{% block title %}{{ i18n_t('page.dashboard.title') }} - TeleDrive{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1 class="page-title">Dashboard</h1>
+    <h1 class="page-title">{{ i18n_t('page.dashboard.title') }}</h1>
     <div class="page-actions">
         <button class="btn btn-secondary" onclick="showUploadModal()">
             <span class="material-icons">upload</span>
-            Upload Files
+            {{ i18n_t('actions.upload_files') }}
         </button>
         <button class="btn btn-secondary" onclick="showCreateFolderModal()">
             <span class="material-icons">create_new_folder</span>
-            New Folder
+            {{ i18n_t('actions.new_folder') }}
         </button>
         <button class="btn btn-primary" onclick="location.href='{{ url_for('scan_page') }}'">
             <span class="material-icons">add</span>
-            New Scan
+            {{ i18n_t('actions.new_scan') }}
         </button>
     </div>
 </div>
@@ -29,7 +29,7 @@
         </div>
         <div class="stat-content">
             <div class="stat-number" id="total-files">{{ files|length }}</div>
-            <div class="stat-label">Total Files</div>
+            <div class="stat-label">{{ i18n_t('stats.total_files') }}</div>
         </div>
     </div>
     
@@ -39,7 +39,7 @@
         </div>
         <div class="stat-content">
             <div class="stat-number" id="total-scans">-</div>
-            <div class="stat-label">Scans Completed</div>
+            <div class="stat-label">{{ i18n_t('stats.scans_completed') }}</div>
         </div>
     </div>
     
@@ -49,7 +49,7 @@
         </div>
         <div class="stat-content">
             <div class="stat-number" id="total-size">-</div>
-            <div class="stat-label">Total Size</div>
+            <div class="stat-label">{{ i18n_t('stats.total_size') }}</div>
         </div>
     </div>
     
@@ -59,7 +59,7 @@
         </div>
         <div class="stat-content">
             <div class="stat-number" id="last-scan">-</div>
-            <div class="stat-label">Last Scan</div>
+            <div class="stat-label">{{ i18n_t('stats.last_scan') }}</div>
         </div>
     </div>
 </div>
@@ -71,26 +71,26 @@
         <nav class="breadcrumb" id="breadcrumb">
             <a href="#" class="breadcrumb-item" onclick="navigateToFolder(null)">
                 <span class="material-icons">home</span>
-                Home
+                {{ i18n_t('breadcrumb.home') }}
             </a>
             <div id="breadcrumb-path"></div>
         </nav>
     </div>
 
     <div class="section-header">
-        <h2 class="section-title">Files & Folders</h2>
+        <h2 class="section-title">{{ i18n_t('section.files_and_folders') }}</h2>
         <div class="section-actions">
             <button class="btn btn-small" onclick="toggleSelectMode()" id="select-mode-btn">
                 <span class="material-icons">check_box_outline_blank</span>
-                <span id="select-mode-text">Select</span>
+                <span id="select-mode-text">{{ i18n_t('buttons.select') }}</span>
             </button>
             <button class="btn btn-small" onclick="toggleViewMode()">
                 <span class="material-icons" id="view-mode-icon">view_list</span>
-                <span id="view-mode-text">List View</span>
+                <span id="view-mode-text">{{ i18n_t('buttons.list_view') }}</span>
             </button>
             <button class="btn btn-secondary" onclick="refreshFiles()">
                 <span class="material-icons">refresh</span>
-                Refresh
+                {{ i18n_t('buttons.refresh') }}
             </button>
         </div>
     </div>
@@ -98,16 +98,16 @@
     <!-- Bulk Operations Toolbar -->
     <div class="bulk-toolbar" id="bulk-toolbar" style="display: none;">
         <div class="bulk-info">
-            <span id="selected-count">0</span> files selected
+            <span id="selected-count">0</span> {{ i18n_t('buttons.select') }}ed
         </div>
         <div class="bulk-actions">
             <button class="btn btn-small" onclick="selectAllFiles()">
                 <span class="material-icons">select_all</span>
-                Select All
+                {{ i18n_t('buttons.select') }} All
             </button>
             <button class="btn btn-small" onclick="deselectAllFiles()">
                 <span class="material-icons">deselect</span>
-                Deselect All
+                De{{ i18n_t('buttons.select') }} All
             </button>
             <button class="btn btn-small" onclick="showBulkMoveModal()">
                 <span class="material-icons">drive_file_move</span>
@@ -169,11 +169,11 @@
             <div class="empty-icon">
                 <span class="material-icons">folder_open</span>
             </div>
-            <div class="empty-title">No files yet</div>
-            <div class="empty-description">Start by scanning a Telegram channel to see files here</div>
+            <div class="empty-title">{{ i18n_t('empty.no_files') }}</div>
+            <div class="empty-description">{{ i18n_t('empty.start_scan_desc') }}</div>
             <button class="btn btn-primary" onclick="location.href='{{ url_for('scan_page') }}'">
                 <span class="material-icons">scanner</span>
-                Start Scanning
+                {{ i18n_t('empty.start_scanning') }}
             </button>
         </div>
         {% endif %}
