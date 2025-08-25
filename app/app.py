@@ -1360,6 +1360,14 @@ def delete_file():
                 except Exception:
                     removed_physical = False
 
+            # Invalidate file list cache for this user
+            try:
+                user = get_or_create_user()
+                for per_page in (20, 5, 10, 50, 100):
+                    cache_delete(f"files_{user.id}_1_{per_page}")
+            except Exception:
+                pass
+
             return jsonify({'success': True,
                             'message': f'File {file_record.filename} deleted successfully',
                             'removed_physical': removed_physical})
