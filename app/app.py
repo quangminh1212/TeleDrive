@@ -44,6 +44,9 @@ print(f"[APP_IMPORT] telegram_auth instance imported: {telegram_auth.instance_id
 # Import Flask configuration loader
 import web_config
 
+# Lightweight i18n
+from i18n import t as i18n_t
+
 # Import detailed logging - with fallback
 DETAILED_LOGGING_AVAILABLE = False
 import logging
