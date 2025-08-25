@@ -782,7 +782,7 @@ function deleteFolder(folderId) {
 
     const folderName = folderCard.querySelector('.file-name').textContent.trim();
 
-    if (confirm(`Are you sure you want to delete the folder "${folderName}" and all its contents? This action cannot be undone.`)) {
+    if (confirm(L(`Bạn có chắc muốn xóa thư mục \"${folderName}\" và toàn bộ nội dung? Hành động này không thể hoàn tác.`,`Are you sure you want to delete the folder \"${folderName}\" and all its contents? This action cannot be undone.`))) {
         showLoading(L('Đang xóa thư mục...','Deleting folder...'));
 
         apiRequest('/api/delete_folder', {
@@ -1033,7 +1033,7 @@ function showFolderSelectionModal(fileId) {
             </div>
             <div class="modal-body">
                 <div class="folder-tree-container" id="folder-tree-${modalId}">
-                    <div class="loading-placeholder">${(window.current_lang||'en')==='vi'?'Đang tải danh sách thư mục...':'Loading folders...'}</div>
+                    <div class="loading-placeholder">${(window.I18N && window.I18N['folders.loading']) || L('Đang tải danh sách thư mục...','Loading folders...')}</div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -1294,7 +1294,7 @@ function loadImagePreview(filename, container) {
         <div class="image-preview">
             <div class="preview-header">
                 <span class="file-type-badge image">IMAGE</span>
-                <span class="file-info" id="image-info">Loading...</span>
+                <span class="file-info" id="image-info">${(window.I18N && window.I18N['preview.loading_image']) || L('Đang tải...','Loading...')}</span>
             </div>
             <div class="image-viewer">
                 <div class="image-container" id="image-container">
@@ -2601,7 +2601,7 @@ function moveMultipleFiles(fileIds) {
             </div>
             <div class="modal-body">
                 <div class="folder-tree-container" id="folder-tree-${modalId}">
-                    <div class="loading-placeholder">${(window.current_lang||'en')==='vi'?'Đang tải danh sách thư mục...':'Loading folders...'}</div>
+                    <div class="loading-placeholder">${(window.I18N && window.I18N['folders.loading']) || L('Đang tải danh sách thư mục...','Loading folders...')}</div>
                 </div>
             </div>
             <div class="modal-footer">
