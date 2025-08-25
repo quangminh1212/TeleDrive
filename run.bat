@@ -49,16 +49,21 @@ if not exist ".venv" (
 echo.
 echo 🔄 Activating virtual environment...
 if exist ".venv\Scripts\activate.bat" (
-    call .venv\Scripts\activate.bat
-    echo ✅ Virtual environment activated
-) else if exist ".venv\Scripts\Activate.ps1" (
-    powershell -ExecutionPolicy Bypass -File .venv\Scripts\Activate.ps1
-    echo ✅ Virtual environment activated
+    call ".venv\Scripts\activate.bat"
+    if errorlevel 1 (
+        echo ❌ Failed to activate virtual environment
+        echo Trying manual PATH setup...
+        set "PATH=%CD%\.venv\Scripts;%PATH%"
+        set "VIRTUAL_ENV=%CD%\.venv"
+    ) else (
+        echo ✅ Virtual environment activated
+    )
 ) else (
     echo ❌ Virtual environment activation script not found
-    echo Trying to continue without explicit activation...
-    set PATH=.venv\Scripts;%PATH%
-    set VIRTUAL_ENV=%CD%\.venv
+    echo Setting up manual PATH...
+    set "PATH=%CD%\.venv\Scripts;%PATH%"
+    set "VIRTUAL_ENV=%CD%\.venv"
+    echo ✅ Manual environment setup completed
 )
 
 :: Upgrade pip
@@ -108,12 +113,12 @@ if not exist "data\teledrive.db" (
 :: Set environment variables
 echo.
 echo 🔧 Setting environment variables...
-set FLASK_APP=app.app
-set FLASK_ENV=development
-set PYTHONPATH=%CD%\app;%PYTHONPATH%
+set "FLASK_APP=app.app"
+set "FLASK_ENV=development"
+set "PYTHONPATH=%CD%\app;%PYTHONPATH%"
 
 :: Ensure Python uses UTF-8 encoding
-set PYTHONIOENCODING=utf-8
+set "PYTHONIOENCODING=utf-8"
 
 :: Start the application
 echo.
@@ -148,12 +153,12 @@ exit /b 0
 
 :: Port cleanup function
 :cleanup_port
-set port=%1
+set "port=%1"
 echo 🔧 Checking port %port%...
 
 :: Find processes using the port
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%port% "') do (
-    set pid=%%a
+    set "pid=%%a"
     if defined pid (
         if not "!pid!"=="0" (
             echo ⚠️  Found process !pid! using port %port%
@@ -170,7 +175,7 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%port% "') do (
 
 :: Additional cleanup for listening sockets
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr "LISTENING" ^| findstr ":%port% "') do (
-    set pid=%%a
+    set "pid=%%a"
     if defined pid (
         if not "!pid!"=="0" (
             echo ⚠️  Found listening process !pid! on port %port%
