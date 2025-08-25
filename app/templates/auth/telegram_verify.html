@@ -392,6 +392,29 @@
         </form>
 
         <div class="auth-links">
+            {% if resend_remaining and resend_remaining|int > 0 %}
+            <script>
+                // Initialize resend button cooldown from server
+                document.addEventListener('DOMContentLoaded', function() {
+                    const btn = document.getElementById('resendBtn');
+                    if (!btn) return;
+                    let cool = {{ resend_remaining|int }};
+                    btn.disabled = true;
+                    const origText = 'Request new code';
+                    btn.textContent = `Wait ${cool}s`;
+                    const t = setInterval(()=>{
+                        cool -= 1;
+                        if (cool <= 0) {
+                            clearInterval(t);
+                            btn.disabled = false;
+                            btn.textContent = origText;
+                        } else {
+                            btn.textContent = `Wait ${cool}s`;
+                        }
+                    }, 1000);
+                });
+            </script>
+            {% endif %}
             <a href="{{ url_for('telegram_login') }}" class="auth-link">← Try different number</a>
             <button id="resendBtn" type="button" class="auth-link" style="border:none;background:none;cursor:pointer;padding:0;">Request new code</button>
         </div>

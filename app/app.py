@@ -2621,13 +2621,21 @@ def telegram_verify():
             except Exception:
                 code_sent_at = None
 
+            # Compute resend cooldown remaining for current IP
+            try:
+                user_ip = request.remote_addr
+                resend_remaining = get_cooldown_remaining(f"resend_{user_ip}", window_seconds=30, max_requests=1)
+            except Exception:
+                resend_remaining = 0
+
             return render_template('auth/telegram_verify.html',
                                  form=form,
                                  phone_number=phone_number,
                                  requires_password=True,
                                  code_sent_at=code_sent_at,
                                  validity_seconds=180,
-                                 server_time=int(time.time()))
+                                 server_time=int(time.time()),
+                                 resend_remaining=resend_remaining)
         except Exception as e:
             app.logger.error(f"Failed to verify code: {e}")
             flash('Verification error. Please try again.', 'error')
@@ -2666,13 +2674,21 @@ def telegram_verify():
     except Exception:
         code_sent_at = None
 
+    # Compute resend cooldown remaining for current IP
+    try:
+        user_ip = request.remote_addr
+        resend_remaining = get_cooldown_remaining(f"resend_{user_ip}", window_seconds=30, max_requests=1)
+    except Exception:
+        resend_remaining = 0
+
     return render_template('auth/telegram_verify.html',
                          form=form,
                          phone_number=phone_number,
                          requires_password=requires_password,
                          code_sent_at=code_sent_at,
                          validity_seconds=180,
-                         server_time=int(time.time()))
+                         server_time=int(time.time()),
+                         resend_remaining=resend_remaining)
 
 # File sharing routes
 @app.route('/api/files/<int:file_id>/share', methods=['POST'])
