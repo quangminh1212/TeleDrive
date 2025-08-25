@@ -16,6 +16,14 @@ DETAILED_LOGGING_AVAILABLE = False
 import logging
 logging.basicConfig(level=logging.WARNING)  # Only warnings and errors
 
+# Import detailed logging if available
+try:
+    from log import log_step
+    DETAILED_LOGGING_AVAILABLE = True
+except ImportError:
+    def log_step(*args, **kwargs):
+        pass  # No-op function when detailed logging is not available
+
 logger = logging.getLogger(__name__)
 
 class ConfigManager:
@@ -418,7 +426,7 @@ EXCLUDE_PERSONAL_INFO = get_safe(CONFIG, 'security.exclude_personal_info', True)
 SECURE_SESSION = get_safe(CONFIG, 'security.secure_session', True)
 AUTO_LOGOUT = get_safe(CONFIG, 'security.auto_logout', False)
 SESSION_TIMEOUT = int(get_safe(CONFIG, 'security.session_timeout', 3600))
-VERIFICATION_CODE_TIMEOUT = int(get_safe(CONFIG, 'security.verification_code_timeout', 1200))  # 20 minutes default
+VERIFICATION_CODE_TIMEOUT = int(get_safe(CONFIG, 'security.verification_code_timeout', 300))  # 5 minutes default - matches Telegram code expiration
 
 # Logging settings
 LOGGING_ENABLED = get_safe(CONFIG, 'logging.enabled', True)

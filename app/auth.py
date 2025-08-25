@@ -126,16 +126,18 @@ class TelegramAuthenticator:
                 session_id = os.urandom(16).hex()
                 session_created_time = time.time()
 
+                # Use longer timeout for session storage (10 minutes) but rely on Telegram API for code expiration
+                session_storage_timeout = 600  # 10 minutes - just for cleanup, not for validation
                 self.temp_sessions[session_id] = {
                     'phone_number': phone_number,
                     'phone_code_hash': sent_code.phone_code_hash,
                     'created_at': session_created_time,
-                    'expires_at': session_created_time + self.session_timeout,  # Use configurable timeout
+                    'expires_at': session_created_time + session_storage_timeout,  # Extended for cleanup only
                     'send_code_duration': send_code_end_time - send_code_start_time
                 }
 
                 if DETAILED_LOGGING_AVAILABLE:
-                    log_step("SESSION STORE", f"Session stored with ID: {session_id}, expires in {self.session_timeout} seconds ({self.session_timeout/60:.1f} minutes)")
+                    log_step("SESSION STORE", f"Session stored with ID: {session_id}, storage timeout: {session_storage_timeout} seconds ({session_storage_timeout/60:.1f} minutes)")
                     log_step("PHONE CODE HASH", f"Stored phone_code_hash: {sent_code.phone_code_hash[:10]}...{sent_code.phone_code_hash[-10:] if len(sent_code.phone_code_hash) > 20 else sent_code.phone_code_hash}")
 
                 return {
@@ -223,35 +225,39 @@ class TelegramAuthenticator:
 
             session_data = self.temp_sessions[session_id]
 
-            # Check if session has expired with detailed logging
+            # Check if session has expired with detailed logging  
             current_time = time.time()
             expires_at = session_data.get('expires_at', 0)
             created_at = session_data.get('created_at', 0)
             session_age = current_time - created_at
             time_until_expiry = expires_at - current_time
 
-            if current_time > expires_at:
+            # Log session timing details for debugging
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("SESSION TIMING", f"Session age: {session_age:.2f}s, Time until expiry: {time_until_expiry:.2f}s")
+
+            # Only check for very long expired sessions (over 10 minutes)
+            # Let Telegram API handle normal code expiration
+            if session_age > 600:  # 10 minutes - cleanup very old sessions
                 if DETAILED_LOGGING_AVAILABLE:
                     log_authentication_event("CODE_VERIFY_FAILED", {
-                        'error': 'Session expired',
+                        'error': 'Session too old (cleanup)',
                         'session_id': session_id,
                         'session_age_seconds': round(session_age, 2),
-                        'expired_by_seconds': round(current_time - expires_at, 2),
                         'created_at': created_at,
-                        'expires_at': expires_at,
                         'current_time': current_time
                     }, success=False)
 
                 await self.cleanup_session(session_id)
                 return {
                     'success': False,
-                    'error': 'Your verification session has expired. This can happen if you wait too long to enter the code. Please request a new verification code.',
+                    'error': 'Phiên xác thực đã quá cũ. Vui lòng yêu cầu mã mới.',
                     'session_expired': True,
-                    'user_friendly_message': 'Session expired - please get a new code'
+                    'user_friendly_message': 'Phiên quá cũ - vui lòng lấy mã mới'
                 }
             else:
                 if DETAILED_LOGGING_AVAILABLE:
-                    pass  # Session is valid
+                    log_step("SESSION STATUS", f"Session valid, proceeding with verification")
 
             session_data = self.temp_sessions[session_id]
             phone_number = session_data['phone_number']
@@ -429,8 +435,8 @@ class TelegramAuthenticator:
                 }, success=False)
             return {
                 'success': False,
-                'error': 'Mã xác thực không đúng. Vui lòng kiểm tra lại mã từ Telegram.',
-                'user_friendly_message': 'Mã xác thực sai'
+                'error': 'Mã xác thực không đúng. Vui lòng kiểm tra lại mã từ Telegram và đảm bảo nhập đúng 5-6 chữ số.',
+                'user_friendly_message': 'Mã xác thực sai - vui lòng kiểm tra lại'
             }
         except PhoneCodeExpiredError:
 
@@ -473,9 +479,9 @@ class TelegramAuthenticator:
                 await self.cleanup_session(session_id)
             return {
                 'success': False,
-                'error': 'Mã xác thực đã hết hạn hoặc không đúng. Vui lòng kiểm tra lại mã từ Telegram hoặc yêu cầu mã mới.',
+                'error': 'Mã xác thực từ Telegram đã hết hạn. Mã thường chỉ có hiệu lực trong 2-5 phút. Vui lòng yêu cầu mã mới.',
                 'code_expired': True,
-                'user_friendly_message': 'Mã hết hạn hoặc sai - vui lòng lấy mã mới'
+                'user_friendly_message': 'Mã Telegram hết hạn - vui lòng lấy mã mới'
             }
         except Exception as e:
             # Clean up verification client first
