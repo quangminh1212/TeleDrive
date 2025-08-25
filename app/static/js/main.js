@@ -810,7 +810,7 @@ function deleteFolder(folderId) {
         .then(response => {
             hideLoading();
             if (response.success) {
-                showToast(`Folder "${folderName}" deleted successfully`, 'success');
+                showToast(tI18N('folder.delete.success', L(`Đã xóa thư mục \"{name}\" thành công`,`Folder \"{name}\" deleted successfully`), {name: folderName}), 'success');
                 // Remove folder card from UI
                 folderCard.remove();
                 // Refresh stats
@@ -2187,7 +2187,7 @@ function renameFile(fileId) {
         })
         .then(response => {
             if (response.success) {
-                showToast('File renamed successfully', 'success');
+                showToast(tI18N('file.rename.success', L('Đổi tên tệp thành công','File renamed successfully')), 'success');
                 // Refresh file list
                 if (typeof refreshFiles === 'function') {
                     refreshFiles();
@@ -2195,11 +2195,11 @@ function renameFile(fileId) {
                     location.reload();
                 }
             } else {
-                showToast('Failed to rename file: ' + (response.error || 'Unknown error'), 'error');
+                showToast(tI18N('file.rename.failed_prefix', L('Đổi tên tệp thất bại: ','Failed to rename file: ')) + (response.error || 'Unknown error'), 'error');
             }
         })
         .catch(error => {
-            showToast('Error renaming file: ' + error.message, 'error');
+            showToast(tI18N('file.rename.error_prefix', L('Lỗi khi đổi tên tệp: ','Error renaming file: ')) + error.message, 'error');
         });
     }
 }
