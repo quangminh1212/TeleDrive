@@ -126,6 +126,10 @@ class TelegramAuthenticator:
                 session_id = os.urandom(16).hex()
                 session_created_time = time.time()
 
+                # Debug: Print session creation info
+                print(f"[DEBUG] Creating session ID: {session_id}")
+                print(f"[DEBUG] Phone code hash length: {len(sent_code.phone_code_hash)}")
+
                 # Use longer timeout for session storage (10 minutes) but rely on Telegram API for code expiration
                 session_storage_timeout = 600  # 10 minutes - just for cleanup, not for validation
                 self.temp_sessions[session_id] = {
@@ -136,9 +140,15 @@ class TelegramAuthenticator:
                     'send_code_duration': send_code_end_time - send_code_start_time
                 }
 
+                # Debug: Print after storing
+                print(f"[DEBUG] Session stored. Total sessions: {len(self.temp_sessions)}")
+                print(f"[DEBUG] All session IDs: {list(self.temp_sessions.keys())}")
+
                 if DETAILED_LOGGING_AVAILABLE:
                     log_step("SESSION STORE", f"Session stored with ID: {session_id}, storage timeout: {session_storage_timeout} seconds ({session_storage_timeout/60:.1f} minutes)")
                     log_step("PHONE CODE HASH", f"Stored phone_code_hash: {sent_code.phone_code_hash[:10]}...{sent_code.phone_code_hash[-10:] if len(sent_code.phone_code_hash) > 20 else sent_code.phone_code_hash}")
+                    log_step("SESSION DEBUG", f"Total sessions after store: {len(self.temp_sessions)}")
+                    log_step("SESSION LIST", f"All session IDs: {list(self.temp_sessions.keys())}")
 
                 return {
                     'success': True,
@@ -206,20 +216,30 @@ class TelegramAuthenticator:
             # Clean up expired sessions first
             await self.cleanup_expired_sessions()
 
+            # Debug: List all available sessions (always print for debugging timeout issue)
+            print(f"[DEBUG] Available sessions: {list(self.temp_sessions.keys())}")
+            print(f"[DEBUG] Looking for session: {session_id}")
+            print(f"[DEBUG] Session exists: {session_id in self.temp_sessions}")
+            
+            if DETAILED_LOGGING_AVAILABLE:
+                log_step("DEBUG SESSIONS", f"Available sessions: {list(self.temp_sessions.keys())}")
+                log_step("DEBUG TARGET", f"Looking for session: {session_id}")
+
             if session_id not in self.temp_sessions:
                 if DETAILED_LOGGING_AVAILABLE:
                     log_authentication_event("CODE_VERIFY_FAILED", {
                         'error': 'Invalid or expired session',
                         'session_id': session_id,
-                        'available_sessions': len(self.temp_sessions)
+                        'available_sessions': list(self.temp_sessions.keys()),
+                        'available_count': len(self.temp_sessions)
                     }, success=False)
                     log_security_event("INVALID_SESSION_ACCESS", {
                         'session_id': session_id,
-                        'available_sessions': len(self.temp_sessions)
+                        'available_sessions': list(self.temp_sessions.keys())
                     }, "WARNING")
                 return {
                     'success': False,
-                    'error': 'Invalid or expired session. Please request a new verification code.',
+                    'error': f'Session không tìm thấy. Session ID: {session_id[:8]}... Có thể session đã hết hạn hoặc server đã restart. Vui lòng yêu cầu mã mới.',
                     'session_expired': True
                 }
 

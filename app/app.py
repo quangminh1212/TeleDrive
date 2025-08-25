@@ -2474,9 +2474,13 @@ def telegram_verify():
         verification_code = form.verification_code.data
         password = form.password.data if form.password.data else None
 
-        app.logger.info(f"Verification attempt - Session ID: {session_id}")
+        app.logger.info(f"=== VERIFICATION DEBUG INFO ===")
+        app.logger.info(f"Session ID from Flask session: {session_id}")
+        app.logger.info(f"Session ID length: {len(session_id) if session_id else 'None'}")
         app.logger.info(f"Verification code length: {len(verification_code)}")
         app.logger.info(f"Password provided: {bool(password)}")
+        app.logger.info(f"All Flask session keys: {list(session.keys())}")
+        app.logger.info(f"Flask session telegram_session_id exists: {'telegram_session_id' in session}")
 
         # Verify code
         async def verify_code():
