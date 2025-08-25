@@ -144,7 +144,8 @@ class TelegramAuthenticator:
                     'phone_code_hash': sent_code.phone_code_hash,
                     'created_at': session_created_time,
                     'expires_at': session_created_time + session_storage_timeout,  # Extended for cleanup only
-                    'send_code_duration': send_code_end_time - send_code_start_time
+                    'send_code_duration': send_code_end_time - send_code_start_time,
+                    'request_session': request_session  # Keep session name to reuse for verification
                 }
 
                 # Debug: Print after storing
@@ -174,16 +175,10 @@ class TelegramAuthenticator:
                     if DETAILED_LOGGING_AVAILABLE:
                         log_step("CLIENT CLEANUP ERROR", f"Error disconnecting client: {cleanup_error}")
 
-                # Clean up session file
-                try:
-                    session_file = Path(f"data/{request_session}.session")
-                    if session_file.exists():
-                        session_file.unlink()
-                        if DETAILED_LOGGING_AVAILABLE:
-                            log_step("SESSION CLEANUP", f"Cleaned up session file: {request_session}.session")
-                except Exception as file_cleanup_error:
-                    if DETAILED_LOGGING_AVAILABLE:
-                        log_step("SESSION CLEANUP ERROR", f"Error cleaning up session file: {file_cleanup_error}")
+                # Defer session file cleanup until verification completes
+                # We keep data/{request_session}.session so that verification can reuse
+                # the same session context, improving reliability with Telegram API.
+                # Cleanup will occur after verification or on error.
             
         except PhoneNumberInvalidError as e:
             if DETAILED_LOGGING_AVAILABLE:
@@ -341,7 +336,7 @@ class TelegramAuthenticator:
 
             # Create a new client with a unique session name for verification
             # Use a simpler session name to avoid potential issues
-            verification_session = f"verify_{session_id[:8]}"
+            verification_session = session_data.get('request_session', f"verify_{session_id[:8]}")
             client = TelegramClient(
                 f"data/{verification_session}",
                 int(config.API_ID),
