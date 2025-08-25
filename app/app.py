@@ -3606,12 +3606,11 @@ def extract_archive(file_id):
 def get_share_links():
     """Get all share links created by the current user"""
     try:
-        user = get_or_create_user()
         page = request.args.get('page', 1, type=int)
         per_page = min(request.args.get('per_page', 20, type=int), 100)
 
         # Get share links with pagination
-        pagination = ShareLink.query.filter_by(user_id=user.id).order_by(ShareLink.created_at.desc()).paginate(
+        pagination = ShareLink.query.filter_by(user_id=current_user.id).order_by(ShareLink.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
 
@@ -3660,8 +3659,7 @@ def get_share_links():
 def update_share_link(link_id):
     """Update share link settings"""
     try:
-        user = get_or_create_user()
-        share_link = ShareLink.query.filter_by(id=link_id, user_id=user.id).first()
+        share_link = ShareLink.query.filter_by(id=link_id, user_id=current_user.id).first()
 
         if not share_link:
             return jsonify({'error': 'Share link not found'}), 404
@@ -3725,8 +3723,7 @@ def update_share_link(link_id):
 def get_share_link_analytics(link_id):
     """Get analytics for a share link"""
     try:
-        user = get_or_create_user()
-        share_link = ShareLink.query.filter_by(id=link_id, user_id=user.id).first()
+        share_link = ShareLink.query.filter_by(id=link_id, user_id=current_user.id).first()
 
         if not share_link:
             return jsonify({'error': 'Share link not found'}), 404

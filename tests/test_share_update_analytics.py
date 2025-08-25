@@ -24,6 +24,12 @@ assert res.status_code == 200 and res.json().get('success')
 link = res.json()['share_link']
 link_id = link['id']
 
+# alternatively, fetch id from listing to ensure owner match
+links = s.get(f'{BASE}/api/share_links').json()['share_links']
+link_ids = [l['id'] for l in links if l['file_id'] == file_id]
+assert link_ids, 'no share id found for uploaded file'
+link_id = link_ids[0]
+
 # update share
 upd = s.put(f'{BASE}/api/share_link/{link_id}/update', json={'name':'NewName','description':'desc','can_view':True,'can_download':True,'max_downloads':5}, headers={'X-CSRFToken': s.get(f'{BASE}/api/csrf-token').json()['csrf_token']})
 print('[update]', upd.status_code, upd.json())
