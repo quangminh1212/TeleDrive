@@ -36,9 +36,25 @@
    setup.bat
    ```
 
-3. **Chạy ứng dụng desktop**
+3. **Copy session từ Telegram Desktop (Khuyến nghị)**
+   ```bash
+   python copy_telegram_session.py
+   ```
+   
+   Script sẽ tự động:
+   - Tìm Telegram Desktop
+   - Kiểm tra đã đăng nhập chưa
+   - Copy session files
+   - Không cần đăng nhập lại!
+
+4. **Chạy ứng dụng desktop**
    ```bash
    run_desktop.bat
+   ```
+   
+   Hoặc web mode:
+   ```bash
+   run.bat
    ```
 
 ### Cách 2: Build thành .exe

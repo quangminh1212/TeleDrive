@@ -2,13 +2,24 @@
 
 ## 🚀 Chạy nhanh (Recommended)
 
-### Web Mode (Browser)
+### Bước 1: Copy Session từ Telegram Desktop (Khuyến nghị)
+
+```bash
+python copy_telegram_session.py
+```
+
+Script sẽ tự động copy session từ Telegram Desktop đã đăng nhập.
+**Lợi ích**: Không cần đăng nhập lại!
+
+### Bước 2: Chạy ứng dụng
+
+**Web Mode (Browser)**
 ```bash
 run.bat
 ```
 Truy cập: http://localhost:3000
 
-### Desktop Mode
+**Desktop Mode**
 ```bash
 run_desktop.bat
 ```

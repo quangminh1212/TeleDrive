@@ -13,8 +13,14 @@
 **Issue**: opentele 1.15.1 không tương thích với Python 3.14
 
 **Workaround**:
-- Sử dụng manual login (nhập số điện thoại + mã xác thực)
-- Hoặc downgrade xuống Python 3.11/3.12
+1. **Sử dụng copy_telegram_session.py** (Khuyến nghị):
+   ```bash
+   python copy_telegram_session.py
+   ```
+   Script sẽ tự động copy session từ Telegram Desktop.
+   
+2. Sử dụng manual login (nhập số điện thoại + mã xác thực)
+3. Hoặc downgrade xuống Python 3.11/3.12
 
 **Error message**:
 ```
