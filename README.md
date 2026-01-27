@@ -30,19 +30,50 @@ A modern Flask web application for Telegram file scanning and management with a 
 
 ### 🚀 Quick Start - Zero Config (Khuyến Nghị)
 
-**Chỉ 2 bước - KHÔNG CẦN API:**
+**Bước 1: Setup (chỉ lần đầu)**
+```bash
+setup.bat
+```
 
-1. **Cài Telegram Desktop và đăng nhập**
+**Bước 2: Run**
+```bash
+run.bat
+```
+
+**Xong!**
+- Truy cập: http://localhost:3000
+- Tự động đăng nhập nếu có Telegram Desktop!
+
+### Chi Tiết
+
+#### Lần Đầu Sử Dụng
+
+1. **Cài Telegram Desktop** (khuyến nghị)
    - Tải: https://desktop.telegram.org/
+   - Đăng nhập tài khoản
 
-2. **Chạy**
+2. **Chạy setup**
+   ```bash
+   setup.bat
+   ```
+   Script sẽ:
+   - Kiểm tra Python
+   - Tạo virtual environment
+   - Cài đặt dependencies
+   - Tạo thư mục cần thiết
+   - Kiểm tra Telegram Desktop
+
+3. **Chạy ứng dụng**
    ```bash
    run.bat
    ```
 
-3. **Xong!**
-   - Truy cập: http://localhost:3000
-   - Tự động đăng nhập - không cần làm gì thêm!
+#### Các Lần Sau
+
+Chỉ cần chạy:
+```bash
+run.bat
+```
 
 ### Alternative: Manual Login (Không có Telegram Desktop)
 
