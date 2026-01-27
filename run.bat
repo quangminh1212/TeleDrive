@@ -65,9 +65,10 @@ echo.
 
 :: Check for updates in requirements
 echo Checking dependencies...
-pip install -r requirements.txt --quiet --upgrade --no-warn-script-location >nul 2>&1
+pip install -r requirements.txt --quiet --upgrade --no-warn-script-location 2>nul
 if errorlevel 1 (
     echo Warning: Some dependencies may not be up to date
+    pip install -r requirements.txt --upgrade --no-warn-script-location
     echo Continuing anyway...
 ) else (
     echo Dependencies up to date
