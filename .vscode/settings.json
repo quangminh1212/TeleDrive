@@ -238,6 +238,7 @@
         "netsh *",
         "ipconfig *",
         "del *",
-        "echo *"
+        "echo *",
+        "if *"
     ]
 }
