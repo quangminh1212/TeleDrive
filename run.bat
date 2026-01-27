@@ -133,8 +133,8 @@ echo.
 echo ========================================
 echo.
 
-:: Run with Python logging script
-python run_with_log.py
+:: Run the application
+python app\app.py
 
 :: If we get here, the app has stopped
 echo.

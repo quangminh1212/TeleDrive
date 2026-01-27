@@ -33,7 +33,9 @@ email-validator==2.0.0
 requests>=2.31.0
 
 # Desktop Application
-pywebview>=5.0.0
+# Note: pywebview 6.x requires pythonnet which has issues on Python 3.14
+# Using pywebview 5.x for better compatibility
+pywebview>=5.0.0,<6.0.0
 pystray>=0.19.5
 Pillow>=10.0.0
 
