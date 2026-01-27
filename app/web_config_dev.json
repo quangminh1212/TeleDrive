@@ -13,7 +13,7 @@
     "socketio_async_mode": "eventlet"
   },
   "database": {
-    "url": "sqlite:///C:\\VF\\TeleDrive\\data\\teledrive.db",
+    "url": "sqlite:///data/teledrive.db",
     "track_modifications": false
   },
   "upload": {

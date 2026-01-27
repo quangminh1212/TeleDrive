@@ -15,16 +15,24 @@ from pathlib import Path
 # Add app directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
-# Configure logging
+# Configure logging with UTF-8 encoding for Windows
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('teledrive.log'),
+        logging.FileHandler('teledrive.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
+
+# Set UTF-8 encoding for console output on Windows
+if sys.platform == 'win32':
+    import codecs
+    if hasattr(sys.stdout, 'buffer'):
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    if hasattr(sys.stderr, 'buffer'):
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
 class TeleDriveApp:
     """TeleDrive Desktop Application"""
@@ -49,7 +57,8 @@ class TeleDriveApp:
     def start_flask(self):
         """Start Flask server in background thread"""
         try:
-            from app.app import app as flask_app
+            # Import the Flask app - since app dir is in sys.path, import directly
+            from app import app as flask_app
             self.flask_app = flask_app
             
             # Disable Flask's default logging to console

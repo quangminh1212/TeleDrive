@@ -7,11 +7,15 @@ Flask web application for Telegram file scanning with Google Drive-like UI
 
 import os
 import sys
-import codecs
 
-# Set UTF-8 encoding for stdout and stderr
-sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
-sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+# Set UTF-8 encoding for stdout and stderr on Windows
+if sys.platform == 'win32':
+    import codecs
+    if hasattr(sys.stdout, 'buffer'):
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'replace')
+    if hasattr(sys.stderr, 'buffer'):
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'replace')
+
 import json
 import asyncio
 import threading

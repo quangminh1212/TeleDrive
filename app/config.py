@@ -45,19 +45,19 @@ class ConfigManager:
         try:
             with open(self.config_file, 'r', encoding='utf-8') as f:
                 self._config = json.load(f)
-                logger.info(f"Đã load config từ {self.config_file}")
+                logger.info(f"Loaded config from {self.config_file}")
 
             # Log chi tiết nếu có
             if DETAILED_LOGGING_AVAILABLE:
-                log_step("LOAD CONFIG", f"Đã tải cấu hình từ {self.config_file}")
+                log_step("LOAD CONFIG", f"Loaded configuration from {self.config_file}")
 
         except FileNotFoundError:
-            logger.warning(f"Không tìm thấy {self.config_file}, tạo config mặc định")
+            logger.warning(f"Config file {self.config_file} not found, creating default config")
             self._config = self._get_default_config()
             self._save_config()
 
             if DETAILED_LOGGING_AVAILABLE:
-                log_step("CONFIG ERROR", f"File {self.config_file} không tồn tại, tạo config mặc định", "WARNING")
+                log_step("CONFIG ERROR", f"File {self.config_file} not found, creating default config", "WARNING")
 
         except json.JSONDecodeError as e:
             logger.error(f"Lỗi JSON trong {self.config_file}: {e}")

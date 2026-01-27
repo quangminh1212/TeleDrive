@@ -100,7 +100,16 @@ class DetailedLogger:
         
         # Console handler nếu enabled
         if self.config.get('console_output', True):
-            console_handler = logging.StreamHandler(sys.stdout)
+            # Use UTF-8 encoding for console output on Windows
+            if sys.platform == 'win32':
+                import codecs
+                if hasattr(sys.stdout, 'buffer'):
+                    console_stream = codecs.getwriter('utf-8')(sys.stdout.buffer, 'replace')
+                else:
+                    console_stream = sys.stdout
+            else:
+                console_stream = sys.stdout
+            console_handler = logging.StreamHandler(console_stream)
             console_handler.setFormatter(formatter)
             logger.addHandler(console_handler)
         
