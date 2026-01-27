@@ -35,6 +35,11 @@ data/*.session-journal
 data/auth_session_*.session
 data/code_req_*.session
 
+# Telegram Desktop session files (copied)
+data/telegram_*
+data/.telegram_desktop_session
+data/telegram_key_data
+
 # Database
 *.db
 *.db-journal
