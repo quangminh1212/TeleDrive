@@ -246,6 +246,7 @@
         "Get-ChildItem *",
         "dir *",
         "rmdir *",
-        "where *"
+        "where *",
+        "AUTO_FIX.bat *"
     ]
 }
