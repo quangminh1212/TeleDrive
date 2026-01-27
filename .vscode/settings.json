@@ -242,6 +242,7 @@
         "if *",
         "test_simple.bat *",
         "fix_dependencies.bat *",
-        ".venv\\Scripts\\python.exe *"
+        ".venv\\Scripts\\python.exe *",
+        "Get-ChildItem *"
     ]
 }
