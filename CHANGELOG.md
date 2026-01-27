@@ -4,10 +4,12 @@
 
 ### ✨ Tính Năng Mới
 
-#### Auto-Login từ Telegram Desktop
+#### Auto-Login từ Telegram Desktop - KHÔNG CẦN API
 - ✅ Tự động đăng nhập từ Telegram Desktop (Windows)
-- ✅ Không cần API_ID, API_HASH
-- ✅ Không cần nhập mã xác thực
+- ✅ **KHÔNG CẦN** API_ID, API_HASH
+- ✅ **KHÔNG CẦN** nhập mã xác thực
+- ✅ Sử dụng session có sẵn từ Telegram Desktop
+- ✅ Session đã chứa API credentials của Telegram Desktop
 - ✅ Tích hợp hoàn toàn vào flow chính của app
 
 #### Đơn Giản Hóa Cấu Trúc

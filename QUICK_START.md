@@ -1,8 +1,8 @@
 # 🚀 Quick Start - TeleDrive
 
-## Chạy Dự Án Chỉ Với 2 Bước
+## ⚡ Chạy Dự Án KHÔNG CẦN API
 
-### Bước 1: Cài Telegram Desktop (nếu chưa có)
+### Bước 1: Cài Telegram Desktop
 - Tải: https://desktop.telegram.org/
 - Đăng nhập tài khoản Telegram
 
@@ -11,18 +11,36 @@
 run.bat
 ```
 
-## Xong! 🎉
+## 🎉 Xong! KHÔNG CẦN API!
 
 - Mở trình duyệt: http://localhost:3000
 - Ứng dụng tự động đăng nhập từ Telegram Desktop
-- Nếu không có Telegram Desktop, đăng nhập bằng số điện thoại
+- **KHÔNG CẦN** API_ID, API_HASH
+- **KHÔNG CẦN** nhập mã xác thực
 
-## Lưu Ý
+## 💡 Cách Hoạt Động
 
-- **Không cần** API_ID, API_HASH
-- **Không cần** nhập mã xác thực (nếu có Telegram Desktop)
-- **Không cần** chạy script riêng
-- Chỉ cần `run.bat` - tất cả đã được tích hợp!
+1. Telegram Desktop lưu session trong `%APPDATA%\Telegram Desktop\tdata`
+2. TeleDrive dùng `opentele` để đọc session này
+3. Session đã chứa sẵn API credentials của Telegram Desktop
+4. Tự động đăng nhập - không cần làm gì thêm!
+
+## 📝 Lưu Ý
+
+### ✅ Với Telegram Desktop (Khuyến nghị)
+- **KHÔNG CẦN** API_ID, API_HASH
+- **KHÔNG CẦN** nhập số điện thoại
+- **KHÔNG CẦN** nhập mã xác thực
+- Chỉ cần `run.bat` → Tự động đăng nhập!
+
+### ⚠️ Không có Telegram Desktop
+- Cần lấy API_ID, API_HASH từ https://my.telegram.org
+- Cấu hình trong `.env`:
+  ```env
+  TELEGRAM_API_ID=your_api_id
+  TELEGRAM_API_HASH=your_api_hash
+  ```
+- Đăng nhập bằng số điện thoại + mã xác thực
 
 ## Troubleshooting
 

@@ -6,7 +6,8 @@ A modern Flask web application for Telegram file scanning and management with a 
 ## 🚀 Features
 
 - **Telegram Integration**: Seamlessly scan and manage files from Telegram channels
-- **🆕 Auto Login**: Đăng nhập tự động từ Telegram Desktop - không cần API credentials!
+- **🆕 Auto Login**: Đăng nhập tự động từ Telegram Desktop - **KHÔNG CẦN API credentials!**
+- **No API Required**: Sử dụng session từ Telegram Desktop, không cần API_ID/API_HASH
 - **Google Drive-like UI**: Clean, modern interface with drag-drop functionality
 - **File Management**: Upload, download, organize, and share files
 - **Smart Folders**: Automated file organization based on criteria
@@ -28,7 +29,7 @@ A modern Flask web application for Telegram file scanning and management with a 
 
 ### 🚀 Quick Start (Recommended)
 
-**Chỉ cần 2 bước:**
+**CHỈ CẦN 2 BƯỚC - KHÔNG CẦN API:**
 
 1. **Cài đặt Telegram Desktop** (nếu chưa có)
    - Tải từ: https://desktop.telegram.org/
@@ -42,10 +43,14 @@ A modern Flask web application for Telegram file scanning and management with a 
 3. **Truy cập**
    - Mở trình duyệt: http://localhost:3000
    - Ứng dụng sẽ tự động đăng nhập từ Telegram Desktop!
+   - **KHÔNG CẦN** API_ID, API_HASH
+   - **KHÔNG CẦN** nhập mã xác thực
 
-**Lưu ý**: Nếu không có Telegram Desktop, bạn vẫn có thể đăng nhập bằng số điện thoại và mã xác thực.
+**Lưu ý**: 
+- Nếu có Telegram Desktop đã đăng nhập → Tự động đăng nhập, không cần API
+- Nếu không có Telegram Desktop → Cần API_ID, API_HASH và đăng nhập bằng số điện thoại
 
-### Manual Installation (Optional)
+### Manual Installation (Nếu không dùng Telegram Desktop)
 
 1. **Clone the repository**
    ```bash
