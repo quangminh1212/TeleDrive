@@ -47,6 +47,7 @@ data/*.db-journal
 logs/
 *.log
 app/logs/
+log.txt
 
 # Output files
 output/
