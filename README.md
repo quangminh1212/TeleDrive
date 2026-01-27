@@ -1,204 +1,203 @@
+# TeleDrive Desktop
 
-# TeleDrive
+Ứng dụng desktop quản lý file Telegram với giao diện hiện đại, chạy native trên Windows.
 
-A modern Flask web application for Telegram file scanning and management with a Google Drive-like interface.
+## ✨ Tính năng
 
-## 🚀 Features
+- **🖥️ Ứng dụng Desktop Native**: Chạy như phần mềm thông thường, không cần browser
+- **🔐 Auto Login**: Tự động đăng nhập từ Telegram Desktop
+- **📁 Quản lý File**: Upload, download, tổ chức file từ Telegram
+- **🔍 Tìm kiếm nâng cao**: Lọc theo loại file, kích thước, ngày tháng
+- **🔗 Chia sẻ File**: Tạo link chia sẻ có bảo mật
+- **📊 Smart Folders**: Tự động phân loại file theo tiêu chí
+- **🎨 Giao diện đẹp**: UI hiện đại, dễ sử dụng
+- **⚡ Hiệu năng cao**: Xử lý file nhanh với Telegram API
 
-- **Telegram Integration**: Seamlessly scan and manage files from Telegram channels
-- **🆕 Auto Login**: Đăng nhập tự động từ Telegram Desktop - **KHÔNG CẦN API credentials!**
-- **No API Required**: Sử dụng session từ Telegram Desktop, không cần API_ID/API_HASH
-- **Google Drive-like UI**: Clean, modern interface with drag-drop functionality
-- **File Management**: Upload, download, organize, and share files
-- **Smart Folders**: Automated file organization based on criteria
-- **Share Links**: Generate secure, time-limited sharing links
-- **Search & Filter**: Advanced search capabilities with multiple filters
-- **Responsive Design**: Works perfectly on desktop and mobile devices
-- **Security**: Telegram authentication with session management
-- **Real-time Updates**: WebSocket support for live progress tracking
-- **File Preview**: Support for 10+ file types including images, videos, PDFs
-- **RESTful API**: Complete API for all file and folder operations
+## 📋 Yêu cầu hệ thống
 
-## 📋 Requirements
+- Windows 10 hoặc mới hơn
+- Python 3.11+ (để chạy từ source)
+- Telegram Desktop (khuyến nghị)
+- 4GB RAM
+- Kết nối Internet
 
-- Python 3.8+
-- Telegram Desktop (khuyến nghị - không cần API)
-- Hoặc: Telegram API credentials nếu không dùng Desktop
-- Modern web browser
+## 🚀 Cài đặt & Sử dụng
 
-## 🛠️ Installation
+### Cách 1: Chạy từ Source (Dành cho Developer)
 
-### 🚀 Quick Start - Zero Config (Khuyến Nghị)
-
-**Bước 1: Setup (chỉ lần đầu)**
-```bash
-setup.bat
-```
-
-**Bước 2: Run**
-```bash
-run.bat
-```
-
-**Xong!**
-- Truy cập: http://localhost:3000
-- Tự động đăng nhập nếu có Telegram Desktop!
-
-### Chi Tiết
-
-#### Lần Đầu Sử Dụng
-
-1. **Cài Telegram Desktop** (khuyến nghị)
-   - Tải: https://desktop.telegram.org/
-   - Đăng nhập tài khoản
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/yourusername/teledrive.git
+   cd teledrive
+   ```
 
 2. **Chạy setup**
    ```bash
    setup.bat
    ```
-   Script sẽ:
-   - Kiểm tra Python
-   - Tạo virtual environment
-   - Cài đặt dependencies
-   - Tạo thư mục cần thiết
-   - Kiểm tra Telegram Desktop
 
-3. **Chạy ứng dụng**
+3. **Chạy ứng dụng desktop**
    ```bash
-   run.bat
+   run_desktop.bat
    ```
 
-#### Các Lần Sau
+### Cách 2: Build thành .exe
 
-Chỉ cần chạy:
-```bash
-run.bat
-```
-
-### Alternative: Manual Login (Không có Telegram Desktop)
-
-1. **Lấy API credentials**
-   - Truy cập: https://my.telegram.org
-   - Tạo app và lấy API_ID, API_HASH
-
-2. **Cấu hình .env**
-   ```env
-   TELEGRAM_API_ID=your_api_id
-   TELEGRAM_API_HASH=your_api_hash
-   ```
-
-3. **Chạy**
+1. **Cài đặt dependencies**
    ```bash
-   run.bat
+   pip install -r requirements.txt
    ```
 
-4. **Đăng nhập**
-   - Nhập số điện thoại
-   - Nhập mã xác thực từ Telegram
-## 📁 Project Structure
+2. **Tạo icon** (tùy chọn)
+   ```bash
+   python create_icon.py
+   ```
+
+3. **Build executable**
+   ```bash
+   python build.py
+   ```
+
+4. **Chạy ứng dụng**
+   - Vào thư mục `dist/TeleDrive/`
+   - Chạy `TeleDrive.exe`
+
+## 📁 Cấu trúc dự án
 
 ```
 TeleDrive/
-├── app/                    # Main application code
-│   ├── static/            # CSS, JS, and other static files
-│   ├── templates/         # HTML templates
-│   ├── app.py            # Main Flask application
+├── main.py                 # Entry point cho desktop app
+├── build.py               # Script build executable
+├── run_desktop.bat        # Script chạy desktop mode
+├── create_icon.py         # Tạo icon cho app
+├── app/                   # Core application
+│   ├── app.py            # Flask backend
 │   ├── db.py             # Database models
-│   ├── auth.py           # Authentication logic
-│   ├── scanner.py        # Telegram file scanning
-│   ├── config.py         # Configuration management
-│   └── ...
-├── tests/                 # Test suite
-├── scripts/              # Utility scripts
-├── docs/                 # Documentation
-├── data/                 # Application data and database
-├── logs/                 # Application logs
-├── requirements.txt      # Python dependencies
-├── run.bat              # Quick start script
-└── README.md            # This file
+│   ├── auth.py           # Authentication
+│   ├── scanner.py        # Telegram scanner
+│   ├── static/           # CSS, JS
+│   └── templates/        # HTML templates
+├── data/                  # Application data
+│   ├── uploads/          # Uploaded files
+│   ├── temp/             # Temporary files
+│   └── teledrive.db      # SQLite database
+├── logs/                  # Log files
+└── requirements.txt       # Python dependencies
 ```
 
-## 🔧 Configuration
+## 🔧 Cấu hình
 
-### Environment Variables
+### File .env (Tùy chọn)
 
-Create a `.env` file in the root directory:
-
-```env
-# Telegram API Configuration
-TELEGRAM_API_ID=your_api_id
-TELEGRAM_API_HASH=your_api_hash
-## 🔧 Configuration
-
-### Environment Variables (.env)
-
-Chỉ cần nếu không dùng Telegram Desktop:
+Nếu không dùng Telegram Desktop, tạo file `.env`:
 
 ```env
-# Telegram API (optional - không cần nếu có Desktop)
+# Telegram API (lấy từ https://my.telegram.org)
 TELEGRAM_API_ID=your_api_id
 TELEGRAM_API_HASH=your_api_hash
 
 # Flask
-FLASK_ENV=development
-SECRET_KEY=your_secret_key
+SECRET_KEY=your_secret_key_here
 
 # Database
 DATABASE_URL=sqlite:///data/teledrive.db
 ```
 
-### Application Settings
+### Cấu hình ứng dụng
 
-Edit `app/config.json` để tùy chỉnh:
-- File upload limits
-- Session timeout
-- UI preferences
-- Security settings
+Chỉnh sửa `app/config.json`:
+- Giới hạn upload
+- Timeout session
+- Cài đặt UI
+- Bảo mật
 
-## 🚀 Usage
+## 🎯 Sử dụng
 
-1. **Lần đầu sử dụng**
-   - Chạy `run.bat`
-   - Truy cập http://localhost:3000
-   - Tự động đăng nhập (nếu có Telegram Desktop)
-   - Hoặc đăng nhập bằng số điện thoại
+1. **Khởi động ứng dụng**
+   - Chạy `TeleDrive.exe` hoặc `run_desktop.bat`
+   - Ứng dụng sẽ mở trong cửa sổ desktop
 
-2. **Quản lý Files**
-   - Browse files trong giao diện chính
-   - Drag-drop để sắp xếp
+2. **Đăng nhập**
+   - Tự động nếu có Telegram Desktop
+   - Hoặc nhập số điện thoại + mã xác thực
+
+3. **Quản lý file**
+   - Browse files trong giao diện
+   - Upload/download files
    - Tạo folders và smart folders
-   - Tạo share links
+   - Chia sẻ files với link
 
-## 🧪 Testing
+## 🛠️ Development
+
+### Chạy ở chế độ development
 
 ```bash
-python tests/comprehensive_test_suite.py
+# Web mode (browser)
+python app/app.py
+
+# Desktop mode
+python main.py
 ```
 
-## 🤝 Contributing
+### Chạy tests
+
+```bash
+python -m pytest tests/
+```
+
+### Build distribution
+
+```bash
+python build.py
+```
+
+## 🔒 Bảo mật
+
+- ✅ Xác thực Telegram
+- ✅ Quản lý session an toàn
+- ✅ Mã hóa mật khẩu với bcrypt
+- ✅ Kiểm tra quyền truy cập file
+- ✅ Rate limiting
+- ✅ Input validation
+
+## 📝 Changelog
+
+### Version 2.0.0 (Desktop)
+- ✨ Chuyển đổi thành ứng dụng desktop
+- ✨ Sử dụng PyWebView cho native window
+- ✨ Tích hợp system tray
+- ✨ Build thành .exe với PyInstaller
+- 🐛 Sửa lỗi tương thích Python 3.14
+- 🐛 Sửa lỗi Flask-SQLAlchemy
+
+### Version 1.0.0 (Web)
+- 🎉 Phiên bản web đầu tiên
+- ✨ Quản lý file Telegram
+- ✨ Auto-login từ Desktop
+- ✨ Share links
+
+## 🤝 Đóng góp
 
 1. Fork repository
-2. Tạo feature branch
-3. Commit changes
-4. Submit pull request
-
-## 🔒 Security
-
-- Telegram authentication
-- Session management
-- File access control
-- Input validation
-- Rate limiting
+2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Tạo Pull Request
 
 ## 📄 License
 
-MIT License - see LICENSE file
+MIT License - xem file [LICENSE](LICENSE)
 
-## 🆘 Support
+## 🆘 Hỗ trợ
 
-- Xem [documentation](docs/)
-- Tạo issue cho bugs/features
+- 📖 [Documentation](docs/)
+- 🐛 [Report Bug](https://github.com/yourusername/teledrive/issues)
+- 💡 [Request Feature](https://github.com/yourusername/teledrive/issues)
+
+## 👨‍💻 Tác giả
+
+TeleDrive Team
 
 ---
 
-*TeleDrive - Modern Telegram File Management System*
+**TeleDrive Desktop** - Quản lý file Telegram chuyên nghiệp 🚀
