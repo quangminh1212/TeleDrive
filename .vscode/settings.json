@@ -243,6 +243,8 @@
         "test_simple.bat *",
         "fix_dependencies.bat *",
         ".venv\\Scripts\\python.exe *",
-        "Get-ChildItem *"
+        "Get-ChildItem *",
+        "dir *",
+        "rmdir *"
     ]
 }
