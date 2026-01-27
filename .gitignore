@@ -21,50 +21,75 @@ wheels/
 *.egg
 MANIFEST
 
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
 # Telegram session files
 *.session
 *.session-journal
+data/*.session
+data/*.session-journal
+data/auth_session_*.session
+data/code_req_*.session
 
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+data/*.db
+data/*.db-journal
 
 # Logs
-logs/*.log
+logs/
 *.log
+app/logs/
 
 # Output files
-output/*
-!output/.gitkeep
+output/
+app/output/
+
+# Temporary files
+data/temp/
+data/backups/
+data/uploads/
+app/data/temp/
+app/data/backups/
+app/data/uploads/
+temp/
+backups/
+uploads/
+instance/
 
 # IDE
 .idea/
+.vscode/
 *.swp
 *.swo
 *~
+.cursor/
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Ignore Python virtual environment
-.venv/
+# Environment
+.env
+.env.local
+.env.*.local
 
-# Session files
-data/session.session
-data/session.session-journal
+# Test files
+test_files/
+tests/__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Ignore log files
-logs/*.log
-
-# Ignore output directory
-output/
-
-# Additional TeleDrive specific ignores
-data/auth_session_*.session
-data/temp/
-data/backups/
-data/uploads/
-instance/
-temp/
-backups/
-uploads/
+# Documentation (keep only README)
+docs/
 
 
