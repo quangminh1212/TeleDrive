@@ -35,7 +35,6 @@ output/*
 !output/.gitkeep
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
