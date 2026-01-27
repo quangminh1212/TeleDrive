@@ -63,11 +63,20 @@ if not errorlevel 1 (
         
         echo !ver! | findstr /r "3\.1[34]\." >nul
         if not errorlevel 1 (
-            echo [WARNING] Python !ver! co the gap van de tuong thich
             echo.
-            echo Khuyến nghị cài Python 3.11 hoặc 3.12
+            echo ========================================
+            echo   PYTHON VERSION INCOMPATIBLE
+            echo ========================================
             echo.
-            echo Dang tu dong cai dat Python 3.11...
+            echo [WARNING] Python !ver! khong tuong thich!
+            echo.
+            echo Cac package khong hoat dong:
+            echo   - opentele (auto-login)
+            echo   - pywebview (embedded window)
+            echo   - pythonnet (build errors)
+            echo.
+            echo Dang TU DONG cai dat Python 3.11...
+            echo (Silent install - khong can tuong tac!)
             echo.
             
             call auto_install_python311.bat
@@ -84,8 +93,16 @@ if not errorlevel 1 (
             )
             
             echo.
-            echo [OK] Python 3.11 da duoc cai dat!
-            echo Vui long dong va mo lai CMD, sau do chay: run.bat
+            echo ========================================
+            echo   PYTHON 3.11 INSTALLED SUCCESSFULLY
+            echo ========================================
+            echo.
+            echo Vui long:
+            echo   1. DONG cua so CMD nay
+            echo   2. MO CMD moi
+            echo   3. Chay lai: run.bat
+            echo.
+            echo (Windows can reload PATH de nhan Python moi)
             echo.
             pause
             exit /b 0
@@ -95,34 +112,47 @@ if not errorlevel 1 (
 
 :: Khong tim thay Python tuong thich
 echo.
+echo ========================================
+echo   PYTHON NOT FOUND
+echo ========================================
+echo.
 echo [ERROR] Khong tim thay Python tuong thich!
 echo.
 echo TeleDrive can Python 3.11 hoac 3.12
 echo.
-echo Dang tu dong cai dat Python 3.11...
+echo Dang TU DONG cai dat Python 3.11...
+echo (Silent install - khong can tuong tac!)
 echo.
 
 call auto_install_python311.bat
 
 if errorlevel 1 (
     echo.
+    echo ========================================
+    echo   AUTO INSTALL FAILED
+    echo ========================================
+    echo.
     echo [ERROR] Khong the cai dat Python 3.11 tu dong
     echo.
     echo Vui long cai dat thu cong:
-    echo 1. Chay: install_python311.bat
-    echo 2. Hoac download tu: https://www.python.org/downloads/
+    echo   1. Chay: install_python311.bat
+    echo   2. Hoac download: https://www.python.org/downloads/
     echo.
     pause
     exit /b 1
 )
 
 echo.
-echo [OK] Python 3.11 da duoc cai dat!
+echo ========================================
+echo   PYTHON 3.11 INSTALLED SUCCESSFULLY
+echo ========================================
 echo.
 echo Vui long:
-echo 1. Dong cua so CMD nay
-echo 2. Mo CMD moi
-echo 3. Chay lai: run.bat
+echo   1. DONG cua so CMD nay
+echo   2. MO CMD moi
+echo   3. Chay lai: run.bat
+echo.
+echo (Windows can reload PATH de nhan Python moi)
 echo.
 pause
 exit /b 0
