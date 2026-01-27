@@ -14,11 +14,11 @@ flask==3.1.0
 flask-socketio==5.3.0
 eventlet==0.40.2
 
-# Database - Updated for compatibility
-sqlalchemy==1.4.41
-flask-sqlalchemy==2.5.1
-alembic==1.8.0
-flask-migrate==3.1.0
+# Database - Updated for Flask 3.x compatibility
+sqlalchemy==2.0.23
+flask-sqlalchemy==3.1.1
+alembic==1.13.1
+flask-migrate==4.0.5
 
 # Authentication
 flask-login==0.6.3
