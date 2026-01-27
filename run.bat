@@ -66,21 +66,29 @@ if not errorlevel 1 (
             echo [WARNING] Python !ver! co the gap van de tuong thich
             echo.
             echo Khuyến nghị cài Python 3.11 hoặc 3.12
-            echo Ban co muon cai dat Python 3.11 khong? (Y/N)
-            choice /c YN /n /m "Chon Y de cai dat, N de tiep tuc voi Python hien tai: "
-            if errorlevel 2 (
+            echo.
+            echo Dang tu dong cai dat Python 3.11...
+            echo.
+            
+            call auto_install_python311.bat
+            
+            if errorlevel 1 (
+                echo.
+                echo [WARNING] Khong the cai dat Python 3.11 tu dong
+                echo Se tiep tuc voi Python !ver! (co the co loi)
+                echo.
                 set "PYTHON_CMD=python"
                 set "PYTHON_VERSION=!ver!"
-                echo [OK] Su dung Python !ver! (co the co loi)
+                timeout /t 3 /nobreak >nul
                 goto :python_found
             )
+            
             echo.
-            echo Dang cai dat Python 3.11...
-            call install_python311.bat
+            echo [OK] Python 3.11 da duoc cai dat!
+            echo Vui long dong va mo lai CMD, sau do chay: run.bat
             echo.
-            echo Vui long chay lai run.bat sau khi cai dat xong
             pause
-            exit /b 1
+            exit /b 0
         )
     )
 )
@@ -91,22 +99,33 @@ echo [ERROR] Khong tim thay Python tuong thich!
 echo.
 echo TeleDrive can Python 3.11 hoac 3.12
 echo.
-echo Ban co muon cai dat Python 3.11 khong? (Y/N)
-choice /c YN /n /m "Chon Y de cai dat, N de thoat: "
-if errorlevel 2 (
+echo Dang tu dong cai dat Python 3.11...
+echo.
+
+call auto_install_python311.bat
+
+if errorlevel 1 (
     echo.
-    echo Da huy. Vui long cai dat Python 3.11 thu cong.
+    echo [ERROR] Khong the cai dat Python 3.11 tu dong
+    echo.
+    echo Vui long cai dat thu cong:
+    echo 1. Chay: install_python311.bat
+    echo 2. Hoac download tu: https://www.python.org/downloads/
+    echo.
     pause
     exit /b 1
 )
 
 echo.
-echo Dang cai dat Python 3.11...
-call install_python311.bat
+echo [OK] Python 3.11 da duoc cai dat!
 echo.
-echo Vui long chay lai run.bat sau khi cai dat xong
+echo Vui long:
+echo 1. Dong cua so CMD nay
+echo 2. Mo CMD moi
+echo 3. Chay lai: run.bat
+echo.
 pause
-exit /b 1
+exit /b 0
 
 :python_found
 %PYTHON_CMD% --version
