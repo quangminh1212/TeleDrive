@@ -53,6 +53,7 @@ logs/
 *.log
 app/logs/
 log.txt
+teledrive.log
 
 # Output files
 output/
@@ -76,6 +77,7 @@ instance/
 *.swo
 *~
 .cursor/
+.vscode/
 
 # OS
 .DS_Store
@@ -103,9 +105,31 @@ build/
 dist/
 release/
 
-# Desktop app
-teledrive.log
-icon.ico
-icon.png
+# Removed/Unused files (cleaned up)
+# Old main files
+main.py
+main_eel.py
+main_webview.py
+
+# Old bat files
+run_web.bat
+run_tauri.bat
+setup.bat
+install_webview.bat
+release.bat
+
+# Old build files
+build.py
+installer.iss
+copy_telegram_session.py
+create_icon.py
+
+# Old folders
+desktop_ui/
+eel_web/
+tauri-app/
+static/
+templates/
+
 
 
