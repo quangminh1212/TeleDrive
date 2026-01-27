@@ -240,6 +240,7 @@
         "del *",
         "echo *",
         "if *",
-        "test_simple.bat *"
+        "test_simple.bat *",
+        "fix_dependencies.bat *"
     ]
 }

@@ -49,6 +49,7 @@ logs/
 app/logs/
 log.txt
 run_with_log.py
+fix_dependencies.bat
 
 # Output files
 output/
