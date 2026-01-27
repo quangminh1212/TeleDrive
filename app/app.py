@@ -2500,7 +2500,7 @@ def reset_password(token):
 # Telegram authentication routes
 @app.route('/telegram_login', methods=['GET', 'POST'])
 def telegram_login():
-    """Telegram login - phone number input"""
+    """Telegram login - phone number input with auto-login support"""
     login_step_id = None
     if DETAILED_LOGGING_AVAILABLE:
         login_step_id = log_step_start("TELEGRAM_LOGIN", f"Method: {request.method}, IP: {request.remote_addr}")
@@ -2522,6 +2522,42 @@ def telegram_login():
 
         if DETAILED_LOGGING_AVAILABLE:
             log_step_end(auth_check_step_id, "AUTH_CHECK", success=True, result="User not authenticated")
+        
+        # Thử auto-login từ session hiện có hoặc Telegram Desktop
+        auto_login_attempted = request.args.get('auto_login_attempted') == '1'
+        
+        if not auto_login_attempted:
+            app.logger.info("Attempting auto-login...")
+            
+            async def try_auto_login():
+                # Kiểm tra session hiện có trước
+                result = await telegram_auth.check_existing_session()
+                if result['success']:
+                    return result
+                
+                # Nếu không có session, thử import từ Telegram Desktop
+                return await telegram_auth.try_auto_login_from_desktop()
+            
+            try:
+                auto_result = run_async_in_thread(try_auto_login())
+                
+                if auto_result['success']:
+                    app.logger.info(f"Auto-login successful: {auto_result['message']}")
+                    
+                    # Đăng nhập user
+                    user_data = auto_result['user']
+                    user = User.query.get(user_data['id'])
+                    
+                    if user:
+                        login_user(user)
+                        flash(f'Đăng nhập tự động thành công! Xin chào {user_data["first_name"]}', 'success')
+                        return redirect(url_for('dashboard'))
+                else:
+                    app.logger.info(f"Auto-login failed: {auto_result['message']}")
+                    if auto_result.get('hint'):
+                        flash(f"{auto_result['message']}. {auto_result['hint']}", 'info')
+            except Exception as e:
+                app.logger.error(f"Auto-login error: {e}")
 
     except Exception as e:
         app.logger.error(f"Error during authentication check: {str(e)}")
