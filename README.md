@@ -1,105 +1,79 @@
 # TeleDrive Desktop
 
-Ứng dụng desktop quản lý file Telegram với giao diện hiện đại, chạy native trên Windows.
+Ứng dụng desktop quản lý file Telegram với giao diện hiện đại.
 
 ## ✨ Tính năng
 
-- **🖥️ Ứng dụng Desktop Native**: Chạy như phần mềm thông thường, không cần browser
-- **🔐 Auto Login**: Tự động đăng nhập từ Telegram Desktop
-- **📁 Quản lý File**: Upload, download, tổ chức file từ Telegram
-- **🔍 Tìm kiếm nâng cao**: Lọc theo loại file, kích thước, ngày tháng
-- **🔗 Chia sẻ File**: Tạo link chia sẻ có bảo mật
-- **📊 Smart Folders**: Tự động phân loại file theo tiêu chí
-- **🎨 Giao diện đẹp**: UI hiện đại, dễ sử dụng
-- **⚡ Hiệu năng cao**: Xử lý file nhanh với Telegram API
+- 🖥️ **Desktop App Native** - Chạy như phần mềm thông thường
+- 🔐 **Auto Login** - Copy session từ Telegram Desktop, không cần đăng nhập lại
+- 📁 **Quản lý File** - Upload, download, tổ chức file từ Telegram
+- 🔍 **Tìm kiếm** - Lọc theo loại file, kích thước, ngày tháng
+- 🔗 **Chia sẻ** - Tạo link chia sẻ có bảo mật
+- 📊 **Smart Folders** - Tự động phân loại file
+- ⚡ **Hiệu năng cao** - Xử lý file nhanh với Telegram API
 
-## 📋 Yêu cầu hệ thống
+## 📋 Yêu cầu
 
-- Windows 10 hoặc mới hơn
-- Python 3.11+ (để chạy từ source)
+- Windows 10+
+- Python 3.11+ (khuyến nghị 3.11 hoặc 3.12)
 - Telegram Desktop (khuyến nghị)
 - 4GB RAM
 - Kết nối Internet
 
-## 🚀 Cài đặt & Sử dụng
+## 🚀 Cài đặt
 
-### Cách 1: Chạy từ Source (Dành cho Developer)
-
-1. **Clone repository**
-   ```bash
-   git clone https://github.com/yourusername/teledrive.git
-   cd teledrive
-   ```
-
-2. **Chạy setup**
-   ```bash
-   setup.bat
-   ```
-
-3. **Copy session từ Telegram Desktop (Khuyến nghị)**
-   ```bash
-   python copy_telegram_session.py
-   ```
-   
-   Script sẽ tự động:
-   - Tìm Telegram Desktop
-   - Kiểm tra đã đăng nhập chưa
-   - Copy session files
-   - Không cần đăng nhập lại!
-
-4. **Chạy ứng dụng desktop**
-   ```bash
-   run.bat
-   ```
-   
-   Hoặc web mode (browser):
-   ```bash
-   run_web.bat
-   ```
-
-### Cách 2: Build thành .exe
-
-1. **Cài đặt dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Tạo icon** (tùy chọn)
-   ```bash
-   python create_icon.py
-   ```
-
-3. **Build executable**
-   ```bash
-   python build.py
-   ```
-
-4. **Chạy ứng dụng**
-   - Vào thư mục `dist/TeleDrive/`
-   - Chạy `TeleDrive.exe`
-
-## 📁 Cấu trúc dự án
-
+### 1. Clone repository
+```bash
+git clone https://github.com/yourusername/teledrive.git
+cd teledrive
 ```
-TeleDrive/
-├── main.py                 # Entry point cho desktop app
-├── build.py               # Script build executable
-├── run_desktop.bat        # Script chạy desktop mode
-├── create_icon.py         # Tạo icon cho app
-├── app/                   # Core application
-│   ├── app.py            # Flask backend
-│   ├── db.py             # Database models
-│   ├── auth.py           # Authentication
-│   ├── scanner.py        # Telegram scanner
-│   ├── static/           # CSS, JS
-│   └── templates/        # HTML templates
-├── data/                  # Application data
-│   ├── uploads/          # Uploaded files
-│   ├── temp/             # Temporary files
-│   └── teledrive.db      # SQLite database
-├── logs/                  # Log files
-└── requirements.txt       # Python dependencies
+
+### 2. Chạy setup
+```bash
+setup.bat
 ```
+
+### 3. Copy session từ Telegram Desktop (Khuyến nghị)
+```bash
+python copy_telegram_session.py
+```
+
+Script sẽ tự động:
+- Tìm Telegram Desktop
+- Kiểm tra đã đăng nhập chưa
+- Copy session files
+- Không cần đăng nhập lại!
+
+### 4. Chạy ứng dụng
+```bash
+run.bat
+```
+
+## 📖 Sử dụng
+
+### Desktop Mode (Mặc định)
+```bash
+run.bat
+```
+Mở cửa sổ desktop app (hoặc browser nếu không có pywebview)
+
+### Web Mode
+```bash
+run_web.bat
+```
+Chạy trong browser: http://localhost:5000
+
+### Copy Session
+```bash
+python copy_telegram_session.py
+```
+Copy session từ Telegram Desktop để không cần login lại
+
+### Build Release
+```bash
+release.bat
+```
+Build portable + installer versions
 
 ## 🔧 Cấu hình
 
@@ -113,58 +87,50 @@ TELEGRAM_API_ID=your_api_id
 TELEGRAM_API_HASH=your_api_hash
 
 # Flask
-SECRET_KEY=your_secret_key_here
+SECRET_KEY=your_secret_key
 
 # Database
 DATABASE_URL=sqlite:///data/teledrive.db
 ```
 
-### Cấu hình ứng dụng
+## 🐛 Troubleshooting
 
-Chỉnh sửa `app/config.json`:
-- Giới hạn upload
-- Timeout session
-- Cài đặt UI
-- Bảo mật
+### Lỗi: pythonnet build failed
+Bỏ qua - ứng dụng vẫn chạy được. Desktop mode sẽ tự động fallback sang browser.
 
-## 🎯 Sử dụng
+### Lỗi: opentele import error
+Bình thường trên Python 3.14. Sử dụng `copy_telegram_session.py` thay vì auto-login.
 
-1. **Khởi động ứng dụng**
-   - Chạy `TeleDrive.exe` hoặc `run_desktop.bat`
-   - Ứng dụng sẽ mở trong cửa sổ desktop
+### Không tìm thấy Telegram Desktop
+1. Cài đặt Telegram Desktop: https://desktop.telegram.org/
+2. Đăng nhập vào Telegram Desktop
+3. Chạy lại `python copy_telegram_session.py`
 
-2. **Đăng nhập**
-   - Tự động nếu có Telegram Desktop
-   - Hoặc nhập số điện thoại + mã xác thực
-
-3. **Quản lý file**
-   - Browse files trong giao diện
-   - Upload/download files
-   - Tạo folders và smart folders
-   - Chia sẻ files với link
-
-## 🛠️ Development
-
-### Chạy ở chế độ development
-
+### Port already in use
 ```bash
-# Web mode (browser)
-python app/app.py
-
-# Desktop mode
-python main.py
+netstat -ano | findstr :5000
+taskkill /F /PID <PID>
 ```
 
-### Chạy tests
+## 📁 Cấu trúc
 
-```bash
-python -m pytest tests/
 ```
-
-### Build distribution
-
-```bash
-python build.py
+TeleDrive/
+├── run.bat              # Chạy desktop mode
+├── run_web.bat          # Chạy web mode
+├── main.py              # Desktop entry point
+├── copy_telegram_session.py  # Copy session utility
+├── app/                 # Core application
+│   ├── app.py          # Flask backend
+│   ├── auth.py         # Authentication
+│   ├── scanner.py      # Telegram scanner
+│   ├── static/         # CSS, JS
+│   └── templates/      # HTML templates
+├── data/               # Application data
+│   ├── uploads/        # Uploaded files
+│   ├── temp/           # Temporary files
+│   └── teledrive.db    # SQLite database
+└── logs/               # Log files
 ```
 
 ## 🔒 Bảo mật
@@ -176,21 +142,26 @@ python build.py
 - ✅ Rate limiting
 - ✅ Input validation
 
-## 📝 Changelog
+## 💡 Tips
 
-### Version 2.0.0 (Desktop)
-- ✨ Chuyển đổi thành ứng dụng desktop
-- ✨ Sử dụng PyWebView cho native window
-- ✨ Tích hợp system tray
-- ✨ Build thành .exe với PyInstaller
-- 🐛 Sửa lỗi tương thích Python 3.14
-- 🐛 Sửa lỗi Flask-SQLAlchemy
+### Python 3.14 Users
+- ⚠️ Auto-login từ Telegram Desktop không hoạt động
+- ✅ Sử dụng `copy_telegram_session.py` để copy session
+- ⚠️ Native desktop window không khả dụng
+- ✅ Tự động fallback sang browser
 
-### Version 1.0.0 (Web)
-- 🎉 Phiên bản web đầu tiên
-- ✨ Quản lý file Telegram
-- ✨ Auto-login từ Desktop
-- ✨ Share links
+**Khuyến nghị**: Dùng Python 3.11 hoặc 3.12 cho trải nghiệm tốt nhất.
+
+### Downgrade Python
+```bash
+# Xóa virtual environment
+rmdir /s /q .venv
+
+# Tạo lại với Python 3.11
+py -3.11 -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
 
 ## 🤝 Đóng góp
 
@@ -206,7 +177,6 @@ MIT License - xem file [LICENSE](LICENSE)
 
 ## 🆘 Hỗ trợ
 
-- 📖 [Documentation](docs/)
 - 🐛 [Report Bug](https://github.com/yourusername/teledrive/issues)
 - 💡 [Request Feature](https://github.com/yourusername/teledrive/issues)
 
