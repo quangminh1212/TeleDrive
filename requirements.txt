@@ -7,6 +7,8 @@ aiofiles==23.2.1
 openpyxl==3.1.0
 
 # Telegram Desktop session import
+# Note: opentele 1.15.1 không tương thích với Python 3.14
+# Nếu gặp lỗi, vui lòng sử dụng Python 3.11 hoặc đăng nhập thủ công
 opentele==1.15.1
 
 # Web interface
