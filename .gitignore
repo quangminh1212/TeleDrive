@@ -48,8 +48,6 @@ logs/
 *.log
 app/logs/
 log.txt
-run_with_log.py
-fix_dependencies.bat
 
 # Output files
 output/
@@ -93,5 +91,15 @@ htmlcov/
 
 # Documentation (keep only README)
 docs/
+
+# PyInstaller
+*.spec
+build/
+dist/
+
+# Desktop app
+teledrive.log
+icon.ico
+icon.png
 
 
