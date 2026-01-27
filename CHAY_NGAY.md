@@ -6,6 +6,18 @@
 run.bat
 ```
 
+## ⚠️ NẾU GẶP LỖI "opentele không tương thích"
+
+**Chạy ngay:**
+```bat
+AUTO_FIX.bat
+```
+
+Script sẽ:
+- ✅ Tự động phát hiện vấn đề
+- ✅ Tự động cài Python 3.11
+- ✅ Hướng dẫn chi tiết từng bước
+
 ## ⚠️ QUAN TRỌNG: CHỈ PYTHON 3.11!
 
 **OPENTELE chỉ hoạt động với Python 3.11**
@@ -80,8 +92,15 @@ run.bat
 ## 🆘 Nếu có lỗi
 
 ### Lỗi: "opentele không tương thích"
+**GIẢI PHÁP NHANH:**
+```bat
+AUTO_FIX.bat
+```
+
+Hoặc thủ công:
 → Bạn đang dùng Python 3.12+
-→ Chạy lại `run.bat` để tự động cài Python 3.11
+→ Chạy `FIX_AUTO_LOGIN.bat` để cài Python 3.11
+→ Đóng CMD, mở CMD mới, chạy `run.bat`
 
 ### Lỗi: "Python 3.11 installation failed"
 ```bat
