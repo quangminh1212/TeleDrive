@@ -10,7 +10,7 @@ openpyxl==3.1.0
 opentele==1.15.1
 
 # Web interface
-flask==3.0.0
+flask==3.1.0
 flask-socketio==5.3.0
 eventlet==0.40.2
 
