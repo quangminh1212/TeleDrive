@@ -26,36 +26,26 @@ A modern Flask web application for Telegram file scanning and management with a 
 
 ## 🛠️ Installation
 
-### 🚀 Đăng Nhập Tự Động (Khuyến Nghị - Không Cần API)
+### 🚀 Quick Start (Recommended)
 
-**Phương thức mới**: Đăng nhập tự động bằng Telegram Desktop - không cần API_ID, API_HASH!
+**Chỉ cần 2 bước:**
 
-1. **Cài đặt Telegram Desktop**
+1. **Cài đặt Telegram Desktop** (nếu chưa có)
    - Tải từ: https://desktop.telegram.org/
    - Đăng nhập vào tài khoản Telegram của bạn
 
-2. **Thiết lập tự động**
-   ```bash
-   setup_telegram_auto_login.bat
-   ```
-
-   Script sẽ tự động:
-   - Cài đặt thư viện cần thiết
-   - Import session từ Telegram Desktop
-   - Thiết lập đăng nhập tự động
-
-3. **Chạy ứng dụng**
+2. **Chạy ứng dụng**
    ```bash
    run.bat
    ```
 
-4. **Truy cập ứng dụng**
+3. **Truy cập**
    - Mở trình duyệt: http://localhost:3000
-   - Đăng nhập tự động - không cần nhập mã!
+   - Ứng dụng sẽ tự động đăng nhập từ Telegram Desktop!
 
-📖 **Xem hướng dẫn chi tiết**: [docs/HUONG_DAN_DANG_NHAP_TELEGRAM.md](docs/HUONG_DAN_DANG_NHAP_TELEGRAM.md)
+**Lưu ý**: Nếu không có Telegram Desktop, bạn vẫn có thể đăng nhập bằng số điện thoại và mã xác thực.
 
-### Quick Start (Phương thức truyền thống)
+### Manual Installation (Optional)
 
 1. **Clone the repository**
    ```bash
