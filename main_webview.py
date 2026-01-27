@@ -95,16 +95,15 @@ class TeleDriveDesktopWindow:
         logger.info(f"Opened browser at {url}")
     
     def create_window(self):
-        """Create a simple control window"""
+        """Create a simple control window with embedded browser"""
         self.root = tk.Tk()
         self.root.title("TeleDrive Desktop")
-        self.root.geometry("400x300")
-        self.root.resizable(False, False)
+        self.root.geometry("900x700")
         
         # Center window
         self.root.update_idletasks()
-        width = self.root.winfo_width()
-        height = self.root.winfo_height()
+        width = 900
+        height = 700
         x = (self.root.winfo_screenwidth() // 2) - (width // 2)
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f'{width}x{height}+{x}+{y}')
@@ -117,81 +116,120 @@ class TeleDriveDesktopWindow:
             except:
                 pass
         
-        # Main frame
-        main_frame = tk.Frame(self.root, padx=20, pady=20)
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        # Try to use webview if available
+        try:
+            import tkinterweb
+            # Use tkinterweb for embedded browser
+            html_path = Path('desktop_ui/index.html').absolute()
+            if html_path.exists():
+                browser = tkinterweb.HtmlFrame(self.root)
+                browser.pack(fill=tk.BOTH, expand=True)
+                browser.load_file(str(html_path))
+            else:
+                self.create_fallback_ui()
+        except ImportError:
+            # Fallback to opening in external browser
+            logger.info("tkinterweb not available, opening in external browser")
+            self.open_browser()
+            self.create_minimal_ui()
+        
+        # Handle window close
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+    
+    def create_minimal_ui(self):
+        """Create minimal UI when webview is not available"""
+        frame = tk.Frame(self.root, bg='#667eea', padx=40, pady=40)
+        frame.pack(fill=tk.BOTH, expand=True)
         
         # Title
-        title_label = tk.Label(
-            main_frame,
+        title = tk.Label(
+            frame,
             text="TeleDrive Desktop",
-            font=("Arial", 18, "bold"),
-            fg="#2c3e50"
+            font=("Arial", 24, "bold"),
+            bg='#667eea',
+            fg='white'
         )
-        title_label.pack(pady=(0, 10))
+        title.pack(pady=(0, 20))
         
         # Status
         self.status_label = tk.Label(
-            main_frame,
-            text="Server is running...",
-            font=("Arial", 10),
-            fg="#27ae60"
+            frame,
+            text="✓ Server is running",
+            font=("Arial", 14),
+            bg='#667eea',
+            fg='#90EE90'
         )
-        self.status_label.pack(pady=(0, 20))
+        self.status_label.pack(pady=(0, 30))
         
-        # URL display
-        url_frame = tk.Frame(main_frame)
-        url_frame.pack(fill=tk.X, pady=(0, 20))
+        # Info card
+        info_frame = tk.Frame(frame, bg='white', padx=30, pady=30)
+        info_frame.pack(fill=tk.BOTH, expand=True)
         
-        tk.Label(url_frame, text="URL:", font=("Arial", 9)).pack(side=tk.LEFT)
-        url_entry = tk.Entry(url_frame, font=("Arial", 9), state='readonly')
-        url_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 0))
-        url_entry.config(state='normal')
+        tk.Label(
+            info_frame,
+            text="Server URL:",
+            font=("Arial", 11, "bold"),
+            bg='white',
+            fg='#6c757d'
+        ).pack(anchor='w', pady=(0, 5))
+        
+        url_entry = tk.Entry(
+            info_frame,
+            font=("Courier New", 12),
+            bg='#f8f9fa',
+            relief=tk.FLAT,
+            bd=0
+        )
+        url_entry.pack(fill=tk.X, pady=(0, 20), ipady=8)
         url_entry.insert(0, f'http://127.0.0.1:{self.port}')
         url_entry.config(state='readonly')
         
         # Buttons
-        button_frame = tk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(0, 10))
+        btn_frame = tk.Frame(info_frame, bg='white')
+        btn_frame.pack(fill=tk.X, pady=(10, 0))
         
         open_btn = tk.Button(
-            button_frame,
-            text="Open in Browser",
+            btn_frame,
+            text="🌐 Open in Browser",
             command=self.open_browser,
-            font=("Arial", 10),
-            bg="#3498db",
-            fg="white",
+            font=("Arial", 12, "bold"),
+            bg='#0088cc',
+            fg='white',
+            relief=tk.FLAT,
             padx=20,
-            pady=10,
+            pady=12,
             cursor="hand2"
         )
-        open_btn.pack(fill=tk.X, pady=(0, 10))
+        open_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
         
         quit_btn = tk.Button(
-            button_frame,
-            text="Stop Server & Exit",
+            btn_frame,
+            text="⏹ Stop & Exit",
             command=self.quit_application,
-            font=("Arial", 10),
-            bg="#e74c3c",
-            fg="white",
+            font=("Arial", 12, "bold"),
+            bg='#dc3545',
+            fg='white',
+            relief=tk.FLAT,
             padx=20,
-            pady=10,
+            pady=12,
             cursor="hand2"
         )
-        quit_btn.pack(fill=tk.X)
+        quit_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 0))
         
-        # Info
-        info_label = tk.Label(
-            main_frame,
-            text="The application is running in your browser.\nKeep this window open.",
-            font=("Arial", 8),
-            fg="#7f8c8d",
+        # Footer
+        footer = tk.Label(
+            frame,
+            text="Keep this window open while using TeleDrive\nVersion 1.0.0",
+            font=("Arial", 9),
+            bg='#667eea',
+            fg='white',
             justify=tk.CENTER
         )
-        info_label.pack(side=tk.BOTTOM, pady=(10, 0))
-        
-        # Handle window close
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        footer.pack(pady=(20, 0))
+    
+    def create_fallback_ui(self):
+        """Fallback UI when HTML file not found"""
+        self.create_minimal_ui()
         
     def on_closing(self):
         """Handle window close event"""

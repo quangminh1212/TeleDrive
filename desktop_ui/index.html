@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive Desktop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0088cc;
+            --primary-dark: #006699;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --border: #dee2e6;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 16px var(--shadow);
+            margin-bottom: 20px;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: var(--light);
+            border-radius: 25px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--warning);
+            animation: pulse 2s infinite;
+        }
+
+        .status.online .status-dot {
+            background: var(--success);
+        }
+
+        .status.offline .status-dot {
+            background: var(--danger);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.1);
+            }
+        }
+
+        .status-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 16px var(--shadow);
+            overflow: hidden;
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            padding: 20px 25px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .card-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        .url-section {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .url-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--secondary);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .url-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            background: white;
+            color: var(--dark);
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px var(--shadow);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-icon {
+            padding: 12px;
+            min-width: 48px;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .info-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .info-icon {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: var(--secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .info-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .footer p {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+
+        .version {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* Icons using Unicode */
+        .icon-telegram::before { content: "✈"; }
+        .icon-server::before { content: "⚙"; }
+        .icon-info::before { content: "ℹ"; }
+        .icon-globe::before { content: "🌐"; }
+        .icon-refresh::before { content: "↻"; }
+        .icon-copy::before { content: "📋"; }
+        .icon-user::before { content: "👤"; }
+        .icon-file::before { content: "📁"; }
+        .icon-storage::before { content: "💾"; }
+        .icon-lock::before { content: "🔒"; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">T</div>
+                <h1>TeleDrive Desktop</h1>
+            </div>
+            <div class="status" id="status">
+                <span class="status-dot"></span>
+                <span class="status-text">Checking...</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2><span class="icon-server"></span> Server Control</h2>
+            </div>
+            <div class="card-body">
+                <div class="url-section">
+                    <label class="url-label">Server URL</label>
+                    <div class="url-container">
+                        <input type="text" class="url-input" id="serverUrl" value="http://127.0.0.1:5000" readonly>
+                        <button class="btn btn-primary btn-icon" onclick="copyUrl()" title="Copy URL">
+                            <span class="icon-copy"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="openBrowser()">
+                        <span class="icon-globe"></span>
+                        Open in Browser
+                    </button>
+                    <button class="btn btn-secondary" onclick="refreshStatus()">
+                        <span class="icon-refresh"></span>
+                        Refresh Status
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2><span class="icon-info"></span> Quick Info</h2>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-icon"><span class="icon-user"></span></div>
+                        <div class="info-label">User</div>
+                        <div class="info-value" id="userName">Guest</div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-icon"><span class="icon-file"></span></div>
+                        <div class="info-label">Files</div>
+                        <div class="info-value" id="fileCount">0</div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-icon"><span class="icon-storage"></span></div>
+                        <div class="info-label">Storage</div>
+                        <div class="info-value" id="storageUsed">0 MB</div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-icon"><span class="icon-lock"></span></div>
+                        <div class="info-label">Security</div>
+                        <div class="info-value">Encrypted</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Keep this window open while using TeleDrive</p>
+            <p class="version">Version 1.0.0 • Made with ❤️</p>
+        </div>
+    </div>
+
+    <script>
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/', {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                updateStatus(true);
+                return true;
+            } catch (error) {
+                updateStatus(false);
+                return false;
+            }
+        }
+
+        function updateStatus(isOnline) {
+            const statusElement = document.getElementById('status');
+            const statusText = statusElement.querySelector('.status-text');
+            
+            if (isOnline) {
+                statusElement.classList.add('online');
+                statusElement.classList.remove('offline');
+                statusText.textContent = 'Server Online';
+            } else {
+                statusElement.classList.add('offline');
+                statusElement.classList.remove('online');
+                statusText.textContent = 'Server Offline';
+            }
+        }
+
+        function openBrowser() {
+            const url = document.getElementById('serverUrl').value;
+            window.open(url, '_blank');
+        }
+
+        function copyUrl() {
+            const urlInput = document.getElementById('serverUrl');
+            urlInput.select();
+            document.execCommand('copy');
+            
+            const btn = event.target.closest('.btn-icon');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<span>✓</span>';
+            btn.style.background = '#28a745';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.style.background = '';
+            }, 2000);
+        }
+
+        function refreshStatus() {
+            const btn = event.target.closest('.btn-secondary');
+            const originalHTML = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="icon-refresh" style="animation: spin 1s linear infinite;"></span> Checking...';
+            btn.disabled = true;
+            
+            checkServerStatus().then(() => {
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }, 1000);
+            });
+        }
+
+        // Add spin animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Auto-check status every 5 seconds
+        setInterval(checkServerStatus, 5000);
+        checkServerStatus();
+    </script>
+</body>
+</html>
