@@ -4,9 +4,20 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ========================================
-echo           TeleDrive Launcher
+echo        TeleDrive - Build & Run
 echo ========================================
 echo.
+
+:: Check if setup has been run
+if not exist ".venv" (
+    echo ❌ Virtual environment not found!
+    echo.
+    echo Please run setup.bat first to install the project:
+    echo    setup.bat
+    echo.
+    pause
+    exit /b 1
+)
 
 :: Check if Python is installed
 python --version >nul 2>&1
@@ -19,6 +30,7 @@ if errorlevel 1 (
 
 echo ✅ Python found
 python --version
+echo.
 
 :: Check if we're in the correct directory
 if not exist "app\app.py" (
@@ -29,24 +41,9 @@ if not exist "app\app.py" (
 )
 
 echo ✅ Project structure verified
-
-:: Create virtual environment if it doesn't exist
-if not exist ".venv" (
-    echo.
-    echo 🔧 Creating virtual environment...
-    python -m venv .venv
-    if errorlevel 1 (
-        echo ❌ Failed to create virtual environment
-        pause
-        exit /b 1
-    )
-    echo ✅ Virtual environment created
-) else (
-    echo ✅ Virtual environment exists
-)
+echo.
 
 :: Activate virtual environment
-echo.
 echo 🔄 Activating virtual environment...
 if exist ".venv\Scripts\activate.bat" (
     call ".venv\Scripts\activate.bat"
@@ -65,67 +62,60 @@ if exist ".venv\Scripts\activate.bat" (
     set "VIRTUAL_ENV=%CD%\.venv"
     echo ✅ Manual environment setup completed
 )
-
-:: Upgrade pip
 echo.
-echo 🔄 Upgrading pip...
-python -m pip install --upgrade pip
 
-:: Install/upgrade dependencies
-echo.
-echo 📦 Installing dependencies...
-pip install -r requirements.txt
+:: Check for updates in requirements
+echo 🔄 Checking dependencies...
+pip install -r requirements.txt --quiet --upgrade
 if errorlevel 1 (
-    echo ❌ Failed to install dependencies
-    echo Please check your internet connection and try again
-    pause
-    exit /b 1
+    echo ⚠️  Warning: Some dependencies may not be up to date
+    echo Continuing anyway...
+) else (
+    echo ✅ Dependencies up to date
 )
-echo ✅ Dependencies installed
-
-:: Cleanup ports function
 echo.
+
+:: Cleanup ports
 echo 🔍 Cleaning up ports...
 call :cleanup_port 3000
 call :cleanup_port 5000
 call :cleanup_port 8000
 echo ✅ Port cleanup completed
+echo.
 
 :: Create necessary directories
-echo.
-echo 📁 Creating necessary directories...
+echo 📁 Ensuring directories exist...
 if not exist "logs" mkdir logs
 if not exist "data" mkdir data
 if not exist "data\uploads" mkdir data\uploads
 if not exist "data\temp" mkdir data\temp
 if not exist "data\backups" mkdir data\backups
-echo ✅ Directories created
-
-:: Check if database exists, if not create it
+if not exist "output" mkdir output
+echo ✅ Directories ready
 echo.
+
+:: Check database
 echo 🗄️  Checking database...
 if not exist "data\teledrive.db" (
     echo ℹ️  Database will be created on first run
 ) else (
     echo ✅ Database exists
 )
+echo.
 
 :: Set environment variables
-echo.
 echo 🔧 Setting environment variables...
 set "FLASK_APP=app.app"
 set "FLASK_ENV=development"
 set "PYTHONPATH=%CD%\app;%PYTHONPATH%"
-
-:: Ensure Python uses UTF-8 encoding
 set "PYTHONIOENCODING=utf-8"
+echo ✅ Environment configured
+echo.
 
 :: Start the application
 echo.
-echo 🚀 Starting TeleDrive...
-echo.
 echo ========================================
-echo           TeleDrive is starting
+echo      🚀 Starting TeleDrive...
 echo ========================================
 echo.
 echo 📱 Web Interface: http://localhost:3000
@@ -136,17 +126,18 @@ echo.
 echo ========================================
 echo.
 
-:: Change to app directory and run the app
+:: Change to app directory and run
 cd app
 python app.py
 
 :: If we get here, the app has stopped
+cd ..
 echo.
 echo ========================================
-echo           TeleDrive stopped
+echo      TeleDrive stopped
 echo ========================================
 echo.
-echo 💡 To restart, run run.bat again
+echo 💡 To restart, run: run.bat
 echo.
 pause
 exit /b 0
@@ -156,18 +147,17 @@ exit /b 0
 set "port=%1"
 echo 🔧 Checking port %port%...
 
-:: Find processes using the port
+:: Find and kill processes using the port
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%port% "') do (
     set "pid=%%a"
     if defined pid (
         if not "!pid!"=="0" (
             echo ⚠️  Found process !pid! using port %port%
-            echo 🗡️  Killing process !pid!...
             taskkill /f /pid !pid! >nul 2>&1
             if errorlevel 1 (
                 echo ❌ Failed to kill process !pid!
             ) else (
-                echo ✅ Process !pid! killed successfully
+                echo ✅ Process !pid! killed
             )
         )
     )
@@ -178,19 +168,10 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr "LISTENING" ^| findstr ":%por
     set "pid=%%a"
     if defined pid (
         if not "!pid!"=="0" (
-            echo ⚠️  Found listening process !pid! on port %port%
-            echo 🗡️  Killing listening process !pid!...
             taskkill /f /pid !pid! >nul 2>&1
-            if errorlevel 1 (
-                echo ❌ Failed to kill listening process !pid!
-            ) else (
-                echo ✅ Listening process !pid! killed successfully
-            )
         )
     )
 )
 
-:: Wait a moment for ports to be fully released
 timeout /t 1 >nul 2>&1
-echo ✅ Port %port% cleanup completed
 exit /b 0 
