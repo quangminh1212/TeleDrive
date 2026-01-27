@@ -43,6 +43,13 @@ class TelegramAuthenticator:
         # Clean up old session files on startup
         self._cleanup_old_session_files()
         print(f"[INIT] TelegramAuthenticator instance {self.instance_id} created")
+        
+        # Auto-login support
+        self._auto_login_attempted = False
+        self._telegram_desktop_paths = [
+            os.path.expandvars(r"%APPDATA%\Telegram Desktop\tdata"),
+            os.path.expanduser("~/AppData/Roaming/Telegram Desktop/tdata"),
+        ]
 
     async def __aenter__(self):
         """Async context manager entry"""
@@ -753,6 +760,166 @@ class TelegramAuthenticator:
 
         except Exception as e:
             pass  # Ignore cleanup errors
+    
+    def _find_telegram_desktop(self) -> Optional[str]:
+        """Tìm thư mục Telegram Desktop tdata"""
+        for tdata_path in self._telegram_desktop_paths:
+            expanded_path = os.path.expandvars(tdata_path)
+            if os.path.exists(expanded_path):
+                return expanded_path
+        return None
+    
+    async def try_auto_login_from_desktop(self) -> Dict[str, Any]:
+        """Thử tự động đăng nhập từ Telegram Desktop"""
+        if self._auto_login_attempted:
+            return {
+                'success': False,
+                'message': 'Auto-login đã được thử trước đó'
+            }
+        
+        self._auto_login_attempted = True
+        
+        try:
+            # Tìm Telegram Desktop
+            tdata_path = self._find_telegram_desktop()
+            if not tdata_path:
+                return {
+                    'success': False,
+                    'message': 'Không tìm thấy Telegram Desktop',
+                    'hint': 'Cài đặt Telegram Desktop và đăng nhập'
+                }
+            
+            print(f"[AUTO_LOGIN] Tìm thấy Telegram Desktop: {tdata_path}")
+            
+            # Import opentele
+            try:
+                from opentele.td import TDesktop
+                from opentele.api import UseCurrentSession
+            except ImportError:
+                return {
+                    'success': False,
+                    'message': 'Chưa cài đặt opentele',
+                    'hint': 'Chạy: pip install opentele'
+                }
+            
+            # Load TDesktop session
+            print("[AUTO_LOGIN] Đang load session từ Telegram Desktop...")
+            tdesk = TDesktop(tdata_path)
+            
+            if not tdesk.isLoaded():
+                return {
+                    'success': False,
+                    'message': 'Telegram Desktop chưa đăng nhập',
+                    'hint': 'Mở Telegram Desktop và đăng nhập'
+                }
+            
+            print("[AUTO_LOGIN] Đã load session, đang chuyển đổi...")
+            
+            # Convert to Telethon
+            session_file = "data/session"
+            client = await tdesk.ToTelethon(
+                session=session_file,
+                flag=UseCurrentSession
+            )
+            
+            await client.connect()
+            
+            if await client.is_user_authorized():
+                me = await client.get_me()
+                
+                # Tạo user trong database
+                db_user = self.create_or_update_user(me, me.phone or '')
+                
+                await client.disconnect()
+                
+                print(f"[AUTO_LOGIN] Thành công! User: {me.first_name}")
+                
+                return {
+                    'success': True,
+                    'message': 'Đăng nhập tự động thành công',
+                    'user': {
+                        'id': db_user.id,
+                        'username': db_user.username,
+                        'telegram_id': me.id,
+                        'first_name': me.first_name,
+                        'last_name': me.last_name,
+                        'phone': me.phone
+                    }
+                }
+            else:
+                await client.disconnect()
+                return {
+                    'success': False,
+                    'message': 'Không thể authorize session'
+                }
+                
+        except Exception as e:
+            print(f"[AUTO_LOGIN] Lỗi: {e}")
+            return {
+                'success': False,
+                'message': f'Lỗi auto-login: {str(e)}'
+            }
+    
+    def has_existing_session(self) -> bool:
+        """Kiểm tra có session file không"""
+        session_paths = [
+            "data/session.session",
+            "session.session"
+        ]
+        return any(os.path.exists(path) for path in session_paths)
+    
+    async def check_existing_session(self) -> Dict[str, Any]:
+        """Kiểm tra và validate session hiện có"""
+        if not self.has_existing_session():
+            return {
+                'success': False,
+                'message': 'Không có session'
+            }
+        
+        try:
+            session_path = "data/session" if os.path.exists("data/session.session") else "session"
+            
+            client = TelegramClient(
+                session_path,
+                int(config.API_ID) if config.API_ID else 0,
+                config.API_HASH if config.API_HASH else ""
+            )
+            
+            await client.connect()
+            
+            if await client.is_user_authorized():
+                me = await client.get_me()
+                
+                # Tạo/cập nhật user trong database
+                db_user = self.create_or_update_user(me, me.phone or '')
+                
+                await client.disconnect()
+                
+                return {
+                    'success': True,
+                    'message': 'Session hợp lệ',
+                    'user': {
+                        'id': db_user.id,
+                        'username': db_user.username,
+                        'telegram_id': me.id,
+                        'first_name': me.first_name,
+                        'last_name': me.last_name,
+                        'phone': me.phone
+                    }
+                }
+            else:
+                await client.disconnect()
+                return {
+                    'success': False,
+                    'message': 'Session không hợp lệ'
+                }
+                
+        except Exception as e:
+            print(f"[CHECK_SESSION] Lỗi: {e}")
+            return {
+                'success': False,
+                'message': f'Lỗi kiểm tra session: {str(e)}'
+            }
 
     async def close(self):
         """Close all connections and clean up with improved error handling"""
