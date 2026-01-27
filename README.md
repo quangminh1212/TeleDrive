@@ -49,12 +49,12 @@
 
 4. **Chạy ứng dụng desktop**
    ```bash
-   run_desktop.bat
+   run.bat
    ```
    
-   Hoặc web mode:
+   Hoặc web mode (browser):
    ```bash
-   run.bat
+   run_web.bat
    ```
 
 ### Cách 2: Build thành .exe

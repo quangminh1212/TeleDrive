@@ -3,7 +3,7 @@ setlocal
 
 echo.
 echo ========================================
-echo     TeleDrive Desktop - Quick Start
+echo      TeleDrive - Web Mode (Browser)
 echo ========================================
 echo.
 
@@ -118,22 +118,22 @@ echo.
 :: Delete old log file
 if exist "log.txt" del /f /q "log.txt" 2>nul
 
-:: Start the application with logging
+:: Start the application
 echo.
 echo ========================================
-echo      Starting TeleDrive Desktop...
+echo      Starting TeleDrive Web Mode...
 echo ========================================
 echo.
-echo Desktop Mode: Native window or browser
+echo Web Interface: http://localhost:5000
+echo Alternative: http://127.0.0.1:5000
 echo.
-echo Press Ctrl+C to stop the application
-echo Logs are being written to teledrive.log
+echo Press Ctrl+C to stop the server
 echo.
 echo ========================================
 echo.
 
-:: Run the desktop application
-python main.py
+:: Run the Flask app directly
+python app\app.py
 
 :: If we get here, the app has stopped
 echo.
@@ -141,8 +141,7 @@ echo ========================================
 echo      TeleDrive stopped
 echo ========================================
 echo.
-echo To restart, run: run.bat
-echo Check log.txt for detailed logs
+echo To restart, run: run_web.bat
 echo.
 pause
 exit /b 0

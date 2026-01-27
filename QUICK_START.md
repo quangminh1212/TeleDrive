@@ -13,19 +13,25 @@ Script sẽ tự động copy session từ Telegram Desktop đã đăng nhập.
 
 ### Bước 2: Chạy ứng dụng
 
-**Web Mode (Browser)**
+**Desktop Mode (Recommended)**
 ```bash
 run.bat
 ```
-Truy cập: http://localhost:3000
+Mở cửa sổ desktop app (hoặc browser nếu không có pywebview)
 
-**Desktop Mode**
+**Web Mode (Browser)**
 ```bash
-run_desktop.bat
+run_web.bat
 ```
-Hoặc:
+Chạy trong browser: http://localhost:5000
+
+**Alternative**
 ```bash
+# Desktop mode
 python main.py
+
+# Web mode  
+python app/app.py
 ```
 
 ## 📦 Build Release
