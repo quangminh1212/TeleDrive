@@ -33,11 +33,16 @@ email-validator==2.0.0
 requests>=2.31.0
 
 # Desktop Application
-# Note: pywebview 6.x requires pythonnet which has issues on Python 3.14
-# Using pywebview 5.x for better compatibility
-pywebview>=5.0.0,<6.0.0
+# Note: pywebview has pythonnet dependency issues on Python 3.14
+# Using alternative: cefpython3 or eel for desktop GUI
+# For now, recommend using Python 3.11/3.12 for desktop builds
+# pywebview>=5.0.0,<6.0.0  # Commented out due to Python 3.14 issues
 pystray>=0.19.5
 Pillow>=10.0.0
+
+# Alternative desktop solutions (uncomment if needed)
+# eel>=0.16.0  # Lightweight alternative
+# flask-desktop>=0.1.0  # Flask wrapper
 
 # Build and Packaging
 pyinstaller>=6.0.0

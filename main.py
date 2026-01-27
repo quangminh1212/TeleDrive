@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 import logging
-import webview
+import webbrowser
 from pathlib import Path
 
 # Add app directory to path
@@ -34,6 +34,17 @@ class TeleDriveApp:
         self.flask_thread = None
         self.server_started = False
         self.port = 5000
+        self.use_webview = False
+        
+        # Try to import pywebview
+        try:
+            import webview
+            self.webview = webview
+            self.use_webview = True
+            logger.info("PyWebView available - will use native window")
+        except ImportError:
+            logger.info("PyWebView not available - will use browser")
+            self.webview = None
         
     def start_flask(self):
         """Start Flask server in background thread"""
@@ -77,7 +88,10 @@ class TeleDriveApp:
     
     def create_window(self):
         """Create and configure the main window"""
-        window = webview.create_window(
+        if not self.use_webview or not self.webview:
+            return None
+            
+        window = self.webview.create_window(
             title='TeleDrive - Telegram File Manager',
             url=f'http://127.0.0.1:{self.port}',
             width=1280,
@@ -89,6 +103,12 @@ class TeleDriveApp:
             text_select=True
         )
         return window
+    
+    def open_browser(self):
+        """Open default browser"""
+        url = f'http://127.0.0.1:{self.port}'
+        logger.info(f"Opening browser at {url}")
+        webbrowser.open(url)
     
     def run(self):
         """Run the desktop application"""
@@ -103,12 +123,25 @@ class TeleDriveApp:
             logger.error("Cannot start application - server not ready")
             return
         
-        # Create and start the window
-        logger.info("Creating application window...")
-        window = self.create_window()
-        
-        # Start the GUI (blocking call)
-        webview.start(debug=False)
+        if self.use_webview:
+            # Create and start the native window
+            logger.info("Creating native application window...")
+            window = self.create_window()
+            
+            # Start the GUI (blocking call)
+            self.webview.start(debug=False)
+        else:
+            # Open in browser
+            logger.info("PyWebView not available, opening in browser...")
+            self.open_browser()
+            
+            # Keep the server running
+            logger.info("Server running. Press Ctrl+C to stop.")
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                logger.info("Shutting down...")
         
         logger.info("Application closed")
 
