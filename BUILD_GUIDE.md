@@ -42,17 +42,37 @@ python main.py
 
 ## Bước 4: Build executable
 
+### Option A: Quick Build (Development)
+
 ```bash
 python build.py
 ```
 
+### Option B: Release Build (Production)
+
+```bash
+release.bat
+```
+
 Script sẽ:
-1. Dọn dẹp build cũ
-2. Tạo PyInstaller spec file
-3. Build executable
-4. Tạo README cho distribution
+1. Kiểm tra prerequisites
+2. Dọn dẹp build cũ
+3. Tạo/verify icon
+4. Build executable với PyInstaller
+5. Tạo Portable version (folder + ZIP)
+6. Build Installer với Inno Setup (nếu có)
+7. Generate SHA256 checksums
+8. Mở thư mục release
+
+**Output:**
+- `release/TeleDrive-Portable-v2.0.0/` - Portable folder
+- `release/TeleDrive-Portable-v2.0.0-Windows.zip` - Portable ZIP
+- `release/TeleDrive-Setup-v2.0.0.exe` - Installer (nếu có Inno Setup)
+- `release/checksums.txt` - SHA256 checksums
 
 ## Bước 5: Kiểm tra kết quả
+
+### Development Build (build.py)
 
 ```
 dist/
@@ -61,6 +81,23 @@ dist/
     ├── _internal/          # Dependencies
     ├── .env.example        # File cấu hình mẫu
     └── README.txt          # Hướng dẫn sử dụng
+```
+
+### Release Build (release.bat)
+
+```
+release/
+├── TeleDrive-Portable-v2.0.0/              # Portable folder
+│   ├── TeleDrive.exe
+│   ├── _internal/
+│   ├── data/                                # Pre-created directories
+│   ├── logs/
+│   ├── .portable                            # Portable marker
+│   ├── README.txt                           # Portable guide
+│   └── ...
+├── TeleDrive-Portable-v2.0.0-Windows.zip   # Portable ZIP
+├── TeleDrive-Setup-v2.0.0.exe              # Installer
+└── checksums.txt                            # SHA256 hashes
 ```
 
 ## Bước 6: Test executable
