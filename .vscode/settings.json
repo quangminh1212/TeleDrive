@@ -241,6 +241,7 @@
         "echo *",
         "if *",
         "test_simple.bat *",
-        "fix_dependencies.bat *"
+        "fix_dependencies.bat *",
+        ".venv\\Scripts\\python.exe *"
     ]
 }
