@@ -236,6 +236,7 @@
         "tasklist *",
         "git *",
         "netsh *",
-        "ipconfig *"
+        "ipconfig *",
+        "del *"
     ]
 }
