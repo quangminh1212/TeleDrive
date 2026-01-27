@@ -33,10 +33,11 @@ email-validator==2.0.0
 requests>=2.31.0
 
 # Desktop Application
-# Note: pywebview has pythonnet dependency issues on Python 3.14
-# Using Eel as alternative for desktop GUI - works with Python 3.14
+# pywebview for embedded web interface (works with Python 3.14 on some systems)
+# If pywebview fails, will fallback to tkinterweb or external browser
+pywebview>=5.0.0
+tkinterweb>=3.0.0
 eel>=0.16.0
-# pywebview>=5.0.0,<6.0.0  # Commented out due to Python 3.14 issues
 pystray>=0.19.5
 Pillow>=10.0.0
 

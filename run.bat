@@ -132,8 +132,8 @@ echo.
 echo ========================================
 echo.
 
-:: Run the desktop application with Tkinter window
-python main_webview.py
+:: Run the desktop application with embedded webview
+python main_embedded.py
 
 :: If we get here, the app has stopped
 echo.
