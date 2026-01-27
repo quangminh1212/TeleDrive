@@ -4688,36 +4688,29 @@ if __name__ == '__main__':
     # Check Telegram session before starting
     print("\n🔍 Checking Telegram session...")
     try:
-        from telegram_session_manager import session_manager
+        from auth import telegram_auth
         import asyncio
         
         # Check if session exists
-        session_info = session_manager.get_session_info()
-        
-        if not session_info['exists']:
-            print("⚠️  Không tìm thấy session Telegram!")
-            print("\n📝 HƯỚNG DẪN:")
-            print("1. Chạy: setup_telegram_auto_login.bat")
-            print("2. Hoặc: python scripts/import_telegram_desktop_session.py")
-            print("\nỨng dụng sẽ tiếp tục khởi động, nhưng bạn cần đăng nhập Telegram.")
-        else:
-            print(f"✅ Tìm thấy session: {session_info['path']}")
-            print(f"   Kích thước: {session_info['size']:,} bytes")
-            print(f"   Cập nhật: {session_info['modified'].strftime('%d/%m/%Y %H:%M:%S')}")
+        if telegram_auth.has_existing_session():
+            print("✅ Tìm thấy session Telegram")
             
             # Try to validate session
             try:
-                result = asyncio.run(session_manager.ensure_session())
+                async def check_session():
+                    return await telegram_auth.check_existing_session()
+                
+                result = asyncio.run(check_session())
                 if result['success']:
-                    print(f"✅ {result['message']}")
-                    if result.get('auto_imported'):
-                        print("🎉 Đã tự động import từ Telegram Desktop!")
+                    print(f"✅ Session hợp lệ: {result['user']['first_name']}")
                 else:
                     print(f"⚠️  {result['message']}")
+                    print("💡 Bạn sẽ cần đăng nhập lại khi truy cập ứng dụng")
             except Exception as e:
                 print(f"⚠️  Không thể kiểm tra session: {e}")
-    except ImportError:
-        print("⚠️  Không thể import session manager")
+        else:
+            print("⚠️  Chưa có session Telegram")
+            print("💡 Ứng dụng sẽ tự động thử đăng nhập từ Telegram Desktop khi bạn truy cập")
     except Exception as e:
         print(f"⚠️  Lỗi kiểm tra session: {e}")
     
