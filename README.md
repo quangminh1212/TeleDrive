@@ -21,83 +21,49 @@ A modern Flask web application for Telegram file scanning and management with a 
 
 ## 📋 Requirements
 
-- Python 3.12+
-- Telegram API credentials (api_id, api_hash)
+- Python 3.8+
+- Telegram Desktop (khuyến nghị - không cần API)
+- Hoặc: Telegram API credentials nếu không dùng Desktop
 - Modern web browser
 
 ## 🛠️ Installation
 
-### 🚀 Quick Start (Recommended)
+### 🚀 Quick Start - Zero Config (Khuyến Nghị)
 
-**CHỈ CẦN 2 BƯỚC - KHÔNG CẦN API:**
+**Chỉ 2 bước - KHÔNG CẦN API:**
 
-1. **Cài đặt Telegram Desktop** (nếu chưa có)
-   - Tải từ: https://desktop.telegram.org/
-   - Đăng nhập vào tài khoản Telegram của bạn
+1. **Cài Telegram Desktop và đăng nhập**
+   - Tải: https://desktop.telegram.org/
 
-2. **Chạy ứng dụng**
+2. **Chạy**
    ```bash
    run.bat
    ```
 
-3. **Truy cập**
-   - Mở trình duyệt: http://localhost:3000
-   - Ứng dụng sẽ tự động đăng nhập từ Telegram Desktop!
-   - **KHÔNG CẦN** API_ID, API_HASH
-   - **KHÔNG CẦN** nhập mã xác thực
+3. **Xong!**
+   - Truy cập: http://localhost:3000
+   - Tự động đăng nhập - không cần làm gì thêm!
 
-**Lưu ý**: 
-- Nếu có Telegram Desktop đã đăng nhập → Tự động đăng nhập, không cần API
-- Nếu không có Telegram Desktop → Cần API_ID, API_HASH và đăng nhập bằng số điện thoại
+### Alternative: Manual Login (Không có Telegram Desktop)
 
-### Manual Installation (Nếu không dùng Telegram Desktop)
+1. **Lấy API credentials**
+   - Truy cập: https://my.telegram.org
+   - Tạo app và lấy API_ID, API_HASH
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd TeleDrive
+2. **Cấu hình .env**
+   ```env
+   TELEGRAM_API_ID=your_api_id
+   TELEGRAM_API_HASH=your_api_hash
    ```
 
-2. **Run the application**
+3. **Chạy**
    ```bash
-   .\run.bat
+   run.bat
    ```
 
-   The script will automatically:
-   - Create a virtual environment
-   - Install all dependencies
-   - Set up the database
-   - Start the application
-
-3. **Access the application**
-   - Open your browser and go to: http://localhost:3000
-
-### Manual Installation
-
-1. **Create virtual environment**
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Configure Telegram API**
-   - Create a `.env` file in the root directory
-   - Add your Telegram API credentials:
-     ```
-     TELEGRAM_API_ID=your_api_id
-     TELEGRAM_API_HASH=your_api_hash
-     ```
-
-4. **Run the application**
-   ```bash
-   cd app
-   python app.py
-   ```
+4. **Đăng nhập**
+   - Nhập số điện thoại
+   - Nhập mã xác thực từ Telegram
 ## 📁 Project Structure
 
 ```
@@ -131,18 +97,28 @@ Create a `.env` file in the root directory:
 # Telegram API Configuration
 TELEGRAM_API_ID=your_api_id
 TELEGRAM_API_HASH=your_api_hash
+## 🔧 Configuration
 
-# Flask Configuration
+### Environment Variables (.env)
+
+Chỉ cần nếu không dùng Telegram Desktop:
+
+```env
+# Telegram API (optional - không cần nếu có Desktop)
+TELEGRAM_API_ID=your_api_id
+TELEGRAM_API_HASH=your_api_hash
+
+# Flask
 FLASK_ENV=development
 SECRET_KEY=your_secret_key
 
-# Database Configuration
+# Database
 DATABASE_URL=sqlite:///data/teledrive.db
 ```
 
 ### Application Settings
 
-Edit `app/config.json` to customize:
+Edit `app/config.json` để tùy chỉnh:
 - File upload limits
 - Session timeout
 - UI preferences
@@ -150,109 +126,48 @@ Edit `app/config.json` to customize:
 
 ## 🚀 Usage
 
-1. **First Time Setup**
-   - Launch the application
-   - Go to http://localhost:3000
-   - Click "Login with Telegram"
-   - Enter your phone number and verification code
+1. **Lần đầu sử dụng**
+   - Chạy `run.bat`
+   - Truy cập http://localhost:3000
+   - Tự động đăng nhập (nếu có Telegram Desktop)
+   - Hoặc đăng nhập bằng số điện thoại
 
-2. **Scanning Files**
-   - Navigate to the "Scan" page
-   - Select Telegram channels to scan
-   - Monitor progress in real-time
-
-3. **File Management**
-   - Browse files in the main interface
-   - Use drag-drop to organize files
-   - Create folders and smart folders
-   - Generate share links for files
+2. **Quản lý Files**
+   - Browse files trong giao diện chính
+   - Drag-drop để sắp xếp
+   - Tạo folders và smart folders
+   - Tạo share links
 
 ## 🧪 Testing
-
-Run the comprehensive test suite:
 
 ```bash
 python tests/comprehensive_test_suite.py
 ```
 
-Quick HTTP checks (no pytest):
-```bash
-python tests/test_share_and_delete_http.py
-python tests/test_delete_unit.py
-python tests/test_download_unit.py
-```
-
-## 📚 Documentation
-
-- [Test Reports](docs/TEST_REPORT.md)
-- [Project Health](docs/PROJECT_HEALTH_REPORT.md)
-- [Testing Checklist](docs/TESTING_CHECKLIST.md)
-- [API: Share & Delete](docs/API_SHARE_DELETE.md)
-
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+1. Fork repository
+2. Tạo feature branch
+3. Commit changes
+4. Submit pull request
 
 ## 🔒 Security
 
-- **Telegram Authentication**: Secure phone-based authentication
-- **Session Management**: Automatic session timeout and security
-- **File Access Control**: Permission-based file access
-- **Input Validation**: Comprehensive input sanitization
-- **Rate Limiting**: API rate limiting protection
+- Telegram authentication
+- Session management
+- File access control
+- Input validation
+- Rate limiting
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - see LICENSE file
 
 ## 🆘 Support
 
-- Check the [documentation](docs/)
-- Review [test reports](docs/TEST_REPORT.md)
-- Open an issue for bugs or feature requests
-
-## 🔄 Version History
-
-- **v1.0.0** - Initial release with core functionality
-  - Modern datetime handling (timezone-aware)
-  - Organized project structure according to international standards
-  - Comprehensive test suite
-  - Google Drive-like UI
-  - Telegram integration
-  - File management system
-
-## 🏆 Acknowledgments
-
-- **Flask** - Web framework
-- **Telethon** - Telegram API client
-- **SQLAlchemy** - Database ORM
-- **Bootstrap** - UI framework
-- **Socket.IO** - Real-time communication
+- Xem [documentation](docs/)
+- Tạo issue cho bugs/features
 
 ---
 
 *TeleDrive - Modern Telegram File Management System*
-- Simple JSON: Chi ten file + link
-
----
-
-## 📊 Trạng thái dự án
-- Đã hoàn thành: 21/115 tính năng (18%)
-- Đang phát triển: authentication, chia sẻ, analytics
-- Định hướng: đạt 100% tính năng cơ bản trong 4 tháng
-- Sẵn sàng production, kiến trúc mở rộng, bảo trì tốt
-
----
-
-## 📚 Tài liệu & tham khảo
-- Hướng dẫn chi tiết: xem README này
-- Cấu hình Telegram: mục "Cấu hình Telegram & môi trường"
-- API, developer guide: sẽ bổ sung trong các release tiếp theo
-
----
-
-*Đã tổng hợp nội dung từ các file: completed-features.md, daily-tasks.md, dev-checklist.md, dev-roadmap.md, final-status.md, missing-features.md, optimization.md, project-summary.md, telegram-config.md*
