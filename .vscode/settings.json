@@ -237,6 +237,7 @@
         "git *",
         "netsh *",
         "ipconfig *",
-        "del *"
+        "del *",
+        "echo *"
     ]
 }
