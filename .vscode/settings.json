@@ -247,6 +247,7 @@
         "dir *",
         "rmdir *",
         "where *",
-        "AUTO_FIX.bat *"
+        "AUTO_FIX.bat *",
+        "py *"
     ]
 }
