@@ -27,17 +27,33 @@ def check_telegram_logged_in(tdata_path):
     """Kiểm tra xem Telegram Desktop đã đăng nhập chưa"""
     # Kiểm tra các file quan trọng
     key_data = os.path.join(tdata_path, "key_data")
-    if not os.path.exists(key_data):
-        return False
     
-    # Kiểm tra có thư mục D877F783D5D3EF8C (hoặc tương tự)
+    # Kiểm tra có thư mục D877F783D5D3EF8C (hoặc tương tự) - 16 ký tự hex
+    has_session_folder = False
     for item in os.listdir(tdata_path):
         item_path = os.path.join(tdata_path, item)
         if os.path.isdir(item_path) and len(item) == 16:
-            # Có thể là thư mục session
-            return True
+            # Kiểm tra xem có phải hex string không
+            try:
+                int(item, 16)
+                has_session_folder = True
+                break
+            except ValueError:
+                continue
     
-    return False
+    # Kiểm tra các file khác
+    has_key_data = os.path.exists(key_data)
+    has_settings = os.path.exists(os.path.join(tdata_path, "settings"))
+    has_usertag = os.path.exists(os.path.join(tdata_path, "usertag"))
+    
+    # Debug info
+    print(f"  - key_data: {'✅' if has_key_data else '❌'}")
+    print(f"  - settings: {'✅' if has_settings else '❌'}")
+    print(f"  - usertag: {'✅' if has_usertag else '❌'}")
+    print(f"  - session folder: {'✅' if has_session_folder else '❌'}")
+    
+    # Cần ít nhất key_data hoặc session folder
+    return has_key_data or has_session_folder or has_settings
 
 def copy_session_files(tdata_path, dest_dir="data"):
     """Copy session files từ Telegram Desktop"""
