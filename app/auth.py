@@ -879,10 +879,22 @@ class TelegramAuthenticator:
         try:
             session_path = "data/session" if os.path.exists("data/session.session") else "session"
             
+            # Thử với API credentials nếu có
+            api_id = int(config.API_ID) if hasattr(config, 'API_ID') and config.API_ID and config.API_ID not in ['', '0'] else None
+            api_hash = config.API_HASH if hasattr(config, 'API_HASH') and config.API_HASH and config.API_HASH != '' else None
+            
+            # Nếu không có API credentials, thử dùng session từ Telegram Desktop
+            if not api_id or not api_hash:
+                print("[CHECK_SESSION] Không có API credentials, thử dùng session từ Desktop...")
+                # Session từ Desktop đã có API credentials embedded
+                # Dùng dummy values để Telethon không báo lỗi
+                api_id = 0
+                api_hash = ""
+            
             client = TelegramClient(
                 session_path,
-                int(config.API_ID) if config.API_ID else 0,
-                config.API_HASH if config.API_HASH else ""
+                api_id,
+                api_hash
             )
             
             await client.connect()
