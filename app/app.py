@@ -2541,7 +2541,7 @@ def telegram_login():
             try:
                 auto_result = run_async_in_thread(try_auto_login())
                 
-                if auto_result['success']:
+                if auto_result and auto_result.get('success'):
                     app.logger.info(f"Auto-login successful: {auto_result['message']}")
                     
                     # Đăng nhập user
@@ -2553,11 +2553,13 @@ def telegram_login():
                         flash(f'Đăng nhập tự động thành công! Xin chào {user_data["first_name"]}', 'success')
                         return redirect(url_for('dashboard'))
                 else:
-                    app.logger.info(f"Auto-login failed: {auto_result['message']}")
-                    if auto_result.get('hint'):
-                        flash(f"{auto_result['message']}. {auto_result['hint']}", 'info')
+                    if auto_result:
+                        app.logger.info(f"Auto-login failed: {auto_result.get('message', 'Unknown error')}")
+                        if auto_result.get('hint'):
+                            flash(f"{auto_result['message']}. {auto_result['hint']}", 'info')
             except Exception as e:
                 app.logger.error(f"Auto-login error: {e}")
+                # Không hiển thị lỗi cho user, chỉ log
 
     except Exception as e:
         app.logger.error(f"Error during authentication check: {str(e)}")

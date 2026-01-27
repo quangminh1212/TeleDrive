@@ -801,6 +801,14 @@ class TelegramAuthenticator:
                     'message': 'Chưa cài đặt opentele',
                     'hint': 'Chạy: pip install opentele'
                 }
+            except (BaseException, Exception) as e:
+                # opentele không tương thích với Python 3.14
+                print(f"[AUTO_LOGIN] Lỗi import opentele: {e}")
+                return {
+                    'success': False,
+                    'message': 'opentele không tương thích với Python hiện tại',
+                    'hint': 'Vui lòng đăng nhập thủ công hoặc sử dụng Python 3.11'
+                }
             
             # Load TDesktop session
             print("[AUTO_LOGIN] Đang load session từ Telegram Desktop...")
