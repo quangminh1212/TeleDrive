@@ -245,6 +245,7 @@
         ".venv\\Scripts\\python.exe *",
         "Get-ChildItem *",
         "dir *",
-        "rmdir *"
+        "rmdir *",
+        "where *"
     ]
 }
