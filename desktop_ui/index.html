@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleDrive Desktop</title>
+    <title>TeleDrive</title>
     <style>
         * {
             margin: 0;
@@ -12,395 +12,438 @@
         }
 
         :root {
-            --primary: #0088cc;
-            --primary-dark: #006699;
-            --secondary: #6c757d;
-            --success: #28a745;
-            --danger: #dc3545;
-            --warning: #ffc107;
-            --light: #f8f9fa;
-            --dark: #343a40;
-            --border: #dee2e6;
-            --shadow: rgba(0, 0, 0, 0.1);
+            --primary: #1a73e8;
+            --primary-hover: #1765cc;
+            --sidebar-bg: #f1f3f4;
+            --border: #dadce0;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --hover-bg: #f1f3f4;
+            --selected-bg: #e8f0fe;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: var(--dark);
-            line-height: 1.6;
-            overflow-x: hidden;
-            padding: 20px;
+            font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+            background: #fff;
+            color: var(--text-primary);
+            line-height: 1.5;
+            overflow: hidden;
+            height: 100vh;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
+        /* Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            flex-direction: column;
         }
 
+        /* Header */
         .header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 25px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 16px var(--shadow);
-            margin-bottom: 20px;
-            animation: slideDown 0.5s ease-out;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border);
+            background: #fff;
+            height: 64px;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
+            margin-right: 24px;
         }
 
         .logo-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            border-radius: 12px;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: 600;
         }
 
-        .logo h1 {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .logo-text {
+            font-size: 22px;
+            font-weight: 400;
+            color: var(--text-secondary);
         }
 
-        .status {
+        .search-bar {
+            flex: 1;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 48px;
+            border: none;
+            background: var(--hover-bg);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+
+        .header-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            background: var(--light);
-            border-radius: 25px;
+            gap: 8px;
+            margin-left: 24px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: background 0.2s;
+            font-size: 18px;
+        }
+
+        .icon-btn:hover {
+            background: var(--hover-bg);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 16px;
+            background: var(--hover-bg);
+            font-size: 12px;
+            color: var(--text-secondary);
         }
 
         .status-dot {
-            width: 12px;
-            height: 12px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: var(--warning);
-            animation: pulse 2s infinite;
+            background: #34a853;
         }
 
-        .status.online .status-dot {
-            background: var(--success);
+        .status-indicator.offline .status-dot {
+            background: #ea4335;
         }
 
-        .status.offline .status-dot {
-            background: var(--danger);
-            animation: none;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.6;
-                transform: scale(1.1);
-            }
-        }
-
-        .status-text {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 16px var(--shadow);
-            overflow: hidden;
-            margin-bottom: 20px;
-            animation: fadeIn 0.5s ease-out;
-            animation-fill-mode: both;
-        }
-
-        .card:nth-child(2) { animation-delay: 0.1s; }
-        .card:nth-child(3) { animation-delay: 0.2s; }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .card-header {
-            padding: 20px 25px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-        }
-
-        .card-header h2 {
-            font-size: 20px;
-            font-weight: 600;
+        /* Main Content */
+        .main-content {
             display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-body {
-            padding: 25px;
-        }
-
-        .url-section {
-            background: var(--light);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        .url-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--secondary);
-            text-transform: uppercase;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .url-container {
-            display: flex;
-            gap: 10px;
-        }
-
-        .url-input {
             flex: 1;
-            padding: 12px 16px;
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            font-size: 15px;
-            background: white;
-            color: var(--dark);
-            font-family: 'Courier New', monospace;
+            overflow: hidden;
         }
 
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+        /* Sidebar */
+        .sidebar {
+            width: 256px;
+            background: #fff;
+            border-right: 1px solid var(--border);
+            padding: 8px 0;
+            overflow-y: auto;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px var(--shadow);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: var(--secondary);
-            color: white;
-        }
-
-        .btn-icon {
-            padding: 12px;
-            min-width: 48px;
-        }
-
-        .actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-        }
-
-        .info-item {
-            background: var(--light);
-            padding: 20px;
-            border-radius: 12px;
-            transition: all 0.3s;
-        }
-
-        .info-item:hover {
-            background: #e9ecef;
-            transform: translateY(-2px);
-        }
-
-        .info-icon {
-            width: 48px;
-            height: 48px;
-            background: white;
-            border-radius: 10px;
+        .sidebar-item {
             display: flex;
             align-items: center;
-            justify-content: center;
-            margin-bottom: 12px;
+            gap: 16px;
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: background 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .sidebar-item.active {
+            background: var(--selected-bg);
+            border-left-color: var(--primary);
             color: var(--primary);
         }
 
-        .info-label {
+        .sidebar-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 0;
+        }
+
+        .storage-info {
+            padding: 16px 20px;
             font-size: 12px;
-            color: var(--secondary);
-            text-transform: uppercase;
-            font-weight: 600;
-            margin-bottom: 6px;
+            color: var(--text-secondary);
         }
 
-        .info-value {
+        .storage-bar {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .storage-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 15%;
+            transition: width 0.3s;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .content-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .content-title {
             font-size: 20px;
-            font-weight: 700;
-            color: var(--dark);
+            font-weight: 400;
+            color: var(--text-primary);
         }
 
-        .footer {
-            text-align: center;
+        .view-options {
+            display: flex;
+            gap: 4px;
+        }
+
+        .content-body {
+            padding: 24px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .action-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
             padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+        }
+
+        .action-card:hover {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            border-color: var(--primary);
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--hover-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .action-content h3 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .action-content p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .btn-primary {
+            background: var(--primary);
             color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 64px 24px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .empty-text {
             font-size: 14px;
         }
-
-        .footer p {
-            margin: 5px 0;
-            opacity: 0.9;
-        }
-
-        .version {
-            font-size: 12px;
-            opacity: 0.7;
-        }
-
-        /* Icons using Unicode */
-        .icon-telegram::before { content: "✈"; }
-        .icon-server::before { content: "⚙"; }
-        .icon-info::before { content: "ℹ"; }
-        .icon-globe::before { content: "🌐"; }
-        .icon-refresh::before { content: "↻"; }
-        .icon-copy::before { content: "📋"; }
-        .icon-user::before { content: "👤"; }
-        .icon-file::before { content: "📁"; }
-        .icon-storage::before { content: "💾"; }
-        .icon-lock::before { content: "🔒"; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="app-container">
+        <!-- Header -->
         <div class="header">
             <div class="logo">
                 <div class="logo-icon">T</div>
-                <h1>TeleDrive Desktop</h1>
+                <span class="logo-text">TeleDrive</span>
             </div>
-            <div class="status" id="status">
-                <span class="status-dot"></span>
-                <span class="status-text">Checking...</span>
+
+            <div class="search-bar">
+                <input type="text" class="search-input" placeholder="Search in TeleDrive">
+            </div>
+
+            <div class="header-actions">
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span>Online</span>
+                </div>
+                <button class="icon-btn" onclick="openBrowser()" title="Open in Browser">🌐</button>
+                <button class="icon-btn" onclick="refreshStatus()" title="Refresh">↻</button>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h2><span class="icon-server"></span> Server Control</h2>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-item active">
+                    <span class="sidebar-icon">🏠</span>
+                    <span>Home</span>
+                </div>
+                <div class="sidebar-item">
+                    <span class="sidebar-icon">📁</span>
+                    <span>My Files</span>
+                </div>
+                <div class="sidebar-item">
+                    <span class="sidebar-icon">👥</span>
+                    <span>Shared</span>
+                </div>
+                <div class="sidebar-item">
+                    <span class="sidebar-icon">⭐</span>
+                    <span>Starred</span>
+                </div>
+                <div class="sidebar-item">
+                    <span class="sidebar-icon">🗑️</span>
+                    <span>Trash</span>
+                </div>
+
+                <div class="sidebar-divider"></div>
+
+                <div class="storage-info">
+                    <div>Storage</div>
+                    <div class="storage-bar">
+                        <div class="storage-fill"></div>
+                    </div>
+                    <div>0 MB of 15 GB used</div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="url-section">
-                    <label class="url-label">Server URL</label>
-                    <div class="url-container">
-                        <input type="text" class="url-input" id="serverUrl" value="http://127.0.0.1:5000" readonly>
-                        <button class="btn btn-primary btn-icon" onclick="copyUrl()" title="Copy URL">
-                            <span class="icon-copy"></span>
-                        </button>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <div class="content-header">
+                    <h1 class="content-title">Home</h1>
+                    <div class="view-options">
+                        <button class="icon-btn">⊞</button>
+                        <button class="icon-btn">☰</button>
                     </div>
                 </div>
 
-                <div class="actions">
-                    <button class="btn btn-primary" onclick="openBrowser()">
-                        <span class="icon-globe"></span>
-                        Open in Browser
-                    </button>
-                    <button class="btn btn-secondary" onclick="refreshStatus()">
-                        <span class="icon-refresh"></span>
-                        Refresh Status
-                    </button>
-                </div>
-            </div>
-        </div>
+                <div class="content-body">
+                    <!-- Quick Actions -->
+                    <div class="quick-actions">
+                        <div class="action-card" onclick="openBrowser()">
+                            <div class="action-icon">🌐</div>
+                            <div class="action-content">
+                                <h3>Open Web Interface</h3>
+                                <p>Access full features in browser</p>
+                            </div>
+                        </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h2><span class="icon-info"></span> Quick Info</h2>
-            </div>
-            <div class="card-body">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-icon"><span class="icon-user"></span></div>
-                        <div class="info-label">User</div>
-                        <div class="info-value" id="userName">Guest</div>
+                        <div class="action-card" onclick="copyUrl()">
+                            <div class="action-icon">📋</div>
+                            <div class="action-content">
+                                <h3>Copy Server URL</h3>
+                                <p>http://127.0.0.1:5000</p>
+                            </div>
+                        </div>
+
+                        <div class="action-card">
+                            <div class="action-icon">⚙️</div>
+                            <div class="action-content">
+                                <h3>Server Status</h3>
+                                <p id="serverStatusText">Running</p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="info-item">
-                        <div class="info-icon"><span class="icon-file"></span></div>
-                        <div class="info-label">Files</div>
-                        <div class="info-value" id="fileCount">0</div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-icon"><span class="icon-storage"></span></div>
-                        <div class="info-label">Storage</div>
-                        <div class="info-value" id="storageUsed">0 MB</div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-icon"><span class="icon-lock"></span></div>
-                        <div class="info-label">Security</div>
-                        <div class="info-value">Encrypted</div>
+                    <!-- Files Section -->
+                    <h2 style="font-size: 16px; font-weight: 500; margin-bottom: 16px; color: var(--text-primary);">Recent Files</h2>
+                    
+                    <div class="empty-state">
+                        <div class="empty-icon">📁</div>
+                        <div class="empty-title">No files yet</div>
+                        <div class="empty-text">Open the web interface to start uploading files</div>
+                        <br>
+                        <button class="btn-primary" onclick="openBrowser()">Open Web Interface</button>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="footer">
-            <p>Keep this window open while using TeleDrive</p>
-            <p class="version">Version 1.0.0 • Made with ❤️</p>
         </div>
     </div>
 
@@ -420,65 +463,38 @@
         }
 
         function updateStatus(isOnline) {
-            const statusElement = document.getElementById('status');
-            const statusText = statusElement.querySelector('.status-text');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('serverStatusText');
             
             if (isOnline) {
-                statusElement.classList.add('online');
-                statusElement.classList.remove('offline');
-                statusText.textContent = 'Server Online';
+                statusIndicator.classList.remove('offline');
+                statusIndicator.querySelector('span:last-child').textContent = 'Online';
+                if (statusText) statusText.textContent = 'Running';
             } else {
-                statusElement.classList.add('offline');
-                statusElement.classList.remove('online');
-                statusText.textContent = 'Server Offline';
+                statusIndicator.classList.add('offline');
+                statusIndicator.querySelector('span:last-child').textContent = 'Offline';
+                if (statusText) statusText.textContent = 'Stopped';
             }
         }
 
         function openBrowser() {
-            const url = document.getElementById('serverUrl').value;
-            window.open(url, '_blank');
+            window.open('http://127.0.0.1:5000', '_blank');
         }
 
         function copyUrl() {
-            const urlInput = document.getElementById('serverUrl');
-            urlInput.select();
-            document.execCommand('copy');
-            
-            const btn = event.target.closest('.btn-icon');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<span>✓</span>';
-            btn.style.background = '#28a745';
-            
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-                btn.style.background = '';
-            }, 2000);
-        }
-
-        function refreshStatus() {
-            const btn = event.target.closest('.btn-secondary');
-            const originalHTML = btn.innerHTML;
-            
-            btn.innerHTML = '<span class="icon-refresh" style="animation: spin 1s linear infinite;"></span> Checking...';
-            btn.disabled = true;
-            
-            checkServerStatus().then(() => {
+            navigator.clipboard.writeText('http://127.0.0.1:5000').then(() => {
+                const card = event.target.closest('.action-card');
+                const originalBg = card.style.background;
+                card.style.background = '#e8f5e9';
                 setTimeout(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
+                    card.style.background = originalBg;
                 }, 1000);
             });
         }
 
-        // Add spin animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes spin {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
-            }
-        `;
-        document.head.appendChild(style);
+        function refreshStatus() {
+            checkServerStatus();
+        }
 
         // Auto-check status every 5 seconds
         setInterval(checkServerStatus, 5000);
