@@ -6,10 +6,18 @@
 run.bat
 ```
 
+## ⚠️ QUAN TRỌNG: CHỈ PYTHON 3.11!
+
+**OPENTELE chỉ hoạt động với Python 3.11**
+- ❌ Python 3.12 - KHÔNG hoạt động
+- ❌ Python 3.13 - KHÔNG hoạt động  
+- ❌ Python 3.14 - KHÔNG hoạt động
+- ✅ Python 3.11 - DUY NHẤT hoạt động!
+
 ## ✨ Tự động 100% - Không cần làm gì!
 
 Script sẽ **TỰ ĐỘNG**:
-- ✅ Tìm Python 3.11/3.12
+- ✅ Tìm Python 3.11
 - ✅ **Cài Python 3.11 nếu không có** (silent, không cần click gì!)
 - ✅ Tạo virtual environment
 - ✅ Cài tất cả dependencies
@@ -28,7 +36,7 @@ Script sẽ **TỰ ĐỘNG**:
 
 - Windows 10/11
 - Internet (lần đầu)
-- **KHÔNG CẦN** cài Python trước!
+- **Python 3.11** (script tự động cài!)
 
 ## 🚀 Các trường hợp
 
@@ -38,17 +46,18 @@ run.bat
 ```
 → Chờ 2-5 phút, tự động cài Python 3.11 và chạy!
 
-### 2. Đã có Python 3.11 hoặc 3.12:
+### 2. Đã có Python 3.11:
 ```bat
 run.bat
 ```
 → Chạy ngay lập tức!
 
-### 3. Đang dùng Python 3.14:
+### 3. Đang dùng Python 3.12/3.13/3.14:
 ```bat
 run.bat
 ```
-→ Script tự động cài Python 3.11
+→ Script phát hiện version không tương thích
+→ Tự động cài Python 3.11
 → Yêu cầu đóng CMD và mở lại
 → Chạy lại `run.bat`
 
@@ -64,11 +73,15 @@ run.bat
 ## 📱 Kết quả
 
 - Cửa sổ desktop với giao diện Google Drive
-- Auto-login từ Telegram Desktop (nếu đã đăng nhập)
+- ✅ **Auto-login từ Telegram Desktop** (chỉ với Python 3.11!)
 - Upload/Download files qua Telegram
 - Quản lý files như Google Drive
 
 ## 🆘 Nếu có lỗi
+
+### Lỗi: "opentele không tương thích"
+→ Bạn đang dùng Python 3.12+
+→ Chạy lại `run.bat` để tự động cài Python 3.11
 
 ### Lỗi: "Python 3.11 installation failed"
 ```bat
@@ -88,6 +101,7 @@ Hoặc download: https://www.python.org/downloads/release/python-31110/
 - **Lần sau**: Vài giây
 - **Không cần tương tác** - để script tự chạy
 - **Giữ Telegram Desktop mở** để auto-login
+- **CHỈ Python 3.11** - không dùng version khác!
 
 ## 🎉 Xong!
 
@@ -105,3 +119,12 @@ Ngồi chờ, uống cà phê ☕, mọi thứ tự động! 🚀
 - `auto_install_python311.bat` - Auto install Python 3.11
 - `CHAY_NGAY.md` - File này
 - `teledrive.log` - Log file nếu có lỗi
+
+## ❓ Tại sao CHỈ Python 3.11?
+
+**OPENTELE** (package cho auto-login) chỉ build được với Python 3.11:
+- Python 3.12+ có thay đổi API nội bộ
+- OPENTELE chưa cập nhật hỗ trợ
+- Không có cách nào khác ngoài dùng Python 3.11
+
+**Giải pháp:** Script tự động cài Python 3.11 song song, không ảnh hưởng Python version khác!

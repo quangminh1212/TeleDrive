@@ -2,19 +2,27 @@
 
 Quản lý files trên Telegram như Google Drive!
 
-## ⚠️ VẤN ĐỀ QUAN TRỌNG
+## ⚠️ VẤN ĐỀ QUAN TRỌNG - CHỈ PYTHON 3.11!
 
-**Bạn đang dùng Python 3.14 - KHÔNG TƯƠNG THÍCH!**
+**OPENTELE chỉ hoạt động với Python 3.11**
 
-Các package sau không hoạt động với Python 3.14:
-- ❌ `opentele` - Auto-login không hoạt động
-- ❌ `pywebview` - Embedded webview không cài được
-- ❌ `pythonnet` - Build lỗi
+Các version khác KHÔNG hoạt động:
+- ❌ Python 3.12 - opentele không build được
+- ❌ Python 3.13 - opentele không build được
+- ❌ Python 3.14 - opentele không build được
+- ✅ **Python 3.11 - DUY NHẤT hoạt động!**
 
 ## ✅ GIẢI PHÁP NHANH
 
 ### Bước 1: Cài Python 3.11
 
+```bat
+run.bat
+```
+
+Script sẽ **TỰ ĐỘNG** cài Python 3.11 nếu không tìm thấy!
+
+Hoặc cài thủ công:
 ```bat
 QUICK_FIX.bat
 ```
@@ -34,14 +42,19 @@ Hoặc download thủ công:
 run.bat
 ```
 
-## 🎯 Tại sao cần Python 3.11?
+## 🎯 Tại sao CHỈ Python 3.11?
 
-| Tính năng | Python 3.14 | Python 3.11 |
+| Tính năng | Python 3.12+ | Python 3.11 |
 |-----------|-------------|-------------|
-| Auto-login | ❌ Không hoạt động | ✅ Hoạt động |
-| Embedded webview | ❌ Không cài được | ✅ Hoạt động |
+| Auto-login | ❌ opentele không build | ✅ Hoạt động |
+| Embedded webview | ⚠️ Một số lỗi | ✅ Hoạt động |
 | Tất cả packages | ❌ Nhiều lỗi | ✅ Ổn định |
-| Hiệu suất | ⚡ Nhanh hơn | ⚡ Nhanh |
+
+**Lý do kỹ thuật:**
+- OPENTELE sử dụng các API nội bộ của Python
+- Python 3.12+ có thay đổi breaking changes
+- OPENTELE chưa cập nhật hỗ trợ Python 3.12+
+- Không có cách nào khác ngoài dùng Python 3.11
 
 ## 📋 Sau khi cài Python 3.11
 
@@ -95,28 +108,30 @@ run.bat
 - 📂 Sidebar với navigation
 - 🔍 Search bar
 - 📊 File grid view
-- 🔐 Auto-login từ Telegram Desktop
+- 🔐 Auto-login từ Telegram Desktop (CHỈ với Python 3.11!)
 
 ## 🆘 Troubleshooting
 
 ### "opentele không tương thích"
-→ Đang dùng Python 3.14, cài Python 3.11
+→ Đang dùng Python 3.12+, PHẢI dùng Python 3.11
+→ Chạy `run.bat` để tự động cài Python 3.11
 
 ### "pywebview not available"
-→ Bình thường với Python 3.14, cài Python 3.11 để fix
+→ Bình thường với Python 3.12+, cài Python 3.11 để fix
 
 ### "pythonnet build failed"
-→ Bình thường với Python 3.14, cài Python 3.11 để fix
+→ Bình thường với Python 3.12+, cài Python 3.11 để fix
 
 ### "Auto-login failed"
 → Cần Python 3.11 và Telegram Desktop đã đăng nhập
 
 ## 💡 Tips
 
-1. **Luôn dùng Python 3.11** cho trải nghiệm tốt nhất
+1. **CHỈ dùng Python 3.11** - không dùng version khác!
 2. **Đóng và mở lại CMD** sau khi cài Python mới
 3. **Giữ Telegram Desktop mở** để auto-login hoạt động
 4. **Chạy `run.bat`** - mọi thứ tự động!
+5. **Python 3.11 có thể cài song song** với Python khác
 
 ## 📂 Cấu trúc
 
@@ -134,11 +149,11 @@ TeleDrive/
 
 ## 🎉 Tóm tắt
 
-1. Chạy `QUICK_FIX.bat` để cài Python 3.11
+1. Chạy `run.bat` (tự động cài Python 3.11)
 2. Đóng CMD, mở CMD mới
-3. Chạy `run.bat`
+3. Chạy lại `run.bat`
 4. Enjoy! 🚀
 
 ---
 
-**Lưu ý:** Python 3.14 quá mới, nhiều package chưa hỗ trợ. Python 3.11 là phiên bản ổn định và tương thích tốt nhất!
+**Lưu ý:** Python 3.12+ quá mới, OPENTELE chưa hỗ trợ. Python 3.11 là phiên bản DUY NHẤT tương thích!

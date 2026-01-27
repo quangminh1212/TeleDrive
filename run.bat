@@ -14,7 +14,7 @@ echo.
 set "PYTHON_CMD="
 set "PYTHON_VERSION="
 
-:: Thu tim Python 3.11 (tot nhat)
+:: Thu tim Python 3.11 (REQUIRED - opentele chi hoat dong voi 3.11)
 py -3.11 --version >nul 2>&1
 if not errorlevel 1 (
     set "PYTHON_CMD=py -3.11"
@@ -31,49 +31,35 @@ if not errorlevel 1 (
     goto :python_found
 )
 
-:: Thu tim Python 3.12 (tot)
-py -3.12 --version >nul 2>&1
-if not errorlevel 1 (
-    set "PYTHON_CMD=py -3.12"
-    set "PYTHON_VERSION=3.12"
-    echo [OK] Tim thay Python 3.12 qua py launcher
-    goto :python_found
-)
-
-python3.12 --version >nul 2>&1
-if not errorlevel 1 (
-    set "PYTHON_CMD=python3.12"
-    set "PYTHON_VERSION=3.12"
-    echo [OK] Tim thay Python 3.12
-    goto :python_found
-)
-
-:: Kiem tra Python mac dinh
+:: Kiem tra Python mac dinh co phai 3.11 khong
 python --version >nul 2>&1
 if not errorlevel 1 (
     for /f "tokens=2" %%v in ('python --version 2^>^&1') do (
         set "ver=%%v"
-        echo !ver! | findstr /r "3\.1[12]\." >nul
+        echo !ver! | findstr /r "3\.11\." >nul
         if not errorlevel 1 (
             set "PYTHON_CMD=python"
-            set "PYTHON_VERSION=default"
-            echo [OK] Tim thay Python tuong thich (default)
+            set "PYTHON_VERSION=3.11"
+            echo [OK] Tim thay Python 3.11 (default)
             goto :python_found
         )
         
-        echo !ver! | findstr /r "3\.1[34]\." >nul
+        :: Neu la Python 3.12, 3.13, 3.14 - khong tuong thich
+        echo !ver! | findstr /r "3\.1[2-9]\." >nul
         if not errorlevel 1 (
             echo.
             echo ========================================
             echo   PYTHON VERSION INCOMPATIBLE
             echo ========================================
             echo.
-            echo [WARNING] Python !ver! khong tuong thich!
+            echo [WARNING] Python !ver! KHONG tuong thich!
             echo.
-            echo Cac package khong hoat dong:
-            echo   - opentele (auto-login)
-            echo   - pywebview (embedded window)
-            echo   - pythonnet (build errors)
+            echo OPENTELE chi hoat dong voi Python 3.11
+            echo Python 3.12+ khong duoc ho tro!
+            echo.
+            echo Cac tinh nang bi anh huong:
+            echo   - Auto-login tu Telegram Desktop
+            echo   - Embedded webview (mot so package)
             echo.
             echo Dang TU DONG cai dat Python 3.11...
             echo (Silent install - khong can tuong tac!)
@@ -84,12 +70,24 @@ if not errorlevel 1 (
             if errorlevel 1 (
                 echo.
                 echo [WARNING] Khong the cai dat Python 3.11 tu dong
-                echo Se tiep tuc voi Python !ver! (co the co loi)
                 echo.
-                set "PYTHON_CMD=python"
-                set "PYTHON_VERSION=!ver!"
-                timeout /t 3 /nobreak >nul
-                goto :python_found
+                echo Ban co the:
+                echo   1. Cai Python 3.11 thu cong: install_python311.bat
+                echo   2. Tiep tuc voi Python !ver! (KHONG CO AUTO-LOGIN)
+                echo.
+                choice /C 12 /N /M "Chon (1=Cai thu cong, 2=Tiep tuc khong auto-login): "
+                if errorlevel 2 (
+                    echo.
+                    echo [WARNING] Tiep tuc voi Python !ver! - KHONG CO AUTO-LOGIN
+                    set "PYTHON_CMD=python"
+                    set "PYTHON_VERSION=!ver!"
+                    timeout /t 3 /nobreak >nul
+                    goto :python_found
+                )
+                echo.
+                echo Vui long cai Python 3.11 va chay lai run.bat
+                pause
+                exit /b 1
             )
             
             echo.
@@ -113,12 +111,13 @@ if not errorlevel 1 (
 :: Khong tim thay Python tuong thich
 echo.
 echo ========================================
-echo   PYTHON NOT FOUND
+echo   PYTHON 3.11 REQUIRED
 echo ========================================
 echo.
-echo [ERROR] Khong tim thay Python tuong thich!
+echo [ERROR] Khong tim thay Python 3.11!
 echo.
-echo TeleDrive can Python 3.11 hoac 3.12
+echo TeleDrive CAN Python 3.11 (KHONG PHAI 3.12+)
+echo Ly do: opentele chi hoat dong voi Python 3.11
 echo.
 echo Dang TU DONG cai dat Python 3.11...
 echo (Silent install - khong can tuong tac!)
@@ -136,7 +135,9 @@ if errorlevel 1 (
     echo.
     echo Vui long cai dat thu cong:
     echo   1. Chay: install_python311.bat
-    echo   2. Hoac download: https://www.python.org/downloads/
+    echo   2. Hoac download: https://www.python.org/downloads/release/python-31110/
+    echo.
+    echo LUU Y: Phai la Python 3.11, KHONG PHAI 3.12 hay 3.14!
     echo.
     pause
     exit /b 1
