@@ -6,9 +6,13 @@ python-dotenv==1.0.0
 aiofiles==23.2.1
 openpyxl==3.1.0
 
+# Performance optimization for Telethon
+# cryptg provides fast encryption (10x faster than pure Python)
+cryptg>=0.4.0
+
 # Telegram Desktop session import
-# Note: opentele 1.15.1 không tương thích với Python 3.14
-# Nếu gặp lỗi, vui lòng sử dụng Python 3.11 hoặc đăng nhập thủ công
+# Note: opentele only works with Python 3.11
+# If using Python 3.12+, auto-login will not work
 opentele==1.15.1
 
 # Web interface
@@ -16,7 +20,7 @@ flask==3.1.0
 flask-socketio==5.3.0
 eventlet==0.40.2
 
-# Database - Updated for Flask 3.x and Python 3.14 compatibility
+# Database - Updated for Flask 3.x compatibility
 sqlalchemy==2.0.46
 flask-sqlalchemy==3.1.1
 alembic==1.13.1
@@ -33,16 +37,16 @@ email-validator==2.0.0
 requests>=2.31.0
 
 # Desktop Application
-# pywebview for embedded web interface (works with Python 3.14 on some systems)
+# pywebview for embedded web interface
 # If pywebview fails, will fallback to tkinterweb or external browser
 pywebview>=5.0.0
 tkinterweb>=3.0.0
-eel>=0.16.0
 pystray>=0.19.5
 Pillow>=10.0.0
 
-# Build and Packaging
+# Build and Packaging (optional)
 pyinstaller>=6.0.0
+
 
 
 

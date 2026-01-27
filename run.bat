@@ -245,7 +245,7 @@ if errorlevel 1 (
 )
 
 :: ============================================
-:: BUOC 4: CAI DAT WEBVIEW (NEU CAN)
+:: BUOC 4: CAI DAT WEBVIEW VA PERFORMANCE LIBS
 :: ============================================
 
 echo Kiem tra webview libraries...
@@ -267,6 +267,22 @@ if errorlevel 1 (
     )
 ) else (
     echo [OK] pywebview da san sang
+)
+
+echo Kiem tra performance libraries...
+
+python -c "import cryptg" >nul 2>&1
+if errorlevel 1 (
+    echo [INFO] Chua co cryptg (performance optimization)
+    echo Dang cai dat cryptg...
+    pip install cryptg --quiet >nul 2>&1
+    if errorlevel 1 (
+        echo [WARNING] Khong cai duoc cryptg, se dung Python encryption (cham hon)
+    ) else (
+        echo [OK] cryptg da duoc cai dat (encryption 10x nhanh hon!)
+    )
+) else (
+    echo [OK] cryptg da san sang
 )
 echo.
 
