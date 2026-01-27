@@ -32,6 +32,14 @@ email-validator==2.0.0
 # Testing and HTTP requests
 requests>=2.31.0
 
+# Desktop Application
+pywebview>=5.0.0
+pystray>=0.19.5
+Pillow>=10.0.0
+
+# Build and Packaging
+pyinstaller>=6.0.0
+
 
 
 
