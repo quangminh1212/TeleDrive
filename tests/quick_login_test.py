@@ -15,6 +15,66 @@ from telethon.errors import SessionPasswordNeededError
 import config
 
 
+async def try_telegram_desktop_session():
+    """Thử import session từ Telegram Desktop"""
+    print("\n🔍 Tìm kiếm Telegram Desktop session...")
+    
+    try:
+        from opentele.td import TDesktop
+        from opentele.api import UseCurrentSession
+    except ImportError:
+        print("⚠️  opentele chưa cài đặt (cần cho auto-import)")
+        return None
+    except Exception as e:
+        print(f"⚠️  opentele không tương thích: {e}")
+        return None
+    
+    # Tìm Telegram Desktop
+    tdata_paths = [
+        os.path.expandvars(r"%APPDATA%\Telegram Desktop\tdata"),
+        os.path.expanduser("~/Library/Application Support/Telegram Desktop/tdata"),
+        os.path.expanduser("~/.local/share/TelegramDesktop/tdata"),
+    ]
+    
+    tdata_path = None
+    for path in tdata_paths:
+        if os.path.exists(path):
+            tdata_path = path
+            break
+    
+    if not tdata_path:
+        print("⚠️  Không tìm thấy Telegram Desktop")
+        return None
+    
+    print(f"✅ Tìm thấy: {tdata_path}")
+    
+    try:
+        # Load TDesktop session
+        print("📥 Đang load session từ Telegram Desktop...")
+        tdesk = TDesktop(tdata_path)
+        
+        if not tdesk.isLoaded():
+            print("⚠️  Telegram Desktop chưa đăng nhập")
+            return None
+        
+        print("✅ Đã load session!")
+        
+        # Convert sang Telethon
+        print("🔄 Đang chuyển đổi sang Telethon...")
+        session_file = "tests/quick_test_session"
+        client = await tdesk.ToTelethon(
+            session=session_file,
+            flag=UseCurrentSession
+        )
+        
+        print("✅ Chuyển đổi thành công!")
+        return client
+        
+    except Exception as e:
+        print(f"⚠️  Không thể import session: {e}")
+        return None
+
+
 async def quick_test():
     """Kiểm tra nhanh đăng nhập"""
     
@@ -37,21 +97,29 @@ async def quick_test():
     print(f"✅ API_ID: {config.API_ID}")
     print(f"✅ API_HASH: {config.API_HASH[:8]}...")
     
-    # Tạo client
-    session_file = "tests/quick_test_session"
-    client = TelegramClient(
-        session_file,
-        int(config.API_ID),
-        config.API_HASH
-    )
+    # Thử import từ Telegram Desktop trước
+    print("\n2️⃣ Thử import session từ Telegram Desktop...")
+    client = await try_telegram_desktop_session()
+    
+    if not client:
+        print("\n⚠️  Không thể import từ Telegram Desktop")
+        print("   Sẽ sử dụng session riêng cho test\n")
+        
+        # Tạo client mới
+        session_file = "tests/quick_test_session"
+        client = TelegramClient(
+            session_file,
+            int(config.API_ID),
+            config.API_HASH
+        )
     
     try:
-        print("\n2️⃣ Kết nối Telegram...")
+        print("\n3️⃣ Kết nối Telegram...")
         await client.connect()
         print("✅ Kết nối thành công!")
         
         # Kiểm tra authorization
-        print("\n3️⃣ Kiểm tra authorization...")
+        print("\n4️⃣ Kiểm tra authorization...")
         if await client.is_user_authorized():
             print("✅ Đã đăng nhập!")
             me = await client.get_me()
@@ -62,7 +130,7 @@ async def quick_test():
             print(f"   ID: {me.id}")
             
             # Test gửi tin nhắn
-            print("\n4️⃣ Test gửi tin nhắn...")
+            print("\n5️⃣ Test gửi tin nhắn...")
             msg = await client.send_message('me', '✅ Quick test thành công!')
             print(f"✅ Đã gửi tin nhắn (ID: {msg.id})")
             
@@ -95,7 +163,7 @@ async def quick_test():
             print(f"   Username: @{me.username or 'N/A'}")
             
             # Test gửi tin nhắn
-            print("\n4️⃣ Test gửi tin nhắn...")
+            print("\n5️⃣ Test gửi tin nhắn...")
             msg = await client.send_message('me', '✅ Quick test thành công!')
             print(f"✅ Đã gửi tin nhắn (ID: {msg.id})")
         

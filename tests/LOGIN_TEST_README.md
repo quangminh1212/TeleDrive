@@ -8,7 +8,7 @@ Các test scripts này giúp kiểm tra đăng nhập Telegram **độc lập**,
 
 ## 🎯 Các Test Scripts
 
-### 1. Quick Login Test (Nhanh nhất)
+### 1. Quick Login Test (Nhanh nhất) ⚡
 
 **File:** `quick_login_test.py`
 
@@ -20,16 +20,17 @@ python tests/quick_login_test.py
 ```
 
 **Tính năng:**
+- ✅ Tự động thử import từ Telegram Desktop (nếu có)
 - ✅ Kiểm tra API credentials
 - ✅ Kết nối Telegram
 - ✅ Đăng nhập (nếu chưa có session)
 - ✅ Gửi tin nhắn test đến Saved Messages
 
-**Thời gian:** ~2-3 phút
+**Thời gian:** ~1-3 phút (nhanh hơn nếu có Telegram Desktop)
 
 ---
 
-### 2. Standalone Login Test (Chi tiết)
+### 2. Standalone Login Test (Chi tiết) 🔍
 
 **File:** `test_telegram_login_standalone.py`
 
@@ -41,12 +42,13 @@ python tests/test_telegram_login_standalone.py
 ```
 
 **Tính năng:**
+- ✅ Test 0: Import session từ Telegram Desktop (tự động)
 - ✅ Test 1: Kiểm tra session hiện có
 - ✅ Test 2: Đăng nhập mới với số điện thoại
 - ✅ Test 3: Kiểm tra API credentials
 - ✅ Test 4: Gửi tin nhắn test
 
-**Thời gian:** ~5-10 phút
+**Thời gian:** ~2-10 phút (tùy có Telegram Desktop hay không)
 
 ---
 
@@ -81,7 +83,14 @@ python tests/test_app_login_integration.py
    pip install -r requirements.txt
    ```
 
-2. **Cấu hình API credentials:**
+2. **(Tùy chọn) Cài opentele để import từ Telegram Desktop:**
+   ```bash
+   pip install opentele
+   ```
+   
+   **Lưu ý:** opentele chỉ hoạt động với Python 3.11
+
+3. **Cấu hình API credentials:**
    
    Mở file `config.py` và cập nhật:
    ```python
@@ -97,26 +106,109 @@ python tests/test_app_login_integration.py
 
 ### Bước 2: Chạy Test
 
-**Option A: Quick Test (Khuyến nghị cho lần đầu)**
+**Option A: Quick Test (Khuyến nghị) ⚡**
 ```bash
 python tests/quick_login_test.py
 ```
+- Tự động thử import từ Telegram Desktop
+- Nếu không có → đăng nhập thủ công
+- Nhanh nhất!
 
-**Option B: Full Test**
+**Option B: Full Test 🔍**
 ```bash
 python tests/test_telegram_login_standalone.py
 ```
+- Test đầy đủ từng bước
+- Có thể chọn test nào chạy
 
-**Option C: Integration Test**
+**Option C: Integration Test 🔗**
 ```bash
 python tests/test_app_login_integration.py
 ```
+- Test tích hợp với app.py
 
-### Bước 3: Nhập Thông Tin
+### Bước 3: Kết Quả
 
-Khi được yêu cầu:
+**Trường hợp 1: Có Telegram Desktop đã đăng nhập**
+```
+🔍 Tìm kiếm Telegram Desktop session...
+✅ Tìm thấy: C:\Users\...\Telegram Desktop\tdata
+📥 Đang load session từ Telegram Desktop...
+✅ Đã load session!
+🔄 Đang chuyển đổi sang Telethon...
+✅ Chuyển đổi thành công!
+
+✅ Kết nối thành công!
+✅ Đã đăng nhập!
+
+👤 Thông tin:
+   Tên: John Doe
+   Username: @johndoe
+   Phone: +84987654321
+
+✅ Đã gửi tin nhắn (ID: 12345)
+🎉 TEST THÀNH CÔNG!
+```
+
+**Trường hợp 2: Không có Telegram Desktop**
+```
+🔍 Tìm kiếm Telegram Desktop session...
+⚠️  Không tìm thấy Telegram Desktop
+   Sẽ sử dụng session riêng cho test
+
+📱 Số điện thoại (vd: +84987654321): _
+```
+
+Sau đó nhập thông tin như bình thường.
+
+### Bước 4: Nhập Thông Tin (Nếu Cần)
+
+Nếu không có Telegram Desktop hoặc session, khi được yêu cầu:
 
 1. **Số điện thoại:** Nhập với mã quốc gia
+   ```
+   Ví dụ: +84987654321
+   ```
+
+2. **Mã xác thực:** Kiểm tra Telegram và nhập mã 5-6 số
+   ```
+   Ví dụ: 12345
+   ```
+
+3. **Mật khẩu 2FA (nếu có):** Nhập mật khẩu 2FA của bạn
+
+---
+
+## 💡 Ưu Điểm Import Từ Telegram Desktop
+
+### Tại Sao Nên Dùng?
+
+1. **Không cần nhập số điện thoại** ✅
+2. **Không cần nhập mã xác thực** ✅
+3. **Không cần nhập 2FA** ✅
+4. **Test nhanh hơn** ⚡ (~1 phút thay vì 3-5 phút)
+5. **Tự động hoàn toàn** 🤖
+
+### Yêu Cầu
+
+- ✅ Telegram Desktop đã cài đặt
+- ✅ Đã đăng nhập vào Telegram Desktop
+- ✅ Python 3.11 (cho opentele)
+- ✅ opentele đã cài: `pip install opentele`
+
+### Cách Hoạt Động
+
+```
+1. Test tìm Telegram Desktop tdata folder
+2. Load session từ tdata
+3. Convert sang Telethon format
+4. Sử dụng cho test
+5. ✅ Xong! Không cần nhập gì
+```
+
+### Bước 4: Nhập Thông Tin (Nếu Cần)
+
+Nếu không có Telegram Desktop hoặc session, khi được yêu cầu:
    ```
    Ví dụ: +84987654321
    ```

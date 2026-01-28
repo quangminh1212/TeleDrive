@@ -23,6 +23,83 @@ class TelegramLoginTester:
     def __init__(self):
         self.client = None
         self.session_file = "tests/test_session"
+        self.imported_from_desktop = False
+    
+    async def try_import_from_desktop(self):
+        """Thử import session từ Telegram Desktop"""
+        print("\n" + "="*60)
+        print("TEST 0: Import Session từ Telegram Desktop")
+        print("="*60)
+        
+        try:
+            from opentele.td import TDesktop
+            from opentele.api import UseCurrentSession
+        except ImportError:
+            print("⚠️  opentele chưa cài đặt")
+            print("   Cài đặt: pip install opentele")
+            return False
+        except Exception as e:
+            print(f"⚠️  opentele không tương thích: {e}")
+            return False
+        
+        # Tìm Telegram Desktop
+        tdata_paths = [
+            os.path.expandvars(r"%APPDATA%\Telegram Desktop\tdata"),
+            os.path.expanduser("~/Library/Application Support/Telegram Desktop/tdata"),
+            os.path.expanduser("~/.local/share/TelegramDesktop/tdata"),
+        ]
+        
+        tdata_path = None
+        for path in tdata_paths:
+            if os.path.exists(path):
+                tdata_path = path
+                break
+        
+        if not tdata_path:
+            print("⚠️  Không tìm thấy Telegram Desktop")
+            return False
+        
+        print(f"✅ Tìm thấy Telegram Desktop: {tdata_path}")
+        
+        try:
+            # Load TDesktop session
+            print("📥 Đang load session...")
+            tdesk = TDesktop(tdata_path)
+            
+            if not tdesk.isLoaded():
+                print("⚠️  Telegram Desktop chưa đăng nhập")
+                return False
+            
+            print("✅ Đã load session!")
+            
+            # Convert sang Telethon
+            print("🔄 Đang chuyển đổi sang Telethon...")
+            client = await tdesk.ToTelethon(
+                session=self.session_file,
+                flag=UseCurrentSession
+            )
+            
+            await client.connect()
+            
+            if await client.is_user_authorized():
+                me = await client.get_me()
+                print("✅ Import thành công!")
+                print(f"   User: {me.first_name} {me.last_name or ''}")
+                print(f"   Username: @{me.username or 'N/A'}")
+                print(f"   Phone: {me.phone or 'N/A'}")
+                print(f"   ID: {me.id}")
+                
+                await client.disconnect()
+                self.imported_from_desktop = True
+                return True
+            else:
+                await client.disconnect()
+                print("⚠️  Session không hợp lệ")
+                return False
+                
+        except Exception as e:
+            print(f"⚠️  Lỗi import: {e}")
+            return False
         
     async def test_existing_session(self):
         """Test 1: Kiểm tra session hiện có"""
@@ -244,11 +321,19 @@ async def main():
     print("🧪 TELEGRAM LOGIN TEST - STANDALONE")
     print("="*60)
     print("\nTest này kiểm tra đăng nhập Telegram độc lập,")
-    print("không phụ thuộc vào Telegram Desktop trên máy.\n")
+    print("có thể sử dụng session từ Telegram Desktop nếu có.\n")
     
     tester = TelegramLoginTester()
     
-    # Test 3: Kiểm tra API credentials trước
+    # Test 0: Thử import từ Telegram Desktop
+    print("\n🔍 Bước 0: Thử import từ Telegram Desktop...")
+    desktop_ok = await tester.try_import_from_desktop()
+    
+    if desktop_ok:
+        print("\n✅ Đã import session từ Telegram Desktop!")
+        print("   Có thể bỏ qua các test đăng nhập khác.\n")
+    
+    # Test 3: Kiểm tra API credentials
     print("\n🔍 Bước 1: Kiểm tra cấu hình...")
     api_ok = await tester.test_api_credentials()
     
@@ -267,6 +352,8 @@ async def main():
     
     if session_ok:
         print("\n✅ Session hiện có hoạt động tốt!")
+        if tester.imported_from_desktop:
+            print("   (Session được import từ Telegram Desktop)")
         
         # Test 4: Gửi tin nhắn
         choice = input("\n❓ Bạn có muốn test gửi tin nhắn không? (y/n): ")
