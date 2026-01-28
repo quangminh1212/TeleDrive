@@ -772,9 +772,11 @@ class TelegramAuthenticator:
     async def try_auto_login_from_desktop(self) -> Dict[str, Any]:
         """Thử tự động đăng nhập từ Telegram Desktop"""
         if self._auto_login_attempted:
+            # Không log nữa để tránh spam
             return {
                 'success': False,
-                'message': 'Auto-login đã được thử trước đó'
+                'message': 'Auto-login đã được thử trước đó',
+                'silent': True  # Đánh dấu để không hiển thị lỗi
             }
         
         self._auto_login_attempted = True

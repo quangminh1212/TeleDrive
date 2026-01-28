@@ -1804,8 +1804,6 @@ def get_csrf_token():
 def api_auto_login():
     """API endpoint to trigger auto-login from Telegram Desktop"""
     try:
-        app.logger.info("=== API AUTO-LOGIN START ===")
-        
         # Reset auto-login flag to allow retry
         telegram_auth._auto_login_attempted = False
         
@@ -1848,7 +1846,9 @@ def api_auto_login():
             message = auto_result.get('message', 'Unknown error') if auto_result else 'Unknown error'
             hint = auto_result.get('hint', '') if auto_result else ''
             
-            app.logger.info(f"Auto-login failed: {message}")
+            # Chỉ log nếu không phải silent error
+            if not auto_result.get('silent'):
+                app.logger.info(f"Auto-login failed: {message}")
             
             return jsonify({
                 'success': False,
@@ -2597,6 +2597,9 @@ def telegram_login():
         if not auto_login_attempted:
             app.logger.info("Attempting auto-login...")
             
+            # Reset flag để cho phép thử lại mỗi lần truy cập trang login
+            telegram_auth._auto_login_attempted = False
+            
             async def try_auto_login():
                 # Kiểm tra session hiện có trước
                 result = await telegram_auth.check_existing_session()
@@ -2621,10 +2624,10 @@ def telegram_login():
                         flash(f'Đăng nhập tự động thành công! Xin chào {user_data["first_name"]}', 'success')
                         return redirect(url_for('dashboard'))
                 else:
-                    if auto_result:
+                    # Chỉ log lỗi nếu không phải silent error
+                    if auto_result and not auto_result.get('silent'):
                         app.logger.info(f"Auto-login failed: {auto_result.get('message', 'Unknown error')}")
-                        if auto_result.get('hint'):
-                            flash(f"{auto_result['message']}. {auto_result['hint']}", 'info')
+                        # Không hiển thị flash message để tránh làm phiền user
             except Exception as e:
                 app.logger.error(f"Auto-login error: {e}")
                 # Không hiển thị lỗi cho user, chỉ log
