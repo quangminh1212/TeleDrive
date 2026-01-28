@@ -110,10 +110,9 @@ dist/
 release/
 
 # Removed/Unused files (cleaned up)
-# Old main files
-main.py
-main_eel.py
-main_webview.py
+# Old main files (REMOVED - now using main.py as primary entry point)
+# main_eel.py
+# main_webview.py
 
 # Old bat files
 run_web.bat

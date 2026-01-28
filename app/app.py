@@ -1800,6 +1800,70 @@ def get_csrf_token():
         'csrf_token': generate_csrf()
     })
 
+@app.route('/api/auto-login', methods=['POST'])
+def api_auto_login():
+    """API endpoint to trigger auto-login from Telegram Desktop"""
+    try:
+        app.logger.info("=== API AUTO-LOGIN START ===")
+        
+        # Reset auto-login flag to allow retry
+        telegram_auth._auto_login_attempted = False
+        
+        async def try_auto_login():
+            # Kiểm tra session hiện có trước
+            result = await telegram_auth.check_existing_session()
+            if result['success']:
+                return result
+            
+            # Nếu không có session, thử import từ Telegram Desktop
+            return await telegram_auth.try_auto_login_from_desktop()
+        
+        auto_result = run_async_in_thread(try_auto_login())
+        
+        if auto_result and auto_result.get('success'):
+            app.logger.info(f"Auto-login successful: {auto_result['message']}")
+            
+            # Đăng nhập user
+            user_data = auto_result['user']
+            user = User.query.get(user_data['id'])
+            
+            if user:
+                login_user(user)
+                return jsonify({
+                    'success': True,
+                    'message': f'Đăng nhập tự động thành công! Xin chào {user_data["first_name"]}',
+                    'user': {
+                        'id': user.id,
+                        'username': user.username,
+                        'first_name': user_data['first_name']
+                    }
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'User not found in database',
+                    'hint': 'Please try manual login'
+                })
+        else:
+            message = auto_result.get('message', 'Unknown error') if auto_result else 'Unknown error'
+            hint = auto_result.get('hint', '') if auto_result else ''
+            
+            app.logger.info(f"Auto-login failed: {message}")
+            
+            return jsonify({
+                'success': False,
+                'message': message,
+                'hint': hint
+            })
+            
+    except Exception as e:
+        app.logger.error(f"Auto-login API error: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'message': 'An error occurred during auto-login',
+            'hint': str(e)
+        }), 500
+
 @app.route('/api/scan_status', methods=['GET'])
 @login_required
 def get_scan_status():

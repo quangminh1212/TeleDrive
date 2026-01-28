@@ -306,6 +306,18 @@
             <p>• Or enter your phone number below for manual login</p>
         </div>
         
+        <!-- Auto-Login Button -->
+        <button type="button" id="autoLoginBtn" class="btn-primary" style="background: #2ecc71; margin-bottom: 16px;">
+            <span class="material-icons" style="vertical-align: middle; margin-right: 8px; font-size: 20px;">flash_on</span>
+            Try Auto-Login from Telegram Desktop
+        </button>
+        
+        <div style="text-align: center; margin: 16px 0; color: #999; font-size: 14px;">
+            <span style="display: inline-block; width: 40%; height: 1px; background: #ddd; vertical-align: middle;"></span>
+            <span style="margin: 0 10px;">OR</span>
+            <span style="display: inline-block; width: 40%; height: 1px; background: #ddd; vertical-align: middle;"></span>
+        </div>
+        
         <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -356,6 +368,93 @@
     </div>
 
     <script>
+        // Auto-login button handler
+        document.getElementById('autoLoginBtn').addEventListener('click', function() {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-icons" style="vertical-align: middle; margin-right: 8px; font-size: 20px; animation: spin 1s linear infinite;">sync</span>Trying Auto-Login...';
+            btn.style.background = '#95a5a6';
+            
+            // Call auto-login API
+            fetch('/api/auto-login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Success - show success message and redirect
+                    btn.innerHTML = '<span class="material-icons" style="vertical-align: middle; margin-right: 8px; font-size: 20px;">check_circle</span>Success! Redirecting...';
+                    btn.style.background = '#27ae60';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    // Failed - show error
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'alert alert-error';
+                    errorDiv.innerHTML = `
+                        <strong>Auto-Login Failed:</strong> ${data.message || 'Unknown error'}<br>
+                        ${data.hint ? `<small>${data.hint}</small>` : ''}
+                    `;
+                    
+                    // Remove existing errors
+                    document.querySelectorAll('.alert-error').forEach(el => el.remove());
+                    
+                    // Insert error before form
+                    const form = document.querySelector('form');
+                    form.parentNode.insertBefore(errorDiv, form);
+                    
+                    // Reset button
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    btn.style.background = '#2ecc71';
+                    
+                    // Auto-remove error after 10 seconds
+                    setTimeout(() => {
+                        if (errorDiv.parentNode) {
+                            errorDiv.remove();
+                        }
+                    }, 10000);
+                }
+            })
+            .catch(error => {
+                console.error('Auto-login error:', error);
+                
+                // Show error
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-error';
+                errorDiv.textContent = 'Network error. Please try again.';
+                
+                document.querySelectorAll('.alert-error').forEach(el => el.remove());
+                const form = document.querySelector('form');
+                form.parentNode.insertBefore(errorDiv, form);
+                
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                btn.style.background = '#2ecc71';
+            });
+        });
+        
+        // Add spin animation for loading icon
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+        
         // Store original options for search functionality
         document.addEventListener('DOMContentLoaded', function() {
             const countrySelect = document.getElementById('country_code');

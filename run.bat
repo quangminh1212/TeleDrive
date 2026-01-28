@@ -68,14 +68,14 @@ echo.
 echo Dang tu dong cai dat Python 3.11 portable...
 echo.
 
-call setup_portable_python.bat
+call setup-python.bat
 
 if errorlevel 1 (
     echo.
     echo [ERROR] Khong the cai dat Python 3.11
     echo.
     echo Vui long cai dat thu cong:
-    echo   1. Chay: setup_portable_python.bat
+    echo   1. Chay: setup-python.bat
     echo   2. Hoac download: https://www.python.org/downloads/release/python-31110/
     echo.
     pause
@@ -113,7 +113,7 @@ if errorlevel 1 (
     
     if errorlevel 1 (
         echo [ERROR] Khong the cai dat setuptools
-        echo Vui long chay: setup_portable_python.bat
+        echo Vui long chay: setup-python.bat
         pause
         exit /b 1
     )
@@ -343,7 +343,7 @@ echo ========================================
 echo.
 
 :: Chay ung dung voi embedded webview
-%PYTHON_CMD% main_embedded.py
+%PYTHON_CMD% main.py
 
 :: Neu ung dung dung
 echo.

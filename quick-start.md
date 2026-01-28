@@ -4,7 +4,7 @@
 
 ### 1️⃣ Cài Python Portable + Dependencies
 ```bash
-setup_portable_python.bat
+setup-python.bat
 ```
 ⏱️ Mất ~5 phút (download + install)
 
@@ -74,7 +74,7 @@ taskkill /F /PID <PID_NUMBER>
 rmdir /s /q python311
 
 # Chạy lại setup
-setup_portable_python.bat
+setup-python.bat
 ```
 
 ---
@@ -83,7 +83,7 @@ setup_portable_python.bat
 
 - 📖 [README.md](README.md) - Full documentation
 - 🇻🇳 [README_VI.md](README_VI.md) - Tiếng Việt
-- ✅ [SETUP_SUCCESS.md](SETUP_SUCCESS.md) - Setup guide
+- ✅ [setup-success.md](setup-success.md) - Setup guide
 
 ---
 

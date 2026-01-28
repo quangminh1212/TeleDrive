@@ -135,8 +135,8 @@ Ngồi chờ, uống cà phê ☕, mọi thứ tự động! 🚀
 ## 📂 Files quan trọng
 
 - `run.bat` - **CHẠY FILE NÀY**
-- `auto_install_python311.bat` - Auto install Python 3.11
-- `CHAY_NGAY.md` - File này
+- `setup-python.bat` - Setup Python 3.11 portable
+- `run-now-vi.md` - File này
 - `teledrive.log` - Log file nếu có lỗi
 
 ## ❓ Tại sao CHỈ Python 3.11?

@@ -4,7 +4,7 @@
 
 ### Bước 1: Cài Đặt Python Portable + Dependencies
 ```bash
-setup_portable_python.bat
+setup-python.bat
 ```
 ⏱️ Mất ~5-10 phút (download Python + install packages)
 
@@ -23,7 +23,7 @@ run.bat
 ## 📋 File Scripts
 
 ### 🔧 Setup Scripts
-- **`setup_portable_python.bat`** - Cài Python 3.11 portable + tất cả dependencies
+- **`setup-python.bat`** - Cài Python 3.11 portable + tất cả dependencies
 - **`run.bat`** - Script chính để chạy ứng dụng (tự động setup nếu cần)
 
 ### ❌ Đã Xóa (Không Cần Nữa)
@@ -76,7 +76,7 @@ Script `run.bat` giờ đây **tự động xử lý mọi thứ**:
 ### Lần Đầu Tiên
 ```bash
 # 1. Cài Python portable
-setup_portable_python.bat
+setup-python.bat
 
 # 2. Chạy ứng dụng
 run.bat
@@ -97,12 +97,12 @@ Script sẽ tự động kiểm tra và cài đặt những gì còn thiếu!
 ```
 TeleDrive/
 ├── run.bat                    # ⭐ Script chính - chạy file này
-├── setup_portable_python.bat  # Setup Python portable
+├── setup-python.bat           # Setup Python portable
 ├── python311/                 # Python 3.11 portable (tự động tạo)
 ├── app/                       # Source code
 ├── data/                      # Database & uploads
 ├── logs/                      # Log files
-└── main_embedded.py           # Entry point
+└── main.py                    # Entry point
 ```
 
 ---
@@ -112,7 +112,7 @@ TeleDrive/
 ### Lỗi "Cannot import setuptools"
 ```bash
 # Chạy lại setup
-setup_portable_python.bat
+setup-python.bat
 ```
 
 ### Lỗi "Port already in use"
@@ -129,7 +129,7 @@ taskkill /F /PID <PID>
 rmdir /s /q python311
 
 # Chạy lại setup
-setup_portable_python.bat
+setup-python.bat
 run.bat
 ```
 
@@ -139,8 +139,8 @@ run.bat
 
 - [README.md](README.md) - Full documentation (English)
 - [README_VI.md](README_VI.md) - Tài liệu đầy đủ (Tiếng Việt)
-- [QUICK_START.md](QUICK_START.md) - Quick start guide
-- [SETUP_SUCCESS.md](SETUP_SUCCESS.md) - Setup details
+- [quick-start.md](quick-start.md) - Quick start guide
+- [setup-success.md](setup-success.md) - Setup details
 
 ---
 

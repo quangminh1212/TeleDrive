@@ -13,7 +13,7 @@ run.bat
 
 ### Hoặc Chạy Trực Tiếp
 ```bash
-python311\python.exe main_embedded.py
+python311\python.exe main.py
 ```
 
 ## ✅ Đã Cài Đặt
@@ -36,7 +36,7 @@ TeleDrive/
 ├── data/               # Database & uploads
 ├── logs/               # Log files
 ├── run.bat             # Chạy ứng dụng
-└── main_embedded.py    # Entry point
+└── main.py             # Entry point
 ```
 
 ## 🔧 Kiểm Tra Setup
@@ -76,7 +76,7 @@ python311\python.exe -m pip install -r requirements.txt --force-reinstall
 
 - README.md - Hướng dẫn chi tiết
 - README_VI.md - Hướng dẫn tiếng Việt
-- START_HERE.md - Quick start guide
+- start-here.md - Quick start guide
 
 ## 🎯 Tính Năng
 

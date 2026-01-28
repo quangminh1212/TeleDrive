@@ -10,7 +10,7 @@
   - Tự động cleanup ports
   - Tự động tạo thư mục cần thiết
   
-- **`setup_portable_python.bat`** - Cài Python 3.11 portable hoàn chỉnh
+- **`setup-python.bat`** - Cài Python 3.11 portable hoàn chỉnh
   - Download Python embeddable
   - Cài pip
   - Cài setuptools & wheel vào đúng vị trí
@@ -18,9 +18,9 @@
   - Verify installation
 
 - **Documentation**
-  - `GETTING_STARTED.md` - Hướng dẫn bắt đầu nhanh
-  - `QUICK_START.md` - Quick start guide
-  - `SETUP_SUCCESS.md` - Chi tiết setup
+  - `getting-started.md` - Hướng dẫn bắt đầu nhanh
+  - `quick-start.md` - Quick start guide
+  - `setup-success.md` - Chi tiết setup
   - `CHANGELOG.md` - Lịch sử thay đổi
 
 ### 🔧 Changed
@@ -113,7 +113,7 @@ run.bat
 ### New Way (Now)
 ```bash
 # 1. Setup (one time)
-setup_portable_python.bat
+setup-python.bat
 
 # 2. Run (always)
 run.bat
