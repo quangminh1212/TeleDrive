@@ -13,8 +13,17 @@ echo.
 
 set "PYTHON_CMD="
 set "PYTHON_VERSION="
+set "PORTABLE_PYTHON=%CD%\python311\python.exe"
 
-:: Thu tim Python 3.11 (REQUIRED - opentele chi hoat dong voi 3.11)
+:: UU TIEN 1: Kiem tra Python portable trong folder du an
+if exist "%PORTABLE_PYTHON%" (
+    set "PYTHON_CMD=%PORTABLE_PYTHON%"
+    set "PYTHON_VERSION=3.11-portable"
+    echo [OK] Tim thay Python 3.11 portable trong du an
+    goto :python_found
+)
+
+:: UU TIEN 2: Thu tim Python 3.11 (REQUIRED - opentele chi hoat dong voi 3.11)
 py -3.11 --version >nul 2>&1
 if not errorlevel 1 (
     set "PYTHON_CMD=py -3.11"
@@ -28,6 +37,21 @@ if not errorlevel 1 (
     set "PYTHON_CMD=python3.11"
     set "PYTHON_VERSION=3.11"
     echo [OK] Tim thay Python 3.11
+    goto :python_found
+)
+
+:: Kiem tra trong cac thu muc mac dinh
+if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
+    set "PYTHON_CMD=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    set "PYTHON_VERSION=3.11"
+    echo [OK] Tim thay Python 3.11 trong LocalAppData
+    goto :python_found
+)
+
+if exist "C:\Python311\python.exe" (
+    set "PYTHON_CMD=C:\Python311\python.exe"
+    set "PYTHON_VERSION=3.11"
+    echo [OK] Tim thay Python 3.11 trong C:\Python311
     goto :python_found
 )
 
@@ -71,11 +95,18 @@ if not errorlevel 1 (
                 echo.
                 echo [WARNING] Khong the cai dat Python 3.11 tu dong
                 echo.
-                echo Ban co the:
+                echo Python 3.11 co the da duoc cai dat nhung chua reload PATH.
+                echo.
+                echo Vui long:
+                echo   1. DONG cua so CMD nay
+                echo   2. MO CMD moi
+                echo   3. Chay lai: run.bat
+                echo.
+                echo Hoac ban co the:
                 echo   1. Cai Python 3.11 thu cong: install_python311.bat
                 echo   2. Tiep tuc voi Python !ver! (KHONG CO AUTO-LOGIN)
                 echo.
-                choice /C 12 /N /M "Chon (1=Cai thu cong, 2=Tiep tuc khong auto-login): "
+                choice /C 12 /N /M "Chon (1=Dong va mo lai CMD, 2=Tiep tuc khong auto-login): "
                 if errorlevel 2 (
                     echo.
                     echo [WARNING] Tiep tuc voi Python !ver! - KHONG CO AUTO-LOGIN
@@ -85,15 +116,17 @@ if not errorlevel 1 (
                     goto :python_found
                 )
                 echo.
-                echo Vui long cai Python 3.11 va chay lai run.bat
+                echo Vui long dong CMD va mo lai, sau do chay: run.bat
                 pause
-                exit /b 1
+                exit /b 0
             )
             
             echo.
             echo ========================================
             echo   PYTHON 3.11 INSTALLED SUCCESSFULLY
             echo ========================================
+            echo.
+            echo Python 3.11 da duoc cai dat!
             echo.
             echo Vui long:
             echo   1. DONG cua so CMD nay
@@ -119,41 +152,52 @@ echo.
 echo TeleDrive CAN Python 3.11 (KHONG PHAI 3.12+)
 echo Ly do: opentele chi hoat dong voi Python 3.11
 echo.
-echo Dang TU DONG cai dat Python 3.11...
-echo (Silent install - khong can tuong tac!)
+echo Ban co the:
+echo   1. Cai Python 3.11 PORTABLE trong folder du an (Khuyến nghị)
+echo   2. Cai Python 3.11 vao system
 echo.
+choice /C 12 /N /M "Chon (1=Portable, 2=System): "
 
-call auto_install_python311.bat
+if errorlevel 2 (
+    echo.
+    echo Dang cai dat Python 3.11 vao system...
+    call auto_install_python311.bat
+    
+    if errorlevel 1 (
+        echo.
+        echo [ERROR] Khong the cai dat Python 3.11 tu dong
+        echo.
+        echo Vui long cai dat thu cong:
+        echo   1. Chay: install_python311.bat
+        echo   2. Hoac download: https://www.python.org/downloads/release/python-31110/
+        echo.
+        pause
+        exit /b 1
+    )
+    
+    echo.
+    echo [OK] Python 3.11 da duoc cai dat!
+    echo Vui long dong va mo lai CMD, sau do chay: run.bat
+    echo.
+    pause
+    exit /b 0
+)
+
+:: Option 1: Portable
+echo.
+echo Dang cai dat Python 3.11 portable...
+call setup_portable_python.bat
 
 if errorlevel 1 (
     echo.
-    echo ========================================
-    echo   AUTO INSTALL FAILED
-    echo ========================================
-    echo.
-    echo [ERROR] Khong the cai dat Python 3.11 tu dong
-    echo.
-    echo Vui long cai dat thu cong:
-    echo   1. Chay: install_python311.bat
-    echo   2. Hoac download: https://www.python.org/downloads/release/python-31110/
-    echo.
-    echo LUU Y: Phai la Python 3.11, KHONG PHAI 3.12 hay 3.14!
-    echo.
+    echo [ERROR] Khong the cai dat Python portable
     pause
     exit /b 1
 )
 
 echo.
-echo ========================================
-echo   PYTHON 3.11 INSTALLED SUCCESSFULLY
-echo ========================================
-echo.
-echo Vui long:
-echo   1. DONG cua so CMD nay
-echo   2. MO CMD moi
-echo   3. Chay lai: run.bat
-echo.
-echo (Windows can reload PATH de nhan Python moi)
+echo [OK] Python 3.11 portable da san sang!
+echo Chay lai: run.bat
 echo.
 pause
 exit /b 0

@@ -27,6 +27,10 @@ venv/
 ENV/
 env/
 
+# Portable Python
+python311/
+python3*/
+
 # Telegram session files
 *.session
 *.session-journal
