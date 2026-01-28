@@ -253,6 +253,7 @@
         ".\\setup_portable_python.bat *",
         ".\\python311\\python.exe *",
         "python311\\python.exe *",
-        ".\\test_setup.bat *"
+        ".\\test_setup.bat *",
+        ".\\test_full_workflow.bat *"
     ]
 }
