@@ -2566,31 +2566,21 @@ def reset_password(token):
     return redirect(url_for('telegram_login'))
 
 # Telegram authentication routes
-@app.route('/telegram_login', methods=['GET', 'POST'])
+@app.route('/telegram_login', methods=['GET'])
 def telegram_login():
-    """Telegram login - phone number input with auto-login support"""
+    """Telegram login - auto-login only"""
     login_step_id = None
     if DETAILED_LOGGING_AVAILABLE:
         login_step_id = log_step_start("TELEGRAM_LOGIN", f"Method: {request.method}, IP: {request.remote_addr}")
 
-    app.logger.info("=== TELEGRAM LOGIN START ===")
-
     try:
         # Check if user is already authenticated
-        auth_check_step_id = None
-        if DETAILED_LOGGING_AVAILABLE:
-            auth_check_step_id = log_step_start("AUTH_CHECK", "Checking if user is already authenticated")
-
         if current_user.is_authenticated:
             app.logger.info(f"User already authenticated: {current_user.username}")
             if DETAILED_LOGGING_AVAILABLE:
-                log_step_end(auth_check_step_id, "AUTH_CHECK", success=True, result="User already authenticated")
                 log_step_end(login_step_id, "TELEGRAM_LOGIN", success=True, result="Redirected to dashboard")
             return redirect(url_for('dashboard'))
 
-        if DETAILED_LOGGING_AVAILABLE:
-            log_step_end(auth_check_step_id, "AUTH_CHECK", success=True, result="User not authenticated")
-        
         # Thử auto-login từ session hiện có hoặc Telegram Desktop
         auto_login_attempted = request.args.get('auto_login_attempted') == '1'
         
@@ -2635,85 +2625,12 @@ def telegram_login():
     except Exception as e:
         app.logger.error(f"Error during authentication check: {str(e)}")
         if DETAILED_LOGGING_AVAILABLE:
-            log_step_end(auth_check_step_id, "AUTH_CHECK", success=False, error=str(e))
             log_step_end(login_step_id, "TELEGRAM_LOGIN", success=False, error=str(e))
         flash('An error occurred during authentication check. Please try again.', 'error')
         return redirect(url_for('telegram_login'))
 
-    form = TelegramLoginForm()
-    if form.validate_on_submit():
-        phone_number = form.phone_number.data
-        country_code = form.country_code.data
-        # Normalize local format: if user typed leading 0 with an international code, drop the 0
-        try:
-            if isinstance(phone_number, str) and isinstance(country_code, str):
-                if phone_number.startswith('0') and country_code.startswith('+'):
-                    phone_number = phone_number[1:]
-        except Exception:
-            # Non-fatal: keep original if anything goes wrong
-            pass
-        full_phone = f"{country_code}{phone_number}"
-
-        app.logger.info(f"Login attempt for phone (normalized): {full_phone}")
-
-        # Store form data in session for the verification step
-        from flask import session
-        session['telegram_phone'] = full_phone
-        session['telegram_country_code'] = country_code
-        app.logger.info(f"Stored phone in session: {session.get('telegram_phone')}")
-
-        # Send verification code
-        app.logger.info(f"Using telegram_auth instance: {getattr(telegram_auth, 'instance_id', 'NO_ID')}")
-        app.logger.info(f"Current session count before send: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
-
-        async def send_code():
-            # Force SMS delivery on first attempt to improve reliability in regions where in-app delivery is inconsistent
-            result = await telegram_auth.send_code_request(phone_number, country_code, force_sms=True)
-            return result
-
-        # Run async function with proper event loop management
-        try:
-            app.logger.info("Sending verification code...")
-            result = run_async_in_thread(send_code())
-            app.logger.info(f"Send code result: {result}")
-            app.logger.info(f"Current session count after send: {len(getattr(telegram_auth, 'temp_sessions', {}))}")
-        except Exception as e:
-            app.logger.error(f"Failed to send verification code: {e}")
-            result = {'success': False, 'error': str(e)}
-
-        if result['success']:
-            session['telegram_session_id'] = result['session_id']
-            app.logger.info(f"Session ID stored: {result['session_id']}")
-            flash('Verification code sent to your Telegram!', 'success')
-            return redirect(url_for('telegram_verify'))
-        else:
-            app.logger.error(f"Failed to send code: {result['error']}")
-            error_message = result['error']
-
-            # Return JSON for AJAX requests
-            if request.is_json or request.headers.get('Content-Type') == 'application/x-www-form-urlencoded':
-                return jsonify({
-                    'success': False,
-                    'error': 'send_code_failed',
-                    'message': error_message
-                }), 400
-
-            flash(error_message, 'error')
-    else:
-        if form.errors:
-            app.logger.warning(f"Form validation errors: {form.errors}")
-
-            # Return JSON for AJAX requests with validation errors
-            if request.is_json or request.headers.get('Content-Type') == 'application/x-www-form-urlencoded':
-                return jsonify({
-                    'success': False,
-                    'error': 'validation_error',
-                    'message': 'Please check your input and try again.',
-                    'errors': form.errors
-                }), 400
-
-    # Render the template for GET requests or when form validation fails
-    return render_template('auth/telegram_login.html', form=form)
+    # Render login page (chỉ có nút auto-login)
+    return render_template('auth/telegram_login.html')
 
 @app.route('/telegram_verify', methods=['GET', 'POST'])
 def telegram_verify():
