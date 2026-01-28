@@ -822,13 +822,13 @@ class TelegramAuthenticator:
                     return {
                         'success': False,
                         'message': 'Telegram Desktop chưa có account nào được đăng nhập',
-                        'hint': 'Vui lòng mở Telegram Desktop và đăng nhập vào ít nhất 1 account'
+                        'hint': 'Vui lòng:\n1. Đóng Telegram Desktop nếu đang chạy\n2. Mở lại Telegram Desktop\n3. Đăng nhập vào account\n4. Đợi sync xong (thấy tin nhắn)\n5. Thử lại auto-login\n\nHoặc đăng nhập thủ công bằng số điện thoại bên dưới.'
                     }
                 else:
                     return {
                         'success': False,
                         'message': f'Không thể load session từ Telegram Desktop',
-                        'hint': f'Lỗi: {error_msg}'
+                        'hint': f'Lỗi: {error_msg}\n\nVui lòng đăng nhập thủ công bằng số điện thoại bên dưới.'
                     }
             
             if not tdesk.isLoaded():
