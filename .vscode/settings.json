@@ -256,6 +256,7 @@
         ".\\test_setup.bat *",
         ".\\test_full_workflow.bat *",
         ".\\run.bat *",
-        "ren *"
+        "ren *",
+        "for *"
     ]
 }
