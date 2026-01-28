@@ -814,7 +814,7 @@ class TelegramAuthenticator:
             print("[AUTO_LOGIN] Đang load session từ Telegram Desktop...")
             try:
                 tdesk = TDesktop(tdata_path)
-            except Exception as e:
+            except BaseException as e:
                 print(f"[AUTO_LOGIN] Lỗi load TDesktop: {e}")
                 # Check if it's the "No account has been loaded" error
                 error_msg = str(e)
