@@ -27,60 +27,46 @@ async def try_telegram_desktop_session():
     """Thử import session từ Telegram Desktop"""
     print("\n🔍 Tìm kiếm Telegram Desktop session...")
     
+    # Import module helper
+    sys.path.insert(0, str(Path(__file__).parent.parent / 'app'))
     try:
-        from opentele.td import TDesktop
-        from opentele.api import UseCurrentSession
-    except (ImportError, BaseException) as e:
-        if isinstance(e, ImportError):
-            print("⚠️  opentele chưa cài đặt (cần cho auto-import)")
-        else:
-            print(f"⚠️  opentele không tương thích với Python {sys.version_info.major}.{sys.version_info.minor}")
-            print("   opentele chỉ hoạt động với Python 3.11")
+        from telegram_desktop_import import get_import_info, try_import_with_opentele
+    except ImportError:
+        print("⚠️  Không thể import telegram_desktop_import module")
         return None
     
-    # Tìm Telegram Desktop
-    tdata_paths = [
-        os.path.expandvars(r"%APPDATA%\Telegram Desktop\tdata"),
-        os.path.expanduser("~/Library/Application Support/Telegram Desktop/tdata"),
-        os.path.expanduser("~/.local/share/TelegramDesktop/tdata"),
-    ]
+    # Lấy thông tin
+    info = get_import_info()
     
-    tdata_path = None
-    for path in tdata_paths:
-        if os.path.exists(path):
-            tdata_path = path
-            break
-    
-    if not tdata_path:
+    if not info['tdata_path']:
         print("⚠️  Không tìm thấy Telegram Desktop")
         return None
     
-    print(f"✅ Tìm thấy: {tdata_path}")
+    print(f"✅ Tìm thấy: {info['tdata_path']}")
     
-    try:
-        # Load TDesktop session
-        print("📥 Đang load session từ Telegram Desktop...")
-        tdesk = TDesktop(tdata_path)
-        
-        if not tdesk.isLoaded():
-            print("⚠️  Telegram Desktop chưa đăng nhập")
-            return None
-        
-        print("✅ Đã load session!")
-        
-        # Convert sang Telethon
-        print("🔄 Đang chuyển đổi sang Telethon...")
-        session_file = "tests/quick_test_session"
-        client = await tdesk.ToTelethon(
-            session=session_file,
-            flag=UseCurrentSession
-        )
-        
-        print("✅ Chuyển đổi thành công!")
-        return client
-        
-    except Exception as e:
-        print(f"⚠️  Không thể import session: {e}")
+    if not info['logged_in']:
+        print(f"⚠️  {info['message']}")
+        return None
+    
+    print(f"✅ {info['message']}")
+    
+    if not info['opentele_compatible']:
+        print(f"⚠️  Python {info['python_version']} không tương thích với opentele")
+        print("   opentele chỉ hoạt động với Python 3.11")
+        return None
+    
+    # Thử import
+    print("📥 Đang import session...")
+    success, result = await try_import_with_opentele(
+        info['tdata_path'],
+        "tests/quick_test_session"
+    )
+    
+    if success:
+        print("✅ Import thành công!")
+        return result
+    else:
+        print(f"⚠️  {result}")
         return None
 
 
