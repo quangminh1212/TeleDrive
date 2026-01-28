@@ -81,7 +81,6 @@ instance/
 *.swo
 *~
 .cursor/
-.vscode/
 
 # OS
 .DS_Store
