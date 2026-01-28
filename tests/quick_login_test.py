@@ -8,11 +8,19 @@ import os
 import sys
 from pathlib import Path
 
+# Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
-import config
+
+# Import config
+try:
+    import config
+except ImportError:
+    # Fallback if running from tests directory
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    import config
 
 
 async def try_telegram_desktop_session():
@@ -22,11 +30,12 @@ async def try_telegram_desktop_session():
     try:
         from opentele.td import TDesktop
         from opentele.api import UseCurrentSession
-    except ImportError:
-        print("⚠️  opentele chưa cài đặt (cần cho auto-import)")
-        return None
-    except Exception as e:
-        print(f"⚠️  opentele không tương thích: {e}")
+    except (ImportError, BaseException) as e:
+        if isinstance(e, ImportError):
+            print("⚠️  opentele chưa cài đặt (cần cho auto-import)")
+        else:
+            print(f"⚠️  opentele không tương thích với Python {sys.version_info.major}.{sys.version_info.minor}")
+            print("   opentele chỉ hoạt động với Python 3.11")
         return None
     
     # Tìm Telegram Desktop
