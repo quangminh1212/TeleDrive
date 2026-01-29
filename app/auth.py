@@ -8,6 +8,7 @@ import asyncio
 import hashlib
 import json
 import os
+import subprocess
 import time
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -793,91 +794,168 @@ class TelegramAuthenticator:
             
             print(f"[AUTO_LOGIN] Tìm thấy Telegram Desktop: {tdata_path}")
             
-            # Import opentele
-            try:
-                from opentele.td import TDesktop
-                from opentele.api import UseCurrentSession
-            except ImportError:
+            # Xác định đường dẫn project root
+            project_root = Path(__file__).parent.parent
+            python311_path = project_root / "python311" / "python.exe"
+            import_script = project_root / "app" / "import_tdesktop_session.py"
+            session_output = project_root / "data" / "session"
+            
+            # Thử import trực tiếp nếu Python < 3.12
+            import sys
+            if sys.version_info < (3, 12):
+                print("[AUTO_LOGIN] Python < 3.12, thử import trực tiếp...")
+                try:
+                    from opentele.td import TDesktop
+                    from opentele.api import UseCurrentSession
+                    
+                    # Load TDesktop session
+                    tdesk = TDesktop(tdata_path)
+                    if not tdesk.isLoaded():
+                        return {
+                            'success': False,
+                            'message': 'Telegram Desktop chưa đăng nhập',
+                            'hint': 'Mở Telegram Desktop và đăng nhập'
+                        }
+                    
+                    # Convert to Telethon
+                    client = await tdesk.ToTelethon(
+                        session=str(session_output),
+                        flag=UseCurrentSession
+                    )
+                    
+                    await client.connect()
+                    
+                    if await client.is_user_authorized():
+                        me = await client.get_me()
+                        db_user = self.create_or_update_user(me, me.phone or '')
+                        await client.disconnect()
+                        
+                        print(f"[AUTO_LOGIN] Thành công! User: {me.first_name}")
+                        return {
+                            'success': True,
+                            'message': 'Đăng nhập tự động thành công',
+                            'user': {
+                                'id': db_user.id,
+                                'username': db_user.username,
+                                'telegram_id': me.id,
+                                'first_name': me.first_name,
+                                'last_name': me.last_name,
+                                'phone': me.phone
+                            }
+                        }
+                    else:
+                        await client.disconnect()
+                        return {
+                            'success': False,
+                            'message': 'Không thể authorize session'
+                        }
+                except ImportError:
+                    pass  # Fallback to Python 3.11
+                except Exception as e:
+                    print(f"[AUTO_LOGIN] Lỗi import trực tiếp: {e}")
+                    # Fallback to Python 3.11
+            
+            # Sử dụng Python 3.11 portable qua subprocess
+            print("[AUTO_LOGIN] Sử dụng Python 3.11 portable để import session...")
+            
+            if not python311_path.exists():
                 return {
                     'success': False,
-                    'message': 'Chưa cài đặt opentele',
-                    'hint': 'Chạy: pip install opentele'
-                }
-            except (BaseException, Exception) as e:
-                # opentele không tương thích với Python 3.14
-                print(f"[AUTO_LOGIN] Lỗi import opentele: {e}")
-                return {
-                    'success': False,
-                    'message': 'opentele không tương thích với Python hiện tại',
-                    'hint': 'Vui lòng đăng nhập thủ công hoặc sử dụng Python 3.11'
+                    'message': 'Không tìm thấy Python 3.11 portable',
+                    'hint': 'Chạy setup-python.bat để cài Python 3.11'
                 }
             
-            # Load TDesktop session
-            print("[AUTO_LOGIN] Đang load session từ Telegram Desktop...")
+            if not import_script.exists():
+                return {
+                    'success': False,
+                    'message': 'Không tìm thấy script import session',
+                    'hint': 'File app/import_tdesktop_session.py bị thiếu'
+                }
+            
+            # Chạy script import với Python 3.11
             try:
-                tdesk = TDesktop(tdata_path)
-            except BaseException as e:
-                print(f"[AUTO_LOGIN] Lỗi load TDesktop: {e}")
-                # Check if it's the "No account has been loaded" error
-                error_msg = str(e)
-                if "No account has been loaded" in error_msg:
+                result = subprocess.run(
+                    [str(python311_path), str(import_script), str(session_output)],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                    cwd=str(project_root)
+                )
+                
+                if result.returncode != 0:
+                    print(f"[AUTO_LOGIN] Script error: {result.stderr}")
                     return {
                         'success': False,
-                        'message': 'Telegram Desktop chưa có account nào được đăng nhập',
-                        'hint': 'Vui lòng:\n1. Đóng Telegram Desktop nếu đang chạy\n2. Mở lại Telegram Desktop\n3. Đăng nhập vào account\n4. Đợi sync xong (thấy tin nhắn)\n5. Thử lại auto-login\n\nHoặc đăng nhập thủ công bằng số điện thoại bên dưới.'
+                        'message': 'Lỗi chạy script import session',
+                        'hint': result.stderr or 'Không có thông tin lỗi'
+                    }
+                
+                # Parse JSON output
+                try:
+                    import_result = json.loads(result.stdout.strip())
+                except json.JSONDecodeError as e:
+                    print(f"[AUTO_LOGIN] JSON decode error: {e}")
+                    print(f"[AUTO_LOGIN] Output: {result.stdout}")
+                    return {
+                        'success': False,
+                        'message': 'Lỗi parse kết quả import',
+                        'hint': result.stdout[:200] if result.stdout else 'Không có output'
+                    }
+                
+                if not import_result.get('success'):
+                    return {
+                        'success': False,
+                        'message': import_result.get('message', 'Import thất bại'),
+                        'hint': 'Vui lòng đăng nhập thủ công'
+                    }
+                
+                # Session đã được import thành công, giờ load và tạo user
+                print("[AUTO_LOGIN] Session đã import, đang xác thực...")
+                
+                user_info = import_result.get('user', {})
+                if user_info:
+                    # Tạo TelegramUser-like object để create_or_update_user
+                    class MockTelegramUser:
+                        def __init__(self, data):
+                            self.id = data.get('id')
+                            self.username = data.get('username')
+                            self.first_name = data.get('first_name')
+                            self.last_name = data.get('last_name')
+                            self.phone = data.get('phone')
+                    
+                    mock_user = MockTelegramUser(user_info)
+                    db_user = self.create_or_update_user(mock_user, mock_user.phone or '')
+                    
+                    print(f"[AUTO_LOGIN] Thành công! User: {user_info.get('first_name')}")
+                    return {
+                        'success': True,
+                        'message': 'Đăng nhập tự động thành công (via Python 3.11)',
+                        'user': {
+                            'id': db_user.id,
+                            'username': db_user.username,
+                            'telegram_id': user_info.get('id'),
+                            'first_name': user_info.get('first_name'),
+                            'last_name': user_info.get('last_name'),
+                            'phone': user_info.get('phone')
+                        }
                     }
                 else:
                     return {
                         'success': False,
-                        'message': f'Không thể load session từ Telegram Desktop',
-                        'hint': f'Lỗi: {error_msg}\n\nVui lòng đăng nhập thủ công bằng số điện thoại bên dưới.'
+                        'message': 'Import thành công nhưng không có thông tin user'
                     }
-            
-            if not tdesk.isLoaded():
+                    
+            except subprocess.TimeoutExpired:
                 return {
                     'success': False,
-                    'message': 'Telegram Desktop chưa đăng nhập',
-                    'hint': 'Mở Telegram Desktop và đăng nhập'
+                    'message': 'Timeout khi import session',
+                    'hint': 'Vui lòng thử lại hoặc đăng nhập thủ công'
                 }
-            
-            print("[AUTO_LOGIN] Đã load session, đang chuyển đổi...")
-            
-            # Convert to Telethon
-            session_file = "data/session"
-            client = await tdesk.ToTelethon(
-                session=session_file,
-                flag=UseCurrentSession
-            )
-            
-            await client.connect()
-            
-            if await client.is_user_authorized():
-                me = await client.get_me()
-                
-                # Tạo user trong database
-                db_user = self.create_or_update_user(me, me.phone or '')
-                
-                await client.disconnect()
-                
-                print(f"[AUTO_LOGIN] Thành công! User: {me.first_name}")
-                
-                return {
-                    'success': True,
-                    'message': 'Đăng nhập tự động thành công',
-                    'user': {
-                        'id': db_user.id,
-                        'username': db_user.username,
-                        'telegram_id': me.id,
-                        'first_name': me.first_name,
-                        'last_name': me.last_name,
-                        'phone': me.phone
-                    }
-                }
-            else:
-                await client.disconnect()
+            except Exception as e:
+                print(f"[AUTO_LOGIN] Subprocess error: {e}")
                 return {
                     'success': False,
-                    'message': 'Không thể authorize session'
+                    'message': f'Lỗi subprocess: {str(e)}'
                 }
                 
         except Exception as e:

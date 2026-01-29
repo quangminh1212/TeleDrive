@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign in with Telegram - TeleDrive</title>
-    
+
     <!-- Telegram-like styling -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
+
     <style>
         * {
             margin: 0;
@@ -238,7 +239,8 @@
                 gap: 20px;
             }
 
-            .country-select, .phone-input {
+            .country-select,
+            .phone-input {
                 flex: none;
             }
 
@@ -248,7 +250,9 @@
                 min-height: 55px;
             }
 
-            .form-group label, .country-label, .phone-label {
+            .form-group label,
+            .country-label,
+            .phone-label {
                 font-size: 16px;
             }
         }
@@ -289,129 +293,135 @@
         }
     </style>
 </head>
+
 <body>
     <div class="auth-container">
         <div class="logo">
             <span class="material-icons">telegram</span>
             <span class="logo-text">TeleDrive</span>
         </div>
-        
+
         <h1 class="auth-title">Sign in with Telegram</h1>
         <p class="auth-subtitle">Auto-login from Telegram Desktop</p>
-        
+
         <div class="telegram-info">
             <h4>✨ How it works:</h4>
             <p>• Make sure Telegram Desktop is installed and logged in</p>
             <p>• Click the button below to auto-login</p>
             <p>• No need to enter phone number or verification code</p>
         </div>
-        
+
         <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'error' if category == 'error' else category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'error' if category == 'error' else category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
-        
+
         <!-- Auto-Login Button -->
         <button type="button" id="autoLoginBtn" class="btn-primary" style="background: #2ecc71;">
-            <span class="material-icons" style="vertical-align: middle; margin-right: 8px; font-size: 20px;">flash_on</span>
+            <span class="material-icons"
+                style="vertical-align: middle; margin-right: 8px; font-size: 20px;">flash_on</span>
             Login from Telegram Desktop
         </button>
-        
+
         <div class="telegram-info" style="margin-top: 24px; background: #fff3cd; border-color: #ffc107;">
             <h4 style="color: #856404;">⚠️ Requirements:</h4>
             <p style="color: #856404;">1. Telegram Desktop must be installed</p>
             <p style="color: #856404;">2. You must be logged in to Telegram Desktop</p>
             <p style="color: #856404;">3. Python 3.11 is required (opentele compatibility)</p>
+            <p style="color: #856404;"><strong>Note:</strong> Telegram Desktop versions after 4.x use a new data format
+                that is not yet supported. If auto-login fails, the library may need updates.</p>
         </div>
-        
+
         <p style="font-size: 14px; color: #666; text-align: center; margin-top: 24px;">
-            Having trouble? Check <a href="https://github.com/yourusername/teledrive" style="color: #0088cc;">the documentation</a> for help.
+            Having trouble? Check <a href="https://github.com/yourusername/teledrive" style="color: #0088cc;">the
+                documentation</a> for help.
         </p>
     </div>
 
     <script>
         // Auto-login button handler
-        document.getElementById('autoLoginBtn').addEventListener('click', function() {
+        document.getElementById('autoLoginBtn').addEventListener('click', function () {
             const btn = this;
             const originalText = btn.innerHTML;
-            
+
             // Disable button and show loading
             btn.disabled = true;
             btn.innerHTML = '<span class="material-icons" style="vertical-align: middle; margin-right: 8px; font-size: 20px; animation: spin 1s linear infinite;">sync</span>Logging in...';
             btn.style.background = '#95a5a6';
-            
+
             // Call auto-login API
             fetch('/api/auto-login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
                 },
                 credentials: 'same-origin'
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Success - show success message and redirect
-                    btn.innerHTML = '<span class="material-icons" style="vertical-align: middle; margin-right: 8px; font-size: 20px;">check_circle</span>Success! Redirecting...';
-                    btn.style.background = '#27ae60';
-                    
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1000);
-                } else {
-                    // Failed - show error
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'alert alert-error';
-                    errorDiv.innerHTML = `
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Success - show success message and redirect
+                        btn.innerHTML = '<span class="material-icons" style="vertical-align: middle; margin-right: 8px; font-size: 20px;">check_circle</span>Success! Redirecting...';
+                        btn.style.background = '#27ae60';
+
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1000);
+                    } else {
+                        // Failed - show error
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'alert alert-error';
+                        errorDiv.innerHTML = `
                         <strong>Login Failed:</strong> ${data.message || 'Unknown error'}<br>
                         ${data.hint ? `<small style="white-space: pre-line;">${data.hint}</small>` : ''}
                     `;
-                    
-                    // Remove existing errors
+
+                        // Remove existing errors
+                        document.querySelectorAll('.alert-error').forEach(el => el.remove());
+
+                        // Insert error after telegram-info
+                        const infoBox = document.querySelector('.telegram-info');
+                        infoBox.parentNode.insertBefore(errorDiv, infoBox.nextSibling);
+
+                        // Reset button
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        btn.style.background = '#2ecc71';
+
+                        // Auto-remove error after 15 seconds
+                        setTimeout(() => {
+                            if (errorDiv.parentNode) {
+                                errorDiv.remove();
+                            }
+                        }, 15000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Auto-login error:', error);
+
+                    // Show error
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'alert alert-error';
+                    errorDiv.textContent = 'Network error. Please try again.';
+
                     document.querySelectorAll('.alert-error').forEach(el => el.remove());
-                    
-                    // Insert error after telegram-info
                     const infoBox = document.querySelector('.telegram-info');
                     infoBox.parentNode.insertBefore(errorDiv, infoBox.nextSibling);
-                    
+
                     // Reset button
                     btn.disabled = false;
                     btn.innerHTML = originalText;
                     btn.style.background = '#2ecc71';
-                    
-                    // Auto-remove error after 15 seconds
-                    setTimeout(() => {
-                        if (errorDiv.parentNode) {
-                            errorDiv.remove();
-                        }
-                    }, 15000);
-                }
-            })
-            .catch(error => {
-                console.error('Auto-login error:', error);
-                
-                // Show error
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'alert alert-error';
-                errorDiv.textContent = 'Network error. Please try again.';
-                
-                document.querySelectorAll('.alert-error').forEach(el => el.remove());
-                const infoBox = document.querySelector('.telegram-info');
-                infoBox.parentNode.insertBefore(errorDiv, infoBox.nextSibling);
-                
-                // Reset button
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-                btn.style.background = '#2ecc71';
-            });
+                });
         });
-        
+
         // Add spin animation for loading icon
         const style = document.createElement('style');
         style.textContent = `
@@ -421,9 +431,9 @@
             }
         `;
         document.head.appendChild(style);
-        
+
         // Auto-trigger login on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Check if we should auto-trigger (not after a failed attempt)
             const urlParams = new URLSearchParams(window.location.search);
             if (!urlParams.has('retry')) {
@@ -435,4 +445,5 @@
         });
     </script>
 </body>
+
 </html>
