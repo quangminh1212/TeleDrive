@@ -257,6 +257,7 @@
         ".\\test_full_workflow.bat *",
         ".\\run.bat *",
         "ren *",
-        "for *"
+        "for *",
+        "taskkill *"
     ]
 }
