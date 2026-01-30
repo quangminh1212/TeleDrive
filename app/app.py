@@ -837,7 +837,7 @@ class WebTelegramScanner(TelegramFileScanner):
                 scan_folder = FakeFolder()
                 # return False
 
-            # Scan messages
+            # Scan messages with retry logic for network errors
             processed = 0
             files_saved = 0
             print(f"🔍 Bắt đầu scan messages từ: {getattr(entity, 'first_name', None) or getattr(entity, 'title', 'Unknown')}")
@@ -845,65 +845,114 @@ class WebTelegramScanner(TelegramFileScanner):
             print(f"📊 Giới hạn: {max_messages} messages")
             print(f"DEBUG: About to start iter_messages loop...")
             sys.stdout.flush()
-            async for message in self.client.iter_messages(entity, limit=max_messages):
-                if not scanning_active:  # Check if scan was cancelled
-                    break
+            
+            # Retry configuration for network errors
+            max_retries = 3
+            retry_delay = 2
+            last_processed_id = None  # Track last processed message for resume
+            
+            for retry_attempt in range(max_retries):
+                try:
+                    # Use offset_id for resuming after error
+                    offset_id = last_processed_id if last_processed_id else 0
+                    remaining_limit = max_messages - processed
+                    
+                    async for message in self.client.iter_messages(entity, limit=remaining_limit, offset_id=offset_id):
+                        if not scanning_active:  # Check if scan was cancelled
+                            break
 
-                # Log message đầu tiên và mỗi 10 messages
-                if processed == 0 or processed % 10 == 0:
-                    print(f"📝 Processing message #{processed}: id={message.id}, has_media={bool(message.media)}")
+                        last_processed_id = message.id  # Track for resume
 
-                file_info = self.extract_file_info(message)
-                if file_info and self.should_include_file_type(file_info['file_type']):
-                    # Save to database instead of just appending to list
-                    try:
-                        file_record = File(
-                            filename=file_info.get('file_name', ''),
-                            original_filename=file_info.get('file_name', ''),
-                            file_size=file_info.get('file_size', 0),
-                            mime_type=file_info.get('mime_type', ''),
-                            folder_id=scan_folder.id,
-                            user_id=self.user_id,
-                            storage_type='telegram',  # Mark as Telegram file
-                            telegram_message_id=file_info.get('message_id'),
-                            telegram_channel=self.scan_session.channel_name or 'Saved Messages',
-                            telegram_channel_id=self.scan_session.channel_id,
-                            telegram_date=datetime.fromisoformat(
-                                file_info['date'].replace('Z', '+00:00')
-                            ) if file_info.get('date') else None
-                        )
+                        # Log message đầu tiên và mỗi 10 messages
+                        if processed == 0 or processed % 10 == 0:
+                            print(f"📝 Processing message #{processed}: id={message.id}, has_media={bool(message.media)}")
 
-                        # Set metadata
-                        metadata = {
-                            'download_url': file_info.get('download_url', ''),
-                            'file_type': file_info.get('file_type', ''),
-                            'sender': file_info.get('sender', '')
-                        }
-                        file_record.set_metadata(metadata)
+                        file_info = self.extract_file_info(message)
+                        if file_info and self.should_include_file_type(file_info['file_type']):
+                            # Save to database instead of just appending to list
+                            try:
+                                file_record = File(
+                                    filename=file_info.get('file_name', ''),
+                                    original_filename=file_info.get('file_name', ''),
+                                    file_size=file_info.get('file_size', 0),
+                                    mime_type=file_info.get('mime_type', ''),
+                                    folder_id=scan_folder.id,
+                                    user_id=self.user_id,
+                                    storage_type='telegram',  # Mark as Telegram file
+                                    telegram_message_id=file_info.get('message_id'),
+                                    telegram_channel=self.scan_session.channel_name or 'Saved Messages',
+                                    telegram_channel_id=self.scan_session.channel_id,
+                                    telegram_date=datetime.fromisoformat(
+                                        file_info['date'].replace('Z', '+00:00')
+                                    ) if file_info.get('date') else None
+                                )
 
-                        db.session.add(file_record)
-                        files_saved += 1
+                                # Set metadata
+                                metadata = {
+                                    'download_url': file_info.get('download_url', ''),
+                                    'file_type': file_info.get('file_type', ''),
+                                    'sender': file_info.get('sender', '')
+                                }
+                                file_record.set_metadata(metadata)
 
-                        # Commit every 50 files to avoid memory issues
-                        if files_saved % 50 == 0:
+                                db.session.add(file_record)
+                                files_saved += 1
+
+                                # Commit every 50 files to avoid memory issues
+                                if files_saved % 50 == 0:
+                                    db.session.commit()
+
+                            except Exception as e:
+                                print(f"Error saving file to database: {e}")
+                                continue
+
+                        processed += 1
+                        scan_progress['current'] = processed
+                        scan_progress['files_found'] = files_saved
+
+                        # Update scan session
+                        self.scan_session.messages_scanned = processed
+                        self.scan_session.files_found = files_saved
+
+                        # Update progress every 10 messages
+                        if processed % 10 == 0:
+                            self.socketio.emit('scan_progress', scan_progress)
                             db.session.commit()
-
-                    except Exception as e:
-                        print(f"Error saving file to database: {e}")
+                    
+                    # If we get here, scan completed successfully
+                    break
+                    
+                except Exception as scan_error:
+                    error_str = str(scan_error)
+                    # Check for recoverable network errors
+                    recoverable_errors = [
+                        'CLIENT_RESPONSE_PARSE_FAILED',
+                        'ConnectionError',
+                        'TimeoutError',
+                        'NetworkError',
+                        'RPCError',
+                        'connection reset',
+                        'broken pipe'
+                    ]
+                    
+                    is_recoverable = any(err.lower() in error_str.lower() for err in recoverable_errors)
+                    
+                    if is_recoverable and retry_attempt < max_retries - 1:
+                        print(f"⚠️ Network error during scan (attempt {retry_attempt + 1}/{max_retries}): {error_str[:100]}")
+                        print(f"⏳ Retrying in {retry_delay} seconds... (processed {processed} messages so far)")
+                        await asyncio.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                        
+                        # Emit warning to frontend
+                        self.socketio.emit('scan_warning', {
+                            'message': f'Network error, retrying... ({processed} messages processed)',
+                            'error': error_str[:100]
+                        })
                         continue
-
-                processed += 1
-                scan_progress['current'] = processed
-                scan_progress['files_found'] = files_saved
-
-                # Update scan session
-                self.scan_session.messages_scanned = processed
-                self.scan_session.files_found = files_saved
-
-                # Update progress every 10 messages
-                if processed % 10 == 0:
-                    self.socketio.emit('scan_progress', scan_progress)
-                    db.session.commit()
+                    else:
+                        # Non-recoverable or max retries reached
+                        print(f"❌ Scan error after {retry_attempt + 1} attempts: {error_str}")
+                        raise scan_error
 
             # Final commit and save results
             scan_progress['status'] = 'saving'
