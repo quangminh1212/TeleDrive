@@ -5,77 +5,234 @@ interface SidebarProps {
     onFolderSelect: (folder: string | null) => void;
 }
 
+// Google Drive SVG Icon
+const DriveIcon = () => (
+    <svg viewBox="0 0 87.3 78" className="w-10 h-10">
+        <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
+        <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47" />
+        <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335" />
+        <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d" />
+        <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc" />
+        <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00" />
+    </svg>
+);
+
+// Menu Icons as SVG components
+const HomeIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+    </svg>
+);
+
+const MyDriveIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 18H5V4h14v16z" />
+        <path d="M12 6l-5 9h10z" />
+    </svg>
+);
+
+const ComputerIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z" />
+    </svg>
+);
+
+const SharedIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+    </svg>
+);
+
+const RecentIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
+        <path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
+    </svg>
+);
+
+const StarredIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+    </svg>
+);
+
+const SpamIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+    </svg>
+);
+
+const TrashIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+    </svg>
+);
+
+const StorageIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z" />
+    </svg>
+);
+
+const PlusIcon = () => (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 5v14M5 12h14" />
+    </svg>
+);
+
 const Sidebar = ({ currentFolder, onFolderSelect }: SidebarProps) => {
     const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
 
-    const menuItems = [
-        { id: null, label: 'My Drive', icon: '📁' },
-        { id: 'shared', label: 'Shared with me', icon: '👥' },
-        { id: 'recent', label: 'Recent', icon: '🕐' },
-        { id: 'starred', label: 'Starred', icon: '⭐' },
-        { id: 'trash', label: 'Trash', icon: '🗑️' },
+    const mainMenuItems = [
+        { id: 'home', label: 'Trang chủ', icon: HomeIcon },
+        { id: null, label: 'Drive của tôi', icon: MyDriveIcon },
+        { id: 'computer', label: 'Máy tính', icon: ComputerIcon },
     ];
 
+    const secondaryMenuItems = [
+        { id: 'shared', label: 'Được chia sẻ với tôi', icon: SharedIcon },
+        { id: 'recent', label: 'Gần đây', icon: RecentIcon },
+        { id: 'starred', label: 'Có gắn dấu sao', icon: StarredIcon },
+    ];
+
+    const bottomMenuItems = [
+        { id: 'spam', label: 'Nội dung rác', icon: SpamIcon },
+        { id: 'trash', label: 'Thùng rác', icon: TrashIcon },
+        { id: 'storage', label: 'Bộ nhớ', icon: StorageIcon },
+    ];
+
+    const usedStorage = 1.34;
+    const totalStorage = 2;
+    const storagePercent = (usedStorage / totalStorage) * 100;
+
     return (
-        <aside className="w-64 bg-gdrive-sidebar border-r border-gdrive-border flex flex-col">
+        <aside className="w-60 bg-white flex flex-col h-full">
+            {/* Logo */}
+            <div className="flex items-center gap-2 px-4 py-3">
+                <DriveIcon />
+                <span className="text-[22px] text-gray-600 font-normal">Drive</span>
+            </div>
+
             {/* New Button */}
-            <div className="p-3">
+            <div className="px-3 py-2">
                 <button
                     onClick={() => setIsNewMenuOpen(!isNewMenuOpen)}
-                    className="flex items-center gap-3 px-6 py-3 bg-white border border-gdrive-border rounded-full shadow-sm hover:shadow-md transition-shadow"
+                    className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-2xl shadow-md hover:shadow-lg hover:bg-gray-50 transition-all"
                 >
-                    <svg className="w-6 h-6 text-gdrive-blue" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                    </svg>
-                    <span className="text-sm font-medium text-gray-700">New</span>
+                    <PlusIcon />
+                    <span className="text-sm font-medium text-gray-700">Mới</span>
                 </button>
 
                 {/* New Dropdown Menu */}
                 {isNewMenuOpen && (
-                    <div className="absolute mt-2 w-56 bg-white rounded-lg shadow-lg border border-gdrive-border z-50">
-                        <div className="py-2">
-                            <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3">
-                                <span>📁</span> New folder
-                            </button>
-                            <hr className="my-1 border-gdrive-border" />
-                            <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3">
-                                <span>📤</span> File upload
-                            </button>
-                            <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3">
-                                <span>📂</span> Folder upload
-                            </button>
-                        </div>
+                    <div className="absolute mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
+                        <button className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3">
+                            <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z" />
+                            </svg>
+                            Thư mục mới
+                        </button>
+                        <hr className="my-2 border-gray-200" />
+                        <button className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3">
+                            <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
+                            </svg>
+                            Tải tệp lên
+                        </button>
+                        <button className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3">
+                            <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10zM8 13.01l1.41 1.41L11 12.84V17h2v-4.16l1.59 1.59L16 13.01 12.01 9 8 13.01z" />
+                            </svg>
+                            Tải thư mục lên
+                        </button>
                     </div>
                 )}
             </div>
 
-            {/* Navigation Menu */}
-            <nav className="flex-1 px-2 py-2">
-                {menuItems.map((item) => (
-                    <button
-                        key={item.id || 'home'}
-                        onClick={() => onFolderSelect(item.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-2 rounded-full text-sm transition-colors ${currentFolder === item.id
-                                ? 'bg-blue-100 text-gdrive-blue font-medium'
-                                : 'text-gray-700 hover:bg-gray-100'
-                            }`}
-                    >
-                        <span className="text-lg">{item.icon}</span>
-                        <span>{item.label}</span>
-                    </button>
-                ))}
+            {/* Main Navigation Menu */}
+            <nav className="flex-1 overflow-y-auto px-2 py-1">
+                {/* Main items */}
+                {mainMenuItems.map((item) => {
+                    const IconComponent = item.icon;
+                    const isActive = currentFolder === item.id;
+                    return (
+                        <button
+                            key={item.id || 'mydrive'}
+                            onClick={() => onFolderSelect(item.id)}
+                            className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'text-gray-700 hover:bg-gray-100'
+                                }`}
+                        >
+                            <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
+                                <IconComponent />
+                            </span>
+                            <span>{item.label}</span>
+                        </button>
+                    );
+                })}
+
+                <div className="h-2" />
+
+                {/* Secondary items */}
+                {secondaryMenuItems.map((item) => {
+                    const IconComponent = item.icon;
+                    const isActive = currentFolder === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => onFolderSelect(item.id)}
+                            className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'text-gray-700 hover:bg-gray-100'
+                                }`}
+                        >
+                            <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
+                                <IconComponent />
+                            </span>
+                            <span>{item.label}</span>
+                        </button>
+                    );
+                })}
+
+                <div className="h-2" />
+
+                {/* Bottom items */}
+                {bottomMenuItems.map((item) => {
+                    const IconComponent = item.icon;
+                    const isActive = currentFolder === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => onFolderSelect(item.id)}
+                            className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'text-gray-700 hover:bg-gray-100'
+                                }`}
+                        >
+                            <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
+                                <IconComponent />
+                            </span>
+                            <span>{item.label}</span>
+                        </button>
+                    );
+                })}
             </nav>
 
             {/* Storage Info */}
-            <div className="p-4 border-t border-gdrive-border">
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                    <span>☁️</span>
-                    <span>Storage</span>
+            <div className="px-4 py-3 border-t border-gray-200">
+                <div className="w-full bg-gray-200 rounded-full h-1 mb-2">
+                    <div
+                        className="bg-gray-500 h-1 rounded-full"
+                        style={{ width: `${storagePercent}%` }}
+                    />
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
-                    <div className="bg-gdrive-blue h-1.5 rounded-full" style={{ width: '14%' }}></div>
-                </div>
-                <p className="text-xs text-gray-500">2.1 GB of 15 GB used</p>
+                <p className="text-xs text-gray-600">
+                    Đã sử dụng {usedStorage} TB trong tổng số {totalStorage} TB
+                </p>
+                <button className="mt-2 px-4 py-1.5 border border-gray-300 rounded-full text-sm text-blue-600 hover:bg-blue-50 transition-colors">
+                    Mua thêm bộ nhớ
+                </button>
             </div>
         </aside>
     );

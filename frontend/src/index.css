@@ -2,6 +2,9 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -10,7 +13,9 @@
 
 body {
   font-family: 'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: #fff;
+  background-color: #f8fafd;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Google Drive scrollbar style */
@@ -30,4 +35,71 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #bdc1c6;
+}
+
+/* Custom focus styles */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Google Drive button styles */
+.gdrive-btn {
+  @apply px-4 py-2 rounded-lg font-medium text-sm transition-all;
+}
+
+.gdrive-btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md;
+}
+
+.gdrive-btn-secondary {
+  @apply bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Material ripple effect */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.ripple:active::after {
+  width: 200%;
+  height: 200%;
 }
