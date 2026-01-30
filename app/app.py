@@ -840,6 +840,8 @@ class WebTelegramScanner(TelegramFileScanner):
             print(f"🔍 Bắt đầu scan messages từ: {getattr(entity, 'first_name', None) or getattr(entity, 'title', 'Unknown')}")
             max_messages = 5000  # Hardcode để tránh lỗi config
             print(f"📊 Giới hạn: {max_messages} messages")
+            print(f"DEBUG: About to start iter_messages loop...")
+            sys.stdout.flush()
             async for message in self.client.iter_messages(entity, limit=max_messages):
                 if not scanning_active:  # Check if scan was cancelled
                     break
