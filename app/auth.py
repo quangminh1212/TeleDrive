@@ -797,7 +797,7 @@ class TelegramAuthenticator:
             # Xác định đường dẫn project root
             project_root = Path(__file__).parent.parent
             python311_path = project_root / "python311" / "python.exe"
-            import_script = project_root / "app" / "import_tdesktop_session.py"
+            import_script = project_root / "app" / "session_import.py"
             # Import to a temp file to avoid locking issues with existing session
             session_output = project_root / "data" / "session_import"
             
@@ -815,7 +815,7 @@ class TelegramAuthenticator:
                 return {
                     'success': False,
                     'message': 'Không tìm thấy script import session',
-                    'hint': 'File app/import_tdesktop_session.py bị thiếu'
+                    'hint': 'File app/session_import.py bị thiếu'
                 }
             
             # Chạy script import với Python 3.11
