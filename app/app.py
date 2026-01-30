@@ -1514,6 +1514,152 @@ def auto_login_public():
         })
 
 
+# Public API endpoint to upload files for Tauri frontend
+@app.route('/api/v2/upload', methods=['POST'])
+@csrf.exempt
+def upload_file_public():
+    """Upload files to the system for Tauri frontend - no CSRF required"""
+    try:
+        if 'files' not in request.files:
+            return jsonify({'success': False, 'error': 'No files provided'}), 400
+
+        files = request.files.getlist('files')
+        folder_id = request.form.get('folder_id')
+
+        if not files or all(f.filename == '' for f in files):
+            return jsonify({'success': False, 'error': 'No files selected'}), 400
+
+        # Limit to 50 files per upload
+        if len(files) > 50:
+            return jsonify({'success': False, 'error': 'Too many files. Maximum 50 files per upload.'}), 400
+
+        # Get or create default user
+        user = get_or_create_user()
+        uploaded_files = []
+
+        # Validate folder if specified
+        if folder_id:
+            folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+            if not folder:
+                return jsonify({'success': False, 'error': 'Invalid folder'}), 400
+
+        # Create uploads directory if it doesn't exist
+        upload_config = web_config.flask_config.get_upload_config()
+        upload_dir = Path(upload_config['upload_directory'])
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        for file in files:
+            if file.filename:
+                # Sanitize and validate filename
+                original_filename = file.filename
+                sanitized_fname = sanitize_filename(original_filename)
+
+                if not sanitized_fname:
+                    continue
+
+                # Check if file type is allowed
+                if not is_allowed_file(sanitized_fname):
+                    continue
+
+                # Generate unique filename
+                if upload_config['timestamp_filenames']:
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    unique_filename = f"{timestamp}_{sanitized_fname}"
+                else:
+                    unique_filename = sanitized_fname
+
+                file_path = upload_dir / unique_filename
+
+                # Ensure path is within upload directory
+                try:
+                    file_path = file_path.resolve()
+                    upload_dir_resolved = upload_dir.resolve()
+                    if not str(file_path).startswith(str(upload_dir_resolved)):
+                        continue
+                except Exception:
+                    continue
+
+                # Save file
+                try:
+                    file.save(str(file_path))
+                    if not file_path.exists():
+                        continue
+                except Exception as e:
+                    app.logger.error(f"Error saving file {unique_filename}: {e}")
+                    continue
+
+                # Get file info
+                file_size = file_path.stat().st_size
+                mime_type = file.content_type or 'application/octet-stream'
+
+                # Check storage backend configuration
+                storage_backend = web_config.flask_config.get('upload.storage_backend', 'local')
+                fallback_to_local = web_config.flask_config.get('upload.fallback_to_local', True)
+
+                # Create database record
+                file_record = File(
+                    filename=unique_filename,
+                    original_filename=original_filename,
+                    file_path=str(file_path),
+                    file_size=file_size,
+                    mime_type=mime_type,
+                    folder_id=folder_id,
+                    user_id=user.id,
+                    description=f'Uploaded file: {original_filename}',
+                    storage_type='local'
+                )
+
+                # Try to upload to Telegram if configured
+                if storage_backend == 'telegram':
+                    try:
+                        telegram_result = run_async_in_thread(
+                            upload_to_telegram_async(str(file_path), unique_filename, user.id)
+                        )
+
+                        if telegram_result:
+                            file_record.set_telegram_storage(
+                                message_id=telegram_result['message_id'],
+                                channel=telegram_result['channel'],
+                                channel_id=telegram_result['channel_id'],
+                                file_id=telegram_result.get('file_id'),
+                                unique_id=telegram_result.get('unique_id'),
+                                access_hash=telegram_result.get('access_hash'),
+                                file_reference=telegram_result.get('file_reference')
+                            )
+
+                            # Remove local file since it's now on Telegram
+                            try:
+                                os.remove(file_path)
+                            except Exception:
+                                pass
+                        elif not fallback_to_local:
+                            continue
+                    except Exception as e:
+                        app.logger.error(f"Telegram upload error: {e}")
+                        if not fallback_to_local:
+                            continue
+
+                db.session.add(file_record)
+                uploaded_files.append({
+                    'id': file_record.id,
+                    'filename': unique_filename,
+                    'size': file_size,
+                    'type': mime_type
+                })
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Successfully uploaded {len(uploaded_files)} file(s)',
+            'files': uploaded_files
+        })
+
+    except Exception as e:
+        app.logger.error(f"Upload error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/download/<filename>')
 @login_required
 def download_file(filename):

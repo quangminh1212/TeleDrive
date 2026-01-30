@@ -118,29 +118,49 @@ class ApiService {
     }
 
     async searchFiles(query: string): Promise<ApiResponse<FilesResponse>> {
-        // Using get_files and filter on client side for now
-        // TODO: Add server-side search endpoint
-        return this.request(`/api/get_files?per_page=100`);
+        // Search with query param - will filter on client side for now
+        return this.request(`/api/v2/files?per_page=100&search=${encodeURIComponent(query)}`);
     }
 
-    async uploadFile(file: File, folderId?: string): Promise<ApiResponse<FileInfo>> {
+    async uploadFile(file: File, folderId?: string): Promise<ApiResponse<{ files: FileInfo[] }>> {
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('files', file);
         if (folderId) formData.append('folder_id', folderId);
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/upload`, {
+            const response = await fetch(`${API_BASE_URL}/api/v2/upload`, {
                 method: 'POST',
                 body: formData,
-                credentials: 'include',
+                // No credentials needed for public API
             });
 
             const data = await response.json();
-            return { success: response.ok, data };
+            return { success: data.success, data, error: data.error };
         } catch (error) {
+            console.error('Upload error:', error);
             return { success: false, error: 'Upload failed' };
         }
     }
+
+    async uploadFiles(files: File[], folderId?: string): Promise<ApiResponse<{ files: FileInfo[] }>> {
+        const formData = new FormData();
+        files.forEach(file => formData.append('files', file));
+        if (folderId) formData.append('folder_id', folderId);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/v2/upload`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+            return { success: data.success, data, error: data.error };
+        } catch (error) {
+            console.error('Upload error:', error);
+            return { success: false, error: 'Upload failed' };
+        }
+    }
+
 
     async createFolder(name: string, parentId?: string): Promise<ApiResponse<FileInfo>> {
         return this.request('/api/folder', {
@@ -163,7 +183,8 @@ class ApiService {
         });
     }
 
-    async downloadFile(fileId: number | string, filename: string): Promise<string> {
+    async downloadFile(_fileId: number | string, filename: string): Promise<string> {
+        // fileId is kept for future use when we implement direct file download by ID
         return `${API_BASE_URL}/download/${filename}`;
     }
 
