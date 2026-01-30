@@ -1,10 +1,9 @@
-```
 import { useState, useEffect } from 'react';
 
 interface SidebarProps {
     currentFolder: string | null;
     onFolderSelect: (folder: string | null) => void;
-    totalFileSize?: number; // Nhận tổng dung lượng từ App.tsx
+    totalFileSize?: number; // Tổng dung lượng file (bytes)
 }
 
 // Google Drive SVG Icon
@@ -82,8 +81,22 @@ const PlusIcon = () => (
     </svg>
 );
 
-const Sidebar = ({ currentFolder, onFolderSelect }: SidebarProps) => {
+const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize }: SidebarProps) => {
     const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
+    const [storageSizeFromAPI, setStorageSizeFromAPI] = useState<number>(0);
+
+    // Fetch total file size from API if not provided
+    useEffect(() => {
+        if (totalFileSize === undefined) {
+            fetch('http://127.0.0.1:5000/api/v2/files?per_page=1000')
+                .then(res => res.json())
+                .then(data => {
+                    const total = data.files?.reduce((sum: number, f: { file_size?: number }) => sum + (f.file_size || 0), 0) || 0;
+                    setStorageSizeFromAPI(total);
+                })
+                .catch(() => setStorageSizeFromAPI(0));
+        }
+    }, [totalFileSize]);
 
     const mainMenuItems = [
         { id: 'home', label: 'Trang chủ', icon: HomeIcon },
@@ -103,9 +116,17 @@ const Sidebar = ({ currentFolder, onFolderSelect }: SidebarProps) => {
         { id: 'storage', label: 'Bộ nhớ', icon: StorageIcon },
     ];
 
-    const usedStorage = 1.34;
-    const totalStorage = 2;
-    const storagePercent = (usedStorage / totalStorage) * 100;
+    // Hàm format dung lượng
+    const formatBytes = (bytes: number): string => {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    const actualSize = totalFileSize !== undefined ? totalFileSize : storageSizeFromAPI;
+    const usedStorageFormatted = formatBytes(actualSize);
 
     return (
         <aside className="w-60 bg-white flex flex-col h-full">
@@ -162,8 +183,8 @@ const Sidebar = ({ currentFolder, onFolderSelect }: SidebarProps) => {
                             key={item.id || 'mydrive'}
                             onClick={() => onFolderSelect(item.id)}
                             className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
-                                    ? 'bg-blue-100 text-blue-700 font-medium'
-                                    : 'text-gray-700 hover:bg-gray-100'
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'text-gray-700 hover:bg-gray-100'
                                 }`}
                         >
                             <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
@@ -185,8 +206,8 @@ const Sidebar = ({ currentFolder, onFolderSelect }: SidebarProps) => {
                             key={item.id}
                             onClick={() => onFolderSelect(item.id)}
                             className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
-                                    ? 'bg-blue-100 text-blue-700 font-medium'
-                                    : 'text-gray-700 hover:bg-gray-100'
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'text-gray-700 hover:bg-gray-100'
                                 }`}
                         >
                             <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
@@ -208,8 +229,8 @@ const Sidebar = ({ currentFolder, onFolderSelect }: SidebarProps) => {
                             key={item.id}
                             onClick={() => onFolderSelect(item.id)}
                             className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
-                                    ? 'bg-blue-100 text-blue-700 font-medium'
-                                    : 'text-gray-700 hover:bg-gray-100'
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'text-gray-700 hover:bg-gray-100'
                                 }`}
                         >
                             <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
@@ -223,18 +244,9 @@ const Sidebar = ({ currentFolder, onFolderSelect }: SidebarProps) => {
 
             {/* Storage Info */}
             <div className="px-4 py-3 border-t border-gray-200">
-                <div className="w-full bg-gray-200 rounded-full h-1 mb-2">
-                    <div
-                        className="bg-gray-500 h-1 rounded-full"
-                        style={{ width: `${storagePercent}%` }}
-                    />
-                </div>
                 <p className="text-xs text-gray-600">
-                    Đã sử dụng {usedStorage} TB trong tổng số {totalStorage} TB
+                    Tổng dung lượng: {usedStorageFormatted}
                 </p>
-                <button className="mt-2 px-4 py-1.5 border border-gray-300 rounded-full text-sm text-blue-600 hover:bg-blue-50 transition-colors">
-                    Mua thêm bộ nhớ
-                </button>
             </div>
         </aside>
     );
