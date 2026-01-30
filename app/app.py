@@ -315,21 +315,13 @@ def create_error_handler(status_code, error_type, message, log_level='warning', 
         if special_action:
             special_action()
 
-        # Return JSON response for API requests
-        if request.is_json:
-            return jsonify({
-                'success': False,
-                'error': error_type.lower().replace(' ', '_'),
-                'message': message
-            }), status_code
-
-        # Handle special cases for non-JSON requests
-        if status_code == 413:
-            flash('The uploaded file is too large. Please choose a smaller file.', 'error')
-            return redirect(request.referrer or url_for('dashboard'))
-
-        # Return HTML template for regular requests
-        return render_template(f'errors/{status_code}.html'), status_code
+        # Always return JSON response (this is an API server for Tauri frontend)
+        return jsonify({
+            'success': False,
+            'error': error_type.lower().replace(' ', '_'),
+            'message': message,
+            'status_code': status_code
+        }), status_code
 
     return error_handler
 
