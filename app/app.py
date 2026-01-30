@@ -1243,6 +1243,15 @@ def get_files_public():
         except:
             file_type = 'unknown'
 
+        # Determine telegram_channel display value
+        channel_display = file_record.telegram_channel
+        if not channel_display:
+            storage = file_record.storage_type or 'local'
+            if storage == 'telegram':
+                channel_display = 'Saved Messages'
+            else:
+                channel_display = 'Tải lên'
+
         files.append({
             'id': file_record.id,
             'name': file_record.filename,
@@ -1252,7 +1261,7 @@ def get_files_public():
             'modified': file_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if file_record.created_at else '',
             'folder_name': file_record.folder.name if file_record.folder else 'Root',
             'file_type': file_type,
-            'telegram_channel': file_record.telegram_channel,
+            'telegram_channel': channel_display,
             'storage_type': file_record.storage_type or 'local',
             'source': 'database',
             'type': file_type.upper(),
@@ -1275,6 +1284,8 @@ def get_files_public():
                     'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
                     'type': file.split('.')[-1].upper(),
                     'file_type': file.split('.')[-1].lower(),
+                    'telegram_channel': 'Output',
+                    'storage_type': 'local',
                     'source': 'output',
                     'owner': 'tôi'
                 })
