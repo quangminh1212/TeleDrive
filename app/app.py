@@ -1853,7 +1853,7 @@ def api_auto_login():
             hint = auto_result.get('hint', '') if auto_result else ''
             
             # Chỉ log nếu không phải silent error
-            if not auto_result.get('silent'):
+            if auto_result and not auto_result.get('silent'):
                 app.logger.info(f"Auto-login failed: {message}")
             
             return jsonify({

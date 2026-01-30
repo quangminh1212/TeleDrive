@@ -801,63 +801,8 @@ class TelegramAuthenticator:
             # Import to a temp file to avoid locking issues with existing session
             session_output = project_root / "data" / "session_import"
             
-            # Thử import trực tiếp nếu Python < 3.12
-            import sys
-            if sys.version_info < (3, 12):
-                print("[AUTO_LOGIN] Python < 3.12, thử import trực tiếp...")
-                try:
-                    from opentele.td import TDesktop
-                    from opentele.api import UseCurrentSession
-                    
-                    # Load TDesktop session
-                    tdesk = TDesktop(tdata_path)
-                    if not tdesk.isLoaded():
-                        return {
-                            'success': False,
-                            'message': 'Telegram Desktop chưa đăng nhập',
-                            'hint': 'Mở Telegram Desktop và đăng nhập'
-                        }
-                    
-                    # Convert to Telethon
-                    client = await tdesk.ToTelethon(
-                        session=str(session_output),
-                        flag=UseCurrentSession
-                    )
-                    
-                    await client.connect()
-                    
-                    if await client.is_user_authorized():
-                        me = await client.get_me()
-                        db_user = self.create_or_update_user(me, me.phone or '')
-                        await client.disconnect()
-                        
-                        print(f"[AUTO_LOGIN] Thành công! User: {me.first_name}")
-                        return {
-                            'success': True,
-                            'message': 'Đăng nhập tự động thành công',
-                            'user': {
-                                'id': db_user.id,
-                                'username': db_user.username,
-                                'telegram_id': me.id,
-                                'first_name': me.first_name,
-                                'last_name': me.last_name,
-                                'phone': me.phone
-                            }
-                        }
-                    else:
-                        await client.disconnect()
-                        return {
-                            'success': False,
-                            'message': 'Không thể authorize session'
-                        }
-                except ImportError:
-                    pass  # Fallback to Python 3.11
-                except Exception as e:
-                    print(f"[AUTO_LOGIN] Lỗi import trực tiếp: {e}")
-                    # Fallback to Python 3.11
-            
-            # Sử dụng Python 3.11 portable qua subprocess
-            print("[AUTO_LOGIN] Sử dụng Python 3.11 portable để import session...")
+            # Sử dụng script import mới qua subprocess (hỗ trợ tdata mới)
+            print("[AUTO_LOGIN] Sử dụng script import để import session...")
             
             if not python311_path.exists():
                 return {
