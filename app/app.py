@@ -758,8 +758,11 @@ class WebTelegramScanner(TelegramFileScanner):
             # Update scan session with channel info
             if hasattr(entity, 'id'):
                 self.scan_session.channel_id = str(entity.id)
-            if hasattr(entity, 'title'):
+            # Handle both Channel (title) and User (first_name for Saved Messages)
+            if hasattr(entity, 'title') and entity.title:
                 self.scan_session.channel_name = entity.title
+            elif hasattr(entity, 'first_name') and entity.first_name:
+                self.scan_session.channel_name = f"Saved Messages ({entity.first_name})"
                 
             print("DEBUG: Committing session update 1")
             db.session.commit()
@@ -855,8 +858,8 @@ class WebTelegramScanner(TelegramFileScanner):
                     # Save to database instead of just appending to list
                     try:
                         file_record = File(
-                            filename=file_info.get('filename', ''),
-                            original_filename=file_info.get('filename', ''),
+                            filename=file_info.get('file_name', ''),
+                            original_filename=file_info.get('file_name', ''),
                             file_size=file_info.get('file_size', 0),
                             mime_type=file_info.get('mime_type', ''),
                             folder_id=scan_folder.id,

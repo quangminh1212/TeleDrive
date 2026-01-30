@@ -422,20 +422,25 @@ class TelegramFileScanner:
                 
         # Tạo download link nếu được yêu cầu
         if config.GENERATE_DOWNLOAD_LINKS and file_info['file_type']:
-            # Tạo link download phù hợp cho cả public và private channel
-            if hasattr(message.chat, 'username') and message.chat.username:
-                # Public channel
-                file_info['download_link'] = f"https://t.me/{message.chat.username}/{message.id}"
-            else:
-                # Private channel hoặc group - sử dụng chat_id
-                chat_id = message.chat.id
-                if str(chat_id).startswith('-100'):
-                    # Supergroup/Channel
-                    clean_id = str(chat_id)[4:]  # Remove -100 prefix
-                    file_info['download_link'] = f"https://t.me/c/{clean_id}/{message.id}"
+            # Kiểm tra message.chat tồn tại (Saved Messages có thể không có chat context)
+            if message.chat is not None:
+                # Tạo link download phù hợp cho cả public và private channel
+                if hasattr(message.chat, 'username') and message.chat.username:
+                    # Public channel
+                    file_info['download_link'] = f"https://t.me/{message.chat.username}/{message.id}"
                 else:
-                    # Fallback
-                    file_info['download_link'] = f"tg://openmessage?chat_id={chat_id}&message_id={message.id}"
+                    # Private channel hoặc group - sử dụng chat_id
+                    chat_id = message.chat.id
+                    if str(chat_id).startswith('-100'):
+                        # Supergroup/Channel
+                        clean_id = str(chat_id)[4:]  # Remove -100 prefix
+                        file_info['download_link'] = f"https://t.me/c/{clean_id}/{message.id}"
+                    else:
+                        # Fallback (including Saved Messages)
+                        file_info['download_link'] = f"tg://openmessage?chat_id={chat_id}&message_id={message.id}"
+            else:
+                # Saved Messages hoặc các trường hợp không có chat
+                file_info['download_link'] = f"tg://openmessage?message_id={message.id}"
             
         return file_info if file_info['file_type'] else None
         
