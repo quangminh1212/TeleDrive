@@ -75,22 +75,49 @@ class TelegramFileScanner:
                 log_step("VALIDATION ERROR", error_msg, "ERROR")
             raise ValueError(error_msg)
 
-        # Kiểm tra session file tồn tại - sử dụng đường dẫn trong data folder
-        project_root = Path(__file__).parent.parent
-        original_session = project_root / "data" / "session.session"
-        scanner_session = project_root / "data" / "scanner_session"
-        
-        # Copy session file để tránh lỗi database locked
+        # Kiểm tra session file tồn tại - copy sang temp để tránh lock
         import shutil
-        if original_session.exists():
-            try:
-                shutil.copy2(str(original_session), f"{scanner_session}.session")
-                print(f"✅ Copied session to {scanner_session}.session for scanning")
-            except Exception as e:
-                print(f"⚠️ Could not copy session: {e}")
+        import tempfile
+        import time
         
-        session_name = str(scanner_session)
-        session_path = Path(f"{session_name}.session")
+        project_root = Path(__file__).parent.parent
+        session_import = project_root / "data" / "session_import.session"
+        session_main = project_root / "data" / "session.session"
+        
+        # Tạo thư mục temp cho scanner
+        scanner_temp_dir = project_root / "data" / "scanner_temp"
+        scanner_temp_dir.mkdir(exist_ok=True)
+        scanner_session = scanner_temp_dir / f"scan_{int(time.time())}.session"
+        
+        # Copy session file sang temp folder để tránh lock
+        source_session = None
+        if session_import.exists():
+            source_session = session_import
+            print(f"✅ Found session_import")
+        elif session_main.exists():
+            source_session = session_main
+            print(f"⚠️ Using main session")
+        
+        if source_session:
+            # Retry logic khi copy session file
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    shutil.copy2(str(source_session), str(scanner_session))
+                    print(f"✅ Copied session to {scanner_session}")
+                    break
+                except Exception as e:
+                    print(f"⚠️ Copy attempt {attempt + 1}/{max_retries} failed: {e}")
+                    if attempt < max_retries - 1:
+                        print(f"⏳ Chờ 2 giây trước khi thử lại...")
+                        time.sleep(2)
+                    else:
+                        raise ValueError(f"Cannot copy session after {max_retries} attempts: {e}")
+        else:
+            raise ValueError("No valid session file found")
+        
+        session_name = str(scanner_session).replace('.session', '')
+        session_path = scanner_session
         session_exists = session_path.exists()
 
         if DETAILED_LOGGING_AVAILABLE:
@@ -123,43 +150,30 @@ class TelegramFileScanner:
 
                     # Wrap connection attempt with timeout
                     async def connect_with_timeout():
-                        # Thử kết nối với session có sẵn trước
+                        # Thử kết nối với session có sẵn (chỉ connect, không start)
                         if session_exists:
                             try:
                                 if DETAILED_LOGGING_AVAILABLE:
                                     log_step("SỬ DỤNG SESSION", "Thử kết nối với session có sẵn")
-                                await self.client.start()
-                                print("✅ Kết nối thành công với session có sẵn!")
-                                if DETAILED_LOGGING_AVAILABLE:
-                                    log_step("SESSION SUCCESS", "Kết nối thành công với session có sẵn", "SUCCESS")
-                                return True
+                                # Chỉ connect, không start (start sẽ yêu cầu đăng nhập mới)
+                                await self.client.connect()
+                                
+                                # Kiểm tra xem đã authorized chưa
+                                if await self.client.is_user_authorized():
+                                    print("✅ Kết nối thành công với session có sẵn!")
+                                    if DETAILED_LOGGING_AVAILABLE:
+                                        log_step("SESSION SUCCESS", "Kết nối thành công với session có sẵn", "SUCCESS")
+                                    return True
+                                else:
+                                    print("⚠️ Session tồn tại nhưng không authorized")
+                                    raise ValueError("Session not authorized - cần đăng nhập lại qua Telegram Desktop")
                             except Exception as session_error:
                                 print(f"⚠️ Session không hợp lệ: {session_error}")
-                                print("🔄 Thử tạo session mới...")
                                 if DETAILED_LOGGING_AVAILABLE:
                                     log_step("SESSION INVALID", f"Session không hợp lệ: {session_error}", "WARNING")
-                                # Xóa session file hỏng
-                                try:
-                                    session_path.unlink()
-                                    print("🗑️ Đã xóa session file hỏng")
-                                    if DETAILED_LOGGING_AVAILABLE:
-                                        log_file_operation("DELETE", str(session_path), "Xóa session file hỏng")
-                                except:
-                                    pass
-                                # Tạo session mới
-                                if DETAILED_LOGGING_AVAILABLE:
-                                    log_step("TẠO SESSION MỚI", "Đang tạo session mới với số điện thoại")
-                                await self.client.start(phone=config.PHONE_NUMBER)
-                                print("✅ Tạo session mới thành công!")
-                                if DETAILED_LOGGING_AVAILABLE:
-                                    log_step("NEW SESSION SUCCESS", "Tạo session mới thành công", "SUCCESS")
-                                return True
+                                raise ValueError(f"Session không hợp lệ: {session_error}")
                         else:
-                            if DETAILED_LOGGING_AVAILABLE:
-                                log_step("TẠO SESSION ĐẦU TIÊN", "Tạo session lần đầu với số điện thoại")
-                            await self.client.start(phone=config.PHONE_NUMBER)
-                            print("✅ Tạo session mới thành công!")
-                            return True
+                            raise ValueError("Không tìm thấy session file - cần đăng nhập qua Telegram Desktop")
 
                     # Apply timeout to connection attempt
                     await asyncio.wait_for(connect_with_timeout(), timeout=connection_timeout)
@@ -261,6 +275,15 @@ class TelegramFileScanner:
             log_step("RESOLVE CHANNEL", f"Đang phân giải channel: {channel_input}")
 
         try:
+            # Xử lý đặc biệt cho 'me' (Saved Messages)
+            if channel_input.lower() == 'me':
+                print("📨 Đang truy cập Saved Messages của bạn...")
+                if DETAILED_LOGGING_AVAILABLE:
+                    log_step("SAVED MESSAGES", "Đang truy cập Saved Messages")
+                # Lấy entity của chính user hiện tại
+                me = await self.client.get_me()
+                print(f"✅ Truy cập Saved Messages của: {me.first_name}")
+                return me
             # Xử lý invite link cho private channel
             if 'joinchat' in channel_input or '+' in channel_input:
                 print("🔐 Phát hiện private channel invite link")

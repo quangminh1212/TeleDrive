@@ -749,7 +749,7 @@ class WebTelegramScanner(TelegramFileScanner):
             scan_progress['message'] = 'Resolving channel...'
             self.socketio.emit('scan_progress', scan_progress)
 
-            entity = await self.resolve_channel(channel_input)
+            entity = await self.get_channel_entity(channel_input)
             if not entity:
                 scan_progress['status'] = 'error'
                 scan_progress['error'] = 'Could not resolve channel'
@@ -771,7 +771,9 @@ class WebTelegramScanner(TelegramFileScanner):
             scan_progress['status'] = 'counting_messages'
             self.socketio.emit('scan_progress', scan_progress)
 
-            total_messages = await self.get_total_messages(entity)
+            # Đặt total_messages = MAX_MESSAGES (bỏ qua đếm vì get_total_messages không tồn tại)
+            total_messages = config.MAX_MESSAGES
+            print(f"📊 Total messages limit: {total_messages}")
             scan_progress['total'] = total_messages
             self.scan_session.total_messages = total_messages
             scan_progress['status'] = 'scanning'
@@ -791,9 +793,15 @@ class WebTelegramScanner(TelegramFileScanner):
             # Scan messages
             processed = 0
             files_saved = 0
+            print(f"🔍 Bắt đầu scan messages từ: {getattr(entity, 'first_name', None) or getattr(entity, 'title', 'Unknown')}")
+            print(f"📊 Giới hạn: {config.MAX_MESSAGES} messages")
             async for message in self.client.iter_messages(entity, limit=config.MAX_MESSAGES):
                 if not scanning_active:  # Check if scan was cancelled
                     break
+
+                # Log message đầu tiên và mỗi 10 messages
+                if processed == 0 or processed % 10 == 0:
+                    print(f"📝 Processing message #{processed}: id={message.id}, has_media={bool(message.media)}")
 
                 file_info = self.extract_file_info(message)
                 if file_info and self.should_include_file_type(file_info['file_type']):
@@ -863,6 +871,8 @@ class WebTelegramScanner(TelegramFileScanner):
             self.scan_session.files_found = files_saved
             self.scan_session.messages_scanned = processed
             db.session.commit()
+            
+            print(f"✅ SCAN COMPLETE! Messages: {processed}, Files Found: {files_saved}")
 
             scan_progress['status'] = 'completed'
             scan_progress['files_found'] = files_saved
