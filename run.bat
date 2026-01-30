@@ -1,6 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
 
+:: Luu duong dan goc de tranh loi khi thay doi thu muc
+set "PROJECT_DIR=%CD%"
+
 echo.
 echo ========================================
 echo     TeleDrive Desktop - Smart Start
@@ -13,7 +16,7 @@ echo.
 
 set "PYTHON_CMD="
 set "PYTHON_VERSION="
-set "PORTABLE_PYTHON=%CD%\python311\python.exe"
+set "PORTABLE_PYTHON=%PROJECT_DIR%\python311\python.exe"
 
 :: UU TIEN 1: Kiem tra Python portable trong folder du an
 if exist "%PORTABLE_PYTHON%" (
@@ -105,7 +108,7 @@ if errorlevel 1 (
     
     if "%PYTHON_VERSION%"=="3.11-portable" (
         :: For portable Python, install to Lib\site-packages
-        %PYTHON_CMD% -m pip install --target "%CD%\python311\Lib\site-packages" setuptools wheel --quiet
+        %PYTHON_CMD% -m pip install --target "%PROJECT_DIR%\python311\Lib\site-packages" setuptools wheel --quiet
     ) else (
         :: For system Python, install normally
         %PYTHON_CMD% -m pip install setuptools wheel --quiet
@@ -166,15 +169,15 @@ if exist ".venv\Scripts\activate.bat" (
     call ".venv\Scripts\activate.bat"
     if errorlevel 1 (
         echo [WARNING] Khong the kich hoat, thu manual PATH setup...
-        set "PATH=%CD%\.venv\Scripts;%PATH%"
-        set "VIRTUAL_ENV=%CD%\.venv"
+        set "PATH=%PROJECT_DIR%\.venv\Scripts;%PATH%"
+        set "VIRTUAL_ENV=%PROJECT_DIR%\.venv"
     ) else (
         echo [OK] Virtual environment da kich hoat
     )
 ) else (
     echo [WARNING] Activation script khong ton tai, setup manual PATH...
-    set "PATH=%CD%\.venv\Scripts;%PATH%"
-    set "VIRTUAL_ENV=%CD%\.venv"
+    set "PATH=%PROJECT_DIR%\.venv\Scripts;%PATH%"
+    set "VIRTUAL_ENV=%PROJECT_DIR%\.venv"
 )
 echo.
 
@@ -319,7 +322,7 @@ echo.
 echo Thiet lap bien moi truong...
 set "FLASK_APP=app.app"
 set "FLASK_ENV=development"
-set "PYTHONPATH=%CD%\app;%PYTHONPATH%"
+set "PYTHONPATH=%PROJECT_DIR%\app;%PYTHONPATH%"
 set "PYTHONIOENCODING=utf-8"
 echo [OK] Bien moi truong da duoc thiet lap
 echo.
@@ -342,12 +345,12 @@ echo [OK] Node.js da san sang
 echo.
 
 :: Kiem tra va cai dat frontend dependencies
-if exist "frontend\package.json" (
+if exist "%PROJECT_DIR%\frontend\package.json" (
     echo Kiem tra frontend dependencies...
-    if not exist "frontend\node_modules" (
+    if not exist "%PROJECT_DIR%\frontend\node_modules" (
         echo Dang cai dat frontend dependencies...
         echo (Co the mat vai phut...)
-        pushd frontend
+        pushd "%PROJECT_DIR%\frontend"
         call npm install --silent
         if errorlevel 1 (
             echo [WARNING] Khong the cai dat frontend dependencies
@@ -363,7 +366,7 @@ if exist "frontend\package.json" (
     
     echo Khoi chay Frontend Vite dev server...
     :: Chay frontend trong cua so rieng (background)
-    start "TeleDrive Frontend" /min cmd /c "cd /d %CD%\frontend && npm run dev"
+    start "TeleDrive Frontend" /min cmd /c "cd /d %PROJECT_DIR%\frontend && npm run dev"
     
     :: Cho frontend khoi dong
     echo Dang cho frontend khoi dong...
