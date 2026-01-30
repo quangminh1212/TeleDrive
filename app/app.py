@@ -806,8 +806,9 @@ class WebTelegramScanner(TelegramFileScanner):
                             mime_type=file_info.get('mime_type', ''),
                             folder_id=scan_folder.id,
                             user_id=self.user_id,
+                            storage_type='telegram',  # Mark as Telegram file
                             telegram_message_id=file_info.get('message_id'),
-                            telegram_channel=self.scan_session.channel_name,
+                            telegram_channel=self.scan_session.channel_name or 'Saved Messages',
                             telegram_channel_id=self.scan_session.channel_id,
                             telegram_date=datetime.fromisoformat(
                                 file_info['date'].replace('Z', '+00:00')
@@ -1308,6 +1309,149 @@ def get_files_public():
     }
 
     return jsonify(response_data)
+
+
+# Public API endpoint to check Telegram auth status
+@app.route('/api/v2/auth/status')
+@csrf.exempt
+def get_auth_status_public():
+    """Check Telegram authentication status for Tauri frontend"""
+    try:
+        from auth import telegram_auth
+        import asyncio
+        
+        # Check if session exists
+        has_session = telegram_auth.has_existing_session()
+        
+        if has_session:
+            # Try to validate session
+            async def check_session():
+                return await telegram_auth.check_existing_session()
+            
+            result = asyncio.run(check_session())
+            if result['success']:
+                return jsonify({
+                    'authenticated': True,
+                    'user': result.get('user', {}),
+                    'message': 'Đã đăng nhập Telegram'
+                })
+            else:
+                return jsonify({
+                    'authenticated': False,
+                    'message': result.get('message', 'Session không hợp lệ')
+                })
+        else:
+            return jsonify({
+                'authenticated': False,
+                'message': 'Chưa đăng nhập Telegram'
+            })
+    except Exception as e:
+        return jsonify({
+            'authenticated': False,
+            'error': str(e)
+        })
+
+
+# Public API endpoint to scan Saved Messages
+@app.route('/api/v2/scan/saved-messages', methods=['POST'])
+@csrf.exempt
+def scan_saved_messages_public():
+    """Scan Saved Messages from Telegram for Tauri frontend"""
+    global scanner, scanning_active
+    
+    try:
+        if scanning_active:
+            return jsonify({'success': False, 'error': 'Scan đang chạy'})
+        
+        # Create new scanner instance
+        scanner = WebTelegramScanner(socketio)
+        scanning_active = True
+        
+        # Start scanning in background thread with proper async handling
+        def run_scan():
+            global scanning_active
+            with app.app_context():
+                async def scan_with_context():
+                    async with scanner:
+                        # Scan 'me' = Saved Messages
+                        await scanner.scan_channel_with_progress('me')
+                
+                try:
+                    asyncio.run(run_async_safely(scan_with_context()))
+                except Exception as e:
+                    logger.error(f"Scanner error: {e}")
+                    try:
+                        asyncio.run(scanner.close())
+                    except:
+                        pass
+                finally:
+                    scanning_active = False
+        
+        thread = threading.Thread(target=run_scan)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'success': True, 'message': 'Đang scan Saved Messages...'})
+    
+    except Exception as e:
+        scanning_active = False
+        return jsonify({'success': False, 'error': str(e)})
+
+
+# Public API endpoint to get scan status
+@app.route('/api/v2/scan/status')
+@csrf.exempt
+def get_scan_status_public():
+    """Get current scan status for Tauri frontend"""
+    global scanning_active
+    return jsonify({
+        'scanning': scanning_active,
+        'message': 'Đang scan...' if scanning_active else 'Sẵn sàng'
+    })
+
+
+# Public API endpoint for auto-login from Telegram Desktop
+@app.route('/api/v2/auth/auto-login', methods=['POST'])
+@csrf.exempt
+def auto_login_public():
+    """Auto-login from Telegram Desktop for Tauri frontend"""
+    try:
+        from auth import telegram_auth
+        import asyncio
+        
+        # Reset auto-login flag to allow retry
+        telegram_auth._auto_login_attempted = False
+        
+        async def try_auto_login():
+            # Check existing session first
+            result = await telegram_auth.check_existing_session()
+            if result['success']:
+                return result
+            
+            # If no session, try import from Telegram Desktop
+            return await telegram_auth.try_auto_login_from_desktop()
+        
+        auto_result = run_async_in_thread(try_auto_login())
+        
+        if auto_result and auto_result.get('success'):
+            user_data = auto_result.get('user', {})
+            return jsonify({
+                'success': True,
+                'message': f'Đăng nhập thành công! Xin chào {user_data.get("first_name", "User")}',
+                'user': user_data
+            })
+        else:
+            message = auto_result.get('message', 'Không thể đăng nhập') if auto_result else 'Lỗi không xác định'
+            return jsonify({
+                'success': False,
+                'message': message,
+                'hint': 'Hãy đảm bảo Telegram Desktop đang chạy và đã đăng nhập'
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 
 @app.route('/download/<filename>')

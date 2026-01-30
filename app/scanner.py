@@ -75,19 +75,33 @@ class TelegramFileScanner:
                 log_step("VALIDATION ERROR", error_msg, "ERROR")
             raise ValueError(error_msg)
 
-        # Kiểm tra session file tồn tại
-        session_path = Path(f"{config.SESSION_NAME}.session")
+        # Kiểm tra session file tồn tại - sử dụng đường dẫn trong data folder
+        project_root = Path(__file__).parent.parent
+        original_session = project_root / "data" / "session.session"
+        scanner_session = project_root / "data" / "scanner_session"
+        
+        # Copy session file để tránh lỗi database locked
+        import shutil
+        if original_session.exists():
+            try:
+                shutil.copy2(str(original_session), f"{scanner_session}.session")
+                print(f"✅ Copied session to {scanner_session}.session for scanning")
+            except Exception as e:
+                print(f"⚠️ Could not copy session: {e}")
+        
+        session_name = str(scanner_session)
+        session_path = Path(f"{session_name}.session")
         session_exists = session_path.exists()
 
         if DETAILED_LOGGING_AVAILABLE:
-            log_step("SESSION CHECK", f"Session file exists: {session_exists}")
+            log_step("SESSION CHECK", f"Session file exists: {session_exists} at {session_path}")
 
         try:
             if DETAILED_LOGGING_AVAILABLE:
-                log_step("TẠO CLIENT", f"API_ID: {config.API_ID}, Session: {config.SESSION_NAME}")
+                log_step("TẠO CLIENT", f"API_ID: {config.API_ID}, Session: {session_name}")
 
             self.client = TelegramClient(
-                config.SESSION_NAME,
+                session_name,
                 int(config.API_ID),
                 config.API_HASH,
                 connection_retries=3,
