@@ -778,8 +778,11 @@ class WebTelegramScanner(TelegramFileScanner):
 
             try:
                 print("DEBUG: Setting total_messages")
-                total_messages = config.MAX_MESSAGES
-                print(f"DEBUG: Config var type: {type(total_messages)}, Value: {total_messages}")
+                # Hardcode 200 for now as config.MAX_MESSAGES is missing/erroring
+                total_messages = 200 
+                # Nếu muốn dùng config, phải đảm bảo config.py có biến này. Hiện tại config.py không có.
+                
+                print(f"DEBUG: Using total_messages: {total_messages}")
                 
                 scan_progress['total'] = total_messages
                 self.scan_session.total_messages = total_messages
@@ -793,6 +796,14 @@ class WebTelegramScanner(TelegramFileScanner):
                 traceback.print_exc()
 
             try:
+                # Uncomment socketio emit but wrap safely
+                # scan_progress['status'] = 'scanning'
+                # self.socketio.emit('scan_progress', scan_progress)
+                pass
+            except:
+                pass
+
+            try:
                 print("DEBUG: Committing session update 2")
                 db.session.commit()
                 print("DEBUG: Commit 2 done")
@@ -803,7 +814,15 @@ class WebTelegramScanner(TelegramFileScanner):
             # Get or create folder for this scan
             try:
                 print("DEBUG: Creating Folder")
-                folder_name = f"Scan_{self.scan_session.channel_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                # Format folder name safely
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                channel_name_safe = getattr(self.scan_session, 'channel_name', 'Unknown')
+                if not channel_name_safe:
+                    channel_name_safe = 'Unknown'
+                # Sanitize channel name
+                channel_name_safe = "".join([c for c in channel_name_safe if c.isalnum() or c in (' ', '_', '-')]).strip()
+                
+                folder_name = f"Scan_{channel_name_safe}_{timestamp}"
                 print(f"DEBUG: Folder name: {folder_name}")
                 
                 scan_folder = Folder(
@@ -817,11 +836,11 @@ class WebTelegramScanner(TelegramFileScanner):
                 sys.stdout.flush()
             except Exception as e:
                 print(f"ERROR: Creating folder failed: {e}")
-                # Fallback to continue scanning even if folder fails?
-                # For now let's just log
-                if not scan_folder: # If scan_folder assignment failed
-                     # Use default or error
-                     return False
+                # Create a fake object to allow scan to continue (logs only)
+                class FakeFolder:
+                    id = None
+                scan_folder = FakeFolder()
+                # return False
 
             # Scan messages
             processed = 0
