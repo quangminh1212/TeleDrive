@@ -1,16 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import FileItem from './FileItem';
 import { ViewModeControls } from './Header';
-
-interface FileData {
-    id: string;
-    name: string;
-    type: 'file' | 'folder';
-    size?: number;
-    modified: string;
-    mimeType?: string;
-    owner?: string;
-}
+import { api, FileInfo } from '../services/api';
 
 interface FileGridProps {
     searchQuery: string;
@@ -18,35 +9,6 @@ interface FileGridProps {
     viewMode: 'grid' | 'list';
     onViewModeChange?: (mode: 'grid' | 'list') => void;
 }
-
-// Mock data - will be replaced with API calls
-const mockFiles: FileData[] = [
-    { id: '1', name: '0.CERT', type: 'folder', modified: '2024-01-15', owner: 'tôi' },
-    { id: '2', name: '0.Hakinet', type: 'folder', modified: '2024-01-14', owner: 'tôi' },
-    { id: '3', name: '0.LEARNING', type: 'folder', modified: '2024-01-13', owner: 'tôi' },
-    { id: '4', name: '0.Xlab', type: 'folder', modified: '2024-01-12', owner: 'tôi' },
-    { id: '5', name: '1.Lưu trữ', type: 'folder', modified: '2024-01-11', owner: 'tôi' },
-    { id: '6', name: '3 anh', type: 'folder', modified: '2024-01-10', owner: 'tôi' },
-    { id: '7', name: '3.Danh sách', type: 'folder', modified: '2024-01-09', owner: 'tôi' },
-    { id: '8', name: '4 ảnh', type: 'folder', modified: '2024-01-08', owner: 'tôi' },
-    { id: '9', name: '4.Lộp day', type: 'folder', modified: '2024-01-07', owner: 'tôi' },
-    { id: '10', name: '687', type: 'folder', modified: '2024-01-06', owner: 'tôi' },
-    { id: '11', name: 'abaaa', type: 'folder', modified: '2024-01-05', owner: 'tôi' },
-    { id: '12', name: 'alexxc', type: 'folder', modified: '2024-01-04', owner: 'tôi' },
-    { id: '13', name: 'back to future', type: 'folder', modified: '2024-01-03', owner: 'tôi' },
-    { id: '14', name: 'be good', type: 'folder', modified: '2024-01-02', owner: 'tôi' },
-    { id: '15', name: 'bkg', type: 'folder', modified: '2024-01-01', owner: 'tôi' },
-    { id: '16', name: 'black3.1', type: 'folder', modified: '2023-12-30', owner: 'tôi' },
-    { id: '17', name: 'bundle greenland png', type: 'folder', modified: '2023-12-29', owner: 'tôi' },
-    { id: '18', name: 'carrfi', type: 'folder', modified: '2023-12-28', owner: 'tôi' },
-    { id: '19', name: 'cgh', type: 'folder', modified: '2023-12-27', owner: 'tôi' },
-    { id: '20', name: 'chu cai', type: 'folder', modified: '2023-12-26', owner: 'tôi' },
-    { id: '21', name: 'CUSTOM', type: 'folder', modified: '2023-12-25', owner: 'tôi' },
-    { id: '22', name: 'doll', type: 'folder', modified: '2023-12-24', owner: 'tôi' },
-    { id: '23', name: 'Dung', type: 'folder', modified: '2023-12-23', owner: 'tôi' },
-    { id: '24', name: 'ĐĂNG KÝ MỞ NGÀNH', type: 'folder', modified: '2023-12-22', owner: 'tôi' },
-    { id: '25', name: 'elp', type: 'folder', modified: '2023-12-21', owner: 'tôi' },
-];
 
 // Dropdown arrow icon
 const DropdownIcon = () => (
@@ -65,13 +27,34 @@ const SortIcon = ({ direction }: { direction: 'asc' | 'desc' }) => (
     </svg>
 );
 
+// Normalize file data from backend
+const normalizeFile = (file: FileInfo): FileInfo => {
+    return {
+        ...file,
+        name: file.name || file.filename || 'Unknown',
+        size: file.size || file.file_size || 0,
+        mimeType: file.mimeType || file.mime_type,
+        type: file.type === 'folder' || file.file_type === 'folder' ? 'folder' : 'file',
+        owner: file.owner || 'tôi',
+    };
+};
+
 const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: FileGridProps) => {
-    const [files, setFiles] = useState<FileData[]>([]);
-    const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+    const [files, setFiles] = useState<FileInfo[]>([]);
+    const [allFiles, setAllFiles] = useState<FileInfo[]>([]);
+    const [selectedFiles, setSelectedFiles] = useState<Set<string | number>>(new Set());
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [sortColumn, setSortColumn] = useState<'name' | 'modified'>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
     const [localViewMode, setLocalViewMode] = useState<'grid' | 'list'>(viewMode);
+    const [pagination, setPagination] = useState({
+        page: 1,
+        total: 0,
+        pages: 0,
+        hasNext: false,
+        hasPrev: false,
+    });
 
     useEffect(() => {
         setLocalViewMode(viewMode);
@@ -82,37 +65,82 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         onViewModeChange?.(mode);
     };
 
-    useEffect(() => {
-        // Simulate API call
+    // Fetch files from API
+    const fetchFiles = useCallback(async () => {
         setLoading(true);
-        setTimeout(() => {
-            let filtered = mockFiles;
+        setError(null);
 
-            if (searchQuery) {
-                filtered = filtered.filter(f =>
-                    f.name.toLowerCase().includes(searchQuery.toLowerCase())
-                );
+        try {
+            const response = await api.getFiles(1, 100);
+
+            if (response.success && response.data) {
+                const normalizedFiles = response.data.files.map(normalizeFile);
+                setAllFiles(normalizedFiles);
+                setPagination({
+                    page: response.data.pagination.page,
+                    total: response.data.pagination.total,
+                    pages: response.data.pagination.pages,
+                    hasNext: response.data.pagination.has_next,
+                    hasPrev: response.data.pagination.has_prev,
+                });
+            } else {
+                setError(response.error || 'Không thể tải danh sách file');
+                setAllFiles([]);
             }
-
-            // Sort files
-            filtered = [...filtered].sort((a, b) => {
-                if (sortColumn === 'name') {
-                    return sortDirection === 'asc'
-                        ? a.name.localeCompare(b.name)
-                        : b.name.localeCompare(a.name);
-                } else {
-                    return sortDirection === 'asc'
-                        ? new Date(a.modified).getTime() - new Date(b.modified).getTime()
-                        : new Date(b.modified).getTime() - new Date(a.modified).getTime();
-                }
-            });
-
-            setFiles(filtered);
+        } catch (err) {
+            setError('Lỗi kết nối đến server');
+            setAllFiles([]);
+        } finally {
             setLoading(false);
-        }, 300);
-    }, [searchQuery, currentFolder, sortColumn, sortDirection]);
+        }
+    }, []);
 
-    const handleFileSelect = (id: string, isMultiSelect: boolean) => {
+    useEffect(() => {
+        fetchFiles();
+    }, [fetchFiles]);
+
+    // Filter and sort files
+    useEffect(() => {
+        let filtered = [...allFiles];
+
+        // Filter by search query
+        if (searchQuery) {
+            filtered = filtered.filter(f =>
+                f.name.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+
+        // Filter by folder (if applicable)
+        if (currentFolder === 'shared') {
+            filtered = filtered.filter(f => f.telegram_channel);
+        } else if (currentFolder === 'recent') {
+            // Sort by modified date, most recent first
+            filtered = [...filtered].sort((a, b) =>
+                new Date(b.modified).getTime() - new Date(a.modified).getTime()
+            );
+        }
+
+        // Sort files
+        filtered = [...filtered].sort((a, b) => {
+            // Folders first
+            if (a.type === 'folder' && b.type !== 'folder') return -1;
+            if (a.type !== 'folder' && b.type === 'folder') return 1;
+
+            if (sortColumn === 'name') {
+                return sortDirection === 'asc'
+                    ? a.name.localeCompare(b.name)
+                    : b.name.localeCompare(a.name);
+            } else {
+                return sortDirection === 'asc'
+                    ? new Date(a.modified).getTime() - new Date(b.modified).getTime()
+                    : new Date(b.modified).getTime() - new Date(a.modified).getTime();
+            }
+        });
+
+        setFiles(filtered);
+    }, [allFiles, searchQuery, currentFolder, sortColumn, sortDirection]);
+
+    const handleFileSelect = (id: string | number, isMultiSelect: boolean) => {
         setSelectedFiles(prev => {
             const newSet = new Set(isMultiSelect ? prev : []);
             if (newSet.has(id)) {
@@ -133,13 +161,33 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         }
     };
 
-    const folders = files.filter(f => f.type === 'folder');
-    const regularFiles = files.filter(f => f.type === 'file');
+    const handleRefresh = () => {
+        fetchFiles();
+    };
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gdrive-blue"></div>
+            <div className="flex flex-col items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gdrive-blue mb-4"></div>
+                <p className="text-gray-500">Đang tải dữ liệu từ Telegram...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                <svg className="w-16 h-16 mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-lg text-red-500 mb-2">Lỗi</p>
+                <p className="text-sm mb-4">{error}</p>
+                <button
+                    onClick={handleRefresh}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                    Thử lại
+                </button>
             </div>
         );
     }
@@ -157,10 +205,13 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         }
     };
 
+    const folders = files.filter(f => f.type === 'folder');
+    const regularFiles = files.filter(f => f.type !== 'folder');
+
     return (
         <div className="h-full flex flex-col">
             {/* Toolbar */}
-            <div className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
                 {/* Left side - Folder name and filters */}
                 <div className="flex items-center gap-4">
                     <button className="flex items-center gap-1 text-lg font-medium text-gray-800 hover:bg-gray-100 px-2 py-1 rounded">
@@ -187,26 +238,42 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                             <DropdownIcon />
                         </button>
                     </div>
+
+                    {/* Refresh button */}
+                    <button
+                        onClick={handleRefresh}
+                        className="p-1.5 hover:bg-gray-100 rounded-full"
+                        title="Làm mới"
+                    >
+                        <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+                        </svg>
+                    </button>
                 </div>
 
                 {/* Right side - View mode toggle */}
-                <ViewModeControls viewMode={localViewMode} onViewModeChange={handleViewModeChange} />
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">
+                        {files.length} mục
+                    </span>
+                    <ViewModeControls viewMode={localViewMode} onViewModeChange={handleViewModeChange} />
+                </div>
             </div>
 
             {/* Content */}
             {files.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                    <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    <svg className="w-20 h-20 mb-4 text-gray-300" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
                     </svg>
-                    <p className="text-lg">Không tìm thấy tệp nào</p>
-                    <p className="text-sm">Thả tệp vào đây hoặc sử dụng nút "Mới"</p>
+                    <p className="text-lg mb-2">Không tìm thấy tệp nào</p>
+                    <p className="text-sm">Hãy quét kênh Telegram để thêm tệp vào đây</p>
                 </div>
             ) : localViewMode === 'list' ? (
                 /* List View */
                 <div className="flex-1 overflow-auto">
                     {/* Table Header */}
-                    <div className="flex items-center px-4 py-2 text-sm text-gray-600 border-b border-gray-200 sticky top-0 bg-white">
+                    <div className="flex items-center px-4 py-2 text-sm text-gray-600 border-b border-gray-200 sticky top-0 bg-white z-10">
                         <button
                             className="flex items-center flex-1 min-w-0 hover:bg-gray-50 -ml-2 px-2 py-1 rounded"
                             onClick={() => handleSort('name')}
@@ -222,7 +289,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                             <span>Lần sửa đổi gần đây nhất</span>
                             {sortColumn === 'modified' && <SortIcon direction={sortDirection} />}
                         </button>
-                        <span className="w-24 text-left px-2">Nguồn</span>
+                        <span className="w-32 text-left px-2">Kênh</span>
                         <span className="w-10"></span>
                     </div>
 
@@ -253,6 +320,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                             />
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* Pagination */}
+            {pagination.pages > 1 && (
+                <div className="flex items-center justify-center gap-2 p-4 border-t border-gray-200">
+                    <span className="text-sm text-gray-500">
+                        Trang {pagination.page} / {pagination.pages} ({pagination.total} mục)
+                    </span>
                 </div>
             )}
         </div>

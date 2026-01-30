@@ -28,6 +28,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
+from flask_cors import CORS
 import eventlet
 
 # Import existing modules
@@ -157,6 +158,16 @@ db.init_app(app)
 
 # Initialize CSRF Protection
 csrf = CSRFProtect(app)
+
+# Initialize CORS for frontend Tauri app
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:1420", "http://127.0.0.1:1420", "tauri://localhost"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "X-CSRF-Token"],
+        "supports_credentials": True
+    }
+})
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -1206,6 +1217,87 @@ def get_files():
     cache_set(cache_key, response_data, 300)
 
     return jsonify(response_data)
+
+# Public API endpoint for Tauri frontend (no login required)
+@app.route('/api/v2/files')
+@csrf.exempt
+def get_files_public():
+    """Public API endpoint for Tauri frontend - Get list of files without login requirement"""
+    # Get pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    per_page = min(per_page, 100)  # Limit max items per page
+
+    # Get files from database with pagination and eager loading
+    db_files_query = File.query.options(
+        db.joinedload(File.owner),
+        db.joinedload(File.folder)
+    ).filter_by(is_deleted=False).order_by(File.created_at.desc())
+    pagination = db_files_query.paginate(page=page, per_page=per_page, error_out=False)
+    db_files = pagination.items
+
+    files = []
+    for file_record in db_files:
+        try:
+            file_type = file_record.get_file_type() if hasattr(file_record, 'get_file_type') else 'unknown'
+        except:
+            file_type = 'unknown'
+
+        files.append({
+            'id': file_record.id,
+            'name': file_record.filename,
+            'filename': file_record.filename,
+            'size': file_record.file_size or 0,
+            'file_size': file_record.file_size or 0,
+            'modified': file_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if file_record.created_at else '',
+            'folder_name': file_record.folder.name if file_record.folder else 'Root',
+            'file_type': file_type,
+            'telegram_channel': file_record.telegram_channel,
+            'storage_type': file_record.storage_type or 'local',
+            'source': 'database',
+            'type': file_type.upper(),
+            'owner': 'tôi'
+        })
+
+    # Also include output files for backward compatibility
+    output_dir = web_config.flask_config.get('directories.output', 'output')
+    if os.path.exists(output_dir):
+        for file in os.listdir(output_dir):
+            if file.endswith(('.json', '.csv', '.xlsx')):
+                file_path = os.path.join(output_dir, file)
+                stat = os.stat(file_path)
+                files.append({
+                    'id': f'output_{file}',
+                    'name': file,
+                    'filename': file,
+                    'size': stat.st_size,
+                    'file_size': stat.st_size,
+                    'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
+                    'type': file.split('.')[-1].upper(),
+                    'file_type': file.split('.')[-1].lower(),
+                    'source': 'output',
+                    'owner': 'tôi'
+                })
+
+    files.sort(key=lambda x: x['modified'], reverse=True)
+
+    # Prepare response
+    response_data = {
+        'files': files,
+        'pagination': {
+            'page': pagination.page,
+            'per_page': pagination.per_page,
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'has_prev': pagination.has_prev,
+            'has_next': pagination.has_next,
+            'prev_num': pagination.prev_num,
+            'next_num': pagination.next_num
+        }
+    }
+
+    return jsonify(response_data)
+
 
 @app.route('/download/<filename>')
 @login_required

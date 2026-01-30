@@ -7,14 +7,42 @@ interface ApiResponse<T> {
     error?: string;
 }
 
-interface FileInfo {
-    id: string;
+// File data matching backend response
+export interface FileInfo {
+    id: number | string;
     name: string;
-    type: 'file' | 'folder';
+    filename?: string;
+    type: 'file' | 'folder' | string;
     size?: number;
+    file_size?: number;
     modified: string;
     mimeType?: string;
+    mime_type?: string;
+    file_type?: string;
+    folder_name?: string;
+    telegram_channel?: string;
+    storage_type?: string;
+    source?: string;
+    owner?: string;
     path?: string;
+}
+
+// Pagination info from backend
+export interface PaginationInfo {
+    page: number;
+    per_page: number;
+    total: number;
+    pages: number;
+    has_prev: boolean;
+    has_next: boolean;
+    prev_num: number | null;
+    next_num: number | null;
+}
+
+// Files response with pagination
+export interface FilesResponse {
+    files: FileInfo[];
+    pagination: PaginationInfo;
 }
 
 interface UserInfo {
@@ -47,13 +75,13 @@ class ApiService {
             const data = await response.json();
 
             if (!response.ok) {
-                return { success: false, error: data.message || 'Request failed' };
+                return { success: false, error: data.message || data.error || 'Request failed' };
             }
 
             return { success: true, data };
         } catch (error) {
             console.error('API Error:', error);
-            return { success: false, error: 'Network error' };
+            return { success: false, error: 'Network error - Backend server may not be running' };
         }
     }
 
@@ -84,14 +112,15 @@ class ApiService {
         return this.request('/logout', { method: 'POST' });
     }
 
-    // File endpoints
-    async getFiles(folderId?: string): Promise<ApiResponse<FileInfo[]>> {
-        const query = folderId ? `?folder=${folderId}` : '';
-        return this.request(`/api/files${query}`);
+    // File endpoints - using public API v2 (no login required)
+    async getFiles(page: number = 1, perPage: number = 100): Promise<ApiResponse<FilesResponse>> {
+        return this.request(`/api/v2/files?page=${page}&per_page=${perPage}`);
     }
 
-    async searchFiles(query: string): Promise<ApiResponse<FileInfo[]>> {
-        return this.request(`/api/search?q=${encodeURIComponent(query)}`);
+    async searchFiles(query: string): Promise<ApiResponse<FilesResponse>> {
+        // Using get_files and filter on client side for now
+        // TODO: Add server-side search endpoint
+        return this.request(`/api/get_files?per_page=100`);
     }
 
     async uploadFile(file: File, folderId?: string): Promise<ApiResponse<FileInfo>> {
@@ -120,19 +149,42 @@ class ApiService {
         });
     }
 
-    async deleteFile(fileId: string): Promise<ApiResponse<void>> {
-        return this.request(`/api/file/${fileId}`, { method: 'DELETE' });
+    async deleteFile(fileId: number | string): Promise<ApiResponse<void>> {
+        return this.request('/api/delete_file', {
+            method: 'POST',
+            body: JSON.stringify({ id: fileId }),
+        });
     }
 
-    async downloadFile(fileId: string): Promise<string> {
-        return `${API_BASE_URL}/api/download/${fileId}`;
+    async renameFile(fileId: number, newName: string): Promise<ApiResponse<FileInfo>> {
+        return this.request(`/api/files/${fileId}/rename`, {
+            method: 'POST',
+            body: JSON.stringify({ name: newName }),
+        });
+    }
+
+    async downloadFile(fileId: number | string, filename: string): Promise<string> {
+        return `${API_BASE_URL}/download/${filename}`;
     }
 
     // Storage info
     async getStorageInfo(): Promise<ApiResponse<StorageInfo>> {
         return this.request('/api/storage');
     }
+
+    // Start scan
+    async startScan(channel: string): Promise<ApiResponse<{ message: string }>> {
+        return this.request('/api/start_scan', {
+            method: 'POST',
+            body: JSON.stringify({ channel }),
+        });
+    }
+
+    // Stop scan
+    async stopScan(): Promise<ApiResponse<{ message: string }>> {
+        return this.request('/api/stop_scan', { method: 'POST' });
+    }
 }
 
 export const api = new ApiService();
-export type { FileInfo, UserInfo, StorageInfo, ApiResponse };
+export type { UserInfo, StorageInfo, ApiResponse };
