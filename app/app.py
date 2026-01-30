@@ -83,13 +83,19 @@ def run_async_in_thread(coro):
     """Run async coroutine in a new thread with proper event loop management"""
     import asyncio
     import threading
+    from flask import current_app
 
     result = {'value': None, 'error': None}
+    
+    # Capture app context from current thread
+    app_context = current_app._get_current_object()
 
     def run_in_thread():
         try:
-            # Use asyncio.run() which properly manages the event loop
-            result['value'] = asyncio.run(run_async_safely(coro))
+            # Push app context in this thread
+            with app_context.app_context():
+                # Use asyncio.run() which properly manages the event loop
+                result['value'] = asyncio.run(run_async_safely(coro))
         except Exception as e:
             result['error'] = e
 

@@ -798,7 +798,8 @@ class TelegramAuthenticator:
             project_root = Path(__file__).parent.parent
             python311_path = project_root / "python311" / "python.exe"
             import_script = project_root / "app" / "import_tdesktop_session.py"
-            session_output = project_root / "data" / "session"
+            # Import to a temp file to avoid locking issues with existing session
+            session_output = project_root / "data" / "session_import"
             
             # Thử import trực tiếp nếu Python < 3.12
             import sys
@@ -925,6 +926,17 @@ class TelegramAuthenticator:
                     
                     mock_user = MockTelegramUser(user_info)
                     db_user = self.create_or_update_user(mock_user, mock_user.phone or '')
+                    
+                    # Copy session_import.session to session.session
+                    import shutil
+                    src_session = project_root / "data" / "session_import.session"
+                    dst_session = project_root / "data" / "session.session"
+                    if src_session.exists():
+                        try:
+                            shutil.copy2(str(src_session), str(dst_session))
+                            print(f"[AUTO_LOGIN] Copied session to {dst_session}")
+                        except Exception as e:
+                            print(f"[AUTO_LOGIN] Warning: Could not copy session: {e}")
                     
                     print(f"[AUTO_LOGIN] Thành công! User: {user_info.get('first_name')}")
                     return {

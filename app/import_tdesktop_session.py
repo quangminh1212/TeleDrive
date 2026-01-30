@@ -1,12 +1,8 @@
-#!/usr/bin/env python3
 """
-Import Telegram Desktop Session Script (Python 3.11 only)
-Script này phải chạy với Python 3.11 do opentele không tương thích Python 3.12+
+TData Session Importer - Support for new Telegram Desktop structure
 
-Hỗ trợ cả cấu trúc tdata cũ và mới của Telegram Desktop.
-
-Usage: python311/python.exe app/import_tdesktop_session.py [output_session_path]
-Output: JSON result to stdout
+This module can import Telegram Desktop sessions from both old and new tdata structures.
+Uses telegram_tdata_decrypter for the new structure.
 """
 
 import os
@@ -23,7 +19,7 @@ if sys.platform == 'win32':
 
 
 def find_telegram_desktop_tdata():
-    """Tìm thư mục tdata của Telegram Desktop"""
+    """Find Telegram Desktop tdata folder"""
     possible_paths = []
     
     if sys.platform == 'win32':
@@ -48,11 +44,11 @@ def find_telegram_desktop_tdata():
 
 
 def check_tdata_structure(tdata_path: str) -> dict:
-    """Kiểm tra cấu trúc tdata và xác định version"""
+    """Check tdata structure and determine version"""
     result = {
         'version': 'unknown',
         'has_key_data': False,
-        'has_user_data': False,
+        'has_key_datas': False,
         'hex_folders': [],
         'user_data_folders': [],
         'can_import': False,
@@ -60,71 +56,173 @@ def check_tdata_structure(tdata_path: str) -> dict:
     }
     
     if not os.path.exists(tdata_path):
-        result['message'] = 'Thư mục tdata không tồn tại'
+        result['message'] = 'Tdata folder does not exist'
         return result
     
-    # Kiểm tra key_data/key_datas
-    result['has_key_data'] = (
-        os.path.exists(os.path.join(tdata_path, 'key_data')) or
-        os.path.exists(os.path.join(tdata_path, 'key_datas'))
-    )
+    # Check key_data/key_datas
+    result['has_key_data'] = os.path.exists(os.path.join(tdata_path, 'key_data'))
+    result['has_key_datas'] = os.path.exists(os.path.join(tdata_path, 'key_datas'))
     
-    # Tìm các folders
+    # Find folders
     for item in os.listdir(tdata_path):
         item_path = os.path.join(tdata_path, item)
         if os.path.isdir(item_path):
-            # 16-char hex folders (cũ)
+            # 16-char hex folders (old)
             if len(item) == 16:
                 try:
                     int(item, 16)
                     result['hex_folders'].append(item)
                 except ValueError:
                     pass
-            # user_data folders (mới)
+            # user_data folders (new)
             elif item.startswith('user_data'):
                 result['user_data_folders'].append(item)
     
-    # Xác định version và khả năng import
-    # Telegram Desktop mới sử dụng user_data folders
-    if result['user_data_folders']:
-        result['version'] = 'new'
-        result['can_import'] = False
-        result['message'] = f'Cấu trúc tdata mới - {len(result["user_data_folders"])} accounts (opentele chưa hỗ trợ)'
-    elif result['hex_folders'] and result['has_key_data']:
+    # Determine version and import capability
+    if result['has_key_datas']:
+        result['version'] = 'new_multi'
+        result['can_import'] = True
+        result['message'] = f'New multi-account tdata structure detected'
+    elif result['has_key_data']:
         result['version'] = 'old'
         result['can_import'] = True
-        result['message'] = f'Cấu trúc tdata cũ - {len(result["hex_folders"])} accounts'
+        result['message'] = f'Old tdata structure'
     else:
-        result['message'] = 'Không tìm thấy account nào trong Telegram Desktop'
+        result['message'] = 'No valid key_data found'
     
     return result
 
 
-async def import_session_old_structure(tdata_path: str, output_session_path: str):
-    """Import session từ tdata cấu trúc cũ bằng opentele"""
+async def create_telethon_session_from_tdata(tdata_path: str, output_session_path: str):
+    """Create Telethon session from tdata using telegram_tdata_decrypter"""
     try:
-        from opentele.td import TDesktop
-        from opentele.api import UseCurrentSession
+        from telegram_tdata_decrypter import TdataReader
+        from telegram_tdata_decrypter.decrypter import AccountReader
+        from telethon import TelegramClient
+        from telethon.sessions import StringSession
         
-        tdesk = TDesktop(tdata_path)
+        # Read key data
+        reader = TdataReader(tdata_path, dataname='data')
+        local_key, account_indexes = reader.read_key_data()
         
-        if not tdesk.isLoaded():
+        if not account_indexes:
             return {
                 'success': False,
-                'message': 'Telegram Desktop chưa đăng nhập'
+                'message': 'No account found in tdata'
             }
         
-        # Đảm bảo thư mục output tồn tại
-        output_dir = os.path.dirname(output_session_path)
+        # Read first account (main account)
+        account_reader = AccountReader(tdata_path, account_indexes[0], 'data')
+        parsed_account = account_reader.read(local_key)
+        
+        user_id = parsed_account.mtp_data.user_id
+        dc_id = parsed_account.mtp_data.current_dc_id
+        auth_keys = parsed_account.mtp_data.keys
+        
+        # Get auth key for main DC
+        if dc_id not in auth_keys:
+            return {
+                'success': False,
+                'message': f'Auth key for DC {dc_id} not found'
+            }
+        
+        auth_key = auth_keys[dc_id]
+        
+        # Create Telethon session file directly
+        # We need to create a SQLite session file with the auth key
+        import sqlite3
+        
+        session_file = output_session_path + '.session'
+        
+        # Ensure output directory exists
+        output_dir = os.path.dirname(session_file)
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
         
-        # Convert to Telethon session
-        client = await tdesk.ToTelethon(
-            session=output_session_path,
-            flag=UseCurrentSession
-        )
+        # Remove existing session file if exists
+        if os.path.exists(session_file):
+            os.remove(session_file)
         
+        # DC servers
+        DC_SERVERS = {
+            1: ('149.154.175.53', 443),
+            2: ('149.154.167.51', 443),
+            3: ('149.154.175.100', 443),
+            4: ('149.154.167.91', 443),
+            5: ('91.108.56.130', 443),
+        }
+        
+        server_address, port = DC_SERVERS.get(dc_id, ('149.154.167.51', 443))
+        
+        # Create new session database
+        conn = sqlite3.connect(session_file)
+        cursor = conn.cursor()
+        
+        # Create version table first
+        cursor.execute('CREATE TABLE version (version INTEGER PRIMARY KEY)')
+        cursor.execute('INSERT INTO version VALUES (?)', (7,))  # Telethon version 7
+        
+        # Create sessions table (Telethon format) - ONLY ONE ROW for main DC
+        cursor.execute('''
+            CREATE TABLE sessions (
+                dc_id INTEGER PRIMARY KEY,
+                server_address TEXT,
+                port INTEGER,
+                auth_key BLOB,
+                takeout_id INTEGER
+            )
+        ''')
+        
+        # Insert ONLY the main DC auth key
+        cursor.execute('''
+            INSERT INTO sessions (dc_id, server_address, port, auth_key, takeout_id)
+            VALUES (?, ?, ?, ?, NULL)
+        ''', (dc_id, server_address, port, auth_key))
+        
+        # Create entities table (empty)
+        cursor.execute('''
+            CREATE TABLE entities (
+                id INTEGER PRIMARY KEY,
+                hash INTEGER NOT NULL,
+                username TEXT,
+                phone INTEGER,
+                name TEXT,
+                date INTEGER
+            )
+        ''')
+        
+        # Create sent_files table (empty)
+        cursor.execute('''
+            CREATE TABLE sent_files (
+                md5_digest BLOB,
+                file_size INTEGER,
+                type INTEGER,
+                id INTEGER,
+                hash INTEGER,
+                PRIMARY KEY (md5_digest, file_size, type)
+            )
+        ''')
+        
+        # Create update_state table
+        cursor.execute('''
+            CREATE TABLE update_state (
+                id INTEGER PRIMARY KEY,
+                pts INTEGER,
+                qts INTEGER,
+                date INTEGER,
+                seq INTEGER
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
+        
+        # Verify session by connecting
+        # Use Telegram Desktop API credentials
+        API_ID = 2040
+        API_HASH = 'b18441a1ff607e10a989891a5462e627'
+        
+        client = TelegramClient(output_session_path, API_ID, API_HASH)
         await client.connect()
         
         if await client.is_user_authorized():
@@ -132,7 +230,7 @@ async def import_session_old_structure(tdata_path: str, output_session_path: str
             
             result = {
                 'success': True,
-                'message': 'Import session thành công',
+                'message': 'Session imported successfully',
                 'user': {
                     'id': me.id,
                     'username': me.username,
@@ -140,7 +238,7 @@ async def import_session_old_structure(tdata_path: str, output_session_path: str
                     'last_name': me.last_name,
                     'phone': me.phone
                 },
-                'session_path': output_session_path + '.session'
+                'session_path': session_file
             }
             
             await client.disconnect()
@@ -149,24 +247,23 @@ async def import_session_old_structure(tdata_path: str, output_session_path: str
             await client.disconnect()
             return {
                 'success': False,
-                'message': 'Không thể xác thực session'
+                'message': 'Session created but not authorized. Auth key may be invalid.'
             }
             
-    except Exception as e:
-        error_msg = str(e)
-        if "No account has been loaded" in error_msg:
-            return {
-                'success': False,
-                'message': 'Không thể load account từ Telegram Desktop. Vui lòng đảm bảo Telegram Desktop đã đóng hoàn toàn.'
-            }
+    except ImportError as e:
         return {
             'success': False,
-            'message': f'Lỗi import: {error_msg}'
+            'message': f'Missing dependency: {str(e)}'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'Error: {str(e)}'
         }
 
 
 def import_session_sync(output_session_path: str = "data/session"):
-    """Import session từ Telegram Desktop - synchronous wrapper"""
+    """Import session from Telegram Desktop - synchronous wrapper"""
     result = {
         'success': False,
         'message': '',
@@ -174,43 +271,29 @@ def import_session_sync(output_session_path: str = "data/session"):
     }
     
     try:
-        # Kiểm tra Python version
-        if sys.version_info >= (3, 12):
-            result['message'] = f'Python {sys.version_info.major}.{sys.version_info.minor} không hỗ trợ. Cần Python 3.11'
-            return result
-        
-        # Tìm Telegram Desktop
+        # Find Telegram Desktop
         tdata_path = find_telegram_desktop_tdata()
         if not tdata_path:
-            result['message'] = 'Không tìm thấy Telegram Desktop'
+            result['message'] = 'Telegram Desktop not found'
             return result
         
-        # Kiểm tra cấu trúc tdata TRƯỚC KHI import opentele
+        # Check tdata structure
         structure = check_tdata_structure(tdata_path)
-        
-        if structure['version'] == 'new':
-            # Telegram Desktop phiên bản mới - opentele chưa hỗ trợ
-            result['message'] = (
-                'Telegram Desktop new version detected. '
-                'The new tdata structure (user_data) is not yet supported by opentele library. '
-                'Please use manual login with phone number instead.'
-            )
-            result['hint'] = (
-                'Your Telegram Desktop uses the new data format which is not compatible with auto-import. '
-                'Please login manually using your phone number.'
-            )
-            result['structure'] = structure
-            return result
         
         if not structure['can_import']:
             result['message'] = structure['message']
             return result
         
-        # Chỉ import opentele khi cấu trúc cũ
-        return asyncio.run(import_session_old_structure(tdata_path, output_session_path))
+        # Import using appropriate method
+        if structure['version'] in ['new_multi', 'old']:
+            # Use telegram_tdata_decrypter for new structure
+            return asyncio.run(create_telethon_session_from_tdata(tdata_path, output_session_path))
+        else:
+            result['message'] = 'Unknown tdata structure'
+            return result
         
     except Exception as e:
-        result['message'] = f'Lỗi: {str(e)}'
+        result['message'] = f'Error: {str(e)}'
     
     return result
 
