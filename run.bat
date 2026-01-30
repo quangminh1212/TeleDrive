@@ -325,7 +325,60 @@ echo [OK] Bien moi truong da duoc thiet lap
 echo.
 
 :: ============================================
-:: BUOC 10: CHAY UNG DUNG
+:: BUOC 10: KIEM TRA VA KHOI CHAY FRONTEND
+:: ============================================
+
+echo Kiem tra Node.js cho frontend...
+where node >nul 2>&1
+if errorlevel 1 (
+    echo [WARNING] Node.js chua duoc cai dat
+    echo Frontend se khong hoat dong. Vui long cai Node.js tu: https://nodejs.org/
+    echo Tiep tuc chi voi Backend API...
+    goto :skip_frontend
+)
+
+node --version
+echo [OK] Node.js da san sang
+echo.
+
+:: Kiem tra va cai dat frontend dependencies
+if exist "frontend\package.json" (
+    echo Kiem tra frontend dependencies...
+    if not exist "frontend\node_modules" (
+        echo Dang cai dat frontend dependencies...
+        echo (Co the mat vai phut...)
+        pushd frontend
+        call npm install --silent
+        if errorlevel 1 (
+            echo [WARNING] Khong the cai dat frontend dependencies
+            popd
+            goto :skip_frontend
+        )
+        popd
+        echo [OK] Frontend dependencies da duoc cai dat
+    ) else (
+        echo [OK] Frontend dependencies da san sang
+    )
+    echo.
+    
+    echo Khoi chay Frontend Vite dev server...
+    :: Chay frontend trong cua so rieng (background)
+    start "TeleDrive Frontend" /min cmd /c "cd /d %CD%\frontend && npm run dev"
+    
+    :: Cho frontend khoi dong
+    echo Dang cho frontend khoi dong...
+    timeout /t 5 /nobreak >nul
+    echo [OK] Frontend da khoi dong tai http://localhost:1420
+    echo.
+) else (
+    echo [WARNING] Khong tim thay frontend\package.json
+    goto :skip_frontend
+)
+
+:skip_frontend
+
+:: ============================================
+:: BUOC 11: CHAY UNG DUNG BACKEND
 :: ============================================
 
 echo.
@@ -333,7 +386,8 @@ echo ========================================
 echo      Starting TeleDrive Desktop...
 echo ========================================
 echo.
-echo Desktop Mode: Embedded webview or browser
+echo Backend API: http://127.0.0.1:5000
+echo Frontend:    http://localhost:1420
 echo Python: %PYTHON_VERSION%
 echo.
 echo Press Ctrl+C to stop the application
@@ -342,7 +396,7 @@ echo.
 echo ========================================
 echo.
 
-:: Chay ung dung voi embedded webview
+:: Chay Backend API
 %PYTHON_CMD% main.py
 
 :: Neu ung dung dung
