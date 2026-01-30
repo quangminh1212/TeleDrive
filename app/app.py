@@ -750,6 +750,9 @@ class WebTelegramScanner(TelegramFileScanner):
             self.socketio.emit('scan_progress', scan_progress)
 
             entity = await self.get_channel_entity(channel_input)
+            
+            print(f"DEBUG: get_channel_entity done. Result: {getattr(entity, 'id', 'NoID')} - {getattr(entity, 'title', 'NoTitle')}")
+            
             if not entity:
                 scan_progress['status'] = 'error'
                 scan_progress['error'] = 'Could not resolve channel'
@@ -765,30 +768,60 @@ class WebTelegramScanner(TelegramFileScanner):
                 self.scan_session.channel_id = str(entity.id)
             if hasattr(entity, 'title'):
                 self.scan_session.channel_name = entity.title
+                
+            print("DEBUG: Committing session update 1")
             db.session.commit()
+            print("DEBUG: Commit 1 done")
 
-            # Get total messages
-            scan_progress['status'] = 'counting_messages'
-            self.socketio.emit('scan_progress', scan_progress)
+            # Get total messages (commented emit)
+            # ... (commented emit code) ...
 
-            # Đặt total_messages = MAX_MESSAGES (bỏ qua đếm vì get_total_messages không tồn tại)
-            total_messages = config.MAX_MESSAGES
-            print(f"📊 Total messages limit: {total_messages}")
-            scan_progress['total'] = total_messages
-            self.scan_session.total_messages = total_messages
-            scan_progress['status'] = 'scanning'
-            self.socketio.emit('scan_progress', scan_progress)
-            db.session.commit()
+            try:
+                print("DEBUG: Setting total_messages")
+                total_messages = config.MAX_MESSAGES
+                print(f"DEBUG: Config var type: {type(total_messages)}, Value: {total_messages}")
+                
+                scan_progress['total'] = total_messages
+                self.scan_session.total_messages = total_messages
+                
+                print(f"📊 Total messages limit: {total_messages}")
+                sys.stdout.flush()
+                
+            except Exception as e:
+                print(f"ERROR: Setting total_messages failed: {e}")
+                import traceback
+                traceback.print_exc()
+
+            try:
+                print("DEBUG: Committing session update 2")
+                db.session.commit()
+                print("DEBUG: Commit 2 done")
+                sys.stdout.flush()
+            except Exception as e:
+                print(f"ERROR: Commit 2 failed: {e}")
 
             # Get or create folder for this scan
-            folder_name = f"Scan_{self.scan_session.channel_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            scan_folder = Folder(
-                name=folder_name,
-                user_id=self.user_id,
-                path=folder_name
-            )
-            db.session.add(scan_folder)
-            db.session.commit()
+            try:
+                print("DEBUG: Creating Folder")
+                folder_name = f"Scan_{self.scan_session.channel_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                print(f"DEBUG: Folder name: {folder_name}")
+                
+                scan_folder = Folder(
+                    name=folder_name,
+                    user_id=self.user_id,
+                    path=folder_name
+                )
+                db.session.add(scan_folder)
+                db.session.commit()
+                print("DEBUG: Folder created and committed")
+                sys.stdout.flush()
+            except Exception as e:
+                print(f"ERROR: Creating folder failed: {e}")
+                # Fallback to continue scanning even if folder fails?
+                # For now let's just log
+                if not scan_folder: # If scan_folder assignment failed
+                     # Use default or error
+                     return False
 
             # Scan messages
             processed = 0

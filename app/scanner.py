@@ -79,6 +79,7 @@ class TelegramFileScanner:
         import shutil
         import tempfile
         import time
+        import sqlite3
         
         project_root = Path(__file__).parent.parent
         session_import = project_root / "data" / "session_import.session"
@@ -99,20 +100,33 @@ class TelegramFileScanner:
             print(f"⚠️ Using main session")
         
         if source_session:
-            # Retry logic khi copy session file
+            # Dùng sqlite3 backup API để tránh lock
             max_retries = 3
+            copy_success = False
             for attempt in range(max_retries):
                 try:
-                    shutil.copy2(str(source_session), str(scanner_session))
-                    print(f"✅ Copied session to {scanner_session}")
+                    # Kết nối read-only đến source và backup sang dest
+                    src_conn = sqlite3.connect(f"file:{source_session}?mode=ro", uri=True)
+                    dst_conn = sqlite3.connect(str(scanner_session))
+                    with dst_conn:
+                        src_conn.backup(dst_conn)
+                    dst_conn.close()
+                    src_conn.close()
+                    
+                    print(f"✅ Copied session to {scanner_session} (sqlite3 backup)")
+                    copy_success = True
                     break
                 except Exception as e:
                     print(f"⚠️ Copy attempt {attempt + 1}/{max_retries} failed: {e}")
                     if attempt < max_retries - 1:
                         print(f"⏳ Chờ 2 giây trước khi thử lại...")
                         time.sleep(2)
-                    else:
-                        raise ValueError(f"Cannot copy session after {max_retries} attempts: {e}")
+            
+            if not copy_success:
+                print(f"❌ Failed to copy session after {max_retries} attempts.")
+                print(f"⚠️ Using ORIGINAL session file directly as fallback (Risk: Database Locked)")
+                scanner_session = source_session
+                
         else:
             raise ValueError("No valid session file found")
         
