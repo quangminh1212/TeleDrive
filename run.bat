@@ -365,8 +365,8 @@ if exist "%PROJECT_DIR%\frontend\package.json" (
     echo.
     
     echo Khoi chay Frontend Vite dev server...
-    :: Chay frontend trong cua so rieng (background)
-    start "TeleDrive Frontend" /min cmd /c "cd /d %PROJECT_DIR%\frontend && npm run dev"
+    :: Chay frontend an trong nen (hoan toan an)
+    powershell -WindowStyle Hidden -Command "Start-Process cmd -ArgumentList '/c cd /d %PROJECT_DIR%\\frontend && npm run dev' -WindowStyle Hidden"
     
     :: Cho frontend khoi dong
     echo Dang cho frontend khoi dong...
