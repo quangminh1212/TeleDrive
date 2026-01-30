@@ -1,8 +1,10 @@
-import { useState } from 'react';
+```
+import { useState, useEffect } from 'react';
 
 interface SidebarProps {
     currentFolder: string | null;
     onFolderSelect: (folder: string | null) => void;
+    totalFileSize?: number; // Nhận tổng dung lượng từ App.tsx
 }
 
 // Google Drive SVG Icon
