@@ -48,6 +48,9 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
     const [sortColumn, setSortColumn] = useState<'name' | 'modified'>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
     const [localViewMode, setLocalViewMode] = useState<'grid' | 'list'>(viewMode);
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanResult, setScanResult] = useState<{ added: number; removed: number } | null>(null);
+    const [filterSavedOnly, setFilterSavedOnly] = useState(false);
     const [pagination, setPagination] = useState({
         page: 1,
         total: 0,
@@ -103,6 +106,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
     useEffect(() => {
         let filtered = [...allFiles];
 
+        // Filter by Saved Messages only (when enabled)
+        if (filterSavedOnly) {
+            filtered = filtered.filter(f =>
+                f.storage_type === 'telegram' ||
+                f.telegram_channel === 'Saved Messages' ||
+                f.telegram_channel === 'me'
+            );
+        }
+
         // Filter by search query
         if (searchQuery) {
             filtered = filtered.filter(f =>
@@ -138,7 +150,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         });
 
         setFiles(filtered);
-    }, [allFiles, searchQuery, currentFolder, sortColumn, sortDirection]);
+    }, [allFiles, searchQuery, currentFolder, sortColumn, sortDirection, filterSavedOnly]);
 
     const handleFileSelect = (id: string | number, isMultiSelect: boolean) => {
         setSelectedFiles(prev => {
@@ -161,9 +173,6 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         }
     };
 
-    const [isScanning, setIsScanning] = useState(false);
-    const [scanResult, setScanResult] = useState<{ added: number; removed: number } | null>(null);
-
     const handleRefresh = async () => {
         setIsScanning(true);
         setScanResult(null);
@@ -178,6 +187,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                     added: response.data.stats.added,
                     removed: response.data.stats.removed
                 });
+                // Enable filter to show only Saved Messages
+                setFilterSavedOnly(true);
                 // Fetch updated files list
                 await fetchFiles();
             } else {
@@ -272,8 +283,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                             onClick={handleRefresh}
                             disabled={isScanning}
                             className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all ${isScanning
-                                    ? 'bg-blue-100 text-blue-600 cursor-wait'
-                                    : 'text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                ? 'bg-blue-100 text-blue-600 cursor-wait'
+                                : 'text-gray-700 border border-gray-300 hover:bg-gray-50'
                                 }`}
                             title="Quét lại Saved Messages từ Telegram"
                         >
@@ -286,6 +297,20 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                             </svg>
                             {isScanning ? 'Đang quét...' : 'Quét Telegram'}
                         </button>
+
+                        {/* Filter toggle - show when filter is active */}
+                        {filterSavedOnly && (
+                            <button
+                                onClick={() => setFilterSavedOnly(false)}
+                                className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+                                title="Nhấn để hiển thị tất cả file"
+                            >
+                                <span>Saved Messages</span>
+                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                                </svg>
+                            </button>
+                        )}
 
                         {/* Scan result notification */}
                         {scanResult && (
