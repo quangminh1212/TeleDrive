@@ -1275,6 +1275,19 @@ def rescan_saved_messages():
         # Get current user or use default
         user = get_or_create_user()
         
+        # First, try auto-login to ensure we have a valid session
+        from auth import telegram_auth
+        telegram_auth._auto_login_attempted = False
+        
+        async def try_auto_login():
+            result = await telegram_auth.check_existing_session()
+            if result.get('success'):
+                return result
+            return await telegram_auth.try_auto_login_from_desktop()
+        
+        auto_login_result = run_async_in_thread(try_auto_login())
+        app.logger.info(f"Auto-login result: {auto_login_result.get('success', False)}")
+        
         # Async function to scan
         async def scan_telegram_saved_messages():
             await telegram_storage.initialize()
