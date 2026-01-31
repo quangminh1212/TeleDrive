@@ -353,11 +353,11 @@ class TelegramStorageManager:
         for attempt in range(max_retries):
             try:
                 print(f"[STORAGE] Scanning Saved Messages (limit: {limit}, attempt {attempt + 1}/{max_retries})...")
-            
+                
                 # Get messages from Saved Messages
                 message_count = 0
                 file_count = 0
-            
+                
                 async for message in self.client.iter_messages('me', limit=limit):
                     message_count += 1
                     
@@ -383,7 +383,6 @@ class TelegramStorageManager:
                                 break
                         
                         if not filename:
-                            # Generate filename from message ID
                             filename = f"file_{message.id}"
                         
                         file_info.update({
@@ -403,7 +402,7 @@ class TelegramStorageManager:
                         photo = message.media.photo
                         file_info.update({
                             'filename': f"photo_{message.id}.jpg",
-                            'file_size': 0,  # Photo size not directly available
+                            'file_size': 0,
                             'mime_type': 'image/jpeg',
                             'file_id': str(photo.id),
                             'access_hash': str(photo.access_hash),
@@ -415,21 +414,19 @@ class TelegramStorageManager:
                 
                 print(f"[STORAGE] Scan complete: {message_count} messages, {file_count} files found")
                 return files
-            
+                
             except Exception as e:
                 error_msg = str(e)
                 print(f"[STORAGE] Scan attempt {attempt + 1}/{max_retries} failed: {error_msg}")
                 
-                # Retry on network/parse errors
                 if 'PARSE_FAILED' in error_msg or 'network' in error_msg.lower() or 'connection' in error_msg.lower():
                     if attempt < max_retries - 1:
                         import asyncio
-                        wait_time = (attempt + 1) * 2  # 2s, 4s, 6s
+                        wait_time = (attempt + 1) * 2
                         print(f"[STORAGE] Retrying in {wait_time}s...")
                         await asyncio.sleep(wait_time)
                         continue
                 
-                # For other errors or final attempt, log and return empty
                 import traceback
                 traceback.print_exc()
                 return []
@@ -438,3 +435,4 @@ class TelegramStorageManager:
 
 # Global instance
 telegram_storage = TelegramStorageManager()
+
