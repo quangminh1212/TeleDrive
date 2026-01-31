@@ -1290,13 +1290,12 @@ def rescan_saved_messages():
         
         app.logger.info(f"Found {len(telegram_files)} files in Saved Messages")
         
-        # Get existing files from database that are stored on Telegram
+        # Get ALL existing files from database (not just telegram files)
         existing_db_files = File.query.filter(
-            File.storage_type == 'telegram',
             File.is_deleted == False
         ).all()
         
-        # Create lookup by message_id
+        # Create lookup by message_id from Telegram Saved Messages
         telegram_message_ids = {f['message_id'] for f in telegram_files}
         
         # Track stats
@@ -1305,17 +1304,23 @@ def rescan_saved_messages():
         synced_files = []
         removed_files = []  # Track removed files for notification
         
-        # Remove files from database that no longer exist in Telegram
+        # Remove ALL files from database that are not in Telegram Saved Messages
         for db_file in existing_db_files:
-            if db_file.telegram_message_id and db_file.telegram_message_id not in telegram_message_ids:
-                app.logger.info(f"Removing deleted file from DB: {db_file.filename}")
-                removed_files.append({
-                    'id': db_file.id,
-                    'filename': db_file.filename,
-                    'message_id': db_file.telegram_message_id
-                })
-                db_file.is_deleted = True
-                removed_count += 1
+            # Check if file exists in Saved Messages by message_id
+            if db_file.telegram_message_id and db_file.telegram_message_id in telegram_message_ids:
+                # File exists in Saved Messages, keep it
+                continue
+            
+            # File not in Saved Messages - mark as deleted
+            app.logger.info(f"Removing file not in Saved Messages: {db_file.filename} (source: {db_file.telegram_channel or 'local'})")
+            removed_files.append({
+                'id': db_file.id,
+                'filename': db_file.filename,
+                'message_id': db_file.telegram_message_id,
+                'source': db_file.telegram_channel or 'local'
+            })
+            db_file.is_deleted = True
+            removed_count += 1
         
         # Add new files from Telegram to database
         existing_message_ids = {f.telegram_message_id for f in existing_db_files if f.telegram_message_id}
