@@ -354,65 +354,65 @@ class TelegramStorageManager:
             try:
                 print(f"[STORAGE] Scanning Saved Messages (limit: {limit}, attempt {attempt + 1}/{max_retries})...")
             
-            # Get messages from Saved Messages
-            message_count = 0
-            file_count = 0
+                # Get messages from Saved Messages
+                message_count = 0
+                file_count = 0
             
-            async for message in self.client.iter_messages('me', limit=limit):
-                message_count += 1
+                async for message in self.client.iter_messages('me', limit=limit):
+                    message_count += 1
+                    
+                    # Check if message has media (file)
+                    if not message.media:
+                        continue
+                    
+                    file_info = {
+                        'message_id': message.id,
+                        'date': message.date.isoformat() if message.date else None,
+                        'caption': message.message or '',
+                    }
+                    
+                    # Handle documents
+                    if isinstance(message.media, MessageMediaDocument):
+                        doc = message.media.document
+                        
+                        # Get filename from attributes
+                        filename = None
+                        for attr in doc.attributes:
+                            if hasattr(attr, 'file_name'):
+                                filename = attr.file_name
+                                break
+                        
+                        if not filename:
+                            # Generate filename from message ID
+                            filename = f"file_{message.id}"
+                        
+                        file_info.update({
+                            'filename': filename,
+                            'file_size': doc.size,
+                            'mime_type': doc.mime_type,
+                            'file_id': str(doc.id),
+                            'access_hash': str(doc.access_hash),
+                            'file_reference': doc.file_reference.hex() if doc.file_reference else None,
+                            'type': 'document'
+                        })
+                        files.append(file_info)
+                        file_count += 1
+                        
+                    # Handle photos
+                    elif hasattr(message.media, 'photo') and message.media.photo:
+                        photo = message.media.photo
+                        file_info.update({
+                            'filename': f"photo_{message.id}.jpg",
+                            'file_size': 0,  # Photo size not directly available
+                            'mime_type': 'image/jpeg',
+                            'file_id': str(photo.id),
+                            'access_hash': str(photo.access_hash),
+                            'file_reference': photo.file_reference.hex() if photo.file_reference else None,
+                            'type': 'photo'
+                        })
+                        files.append(file_info)
+                        file_count += 1
                 
-                # Check if message has media (file)
-                if not message.media:
-                    continue
-                
-                file_info = {
-                    'message_id': message.id,
-                    'date': message.date.isoformat() if message.date else None,
-                    'caption': message.message or '',
-                }
-                
-                # Handle documents
-                if isinstance(message.media, MessageMediaDocument):
-                    doc = message.media.document
-                    
-                    # Get filename from attributes
-                    filename = None
-                    for attr in doc.attributes:
-                        if hasattr(attr, 'file_name'):
-                            filename = attr.file_name
-                            break
-                    
-                    if not filename:
-                        # Generate filename from message ID
-                        filename = f"file_{message.id}"
-                    
-                    file_info.update({
-                        'filename': filename,
-                        'file_size': doc.size,
-                        'mime_type': doc.mime_type,
-                        'file_id': str(doc.id),
-                        'access_hash': str(doc.access_hash),
-                        'file_reference': doc.file_reference.hex() if doc.file_reference else None,
-                        'type': 'document'
-                    })
-                    files.append(file_info)
-                    file_count += 1
-                    
-                # Handle photos
-                elif hasattr(message.media, 'photo') and message.media.photo:
-                    photo = message.media.photo
-                    file_info.update({
-                        'filename': f"photo_{message.id}.jpg",
-                        'file_size': 0,  # Photo size not directly available
-                        'mime_type': 'image/jpeg',
-                        'file_id': str(photo.id),
-                        'access_hash': str(photo.access_hash),
-                        'file_reference': photo.file_reference.hex() if photo.file_reference else None,
-                        'type': 'photo'
-                    })
-                    files.append(file_info)
-                    file_count += 1
-            
                 print(f"[STORAGE] Scan complete: {message_count} messages, {file_count} files found")
                 return files
             
