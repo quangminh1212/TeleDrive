@@ -1322,11 +1322,18 @@ def rescan_saved_messages():
             db_file.is_deleted = True
             removed_count += 1
         
-        # Add new files from Telegram to database
-        existing_message_ids = {f.telegram_message_id for f in existing_db_files if f.telegram_message_id}
+        # Add new files from Telegram to database OR update existing ones
+        existing_message_ids = {f.telegram_message_id: f for f in existing_db_files if f.telegram_message_id}
         
         for tg_file in telegram_files:
-            if tg_file['message_id'] not in existing_message_ids:
+            existing_file = existing_message_ids.get(tg_file['message_id'])
+            
+            if existing_file:
+                # File exists - update channel to 'Saved Messages' for consistency
+                if existing_file.telegram_channel != 'Saved Messages':
+                    existing_file.telegram_channel = 'Saved Messages'
+                    app.logger.info(f"Updated channel for: {existing_file.filename}")
+            else:
                 # Create new file record
                 new_file = File(
                     filename=tg_file['filename'],
@@ -1345,7 +1352,7 @@ def rescan_saved_messages():
                 if tg_file.get('file_id'):
                     new_file.set_telegram_storage(
                         message_id=tg_file['message_id'],
-                        channel='me',
+                        channel='Saved Messages',
                         channel_id='me',
                         file_id=tg_file.get('file_id'),
                         unique_id=tg_file.get('file_reference'),
