@@ -30,12 +30,75 @@ class TelegramStorageManager:
     def __init__(self):
         self.client = None
         self.user_channels = {}  # Cache user channels
+        self._temp_session_path = None
+        
+    def _copy_session_to_temp(self):
+        """Copy session file to temp to avoid database lock"""
+        import sqlite3
+        import time
+        from pathlib import Path
+        
+        # Get project root
+        project_root = Path(__file__).parent.parent
+        
+        # Check for session files in order of priority
+        session_import = project_root / "data" / "session_import.session"
+        session_main = project_root / "data" / "session.session"
+        
+        source_session = None
+        if session_import.exists():
+            source_session = session_import
+            print(f"[STORAGE] Found session_import: {source_session}")
+        elif session_main.exists():
+            source_session = session_main
+            print(f"[STORAGE] Found main session: {source_session}")
+        else:
+            print(f"[STORAGE] No session file found in data/")
+            return None
+        
+        # Create temp directory for storage sessions
+        storage_temp_dir = project_root / "data" / "storage_temp"
+        storage_temp_dir.mkdir(exist_ok=True)
+        
+        # Create temp session path
+        temp_session = storage_temp_dir / f"upload_{int(time.time())}.session"
+        
+        # Copy using sqlite3 backup API to avoid lock
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                src_conn = sqlite3.connect(f"file:{source_session}?mode=ro", uri=True)
+                dst_conn = sqlite3.connect(str(temp_session))
+                with dst_conn:
+                    src_conn.backup(dst_conn)
+                dst_conn.close()
+                src_conn.close()
+                
+                print(f"[STORAGE] Copied session to: {temp_session}")
+                return str(temp_session).replace('.session', '')
+            except Exception as e:
+                print(f"[STORAGE] Copy attempt {attempt + 1}/{max_retries} failed: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+        
+        # Fallback: use original session directly (risk: database lock)
+        print(f"[STORAGE] Using original session directly (may cause lock)")
+        return str(source_session).replace('.session', '')
         
     async def initialize(self):
         """Initialize Telegram client"""
         try:
+            # Copy session to temp to avoid lock
+            session_path = self._copy_session_to_temp()
+            if not session_path:
+                print(f"[STORAGE] ERROR: No valid session file found")
+                return False
+            
+            self._temp_session_path = session_path
+            print(f"[STORAGE] Using session: {session_path}")
+            
             self.client = TelegramClient(
-                config.SESSION_NAME,
+                session_path,
                 int(config.API_ID),
                 config.API_HASH,
                 connection_retries=3,
@@ -45,11 +108,18 @@ class TelegramStorageManager:
             await self.client.connect()
             
             if not await self.client.is_user_authorized():
+                print(f"[STORAGE] Session not authorized: {session_path}")
                 raise Exception("Telegram client not authorized. Please run authentication first.")
+            
+            # Get user info
+            me = await self.client.get_me()
+            print(f"[STORAGE] Connected as: {me.first_name} (ID: {me.id})")
             
             return True
         except Exception as e:
-            print(f"Failed to initialize Telegram client: {e}")
+            print(f"[STORAGE] Failed to initialize Telegram client: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     async def close(self):

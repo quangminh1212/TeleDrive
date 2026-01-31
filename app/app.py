@@ -109,13 +109,33 @@ def run_async_in_thread(coro):
     return result['value']
 
 async def upload_to_telegram_async(file_path: str, filename: str, user_id: int):
-    """Async helper to upload file to Telegram"""
+    """Async helper to upload file to Telegram Saved Messages"""
     try:
-        await telegram_storage.initialize()
+        print(f"[UPLOAD] Starting upload for: {filename}")
+        print(f"[UPLOAD] File path: {file_path}")
+        
+        # Initialize Telegram client
+        init_result = await telegram_storage.initialize()
+        if not init_result:
+            print(f"[UPLOAD] ERROR: Failed to initialize Telegram client")
+            return None
+        
+        print(f"[UPLOAD] Telegram client initialized successfully")
+        
+        # Upload file to Saved Messages
         result = await telegram_storage.upload_file(file_path, filename, user_id)
+        
+        if result:
+            print(f"[UPLOAD] SUCCESS: File uploaded to Saved Messages, message_id={result.get('message_id')}")
+        else:
+            print(f"[UPLOAD] WARNING: Upload returned None")
+        
         await telegram_storage.close()
         return result
     except Exception as e:
+        print(f"[UPLOAD] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         logger.error(f"Telegram upload error: {e}")
         return None
 
