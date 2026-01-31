@@ -211,6 +211,7 @@ class ApiService {
         message: string;
         stats: { total_telegram: number; added: number; removed: number };
         files: Array<{ message_id: number; filename: string; file_size: number; mime_type: string; type: string }>;
+        removed_files: Array<{ id: number; filename: string; message_id: number }>;
     }>> {
         return this.request('/api/rescan_saved_messages', { method: 'POST' });
     }

@@ -173,9 +173,12 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         }
     };
 
+    const [removedFilesList, setRemovedFilesList] = useState<string[]>([]);
+
     const handleRefresh = async () => {
         setIsScanning(true);
         setScanResult(null);
+        setRemovedFilesList([]);
         setError(null);
 
         try {
@@ -187,6 +190,12 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                     added: response.data.stats.added,
                     removed: response.data.stats.removed
                 });
+
+                // Save removed files list for notification
+                if (response.data.removed_files && response.data.removed_files.length > 0) {
+                    setRemovedFilesList(response.data.removed_files.map(f => f.filename));
+                }
+
                 // Enable filter to show only Saved Messages
                 setFilterSavedOnly(true);
                 // Fetch updated files list
@@ -198,8 +207,11 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
             setError('Failed to rescan Saved Messages');
         } finally {
             setIsScanning(false);
-            // Clear result after 5 seconds
-            setTimeout(() => setScanResult(null), 5000);
+            // Clear result after 10 seconds (more time for user to see removed files)
+            setTimeout(() => {
+                setScanResult(null);
+                setRemovedFilesList([]);
+            }, 10000);
         }
     };
 
@@ -314,9 +326,29 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
 
                         {/* Scan result notification */}
                         {scanResult && (
-                            <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
-                                +{scanResult.added} / -{scanResult.removed}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                    +{scanResult.added} / -{scanResult.removed}
+                                </span>
+                                {removedFilesList.length > 0 && (
+                                    <div className="relative group">
+                                        <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded cursor-help">
+                                            🗑️ {removedFilesList.length} file đã xóa
+                                        </span>
+                                        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-50 hidden group-hover:block min-w-48 max-w-80">
+                                            <p className="text-xs font-medium text-gray-700 mb-1">File không còn trong Saved Messages:</p>
+                                            <ul className="text-xs text-gray-600 max-h-32 overflow-y-auto">
+                                                {removedFilesList.slice(0, 10).map((filename, idx) => (
+                                                    <li key={idx} className="truncate py-0.5">• {filename}</li>
+                                                ))}
+                                                {removedFilesList.length > 10 && (
+                                                    <li className="text-gray-400 italic">...và {removedFilesList.length - 10} file khác</li>
+                                                )}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>

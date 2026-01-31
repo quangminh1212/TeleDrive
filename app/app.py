@@ -1303,11 +1303,17 @@ def rescan_saved_messages():
         added_count = 0
         removed_count = 0
         synced_files = []
+        removed_files = []  # Track removed files for notification
         
         # Remove files from database that no longer exist in Telegram
         for db_file in existing_db_files:
             if db_file.telegram_message_id and db_file.telegram_message_id not in telegram_message_ids:
                 app.logger.info(f"Removing deleted file from DB: {db_file.filename}")
+                removed_files.append({
+                    'id': db_file.id,
+                    'filename': db_file.filename,
+                    'message_id': db_file.telegram_message_id
+                })
                 db_file.is_deleted = True
                 removed_count += 1
         
@@ -1368,7 +1374,8 @@ def rescan_saved_messages():
                 'added': added_count,
                 'removed': removed_count
             },
-            'files': synced_files
+            'files': synced_files,
+            'removed_files': removed_files  # List of deleted files
         })
         
     except Exception as e:
