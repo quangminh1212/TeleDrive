@@ -1641,11 +1641,12 @@ def upload_file_public():
                 file_size = file_path.stat().st_size
                 mime_type = file.content_type or 'application/octet-stream'
 
-                # Check storage backend configuration
-                storage_backend = web_config.flask_config.get('upload.storage_backend', 'local')
-                fallback_to_local = web_config.flask_config.get('upload.fallback_to_local', True)
+                # Default: Always try to upload to Telegram Saved Messages
+                # Fallback to local storage if Telegram upload fails
+                telegram_upload_success = False
+                telegram_result = None
 
-                # Create database record
+                # Create database record (default to local, will update if Telegram succeeds)
                 file_record = File(
                     filename=unique_filename,
                     original_filename=original_filename,
@@ -1658,35 +1659,39 @@ def upload_file_public():
                     storage_type='local'
                 )
 
-                # Try to upload to Telegram if configured
-                if storage_backend == 'telegram':
-                    try:
-                        telegram_result = run_async_in_thread(
-                            upload_to_telegram_async(str(file_path), unique_filename, user.id)
+                # Try to upload to Telegram Saved Messages
+                try:
+                    app.logger.info(f"Uploading {unique_filename} to Telegram Saved Messages...")
+                    telegram_result = run_async_in_thread(
+                        upload_to_telegram_async(str(file_path), unique_filename, user.id)
+                    )
+
+                    if telegram_result:
+                        telegram_upload_success = True
+                        file_record.storage_type = 'telegram'
+                        file_record.telegram_channel = 'Saved Messages'
+                        file_record.set_telegram_storage(
+                            message_id=telegram_result['message_id'],
+                            channel=telegram_result['channel'],
+                            channel_id=telegram_result['channel_id'],
+                            file_id=telegram_result.get('file_id'),
+                            unique_id=telegram_result.get('unique_id'),
+                            access_hash=telegram_result.get('access_hash'),
+                            file_reference=telegram_result.get('file_reference')
                         )
+                        app.logger.info(f"✅ Successfully uploaded {unique_filename} to Telegram Saved Messages")
 
-                        if telegram_result:
-                            file_record.set_telegram_storage(
-                                message_id=telegram_result['message_id'],
-                                channel=telegram_result['channel'],
-                                channel_id=telegram_result['channel_id'],
-                                file_id=telegram_result.get('file_id'),
-                                unique_id=telegram_result.get('unique_id'),
-                                access_hash=telegram_result.get('access_hash'),
-                                file_reference=telegram_result.get('file_reference')
-                            )
-
-                            # Remove local file since it's now on Telegram
-                            try:
-                                os.remove(file_path)
-                            except Exception:
-                                pass
-                        elif not fallback_to_local:
-                            continue
-                    except Exception as e:
-                        app.logger.error(f"Telegram upload error: {e}")
-                        if not fallback_to_local:
-                            continue
+                        # Remove local file since it's now on Telegram
+                        try:
+                            os.remove(file_path)
+                            app.logger.info(f"Removed local temp file: {file_path}")
+                        except Exception as rm_err:
+                            app.logger.warning(f"Could not remove local file: {rm_err}")
+                    else:
+                        app.logger.warning(f"Telegram upload returned no result for {unique_filename}, keeping local")
+                except Exception as e:
+                    app.logger.error(f"Telegram upload error for {unique_filename}: {e}")
+                    # Keep local storage as fallback
 
                 db.session.add(file_record)
                 uploaded_files.append({

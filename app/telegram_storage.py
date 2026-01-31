@@ -103,18 +103,17 @@ class TelegramStorageManager:
             return None
     
     async def upload_file(self, file_path: str, filename: str, user_id: int) -> Optional[Dict[str, Any]]:
-        """Upload file to user's Telegram channel"""
+        """Upload file to Saved Messages (for backward compatibility)"""
+        return await self.upload_to_saved_messages(file_path, filename)
+    
+    async def upload_to_saved_messages(self, file_path: str, filename: str) -> Optional[Dict[str, Any]]:
+        """Upload file directly to Saved Messages"""
         try:
-            # Get user's storage channel
-            channel = await self.get_or_create_user_channel(user_id)
-            if not channel:
-                raise Exception("Failed to get user storage channel")
-            
-            # Upload file to channel
+            # Upload file to Saved Messages ('me' = current user's Saved Messages)
             message = await self.client.send_file(
-                channel,
+                'me',  # Saved Messages
                 file_path,
-                caption=f"📁 {filename}",
+                caption=f"📁 {filename}\n🔗 Uploaded via TeleDrive",
                 attributes=[DocumentAttributeFilename(filename)]
             )
             
@@ -124,7 +123,7 @@ class TelegramStorageManager:
                 
                 return {
                     'message_id': message.id,
-                    'channel': channel,
+                    'channel': 'me',  # Saved Messages
                     'channel_id': str(message.chat_id),
                     'file_id': str(document.id),
                     'unique_id': document.file_reference.hex() if document.file_reference else None,
@@ -134,14 +133,30 @@ class TelegramStorageManager:
                     'mime_type': document.mime_type
                 }
             
+            # Handle photos (images sent without document format)
+            if message.media:
+                return {
+                    'message_id': message.id,
+                    'channel': 'me',
+                    'channel_id': str(message.chat_id),
+                    'file_id': str(message.id),
+                    'unique_id': None,
+                    'access_hash': None,
+                    'file_reference': None,
+                    'file_size': os.path.getsize(file_path),
+                    'mime_type': 'application/octet-stream'
+                }
+            
             return None
             
         except FloodWaitError as e:
             print(f"Rate limited, wait {e.seconds} seconds")
             await asyncio.sleep(e.seconds)
-            return await self.upload_file(file_path, filename, user_id)
+            return await self.upload_to_saved_messages(file_path, filename)
         except Exception as e:
-            print(f"Failed to upload file: {e}")
+            print(f"Failed to upload file to Saved Messages: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     async def download_file(self, file_record: File, output_path: Optional[str] = None) -> Optional[str]:
