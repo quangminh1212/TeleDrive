@@ -1304,20 +1304,49 @@ def rescan_saved_messages():
         synced_files = []
         removed_files = []  # Track removed files for notification
         
-        # Remove ALL files from database that are not in Telegram Saved Messages
+        # Group files by message_id to detect duplicates
+        message_id_to_files = {}
         for db_file in existing_db_files:
-            # Check if file exists in Saved Messages by message_id
-            if db_file.telegram_message_id and db_file.telegram_message_id in telegram_message_ids:
-                # File exists in Saved Messages, keep it
+            if db_file.telegram_message_id:
+                if db_file.telegram_message_id not in message_id_to_files:
+                    message_id_to_files[db_file.telegram_message_id] = []
+                message_id_to_files[db_file.telegram_message_id].append(db_file)
+        
+        # Remove ALL files from database that are not in Telegram Saved Messages
+        # AND remove duplicates (keep only 1 file per message_id)
+        kept_message_ids = set()  # Track which message_ids we've already kept
+        
+        for db_file in existing_db_files:
+            should_delete = False
+            delete_reason = ""
+            
+            # Check if file has no message_id (local file)
+            if not db_file.telegram_message_id:
+                should_delete = True
+                delete_reason = "no message_id (local file)"
+            # Check if file is not in Saved Messages
+            elif db_file.telegram_message_id not in telegram_message_ids:
+                should_delete = True
+                delete_reason = "not in Saved Messages"
+            # Check if this is a duplicate (another file with same message_id already kept)
+            elif db_file.telegram_message_id in kept_message_ids:
+                should_delete = True
+                delete_reason = "duplicate"
+            else:
+                # Keep this file
+                kept_message_ids.add(db_file.telegram_message_id)
+                # Update channel to 'Saved Messages' for consistency
+                if db_file.telegram_channel != 'Saved Messages':
+                    db_file.telegram_channel = 'Saved Messages'
                 continue
             
-            # File not in Saved Messages - mark as deleted
-            app.logger.info(f"Removing file not in Saved Messages: {db_file.filename} (source: {db_file.telegram_channel or 'local'})")
+            # Delete the file
+            app.logger.info(f"Removing file: {db_file.filename} (reason: {delete_reason})")
             removed_files.append({
                 'id': db_file.id,
                 'filename': db_file.filename,
                 'message_id': db_file.telegram_message_id,
-                'source': db_file.telegram_channel or 'local'
+                'reason': delete_reason
             })
             db_file.is_deleted = True
             removed_count += 1
