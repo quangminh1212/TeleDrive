@@ -348,8 +348,11 @@ class TelegramStorageManager:
     async def scan_saved_messages(self, limit: int = 500) -> List[Dict[str, Any]]:
         """Scan all files in Saved Messages and return list of files"""
         files = []
-        try:
-            print(f"[STORAGE] Scanning Saved Messages (limit: {limit})...")
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                print(f"[STORAGE] Scanning Saved Messages (limit: {limit}, attempt {attempt + 1}/{max_retries})...")
             
             # Get messages from Saved Messages
             message_count = 0
@@ -410,14 +413,28 @@ class TelegramStorageManager:
                     files.append(file_info)
                     file_count += 1
             
-            print(f"[STORAGE] Scan complete: {message_count} messages, {file_count} files found")
-            return files
+                print(f"[STORAGE] Scan complete: {message_count} messages, {file_count} files found")
+                return files
             
-        except Exception as e:
-            print(f"[STORAGE] Failed to scan Saved Messages: {e}")
-            import traceback
-            traceback.print_exc()
-            return []
+            except Exception as e:
+                error_msg = str(e)
+                print(f"[STORAGE] Scan attempt {attempt + 1}/{max_retries} failed: {error_msg}")
+                
+                # Retry on network/parse errors
+                if 'PARSE_FAILED' in error_msg or 'network' in error_msg.lower() or 'connection' in error_msg.lower():
+                    if attempt < max_retries - 1:
+                        import asyncio
+                        wait_time = (attempt + 1) * 2  # 2s, 4s, 6s
+                        print(f"[STORAGE] Retrying in {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                        continue
+                
+                # For other errors or final attempt, log and return empty
+                import traceback
+                traceback.print_exc()
+                return []
+        
+        return []
 
 # Global instance
 telegram_storage = TelegramStorageManager()
