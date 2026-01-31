@@ -161,8 +161,35 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         }
     };
 
-    const handleRefresh = () => {
-        fetchFiles();
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanResult, setScanResult] = useState<{ added: number; removed: number } | null>(null);
+
+    const handleRefresh = async () => {
+        setIsScanning(true);
+        setScanResult(null);
+        setError(null);
+
+        try {
+            // Call rescan API
+            const response = await api.rescanSavedMessages();
+
+            if (response.success && response.data) {
+                setScanResult({
+                    added: response.data.stats.added,
+                    removed: response.data.stats.removed
+                });
+                // Fetch updated files list
+                await fetchFiles();
+            } else {
+                setError(response.error || 'Rescan failed');
+            }
+        } catch (err) {
+            setError('Failed to rescan Saved Messages');
+        } finally {
+            setIsScanning(false);
+            // Clear result after 5 seconds
+            setTimeout(() => setScanResult(null), 5000);
+        }
     };
 
     if (loading) {
@@ -239,16 +266,34 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                         </button>
                     </div>
 
-                    {/* Refresh button */}
-                    <button
-                        onClick={handleRefresh}
-                        className="p-1.5 hover:bg-gray-100 rounded-full"
-                        title="Làm mới"
-                    >
-                        <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
-                        </svg>
-                    </button>
+                    {/* Rescan Saved Messages button */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleRefresh}
+                            disabled={isScanning}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all ${isScanning
+                                    ? 'bg-blue-100 text-blue-600 cursor-wait'
+                                    : 'text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                            title="Quét lại Saved Messages từ Telegram"
+                        >
+                            <svg
+                                className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`}
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                            >
+                                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+                            </svg>
+                            {isScanning ? 'Đang quét...' : 'Quét Telegram'}
+                        </button>
+
+                        {/* Scan result notification */}
+                        {scanResult && (
+                            <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                +{scanResult.added} / -{scanResult.removed}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Right side - View mode toggle */}

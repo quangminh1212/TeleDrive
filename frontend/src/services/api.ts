@@ -205,6 +205,15 @@ class ApiService {
     async stopScan(): Promise<ApiResponse<{ message: string }>> {
         return this.request('/api/stop_scan', { method: 'POST' });
     }
+
+    // Rescan Saved Messages from Telegram
+    async rescanSavedMessages(): Promise<ApiResponse<{
+        message: string;
+        stats: { total_telegram: number; added: number; removed: number };
+        files: Array<{ message_id: number; filename: string; file_size: number; mime_type: string; type: string }>;
+    }>> {
+        return this.request('/api/rescan_saved_messages', { method: 'POST' });
+    }
 }
 
 export const api = new ApiService();

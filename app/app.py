@@ -1265,6 +1265,122 @@ def stop_scan():
     scanning_active = False
     return jsonify({'success': True, 'message': 'Scan stopped'})
 
+@app.route('/api/rescan_saved_messages', methods=['POST'])
+@csrf.exempt
+def rescan_saved_messages():
+    """Rescan Saved Messages from Telegram and sync with database"""
+    try:
+        app.logger.info("Starting rescan of Saved Messages...")
+        
+        # Get current user or use default
+        user = get_or_create_user()
+        
+        # Async function to scan
+        async def scan_telegram_saved_messages():
+            await telegram_storage.initialize()
+            files = await telegram_storage.scan_saved_messages(limit=500)
+            await telegram_storage.close()
+            return files
+        
+        # Run async scan
+        telegram_files = run_async_in_thread(scan_telegram_saved_messages())
+        
+        if telegram_files is None:
+            telegram_files = []
+        
+        app.logger.info(f"Found {len(telegram_files)} files in Saved Messages")
+        
+        # Get existing files from database that are stored on Telegram
+        existing_db_files = File.query.filter(
+            File.storage_type == 'telegram',
+            File.is_deleted == False
+        ).all()
+        
+        # Create lookup by message_id
+        telegram_message_ids = {f['message_id'] for f in telegram_files}
+        
+        # Track stats
+        added_count = 0
+        removed_count = 0
+        synced_files = []
+        
+        # Remove files from database that no longer exist in Telegram
+        for db_file in existing_db_files:
+            if db_file.telegram_message_id and db_file.telegram_message_id not in telegram_message_ids:
+                app.logger.info(f"Removing deleted file from DB: {db_file.filename}")
+                db_file.is_deleted = True
+                removed_count += 1
+        
+        # Add new files from Telegram to database
+        existing_message_ids = {f.telegram_message_id for f in existing_db_files if f.telegram_message_id}
+        
+        for tg_file in telegram_files:
+            if tg_file['message_id'] not in existing_message_ids:
+                # Create new file record
+                new_file = File(
+                    filename=tg_file['filename'],
+                    original_filename=tg_file['filename'],
+                    file_path='',
+                    file_size=tg_file.get('file_size', 0),
+                    mime_type=tg_file.get('mime_type', 'application/octet-stream'),
+                    user_id=user.id,
+                    storage_type='telegram',
+                    telegram_channel='Saved Messages',
+                    telegram_message_id=tg_file['message_id'],
+                    description=f"Synced from Saved Messages: {tg_file['filename']}"
+                )
+                
+                # Set Telegram storage info if available
+                if tg_file.get('file_id'):
+                    new_file.set_telegram_storage(
+                        message_id=tg_file['message_id'],
+                        channel='me',
+                        channel_id='me',
+                        file_id=tg_file.get('file_id'),
+                        unique_id=tg_file.get('file_reference'),
+                        access_hash=tg_file.get('access_hash')
+                    )
+                
+                db.session.add(new_file)
+                added_count += 1
+                app.logger.info(f"Added new file from Telegram: {tg_file['filename']}")
+            
+            # Add to synced files list
+            synced_files.append({
+                'message_id': tg_file['message_id'],
+                'filename': tg_file['filename'],
+                'file_size': tg_file.get('file_size', 0),
+                'mime_type': tg_file.get('mime_type'),
+                'type': tg_file.get('type', 'document')
+            })
+        
+        db.session.commit()
+        
+        # Cache cleared via commit
+        
+        app.logger.info(f"Rescan complete: {added_count} added, {removed_count} removed")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Rescan complete: {len(telegram_files)} files found',
+            'stats': {
+                'total_telegram': len(telegram_files),
+                'added': added_count,
+                'removed': removed_count
+            },
+            'files': synced_files
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Rescan error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/api/get_files')
 @login_required
 def get_files():
