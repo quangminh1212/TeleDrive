@@ -14,7 +14,9 @@ for /f "tokens=2" %%a in ('tasklist /fi "imagename eq python.exe" /v 2^>nul ^| f
     taskkill /f /pid %%a >nul 2>&1
 )
 :: Kill all python.exe that might be from this project
-taskkill /f /im python.exe >nul 2>&1
+:: Kill all python.exe that might be from this project
+:: REMOVED: Global python kill is unsafe for other applications
+:: taskkill /f /im python.exe >nul 2>&1
 echo [OK] Python processes stopped
 
 :: Stop Node.js processes (frontend dev server)
@@ -43,10 +45,7 @@ echo [OK] Cleanup completed
 
 :: Clean up database locks and test files
 echo [5/5] Don dep database...
-:: Remove database lock files
-del /q data\*.db-journal >nul 2>&1
-del /q data\*.db-wal >nul 2>&1
-del /q data\*.db-shm >nul 2>&1
+:: REMOVED: Deleting WAL/Journal files can cause data corruption. SQLite handles recovery automatically.
 echo [OK] Database cleanup completed
 
 echo.
