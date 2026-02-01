@@ -1,8 +1,12 @@
 @echo off
 setlocal enabledelayedexpansion
+title TeleDrive Desktop
 
-:: Luu duong dan goc de tranh loi khi thay doi thu muc
-set "PROJECT_DIR=%CD%"
+:: Chuyen den thu muc chua script
+pushd "%~dp0"
+set "PROJECT_DIR=%~dp0"
+:: Remove trailing backslash
+if "%PROJECT_DIR:~-1%"=="\" set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
 
 echo.
 echo ========================================
@@ -20,7 +24,7 @@ set "PORTABLE_PYTHON=%PROJECT_DIR%\python311\python.exe"
 
 :: UU TIEN 1: Kiem tra Python portable trong folder du an
 if exist "%PORTABLE_PYTHON%" (
-    set "PYTHON_CMD=%PORTABLE_PYTHON%"
+    set "PYTHON_CMD="%PORTABLE_PYTHON%""
     set "PYTHON_VERSION=3.11-portable"
     echo [OK] Tim thay Python 3.11 portable trong du an
     goto :verify_python
@@ -45,14 +49,14 @@ if not errorlevel 1 (
 
 :: Kiem tra trong cac thu muc mac dinh
 if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
-    set "PYTHON_CMD=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    set "PYTHON_CMD="%LOCALAPPDATA%\Programs\Python\Python311\python.exe""
     set "PYTHON_VERSION=3.11"
     echo [OK] Tim thay Python 3.11 trong LocalAppData
     goto :verify_python
 )
 
 if exist "C:\Python311\python.exe" (
-    set "PYTHON_CMD=C:\Python311\python.exe"
+    set "PYTHON_CMD="C:\Python311\python.exe""
     set "PYTHON_VERSION=3.11"
     echo [OK] Tim thay Python 3.11 trong C:\Python311
     goto :verify_python
@@ -71,14 +75,14 @@ echo.
 echo Dang tu dong cai dat Python 3.11 portable...
 echo.
 
-call setup-python.bat
+call setup.bat
 
 if errorlevel 1 (
     echo.
     echo [ERROR] Khong the cai dat Python 3.11
     echo.
     echo Vui long cai dat thu cong:
-    echo   1. Chay: setup-python.bat
+    echo   1. Chay: setup.bat
     echo   2. Hoac download: https://www.python.org/downloads/release/python-31110/
     echo.
     pause
@@ -116,7 +120,7 @@ if errorlevel 1 (
     
     if errorlevel 1 (
         echo [ERROR] Khong the cai dat setuptools
-        echo Vui long chay: setup-python.bat
+        echo Vui long chay: setup.bat
         pause
         exit /b 1
     )
