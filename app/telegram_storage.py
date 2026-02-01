@@ -179,11 +179,15 @@ class TelegramStorageManager:
     async def upload_to_saved_messages(self, file_path: str, filename: str) -> Optional[Dict[str, Any]]:
         """Upload file directly to Saved Messages"""
         try:
+            # Verify and log current user before upload
+            me = await self.client.get_me()
+            print(f"[STORAGE] ✅ Uploading to Saved Messages of: {me.first_name} (ID: {me.id}, Phone: {me.phone})")
+            
             # Upload file to Saved Messages ('me' = current user's Saved Messages)
             message = await self.client.send_file(
                 'me',  # Saved Messages
                 file_path,
-                caption=f"📁 {filename}\n🔗 Uploaded via TeleDrive",
+                caption=f"📁 {filename}\n🔗 Uploaded via TeleDrive\n👤 User: {me.first_name}",
                 attributes=[DocumentAttributeFilename(filename)]
             )
             
@@ -200,7 +204,12 @@ class TelegramStorageManager:
                     'access_hash': str(document.access_hash),
                     'file_reference': document.file_reference,
                     'file_size': document.size,
-                    'mime_type': document.mime_type
+                    'mime_type': document.mime_type,
+                    'uploaded_by_user': {
+                        'telegram_id': me.id,
+                        'first_name': me.first_name,
+                        'phone': me.phone
+                    }
                 }
             
             # Handle photos (images sent without document format)
@@ -214,7 +223,12 @@ class TelegramStorageManager:
                     'access_hash': None,
                     'file_reference': None,
                     'file_size': os.path.getsize(file_path),
-                    'mime_type': 'application/octet-stream'
+                    'mime_type': 'application/octet-stream',
+                    'uploaded_by_user': {
+                        'telegram_id': me.id,
+                        'first_name': me.first_name,
+                        'phone': me.phone
+                    }
                 }
             
             return None
