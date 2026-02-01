@@ -109,13 +109,33 @@ def run_async_in_thread(coro):
     return result['value']
 
 async def upload_to_telegram_async(file_path: str, filename: str, user_id: int):
-    """Async helper to upload file to Telegram"""
+    """Async helper to upload file to Telegram Saved Messages"""
     try:
-        await telegram_storage.initialize()
+        print(f"[UPLOAD] Starting upload for: {filename}")
+        print(f"[UPLOAD] File path: {file_path}")
+        
+        # Initialize Telegram client
+        init_result = await telegram_storage.initialize()
+        if not init_result:
+            print(f"[UPLOAD] ERROR: Failed to initialize Telegram client")
+            return None
+        
+        print(f"[UPLOAD] Telegram client initialized successfully")
+        
+        # Upload file to Saved Messages
         result = await telegram_storage.upload_file(file_path, filename, user_id)
+        
+        if result:
+            print(f"[UPLOAD] SUCCESS: File uploaded to Saved Messages, message_id={result.get('message_id')}")
+        else:
+            print(f"[UPLOAD] WARNING: Upload returned None")
+        
         await telegram_storage.close()
         return result
     except Exception as e:
+        print(f"[UPLOAD] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         logger.error(f"Telegram upload error: {e}")
         return None
 
@@ -837,7 +857,7 @@ class WebTelegramScanner(TelegramFileScanner):
                 scan_folder = FakeFolder()
                 # return False
 
-            # Scan messages
+            # Scan messages with retry logic for network errors
             processed = 0
             files_saved = 0
             print(f"🔍 Bắt đầu scan messages từ: {getattr(entity, 'first_name', None) or getattr(entity, 'title', 'Unknown')}")
@@ -845,65 +865,114 @@ class WebTelegramScanner(TelegramFileScanner):
             print(f"📊 Giới hạn: {max_messages} messages")
             print(f"DEBUG: About to start iter_messages loop...")
             sys.stdout.flush()
-            async for message in self.client.iter_messages(entity, limit=max_messages):
-                if not scanning_active:  # Check if scan was cancelled
-                    break
+            
+            # Retry configuration for network errors
+            max_retries = 3
+            retry_delay = 2
+            last_processed_id = None  # Track last processed message for resume
+            
+            for retry_attempt in range(max_retries):
+                try:
+                    # Use offset_id for resuming after error
+                    offset_id = last_processed_id if last_processed_id else 0
+                    remaining_limit = max_messages - processed
+                    
+                    async for message in self.client.iter_messages(entity, limit=remaining_limit, offset_id=offset_id):
+                        if not scanning_active:  # Check if scan was cancelled
+                            break
 
-                # Log message đầu tiên và mỗi 10 messages
-                if processed == 0 or processed % 10 == 0:
-                    print(f"📝 Processing message #{processed}: id={message.id}, has_media={bool(message.media)}")
+                        last_processed_id = message.id  # Track for resume
 
-                file_info = self.extract_file_info(message)
-                if file_info and self.should_include_file_type(file_info['file_type']):
-                    # Save to database instead of just appending to list
-                    try:
-                        file_record = File(
-                            filename=file_info.get('file_name', ''),
-                            original_filename=file_info.get('file_name', ''),
-                            file_size=file_info.get('file_size', 0),
-                            mime_type=file_info.get('mime_type', ''),
-                            folder_id=scan_folder.id,
-                            user_id=self.user_id,
-                            storage_type='telegram',  # Mark as Telegram file
-                            telegram_message_id=file_info.get('message_id'),
-                            telegram_channel=self.scan_session.channel_name or 'Saved Messages',
-                            telegram_channel_id=self.scan_session.channel_id,
-                            telegram_date=datetime.fromisoformat(
-                                file_info['date'].replace('Z', '+00:00')
-                            ) if file_info.get('date') else None
-                        )
+                        # Log message đầu tiên và mỗi 10 messages
+                        if processed == 0 or processed % 10 == 0:
+                            print(f"📝 Processing message #{processed}: id={message.id}, has_media={bool(message.media)}")
 
-                        # Set metadata
-                        metadata = {
-                            'download_url': file_info.get('download_url', ''),
-                            'file_type': file_info.get('file_type', ''),
-                            'sender': file_info.get('sender', '')
-                        }
-                        file_record.set_metadata(metadata)
+                        file_info = self.extract_file_info(message)
+                        if file_info and self.should_include_file_type(file_info['file_type']):
+                            # Save to database instead of just appending to list
+                            try:
+                                file_record = File(
+                                    filename=file_info.get('file_name', ''),
+                                    original_filename=file_info.get('file_name', ''),
+                                    file_size=file_info.get('file_size', 0),
+                                    mime_type=file_info.get('mime_type', ''),
+                                    folder_id=scan_folder.id,
+                                    user_id=self.user_id,
+                                    storage_type='telegram',  # Mark as Telegram file
+                                    telegram_message_id=file_info.get('message_id'),
+                                    telegram_channel=self.scan_session.channel_name or 'Saved Messages',
+                                    telegram_channel_id=self.scan_session.channel_id,
+                                    telegram_date=datetime.fromisoformat(
+                                        file_info['date'].replace('Z', '+00:00')
+                                    ) if file_info.get('date') else None
+                                )
 
-                        db.session.add(file_record)
-                        files_saved += 1
+                                # Set metadata
+                                metadata = {
+                                    'download_url': file_info.get('download_url', ''),
+                                    'file_type': file_info.get('file_type', ''),
+                                    'sender': file_info.get('sender', '')
+                                }
+                                file_record.set_metadata(metadata)
 
-                        # Commit every 50 files to avoid memory issues
-                        if files_saved % 50 == 0:
+                                db.session.add(file_record)
+                                files_saved += 1
+
+                                # Commit every 50 files to avoid memory issues
+                                if files_saved % 50 == 0:
+                                    db.session.commit()
+
+                            except Exception as e:
+                                print(f"Error saving file to database: {e}")
+                                continue
+
+                        processed += 1
+                        scan_progress['current'] = processed
+                        scan_progress['files_found'] = files_saved
+
+                        # Update scan session
+                        self.scan_session.messages_scanned = processed
+                        self.scan_session.files_found = files_saved
+
+                        # Update progress every 10 messages
+                        if processed % 10 == 0:
+                            self.socketio.emit('scan_progress', scan_progress)
                             db.session.commit()
-
-                    except Exception as e:
-                        print(f"Error saving file to database: {e}")
+                    
+                    # If we get here, scan completed successfully
+                    break
+                    
+                except Exception as scan_error:
+                    error_str = str(scan_error)
+                    # Check for recoverable network errors
+                    recoverable_errors = [
+                        'CLIENT_RESPONSE_PARSE_FAILED',
+                        'ConnectionError',
+                        'TimeoutError',
+                        'NetworkError',
+                        'RPCError',
+                        'connection reset',
+                        'broken pipe'
+                    ]
+                    
+                    is_recoverable = any(err.lower() in error_str.lower() for err in recoverable_errors)
+                    
+                    if is_recoverable and retry_attempt < max_retries - 1:
+                        print(f"⚠️ Network error during scan (attempt {retry_attempt + 1}/{max_retries}): {error_str[:100]}")
+                        print(f"⏳ Retrying in {retry_delay} seconds... (processed {processed} messages so far)")
+                        await asyncio.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                        
+                        # Emit warning to frontend
+                        self.socketio.emit('scan_warning', {
+                            'message': f'Network error, retrying... ({processed} messages processed)',
+                            'error': error_str[:100]
+                        })
                         continue
-
-                processed += 1
-                scan_progress['current'] = processed
-                scan_progress['files_found'] = files_saved
-
-                # Update scan session
-                self.scan_session.messages_scanned = processed
-                self.scan_session.files_found = files_saved
-
-                # Update progress every 10 messages
-                if processed % 10 == 0:
-                    self.socketio.emit('scan_progress', scan_progress)
-                    db.session.commit()
+                    else:
+                        # Non-recoverable or max retries reached
+                        print(f"❌ Scan error after {retry_attempt + 1} attempts: {error_str}")
+                        raise scan_error
 
             # Final commit and save results
             scan_progress['status'] = 'saving'
@@ -1195,6 +1264,279 @@ def stop_scan():
 
     scanning_active = False
     return jsonify({'success': True, 'message': 'Scan stopped'})
+
+@app.route('/api/rescan_saved_messages', methods=['POST'])
+@csrf.exempt
+def rescan_saved_messages():
+    """Rescan Saved Messages from Telegram and sync with database"""
+    try:
+        app.logger.info("Starting rescan of Saved Messages...")
+        
+        # Get current user or use default
+        user = get_or_create_user()
+        
+        # First, try auto-login to ensure we have a valid session
+        from auth import telegram_auth
+        telegram_auth._auto_login_attempted = False
+        
+        async def try_auto_login():
+            result = await telegram_auth.check_existing_session()
+            if result.get('success'):
+                return result
+            return await telegram_auth.try_auto_login_from_desktop()
+        
+        auto_login_result = run_async_in_thread(try_auto_login())
+        app.logger.info(f"Auto-login result: {auto_login_result.get('success', False)}")
+        
+        # Async function to scan
+        async def scan_telegram_saved_messages():
+            await telegram_storage.initialize()
+            files = await telegram_storage.scan_saved_messages(limit=500)
+            await telegram_storage.close()
+            return files
+        
+        # Run async scan
+        telegram_files = run_async_in_thread(scan_telegram_saved_messages())
+        
+        if telegram_files is None:
+            telegram_files = []
+        
+        app.logger.info(f"Found {len(telegram_files)} files in Saved Messages")
+        
+        # Delete test files from database before syncing (hard delete)
+        # Also delete files already marked as is_deleted
+        test_patterns = ['%test%', '%debug%', '%final_test%', '%upload_test%', '%api_test%']
+        
+        # First, delete all files marked as is_deleted
+        File.query.filter(File.is_deleted == True).delete(synchronize_session='fetch')
+        db.session.commit()
+        app.logger.info("Cleaned up previously deleted files")
+        
+        # Delete test files
+        for pattern in test_patterns:
+            deleted = File.query.filter(File.filename.ilike(pattern)).delete(synchronize_session='fetch')
+            if deleted > 0:
+                app.logger.info(f"Deleted {deleted} files matching pattern: {pattern}")
+        db.session.commit()
+        
+        # Get ALL existing files from database
+        existing_db_files = File.query.all()
+        
+        # Create lookup by message_id from Telegram Saved Messages
+        telegram_message_ids = {f['message_id'] for f in telegram_files}
+        
+        # Track stats
+        added_count = 0
+        removed_count = 0
+        synced_files = []
+        removed_files = []  # Track removed files for notification
+        
+        # Group files by message_id to detect duplicates
+        message_id_to_files = {}
+        for db_file in existing_db_files:
+            if db_file.telegram_message_id:
+                if db_file.telegram_message_id not in message_id_to_files:
+                    message_id_to_files[db_file.telegram_message_id] = []
+                message_id_to_files[db_file.telegram_message_id].append(db_file)
+        
+        # Remove ALL files from database that are not in Telegram Saved Messages
+        # AND remove duplicates (keep only 1 file per message_id)
+        kept_message_ids = set()  # Track which message_ids we've already kept
+        files_to_delete = []  # Collect files to delete
+        
+        for db_file in existing_db_files:
+            should_delete = False
+            delete_reason = ""
+            
+            # Check if file has no message_id (local file without telegram link)
+            if not db_file.telegram_message_id:
+                should_delete = True
+                delete_reason = "no message_id (local file)"
+            # Check if file is not in Saved Messages
+            elif db_file.telegram_message_id not in telegram_message_ids:
+                should_delete = True
+                delete_reason = "not in Saved Messages"
+            # Check if this is a duplicate (another file with same message_id already kept)
+            elif db_file.telegram_message_id in kept_message_ids:
+                should_delete = True
+                delete_reason = "duplicate"
+            else:
+                # Keep this file
+                kept_message_ids.add(db_file.telegram_message_id)
+                # Update channel to 'Saved Messages' for consistency
+                if db_file.telegram_channel != 'Saved Messages':
+                    db_file.telegram_channel = 'Saved Messages'
+                continue
+            
+            # Mark file for deletion
+            app.logger.info(f"Will delete file: {db_file.filename} (reason: {delete_reason})")
+            removed_files.append({
+                'id': db_file.id,
+                'filename': db_file.filename,
+                'message_id': db_file.telegram_message_id,
+                'reason': delete_reason
+            })
+            files_to_delete.append(db_file)
+            removed_count += 1
+        
+        # Actually DELETE files from database (hard delete)
+        for file_to_del in files_to_delete:
+            db.session.delete(file_to_del)
+        db.session.commit()
+        app.logger.info(f"Hard deleted {removed_count} files from database")
+        
+        # Define test file patterns to skip
+        skip_patterns = ['test', 'debug', 'upload_test', 'api_test', 'final_test']
+        
+        def is_test_file(filename):
+            """Check if filename contains test patterns"""
+            filename_lower = filename.lower()
+            return any(pattern in filename_lower for pattern in skip_patterns)
+        
+        # Filter out test files and duplicates from telegram_files
+        # Keep only the file with the highest message_id for each filename
+        filename_to_best_file = {}
+        for tg_file in telegram_files:
+            filename = tg_file['filename']
+            
+            # Skip test files
+            if is_test_file(filename):
+                app.logger.info(f"Skipping test file from Telegram: {filename}")
+                continue
+            
+            # Keep only the latest (highest message_id) for each filename
+            if filename not in filename_to_best_file:
+                filename_to_best_file[filename] = tg_file
+            elif tg_file['message_id'] > filename_to_best_file[filename]['message_id']:
+                app.logger.info(f"Replacing duplicate: {filename} (msg {filename_to_best_file[filename]['message_id']} -> {tg_file['message_id']})")
+                filename_to_best_file[filename] = tg_file
+        
+        # Use only the filtered files
+        filtered_telegram_files = list(filename_to_best_file.values())
+        app.logger.info(f"After filtering: {len(filtered_telegram_files)} unique files (from {len(telegram_files)} total)")
+        
+        # Update telegram_message_ids with filtered files
+        filtered_message_ids = {f['message_id'] for f in filtered_telegram_files}
+        
+        # Delete files from DB that are not in filtered list
+        existing_db_files = File.query.all()
+        for db_file in existing_db_files:
+            if db_file.telegram_message_id and db_file.telegram_message_id not in filtered_message_ids:
+                app.logger.info(f"Deleting file not in filtered list: {db_file.filename} (msg_id: {db_file.telegram_message_id})")
+                db.session.delete(db_file)
+                removed_count += 1
+        db.session.commit()
+        
+        # Re-query to get fresh data after deletions
+        existing_db_files = File.query.all()
+        existing_message_ids = {f.telegram_message_id: f for f in existing_db_files if f.telegram_message_id}
+        
+        for tg_file in filtered_telegram_files:
+            existing_file = existing_message_ids.get(tg_file['message_id'])
+            
+            if existing_file:
+                # File exists - update channel to 'Saved Messages' for consistency
+                if existing_file.telegram_channel != 'Saved Messages':
+                    existing_file.telegram_channel = 'Saved Messages'
+                    app.logger.info(f"Updated channel for: {existing_file.filename}")
+            else:
+                # Create new file record
+                new_file = File(
+                    filename=tg_file['filename'],
+                    original_filename=tg_file['filename'],
+                    file_path='',
+                    file_size=tg_file.get('file_size', 0),
+                    mime_type=tg_file.get('mime_type', 'application/octet-stream'),
+                    user_id=user.id,
+                    storage_type='telegram',
+                    telegram_channel='Saved Messages',
+                    telegram_message_id=tg_file['message_id'],
+                    description=f"Synced from Saved Messages: {tg_file['filename']}"
+                )
+                
+                # Set Telegram storage info if available
+                if tg_file.get('file_id'):
+                    new_file.set_telegram_storage(
+                        message_id=tg_file['message_id'],
+                        channel='Saved Messages',
+                        channel_id='me',
+                        file_id=tg_file.get('file_id'),
+                        unique_id=tg_file.get('file_reference'),
+                        access_hash=tg_file.get('access_hash')
+                    )
+                
+                db.session.add(new_file)
+                added_count += 1
+                app.logger.info(f"Added new file from Telegram: {tg_file['filename']}")
+            
+            
+            # Add to synced files list
+            synced_files.append({
+                'message_id': tg_file['message_id'],
+                'filename': tg_file['filename'],
+                'file_size': tg_file.get('file_size', 0),
+                'mime_type': tg_file.get('mime_type'),
+                'type': tg_file.get('type', 'document')
+            })
+        
+        db.session.commit()
+        
+        # Cache cleared via commit
+        
+        app.logger.info(f"Rescan complete: {added_count} added, {removed_count} removed")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Rescan complete: {len(telegram_files)} files found',
+            'stats': {
+                'total_telegram': len(telegram_files),
+                'added': added_count,
+                'removed': removed_count
+            },
+            'files': synced_files,
+            'removed_files': removed_files  # List of deleted files
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Rescan error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/v2/auth/logout', methods=['POST'])
+@csrf.exempt
+def logout_telegram():
+    """Đăng xuất khỏi Telegram - xóa session"""
+    try:
+        from auth import telegram_auth
+        
+        async def do_logout():
+            return await telegram_auth.logout()
+        
+        result = run_async_in_thread(do_logout())
+        
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': result.get('message', 'Đã đăng xuất thành công')
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Lỗi đăng xuất')
+            }), 500
+            
+    except Exception as e:
+        app.logger.error(f"Logout error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 
 @app.route('/api/get_files')
 @login_required
@@ -1512,6 +1854,157 @@ def auto_login_public():
             'success': False,
             'error': str(e)
         })
+
+
+# Public API endpoint to upload files for Tauri frontend
+@app.route('/api/v2/upload', methods=['POST'])
+@csrf.exempt
+def upload_file_public():
+    """Upload files to the system for Tauri frontend - no CSRF required"""
+    try:
+        if 'files' not in request.files:
+            return jsonify({'success': False, 'error': 'No files provided'}), 400
+
+        files = request.files.getlist('files')
+        folder_id = request.form.get('folder_id')
+
+        if not files or all(f.filename == '' for f in files):
+            return jsonify({'success': False, 'error': 'No files selected'}), 400
+
+        # Limit to 50 files per upload
+        if len(files) > 50:
+            return jsonify({'success': False, 'error': 'Too many files. Maximum 50 files per upload.'}), 400
+
+        # Get or create default user
+        user = get_or_create_user()
+        uploaded_files = []
+
+        # Validate folder if specified
+        if folder_id:
+            folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+            if not folder:
+                return jsonify({'success': False, 'error': 'Invalid folder'}), 400
+
+        # Create uploads directory if it doesn't exist
+        upload_config = web_config.flask_config.get_upload_config()
+        upload_dir = Path(upload_config['upload_directory'])
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        for file in files:
+            if file.filename:
+                # Sanitize and validate filename
+                original_filename = file.filename
+                sanitized_fname = sanitize_filename(original_filename)
+
+                if not sanitized_fname:
+                    continue
+
+                # Check if file type is allowed
+                if not is_allowed_file(sanitized_fname):
+                    continue
+
+                # Generate unique filename
+                if upload_config['timestamp_filenames']:
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    unique_filename = f"{timestamp}_{sanitized_fname}"
+                else:
+                    unique_filename = sanitized_fname
+
+                file_path = upload_dir / unique_filename
+
+                # Ensure path is within upload directory
+                try:
+                    file_path = file_path.resolve()
+                    upload_dir_resolved = upload_dir.resolve()
+                    if not str(file_path).startswith(str(upload_dir_resolved)):
+                        continue
+                except Exception:
+                    continue
+
+                # Save file
+                try:
+                    file.save(str(file_path))
+                    if not file_path.exists():
+                        continue
+                except Exception as e:
+                    app.logger.error(f"Error saving file {unique_filename}: {e}")
+                    continue
+
+                # Get file info
+                file_size = file_path.stat().st_size
+                mime_type = file.content_type or 'application/octet-stream'
+
+                # Default: Always try to upload to Telegram Saved Messages
+                # Fallback to local storage if Telegram upload fails
+                telegram_upload_success = False
+                telegram_result = None
+
+                # Create database record (default to local, will update if Telegram succeeds)
+                file_record = File(
+                    filename=unique_filename,
+                    original_filename=original_filename,
+                    file_path=str(file_path),
+                    file_size=file_size,
+                    mime_type=mime_type,
+                    folder_id=folder_id,
+                    user_id=user.id,
+                    description=f'Uploaded file: {original_filename}',
+                    storage_type='local'
+                )
+
+                # Try to upload to Telegram Saved Messages
+                try:
+                    app.logger.info(f"Uploading {unique_filename} to Telegram Saved Messages...")
+                    telegram_result = run_async_in_thread(
+                        upload_to_telegram_async(str(file_path), unique_filename, user.id)
+                    )
+
+                    if telegram_result:
+                        telegram_upload_success = True
+                        file_record.storage_type = 'telegram'
+                        file_record.telegram_channel = 'Saved Messages'
+                        file_record.set_telegram_storage(
+                            message_id=telegram_result['message_id'],
+                            channel=telegram_result['channel'],
+                            channel_id=telegram_result['channel_id'],
+                            file_id=telegram_result.get('file_id'),
+                            unique_id=telegram_result.get('unique_id'),
+                            access_hash=telegram_result.get('access_hash'),
+                            file_reference=telegram_result.get('file_reference')
+                        )
+                        app.logger.info(f"✅ Successfully uploaded {unique_filename} to Telegram Saved Messages")
+
+                        # Remove local file since it's now on Telegram
+                        try:
+                            os.remove(file_path)
+                            app.logger.info(f"Removed local temp file: {file_path}")
+                        except Exception as rm_err:
+                            app.logger.warning(f"Could not remove local file: {rm_err}")
+                    else:
+                        app.logger.warning(f"Telegram upload returned no result for {unique_filename}, keeping local")
+                except Exception as e:
+                    app.logger.error(f"Telegram upload error for {unique_filename}: {e}")
+                    # Keep local storage as fallback
+
+                db.session.add(file_record)
+                uploaded_files.append({
+                    'id': file_record.id,
+                    'filename': unique_filename,
+                    'size': file_size,
+                    'type': mime_type
+                })
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Successfully uploaded {len(uploaded_files)} file(s)',
+            'files': uploaded_files
+        })
+
+    except Exception as e:
+        app.logger.error(f"Upload error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/download/<filename>')

@@ -9,7 +9,7 @@ import os
 import tempfile
 import hashlib
 from pathlib import Path
-from typing import Optional, Dict, Any, BinaryIO
+from typing import Optional, Dict, Any, BinaryIO, List
 from telethon import TelegramClient
 from telethon.errors import (
     FloodWaitError, FileReferenceExpiredError, 
@@ -30,12 +30,75 @@ class TelegramStorageManager:
     def __init__(self):
         self.client = None
         self.user_channels = {}  # Cache user channels
+        self._temp_session_path = None
+        
+    def _copy_session_to_temp(self):
+        """Copy session file to temp to avoid database lock"""
+        import sqlite3
+        import time
+        from pathlib import Path
+        
+        # Get project root
+        project_root = Path(__file__).parent.parent
+        
+        # Check for session files in order of priority
+        session_import = project_root / "data" / "session_import.session"
+        session_main = project_root / "data" / "session.session"
+        
+        source_session = None
+        if session_import.exists():
+            source_session = session_import
+            print(f"[STORAGE] Found session_import: {source_session}")
+        elif session_main.exists():
+            source_session = session_main
+            print(f"[STORAGE] Found main session: {source_session}")
+        else:
+            print(f"[STORAGE] No session file found in data/")
+            return None
+        
+        # Create temp directory for storage sessions
+        storage_temp_dir = project_root / "data" / "storage_temp"
+        storage_temp_dir.mkdir(exist_ok=True)
+        
+        # Create temp session path
+        temp_session = storage_temp_dir / f"upload_{int(time.time())}.session"
+        
+        # Copy using sqlite3 backup API to avoid lock
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                src_conn = sqlite3.connect(f"file:{source_session}?mode=ro", uri=True)
+                dst_conn = sqlite3.connect(str(temp_session))
+                with dst_conn:
+                    src_conn.backup(dst_conn)
+                dst_conn.close()
+                src_conn.close()
+                
+                print(f"[STORAGE] Copied session to: {temp_session}")
+                return str(temp_session).replace('.session', '')
+            except Exception as e:
+                print(f"[STORAGE] Copy attempt {attempt + 1}/{max_retries} failed: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+        
+        # Fallback: use original session directly (risk: database lock)
+        print(f"[STORAGE] Using original session directly (may cause lock)")
+        return str(source_session).replace('.session', '')
         
     async def initialize(self):
         """Initialize Telegram client"""
         try:
+            # Copy session to temp to avoid lock
+            session_path = self._copy_session_to_temp()
+            if not session_path:
+                print(f"[STORAGE] ERROR: No valid session file found")
+                return False
+            
+            self._temp_session_path = session_path
+            print(f"[STORAGE] Using session: {session_path}")
+            
             self.client = TelegramClient(
-                config.SESSION_NAME,
+                session_path,
                 int(config.API_ID),
                 config.API_HASH,
                 connection_retries=3,
@@ -45,11 +108,18 @@ class TelegramStorageManager:
             await self.client.connect()
             
             if not await self.client.is_user_authorized():
+                print(f"[STORAGE] Session not authorized: {session_path}")
                 raise Exception("Telegram client not authorized. Please run authentication first.")
+            
+            # Get user info
+            me = await self.client.get_me()
+            print(f"[STORAGE] Connected as: {me.first_name} (ID: {me.id})")
             
             return True
         except Exception as e:
-            print(f"Failed to initialize Telegram client: {e}")
+            print(f"[STORAGE] Failed to initialize Telegram client: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     async def close(self):
@@ -103,18 +173,17 @@ class TelegramStorageManager:
             return None
     
     async def upload_file(self, file_path: str, filename: str, user_id: int) -> Optional[Dict[str, Any]]:
-        """Upload file to user's Telegram channel"""
+        """Upload file to Saved Messages (for backward compatibility)"""
+        return await self.upload_to_saved_messages(file_path, filename)
+    
+    async def upload_to_saved_messages(self, file_path: str, filename: str) -> Optional[Dict[str, Any]]:
+        """Upload file directly to Saved Messages"""
         try:
-            # Get user's storage channel
-            channel = await self.get_or_create_user_channel(user_id)
-            if not channel:
-                raise Exception("Failed to get user storage channel")
-            
-            # Upload file to channel
+            # Upload file to Saved Messages ('me' = current user's Saved Messages)
             message = await self.client.send_file(
-                channel,
+                'me',  # Saved Messages
                 file_path,
-                caption=f"📁 {filename}",
+                caption=f"📁 {filename}\n🔗 Uploaded via TeleDrive",
                 attributes=[DocumentAttributeFilename(filename)]
             )
             
@@ -124,7 +193,7 @@ class TelegramStorageManager:
                 
                 return {
                     'message_id': message.id,
-                    'channel': channel,
+                    'channel': 'me',  # Saved Messages
                     'channel_id': str(message.chat_id),
                     'file_id': str(document.id),
                     'unique_id': document.file_reference.hex() if document.file_reference else None,
@@ -134,14 +203,30 @@ class TelegramStorageManager:
                     'mime_type': document.mime_type
                 }
             
+            # Handle photos (images sent without document format)
+            if message.media:
+                return {
+                    'message_id': message.id,
+                    'channel': 'me',
+                    'channel_id': str(message.chat_id),
+                    'file_id': str(message.id),
+                    'unique_id': None,
+                    'access_hash': None,
+                    'file_reference': None,
+                    'file_size': os.path.getsize(file_path),
+                    'mime_type': 'application/octet-stream'
+                }
+            
             return None
             
         except FloodWaitError as e:
             print(f"Rate limited, wait {e.seconds} seconds")
             await asyncio.sleep(e.seconds)
-            return await self.upload_file(file_path, filename, user_id)
+            return await self.upload_to_saved_messages(file_path, filename)
         except Exception as e:
-            print(f"Failed to upload file: {e}")
+            print(f"Failed to upload file to Saved Messages: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     async def download_file(self, file_record: File, output_path: Optional[str] = None) -> Optional[str]:
@@ -259,6 +344,95 @@ class TelegramStorageManager:
         except Exception as e:
             print(f"Failed to get file info: {e}")
             return None
+    
+    async def scan_saved_messages(self, limit: int = 500) -> List[Dict[str, Any]]:
+        """Scan all files in Saved Messages and return list of files"""
+        files = []
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                print(f"[STORAGE] Scanning Saved Messages (limit: {limit}, attempt {attempt + 1}/{max_retries})...")
+                
+                # Get messages from Saved Messages
+                message_count = 0
+                file_count = 0
+                
+                async for message in self.client.iter_messages('me', limit=limit):
+                    message_count += 1
+                    
+                    # Check if message has media (file)
+                    if not message.media:
+                        continue
+                    
+                    file_info = {
+                        'message_id': message.id,
+                        'date': message.date.isoformat() if message.date else None,
+                        'caption': message.message or '',
+                    }
+                    
+                    # Handle documents
+                    if isinstance(message.media, MessageMediaDocument):
+                        doc = message.media.document
+                        
+                        # Get filename from attributes
+                        filename = None
+                        for attr in doc.attributes:
+                            if hasattr(attr, 'file_name'):
+                                filename = attr.file_name
+                                break
+                        
+                        if not filename:
+                            filename = f"file_{message.id}"
+                        
+                        file_info.update({
+                            'filename': filename,
+                            'file_size': doc.size,
+                            'mime_type': doc.mime_type,
+                            'file_id': str(doc.id),
+                            'access_hash': str(doc.access_hash),
+                            'file_reference': doc.file_reference.hex() if doc.file_reference else None,
+                            'type': 'document'
+                        })
+                        files.append(file_info)
+                        file_count += 1
+                        
+                    # Handle photos
+                    elif hasattr(message.media, 'photo') and message.media.photo:
+                        photo = message.media.photo
+                        file_info.update({
+                            'filename': f"photo_{message.id}.jpg",
+                            'file_size': 0,
+                            'mime_type': 'image/jpeg',
+                            'file_id': str(photo.id),
+                            'access_hash': str(photo.access_hash),
+                            'file_reference': photo.file_reference.hex() if photo.file_reference else None,
+                            'type': 'photo'
+                        })
+                        files.append(file_info)
+                        file_count += 1
+                
+                print(f"[STORAGE] Scan complete: {message_count} messages, {file_count} files found")
+                return files
+                
+            except Exception as e:
+                error_msg = str(e)
+                print(f"[STORAGE] Scan attempt {attempt + 1}/{max_retries} failed: {error_msg}")
+                
+                if 'PARSE_FAILED' in error_msg or 'network' in error_msg.lower() or 'connection' in error_msg.lower():
+                    if attempt < max_retries - 1:
+                        import asyncio
+                        wait_time = (attempt + 1) * 2
+                        print(f"[STORAGE] Retrying in {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                        continue
+                
+                import traceback
+                traceback.print_exc()
+                return []
+        
+        return []
 
 # Global instance
 telegram_storage = TelegramStorageManager()
+

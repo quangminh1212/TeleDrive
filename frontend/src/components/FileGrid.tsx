@@ -48,6 +48,9 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
     const [sortColumn, setSortColumn] = useState<'name' | 'modified'>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
     const [localViewMode, setLocalViewMode] = useState<'grid' | 'list'>(viewMode);
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanResult, setScanResult] = useState<{ added: number; removed: number } | null>(null);
+    const [filterSavedOnly, setFilterSavedOnly] = useState(false);
     const [pagination, setPagination] = useState({
         page: 1,
         total: 0,
@@ -103,6 +106,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
     useEffect(() => {
         let filtered = [...allFiles];
 
+        // Filter by Saved Messages only (when enabled)
+        if (filterSavedOnly) {
+            filtered = filtered.filter(f =>
+                f.storage_type === 'telegram' ||
+                f.telegram_channel === 'Saved Messages' ||
+                f.telegram_channel === 'me'
+            );
+        }
+
         // Filter by search query
         if (searchQuery) {
             filtered = filtered.filter(f =>
@@ -138,7 +150,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         });
 
         setFiles(filtered);
-    }, [allFiles, searchQuery, currentFolder, sortColumn, sortDirection]);
+    }, [allFiles, searchQuery, currentFolder, sortColumn, sortDirection, filterSavedOnly]);
 
     const handleFileSelect = (id: string | number, isMultiSelect: boolean) => {
         setSelectedFiles(prev => {
@@ -161,8 +173,46 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         }
     };
 
-    const handleRefresh = () => {
-        fetchFiles();
+    const [removedFilesList, setRemovedFilesList] = useState<string[]>([]);
+
+    const handleRefresh = async () => {
+        setIsScanning(true);
+        setScanResult(null);
+        setRemovedFilesList([]);
+        setError(null);
+
+        try {
+            // Call rescan API
+            const response = await api.rescanSavedMessages();
+
+            if (response.success && response.data) {
+                setScanResult({
+                    added: response.data.stats.added,
+                    removed: response.data.stats.removed
+                });
+
+                // Save removed files list for notification
+                if (response.data.removed_files && response.data.removed_files.length > 0) {
+                    setRemovedFilesList(response.data.removed_files.map(f => f.filename));
+                }
+
+                // Enable filter to show only Saved Messages
+                setFilterSavedOnly(true);
+                // Fetch updated files list
+                await fetchFiles();
+            } else {
+                setError(response.error || 'Rescan failed');
+            }
+        } catch (err) {
+            setError('Failed to rescan Saved Messages');
+        } finally {
+            setIsScanning(false);
+            // Clear result after 10 seconds (more time for user to see removed files)
+            setTimeout(() => {
+                setScanResult(null);
+                setRemovedFilesList([]);
+            }, 10000);
+        }
     };
 
     if (loading) {
@@ -239,16 +289,68 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                         </button>
                     </div>
 
-                    {/* Refresh button */}
-                    <button
-                        onClick={handleRefresh}
-                        className="p-1.5 hover:bg-gray-100 rounded-full"
-                        title="Làm mới"
-                    >
-                        <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
-                        </svg>
-                    </button>
+                    {/* Rescan Saved Messages button */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleRefresh}
+                            disabled={isScanning}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all ${isScanning
+                                ? 'bg-blue-100 text-blue-600 cursor-wait'
+                                : 'text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                            title="Quét lại Saved Messages từ Telegram"
+                        >
+                            <svg
+                                className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`}
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                            >
+                                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+                            </svg>
+                            {isScanning ? 'Đang quét...' : 'Quét Telegram'}
+                        </button>
+
+                        {/* Filter toggle - show when filter is active */}
+                        {filterSavedOnly && (
+                            <button
+                                onClick={() => setFilterSavedOnly(false)}
+                                className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+                                title="Nhấn để hiển thị tất cả file"
+                            >
+                                <span>Saved Messages</span>
+                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                                </svg>
+                            </button>
+                        )}
+
+                        {/* Scan result notification */}
+                        {scanResult && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                    +{scanResult.added} / -{scanResult.removed}
+                                </span>
+                                {removedFilesList.length > 0 && (
+                                    <div className="relative group">
+                                        <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded cursor-help">
+                                            🗑️ {removedFilesList.length} file đã xóa
+                                        </span>
+                                        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-50 hidden group-hover:block min-w-48 max-w-80">
+                                            <p className="text-xs font-medium text-gray-700 mb-1">File không còn trong Saved Messages:</p>
+                                            <ul className="text-xs text-gray-600 max-h-32 overflow-y-auto">
+                                                {removedFilesList.slice(0, 10).map((filename, idx) => (
+                                                    <li key={idx} className="truncate py-0.5">• {filename}</li>
+                                                ))}
+                                                {removedFilesList.length > 10 && (
+                                                    <li className="text-gray-400 italic">...và {removedFilesList.length - 10} file khác</li>
+                                                )}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Right side - View mode toggle */}

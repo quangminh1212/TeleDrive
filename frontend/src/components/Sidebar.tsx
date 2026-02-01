@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { api } from '../services/api';
 
 interface SidebarProps {
     currentFolder: string | null;
     onFolderSelect: (folder: string | null) => void;
     totalFileSize?: number; // Tổng dung lượng file (bytes)
+    onFilesUploaded?: () => void; // Callback khi upload xong
 }
 
 // Google Drive SVG Icon
@@ -81,9 +83,14 @@ const PlusIcon = () => (
     </svg>
 );
 
-const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize }: SidebarProps) => {
+const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded }: SidebarProps) => {
     const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
     const [storageSizeFromAPI, setStorageSizeFromAPI] = useState<number>(0);
+    const [isUploading, setIsUploading] = useState(false);
+
+    // Hidden file input refs
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const folderInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch total file size from API if not provided
     useEffect(() => {
@@ -97,6 +104,56 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize }: SidebarProps)
                 .catch(() => setStorageSizeFromAPI(0));
         }
     }, [totalFileSize]);
+
+    // Handle file upload
+    const handleFileUpload = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+
+        setIsUploading(true);
+        setIsNewMenuOpen(false);
+
+        try {
+            const filesArray = Array.from(files);
+            const result = await api.uploadFiles(filesArray);
+
+            if (result.success) {
+                console.log('Upload thành công:', result.data);
+                // Callback để refresh danh sách file
+                onFilesUploaded?.();
+            } else {
+                console.error('Upload thất bại:', result.error);
+                alert('Upload thất bại: ' + (result.error || 'Lỗi không xác định'));
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Lỗi upload file');
+        } finally {
+            setIsUploading(false);
+            // Reset file input
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            if (folderInputRef.current) folderInputRef.current.value = '';
+        }
+    };
+
+    // Handle file input change
+    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleFileUpload(e.target.files);
+    };
+
+    // Handle folder input change
+    const handleFolderInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleFileUpload(e.target.files);
+    };
+
+    // Trigger file picker
+    const triggerFileUpload = () => {
+        fileInputRef.current?.click();
+    };
+
+    // Trigger folder picker
+    const triggerFolderUpload = () => {
+        folderInputRef.current?.click();
+    };
 
     const mainMenuItems = [
         { id: 'home', label: 'Trang chủ', icon: HomeIcon },
@@ -130,6 +187,24 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize }: SidebarProps)
 
     return (
         <aside className="w-60 bg-white flex flex-col h-full">
+            {/* Hidden file inputs */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileInputChange}
+                multiple
+                className="hidden"
+            />
+            <input
+                type="file"
+                ref={folderInputRef}
+                onChange={handleFolderInputChange}
+                // @ts-expect-error - webkitdirectory is not in standard types
+                webkitdirectory=""
+                multiple
+                className="hidden"
+            />
+
             {/* Logo */}
             <div className="flex items-center gap-2 px-4 py-3">
                 <DriveIcon />
@@ -137,32 +212,49 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize }: SidebarProps)
             </div>
 
             {/* New Button */}
-            <div className="px-3 py-2">
+            <div className="px-3 py-2 relative">
                 <button
                     onClick={() => setIsNewMenuOpen(!isNewMenuOpen)}
-                    className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-2xl shadow-md hover:shadow-lg hover:bg-gray-50 transition-all"
+                    disabled={isUploading}
+                    className={`flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-2xl shadow-md hover:shadow-lg hover:bg-gray-50 transition-all ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                    <PlusIcon />
-                    <span className="text-sm font-medium text-gray-700">Mới</span>
+                    {isUploading ? (
+                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                        <PlusIcon />
+                    )}
+                    <span className="text-sm font-medium text-gray-700">
+                        {isUploading ? 'Đang tải...' : 'Mới'}
+                    </span>
                 </button>
 
                 {/* New Dropdown Menu */}
-                {isNewMenuOpen && (
-                    <div className="absolute mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
-                        <button className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3">
-                            <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                {isNewMenuOpen && !isUploading && (
+                    <div className="absolute left-3 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
+                        <button
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3 text-gray-400 cursor-not-allowed"
+                            disabled
+                            title="Tính năng đang phát triển"
+                        >
+                            <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z" />
                             </svg>
-                            Thư mục mới
+                            Thư mục mới (sắp ra mắt)
                         </button>
                         <hr className="my-2 border-gray-200" />
-                        <button className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3">
+                        <button
+                            onClick={triggerFileUpload}
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3"
+                        >
                             <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
                             </svg>
                             Tải tệp lên
                         </button>
-                        <button className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3">
+                        <button
+                            onClick={triggerFolderUpload}
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3"
+                        >
                             <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10zM8 13.01l1.41 1.41L11 12.84V17h2v-4.16l1.59 1.59L16 13.01 12.01 9 8 13.01z" />
                             </svg>
@@ -247,6 +339,38 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize }: SidebarProps)
                 <p className="text-xs text-gray-600">
                     Tổng dung lượng: {usedStorageFormatted}
                 </p>
+            </div>
+
+            {/* Logout Button */}
+            <div className="px-3 py-2 border-t border-gray-200">
+                <button
+                    onClick={async () => {
+                        if (confirm('Bạn có chắc muốn đăng xuất khỏi Telegram?\nSau khi đăng xuất, bạn cần đăng nhập lại để sử dụng.')) {
+                            try {
+                                const response = await fetch('http://127.0.0.1:5000/api/v2/auth/logout', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' }
+                                });
+                                const result = await response.json();
+                                if (result.success) {
+                                    alert('Đăng xuất thành công!');
+                                    window.location.reload();
+                                } else {
+                                    alert('Lỗi: ' + (result.error || 'Không thể đăng xuất'));
+                                }
+                            } catch (error) {
+                                console.error('Logout error:', error);
+                                alert('Lỗi kết nối đến server');
+                            }
+                        }
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+                    </svg>
+                    <span>Đăng xuất Telegram</span>
+                </button>
             </div>
         </aside>
     );

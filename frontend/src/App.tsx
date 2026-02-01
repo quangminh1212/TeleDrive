@@ -8,6 +8,12 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Callback khi upload file xong - trigger refresh FileGrid
+  const handleFilesUploaded = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   return (
     <div className="flex h-screen bg-white">
@@ -15,6 +21,7 @@ function App() {
       <Sidebar
         currentFolder={currentFolder}
         onFolderSelect={setCurrentFolder}
+        onFilesUploaded={handleFilesUploaded}
       />
 
       {/* Main Content */}
@@ -30,6 +37,7 @@ function App() {
         {/* File Grid */}
         <main className="flex-1 overflow-hidden bg-white m-2 rounded-2xl">
           <FileGrid
+            key={refreshKey}
             searchQuery={searchQuery}
             currentFolder={currentFolder}
             viewMode={viewMode}

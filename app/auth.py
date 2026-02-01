@@ -771,38 +771,39 @@ class TelegramAuthenticator:
         return None
     
     async def try_auto_login_from_desktop(self) -> Dict[str, Any]:
-        """Thử tự động đăng nhập từ Telegram Desktop"""
+        """Thử tự động đăng nhập từ Telegram Desktop - tạo session riêng cho TeleDrive"""
         if self._auto_login_attempted:
-            # Không log nữa để tránh spam
             return {
                 'success': False,
                 'message': 'Auto-login đã được thử trước đó',
-                'silent': True  # Đánh dấu để không hiển thị lỗi
+                'silent': True
             }
         
         self._auto_login_attempted = True
         
         try:
-            # Tìm Telegram Desktop
+            # Kiểm tra session đã tồn tại trước
+            existing = await self.check_existing_session()
+            if existing.get('success'):
+                print("[AUTO_LOGIN] Sử dụng session TeleDrive đã lưu")
+                return existing
+            
+            # Nếu chưa có session, thử import từ Telegram Desktop
             tdata_path = self._find_telegram_desktop()
             if not tdata_path:
                 return {
                     'success': False,
                     'message': 'Không tìm thấy Telegram Desktop',
-                    'hint': 'Cài đặt Telegram Desktop và đăng nhập'
+                    'hint': 'Hãy đảm bảo Telegram Desktop đã được cài đặt và đăng nhập'
                 }
             
             print(f"[AUTO_LOGIN] Tìm thấy Telegram Desktop: {tdata_path}")
             
-            # Xác định đường dẫn project root
+            # Sử dụng script import để tạo session riêng cho TeleDrive
             project_root = Path(__file__).parent.parent
             python311_path = project_root / "python311" / "python.exe"
             import_script = project_root / "app" / "session_import.py"
-            # Import to a temp file to avoid locking issues with existing session
             session_output = project_root / "data" / "session_import"
-            
-            # Sử dụng script import mới qua subprocess (hỗ trợ tdata mới)
-            print("[AUTO_LOGIN] Sử dụng script import để import session...")
             
             if not python311_path.exists():
                 return {
@@ -818,103 +819,84 @@ class TelegramAuthenticator:
                     'hint': 'File app/session_import.py bị thiếu'
                 }
             
-            # Chạy script import với Python 3.11
+            print("[AUTO_LOGIN] Import session từ Telegram Desktop...")
+            
+            result = subprocess.run(
+                [str(python311_path), str(import_script), str(session_output)],
+                capture_output=True,
+                text=True,
+                timeout=60,
+                cwd=str(project_root)
+            )
+            
+            if result.returncode != 0:
+                print(f"[AUTO_LOGIN] Script error: {result.stderr}")
+                return {
+                    'success': False,
+                    'message': 'Lỗi import session',
+                    'hint': result.stderr or 'Không có thông tin lỗi'
+                }
+            
             try:
-                result = subprocess.run(
-                    [str(python311_path), str(import_script), str(session_output)],
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                    cwd=str(project_root)
-                )
-                
-                if result.returncode != 0:
-                    print(f"[AUTO_LOGIN] Script error: {result.stderr}")
-                    return {
-                        'success': False,
-                        'message': 'Lỗi chạy script import session',
-                        'hint': result.stderr or 'Không có thông tin lỗi'
-                    }
-                
-                # Parse JSON output
-                try:
-                    import_result = json.loads(result.stdout.strip())
-                except json.JSONDecodeError as e:
-                    print(f"[AUTO_LOGIN] JSON decode error: {e}")
-                    print(f"[AUTO_LOGIN] Output: {result.stdout}")
-                    return {
-                        'success': False,
-                        'message': 'Lỗi parse kết quả import',
-                        'hint': result.stdout[:200] if result.stdout else 'Không có output'
-                    }
-                
-                if not import_result.get('success'):
-                    return {
-                        'success': False,
-                        'message': import_result.get('message', 'Import thất bại'),
-                        'hint': 'Vui lòng đăng nhập thủ công'
-                    }
-                
-                # Session đã được import thành công, giờ load và tạo user
-                print("[AUTO_LOGIN] Session đã import, đang xác thực...")
-                
-                user_info = import_result.get('user', {})
-                if user_info:
-                    # Tạo TelegramUser-like object để create_or_update_user
-                    class MockTelegramUser:
-                        def __init__(self, data):
-                            self.id = data.get('id')
-                            self.username = data.get('username')
-                            self.first_name = data.get('first_name')
-                            self.last_name = data.get('last_name')
-                            self.phone = data.get('phone')
-                    
-                    mock_user = MockTelegramUser(user_info)
-                    db_user = self.create_or_update_user(mock_user, mock_user.phone or '')
-                    
-                    # Copy session_import.session to session.session
-                    import shutil
-                    src_session = project_root / "data" / "session_import.session"
-                    dst_session = project_root / "data" / "session.session"
-                    if src_session.exists():
-                        try:
-                            shutil.copy2(str(src_session), str(dst_session))
-                            print(f"[AUTO_LOGIN] Copied session to {dst_session}")
-                        except Exception as e:
-                            print(f"[AUTO_LOGIN] Warning: Could not copy session: {e}")
-                    
-                    print(f"[AUTO_LOGIN] Thành công! User: {user_info.get('first_name')}")
-                    return {
-                        'success': True,
-                        'message': 'Đăng nhập tự động thành công (via Python 3.11)',
-                        'user': {
-                            'id': db_user.id,
-                            'username': db_user.username,
-                            'telegram_id': user_info.get('id'),
-                            'first_name': user_info.get('first_name'),
-                            'last_name': user_info.get('last_name'),
-                            'phone': user_info.get('phone')
-                        }
-                    }
-                else:
-                    return {
-                        'success': False,
-                        'message': 'Import thành công nhưng không có thông tin user'
-                    }
-                    
-            except subprocess.TimeoutExpired:
+                import_result = json.loads(result.stdout.strip())
+            except json.JSONDecodeError as e:
                 return {
                     'success': False,
-                    'message': 'Timeout khi import session',
-                    'hint': 'Vui lòng thử lại hoặc đăng nhập thủ công'
+                    'message': 'Lỗi parse kết quả import'
                 }
-            except Exception as e:
-                print(f"[AUTO_LOGIN] Subprocess error: {e}")
+            
+            if not import_result.get('success'):
                 return {
                     'success': False,
-                    'message': f'Lỗi subprocess: {str(e)}'
+                    'message': import_result.get('message', 'Import thất bại'),
+                    'hint': 'Vui lòng đăng nhập thủ công'
                 }
+            
+            user_info = import_result.get('user', {})
+            if user_info:
+                class MockTelegramUser:
+                    def __init__(self, data):
+                        self.id = data.get('id')
+                        self.username = data.get('username')
+                        self.first_name = data.get('first_name')
+                        self.last_name = data.get('last_name')
+                        self.phone = data.get('phone')
                 
+                mock_user = MockTelegramUser(user_info)
+                db_user = self.create_or_update_user(mock_user, mock_user.phone or '')
+                
+                # Copy session to main session file
+                import shutil
+                src_session = project_root / "data" / "session_import.session"
+                dst_session = project_root / "data" / "session.session"
+                if src_session.exists():
+                    shutil.copy2(str(src_session), str(dst_session))
+                    print(f"[AUTO_LOGIN] Session đã lưu vào {dst_session}")
+                
+                print(f"[AUTO_LOGIN] Thành công! User: {user_info.get('first_name')}")
+                return {
+                    'success': True,
+                    'message': 'Đăng nhập thành công từ Telegram Desktop',
+                    'user': {
+                        'id': db_user.id,
+                        'username': db_user.username,
+                        'telegram_id': user_info.get('id'),
+                        'first_name': user_info.get('first_name'),
+                        'last_name': user_info.get('last_name'),
+                        'phone': user_info.get('phone')
+                    }
+                }
+            
+            return {
+                'success': False,
+                'message': 'Import thành công nhưng không có thông tin user'
+            }
+            
+        except subprocess.TimeoutExpired:
+            return {
+                'success': False,
+                'message': 'Timeout khi import session'
+            }
         except Exception as e:
             print(f"[AUTO_LOGIN] Lỗi: {e}")
             return {
@@ -1021,6 +1003,50 @@ class TelegramAuthenticator:
 
         # Final cleanup of session files
         self._cleanup_old_session_files()
+
+    async def logout(self) -> Dict[str, Any]:
+        """Đăng xuất khỏi Telegram - xóa session file"""
+        try:
+            # Đóng kết nối nếu có
+            await self.close()
+            
+            # Xóa session files
+            session_files = [
+                "data/session.session",
+                "data/session.session-journal",
+                "data/session_import.session",
+                "data/session_import.session-journal",
+                "session.session",
+                "session.session-journal"
+            ]
+            
+            deleted_files = []
+            for session_file in session_files:
+                if os.path.exists(session_file):
+                    try:
+                        os.remove(session_file)
+                        deleted_files.append(session_file)
+                        print(f"[LOGOUT] Deleted session file: {session_file}")
+                    except Exception as e:
+                        print(f"[LOGOUT] Error deleting {session_file}: {e}")
+            
+            # Reset auto-login flag
+            self._auto_login_attempted = False
+            
+            print(f"[LOGOUT] Đăng xuất thành công, đã xóa {len(deleted_files)} session files")
+            
+            return {
+                'success': True,
+                'message': 'Đã đăng xuất khỏi Telegram thành công',
+                'deleted_files': deleted_files
+            }
+            
+        except Exception as e:
+            print(f"[LOGOUT] Lỗi: {e}")
+            return {
+                'success': False,
+                'error': f'Lỗi đăng xuất: {str(e)}'
+            }
 
 # Global authenticator instance
 telegram_auth = TelegramAuthenticator()
