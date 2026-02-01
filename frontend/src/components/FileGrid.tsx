@@ -164,6 +164,45 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         });
     };
 
+    // Handle file rename
+    const handleFileRename = async (file: FileInfo, newName: string) => {
+        try {
+            const response = await api.renameFile(Number(file.id), newName);
+            if (response.success) {
+                // Update local state
+                setAllFiles(prev => prev.map(f =>
+                    f.id === file.id ? { ...f, name: newName, filename: newName } : f
+                ));
+            } else {
+                alert(`Lỗi đổi tên: ${response.error}`);
+            }
+        } catch (err) {
+            alert('Lỗi đổi tên file');
+        }
+    };
+
+    // Handle file delete
+    const handleFileDelete = async (file: FileInfo) => {
+        try {
+            const response = await api.deleteFile(file.id);
+            if (response.success) {
+                // Remove from local state
+                setAllFiles(prev => prev.filter(f => f.id !== file.id));
+            } else {
+                alert(`Lỗi xóa file: ${response.error}`);
+            }
+        } catch (err) {
+            alert('Lỗi xóa file');
+        }
+    };
+
+    // Handle show file info
+    const [infoFile, setInfoFile] = useState<FileInfo | null>(null);
+
+    const handleShowInfo = (file: FileInfo) => {
+        setInfoFile(file);
+    };
+
     const handleSort = (column: 'name' | 'modified') => {
         if (sortColumn === column) {
             setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
@@ -404,6 +443,9 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                                 viewMode="list"
                                 isSelected={selectedFiles.has(file.id)}
                                 onSelect={(isMulti) => handleFileSelect(file.id, isMulti)}
+                                onRename={handleFileRename}
+                                onDelete={handleFileDelete}
+                                onShowInfo={handleShowInfo}
                             />
                         ))}
                     </div>
@@ -419,6 +461,9 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                                 viewMode="grid"
                                 isSelected={selectedFiles.has(file.id)}
                                 onSelect={(isMulti) => handleFileSelect(file.id, isMulti)}
+                                onRename={handleFileRename}
+                                onDelete={handleFileDelete}
+                                onShowInfo={handleShowInfo}
                             />
                         ))}
                     </div>
@@ -431,6 +476,84 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                     <span className="text-sm text-gray-500">
                         Trang {pagination.page} / {pagination.pages} ({pagination.total} mục)
                     </span>
+                </div>
+            )}
+
+            {/* File Info Panel */}
+            {infoFile && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setInfoFile(null)}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                            <h3 className="text-lg font-medium text-gray-800">Thông tin về tệp</h3>
+                            <button
+                                onClick={() => setInfoFile(null)}
+                                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="px-6 py-4 space-y-4">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-gray-800 truncate">{infoFile.name}</p>
+                                    <p className="text-sm text-gray-500">{infoFile.type === 'folder' ? 'Thư mục' : 'Tệp'}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Loại:</span>
+                                    <span className="text-gray-800">{infoFile.mimeType || infoFile.file_type || 'Không xác định'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Kích thước:</span>
+                                    <span className="text-gray-800">
+                                        {infoFile.size ? `${(infoFile.size / 1024 / 1024).toFixed(2)} MB` : 'Không xác định'}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Ngày sửa đổi:</span>
+                                    <span className="text-gray-800">{infoFile.modified || 'Không xác định'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Chủ sở hữu:</span>
+                                    <span className="text-gray-800">{infoFile.owner || 'tôi'}</span>
+                                </div>
+                                {infoFile.telegram_channel && (
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Kênh Telegram:</span>
+                                        <span className="text-gray-800">{infoFile.telegram_channel}</span>
+                                    </div>
+                                )}
+                                {infoFile.storage_type && (
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Lưu trữ:</span>
+                                        <span className="text-gray-800 capitalize">{infoFile.storage_type}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+                            <button
+                                onClick={() => setInfoFile(null)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
