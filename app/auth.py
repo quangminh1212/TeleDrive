@@ -771,7 +771,7 @@ class TelegramAuthenticator:
         return None
     
     async def try_auto_login_from_desktop(self) -> Dict[str, Any]:
-        """Thử tự động đăng nhập từ session đã lưu (KHÔNG import từ Telegram Desktop để tránh conflict)"""
+        """Thử tự động đăng nhập từ Telegram Desktop - tạo session riêng cho TeleDrive"""
         if self._auto_login_attempted:
             return {
                 'success': False,
@@ -781,22 +781,122 @@ class TelegramAuthenticator:
         
         self._auto_login_attempted = True
         
-        # QUAN TRỌNG: KHÔNG import từ Telegram Desktop nữa vì gây conflict
-        # Thay vào đó, chỉ kiểm tra session riêng của TeleDrive
         try:
-            # Chỉ kiểm tra session đã tồn tại (không import từ Desktop)
+            # Kiểm tra session đã tồn tại trước
             existing = await self.check_existing_session()
             if existing.get('success'):
                 print("[AUTO_LOGIN] Sử dụng session TeleDrive đã lưu")
                 return existing
             
-            # Nếu không có session, yêu cầu đăng nhập thủ công
+            # Nếu chưa có session, thử import từ Telegram Desktop
+            tdata_path = self._find_telegram_desktop()
+            if not tdata_path:
+                return {
+                    'success': False,
+                    'message': 'Không tìm thấy Telegram Desktop',
+                    'hint': 'Hãy đảm bảo Telegram Desktop đã được cài đặt và đăng nhập'
+                }
+            
+            print(f"[AUTO_LOGIN] Tìm thấy Telegram Desktop: {tdata_path}")
+            
+            # Sử dụng script import để tạo session riêng cho TeleDrive
+            project_root = Path(__file__).parent.parent
+            python311_path = project_root / "python311" / "python.exe"
+            import_script = project_root / "app" / "session_import.py"
+            session_output = project_root / "data" / "session_import"
+            
+            if not python311_path.exists():
+                return {
+                    'success': False,
+                    'message': 'Không tìm thấy Python 3.11 portable',
+                    'hint': 'Chạy setup-python.bat để cài Python 3.11'
+                }
+            
+            if not import_script.exists():
+                return {
+                    'success': False,
+                    'message': 'Không tìm thấy script import session',
+                    'hint': 'File app/session_import.py bị thiếu'
+                }
+            
+            print("[AUTO_LOGIN] Import session từ Telegram Desktop...")
+            
+            result = subprocess.run(
+                [str(python311_path), str(import_script), str(session_output)],
+                capture_output=True,
+                text=True,
+                timeout=60,
+                cwd=str(project_root)
+            )
+            
+            if result.returncode != 0:
+                print(f"[AUTO_LOGIN] Script error: {result.stderr}")
+                return {
+                    'success': False,
+                    'message': 'Lỗi import session',
+                    'hint': result.stderr or 'Không có thông tin lỗi'
+                }
+            
+            try:
+                import_result = json.loads(result.stdout.strip())
+            except json.JSONDecodeError as e:
+                return {
+                    'success': False,
+                    'message': 'Lỗi parse kết quả import'
+                }
+            
+            if not import_result.get('success'):
+                return {
+                    'success': False,
+                    'message': import_result.get('message', 'Import thất bại'),
+                    'hint': 'Vui lòng đăng nhập thủ công'
+                }
+            
+            user_info = import_result.get('user', {})
+            if user_info:
+                class MockTelegramUser:
+                    def __init__(self, data):
+                        self.id = data.get('id')
+                        self.username = data.get('username')
+                        self.first_name = data.get('first_name')
+                        self.last_name = data.get('last_name')
+                        self.phone = data.get('phone')
+                
+                mock_user = MockTelegramUser(user_info)
+                db_user = self.create_or_update_user(mock_user, mock_user.phone or '')
+                
+                # Copy session to main session file
+                import shutil
+                src_session = project_root / "data" / "session_import.session"
+                dst_session = project_root / "data" / "session.session"
+                if src_session.exists():
+                    shutil.copy2(str(src_session), str(dst_session))
+                    print(f"[AUTO_LOGIN] Session đã lưu vào {dst_session}")
+                
+                print(f"[AUTO_LOGIN] Thành công! User: {user_info.get('first_name')}")
+                return {
+                    'success': True,
+                    'message': 'Đăng nhập thành công từ Telegram Desktop',
+                    'user': {
+                        'id': db_user.id,
+                        'username': db_user.username,
+                        'telegram_id': user_info.get('id'),
+                        'first_name': user_info.get('first_name'),
+                        'last_name': user_info.get('last_name'),
+                        'phone': user_info.get('phone')
+                    }
+                }
+            
             return {
                 'success': False,
-                'message': 'Chưa đăng nhập Telegram',
-                'hint': 'Vui lòng đăng nhập Telegram trong ứng dụng. Không import từ Telegram Desktop để tránh conflict.'
+                'message': 'Import thành công nhưng không có thông tin user'
             }
             
+        except subprocess.TimeoutExpired:
+            return {
+                'success': False,
+                'message': 'Timeout khi import session'
+            }
         except Exception as e:
             print(f"[AUTO_LOGIN] Lỗi: {e}")
             return {
