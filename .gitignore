@@ -51,6 +51,10 @@ data/telegram_key_data
 *.sqlite3
 data/*.db
 data/*.db-journal
+teledrive.db
+teledrive.db-journal
+app/teledrive.db
+app/teledrive.db-journal
 
 # Logs
 logs/
