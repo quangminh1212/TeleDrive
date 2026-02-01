@@ -1,10 +1,17 @@
+import React, { useState } from 'react';
 import { FileInfo } from '../services/api';
+import ContextMenu from './ContextMenu';
 
 interface FileItemProps {
     file: FileInfo;
     viewMode: 'grid' | 'list';
     isSelected: boolean;
     onSelect: (isMultiSelect: boolean) => void;
+    onRename?: (file: FileInfo, newName: string) => void;
+    onDelete?: (file: FileInfo) => void;
+    onCopy?: (file: FileInfo) => void;
+    onMove?: (file: FileInfo) => void;
+    onShowInfo?: (file: FileInfo) => void;
 }
 
 // Google Drive folder icon
@@ -22,7 +29,7 @@ const LargeFolderIcon = () => (
 );
 
 // File icons based on type/extension
-const getFileIcon = (file: FileInfo): JSX.Element => {
+const getFileIcon = (file: FileInfo): React.ReactElement => {
     if (file.type === 'folder' || file.file_type === 'folder') return <FolderIcon />;
 
     const mimeType = file.mimeType || file.mime_type || '';
@@ -111,7 +118,7 @@ const getFileIcon = (file: FileInfo): JSX.Element => {
 };
 
 // Large file icon for grid view
-const getLargeFileIcon = (file: FileInfo): JSX.Element => {
+const getLargeFileIcon = (file: FileInfo): React.ReactElement => {
     if (file.type === 'folder' || file.file_type === 'folder') return <LargeFolderIcon />;
 
     const mimeType = file.mimeType || file.mime_type || '';
@@ -203,7 +210,11 @@ const formatDate = (dateStr: string): string => {
     }
 };
 
-const FileItem = ({ file, viewMode, isSelected, onSelect }: FileItemProps) => {
+const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, onCopy, onMove, onShowInfo }: FileItemProps) => {
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [newName, setNewName] = useState(file.name || file.filename || '');
+
     const handleClick = (e: React.MouseEvent) => {
         onSelect(e.ctrlKey || e.metaKey);
     };
@@ -218,6 +229,65 @@ const FileItem = ({ file, viewMode, isSelected, onSelect }: FileItemProps) => {
         }
     };
 
+    const handleContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setContextMenu({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleContextMenuAction = (action: string) => {
+        switch (action) {
+            case 'download':
+                const filename = file.filename || file.name;
+                window.open(`http://127.0.0.1:5000/download/${filename}`, '_blank');
+                break;
+            case 'rename':
+                setIsRenaming(true);
+                break;
+            case 'delete':
+                if (onDelete) {
+                    if (confirm(`Bạn có chắc muốn xóa "${file.name || file.filename}"?`)) {
+                        onDelete(file);
+                    }
+                }
+                break;
+            case 'copy':
+                onCopy?.(file);
+                break;
+            case 'move':
+                onMove?.(file);
+                break;
+            case 'info':
+                onShowInfo?.(file);
+                break;
+            case 'share':
+                // Copy share link to clipboard
+                const shareLink = `http://127.0.0.1:5000/share/${file.id}`;
+                navigator.clipboard.writeText(shareLink);
+                alert('Đã sao chép liên kết chia sẻ!');
+                break;
+            case 'open':
+                handleDoubleClick();
+                break;
+        }
+        setContextMenu(null);
+    };
+
+    const handleRenameSubmit = () => {
+        if (newName && newName !== (file.name || file.filename)) {
+            onRename?.(file, newName);
+        }
+        setIsRenaming(false);
+    };
+
+    const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleRenameSubmit();
+        } else if (e.key === 'Escape') {
+            setIsRenaming(false);
+            setNewName(file.name || file.filename || '');
+        }
+    };
+
     const displayName = file.name || file.filename || 'Unknown';
     const displaySize = formatFileSize(file.size || file.file_size);
     const displayDate = formatDate(file.modified);
@@ -226,88 +296,143 @@ const FileItem = ({ file, viewMode, isSelected, onSelect }: FileItemProps) => {
 
     if (viewMode === 'grid') {
         return (
-            <div
-                onClick={handleClick}
-                onDoubleClick={handleDoubleClick}
-                className={`group relative p-3 rounded-lg cursor-pointer transition-all ${isSelected
-                    ? 'bg-blue-100 ring-2 ring-blue-400'
-                    : 'hover:bg-gray-100'
-                    }`}
-            >
-                {/* File Icon */}
-                <div className="flex items-center justify-center h-16 mb-2">
-                    {getLargeFileIcon(file)}
+            <>
+                <div
+                    onClick={handleClick}
+                    onDoubleClick={handleDoubleClick}
+                    onContextMenu={handleContextMenu}
+                    className={`group relative p-3 rounded-lg cursor-pointer transition-all ${isSelected
+                        ? 'bg-blue-100 ring-2 ring-blue-400'
+                        : 'hover:bg-gray-100'
+                        }`}
+                >
+                    {/* File Icon */}
+                    <div className="flex items-center justify-center h-16 mb-2">
+                        {getLargeFileIcon(file)}
+                    </div>
+
+                    {/* File Name - with rename input */}
+                    {isRenaming ? (
+                        <input
+                            type="text"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            onBlur={handleRenameSubmit}
+                            onKeyDown={handleRenameKeyDown}
+                            className="w-full text-sm text-center px-1 py-0.5 border border-blue-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <p className="text-sm text-center text-gray-700 truncate" title={displayName}>
+                            {displayName}
+                        </p>
+                    )}
+
+                    {/* File size (below name) */}
+                    {file.type !== 'folder' && (
+                        <p className="text-xs text-center text-gray-400 mt-1">
+                            {displaySize}
+                        </p>
+                    )}
+
+                    {/* Context Menu Button */}
+                    <button
+                        className="absolute top-2 right-2 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-gray-200 transition-opacity"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setContextMenu({ x: e.clientX, y: e.clientY });
+                        }}
+                    >
+                        <MoreIcon />
+                    </button>
                 </div>
 
-                {/* File Name */}
-                <p className="text-sm text-center text-gray-700 truncate" title={displayName}>
-                    {displayName}
-                </p>
-
-                {/* File size (below name) */}
-                {file.type !== 'folder' && (
-                    <p className="text-xs text-center text-gray-400 mt-1">
-                        {displaySize}
-                    </p>
+                {/* Context Menu */}
+                {contextMenu && (
+                    <ContextMenu
+                        file={file}
+                        x={contextMenu.x}
+                        y={contextMenu.y}
+                        onClose={() => setContextMenu(null)}
+                        onAction={handleContextMenuAction}
+                    />
                 )}
-
-                {/* Context Menu Button */}
-                <button
-                    className="absolute top-2 right-2 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-gray-200 transition-opacity"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        console.log('Show context menu');
-                    }}
-                >
-                    <MoreIcon />
-                </button>
-            </div>
+            </>
         );
     }
 
     // List View - Google Drive style
     return (
-        <div
-            onClick={handleClick}
-            onDoubleClick={handleDoubleClick}
-            className={`group flex items-center px-4 py-2 cursor-pointer transition-all border-b border-gray-100 ${isSelected
-                ? 'bg-blue-50'
-                : 'hover:bg-gray-50'
-                }`}
-        >
-            {/* Icon */}
-            <span className="mr-3 flex-shrink-0">{getFileIcon(file)}</span>
+        <>
+            <div
+                onClick={handleClick}
+                onDoubleClick={handleDoubleClick}
+                onContextMenu={handleContextMenu}
+                className={`group flex items-center px-4 py-2 cursor-pointer transition-all border-b border-gray-100 ${isSelected
+                    ? 'bg-blue-50'
+                    : 'hover:bg-gray-50'
+                    }`}
+            >
+                {/* Icon */}
+                <span className="mr-3 flex-shrink-0">{getFileIcon(file)}</span>
 
-            {/* Name */}
-            <span className="flex-1 min-w-0 text-sm text-gray-700 truncate" title={displayName}>
-                {displayName}
-            </span>
+                {/* Name - with rename input */}
+                {isRenaming ? (
+                    <input
+                        type="text"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        onBlur={handleRenameSubmit}
+                        onKeyDown={handleRenameKeyDown}
+                        className="flex-1 min-w-0 text-sm px-2 py-1 border border-blue-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                ) : (
+                    <span className="flex-1 min-w-0 text-sm text-gray-700 truncate" title={displayName}>
+                        {displayName}
+                    </span>
+                )}
 
-            {/* Owner */}
-            <span className="w-32 text-sm text-gray-500 px-2 truncate">{displayOwner}</span>
+                {/* Owner */}
+                <span className="w-32 text-sm text-gray-500 px-2 truncate">{displayOwner}</span>
 
-            {/* Modified Date */}
-            <span className="w-48 text-sm text-gray-500 px-2">{displayDate}</span>
+                {/* Modified Date */}
+                <span className="w-48 text-sm text-gray-500 px-2">{displayDate}</span>
 
-            {/* Channel / Source */}
-            <span className="w-32 text-sm text-gray-500 px-2 truncate" title={displayChannel}>
-                {displayChannel}
-            </span>
+                {/* Channel / Source */}
+                <span className="w-32 text-sm text-gray-500 px-2 truncate" title={displayChannel}>
+                    {displayChannel}
+                </span>
 
-            {/* Actions */}
-            <div className="w-10 flex justify-end">
-                <button
-                    className="p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-gray-200"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        console.log('Show context menu');
-                    }}
-                >
-                    <MoreIcon />
-                </button>
+                {/* Actions */}
+                <div className="w-10 flex justify-end">
+                    <button
+                        className="p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-gray-200"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setContextMenu({ x: e.clientX, y: e.clientY });
+                        }}
+                    >
+                        <MoreIcon />
+                    </button>
+                </div>
             </div>
-        </div>
+
+            {/* Context Menu */}
+            {contextMenu && (
+                <ContextMenu
+                    file={file}
+                    x={contextMenu.x}
+                    y={contextMenu.y}
+                    onClose={() => setContextMenu(null)}
+                    onAction={handleContextMenuAction}
+                />
+            )}
+        </>
     );
 };
 
 export default FileItem;
+
