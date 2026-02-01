@@ -52,6 +52,16 @@ class TelegramAuthenticator:
             os.path.expanduser("~/AppData/Roaming/Telegram Desktop/tdata"),
         ]
 
+    def is_session_valid(self) -> bool:
+        """Check if main session file exists and is valid (sync check)"""
+        session_path = "data/session.session"
+        if not os.path.exists(session_path):
+            return False
+        # Check size (empty file is invalid)
+        if os.path.getsize(session_path) < 100:
+            return False
+        return True
+
     async def __aenter__(self):
         """Async context manager entry"""
         return self

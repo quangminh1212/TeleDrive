@@ -290,6 +290,18 @@ def check_session_timeout():
         session['last_activity'] = dt.datetime.now(dt.timezone.utc).isoformat()
         session.permanent = True
 
+        # NEW: Check if Telegram session is actually valid
+        # This handles cases where user is logged in Flask but 'session.session' is missing/deleted
+        if request.endpoint not in ['logout', 'telegram_login', 'api_qr_start', 'api_qr_status', 'api_phone_start', 'api_phone_verify']:
+            # Skip for auth API endpoints too
+            if not request.endpoint or not request.endpoint.startswith('api_'):
+                 if not telegram_auth.is_session_valid():
+                     app.logger.warning("Flask session active but Telegram session file missing. Forcing logout.")
+                     logout_user()
+                     session.clear()
+                     flash('Phiên đăng nhập Telegram không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.', 'warning')
+                     return redirect(url_for('telegram_login'))
+
 @app.after_request
 def add_security_headers(response):
     """Add security headers to all responses"""
