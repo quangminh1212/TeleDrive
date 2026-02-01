@@ -1306,9 +1306,9 @@ def rescan_saved_messages():
         # Delete test files from database before syncing
         test_files_deleted = File.query.filter(
             db.or_(
-                File.name.like('%test%'),
-                File.name.like('%debug%'),
-                File.name.like('%final_test%')
+                File.filename.like('%test%'),
+                File.filename.like('%debug%'),
+                File.filename.like('%final_test%')
             )
         ).delete(synchronize_session='fetch')
         if test_files_deleted > 0:
