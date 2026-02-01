@@ -55,6 +55,7 @@ xcopy /q "%PROJECT_DIR%\icon.ico" "%BUILD_DIR%\" >nul
 :: Copy scripts
 xcopy /q "%PROJECT_DIR%\run.bat" "%BUILD_DIR%\" >nul
 xcopy /q "%PROJECT_DIR%\stop.bat" "%BUILD_DIR%\" >nul
+xcopy /q "%PROJECT_DIR%\install_windows.bat" "%BUILD_DIR%\" >nul
 
 :: ============================================
 :: 3. Setup Frontend
