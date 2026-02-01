@@ -340,6 +340,38 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     Tổng dung lượng: {usedStorageFormatted}
                 </p>
             </div>
+
+            {/* Logout Button */}
+            <div className="px-3 py-2 border-t border-gray-200">
+                <button
+                    onClick={async () => {
+                        if (confirm('Bạn có chắc muốn đăng xuất khỏi Telegram?\nSau khi đăng xuất, bạn cần đăng nhập lại để sử dụng.')) {
+                            try {
+                                const response = await fetch('http://127.0.0.1:5000/api/v2/auth/logout', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' }
+                                });
+                                const result = await response.json();
+                                if (result.success) {
+                                    alert('Đăng xuất thành công!');
+                                    window.location.reload();
+                                } else {
+                                    alert('Lỗi: ' + (result.error || 'Không thể đăng xuất'));
+                                }
+                            } catch (error) {
+                                console.error('Logout error:', error);
+                                alert('Lỗi kết nối đến server');
+                            }
+                        }
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+                    </svg>
+                    <span>Đăng xuất Telegram</span>
+                </button>
+            </div>
         </aside>
     );
 };

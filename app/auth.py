@@ -1004,6 +1004,50 @@ class TelegramAuthenticator:
         # Final cleanup of session files
         self._cleanup_old_session_files()
 
+    async def logout(self) -> Dict[str, Any]:
+        """Đăng xuất khỏi Telegram - xóa session file"""
+        try:
+            # Đóng kết nối nếu có
+            await self.close()
+            
+            # Xóa session files
+            session_files = [
+                "data/session.session",
+                "data/session.session-journal",
+                "data/session_import.session",
+                "data/session_import.session-journal",
+                "session.session",
+                "session.session-journal"
+            ]
+            
+            deleted_files = []
+            for session_file in session_files:
+                if os.path.exists(session_file):
+                    try:
+                        os.remove(session_file)
+                        deleted_files.append(session_file)
+                        print(f"[LOGOUT] Deleted session file: {session_file}")
+                    except Exception as e:
+                        print(f"[LOGOUT] Error deleting {session_file}: {e}")
+            
+            # Reset auto-login flag
+            self._auto_login_attempted = False
+            
+            print(f"[LOGOUT] Đăng xuất thành công, đã xóa {len(deleted_files)} session files")
+            
+            return {
+                'success': True,
+                'message': 'Đã đăng xuất khỏi Telegram thành công',
+                'deleted_files': deleted_files
+            }
+            
+        except Exception as e:
+            print(f"[LOGOUT] Lỗi: {e}")
+            return {
+                'success': False,
+                'error': f'Lỗi đăng xuất: {str(e)}'
+            }
+
 # Global authenticator instance
 telegram_auth = TelegramAuthenticator()
 

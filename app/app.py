@@ -1507,6 +1507,37 @@ def rescan_saved_messages():
         }), 500
 
 
+@app.route('/api/v2/auth/logout', methods=['POST'])
+@csrf.exempt
+def logout_telegram():
+    """Đăng xuất khỏi Telegram - xóa session"""
+    try:
+        from auth import telegram_auth
+        
+        async def do_logout():
+            return await telegram_auth.logout()
+        
+        result = run_async_in_thread(do_logout())
+        
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': result.get('message', 'Đã đăng xuất thành công')
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Lỗi đăng xuất')
+            }), 500
+            
+    except Exception as e:
+        app.logger.error(f"Logout error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/api/get_files')
 @login_required
 def get_files():
