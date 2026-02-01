@@ -7,7 +7,7 @@ echo   Setup Portable Python 3.11
 echo ========================================
 echo.
 
-set "PYTHON_DIR=%CD%\python311"
+set "PYTHON_DIR=%~dp0python311"
 set "PYTHON_URL=https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip"
 set "PYTHON_ZIP=%TEMP%\python-3.11.9-embed.zip"
 set "GET_PIP_URL=https://bootstrap.pypa.io/get-pip.py"
