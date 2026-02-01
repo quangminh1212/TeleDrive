@@ -1303,6 +1303,18 @@ def rescan_saved_messages():
         
         app.logger.info(f"Found {len(telegram_files)} files in Saved Messages")
         
+        # Delete test files from database before syncing
+        test_files_deleted = File.query.filter(
+            db.or_(
+                File.name.like('%test%'),
+                File.name.like('%debug%'),
+                File.name.like('%final_test%')
+            )
+        ).delete(synchronize_session='fetch')
+        if test_files_deleted > 0:
+            db.session.commit()
+            app.logger.info(f"Deleted {test_files_deleted} test files from database")
+        
         # Get ALL existing files from database (not just telegram files)
         existing_db_files = File.query.filter(
             File.is_deleted == False
