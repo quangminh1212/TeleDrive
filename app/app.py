@@ -1385,12 +1385,53 @@ def rescan_saved_messages():
         db.session.commit()
         app.logger.info(f"Hard deleted {removed_count} files from database")
         
-        # Add new files from Telegram to database OR update existing ones
+        # Define test file patterns to skip
+        skip_patterns = ['test', 'debug', 'upload_test', 'api_test', 'final_test']
+        
+        def is_test_file(filename):
+            """Check if filename contains test patterns"""
+            filename_lower = filename.lower()
+            return any(pattern in filename_lower for pattern in skip_patterns)
+        
+        # Filter out test files and duplicates from telegram_files
+        # Keep only the file with the highest message_id for each filename
+        filename_to_best_file = {}
+        for tg_file in telegram_files:
+            filename = tg_file['filename']
+            
+            # Skip test files
+            if is_test_file(filename):
+                app.logger.info(f"Skipping test file from Telegram: {filename}")
+                continue
+            
+            # Keep only the latest (highest message_id) for each filename
+            if filename not in filename_to_best_file:
+                filename_to_best_file[filename] = tg_file
+            elif tg_file['message_id'] > filename_to_best_file[filename]['message_id']:
+                app.logger.info(f"Replacing duplicate: {filename} (msg {filename_to_best_file[filename]['message_id']} -> {tg_file['message_id']})")
+                filename_to_best_file[filename] = tg_file
+        
+        # Use only the filtered files
+        filtered_telegram_files = list(filename_to_best_file.values())
+        app.logger.info(f"After filtering: {len(filtered_telegram_files)} unique files (from {len(telegram_files)} total)")
+        
+        # Update telegram_message_ids with filtered files
+        filtered_message_ids = {f['message_id'] for f in filtered_telegram_files}
+        
+        # Delete files from DB that are not in filtered list
+        existing_db_files = File.query.all()
+        for db_file in existing_db_files:
+            if db_file.telegram_message_id and db_file.telegram_message_id not in filtered_message_ids:
+                app.logger.info(f"Deleting file not in filtered list: {db_file.filename} (msg_id: {db_file.telegram_message_id})")
+                db.session.delete(db_file)
+                removed_count += 1
+        db.session.commit()
+        
         # Re-query to get fresh data after deletions
         existing_db_files = File.query.all()
         existing_message_ids = {f.telegram_message_id: f for f in existing_db_files if f.telegram_message_id}
         
-        for tg_file in telegram_files:
+        for tg_file in filtered_telegram_files:
             existing_file = existing_message_ids.get(tg_file['message_id'])
             
             if existing_file:
@@ -1427,6 +1468,7 @@ def rescan_saved_messages():
                 db.session.add(new_file)
                 added_count += 1
                 app.logger.info(f"Added new file from Telegram: {tg_file['filename']}")
+            
             
             # Add to synced files list
             synced_files.append({
