@@ -3346,9 +3346,89 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
+# --- QR & Phone Auth API Routes ---
+
+@app.route('/api/auth/qr/start', methods=['POST'])
+def api_qr_start():
+    """Start QR Login session"""
+    result = run_async_in_thread(telegram_auth.qr_login_start())
+    return jsonify(result)
+
+@app.route('/api/auth/qr/status', methods=['POST'])
+def api_qr_status():
+    """Check QR Login status"""
+    data = request.get_json()
+    token = data.get('token')
+    if not token:
+        return jsonify({'success': False, 'error': 'Token required'})
+        
+    result = run_async_in_thread(telegram_auth.check_qr_login_status(token))
+    
+    if result.get('status') == 'authenticated':
+        # Login the user in Flask
+        user_data = result.get('user')
+        if user_data:
+            user = User.query.get(user_data['id'])
+            if user:
+                login_user(user, remember=True)
+                flash(f'Đăng nhập thành công! Xin chào {user.first_name}', 'success')
+                
+    return jsonify(result)
+
+@app.route('/api/auth/phone/start', methods=['POST'])
+def api_phone_start():
+    """Start Phone Login"""
+    data = request.get_json()
+    phone = data.get('phone_number')
+    if not phone:
+        return jsonify({'success': False, 'error': 'Phone number required'})
+        
+    # Use existing auth method
+    result = run_async_in_thread(telegram_auth.send_code_request(phone))
+    return jsonify(result)
+
+@app.route('/api/auth/phone/verify', methods=['POST'])
+def api_phone_verify():
+    """Verify Phone Login Code"""
+    data = request.get_json()
+    session_id = data.get('session_id')
+    code = data.get('code')
+    password = data.get('password')
+    
+    if not session_id or not code:
+        return jsonify({'success': False, 'error': 'Missing session_id or code'})
+        
+    result = run_async_in_thread(telegram_auth.verify_code(session_id, code, password))
+    
+    if result.get('success'):
+         # Finalize login
+         user_data = result.get('user')
+         if user_data:
+            user = User.query.get(user_data['id'])
+            if user:
+                login_user(user, remember=True)
+                flash(f'Đăng nhập thành công! Xin chào {user.first_name}', 'success')
+                
+                # Also save usage of this session for future auto-logins if desired
+                # But we just use the session file provided by auth logic.
+
+    return jsonify(result)
+
+# --- End Auth Routes ---
+
+@app.route('/telegram_login', methods=['GET'])
+def telegram_login():
+    """Telegram login page"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+        
+    # Render the new UI
+    return render_template('auth/telegram_login.html')
+
 @app.route('/profile')
 @login_required
 def profile():
+
     """User profile page"""
     return render_template('auth/profile.html', user=current_user)
 
