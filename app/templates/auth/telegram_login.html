@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleDrive Login</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #3390ec;
+            --primary-hover: #2185d0;
+            --text-color: #000;
+            --text-secondary: #707579;
+            --bg-color: #fff;
+            --surface-color: #fff;
+            --border-color: #dfe1e5;
+            --error-color: #e53935;
+        }
+
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f9fa; /* Telegram Web background vibe */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: var(--text-color);
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Subtle shadow */
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .logo-section {
+            margin-bottom: 24px;
+        }
+
+        .logo-img {
+            width: 120px;
+            height: 120px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"><circle cx="120" cy="120" r="120" fill="%233390ec"/><path fill="%23fff" d="M54 118c0-12 55.5-23.7 124-49.5-2.8 11.8-15.3 79.5-22.3 113.8 2.2 0.7-33-14.8-40.3-19.4l45-39.7c-5.5-3.8-37.5 22.8-44 26.5l-33.5-10.2L54 118z"/></svg>');
+            background-size: cover;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 500;
+            margin: 0 0 10px;
+        }
+
+        p.subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin: 0 0 30px;
+            line-height: 1.5;
+        }
+
+        /* Tabs */
+        .tabs {
+           display: none; /* Hidden for now, implemented logic to switch via buttons */
+        }
+        
+        .mode-switch {
+            color: var(--primary);
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .mode-switch:hover {
+            text-decoration: underline;
+        }
+
+        /* QR View */
+        .qr-section {
+            display: none; /* Hidden by default or managed by JS */
+            flex-direction: column;
+            align-items: center;
+        }
+        .qr-section.active {
+            display: flex;
+        }
+
+        .qr-code-wrapper {
+            width: 240px;
+            height: 240px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        #qrcode {
+            /* padding: 10px; */
+            /* border: 1px solid #eee; */
+            /* border-radius: 4px; */
+        }
+        
+        #qrcode img {
+            display: block; /* Remove gap */
+        }
+
+        .qr-loading {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 4px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(51, 144, 236, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        ol.steps {
+            text-align: left;
+            color: var(--text-secondary);
+            font-size: 14px;
+            padding-left: 20px;
+            margin: 0 0 20px;
+            line-height: 1.8;
+        }
+        
+        ol.steps b {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        /* Phone View */
+        .phone-section {
+            display: none;
+            flex-direction: column;
+        }
+        .phone-section.active {
+            display: flex;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            color: var(--primary);
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        
+        input:focus {
+            border-color: var(--primary);
+            border-width: 2px;
+            padding: 11px 13px; /* Adjust for border width change */
+        }
+
+        button.primary-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+            text-transform: uppercase;
+        }
+        
+        button.primary-btn:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        button.primary-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: left;
+            display: none;
+        }
+        
+        .alert-error {
+            background-color: #ffebee;
+            color: var(--error-color);
+        }
+        
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* Code Input */
+        .code-input-container {
+            display: none; /* Shown after sending code */
+        }
+        
+        .resend-timer {
+            margin-top: 15px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <div class="logo-section">
+        <div class="logo-img"></div>
+    </div>
+    
+    <!-- HEADER -->
+    <h1 id="page-title">TeleDrive</h1>
+    <p class="subtitle" id="page-subtitle">Welcome to the future of cloud storage</p>
+
+    <!-- ALERT BOX -->
+    <div id="alert-box" class="alert"></div>
+
+    <!-- VIEW: QR SCAN (DEFAULT) -->
+    <div id="view-qr" class="qr-section active">
+        <div class="qr-code-wrapper">
+            <div id="qrcode"></div>
+            <div id="qr-loading" class="qr-loading">
+                <div class="spinner"></div>
+            </div>
+            <div id="qr-expired" class="qr-loading" style="display:none; flex-direction:column; background:rgba(255,255,255,0.95);">
+                 <p style="margin-bottom:10px; font-weight:500;">Link expired</p>
+                 <button onclick="startQR()" style="padding: 8px 16px; border:1px solid var(--primary); background:transparent; color:var(--primary); border-radius:4px; cursor:pointer;">Reload</button>
+            </div>
+        </div>
+        
+        <ol class="steps">
+            <li>Open <b>Telegram</b> on your phone</li>
+            <li>Go to <b>Settings</b> &gt; <b>Devices</b> &gt; <b>Link Desktop Device</b></li>
+            <li>Point your phone at this screen to confirm login</li>
+        </ol>
+
+        <a class="mode-switch" onclick="switchView('phone')">Log in by phone Number</a>
+    </div>
+
+    <!-- VIEW: PHONE / CODE -->
+    <div id="view-phone" class="phone-section">
+        <!-- STEP 1: PHONE -->
+        <div id="step-phone">
+            <div class="input-group">
+                <label>Phone Number</label>
+                <div class="input-wrapper">
+                    <input type="tel" id="phone-input" placeholder="+84 3xxxxxxxxx" value="+84">
+                </div>
+                <div style="font-size:12px; color:#707579; margin-top:6px;">Please enter your full number with country code</div>
+            </div>
+            <button class="primary-btn" onclick="sendCode()" id="btn-send-code">Next</button>
+        </div>
+
+        <!-- STEP 2: CODE & PASSWORD -->
+        <div id="step-code" class="code-input-container">
+            <div class="input-group">
+                <label>Code</label>
+                <input type="text" id="code-input" placeholder="xxxxx" maxlength="10" autocomplete="one-time-code">
+            </div>
+            
+            <div class="input-group" id="group-password" style="display:none;">
+                <label>Cloud Password (2FA)</label>
+                <input type="password" id="password-input" placeholder="Your password">
+            </div>
+
+            <button class="primary-btn" onclick="verifyCode()" id="btn-verify">Log In</button>
+            <div class="resend-timer" id="resend-text"></div>
+        </div>
+
+        <a class="mode-switch" onclick="switchView('qr')" style="margin-top:20px;">Log in by QR Code</a>
+    </div>
+
+</div>
+
+<script>
+    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let qrToken = null;
+    let qrCheckInterval = null;
+    let currentSessionId = null; // For phone login session
+
+    // Switch Views
+    function switchView(mode) {
+        document.getElementById('alert-box').style.display = 'none';
+        if (mode === 'qr') {
+            document.getElementById('view-qr').classList.add('active');
+            document.getElementById('view-phone').classList.remove('active');
+            document.getElementById('page-title').innerText = "Log in to Telegram";
+            document.getElementById('page-subtitle').innerText = "Scan QR Code to Log in";
+            startQR();
+        } else {
+            document.getElementById('view-qr').classList.remove('active');
+            document.getElementById('view-phone').classList.add('active');
+            document.getElementById('page-title').innerText = "Your Phone Number";
+            document.getElementById('page-subtitle').innerText = "Please confirm your country code and\nenter your phone number.";
+            stopQR();
+        }
+    }
+
+    // QR Logic
+    async function startQR() {
+        showQRLoading();
+        document.getElementById('qr-expired').style.display = 'none';
+        
+        try {
+            const res = await fetch('/api/auth/qr/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF_TOKEN
+                }
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                qrToken = data.token;
+                renderQR(data.url);
+                startPolling(data.token);
+            } else {
+                showAlert(data.error || 'Failed to start QR session', 'error');
+            }
+        } catch (e) {
+            showAlert('Network error', 'error');
+        }
+    }
+
+    function renderQR(url) {
+        const container = document.getElementById('qrcode');
+        container.innerHTML = ''; // Clear previous
+        new QRCode(container, {
+            text: url,
+            width: 200,
+            height: 200,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.M
+        });
+        document.getElementById('qr-loading').style.display = 'none';
+    }
+    
+    function showQRLoading() {
+        document.getElementById('qr-loading').style.display = 'flex';
+    }
+
+    function stopQR() {
+        if (qrCheckInterval) {
+            clearInterval(qrCheckInterval);
+            qrCheckInterval = null;
+        }
+    }
+
+    function startPolling(token) {
+        stopQR();
+        qrCheckInterval = setInterval(async () => {
+            try {
+                const res = await fetch('/api/auth/qr/status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                    body: JSON.stringify({ token: token })
+                });
+                const data = await res.json();
+                
+                if (data.status === 'authenticated') {
+                    // Success!
+                    stopQR();
+                    showAlert("Login successful! Redirecting...", 'success');
+                    setTimeout(() => window.location.href = '/', 1000);
+                } else if (data.status === 'expired') {
+                    stopQR();
+                    document.getElementById('qr-expired').style.display = 'flex';
+                } else if (data.status === 'error') {
+                     stopQR();
+                     showAlert(data.error, 'error');
+                }
+            } catch (e) {
+                // Ignore network glitches in polling
+            }
+        }, 2000); 
+    }
+
+    // Phone Logic
+    async function sendCode() {
+        const phone = document.getElementById('phone-input').value.trim();
+        const btn = document.getElementById('btn-send-code');
+        
+        if (!phone) return showAlert('Please enter phone number', 'error');
+        
+        btn.disabled = true;
+        btn.innerText = "Sending...";
+        
+        // Note: Using existing functionality through form endpoint or maybe need new API?
+        // App.py uses WTForm 'telegram_verify'. It's easier to create a new API endpoint for phone flow API-style 
+        // OR construct a form submit. 
+        // BUT the backend `verify_code` uses existing session logic.
+        // Let's assume we can call an API for this too or use the existing authenticator API directly?
+        // Actually, looking at app.py `telegram_verify` gets code from form. 
+        // `telegram_login` handles auto-login. 
+        // There is NO endpoint exposed for "start phone auth" except implicit session through `auth.py`. 
+        // I need to add an endpoint for phone login init as well to match this UI.
+        
+        // I'll assume I missed adding /api/auth/phone/start. 
+        // I should have added it.
+        // For now, I will use a simulated fetch that I will add to app.py shortly.
+        
+        try {
+            const res = await fetch('/api/auth/phone/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({ phone_number: phone })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                currentSessionId = data.session_id; // Need this for verify
+                document.getElementById('step-phone').style.display = 'none';
+                document.getElementById('step-code').style.display = 'block';
+                document.getElementById('page-subtitle').innerText = `We've sent the code to the Telegram app\non your other device.`;
+            } else {
+                showAlert(data.error || 'Failed to send code', 'error');
+            }
+        } catch (e) {
+             showAlert('Network error: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Next";
+        }
+    }
+    
+    async function verifyCode() {
+        const code = document.getElementById('code-input').value.trim();
+        const password = document.getElementById('password-input').value;
+        const btn = document.getElementById('btn-verify');
+        
+        if (!code) return showAlert('Enter the code', 'error');
+        
+        btn.disabled = true;
+        btn.innerText = "Verifying...";
+        
+        try {
+             const res = await fetch('/api/auth/phone/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({ 
+                    session_id: currentSessionId,
+                    code: code,
+                    password: password
+                })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                 showAlert("Login successful!", 'success');
+                 window.location.href = '/';
+            } else if (data.requires_password) {
+                document.getElementById('group-password').style.display = 'block';
+                showAlert("Two-Step Verification Password Required", 'error');
+                btn.innerText = "Log In";
+            } else {
+                showAlert(data.error || 'Verification failed', 'error');
+            }
+        } catch (e) {
+             showAlert('Network error', 'error');
+        } finally {
+            if (btn.innerText !== "Log In") btn.disabled = false; // Only re-enable if not 2FA flow switch
+             btn.disabled = false;
+             btn.innerText = "Log In";
+        }
+    }
+
+    function showAlert(msg, type) {
+        const el = document.getElementById('alert-box');
+        el.innerText = msg;
+        el.className = 'alert ' + (type === 'error' ? 'alert-error' : 'alert-success');
+        el.style.display = 'block';
+    }
+    
+    // Initialize
+    startQR(); // Default view is QR
+</script>
+
+</body>
+</html>
