@@ -1303,22 +1303,24 @@ def rescan_saved_messages():
         
         app.logger.info(f"Found {len(telegram_files)} files in Saved Messages")
         
-        # Delete test files from database before syncing
-        test_files_deleted = File.query.filter(
-            db.or_(
-                File.filename.like('%test%'),
-                File.filename.like('%debug%'),
-                File.filename.like('%final_test%')
-            )
-        ).delete(synchronize_session='fetch')
-        if test_files_deleted > 0:
-            db.session.commit()
-            app.logger.info(f"Deleted {test_files_deleted} test files from database")
+        # Delete test files from database before syncing (hard delete)
+        # Also delete files already marked as is_deleted
+        test_patterns = ['%test%', '%debug%', '%final_test%', '%upload_test%', '%api_test%']
         
-        # Get ALL existing files from database (not just telegram files)
-        existing_db_files = File.query.filter(
-            File.is_deleted == False
-        ).all()
+        # First, delete all files marked as is_deleted
+        File.query.filter(File.is_deleted == True).delete(synchronize_session='fetch')
+        db.session.commit()
+        app.logger.info("Cleaned up previously deleted files")
+        
+        # Delete test files
+        for pattern in test_patterns:
+            deleted = File.query.filter(File.filename.ilike(pattern)).delete(synchronize_session='fetch')
+            if deleted > 0:
+                app.logger.info(f"Deleted {deleted} files matching pattern: {pattern}")
+        db.session.commit()
+        
+        # Get ALL existing files from database
+        existing_db_files = File.query.all()
         
         # Create lookup by message_id from Telegram Saved Messages
         telegram_message_ids = {f['message_id'] for f in telegram_files}
@@ -1340,12 +1342,13 @@ def rescan_saved_messages():
         # Remove ALL files from database that are not in Telegram Saved Messages
         # AND remove duplicates (keep only 1 file per message_id)
         kept_message_ids = set()  # Track which message_ids we've already kept
+        files_to_delete = []  # Collect files to delete
         
         for db_file in existing_db_files:
             should_delete = False
             delete_reason = ""
             
-            # Check if file has no message_id (local file)
+            # Check if file has no message_id (local file without telegram link)
             if not db_file.telegram_message_id:
                 should_delete = True
                 delete_reason = "no message_id (local file)"
@@ -1365,18 +1368,26 @@ def rescan_saved_messages():
                     db_file.telegram_channel = 'Saved Messages'
                 continue
             
-            # Delete the file
-            app.logger.info(f"Removing file: {db_file.filename} (reason: {delete_reason})")
+            # Mark file for deletion
+            app.logger.info(f"Will delete file: {db_file.filename} (reason: {delete_reason})")
             removed_files.append({
                 'id': db_file.id,
                 'filename': db_file.filename,
                 'message_id': db_file.telegram_message_id,
                 'reason': delete_reason
             })
-            db_file.is_deleted = True
+            files_to_delete.append(db_file)
             removed_count += 1
         
+        # Actually DELETE files from database (hard delete)
+        for file_to_del in files_to_delete:
+            db.session.delete(file_to_del)
+        db.session.commit()
+        app.logger.info(f"Hard deleted {removed_count} files from database")
+        
         # Add new files from Telegram to database OR update existing ones
+        # Re-query to get fresh data after deletions
+        existing_db_files = File.query.all()
         existing_message_ids = {f.telegram_message_id: f for f in existing_db_files if f.telegram_message_id}
         
         for tg_file in telegram_files:
