@@ -243,9 +243,9 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     const renderLoginMethodSelector = () => (
         <div className="flex gap-2 mb-6">
             {[
-                { id: 'desktop' as LoginMethod, label: 'Desktop', icon: '💻' },
-                { id: 'qr' as LoginMethod, label: 'QR Code', icon: '📱' },
-                { id: 'phone' as LoginMethod, label: 'Số điện thoại', icon: '📞' }
+                { id: 'desktop' as LoginMethod, label: 'Desktop' },
+                { id: 'qr' as LoginMethod, label: 'QR Code' },
+                { id: 'phone' as LoginMethod, label: 'Số điện thoại' }
             ].map(method => (
                 <button
                     key={method.id}
@@ -259,7 +259,6 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                 >
-                    <span className="mr-1">{method.icon}</span>
                     {method.label}
                 </button>
             ))}
