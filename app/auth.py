@@ -505,7 +505,10 @@ class TelegramAuthenticator:
                 await self.cleanup_session(token)
 
     async def check_qr_login_status(self, token: str) -> Dict[str, Any]:
-        """Check the status of a QR login attempt by polling"""
+        """Check the status of a QR login attempt - just read status from session data.
+        The background thread updates status when QR is scanned.
+        DO NOT use client here - it runs in a different event loop!
+        """
         print(f"[QR_STATUS] Checking status for token {token[:8]}...")
         
         if token not in self.temp_sessions:
@@ -518,67 +521,63 @@ class TelegramAuthenticator:
         
         # If already authenticated, finalize
         if status == 'authenticated':
-            return await self._finalize_qr_login(token, session_data)
+            user_info = session_data.get('user', {})
+            session_name = session_data.get('session_name')
+            
+            # Move session file (synchronously, no client needed)
+            try:
+                src = f"data/{session_name}.session"
+                dst = "data/session.session"
+                
+                import shutil
+                if os.path.exists(dst):
+                    os.remove(dst)
+                if os.path.exists(src):
+                    shutil.move(src, dst)
+                    print(f"[QR_STATUS] Session file moved: {src} -> {dst}")
+                
+                # Move journal if exists
+                if os.path.exists(src + "-journal"):
+                    shutil.move(src + "-journal", dst + "-journal")
+                
+                # Cleanup session_import if exists
+                session_import = "data/session_import.session"
+                if os.path.exists(session_import):
+                    try:
+                        os.remove(session_import)
+                    except:
+                        pass
+                        
+            except Exception as e:
+                print(f"[QR_STATUS] Error moving session: {e}")
+            
+            # Remove from temp_sessions
+            del self.temp_sessions[token]
+            
+            print(f"[QR_STATUS] ✅ Returning authenticated for token {token[:8]}")
+            return {
+                'success': True,
+                'status': 'authenticated',
+                'logged_in': True,
+                'user': user_info,
+                'message': 'Login successful'
+            }
         
         # If expired or error, return that
         if status in ['expired', 'error']:
             error_msg = session_data.get('error', 'QR Code expired')
+            print(f"[QR_STATUS] Token {token[:8]} status: {status}, error: {error_msg}")
             return {'success': False, 'status': status, 'error': error_msg}
         
         # Check if session expired by time
         if time.time() > session_data.get('expires_at', 0):
             print(f"[QR_STATUS] Token {token[:8]} expired by time")
             session_data['status'] = 'expired'
-            await self.cleanup_session(token)
             return {'success': False, 'status': 'expired', 'error': 'QR Code expired'}
         
-        # Check if user is now authorized (QR was scanned)
-        client = session_data.get('client')
-        
-        if not client:
-            print(f"[QR_STATUS] Missing client for token {token[:8]}")
-            return {'success': True, 'status': 'waiting'}
-        
-        try:
-            # Check if user has been authorized (QR scanned successfully)
-            print(f"[QR_STATUS] Checking if user is authorized...")
-            is_authorized = await client.is_user_authorized()
-            print(f"[QR_STATUS] is_user_authorized: {is_authorized}")
-            
-            if is_authorized:
-                # User has scanned QR and is now logged in!
-                print(f"[QR_STATUS] ✅ User is authorized! Getting user info...")
-                
-                # Get user info
-                me = await client.get_me()
-                print(f"[QR_STATUS] User: {me.first_name} (@{me.username or 'no_username'})")
-                
-                db_user = self.create_or_update_user(me, me.phone or '')
-                print(f"[QR_STATUS] DB user ID: {db_user.id}")
-                
-                # Update session
-                session_data['status'] = 'authenticated'
-                session_data['user'] = {
-                    'id': db_user.id,
-                    'username': db_user.username,
-                    'first_name': me.first_name,
-                    'phone': me.phone
-                }
-                
-                # Finalize immediately
-                return await self._finalize_qr_login(token, session_data)
-            else:
-                # Not authorized yet, still waiting for scan
-                print(f"[QR_STATUS] Token {token[:8]} still waiting for scan...")
-                return {'success': True, 'status': 'waiting'}
-            
-        except Exception as e:
-            print(f"[QR_STATUS] Error polling token {token[:8]}: {e}")
-            import traceback
-            traceback.print_exc()
-            session_data['status'] = 'error'
-            session_data['error'] = str(e)
-            return {'success': False, 'status': 'error', 'error': str(e)}
+        # Still waiting for QR scan
+        print(f"[QR_STATUS] Token {token[:8]} still waiting...")
+        return {'success': True, 'status': 'waiting'}
     
     async def _finalize_qr_login(self, token: str, session_data: Dict) -> Dict[str, Any]:
         """Finalize QR login by saving session file"""
