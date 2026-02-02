@@ -30,6 +30,23 @@ except ImportError:
     import logging
     logger = logging.getLogger(__name__)
 
+# Setup file logging for QR login debugging
+import logging as _logging
+from pathlib import Path as _Path
+_log_dir = _Path(__file__).parent.parent / 'logs'
+_log_dir.mkdir(exist_ok=True)
+_qr_logger = _logging.getLogger('qr_login')
+_qr_logger.setLevel(_logging.DEBUG)
+_qr_handler = _logging.FileHandler(_log_dir / 'qr_login.log', mode='w', encoding='utf-8')
+_qr_handler.setFormatter(_logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+_qr_logger.addHandler(_qr_handler)
+
+def qr_log(msg):
+    """Log to both console and file"""
+    print(msg)
+    _qr_logger.info(msg)
+
+
 class TelegramAuthenticator:
     """Handle Telegram authentication for web login"""
 
