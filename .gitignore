@@ -71,6 +71,9 @@ app/output/
 data/temp/
 data/backups/
 data/uploads/
+data/debug_temp/
+data/scanner_temp/
+data/storage_temp/
 app/data/temp/
 app/data/backups/
 app/data/uploads/
