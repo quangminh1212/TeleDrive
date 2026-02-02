@@ -392,45 +392,45 @@ class TelegramAuthenticator:
             await self.cleanup_session(token)
             return {'success': False, 'status': 'expired', 'error': 'QR Code expired'}
         
-        # Try to poll qr_login with very short timeout
-        qr_login = session_data.get('qr_login')
+        # Check if user is now authorized (QR was scanned)
         client = session_data.get('client')
         
-        if not qr_login or not client:
-            print(f"[QR_STATUS] Missing qr_login or client for token {token[:8]}")
+        if not client:
+            print(f"[QR_STATUS] Missing client for token {token[:8]}")
             return {'success': True, 'status': 'waiting'}
         
         try:
-            # Poll with 0.5 second timeout - just check if scanned
-            print(f"[QR_STATUS] Polling qr_login.wait() with 0.5s timeout...")
-            user = await asyncio.wait_for(qr_login.wait(), timeout=0.5)
+            # Check if user has been authorized (QR scanned successfully)
+            print(f"[QR_STATUS] Checking if user is authorized...")
+            is_authorized = await client.is_user_authorized()
+            print(f"[QR_STATUS] is_user_authorized: {is_authorized}")
             
-            # If we got here, login was successful!
-            print(f"[QR_STATUS] ✅ QR Login successful! User ID: {user.id}")
-            
-            # Get user info
-            me = await client.get_me()
-            print(f"[QR_STATUS] User: {me.first_name} (@{me.username or 'no_username'})")
-            
-            db_user = self.create_or_update_user(me, me.phone or '')
-            print(f"[QR_STATUS] DB user ID: {db_user.id}")
-            
-            # Update session
-            session_data['status'] = 'authenticated'
-            session_data['user'] = {
-                'id': db_user.id,
-                'username': db_user.username,
-                'first_name': me.first_name,
-                'phone': me.phone
-            }
-            
-            # Finalize immediately
-            return await self._finalize_qr_login(token, session_data)
-            
-        except asyncio.TimeoutError:
-            # Not ready yet, still waiting
-            print(f"[QR_STATUS] Token {token[:8]} still waiting...")
-            return {'success': True, 'status': 'waiting'}
+            if is_authorized:
+                # User has scanned QR and is now logged in!
+                print(f"[QR_STATUS] ✅ User is authorized! Getting user info...")
+                
+                # Get user info
+                me = await client.get_me()
+                print(f"[QR_STATUS] User: {me.first_name} (@{me.username or 'no_username'})")
+                
+                db_user = self.create_or_update_user(me, me.phone or '')
+                print(f"[QR_STATUS] DB user ID: {db_user.id}")
+                
+                # Update session
+                session_data['status'] = 'authenticated'
+                session_data['user'] = {
+                    'id': db_user.id,
+                    'username': db_user.username,
+                    'first_name': me.first_name,
+                    'phone': me.phone
+                }
+                
+                # Finalize immediately
+                return await self._finalize_qr_login(token, session_data)
+            else:
+                # Not authorized yet, still waiting for scan
+                print(f"[QR_STATUS] Token {token[:8]} still waiting for scan...")
+                return {'success': True, 'status': 'waiting'}
             
         except Exception as e:
             print(f"[QR_STATUS] Error polling token {token[:8]}: {e}")
