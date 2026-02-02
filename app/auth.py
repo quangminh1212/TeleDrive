@@ -259,16 +259,27 @@ class TelegramAuthenticator:
     async def qr_login_start(self) -> Dict[str, Any]:
         """Start QR login process"""
         try:
+            # Validate API credentials first
+            if not config.API_ID or not config.API_HASH:
+                return {'success': False, 'error': 'API credentials not configured'}
+            
             # Create a unique session name for this QR attempt
             qr_session_name = f"qr_login_{os.urandom(8).hex()}"
+            print(f"[QR_LOGIN] Starting with session: {qr_session_name}")
+            
             client = TelegramClient(
                 f"data/{qr_session_name}",
                 int(config.API_ID),
                 config.API_HASH
             )
+            
+            # Connect to Telegram (only call once)
+            print(f"[QR_LOGIN] Connecting to Telegram...")
             await client.connect()
             
-            if not await client.connect():
+            # Check if connected
+            if not client.is_connected():
+                print(f"[QR_LOGIN] Failed to connect to Telegram")
                 return {'success': False, 'error': 'Could not connect to Telegram'}
 
             qr_login = await client.qr_login()
