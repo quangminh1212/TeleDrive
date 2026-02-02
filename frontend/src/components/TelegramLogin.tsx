@@ -28,7 +28,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     // Phone Login state
     const [countryCode, setCountryCode] = useState('+84');
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [phoneHash, setPhoneHash] = useState<string | null>(null);
+    const [sessionId, setSessionId] = useState<string | null>(null);
     const [verificationCode, setVerificationCode] = useState('');
     const [needsCode, setNeedsCode] = useState(false);
     const [needs2FA, setNeeds2FA] = useState(false);
@@ -183,7 +183,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
             const data = await res.json();
 
             if (data.success) {
-                setPhoneHash(data.phone_code_hash);
+                setSessionId(data.session_id);
                 setNeedsCode(true);
                 setStatus('Mã xác nhận đã được gửi đến Telegram của bạn');
             } else {
@@ -213,9 +213,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    phone: phoneNumber,
+                    session_id: sessionId,
                     code: verificationCode,
-                    phone_code_hash: phoneHash,
                     password: needs2FA ? password2FA : undefined
                 })
             });
