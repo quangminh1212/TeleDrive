@@ -3394,7 +3394,8 @@ def api_qr_status():
 def api_phone_start():
     """Start Phone Login"""
     data = request.get_json()
-    phone = data.get('phone_number')
+    # Frontend gửi 'phone', hỗ trợ cả 2 key để tương thích
+    phone = data.get('phone') or data.get('phone_number')
     if not phone:
         return jsonify({'success': False, 'error': 'Phone number required'})
         
