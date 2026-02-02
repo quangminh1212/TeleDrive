@@ -286,19 +286,20 @@ class TelegramAuthenticator:
             
             # Generate a token for the frontend to track this session
             token = os.urandom(16).hex()
+            print(f"[QR_LOGIN] Generated token: {token[:8]}...")
             
-            # Initial state
+            # Store QR login object for polling - NO background task
             self.temp_sessions[token] = {
                 'type': 'qr',
                 'status': 'waiting',  # waiting, scanned, authenticated, expired, error
                 'client': client,     # Keep connected
+                'qr_login': qr_login, # Store for polling
                 'session_name': qr_session_name,
                 'created_at': time.time(),
                 'expires_at': time.time() + 300  # Default QR expiry
             }
             
-            # Start background task to wait for scan
-            asyncio.create_task(self._monitor_qr_login(token, qr_login))
+            print(f"[QR_LOGIN] Session stored. URL: {qr_login.url[:50]}...")
             
             return {
                 'success': True,
@@ -309,27 +310,34 @@ class TelegramAuthenticator:
             
         except Exception as e:
             print(f"[QR_LOGIN] Error starting: {e}")
+            import traceback
+            traceback.print_exc()
             return {'success': False, 'error': str(e)}
 
     async def _monitor_qr_login(self, token: str, qr_login: Any):
         """Background task to monitor QR login status"""
+        print(f"[QR_MONITOR] Starting monitor for token {token[:8]}...")
         if token not in self.temp_sessions:
+            print(f"[QR_MONITOR] Token {token[:8]} not found in sessions, aborting")
             return
 
         session_data = self.temp_sessions[token]
         client = session_data['client']
         
         try:
-            print(f"[QR_LOGIN] Waiting for scan for token {token[:8]}...")
+            print(f"[QR_MONITOR] Waiting for scan for token {token[:8]}...")
             # This will block until scanned or expired
             user = await qr_login.wait()
             
             # Login successful
-            print(f"[QR_LOGIN] Success for token {token[:8]}! User: {user.id}")
+            print(f"[QR_MONITOR] ✅ SUCCESS for token {token[:8]}! User ID: {user.id}")
             
             # Update session user info
             me = await client.get_me()
+            print(f"[QR_MONITOR] Got user info: {me.first_name} (@{me.username or 'no_username'})")
+            
             db_user = self.create_or_update_user(me, me.phone or '')
+            print(f"[QR_MONITOR] Created/updated DB user ID: {db_user.id}")
             
             # Mark as authenticated
             self.temp_sessions[token]['status'] = 'authenticated'
@@ -339,103 +347,161 @@ class TelegramAuthenticator:
                 'first_name': me.first_name,
                 'phone': me.phone
             }
+            print(f"[QR_MONITOR] Session {token[:8]} marked as authenticated")
             
         except asyncio.TimeoutError:
-            print(f"[QR_LOGIN] Timeout for token {token[:8]}")
+            print(f"[QR_MONITOR] ⏰ Timeout for token {token[:8]}")
             if token in self.temp_sessions:
                 self.temp_sessions[token]['status'] = 'expired'
                 await self.cleanup_session(token)
                 
         except Exception as e:
-            print(f"[QR_LOGIN] Error monitoring {token[:8]}: {e}")
+            print(f"[QR_MONITOR] ❌ Error monitoring {token[:8]}: {e}")
+            import traceback
+            traceback.print_exc()
             if token in self.temp_sessions:
                 self.temp_sessions[token]['status'] = 'error'
                 self.temp_sessions[token]['error'] = str(e)
                 await self.cleanup_session(token)
 
     async def check_qr_login_status(self, token: str) -> Dict[str, Any]:
-        """Check the status of a QR login attempt"""
+        """Check the status of a QR login attempt by polling"""
+        print(f"[QR_STATUS] Checking status for token {token[:8]}...")
+        
         if token not in self.temp_sessions:
+            print(f"[QR_STATUS] Token {token[:8]} not found!")
             return {'success': False, 'status': 'invalid', 'error': 'Session expired or not found'}
             
         session_data = self.temp_sessions[token]
         status = session_data.get('status', 'waiting')
+        print(f"[QR_STATUS] Token {token[:8]} current status: {status}")
         
+        # If already authenticated, finalize
         if status == 'authenticated':
-            # Finalize session
-            # We need to move the temporary session file to the main 'session.session'
-            # OR just return success and let the frontend redirect.
-            # But we must persist the session.
+            return await self._finalize_qr_login(token, session_data)
+        
+        # If expired or error, return that
+        if status in ['expired', 'error']:
+            error_msg = session_data.get('error', 'QR Code expired')
+            return {'success': False, 'status': status, 'error': error_msg}
+        
+        # Check if session expired by time
+        if time.time() > session_data.get('expires_at', 0):
+            print(f"[QR_STATUS] Token {token[:8]} expired by time")
+            session_data['status'] = 'expired'
+            await self.cleanup_session(token)
+            return {'success': False, 'status': 'expired', 'error': 'QR Code expired'}
+        
+        # Try to poll qr_login with very short timeout
+        qr_login = session_data.get('qr_login')
+        client = session_data.get('client')
+        
+        if not qr_login or not client:
+            print(f"[QR_STATUS] Missing qr_login or client for token {token[:8]}")
+            return {'success': True, 'status': 'waiting'}
+        
+        try:
+            # Poll with 0.5 second timeout - just check if scanned
+            print(f"[QR_STATUS] Polling qr_login.wait() with 0.5s timeout...")
+            user = await asyncio.wait_for(qr_login.wait(), timeout=0.5)
             
-            user_info = session_data.get('user', {})
-            session_name = session_data.get('session_name')
+            # If we got here, login was successful!
+            print(f"[QR_STATUS] ✅ QR Login successful! User ID: {user.id}")
             
-            # The client is currently connected. 
-            # We should disconnect it safely so the file can be used/renamed?
-            # Or better, we just copy the logic to "finalize" it.
+            # Get user info
+            me = await client.get_me()
+            print(f"[QR_STATUS] User: {me.first_name} (@{me.username or 'no_username'})")
             
-            # For this project, we seem to use 'data/session.session' as the main one.
-            # So we should close this client, and rename 'data/{qr_session_name}.session' to 'data/session.session'
+            db_user = self.create_or_update_user(me, me.phone or '')
+            print(f"[QR_STATUS] DB user ID: {db_user.id}")
             
-            client = session_data.get('client')
-            if client and client.is_connected():
-                await client.disconnect()
+            # Update session
+            session_data['status'] = 'authenticated'
+            session_data['user'] = {
+                'id': db_user.id,
+                'username': db_user.username,
+                'first_name': me.first_name,
+                'phone': me.phone
+            }
             
-            # Rename session file
-            try:
-                src = f"data/{session_name}.session"
-                dst = "data/session.session"
+            # Finalize immediately
+            return await self._finalize_qr_login(token, session_data)
+            
+        except asyncio.TimeoutError:
+            # Not ready yet, still waiting
+            print(f"[QR_STATUS] Token {token[:8]} still waiting...")
+            return {'success': True, 'status': 'waiting'}
+            
+        except Exception as e:
+            print(f"[QR_STATUS] Error polling token {token[:8]}: {e}")
+            import traceback
+            traceback.print_exc()
+            session_data['status'] = 'error'
+            session_data['error'] = str(e)
+            return {'success': False, 'status': 'error', 'error': str(e)}
+    
+    async def _finalize_qr_login(self, token: str, session_data: Dict) -> Dict[str, Any]:
+        """Finalize QR login by saving session file"""
+        print(f"[QR_FINALIZE] Finalizing login for token {token[:8]}...")
+        
+        user_info = session_data.get('user', {})
+        session_name = session_data.get('session_name')
+        client = session_data.get('client')
+        
+        # Disconnect client
+        if client and client.is_connected():
+            await client.disconnect()
+            print(f"[QR_FINALIZE] Client disconnected")
+        
+        # Rename session file
+        try:
+            src = f"data/{session_name}.session"
+            dst = "data/session.session"
+            
+            # Delete old session if exists
+            if os.path.exists(dst):
+                os.remove(dst)
+            
+            # Rename/Move
+            import shutil
+            shutil.move(src, dst)
+            
+            # Also move journal if exists
+            if os.path.exists(src + "-journal"):
+                shutil.move(src + "-journal", dst + "-journal")
                 
-                # Delete old session if exists
-                if os.path.exists(dst):
-                    os.remove(dst)
-                
-                # Rename/Move
-                import shutil
-                shutil.move(src, dst)
-                
-                # Also move journal if exists
-                if os.path.exists(src + "-journal"):
-                    shutil.move(src + "-journal", dst + "-journal")
-                    
-                print(f"[QR_LOGIN] Session file moved to {dst}")
-                
-                 # Cleanup legacy session_import if exists to ensure new session is used
-                session_import = "data/session_import.session"
-                if os.path.exists(session_import):
-                    try:
-                        os.remove(session_import)
-                        print(f"[QR_LOGIN] Removed legacy session_import")
-                    except Exception as e:
-                        print(f"[QR_LOGIN] Warning: Failed to remove session_import: {e}")
-                
-                # Cleanup temp session entry
-                del self.temp_sessions[token]
-                
-                return {
-                    'success': True,
-                    'status': 'authenticated',
-                    'user': user_info,
-                    'message': 'Login successful'
-                }
-                
-            except Exception as e:
-                print(f"[QR_LOGIN] Error moving session file: {e}")
-                return {
-                    'success': False,
-                    'status': 'error',
-                    'error': f'Failed to save session: {str(e)}'
-                }
-                
-        elif status in ['expired', 'error']:
-             # Return error info
-             error_msg = session_data.get('error', 'QR Code expired')
-             return {'success': False, 'status': status, 'error': error_msg}
-             
-        return {
-            'success': True,
-            'status': 'waiting'
-        }
+            print(f"[QR_FINALIZE] Session file moved to {dst}")
+            
+            # Cleanup legacy session_import if exists
+            session_import = "data/session_import.session"
+            if os.path.exists(session_import):
+                try:
+                    os.remove(session_import)
+                    print(f"[QR_FINALIZE] Removed legacy session_import")
+                except Exception as e:
+                    print(f"[QR_FINALIZE] Warning: Failed to remove session_import: {e}")
+            
+            # Cleanup temp session entry
+            del self.temp_sessions[token]
+            
+            print(f"[QR_FINALIZE] ✅ Login finalized successfully!")
+            return {
+                'success': True,
+                'status': 'authenticated',
+                'logged_in': True,  # Added for frontend compatibility
+                'user': user_info,
+                'message': 'Login successful'
+            }
+            
+        except Exception as e:
+            print(f"[QR_FINALIZE] Error moving session file: {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                'success': False,
+                'status': 'error',
+                'error': f'Failed to save session: {str(e)}'
+            }
 
     async def verify_code(self, session_id: str, verification_code: str, password: str = None) -> Dict[str, Any]:
         """Verify the code and complete authentication"""
