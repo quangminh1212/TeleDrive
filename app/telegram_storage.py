@@ -414,10 +414,31 @@ class TelegramStorageManager:
                     # Handle photos
                     elif hasattr(message.media, 'photo') and message.media.photo:
                         photo = message.media.photo
+                        
+                        # Try to extract filename from caption (TeleDrive uploads have format: "📁 filename.ext\n...")
+                        photo_filename = f"photo_{message.id}.jpg"
+                        caption = message.message or ''
+                        if caption.startswith('📁 '):
+                            # Extract filename from caption line
+                            first_line = caption.split('\n')[0]
+                            extracted_name = first_line.replace('📁 ', '').strip()
+                            if extracted_name:
+                                photo_filename = extracted_name
+                                print(f"[STORAGE] Extracted filename from caption: {photo_filename}")
+                        
+                        # Determine mime type based on extension
+                        mime_type = 'image/jpeg'
+                        if photo_filename.lower().endswith('.png'):
+                            mime_type = 'image/png'
+                        elif photo_filename.lower().endswith('.gif'):
+                            mime_type = 'image/gif'
+                        elif photo_filename.lower().endswith('.webp'):
+                            mime_type = 'image/webp'
+                        
                         file_info.update({
-                            'filename': f"photo_{message.id}.jpg",
+                            'filename': photo_filename,
                             'file_size': 0,
-                            'mime_type': 'image/jpeg',
+                            'mime_type': mime_type,
                             'file_id': str(photo.id),
                             'access_hash': str(photo.access_hash),
                             'file_reference': photo.file_reference.hex() if photo.file_reference else None,
