@@ -3361,12 +3361,14 @@ def logout():
 # --- QR & Phone Auth API Routes ---
 
 @app.route('/api/auth/qr/start', methods=['POST'])
+@csrf.exempt
 def api_qr_start():
     """Start QR Login session"""
     result = run_async_in_thread(telegram_auth.qr_login_start())
     return jsonify(result)
 
 @app.route('/api/auth/qr/status', methods=['POST'])
+@csrf.exempt
 def api_qr_status():
     """Check QR Login status"""
     data = request.get_json()
@@ -3388,6 +3390,7 @@ def api_qr_status():
     return jsonify(result)
 
 @app.route('/api/auth/phone/start', methods=['POST'])
+@csrf.exempt
 def api_phone_start():
     """Start Phone Login"""
     data = request.get_json()
@@ -3400,6 +3403,7 @@ def api_phone_start():
     return jsonify(result)
 
 @app.route('/api/auth/phone/verify', methods=['POST'])
+@csrf.exempt
 def api_phone_verify():
     """Verify Phone Login Code"""
     data = request.get_json()
