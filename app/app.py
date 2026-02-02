@@ -5,6 +5,9 @@ TeleDrive Web Interface
 Flask web application for Telegram file scanning with Google Drive-like UI
 """
 
+import eventlet
+eventlet.monkey_patch()
+
 import os
 import sys
 
@@ -2054,16 +2057,55 @@ def download_file(filename):
                     safe_filename = "".join([c for c in filename if c.isalpha() or c.isdigit() or c in (' ', '.', '_', '-')]).strip()
                     cache_file_path = os.path.join(cache_dir, f"{file_record.id}_{safe_filename}")
 
-                    # Check if file already exists in cache
                     if os.path.exists(cache_file_path) and os.path.getsize(cache_file_path) > 0:
                         app.logger.info(f"Serving from cache: {cache_file_path}")
                         downloaded_path = cache_file_path
                     else:
                         app.logger.info(f"Downloading from Telegram to cache: {cache_file_path}")
-                        # Download from Telegram to cache file
-                        downloaded_path = run_async_in_thread(
-                            download_from_telegram_async(file_record, cache_file_path)
-                        )
+                        # Use a unique temp file for download to avoid race conditions
+                        import uuid
+                        temp_cache_path = f"{cache_file_path}.{uuid.uuid4().hex[:8]}.tmp"
+                        
+                        try:
+                            # Download from Telegram to temp cache file
+                            result_path = run_async_in_thread(
+                                download_from_telegram_async(file_record, temp_cache_path)
+                            )
+                            
+                            if result_path and os.path.exists(result_path) and os.path.getsize(result_path) > 0:
+                                # Atomic rename (or close enough) to final cache path
+                                # This ensures we don't serve partial files to other requests
+                                try:
+                                    if os.path.exists(cache_file_path):
+                                        # Use standard replace or remove+rename
+                                        # On Windows os.rename might fail if dest exists
+                                        try:
+                                            os.replace(result_path, cache_file_path)
+                                        except OSError:
+                                            # Fallback if replace fails (e.g. file locked)
+                                            if os.path.exists(cache_file_path):
+                                                os.remove(result_path) # Cache file already exists/wins
+                                    else:
+                                        os.rename(result_path, cache_file_path)
+                                    
+                                    downloaded_path = cache_file_path
+                                except Exception as e:
+                                    app.logger.error(f"Failed to rename cache file: {e}")
+                                    # Serve the temp file if rename failed but download succeeded
+                                    downloaded_path = result_path
+                            else:
+                                app.logger.error("Download returned path but file missing or empty")
+                                downloaded_path = None
+                                # Cleanup temp
+                                if os.path.exists(temp_cache_path):
+                                    try: os.remove(temp_cache_path)
+                                    except: pass
+                        except Exception as e:
+                            app.logger.error(f"Error during cache download: {e}")
+                            if os.path.exists(temp_cache_path):
+                                try: os.remove(temp_cache_path)
+                                except: pass
+                            downloaded_path = None
 
                     if downloaded_path and os.path.exists(downloaded_path):
                         app.logger.info(f"Ready to serve: {downloaded_path}")
