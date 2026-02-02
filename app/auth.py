@@ -258,6 +258,9 @@ class TelegramAuthenticator:
 
     async def qr_login_start(self) -> Dict[str, Any]:
         """Start QR login process"""
+        import threading
+        import queue
+        
         try:
             # Validate API credentials first
             if not config.API_ID or not config.API_HASH:
@@ -265,67 +268,67 @@ class TelegramAuthenticator:
             
             # Create a unique session name for this QR attempt
             qr_session_name = f"qr_login_{os.urandom(8).hex()}"
-            print(f"[QR_LOGIN] Starting with session: {qr_session_name}")
-            
-            client = TelegramClient(
-                f"data/{qr_session_name}",
-                int(config.API_ID),
-                config.API_HASH
-            )
-            
-            # Connect to Telegram (only call once)
-            print(f"[QR_LOGIN] Connecting to Telegram...")
-            await client.connect()
-            
-            # Check if connected
-            if not client.is_connected():
-                print(f"[QR_LOGIN] Failed to connect to Telegram")
-                return {'success': False, 'error': 'Could not connect to Telegram'}
-
-            qr_login = await client.qr_login()
-            
-            # Generate a token for the frontend to track this session
             token = os.urandom(16).hex()
-            print(f"[QR_LOGIN] Generated token: {token[:8]}...")
             
-            # Store session data
+            print(f"[QR_LOGIN] Starting with session: {qr_session_name}, token: {token[:8]}...")
+            
+            # Use a queue to get QR URL from thread
+            result_queue = queue.Queue()
+            
+            # Store session data (will be updated by thread)
             self.temp_sessions[token] = {
                 'type': 'qr',
-                'status': 'waiting',  # waiting, authenticated, expired, error
-                'client': client,
-                'qr_login': qr_login,
+                'status': 'initializing',
                 'session_name': qr_session_name,
                 'created_at': time.time(),
-                'expires_at': time.time() + 300
+                'expires_at': time.time() + 300,
+                'url': None,
+                'error': None
             }
             
-            print(f"[QR_LOGIN] Session stored. URL: {qr_login.url[:50]}...")
-            
-            # Start background thread to monitor QR login
-            import threading
+            # Start thread that will create client, get QR, and wait
             monitor_thread = threading.Thread(
-                target=self._run_qr_monitor_in_thread,
-                args=(token, client, qr_login),
+                target=self._qr_login_thread,
+                args=(token, qr_session_name, result_queue),
                 daemon=True
             )
             monitor_thread.start()
-            print(f"[QR_LOGIN] Monitor thread started for token {token[:8]}")
             
-            return {
-                'success': True,
-                'token': token,
-                'url': qr_login.url,
-                'expires': str(qr_login.expires)
-            }
-            
+            # Wait for QR URL from thread (with timeout)
+            try:
+                result = result_queue.get(timeout=15)
+                print(f"[QR_LOGIN] Got result from thread: {result.get('success')}")
+                
+                if result.get('success'):
+                    self.temp_sessions[token]['status'] = 'waiting'
+                    self.temp_sessions[token]['url'] = result.get('url')
+                    self.temp_sessions[token]['expires'] = result.get('expires')
+                    
+                    return {
+                        'success': True,
+                        'token': token,
+                        'url': result.get('url'),
+                        'expires': result.get('expires')
+                    }
+                else:
+                    self.temp_sessions[token]['status'] = 'error'
+                    self.temp_sessions[token]['error'] = result.get('error')
+                    return {'success': False, 'error': result.get('error')}
+                    
+            except queue.Empty:
+                print(f"[QR_LOGIN] Timeout waiting for QR URL")
+                self.temp_sessions[token]['status'] = 'error'
+                self.temp_sessions[token]['error'] = 'Timeout getting QR code'
+                return {'success': False, 'error': 'Timeout getting QR code'}
+                
         except Exception as e:
             print(f"[QR_LOGIN] Error starting: {e}")
             import traceback
             traceback.print_exc()
             return {'success': False, 'error': str(e)}
     
-    def _run_qr_monitor_in_thread(self, token: str, client: TelegramClient, qr_login: Any):
-        """Run QR monitor in a separate thread with its own event loop"""
+    def _qr_login_thread(self, token: str, session_name: str, result_queue):
+        """Thread that handles entire QR login flow in its own event loop"""
         print(f"[QR_THREAD] Thread started for token {token[:8]}")
         
         # Create new event loop for this thread
@@ -333,28 +336,67 @@ class TelegramAuthenticator:
         asyncio.set_event_loop(loop)
         
         try:
-            loop.run_until_complete(self._async_qr_monitor(token, client, qr_login))
+            loop.run_until_complete(self._qr_login_async_flow(token, session_name, result_queue))
         except Exception as e:
             print(f"[QR_THREAD] Error in thread {token[:8]}: {e}")
             import traceback
             traceback.print_exc()
+            # Send error to queue if not already sent
+            try:
+                result_queue.put_nowait({'success': False, 'error': str(e)})
+            except:
+                pass
         finally:
             loop.close()
             print(f"[QR_THREAD] Thread ended for token {token[:8]}")
     
-    async def _async_qr_monitor(self, token: str, client: TelegramClient, qr_login: Any):
-        """Async monitor that waits for QR scan"""
-        print(f"[QR_ASYNC] Waiting for QR scan for token {token[:8]}...")
+    async def _qr_login_async_flow(self, token: str, session_name: str, result_queue):
+        """Async flow: create client, get QR, wait for scan - all in same event loop"""
+        client = None
         
         try:
-            # Wait for QR to be scanned (this blocks until scan or timeout)
+            print(f"[QR_ASYNC] Creating client for token {token[:8]}...")
+            
+            # Create client in THIS event loop
+            client = TelegramClient(
+                f"data/{session_name}",
+                int(config.API_ID),
+                config.API_HASH
+            )
+            
+            print(f"[QR_ASYNC] Connecting to Telegram...")
+            await client.connect()
+            
+            if not client.is_connected():
+                print(f"[QR_ASYNC] Failed to connect!")
+                result_queue.put({'success': False, 'error': 'Could not connect to Telegram'})
+                return
+            
+            print(f"[QR_ASYNC] Getting QR login...")
+            qr_login = await client.qr_login()
+            
+            print(f"[QR_ASYNC] QR URL: {qr_login.url[:50]}...")
+            
+            # Send QR URL back to main thread
+            result_queue.put({
+                'success': True,
+                'url': qr_login.url,
+                'expires': str(qr_login.expires)
+            })
+            
+            # Store client reference
+            if token in self.temp_sessions:
+                self.temp_sessions[token]['client'] = client
+            
+            # Now wait for QR to be scanned
+            print(f"[QR_ASYNC] Waiting for QR scan...")
             user = await qr_login.wait()
             
             print(f"[QR_ASYNC] ✅ QR scanned! User ID: {user.id}")
             
             # Get user info
             me = await client.get_me()
-            print(f"[QR_ASYNC] User: {me.first_name} (@{me.username or 'no_username'})")
+            print(f"[QR_ASYNC] User: {me.first_name} (@{me.username or 'no_username'}), phone: {me.phone}")
             
             # Create/update DB user
             db_user = self.create_or_update_user(me, me.phone or '')
@@ -369,15 +411,26 @@ class TelegramAuthenticator:
                     'first_name': me.first_name,
                     'phone': me.phone
                 }
-                print(f"[QR_ASYNC] Session {token[:8]} marked as authenticated!")
+                print(f"[QR_ASYNC] ✅ Session {token[:8]} marked as AUTHENTICATED!")
             
         except asyncio.TimeoutError:
             print(f"[QR_ASYNC] ⏰ Timeout for token {token[:8]}")
             if token in self.temp_sessions:
                 self.temp_sessions[token]['status'] = 'expired'
+                self.temp_sessions[token]['error'] = 'QR Code expired'
                 
         except Exception as e:
             print(f"[QR_ASYNC] ❌ Error for token {token[:8]}: {e}")
+            import traceback
+            traceback.print_exc()
+            if token in self.temp_sessions:
+                self.temp_sessions[token]['status'] = 'error'
+                self.temp_sessions[token]['error'] = str(e)
+            # Try to send error if queue is empty
+            try:
+                result_queue.put_nowait({'success': False, 'error': str(e)})
+            except:
+                pass
             import traceback
             traceback.print_exc()
             if token in self.temp_sessions:
