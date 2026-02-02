@@ -79,8 +79,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         {status && (
                             <div className="mb-5 p-4 bg-blue-50 border border-blue-100 rounded-xl animate-fade-in">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-5 h-5 border-2 border-[#1a73e8] border-t-transparent rounded-full animate-spin" />
-                                    <span className="text-[#1a73e8] text-sm font-medium">{status}</span>
+                                    <div className="w-5 h-5 border-2 border-[#0088cc] border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-[#0088cc] text-sm font-medium">{status}</span>
                                 </div>
                             </div>
                         )}
@@ -103,7 +103,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             disabled={isLoading}
                             className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 flex items-center justify-center gap-3 ${isLoading
                                 ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-[#1a73e8] hover:bg-[#1557b0] hover:shadow-lg hover:shadow-blue-500/25 active:scale-[0.98]'
+                                : 'bg-[#0088cc] hover:bg-[#006699] hover:shadow-lg hover:shadow-cyan-500/25 active:scale-[0.98]'
                                 }`}
                         >
                             {isLoading ? (
@@ -122,26 +122,26 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         {/* Instructions - Google style */}
                         <div className="mt-8 p-5 bg-gray-50 rounded-xl border border-gray-100">
                             <h3 className="font-medium text-gray-700 mb-4 flex items-center gap-2">
-                                <svg className="w-5 h-5 text-[#1a73e8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="w-5 h-5 text-[#0088cc]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 Hướng dẫn
                             </h3>
                             <ol className="text-sm text-gray-600 space-y-3">
                                 <li className="flex items-start gap-3">
-                                    <span className="flex-shrink-0 w-6 h-6 bg-[#1a73e8] rounded-full flex items-center justify-center text-xs font-semibold text-white">
+                                    <span className="flex-shrink-0 w-6 h-6 bg-[#0088cc] rounded-full flex items-center justify-center text-xs font-semibold text-white">
                                         1
                                     </span>
                                     <span className="pt-0.5">Mở <strong>Telegram Desktop</strong> trên máy tính</span>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <span className="flex-shrink-0 w-6 h-6 bg-[#1a73e8] rounded-full flex items-center justify-center text-xs font-semibold text-white">
+                                    <span className="flex-shrink-0 w-6 h-6 bg-[#0088cc] rounded-full flex items-center justify-center text-xs font-semibold text-white">
                                         2
                                     </span>
                                     <span className="pt-0.5">Đảm bảo đã đăng nhập vào tài khoản Telegram</span>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <span className="flex-shrink-0 w-6 h-6 bg-[#1a73e8] rounded-full flex items-center justify-center text-xs font-semibold text-white">
+                                    <span className="flex-shrink-0 w-6 h-6 bg-[#0088cc] rounded-full flex items-center justify-center text-xs font-semibold text-white">
                                         3
                                     </span>
                                     <span className="pt-0.5">Nhấn nút <strong>"Đăng nhập từ Telegram Desktop"</strong></span>
