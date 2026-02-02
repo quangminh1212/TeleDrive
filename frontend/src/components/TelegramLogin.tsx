@@ -72,10 +72,10 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                     });
                     const data = await res.json();
 
-                    if (data.success && data.logged_in) {
+                    if (data.success && data.status === 'authenticated') {
                         if (interval) clearInterval(interval);
                         onLoginSuccess();
-                    } else if (data.expired) {
+                    } else if (data.expired || data.status === 'expired') {
                         setQrExpired(true);
                         if (interval) clearInterval(interval);
                     }
