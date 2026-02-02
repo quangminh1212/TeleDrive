@@ -415,17 +415,21 @@ class TelegramAuthenticator:
             me = await client.get_me()
             print(f"[QR_ASYNC] User: {me.first_name} (@{me.username or 'no_username'}), phone: {me.phone}")
             
-            # Create/update DB user
-            db_user = self.create_or_update_user(me, me.phone or '')
-            print(f"[QR_ASYNC] DB user ID: {db_user.id}")
+            # DON'T call create_or_update_user here - no Flask app context in thread!
+            # Just save Telegram user info, DB user will be created in check_qr_login_status
             
-            # Update session status
+            # Disconnect client before saving session
+            await client.disconnect()
+            print(f"[QR_ASYNC] Client disconnected")
+            
+            # Update session status with Telegram user info
             if token in self.temp_sessions:
                 self.temp_sessions[token]['status'] = 'authenticated'
-                self.temp_sessions[token]['user'] = {
-                    'id': db_user.id,
-                    'username': db_user.username,
+                self.temp_sessions[token]['telegram_user'] = {
+                    'id': me.id,
+                    'username': me.username,
                     'first_name': me.first_name,
+                    'last_name': me.last_name,
                     'phone': me.phone
                 }
                 print(f"[QR_ASYNC] ✅ Session {token[:8]} marked as AUTHENTICATED!")
@@ -521,8 +525,36 @@ class TelegramAuthenticator:
         
         # If already authenticated, finalize
         if status == 'authenticated':
-            user_info = session_data.get('user', {})
+            telegram_user = session_data.get('telegram_user', {})
             session_name = session_data.get('session_name')
+            
+            # Create/update DB user here (we have Flask app context)
+            print(f"[QR_STATUS] Creating DB user from telegram_user: {telegram_user}")
+            try:
+                # Create a simple user object for create_or_update_user
+                class TelegramUserObj:
+                    def __init__(self, data):
+                        self.id = data.get('id')
+                        self.username = data.get('username')
+                        self.first_name = data.get('first_name')
+                        self.last_name = data.get('last_name')
+                        self.phone = data.get('phone')
+                
+                user_obj = TelegramUserObj(telegram_user)
+                db_user = self.create_or_update_user(user_obj, telegram_user.get('phone') or '')
+                print(f"[QR_STATUS] DB user created/updated: ID={db_user.id}")
+                
+                user_info = {
+                    'id': db_user.id,
+                    'username': db_user.username,
+                    'first_name': telegram_user.get('first_name'),
+                    'phone': telegram_user.get('phone')
+                }
+            except Exception as e:
+                print(f"[QR_STATUS] Error creating DB user: {e}")
+                import traceback
+                traceback.print_exc()
+                user_info = telegram_user
             
             # Move session file (synchronously, no client needed)
             try:
