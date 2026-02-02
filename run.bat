@@ -15,6 +15,34 @@ echo ========================================
 echo.
 
 :: ============================================
+:: BUOC 0: DUNG CAC PROCESS CU (TICH HOP TU STOP.BAT)
+:: ============================================
+
+echo [CLEANUP] Dang dung cac process TeleDrive cu...
+
+:: Kill Python processes on ports 5000, 8000
+for %%p in (5000 8000) do (
+    for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":%%p "') do (
+        taskkill /f /pid %%a >nul 2>&1
+    )
+)
+
+:: Kill Node.js on port 1420, 3000
+for %%p in (1420 3000) do (
+    for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":%%p "') do (
+        taskkill /f /pid %%a >nul 2>&1
+    )
+)
+
+:: Kill any cmd.exe running npm or vite
+for /f "tokens=2" %%a in ('tasklist /fi "imagename eq cmd.exe" /v 2^>nul ^| findstr /i "npm vite"') do (
+    taskkill /f /pid %%a >nul 2>&1
+)
+
+echo [OK] Cleanup completed
+echo.
+
+:: ============================================
 :: BUOC 1: TIM VA KIEM TRA PYTHON
 :: ============================================
 
