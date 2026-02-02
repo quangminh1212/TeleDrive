@@ -26,12 +26,37 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     const [qrExpired, setQrExpired] = useState(false);
 
     // Phone Login state
+    const [countryCode, setCountryCode] = useState('+84');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [phoneHash, setPhoneHash] = useState<string | null>(null);
     const [verificationCode, setVerificationCode] = useState('');
     const [needsCode, setNeedsCode] = useState(false);
     const [needs2FA, setNeeds2FA] = useState(false);
     const [password2FA, setPassword2FA] = useState('');
+
+    // Country codes list
+    const countryCodes = [
+        { code: '+84', country: '🇻🇳 Việt Nam', short: 'VN' },
+        { code: '+1', country: '🇺🇸 Mỹ', short: 'US' },
+        { code: '+44', country: '🇬🇧 Anh', short: 'UK' },
+        { code: '+86', country: '🇨🇳 Trung Quốc', short: 'CN' },
+        { code: '+81', country: '🇯🇵 Nhật Bản', short: 'JP' },
+        { code: '+82', country: '🇰🇷 Hàn Quốc', short: 'KR' },
+        { code: '+65', country: '🇸🇬 Singapore', short: 'SG' },
+        { code: '+66', country: '🇹🇭 Thái Lan', short: 'TH' },
+        { code: '+60', country: '🇲🇾 Malaysia', short: 'MY' },
+        { code: '+62', country: '🇮🇩 Indonesia', short: 'ID' },
+        { code: '+63', country: '🇵🇭 Philippines', short: 'PH' },
+        { code: '+91', country: '🇮🇳 Ấn Độ', short: 'IN' },
+        { code: '+49', country: '🇩🇪 Đức', short: 'DE' },
+        { code: '+33', country: '🇫🇷 Pháp', short: 'FR' },
+        { code: '+7', country: '🇷🇺 Nga', short: 'RU' },
+        { code: '+61', country: '🇦🇺 Úc', short: 'AU' },
+        { code: '+55', country: '🇧🇷 Brazil', short: 'BR' },
+        { code: '+852', country: '🇭🇰 Hồng Kông', short: 'HK' },
+        { code: '+886', country: '🇹🇼 Đài Loan', short: 'TW' },
+        { code: '+971', country: '🇦🇪 UAE', short: 'AE' },
+    ];
 
     // Check QR status periodically
     useEffect(() => {
@@ -153,7 +178,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
             const res = await fetch('http://127.0.0.1:5000/api/auth/phone/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phoneNumber })
+                body: JSON.stringify({ phone: countryCode + phoneNumber })
             });
             const data = await res.json();
 
@@ -230,8 +255,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         setStatus('');
                     }}
                     className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${loginMethod === method.id
-                            ? 'bg-[#0088cc] text-white shadow-md'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-[#0088cc] text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                 >
                     <span className="mr-1">{method.icon}</span>
@@ -247,8 +272,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 onClick={handleAutoLogin}
                 disabled={isLoading}
                 className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 flex items-center justify-center gap-3 ${isLoading
-                        ? 'bg-gray-300 cursor-not-allowed'
-                        : 'bg-[#0088cc] hover:bg-[#006699] hover:shadow-lg hover:shadow-cyan-500/25 active:scale-[0.98]'
+                    ? 'bg-gray-300 cursor-not-allowed'
+                    : 'bg-[#0088cc] hover:bg-[#006699] hover:shadow-lg hover:shadow-cyan-500/25 active:scale-[0.98]'
                     }`}
             >
                 {isLoading ? (
@@ -320,20 +345,38 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Số điện thoại
                         </label>
-                        <input
-                            type="tel"
-                            value={phoneNumber}
-                            onChange={(e) => setPhoneNumber(e.target.value)}
-                            placeholder="+84 xxx xxx xxx"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] focus:border-transparent transition-all"
-                        />
+                        <div className="flex gap-2">
+                            {/* Country Code Dropdown */}
+                            <select
+                                value={countryCode}
+                                onChange={(e) => setCountryCode(e.target.value)}
+                                className="px-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] focus:border-transparent transition-all bg-white text-gray-700 font-medium min-w-[100px]"
+                            >
+                                {countryCodes.map((c) => (
+                                    <option key={c.code} value={c.code}>
+                                        {c.country} ({c.code})
+                                    </option>
+                                ))}
+                            </select>
+                            {/* Phone Number Input */}
+                            <input
+                                type="tel"
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                                placeholder="Nhập số điện thoại"
+                                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] focus:border-transparent transition-all"
+                            />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2">
+                            Ví dụ: {countryCode} 912345678
+                        </p>
                     </div>
                     <button
                         type="submit"
-                        disabled={isLoading}
-                        className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 ${isLoading
-                                ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-[#0088cc] hover:bg-[#006699] active:scale-[0.98]'
+                        disabled={isLoading || !phoneNumber.trim()}
+                        className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 ${isLoading || !phoneNumber.trim()
+                            ? 'bg-gray-300 cursor-not-allowed'
+                            : 'bg-[#0088cc] hover:bg-[#006699] active:scale-[0.98]'
                             }`}
                     >
                         {isLoading ? 'Đang gửi...' : 'Gửi mã xác nhận'}
@@ -374,8 +417,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         type="submit"
                         disabled={isLoading}
                         className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 ${isLoading
-                                ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-[#0088cc] hover:bg-[#006699] active:scale-[0.98]'
+                            ? 'bg-gray-300 cursor-not-allowed'
+                            : 'bg-[#0088cc] hover:bg-[#006699] active:scale-[0.98]'
                             }`}
                     >
                         {isLoading ? 'Đang xác nhận...' : 'Xác nhận'}
