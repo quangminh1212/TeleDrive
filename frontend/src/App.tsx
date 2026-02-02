@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import FileGrid from './components/FileGrid';
+import TelegramLogin from './components/TelegramLogin';
 import './index.css';
 
 function App() {
@@ -10,11 +11,58 @@ function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Check auth status on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    setIsCheckingAuth(true);
+    try {
+      const response = await fetch('http://127.0.0.1:5000/api/v2/auth/status');
+      const result = await response.json();
+      setIsAuthenticated(result.authenticated === true);
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      // If server is not available, assume not authenticated
+      setIsAuthenticated(false);
+    } finally {
+      setIsCheckingAuth(false);
+    }
+  };
+
   // Callback khi upload file xong - trigger refresh FileGrid
   const handleFilesUploaded = () => {
     setRefreshKey(prev => prev + 1);
   };
 
+  // Handle login success
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+  };
+
+  // Loading state while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang kiểm tra đăng nhập...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <TelegramLogin onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Main app
   return (
     <div className="flex h-screen bg-white">
       {/* Sidebar */}
