@@ -37,28 +37,28 @@ const getFileIcon = (file: FileInfo): React.ReactElement => {
     const ext = name.split('.').pop()?.toLowerCase() || '';
     const fileType = file.file_type?.toLowerCase() || '';
 
-    // Image
+    // Image - Google Drive style (red with mountain scenery)
     if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext) || fileType === 'image') {
         return (
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#4285f4">
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#ea4335">
                 <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
             </svg>
         );
     }
 
-    // Video
+    // Video - Google Drive style (red with play button)
     if (mimeType.startsWith('video/') || ['mp4', 'avi', 'mov', 'mkv', 'webm', 'flv'].includes(ext) || fileType === 'video') {
         return (
             <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#ea4335">
-                <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM10 16V8l6 4-6 4z" />
             </svg>
         );
     }
 
-    // Audio
+    // Audio - Google Drive style (red with musical note)
     if (mimeType.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'flac', 'm4a'].includes(ext) || fileType === 'audio') {
         return (
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#fbbc04">
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#ea4335">
                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
             </svg>
         );
@@ -126,20 +126,20 @@ const getLargeFileIcon = (file: FileInfo): React.ReactElement => {
     const ext = name.split('.').pop()?.toLowerCase() || '';
     const fileType = file.file_type?.toLowerCase() || '';
 
-    // Image
+    // Image - Google Drive style (red with mountain scenery)
     if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) || fileType === 'image') {
         return (
-            <svg className="w-12 h-12" viewBox="0 0 24 24" fill="#4285f4">
+            <svg className="w-12 h-12" viewBox="0 0 24 24" fill="#ea4335">
                 <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
             </svg>
         );
     }
 
-    // Video
+    // Video - Google Drive style (red with play button)
     if (mimeType.startsWith('video/') || ['mp4', 'avi', 'mov', 'mkv'].includes(ext) || fileType === 'video') {
         return (
             <svg className="w-12 h-12" viewBox="0 0 24 24" fill="#ea4335">
-                <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM10 16V8l6 4-6 4z" />
             </svg>
         );
     }
