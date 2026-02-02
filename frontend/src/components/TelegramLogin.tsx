@@ -54,8 +54,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                     {/* Header */}
                     <div className="pt-10 pb-6 px-8 text-center">
                         {/* Logo */}
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#1a73e8] to-[#4285f4] rounded-2xl mb-6 shadow-lg shadow-blue-500/25 transform hover:scale-105 transition-transform duration-200">
-                            <TelegramIcon className="w-12 h-12 text-white" />
+                        <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl mb-6 shadow-lg shadow-blue-500/20 transform hover:scale-105 transition-transform duration-200 overflow-hidden">
+                            <img src="/logo.png" alt="TeleDrive" className="w-full h-full object-cover" />
                         </div>
 
                         <h1 className="text-2xl font-semibold text-gray-800 mb-1">
@@ -102,8 +102,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             onClick={handleAutoLogin}
                             disabled={isLoading}
                             className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 flex items-center justify-center gap-3 ${isLoading
-                                    ? 'bg-gray-300 cursor-not-allowed'
-                                    : 'bg-[#1a73e8] hover:bg-[#1557b0] hover:shadow-lg hover:shadow-blue-500/25 active:scale-[0.98]'
+                                ? 'bg-gray-300 cursor-not-allowed'
+                                : 'bg-[#1a73e8] hover:bg-[#1557b0] hover:shadow-lg hover:shadow-blue-500/25 active:scale-[0.98]'
                                 }`}
                         >
                             {isLoading ? (
