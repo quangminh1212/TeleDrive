@@ -12,6 +12,7 @@ interface FileItemProps {
     onCopy?: (file: FileInfo) => void;
     onMove?: (file: FileInfo) => void;
     onShowInfo?: (file: FileInfo) => void;
+    onPreview?: (file: FileInfo) => void;
 }
 
 // Google Drive folder icon
@@ -210,7 +211,7 @@ const formatDate = (dateStr: string): string => {
     }
 };
 
-const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, onCopy, onMove, onShowInfo }: FileItemProps) => {
+const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, onCopy, onMove, onShowInfo, onPreview }: FileItemProps) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [isRenaming, setIsRenaming] = useState(false);
     const [newName, setNewName] = useState(file.name || file.filename || '');
@@ -222,10 +223,12 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
     const handleDoubleClick = () => {
         if (file.type === 'folder') {
             console.log('Open folder:', file.name);
+        } else if (onPreview) {
+            onPreview(file);
         } else {
-            // Open download link
+            // Open download link (fallback)
             const filename = file.filename || file.name;
-            window.open(`http://127.0.0.1:5000/download/${filename}`, '_blank');
+            window.open(`http://127.0.0.1:5000/download/${encodeURIComponent(filename)}`, '_blank');
         }
     };
 

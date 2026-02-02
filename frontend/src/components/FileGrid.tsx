@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import FileItem from './FileItem';
+import FilePreview from './FilePreview';
 import { ViewModeControls } from './Header';
 import { api, FileInfo } from '../services/api';
 
@@ -201,6 +202,13 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
 
     const handleShowInfo = (file: FileInfo) => {
         setInfoFile(file);
+    };
+
+    // Handle file preview
+    const [previewFile, setPreviewFile] = useState<FileInfo | null>(null);
+
+    const handlePreview = (file: FileInfo) => {
+        setPreviewFile(file);
     };
 
     const handleSort = (column: 'name' | 'modified') => {
@@ -446,6 +454,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                                 onRename={handleFileRename}
                                 onDelete={handleFileDelete}
                                 onShowInfo={handleShowInfo}
+                                onPreview={handlePreview}
                             />
                         ))}
                     </div>
@@ -464,6 +473,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                                 onRename={handleFileRename}
                                 onDelete={handleFileDelete}
                                 onShowInfo={handleShowInfo}
+                                onPreview={handlePreview}
                             />
                         ))}
                     </div>
@@ -555,6 +565,14 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* File Preview Modal */}
+            {previewFile && (
+                <FilePreview
+                    file={previewFile}
+                    onClose={() => setPreviewFile(null)}
+                />
             )}
         </div>
     );

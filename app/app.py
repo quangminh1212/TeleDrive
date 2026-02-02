@@ -2025,6 +2025,9 @@ def download_file(filename):
     """Download uploaded files"""
     try:
         app.logger.info(f"Download request for: {filename} by user: {current_user.id}")
+        
+        # Check for inline display (preview)
+        as_attachment = request.args.get('inline', 'false').lower() != 'true'
 
         # First check if it's an uploaded file in database
         file_record = File.query.filter_by(filename=filename, user_id=current_user.id).first()
@@ -2046,7 +2049,9 @@ def download_file(filename):
                     # Download from Telegram to temp file
                     import tempfile
                     temp_dir = tempfile.gettempdir()
-                    temp_file_path = os.path.join(temp_dir, f"teledrive_download_{file_record.id}_{filename}")
+                    # Sanitize filename for temp path to avoid issues
+                    safe_filename = "".join([c for c in filename if c.isalpha() or c.isdigit() or c in (' ', '.', '_', '-')]).strip()
+                    temp_file_path = os.path.join(temp_dir, f"teledrive_download_{file_record.id}_{safe_filename}")
 
                     downloaded_path = run_async_in_thread(
                         download_from_telegram_async(file_record, temp_file_path)
@@ -2058,22 +2063,29 @@ def download_file(filename):
                         # Send file and clean up temp file after sending
                         def remove_temp_file():
                             try:
-                                os.remove(downloaded_path)
-                                app.logger.info(f"Cleaned up temp file: {downloaded_path}")
-                            except:
-                                pass
+                                # Small delay to ensure file is served
+                                import time
+                                time.sleep(1)
+                                if os.path.exists(downloaded_path):
+                                    os.remove(downloaded_path)
+                                    app.logger.info(f"Cleaned up temp file: {downloaded_path}")
+                            except Exception as e:
+                                app.logger.error(f"Error cleaning up temp file: {e}")
 
                         # Use send_file with callback to clean up
                         response = send_file(
                             downloaded_path,
-                            as_attachment=True,
+                            as_attachment=as_attachment,
                             download_name=filename,
                             mimetype=file_record.mime_type
                         )
 
                         # Schedule cleanup (note: this might not work perfectly in all cases)
-                        import atexit
-                        atexit.register(remove_temp_file)
+                        # For Flask threaded mode, we can try to use a background thread for cleanup
+                        # since atexit only works when process exits
+                        cleanup_thread = threading.Thread(target=remove_temp_file)
+                        cleanup_thread.daemon = True
+                        cleanup_thread.start()
 
                         return response
                     else:
@@ -2100,7 +2112,7 @@ def download_file(filename):
 
                 if file_path.exists():
                     app.logger.info(f"Local file found, sending: {file_path}")
-                    return send_file(str(file_path), as_attachment=True, download_name=filename)
+                    return send_file(str(file_path), as_attachment=as_attachment, download_name=filename)
                 else:
                     app.logger.error(f"Local file not found on disk: {file_path}")
                     return jsonify({'error': 'File not found on disk'}), 404
@@ -2119,7 +2131,7 @@ def download_file(filename):
                 output_path = (base_root / output_path).resolve()
             file_path = (output_path / filename).resolve()
             if file_path.exists():
-                return send_file(str(file_path), as_attachment=True, download_name=filename)
+                return send_file(str(file_path), as_attachment=as_attachment, download_name=filename)
 
         return jsonify({'error': 'File not found'}), 404
 
