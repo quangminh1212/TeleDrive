@@ -2046,47 +2046,35 @@ def download_file(filename):
             if file_record.is_stored_on_telegram():
                 app.logger.info(f"Downloading from Telegram: {filename}")
                 try:
-                    # Download from Telegram to temp file
-                    import tempfile
-                    temp_dir = tempfile.gettempdir()
-                    # Sanitize filename for temp path to avoid issues
+                    # Use a persistent cache directory
+                    cache_dir = os.path.join(app.root_path, '..', 'data', 'cache')
+                    os.makedirs(cache_dir, exist_ok=True)
+                    
+                    # Create a safe filename for the cache
                     safe_filename = "".join([c for c in filename if c.isalpha() or c.isdigit() or c in (' ', '.', '_', '-')]).strip()
-                    temp_file_path = os.path.join(temp_dir, f"teledrive_download_{file_record.id}_{safe_filename}")
+                    cache_file_path = os.path.join(cache_dir, f"{file_record.id}_{safe_filename}")
 
-                    downloaded_path = run_async_in_thread(
-                        download_from_telegram_async(file_record, temp_file_path)
-                    )
+                    # Check if file already exists in cache
+                    if os.path.exists(cache_file_path) and os.path.getsize(cache_file_path) > 0:
+                        app.logger.info(f"Serving from cache: {cache_file_path}")
+                        downloaded_path = cache_file_path
+                    else:
+                        app.logger.info(f"Downloading from Telegram to cache: {cache_file_path}")
+                        # Download from Telegram to cache file
+                        downloaded_path = run_async_in_thread(
+                            download_from_telegram_async(file_record, cache_file_path)
+                        )
 
                     if downloaded_path and os.path.exists(downloaded_path):
-                        app.logger.info(f"Successfully downloaded from Telegram: {downloaded_path}")
+                        app.logger.info(f"Ready to serve: {downloaded_path}")
 
-                        # Send file and clean up temp file after sending
-                        def remove_temp_file():
-                            try:
-                                # Small delay to ensure file is served
-                                import time
-                                time.sleep(1)
-                                if os.path.exists(downloaded_path):
-                                    os.remove(downloaded_path)
-                                    app.logger.info(f"Cleaned up temp file: {downloaded_path}")
-                            except Exception as e:
-                                app.logger.error(f"Error cleaning up temp file: {e}")
-
-                        # Use send_file with callback to clean up
+                        # Use send_file - Flask handles Range requests efficiently for disk files
                         response = send_file(
                             downloaded_path,
                             as_attachment=as_attachment,
                             download_name=filename,
                             mimetype=file_record.mime_type
                         )
-
-                        # Schedule cleanup (note: this might not work perfectly in all cases)
-                        # For Flask threaded mode, we can try to use a background thread for cleanup
-                        # since atexit only works when process exits
-                        cleanup_thread = threading.Thread(target=remove_temp_file)
-                        cleanup_thread.daemon = True
-                        cleanup_thread.start()
-
                         return response
                     else:
                         app.logger.error(f"Failed to download from Telegram: {filename}")
