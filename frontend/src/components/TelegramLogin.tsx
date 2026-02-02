@@ -4,10 +4,9 @@ interface TelegramLoginProps {
     onLoginSuccess: () => void;
 }
 
-const TelegramIcon = () => (
-    <svg className="w-16 h-16" viewBox="0 0 24 24" fill="#0088cc">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.74 3.98-1.73 6.64-2.88 7.96-3.44 3.79-1.58 4.58-1.86 5.09-1.87.11 0 .37.03.53.14.14.1.18.23.2.33-.01.06.01.24 0 .38z" />
-    </svg>
+// TeleDrive Logo component using the new logo image
+const TeleDriveLogo = ({ className = "w-16 h-16" }: { className?: string }) => (
+    <img src="/logo.png" alt="TeleDrive" className={className} />
 );
 
 const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
@@ -53,8 +52,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                     {/* Header */}
                     <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-8 text-center">
                         <div className="flex justify-center mb-4">
-                            <div className="bg-white rounded-full p-4 shadow-lg">
-                                <TelegramIcon />
+                            <div className="bg-white rounded-full p-2 shadow-lg">
+                                <TeleDriveLogo className="w-20 h-20" />
                             </div>
                         </div>
                         <h1 className="text-2xl font-bold text-white mb-2">TeleDrive</h1>
@@ -89,8 +88,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             onClick={handleAutoLogin}
                             disabled={isLoading}
                             className={`w-full py-3 px-4 rounded-xl font-medium text-white transition-all ${isLoading
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl'
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl'
                                 }`}
                         >
                             {isLoading ? (
@@ -100,7 +99,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center gap-2">
-                                    <TelegramIcon />
+                                    <TeleDriveLogo className="w-6 h-6" />
                                     <span>Đăng nhập từ Telegram Desktop</span>
                                 </div>
                             )}
