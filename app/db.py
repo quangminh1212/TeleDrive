@@ -229,7 +229,7 @@ class File(db.Model):
     __tablename__ = 'files'
     
     id = Column(Integer, primary_key=True)
-    unique_id = Column(String(50), unique=True, nullable=False, index=True, default=lambda: str(int(time.time() * 1000000)))  # Epoch timestamp microseconds for unique ID
+    unique_id = Column(String(50), unique=True, nullable=False, index=True, default=lambda: str(int(time.time() * 1000)))  # Epoch timestamp milliseconds for unique ID
     filename = Column(String(255), nullable=False, index=True)
     original_filename = Column(String(255))
     file_path = Column(String(500))  # Path on disk

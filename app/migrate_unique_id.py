@@ -54,8 +54,8 @@ def migrate_unique_ids():
         
         updated_count = 0
         for (file_id,) in files:
-            # Generate unique_id based on epoch timestamp + file id
-            unique_id = f"{int(time.time() * 1000000)}_{file_id}"
+            # Generate unique_id based on epoch timestamp (ms) + file id
+            unique_id = f"{int(time.time() * 1000)}_{file_id}"
             cursor.execute("UPDATE files SET unique_id = ? WHERE id = ?", (unique_id, file_id))
             updated_count += 1
             
