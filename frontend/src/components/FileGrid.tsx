@@ -4,6 +4,7 @@ import FilePreview from './FilePreview';
 import { ViewModeControls } from './Header';
 import { api, FileInfo, FolderInfo } from '../services/api';
 import { useToast } from './Toast';
+import ConfirmDialog from './ConfirmDialog';
 
 interface FileGridProps {
     searchQuery: string;
@@ -62,6 +63,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
     });
     const [folders, setFolders] = useState<FolderInfo[]>([]);
     const [moveFileTarget, setMoveFileTarget] = useState<FileInfo | null>(null);
+    const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
     const toast = useToast();
 
     useEffect(() => {
@@ -240,6 +242,59 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         } catch (err) {
             toast.error('Lỗi xóa');
         }
+    };
+
+    // Handle bulk delete (multiple files/folders)
+    const handleBulkDelete = async () => {
+        if (selectedFiles.size === 0) return;
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const fileId of selectedFiles) {
+            try {
+                const isFolder = String(fileId).startsWith('folder-');
+
+                if (isFolder) {
+                    const folderId = parseInt(String(fileId).replace('folder-', ''));
+                    const response = await api.deleteFolder(folderId);
+                    if (response.success) successCount++;
+                    else errorCount++;
+                } else {
+                    const response = await api.deleteFile(fileId);
+                    if (response.success) successCount++;
+                    else errorCount++;
+                }
+            } catch (err) {
+                errorCount++;
+            }
+        }
+
+        // Update local state
+        setAllFiles(prev => prev.filter(f => !selectedFiles.has(f.id)));
+        setSelectedFiles(new Set());
+
+        if (successCount > 0 && errorCount === 0) {
+            toast.success(`Đã xóa ${successCount} mục`);
+        } else if (successCount > 0 && errorCount > 0) {
+            toast.warning(`Đã xóa ${successCount} mục, ${errorCount} lỗi`);
+        } else {
+            toast.error('Không thể xóa các mục đã chọn');
+        }
+    };
+
+    // Select all files
+    const handleSelectAll = () => {
+        if (selectedFiles.size === files.length) {
+            setSelectedFiles(new Set());
+        } else {
+            setSelectedFiles(new Set(files.map(f => f.id)));
+        }
+    };
+
+    // Clear selection
+    const handleClearSelection = () => {
+        setSelectedFiles(new Set());
     };
 
     // Handle file move to folder
@@ -728,6 +783,87 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                     </div>
                 </div>
             )}
+
+            {/* Selection Toolbar - appears at bottom when files are selected */}
+            {selectedFiles.size > 0 && (
+                <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white rounded-full shadow-2xl px-4 py-2 flex items-center gap-4 z-50 animate-slideUp">
+                    {/* Selection count */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleClearSelection}
+                            className="p-1 hover:bg-gray-700 rounded-full transition-colors"
+                            title="Bỏ chọn"
+                        >
+                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                            </svg>
+                        </button>
+                        <span className="text-sm font-medium">{selectedFiles.size} đã chọn</span>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="w-px h-6 bg-gray-600" />
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1">
+                        {/* Select All */}
+                        <button
+                            onClick={handleSelectAll}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm hover:bg-gray-700 rounded-full transition-colors"
+                            title="Chọn tất cả"
+                        >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 5h2V3c-1.1 0-2 .9-2 2zm0 8h2v-2H3v2zm4 8h2v-2H7v2zM3 9h2V7H3v2zm10-6h-2v2h2V3zm6 0v2h2c0-1.1-.9-2-2-2zM5 21v-2H3c0 1.1.9 2 2 2zm-2-4h2v-2H3v2zM9 3H7v2h2V3zm2 18h2v-2h-2v2zm8-8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2zm0-12h2V7h-2v2zm0 8h2v-2h-2v2zm-4 4h2v-2h-2v2zm0-16h2V3h-2v2zM7 17h10V7H7v10zm2-8h6v6H9V9z" />
+                            </svg>
+                            Chọn tất cả
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                            onClick={() => setShowBulkDeleteConfirm(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/20 rounded-full transition-colors"
+                            title="Xóa"
+                        >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                            </svg>
+                            Xóa
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Delete Confirm Dialog */}
+            <ConfirmDialog
+                isOpen={showBulkDeleteConfirm}
+                title="Xóa nhiều mục"
+                message={`Bạn có chắc chắn muốn xóa ${selectedFiles.size} mục đã chọn? Thao tác này không thể hoàn tác.`}
+                confirmText="Xóa tất cả"
+                cancelText="Hủy"
+                confirmButtonColor="red"
+                onConfirm={() => {
+                    setShowBulkDeleteConfirm(false);
+                    handleBulkDelete();
+                }}
+                onCancel={() => setShowBulkDeleteConfirm(false)}
+            />
+
+            {/* Animation styles */}
+            <style>{`
+                @keyframes slideUp {
+                    from {
+                        opacity: 0;
+                        transform: translateX(-50%) translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(-50%) translateY(0);
+                    }
+                }
+                .animate-slideUp {
+                    animation: slideUp 0.2s ease-out;
+                }
+            `}</style>
         </div>
     );
 };
