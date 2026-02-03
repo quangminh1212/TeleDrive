@@ -1603,10 +1603,11 @@ def get_files():
         return jsonify(cached_result)
 
     # Get files from database with pagination and eager loading
+    # Only get files at root level (folder_id is None)
     db_files_query = File.query.options(
         db.joinedload(File.owner),
         db.joinedload(File.folder)
-    ).filter_by(is_deleted=False).order_by(File.created_at.desc())
+    ).filter_by(is_deleted=False, folder_id=None).order_by(File.created_at.desc())
     pagination = db_files_query.paginate(page=page, per_page=per_page, error_out=False)
     db_files = pagination.items
 
@@ -1680,10 +1681,11 @@ def get_files_public():
     per_page = min(per_page, 100)  # Limit max items per page
 
     # Get files from database with pagination and eager loading
+    # Only get files at root level (folder_id is None) for the main file list
     db_files_query = File.query.options(
         db.joinedload(File.owner),
         db.joinedload(File.folder)
-    ).filter_by(is_deleted=False).order_by(File.created_at.desc())
+    ).filter_by(is_deleted=False, folder_id=None).order_by(File.created_at.desc())
     pagination = db_files_query.paginate(page=page, per_page=per_page, error_out=False)
     db_files = pagination.items
 
