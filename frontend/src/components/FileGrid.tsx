@@ -327,7 +327,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                             <DropdownIcon />
                         </button>
                         <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
-                            Lần sửa đổi gần đây nhất
+                            Thời gian tạo
                             <DropdownIcon />
                         </button>
                         <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
@@ -435,7 +435,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                             className="w-48 text-left flex items-center hover:bg-gray-50 px-2 py-1 rounded"
                             onClick={() => handleSort('modified')}
                         >
-                            <span>Lần sửa đổi gần đây nhất</span>
+                            <span>Thời gian tạo</span>
                             {sortColumn === 'modified' && <SortIcon direction={sortDirection} />}
                         </button>
                         <span className="w-32 text-left px-2">Kênh</span>
