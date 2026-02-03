@@ -6,20 +6,13 @@ interface CreateFolderModalProps {
     onCreateFolder: (name: string) => Promise<{ success: boolean; error?: string }>;
 }
 
-// Folder icon - Google Drive style blue
+// Folder icon - Google Drive style
 const FolderIcon = () => (
-    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
-        <defs>
-            <linearGradient id="folderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#5B8DEF" />
-                <stop offset="100%" stopColor="#8B5CF6" />
-            </linearGradient>
-        </defs>
-        <path
-            d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V9C21 7.89543 20.1046 7 19 7H13L11 5H5C3.89543 5 3 5.89543 3 7Z"
-            fill="url(#folderGradient)"
-        />
-    </svg>
+    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+        <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+        </svg>
+    </div>
 );
 
 const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, onCreateFolder }) => {
@@ -88,129 +81,118 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
             className="fixed inset-0 z-50 flex items-center justify-center"
             onKeyDown={handleKeyDown}
         >
-            {/* Backdrop - Dark blur */}
+            {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fadeIn"
+                className="absolute inset-0 bg-black/60 animate-fadeIn"
                 onClick={onClose}
             />
 
-            {/* Modal - Google Drive Dark Style */}
-            <div className="relative w-full max-w-md mx-4 animate-scaleIn">
-                {/* Gradient border effect */}
-                <div className="absolute -inset-[1px] bg-gradient-to-r from-blue-500 via-purple-500 to-violet-500 rounded-2xl opacity-50 blur-sm"></div>
+            {/* Modal - Google Drive Style */}
+            <div className="relative bg-[#2b2d31] rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-2xl animate-scaleIn border border-gray-700/50">
+                {/* Header */}
+                <div className="px-6 pt-6 pb-4">
+                    <div className="flex items-center gap-4">
+                        <FolderIcon />
+                        <div>
+                            <h2 className="text-xl font-medium text-white">
+                                Tạo thư mục mới
+                            </h2>
+                            <p className="text-sm text-gray-400 mt-0.5">
+                                Nhập tên cho thư mục của bạn
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
-                <div className="relative bg-[#1E1E2E] rounded-2xl overflow-hidden border border-gray-700/50">
-                    {/* Header */}
-                    <div className="px-6 pt-6 pb-4">
-                        <div className="flex items-center gap-4">
-                            {/* Folder Icon with gradient background */}
-                            <div className="p-3 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl border border-blue-500/30">
-                                <FolderIcon />
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-semibold text-white">
-                                    Tạo thư mục mới
-                                </h2>
-                                <p className="text-sm text-gray-400 mt-0.5">
-                                    Nhập tên cho thư mục của bạn
-                                </p>
-                            </div>
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="px-6 pb-6">
+                    {/* Input Label */}
+                    <label className="block text-sm text-gray-300 mb-2">
+                        Tên thư mục
+                    </label>
+
+                    {/* Input - Google Drive style with blue border */}
+                    <div className="relative">
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={folderName}
+                            onChange={(e) => {
+                                setFolderName(e.target.value);
+                                setError('');
+                            }}
+                            placeholder="Ví dụ: Tài liệu quan trọng"
+                            className="w-full px-4 py-3 bg-[#1e1f22] border-2 border-blue-500 rounded-lg text-white placeholder-gray-500 outline-none focus:border-blue-400 transition-colors pr-16"
+                            disabled={isCreating}
+                            maxLength={255}
+                        />
+                        {/* Character count */}
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                            {folderName.length}/255
+                        </span>
+                    </div>
+
+                    {/* Error message */}
+                    {error && (
+                        <div className="mt-2 flex items-center gap-2 text-red-400 text-sm">
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                            </svg>
+                            {error}
+                        </div>
+                    )}
+
+                    {/* Quick suggestions */}
+                    <div className="mt-4">
+                        <p className="text-xs text-gray-500 mb-2">Gợi ý:</p>
+                        <div className="flex flex-wrap gap-2">
+                            {suggestions.map((suggestion) => (
+                                <button
+                                    key={suggestion}
+                                    type="button"
+                                    onClick={() => setFolderName(suggestion)}
+                                    className="px-3 py-1.5 text-sm bg-[#383a40] text-gray-300 rounded-full border border-gray-600 hover:bg-[#404249] hover:border-gray-500 transition-colors"
+                                >
+                                    {suggestion}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Form */}
-                    <form onSubmit={handleSubmit} className="px-6 pb-6">
-                        {/* Input Label */}
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Tên thư mục
-                        </label>
-
-                        {/* Input with gradient border */}
-                        <div className="relative">
-                            <div className="absolute -inset-[1px] bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl opacity-60"></div>
-                            <div className="relative">
-                                <input
-                                    ref={inputRef}
-                                    type="text"
-                                    value={folderName}
-                                    onChange={(e) => {
-                                        setFolderName(e.target.value);
-                                        setError('');
-                                    }}
-                                    placeholder="Ví dụ: Tài liệu quan trọng"
-                                    className="w-full px-4 py-3.5 bg-[#252536] rounded-xl text-white placeholder-gray-500 outline-none pr-16"
-                                    disabled={isCreating}
-                                    maxLength={255}
-                                />
-                                {/* Character count */}
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-                                    {folderName.length}/255
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Error message */}
-                        {error && (
-                            <div className="mt-2 flex items-center gap-2 text-red-400 text-sm animate-shake">
-                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-                                </svg>
-                                {error}
-                            </div>
-                        )}
-
-                        {/* Quick suggestions */}
-                        <div className="mt-4">
-                            <p className="text-xs text-gray-500 mb-2">Gợi ý:</p>
-                            <div className="flex flex-wrap gap-2">
-                                {suggestions.map((suggestion) => (
-                                    <button
-                                        key={suggestion}
-                                        type="button"
-                                        onClick={() => setFolderName(suggestion)}
-                                        className="px-3 py-1.5 text-xs bg-[#2A2A3C] text-gray-300 rounded-full border border-gray-600/50 hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-400 transition-all"
-                                    >
-                                        {suggestion}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="mt-6 flex items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                disabled={isCreating}
-                                className="flex-1 px-4 py-3 text-gray-300 bg-[#2A2A3C] rounded-xl hover:bg-[#353548] transition-colors font-medium disabled:opacity-50 border border-gray-600/30"
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={isCreating || !folderName.trim()}
-                                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
-                            >
-                                {isCreating ? (
-                                    <>
-                                        <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                        </svg>
-                                        Đang tạo...
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-                                        </svg>
-                                        Tạo thư mục
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    {/* Actions */}
+                    <div className="mt-6 flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={isCreating}
+                            className="flex-1 px-4 py-3 text-white bg-[#4e5058] rounded-lg hover:bg-[#5d5f66] transition-colors font-medium disabled:opacity-50"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isCreating || !folderName.trim()}
+                            className="flex-1 px-4 py-3 bg-gradient-to-r from-rose-500 to-orange-500 text-white rounded-lg hover:from-rose-600 hover:to-orange-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {isCreating ? (
+                                <>
+                                    <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    Đang tạo...
+                                </>
+                            ) : (
+                                <>
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                                    </svg>
+                                    Tạo thư mục
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
             </div>
 
             {/* Custom animations */}
@@ -229,19 +211,11 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                         transform: scale(1) translateY(0);
                     }
                 }
-                @keyframes shake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-4px); }
-                    75% { transform: translateX(4px); }
-                }
                 .animate-fadeIn {
                     animation: fadeIn 0.2s ease-out;
                 }
                 .animate-scaleIn {
-                    animation: scaleIn 0.3s ease-out;
-                }
-                .animate-shake {
-                    animation: shake 0.3s ease-out;
+                    animation: scaleIn 0.2s ease-out;
                 }
             `}</style>
         </div>
