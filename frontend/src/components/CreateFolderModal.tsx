@@ -6,10 +6,10 @@ interface CreateFolderModalProps {
     onCreateFolder: (name: string) => Promise<{ success: boolean; error?: string }>;
 }
 
-// Folder icon - Google Drive style
+// Folder icon - Google Drive style blue
 const FolderIcon = () => (
-    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-        <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+        <svg className="w-7 h-7 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
             <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
         </svg>
     </div>
@@ -19,12 +19,14 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
     const [folderName, setFolderName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState('');
+    const [isFocused, setIsFocused] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isOpen) {
             setFolderName('');
             setError('');
+            setIsFocused(false);
             setTimeout(() => inputRef.current?.focus(), 100);
         }
     }, [isOpen]);
@@ -83,21 +85,21 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
         >
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/60 animate-fadeIn"
+                className="absolute inset-0 bg-black/40 animate-fadeIn"
                 onClick={onClose}
             />
 
-            {/* Modal - Google Drive Style */}
-            <div className="relative bg-[#2b2d31] rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-2xl animate-scaleIn border border-gray-700/50">
+            {/* Modal - Google Drive Light Style */}
+            <div className="relative bg-white rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-2xl animate-scaleIn">
                 {/* Header */}
                 <div className="px-6 pt-6 pb-4">
                     <div className="flex items-center gap-4">
                         <FolderIcon />
                         <div>
-                            <h2 className="text-xl font-medium text-white">
+                            <h2 className="text-xl font-medium text-gray-800">
                                 Tạo thư mục mới
                             </h2>
-                            <p className="text-sm text-gray-400 mt-0.5">
+                            <p className="text-sm text-gray-500 mt-0.5">
                                 Nhập tên cho thư mục của bạn
                             </p>
                         </div>
@@ -107,11 +109,11 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="px-6 pb-6">
                     {/* Input Label */}
-                    <label className="block text-sm text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                         Tên thư mục
                     </label>
 
-                    {/* Input - Google Drive style with blue border */}
+                    {/* Input - Google Drive style */}
                     <div className="relative">
                         <input
                             ref={inputRef}
@@ -121,20 +123,27 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                                 setFolderName(e.target.value);
                                 setError('');
                             }}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
                             placeholder="Ví dụ: Tài liệu quan trọng"
-                            className="w-full px-4 py-3 bg-[#1e1f22] border-2 border-blue-500 rounded-lg text-white placeholder-gray-500 outline-none focus:border-blue-400 transition-colors pr-16"
+                            className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-lg text-gray-800 placeholder-gray-400 outline-none transition-colors pr-16 ${error
+                                    ? 'border-red-400'
+                                    : isFocused
+                                        ? 'border-blue-500 bg-white'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                }`}
                             disabled={isCreating}
                             maxLength={255}
                         />
                         {/* Character count */}
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400">
                             {folderName.length}/255
                         </span>
                     </div>
 
                     {/* Error message */}
                     {error && (
-                        <div className="mt-2 flex items-center gap-2 text-red-400 text-sm">
+                        <div className="mt-2 flex items-center gap-2 text-red-500 text-sm">
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
                             </svg>
@@ -151,7 +160,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                                     key={suggestion}
                                     type="button"
                                     onClick={() => setFolderName(suggestion)}
-                                    className="px-3 py-1.5 text-sm bg-[#383a40] text-gray-300 rounded-full border border-gray-600 hover:bg-[#404249] hover:border-gray-500 transition-colors"
+                                    className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-full border border-gray-200 hover:bg-gray-200 hover:border-gray-300 transition-colors"
                                 >
                                     {suggestion}
                                 </button>
@@ -165,14 +174,14 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                             type="button"
                             onClick={onClose}
                             disabled={isCreating}
-                            className="flex-1 px-4 py-3 text-white bg-[#4e5058] rounded-lg hover:bg-[#5d5f66] transition-colors font-medium disabled:opacity-50"
+                            className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
                         >
                             Hủy
                         </button>
                         <button
                             type="submit"
                             disabled={isCreating || !folderName.trim()}
-                            className="flex-1 px-4 py-3 bg-gradient-to-r from-rose-500 to-orange-500 text-white rounded-lg hover:from-rose-600 hover:to-orange-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isCreating ? (
                                 <>
