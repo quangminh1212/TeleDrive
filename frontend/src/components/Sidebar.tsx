@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
 import CreateFolderModal from './CreateFolderModal';
+import { useToast } from './Toast';
 
 interface SidebarProps {
     currentFolder: string | null;
@@ -82,6 +83,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     const [storageSizeFromAPI, setStorageSizeFromAPI] = useState<number>(0);
     const [isUploading, setIsUploading] = useState(false);
     const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+    const toast = useToast();
 
     // Hidden file input refs
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -113,15 +115,16 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
             if (result.success) {
                 console.log('Upload thành công:', result.data);
+                toast.success(`Upload thành công ${filesArray.length} file`);
                 // Callback để refresh danh sách file
                 onFilesUploaded?.();
             } else {
                 console.error('Upload thất bại:', result.error);
-                alert('Upload thất bại: ' + (result.error || 'Lỗi không xác định'));
+                toast.error('Upload thất bại: ' + (result.error || 'Lỗi không xác định'));
             }
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Lỗi upload file');
+            toast.error('Lỗi upload file');
         } finally {
             setIsUploading(false);
             // Reset file input

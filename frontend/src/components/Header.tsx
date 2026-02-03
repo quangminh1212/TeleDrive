@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import UserAccountMenu from './UserAccountMenu';
+import { useToast } from './Toast';
 
 interface HeaderProps {
     searchQuery: string;
@@ -65,6 +66,7 @@ const HelpIcon = () => (
 
 const Header = ({ searchQuery, onSearchChange, userInfo }: HeaderProps) => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const toast = useToast();
 
     const handleLogout = async () => {
         try {
@@ -76,11 +78,11 @@ const Header = ({ searchQuery, onSearchChange, userInfo }: HeaderProps) => {
             if (result.success) {
                 window.location.reload();
             } else {
-                alert('Lỗi: ' + (result.error || 'Không thể đăng xuất'));
+                toast.error('Lỗi: ' + (result.error || 'Không thể đăng xuất'));
             }
         } catch (error) {
             console.error('Logout error:', error);
-            alert('Lỗi kết nối đến server');
+            toast.error('Lỗi kết nối đến server');
         }
     };
 

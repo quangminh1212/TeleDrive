@@ -3,6 +3,7 @@ import FileItem from './FileItem';
 import FilePreview from './FilePreview';
 import { ViewModeControls } from './Header';
 import { api, FileInfo, FolderInfo } from '../services/api';
+import { useToast } from './Toast';
 
 interface FileGridProps {
     searchQuery: string;
@@ -61,6 +62,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
     });
     const [folders, setFolders] = useState<FolderInfo[]>([]);
     const [moveFileTarget, setMoveFileTarget] = useState<FileInfo | null>(null);
+    const toast = useToast();
 
     useEffect(() => {
         setLocalViewMode(viewMode);
@@ -201,11 +203,12 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                 setAllFiles(prev => prev.map(f =>
                     f.id === file.id ? { ...f, name: newName, filename: newName } : f
                 ));
+                toast.success(`Đã đổi tên thành "${newName}"`);
             } else {
-                alert(`Lỗi đổi tên: ${response.error}`);
+                toast.error(`Lỗi đổi tên: ${response.error}`);
             }
         } catch (err) {
-            alert('Lỗi đổi tên file');
+            toast.error('Lỗi đổi tên file');
         }
     };
 
@@ -216,11 +219,12 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
             if (response.success) {
                 // Remove from local state
                 setAllFiles(prev => prev.filter(f => f.id !== file.id));
+                toast.success(`Đã xóa "${file.name || file.filename}"`);
             } else {
-                alert(`Lỗi xóa file: ${response.error}`);
+                toast.error(`Lỗi xóa file: ${response.error}`);
             }
         } catch (err) {
-            alert('Lỗi xóa file');
+            toast.error('Lỗi xóa file');
         }
     };
 
@@ -245,14 +249,14 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
             const response = await api.moveFileToFolder(Number(moveFileTarget.id), folderId);
             if (response.success) {
                 const folderName = folderId ? folders.find(f => f.id === folderId)?.name || 'thư mục' : 'Gốc';
-                alert(`Đã di chuyển "${moveFileTarget.name}" đến "${folderName}"`);
+                toast.success(`Đã di chuyển "${moveFileTarget.name}" đến "${folderName}"`);
                 // Refresh file list
                 await fetchFiles();
             } else {
-                alert(`Lỗi di chuyển: ${response.error}`);
+                toast.error(`Lỗi di chuyển: ${response.error}`);
             }
         } catch (err) {
-            alert('Lỗi di chuyển file');
+            toast.error('Lỗi di chuyển file');
         } finally {
             setMoveFileTarget(null);
         }

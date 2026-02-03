@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FileInfo } from '../services/api';
 import ContextMenu from './ContextMenu';
 import ConfirmDialog from './ConfirmDialog';
+import { useToast } from './Toast';
 
 interface FileItemProps {
     file: FileInfo;
@@ -217,6 +218,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
     const [isRenaming, setIsRenaming] = useState(false);
     const [newName, setNewName] = useState(file.name || file.filename || '');
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const toast = useToast();
 
     const handleClick = (e: React.MouseEvent) => {
         onSelect(e.ctrlKey || e.metaKey);
@@ -266,7 +268,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                 // Copy share link to clipboard
                 const shareLink = `http://127.0.0.1:5000/share/${file.id}`;
                 navigator.clipboard.writeText(shareLink);
-                alert('Đã sao chép liên kết chia sẻ!');
+                toast.success('Đã sao chép liên kết chia sẻ!');
                 break;
             case 'open':
                 handleDoubleClick();
