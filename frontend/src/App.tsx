@@ -3,7 +3,9 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import FileGrid from './components/FileGrid';
 import TelegramLogin from './components/TelegramLogin';
+import UploadProgress from './components/UploadProgress';
 import { ToastProvider } from './components/Toast';
+import { UploadProvider, useUpload } from './contexts/UploadContext';
 import './index.css';
 
 interface UserInfo {
@@ -15,16 +17,21 @@ interface UserInfo {
   avatar?: string;
 }
 
-function App() {
+// Inner component that uses upload context
+function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showUploadProgress, setShowUploadProgress] = useState(true);
 
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [userInfo, setUserInfo] = useState<UserInfo | undefined>(undefined);
+
+  // Upload context
+  const { uploadItems, clearAll } = useUpload();
 
   // Check auth status on mount
   useEffect(() => {
@@ -73,29 +80,23 @@ function App() {
   // Loading state while checking auth
   if (isCheckingAuth) {
     return (
-      <ToastProvider>
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Đang kiểm tra đăng nhập...</p>
-          </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang kiểm tra đăng nhập...</p>
         </div>
-      </ToastProvider>
+      </div>
     );
   }
 
   // Show login if not authenticated
   if (!isAuthenticated) {
-    return (
-      <ToastProvider>
-        <TelegramLogin onLoginSuccess={handleLoginSuccess} />
-      </ToastProvider>
-    );
+    return <TelegramLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
   // Main app
   return (
-    <ToastProvider>
+    <>
       <div className="flex h-screen bg-white">
         {/* Sidebar */}
         <Sidebar
@@ -128,9 +129,34 @@ function App() {
           </main>
         </div>
       </div>
+
+      {/* Upload Progress Panel - Google Drive style */}
+      {showUploadProgress && uploadItems.length > 0 && (
+        <UploadProgress
+          items={uploadItems}
+          onClose={() => setShowUploadProgress(false)}
+          onClear={clearAll}
+        />
+      )}
+    </>
+  );
+}
+
+// Main App component with providers
+function App() {
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleUploadComplete = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
+  return (
+    <ToastProvider>
+      <UploadProvider onUploadComplete={handleUploadComplete}>
+        <AppContent key={refreshKey} />
+      </UploadProvider>
     </ToastProvider>
   );
 }
 
 export default App;
-

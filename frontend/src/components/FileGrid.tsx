@@ -4,6 +4,7 @@ import FilePreview from './FilePreview';
 import { ViewModeControls } from './Header';
 import { api, FileInfo, FolderInfo } from '../services/api';
 import { useToast } from './Toast';
+import { useUpload } from '../contexts/UploadContext';
 import ConfirmDialog from './ConfirmDialog';
 
 interface FileGridProps {
@@ -68,6 +69,9 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const [currentFolderName, setCurrentFolderName] = useState<string | null>(null);
     const toast = useToast();
 
+    // Upload context
+    const { uploadFiles } = useUpload();
+
     // Drag selection state
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -77,8 +81,6 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
 
     // Drag & drop upload state
     const [isDragOver, setIsDragOver] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
     const dragCounterRef = useRef(0);
 
     useEffect(() => {
@@ -238,36 +240,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const handleDropUpload = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
 
-        setIsUploading(true);
-        setUploadProgress({ current: 0, total: files.length });
+        // Get current folder ID for upload
+        const folderId = currentFolder && !isNaN(parseInt(currentFolder)) ? currentFolder : undefined;
 
-        try {
-            // Get current folder ID for upload
-            const folderId = currentFolder && !isNaN(parseInt(currentFolder)) ? currentFolder : undefined;
+        // Use upload context to handle upload with progress tracking
+        await uploadFiles(files, folderId);
 
-            let successCount = 0;
-            for (let i = 0; i < files.length; i++) {
-                setUploadProgress({ current: i + 1, total: files.length });
-                const response = await api.uploadFile(files[i], folderId);
-                if (response.success) {
-                    successCount++;
-                }
-            }
-
-            if (successCount > 0) {
-                toast.success(`Đã tải lên ${successCount}/${files.length} file thành công`);
-                fetchFiles(); // Refresh file list
-            } else {
-                toast.error('Không thể tải lên file');
-            }
-        } catch (error) {
-            console.error('Upload error:', error);
-            toast.error('Lỗi khi tải lên file');
-        } finally {
-            setIsUploading(false);
-            setUploadProgress(null);
-        }
-    }, [currentFolder, fetchFiles, toast]);
+        // Refresh file list after upload
+        fetchFiles();
+    }, [currentFolder, uploadFiles, fetchFiles]);
 
     const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -791,25 +772,6 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
             )}
 
             {/* Upload Progress Overlay */}
-            {isUploading && uploadProgress && (
-                <div className="absolute inset-0 z-50 bg-black/30 flex items-center justify-center backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 min-w-[300px]">
-                        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                        <div className="text-center">
-                            <p className="text-lg font-semibold text-gray-800">Đang tải lên...</p>
-                            <p className="text-sm text-gray-500">
-                                {uploadProgress.current} / {uploadProgress.total} file
-                            </p>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
-                            ></div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Toolbar */}
             <div className="flex items-center justify-between px-2 md:px-4 py-2 border-b border-gray-100">
