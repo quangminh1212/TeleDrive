@@ -379,6 +379,28 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                     : 'hover:bg-gray-50'
                     }`}
             >
+                {/* Checkbox - visible on hover or when selected */}
+                <div
+                    className={`mr-2 flex-shrink-0 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(true); // Always multi-select mode when clicking checkbox
+                    }}
+                >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors
+                        ${isSelected
+                            ? 'bg-blue-600 border-blue-600'
+                            : 'border-gray-400 hover:border-blue-500'
+                        }`}
+                    >
+                        {isSelected && (
+                            <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                            </svg>
+                        )}
+                    </div>
+                </div>
+
                 {/* Icon */}
                 <span className="mr-3 flex-shrink-0">{getFileIcon(file)}</span>
 
