@@ -166,8 +166,6 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     ];
 
     const bottomMenuItems = [
-        { id: 'spam', label: 'Nội dung rác', icon: SpamIcon },
-        { id: 'trash', label: 'Thùng rác', icon: TrashIcon },
         { id: 'storage', label: 'Bộ nhớ', icon: StorageIcon },
     ];
 
