@@ -1428,7 +1428,24 @@ class TelegramAuthenticator:
                 # Tạo/cập nhật user trong database
                 db_user = self.create_or_update_user(me, me.phone or '')
                 
+                # Lấy avatar từ Telegram
+                avatar_base64 = None
+                try:
+                    # Download profile photo vào memory (bytes)
+                    photo_bytes = await client.download_profile_photo(me, file=bytes)
+                    if photo_bytes:
+                        import base64
+                        avatar_base64 = f"data:image/jpeg;base64,{base64.b64encode(photo_bytes).decode('utf-8')}"
+                        print(f"[CHECK_SESSION] Đã tải avatar, size: {len(photo_bytes)} bytes")
+                except Exception as avatar_err:
+                    print(f"[CHECK_SESSION] Không thể tải avatar: {avatar_err}")
+                
                 await client.disconnect()
+                
+                # Format số điện thoại với dấu +
+                phone_formatted = me.phone
+                if phone_formatted and not phone_formatted.startswith('+'):
+                    phone_formatted = f"+{phone_formatted}"
                 
                 return {
                     'success': True,
@@ -1439,7 +1456,8 @@ class TelegramAuthenticator:
                         'telegram_id': me.id,
                         'first_name': me.first_name,
                         'last_name': me.last_name,
-                        'phone': me.phone
+                        'phone': phone_formatted,
+                        'avatar': avatar_base64
                     }
                 }
             else:

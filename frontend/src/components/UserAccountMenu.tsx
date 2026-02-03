@@ -62,8 +62,14 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
         }
     };
 
-    const displayName = userInfo?.name || userInfo?.phone || 'Người dùng';
-    const displayEmail = userInfo?.email || userInfo?.phone || '';
+    // Format số điện thoại với mã quốc gia (+)
+    const formatPhone = (phone?: string) => {
+        if (!phone) return '';
+        return phone.startsWith('+') ? phone : `+${phone}`;
+    };
+
+    const displayName = userInfo?.name || formatPhone(userInfo?.phone) || 'Người dùng';
+    const displayEmail = userInfo?.email || formatPhone(userInfo?.phone) || '';
 
     return (
         <>
