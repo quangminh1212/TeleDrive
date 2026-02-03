@@ -176,18 +176,24 @@ class TelegramStorageManager:
         """Upload file to Saved Messages (for backward compatibility)"""
         return await self.upload_to_saved_messages(file_path, filename)
     
-    async def upload_to_saved_messages(self, file_path: str, filename: str) -> Optional[Dict[str, Any]]:
+    async def upload_to_saved_messages(self, file_path: str, filename: str, unique_id: str = None) -> Optional[Dict[str, Any]]:
         """Upload file directly to Saved Messages"""
         try:
             # Verify and log current user before upload
             me = await self.client.get_me()
             print(f"[STORAGE] ✅ Uploading to Saved Messages of: {me.first_name} (ID: {me.id}, Phone: {me.phone})")
             
+            # Generate unique_id (epoch timestamp ms) if not provided
+            import time
+            if not unique_id:
+                unique_id = str(int(time.time() * 1000))
+            
             # Upload file to Saved Messages ('me' = current user's Saved Messages)
+            # Include unique_id in caption for easy mapping/atlas search
             message = await self.client.send_file(
                 'me',  # Saved Messages
                 file_path,
-                caption=f"📁 {filename}\n🔗 Uploaded via TeleDrive\n👤 User: {me.first_name}",
+                caption=f"📁 {filename}\n🆔 ID: {unique_id}\n🔗 Uploaded via TeleDrive\n👤 User: {me.first_name}",
                 attributes=[DocumentAttributeFilename(filename)]
             )
             
@@ -201,6 +207,7 @@ class TelegramStorageManager:
                     'channel_id': str(message.chat_id),
                     'file_id': str(document.id),
                     'unique_id': document.file_reference.hex() if document.file_reference else None,
+                    'teledrive_unique_id': unique_id,  # Our epoch timestamp ms ID for mapping
                     'access_hash': str(document.access_hash),
                     'file_reference': document.file_reference,
                     'file_size': document.size,
@@ -220,6 +227,7 @@ class TelegramStorageManager:
                     'channel_id': str(message.chat_id),
                     'file_id': str(message.id),
                     'unique_id': None,
+                    'teledrive_unique_id': unique_id,  # Our epoch timestamp ms ID for mapping
                     'access_hash': None,
                     'file_reference': None,
                     'file_size': os.path.getsize(file_path),

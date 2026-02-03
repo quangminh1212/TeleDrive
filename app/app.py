@@ -111,11 +111,12 @@ def run_async_in_thread(coro):
         raise result['error']
     return result['value']
 
-async def upload_to_telegram_async(file_path: str, filename: str, user_id: int):
+async def upload_to_telegram_async(file_path: str, filename: str, user_id: int, unique_id: str = None):
     """Async helper to upload file to Telegram Saved Messages"""
     try:
         print(f"[UPLOAD] Starting upload for: {filename}")
         print(f"[UPLOAD] File path: {file_path}")
+        print(f"[UPLOAD] Unique ID: {unique_id}")
         
         # Initialize Telegram client
         init_result = await telegram_storage.initialize()
@@ -125,8 +126,8 @@ async def upload_to_telegram_async(file_path: str, filename: str, user_id: int):
         
         print(f"[UPLOAD] Telegram client initialized successfully")
         
-        # Upload file to Saved Messages
-        result = await telegram_storage.upload_file(file_path, filename, user_id)
+        # Upload file to Saved Messages with unique_id
+        result = await telegram_storage.upload_to_saved_messages(file_path, filename, unique_id)
         
         if result:
             print(f"[UPLOAD] SUCCESS: File uploaded to Saved Messages, message_id={result.get('message_id')}")
@@ -2888,7 +2889,7 @@ def upload_file():
                 app.logger.info(f"Attempting to upload {unique_filename} to Telegram...")
                 try:
                     telegram_result = run_async_in_thread(
-                        upload_to_telegram_async(str(file_path), unique_filename, user.id)
+                        upload_to_telegram_async(str(file_path), unique_filename, user.id, file_record.unique_id)
                     )
 
                     if telegram_result:
