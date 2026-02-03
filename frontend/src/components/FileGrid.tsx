@@ -444,6 +444,44 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         }
     };
 
+    // Handle drop files to folder (drag & drop)
+    const handleDropFilesToFolder = async (targetFolderId: string | number, fileIds: (string | number)[]) => {
+        const folderId = Number(targetFolderId);
+        const validFileIds = fileIds.filter(id => !String(id).startsWith('folder-')).map(id => Number(id));
+
+        if (validFileIds.length === 0) {
+            toast.error('Không thể di chuyển folder vào folder');
+            return;
+        }
+
+        // Move all files
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const fileId of validFileIds) {
+            try {
+                const response = await api.moveFileToFolder(fileId, folderId);
+                if (response.success) {
+                    successCount++;
+                } else {
+                    errorCount++;
+                }
+            } catch {
+                errorCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            toast.success(`Đã di chuyển ${successCount} file vào folder`);
+            // Clear selection and refresh
+            setSelectedFiles(new Set());
+            await fetchFiles();
+        }
+        if (errorCount > 0) {
+            toast.error(`Lỗi di chuyển ${errorCount} file`);
+        }
+    };
+
     // Handle show file info
     const [infoFile, setInfoFile] = useState<FileInfo | null>(null);
 
@@ -764,6 +802,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                                     onMove={handleMoveFile}
                                     onShowInfo={handleShowInfo}
                                     onPreview={handlePreview}
+                                    onDropFiles={handleDropFilesToFolder}
+                                    selectedFiles={selectedFiles}
                                 />
                             </div>
                         ))}

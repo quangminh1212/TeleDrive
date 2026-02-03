@@ -15,6 +15,8 @@ interface FileItemProps {
     onMove?: (file: FileInfo) => void;
     onShowInfo?: (file: FileInfo) => void;
     onPreview?: (file: FileInfo) => void;
+    onDropFiles?: (targetFolderId: string | number, fileIds: (string | number)[]) => void;
+    selectedFiles?: Set<string | number>;
 }
 
 // Google Drive folder icon
@@ -213,12 +215,60 @@ const formatDate = (dateStr: string): string => {
     }
 };
 
-const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, onCopy, onMove, onShowInfo, onPreview }: FileItemProps) => {
+const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, onCopy, onMove, onShowInfo, onPreview, onDropFiles, selectedFiles }: FileItemProps) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [isRenaming, setIsRenaming] = useState(false);
     const [newName, setNewName] = useState(file.name || file.filename || '');
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
     const toast = useToast();
+
+    const isFolder = file.type === 'folder';
+
+    // Drag handlers
+    const handleDragStart = (e: React.DragEvent) => {
+        if (isFolder) {
+            e.preventDefault();
+            return;
+        }
+
+        // Set drag data - include all selected files if this file is selected
+        const filesToDrag = isSelected && selectedFiles && selectedFiles.size > 1
+            ? Array.from(selectedFiles)
+            : [file.id];
+
+        e.dataTransfer.setData('application/json', JSON.stringify({ fileIds: filesToDrag }));
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        if (!isFolder) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = () => {
+        setIsDragOver(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+
+        if (!isFolder || !onDropFiles) return;
+
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('application/json'));
+            if (data.fileIds && data.fileIds.length > 0) {
+                // Extract folder ID from 'folder-123' format
+                const folderId = String(file.id).replace('folder-', '');
+                onDropFiles(folderId, data.fileIds);
+            }
+        } catch (err) {
+            console.error('Drop error:', err);
+        }
+    };
 
     const handleClick = (e: React.MouseEvent) => {
         onSelect(e.ctrlKey || e.metaKey);
@@ -374,9 +424,16 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                 onClick={handleClick}
                 onDoubleClick={handleDoubleClick}
                 onContextMenu={handleContextMenu}
+                draggable={!isFolder}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
                 className={`group flex items-center px-4 py-2 cursor-pointer transition-all border-b border-gray-100 ${isSelected
                     ? 'bg-blue-50'
-                    : 'hover:bg-gray-50'
+                    : isDragOver
+                        ? 'bg-blue-100 border-blue-300 border-2'
+                        : 'hover:bg-gray-50'
                     }`}
             >
                 {/* Checkbox - visible on hover or when selected */}
