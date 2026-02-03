@@ -203,7 +203,7 @@ class TelegramStorageManager:
                 
                 return {
                     'message_id': message.id,
-                    'channel': 'me',  # Saved Messages
+                    'channel': 'Saved Messages',
                     'channel_id': str(message.chat_id),
                     'file_id': str(document.id),
                     'unique_id': document.file_reference.hex() if document.file_reference else None,
@@ -223,7 +223,7 @@ class TelegramStorageManager:
             if message.media:
                 return {
                     'message_id': message.id,
-                    'channel': 'me',
+                    'channel': 'Saved Messages',
                     'channel_id': str(message.chat_id),
                     'file_id': str(message.id),
                     'unique_id': None,
