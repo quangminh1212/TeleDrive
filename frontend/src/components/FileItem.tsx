@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileInfo } from '../services/api';
 import ContextMenu from './ContextMenu';
+import ConfirmDialog from './ConfirmDialog';
 
 interface FileItemProps {
     file: FileInfo;
@@ -215,6 +216,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [isRenaming, setIsRenaming] = useState(false);
     const [newName, setNewName] = useState(file.name || file.filename || '');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleClick = (e: React.MouseEvent) => {
         onSelect(e.ctrlKey || e.metaKey);
@@ -248,9 +250,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                 break;
             case 'delete':
                 if (onDelete) {
-                    if (confirm(`Bạn có chắc muốn xóa "${file.name || file.filename}"?`)) {
-                        onDelete(file);
-                    }
+                    setShowDeleteConfirm(true);
                 }
                 break;
             case 'copy':
@@ -433,6 +433,21 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                     onAction={handleContextMenuAction}
                 />
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={showDeleteConfirm}
+                title="Xóa tệp"
+                message={`Bạn có chắc chắn muốn xóa "${file.name || file.filename}"? Thao tác này không thể hoàn tác.`}
+                confirmText="Xóa"
+                cancelText="Hủy"
+                confirmButtonColor="red"
+                onConfirm={() => {
+                    setShowDeleteConfirm(false);
+                    onDelete?.(file);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </>
     );
 };
