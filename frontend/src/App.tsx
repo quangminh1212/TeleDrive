@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import FileGrid from './components/FileGrid';
 import TelegramLogin from './components/TelegramLogin';
+import { ToastProvider } from './components/Toast';
 import './index.css';
 
 interface UserInfo {
@@ -72,53 +73,61 @@ function App() {
   // Loading state while checking auth
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang kiểm tra đăng nhập...</p>
+      <ToastProvider>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang kiểm tra đăng nhập...</p>
+          </div>
         </div>
-      </div>
+      </ToastProvider>
     );
   }
 
   // Show login if not authenticated
   if (!isAuthenticated) {
-    return <TelegramLogin onLoginSuccess={handleLoginSuccess} />;
+    return (
+      <ToastProvider>
+        <TelegramLogin onLoginSuccess={handleLoginSuccess} />
+      </ToastProvider>
+    );
   }
 
   // Main app
   return (
-    <div className="flex h-screen bg-white">
-      {/* Sidebar */}
-      <Sidebar
-        currentFolder={currentFolder}
-        onFolderSelect={setCurrentFolder}
-        onFilesUploaded={handleFilesUploaded}
-      />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-gdrive-sidebar">
-        {/* Header */}
-        <Header
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          userInfo={userInfo}
+    <ToastProvider>
+      <div className="flex h-screen bg-white">
+        {/* Sidebar */}
+        <Sidebar
+          currentFolder={currentFolder}
+          onFolderSelect={setCurrentFolder}
+          onFilesUploaded={handleFilesUploaded}
         />
 
-        {/* File Grid */}
-        <main className="flex-1 overflow-hidden bg-white m-2 rounded-2xl">
-          <FileGrid
-            key={refreshKey}
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-gdrive-sidebar">
+          {/* Header */}
+          <Header
             searchQuery={searchQuery}
-            currentFolder={currentFolder}
+            onSearchChange={setSearchQuery}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
+            userInfo={userInfo}
           />
-        </main>
+
+          {/* File Grid */}
+          <main className="flex-1 overflow-hidden bg-white m-2 rounded-2xl">
+            <FileGrid
+              key={refreshKey}
+              searchQuery={searchQuery}
+              currentFolder={currentFolder}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+            />
+          </main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }
 
