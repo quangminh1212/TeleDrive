@@ -338,6 +338,50 @@ class TelegramStorageManager:
             print(f"Failed to delete file from Telegram: {e}")
             return False
     
+    async def add_id_to_caption(self, message_id: int, unique_id: str) -> bool:
+        """Edit message caption to add unique_id if not present"""
+        try:
+            # Get the message
+            message = await self.client.get_messages('me', ids=message_id)
+            if not message:
+                print(f"[STORAGE] Message {message_id} not found")
+                return False
+            
+            current_caption = message.message or ''
+            
+            # Check if ID already exists in caption
+            if '🆔 ID:' in current_caption:
+                print(f"[STORAGE] Message {message_id} already has ID in caption")
+                return True
+            
+            # Get filename from caption (first line after 📁)
+            lines = current_caption.split('\n')
+            filename = ''
+            for line in lines:
+                if line.startswith('📁 '):
+                    filename = line.replace('📁 ', '').strip()
+                    break
+            
+            if not filename and message.file:
+                # Try to get filename from file attributes
+                if hasattr(message.file, 'name') and message.file.name:
+                    filename = message.file.name
+            
+            # Get user info
+            me = await self.client.get_me()
+            
+            # Build new caption with ID
+            new_caption = f"📁 {filename}\n🆔 ID: {unique_id}\n🔗 Uploaded via TeleDrive\n👤 User: {me.first_name}"
+            
+            # Edit the message caption
+            await self.client.edit_message('me', message_id, new_caption)
+            print(f"[STORAGE] Added ID {unique_id} to message {message_id}")
+            return True
+            
+        except Exception as e:
+            print(f"[STORAGE] Failed to add ID to caption for message {message_id}: {e}")
+            return False
+    
     async def get_file_info(self, file_record: File) -> Optional[Dict[str, Any]]:
         """Get file information from Telegram"""
         try:

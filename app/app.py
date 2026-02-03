@@ -1304,10 +1304,41 @@ def rescan_saved_messages():
         auto_login_result = run_async_in_thread(try_auto_login())
         app.logger.info(f"Auto-login result: {auto_login_result.get('success', False)}")
         
-        # Async function to scan
+        # Async function to scan and add IDs to captions
         async def scan_telegram_saved_messages():
             await telegram_storage.initialize()
             files = await telegram_storage.scan_saved_messages(limit=500)
+            
+            # Add ID to caption for files that don't have it
+            import time
+            for tg_file in files:
+                caption = tg_file.get('caption', '')
+                message_id = tg_file.get('message_id')
+                
+                # Check if caption already has ID
+                if '🆔 ID:' not in caption and message_id:
+                    # Generate unique_id for this file
+                    unique_id = str(int(time.time() * 1000))
+                    
+                    # Try to add ID to caption
+                    try:
+                        await telegram_storage.add_id_to_caption(message_id, unique_id)
+                        tg_file['teledrive_unique_id'] = unique_id
+                        app.logger.info(f"Added ID {unique_id} to message {message_id}")
+                    except Exception as e:
+                        app.logger.warning(f"Failed to add ID to message {message_id}: {e}")
+                    
+                    # Small delay to avoid rate limiting
+                    await asyncio.sleep(0.5)
+                else:
+                    # Extract existing ID from caption
+                    if '🆔 ID:' in caption:
+                        for line in caption.split('\n'):
+                            if line.startswith('🆔 ID:'):
+                                existing_id = line.replace('🆔 ID:', '').strip()
+                                tg_file['teledrive_unique_id'] = existing_id
+                                break
+            
             await telegram_storage.close()
             return files
         
