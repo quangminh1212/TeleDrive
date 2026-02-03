@@ -89,6 +89,37 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         setError(null);
 
         try {
+            // Special case: starred items
+            if (currentFolder === 'starred') {
+                const starredResponse = await api.getStarredItems();
+                if (starredResponse.success && starredResponse.data) {
+                    const folderItems = starredResponse.data.folders.map((folder): FileInfo => ({
+                        id: `folder-${folder.id}`,
+                        name: folder.name,
+                        type: 'folder',
+                        size: 0,
+                        modified: folder.created_at || '',
+                        owner: 'tôi',
+                        is_favorite: true,
+                    }));
+                    const fileItems = starredResponse.data.files.map((f): FileInfo => ({
+                        ...f,
+                        name: f.filename || f.name,
+                        type: f.type || 'file',
+                        modified: f.created_at || '',
+                        owner: 'tôi',
+                        is_favorite: true,
+                    }));
+                    setAllFiles([...folderItems, ...fileItems]);
+                    setFolders([]);
+                    setPagination({ page: 1, total: folderItems.length + fileItems.length, pages: 1, hasNext: false, hasPrev: false });
+                } else {
+                    setError('Không thể tải mục có gắn dấu sao');
+                }
+                setLoading(false);
+                return;
+            }
+
             // Fetch both files and folders in parallel
             const [filesResponse, foldersResponse] = await Promise.all([
                 api.getFiles(1, 100),
@@ -107,6 +138,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     modified: folder.created_at || '',
                     owner: 'tôi',
                     folder_name: folder.parent_id ? 'Subfolder' : 'Root',
+                    is_favorite: folder.is_favorite,
                 }));
                 allItems = [...folderItems];
                 setFolders(foldersResponse.data.folders);
