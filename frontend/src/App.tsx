@@ -5,6 +5,15 @@ import FileGrid from './components/FileGrid';
 import TelegramLogin from './components/TelegramLogin';
 import './index.css';
 
+interface UserInfo {
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  telegram_id?: string;
+  avatar?: string;
+}
+
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
@@ -14,6 +23,7 @@ function App() {
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [userInfo, setUserInfo] = useState<UserInfo | undefined>(undefined);
 
   // Check auth status on mount
   useEffect(() => {
@@ -26,6 +36,19 @@ function App() {
       const response = await fetch('http://127.0.0.1:5000/api/v2/auth/status');
       const result = await response.json();
       setIsAuthenticated(result.authenticated === true);
+
+      // Save user info if available
+      if (result.authenticated && result.user) {
+        const user = result.user;
+        setUserInfo({
+          name: user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : undefined,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          phone: user.phone,
+          telegram_id: user.telegram_id,
+          avatar: user.avatar
+        });
+      }
     } catch (error) {
       console.error('Auth check failed:', error);
       // If server is not available, assume not authenticated
@@ -42,7 +65,8 @@ function App() {
 
   // Handle login success
   const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
+    // Re-check auth status to get user info
+    checkAuthStatus();
   };
 
   // Loading state while checking auth
@@ -80,6 +104,7 @@ function App() {
           onSearchChange={setSearchQuery}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          userInfo={userInfo}
         />
 
         {/* File Grid */}
@@ -98,3 +123,4 @@ function App() {
 }
 
 export default App;
+
