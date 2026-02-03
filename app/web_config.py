@@ -187,9 +187,21 @@ class FlaskConfigLoader:
         }
     
     def get_socketio_config(self) -> Dict[str, Any]:
-        """Get SocketIO configuration"""
+        """Get SocketIO configuration
+        
+        SECURITY: Default CORS origins are restricted to localhost only.
+        Add production domains to config if needed.
+        """
+        # Default to localhost origins only for security
+        default_origins = ["http://localhost:1420", "http://127.0.0.1:1420", "http://localhost:3000", "http://127.0.0.1:3000", "tauri://localhost"]
+        configured_origins = self.get('flask.cors_allowed_origins')
+        
+        # Only use '*' if explicitly configured (not recommended for production)
+        if configured_origins == '*':
+            print("⚠️  SECURITY WARNING: CORS allows all origins ('*'). This is not recommended for production!")
+        
         return {
-            'cors_allowed_origins': self.get('flask.cors_allowed_origins', '*'),
+            'cors_allowed_origins': configured_origins if configured_origins else default_origins,
             'async_mode': self.get('flask.socketio_async_mode', 'eventlet')
         }
     
@@ -218,11 +230,29 @@ class FlaskConfigLoader:
         }
     
     def get_admin_config(self) -> Dict[str, Any]:
-        """Get admin user configuration"""
+        """Get admin user configuration
+        
+        SECURITY WARNING: Always change the default admin password!
+        The default password should only be used for initial setup.
+        """
+        import secrets
+        import os
+        
+        # Try to get password from environment variable first (more secure)
+        default_pwd = os.environ.get('ADMIN_DEFAULT_PASSWORD')
+        if not default_pwd:
+            default_pwd = self.get('admin.default_password')
+        
+        # If still using weak default, generate a random one and warn
+        if not default_pwd or default_pwd == 'admin123':
+            default_pwd = secrets.token_urlsafe(12)  # Generate secure random password
+            print(f"⚠️  SECURITY WARNING: Using auto-generated admin password: {default_pwd}")
+            print(f"⚠️  Please change this password immediately after first login!")
+        
         return {
             'username': self.get('admin.username', 'admin'),
             'email': self.get('admin.email', 'admin@teledrive.local'),
-            'default_password': self.get('admin.default_password', 'admin123'),
+            'default_password': default_pwd,
             'role': self.get('admin.role', 'admin'),
             'auto_create': self.get('admin.auto_create', True)
         }
@@ -294,8 +324,9 @@ class FlaskConfigLoader:
             "admin": {
                 "username": "admin",
                 "email": "admin@teledrive.local",
-                "default_password": "admin123",
-                "auto_create": True
+                "default_password": "",  # Empty = auto-generate secure password
+                "auto_create": True,
+                "_security_note": "Set ADMIN_DEFAULT_PASSWORD env var or change after first login"
             },
             "security": {
                 "session_protection": "strong",

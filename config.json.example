@@ -1,0 +1,97 @@
+{
+  "_schema_version": "1.0",
+  "_description": "Telegram File Scanner Configuration - COPY THIS TO config.json AND FILL IN YOUR CREDENTIALS",
+  "_last_updated": "2026-02-04",
+  "_security_notice": "NEVER commit real API credentials to git! Keep config.json in .gitignore",
+  "telegram": {
+    "api_id": "YOUR_API_ID_HERE",
+    "api_hash": "YOUR_API_HASH_HERE",
+    "phone_number": "+84XXXXXXXXX",
+    "session_name": "session",
+    "connection_timeout": 30,
+    "request_timeout": 60,
+    "retry_attempts": 3,
+    "retry_delay": 5,
+    "flood_sleep_threshold": 60,
+    "device_model": "TeleDrive",
+    "system_version": "1.0",
+    "app_version": "1.0",
+    "lang_code": "vi",
+    "system_lang_code": "vi-VN",
+    "_get_credentials_from": "https://my.telegram.org/apps"
+  },
+  "output": {
+    "directory": "output",
+    "create_subdirs": true,
+    "timestamp_folders": false,
+    "backup_existing": true,
+    "formats": {
+      "csv": {
+        "enabled": true,
+        "filename": "telegram_files.csv",
+        "encoding": "utf-8-sig"
+      },
+      "json": {
+        "enabled": true,
+        "filename": "telegram_files.json",
+        "encoding": "utf-8"
+      },
+      "excel": {
+        "enabled": true,
+        "filename": "telegram_files.xlsx",
+        "sheet_name": "Telegram Files"
+      }
+    }
+  },
+  "scanning": {
+    "max_messages": null,
+    "batch_size": 100,
+    "scan_direction": "newest_first",
+    "skip_duplicates": true,
+    "file_types": {
+      "documents": true,
+      "photos": true,
+      "videos": true,
+      "audio": true,
+      "voice": true,
+      "stickers": true,
+      "animations": true
+    }
+  },
+  "download": {
+    "generate_links": true,
+    "include_preview": false,
+    "auto_download": false,
+    "download_directory": "downloads"
+  },
+  "display": {
+    "show_progress": true,
+    "show_file_details": true,
+    "language": "vi",
+    "date_format": "DD/MM/YYYY HH:mm:ss",
+    "log_level": "INFO"
+  },
+  "filters": {
+    "min_file_size": 0,
+    "max_file_size": null,
+    "file_extensions": [],
+    "exclude_extensions": []
+  },
+  "database": {
+    "url": "sqlite:///data/teledrive.db",
+    "track_modifications": false,
+    "pool_size": 10,
+    "pool_timeout": 20,
+    "pool_recycle": -1,
+    "max_overflow": 0,
+    "echo": false
+  },
+  "security": {
+    "_warning": "Change default admin password immediately after first login!",
+    "session_protection": "strong",
+    "remember_cookie_duration": 2592000,
+    "session_cookie_secure": false,
+    "session_cookie_httponly": true,
+    "session_cookie_samesite": "Lax"
+  }
+}

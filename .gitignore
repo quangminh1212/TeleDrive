@@ -99,6 +99,12 @@ desktop.ini
 .env.local
 .env.*.local
 
+# Configuration files with sensitive data
+config.json
+app/config.json
+!config.json.example
+!app/config.json.example
+
 # Test files
 test_files/
 tests/__pycache__/
