@@ -2512,6 +2512,7 @@ def download_file(filename):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/delete_file', methods=['POST'])
+@csrf.exempt
 @login_required
 def delete_file():
     """Delete a file from database (soft delete) and optionally remove local disk file safely.
