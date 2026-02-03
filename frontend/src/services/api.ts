@@ -25,6 +25,7 @@ export interface FileInfo {
     source?: string;
     owner?: string;
     path?: string;
+    is_favorite?: boolean;
 }
 
 // Pagination info from backend
@@ -259,6 +260,36 @@ class ApiService {
     }>> {
         return this.request(`/api/v2/folders/${folderId}/files?page=${page}&per_page=${perPage}`);
     }
+
+    // Toggle star/favorite for a file
+    async toggleFileStar(fileId: number): Promise<ApiResponse<{
+        file: FileInfo;
+        is_favorite: boolean;
+        message: string;
+    }>> {
+        return this.request(`/api/v2/files/${fileId}/star`, {
+            method: 'POST',
+        });
+    }
+
+    // Toggle star/favorite for a folder
+    async toggleFolderStar(folderId: number): Promise<ApiResponse<{
+        folder: FolderInfo;
+        is_favorite: boolean;
+        message: string;
+    }>> {
+        return this.request(`/api/v2/folders/${folderId}/star`, {
+            method: 'POST',
+        });
+    }
+
+    // Get all starred items (files and folders)
+    async getStarredItems(): Promise<ApiResponse<{
+        files: FileInfo[];
+        folders: FolderInfo[];
+    }>> {
+        return this.request('/api/v2/starred');
+    }
 }
 
 // Folder data interface
@@ -268,6 +299,7 @@ export interface FolderInfo {
     parent_id: number | null;
     path: string;
     file_count: number;
+    is_favorite?: boolean;
     created_at: string | null;
     updated_at?: string | null;
 }

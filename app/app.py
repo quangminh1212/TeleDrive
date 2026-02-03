@@ -2215,6 +2215,116 @@ def move_file_to_folder(file_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# API endpoint to toggle star/favorite for a file
+@app.route('/api/v2/files/<int:file_id>/star', methods=['POST'])
+@csrf.exempt
+def toggle_file_star(file_id):
+    """Toggle star/favorite status for a file"""
+    try:
+        user = get_or_create_user()
+        
+        # Find the file
+        file_record = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+        if not file_record:
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+        
+        # Toggle is_favorite
+        file_record.is_favorite = not file_record.is_favorite
+        db.session.commit()
+        
+        action = "starred" if file_record.is_favorite else "unstarred"
+        
+        return jsonify({
+            'success': True,
+            'message': f'File {action} successfully',
+            'is_favorite': file_record.is_favorite,
+            'file': {
+                'id': file_record.id,
+                'unique_id': file_record.unique_id,
+                'filename': file_record.filename,
+                'is_favorite': file_record.is_favorite
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Toggle file star error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# API endpoint to toggle star/favorite for a folder
+@app.route('/api/v2/folders/<int:folder_id>/star', methods=['POST'])
+@csrf.exempt
+def toggle_folder_star(folder_id):
+    """Toggle star/favorite status for a folder"""
+    try:
+        user = get_or_create_user()
+        
+        # Find the folder
+        folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+        if not folder:
+            return jsonify({'success': False, 'error': 'Folder not found'}), 404
+        
+        # Toggle is_favorite
+        folder.is_favorite = not folder.is_favorite
+        db.session.commit()
+        
+        action = "starred" if folder.is_favorite else "unstarred"
+        
+        return jsonify({
+            'success': True,
+            'message': f'Folder {action} successfully',
+            'is_favorite': folder.is_favorite,
+            'folder': folder.to_dict()
+        })
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Toggle folder star error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# API endpoint to get all starred items
+@app.route('/api/v2/starred')
+def get_starred_items():
+    """Get all starred files and folders"""
+    try:
+        user = get_or_create_user()
+        
+        # Get starred files
+        starred_files = File.query.filter_by(
+            user_id=user.id, 
+            is_deleted=False, 
+            is_favorite=True
+        ).all()
+        
+        # Get starred folders
+        starred_folders = Folder.query.filter_by(
+            user_id=user.id, 
+            is_deleted=False, 
+            is_favorite=True
+        ).all()
+        
+        return jsonify({
+            'success': True,
+            'files': [{
+                'id': f.id,
+                'unique_id': f.unique_id,
+                'filename': f.filename,
+                'name': f.filename,
+                'file_size': f.file_size,
+                'mime_type': f.mime_type,
+                'file_type': f.mime_type.split('/')[0] if f.mime_type else 'file',
+                'is_favorite': f.is_favorite,
+                'created_at': f.created_at.isoformat() if f.created_at else None,
+                'telegram_channel': f.telegram_channel,
+                'type': 'file'
+            } for f in starred_files],
+            'folders': [f.to_dict() for f in starred_folders]
+        })
+    except Exception as e:
+        app.logger.error(f"Get starred items error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 # API endpoint to delete a folder
 @app.route('/api/v2/folders/<int:folder_id>', methods=['DELETE'])
 @csrf.exempt

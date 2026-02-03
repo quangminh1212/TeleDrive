@@ -18,6 +18,7 @@ interface FileItemProps {
     onDropFiles?: (targetFolderId: string | number, fileIds: (string | number)[]) => void;
     selectedFiles?: Set<string | number>;
     onFolderOpen?: (folderId: number) => void;
+    onStar?: (file: FileInfo) => void;
 }
 
 // Google Drive folder icon
@@ -216,7 +217,7 @@ const formatDate = (dateStr: string): string => {
     }
 };
 
-const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, onCopy, onMove, onShowInfo, onPreview, onDropFiles, selectedFiles, onFolderOpen }: FileItemProps) => {
+const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, onCopy, onMove, onShowInfo, onPreview, onDropFiles, selectedFiles, onFolderOpen, onStar }: FileItemProps) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [isRenaming, setIsRenaming] = useState(false);
     const [newName, setNewName] = useState(file.name || file.filename || '');
@@ -327,6 +328,9 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                 break;
             case 'open':
                 handleDoubleClick();
+                break;
+            case 'star':
+                onStar?.(file);
                 break;
         }
         setContextMenu(null);

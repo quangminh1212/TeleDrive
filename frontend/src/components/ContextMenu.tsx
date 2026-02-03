@@ -58,6 +58,18 @@ const OpenWithIcon = () => (
     </svg>
 );
 
+const StarIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+    </svg>
+);
+
+const StarOutlineIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z" />
+    </svg>
+);
+
 interface MenuItem {
     id: string;
     label: string;
@@ -71,10 +83,13 @@ const ContextMenu = ({ file, x, y, onClose, onAction }: ContextMenuProps) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const [position, setPosition] = useState({ x, y });
 
+    const isStarred = file.is_favorite || false;
+
     const menuItems: MenuItem[] = [
         { id: 'open', label: 'Mở bằng', icon: <OpenWithIcon /> },
         { id: 'download', label: 'Tải xuống', icon: <DownloadIcon /> },
         { id: 'rename', label: 'Đổi tên', icon: <RenameIcon />, shortcut: 'Ctrl+Alt+E', divider: true },
+        { id: 'star', label: isStarred ? 'Bỏ gắn dấu sao' : 'Thêm vào mục có gắn dấu sao', icon: isStarred ? <StarIcon /> : <StarOutlineIcon /> },
         { id: 'copy', label: 'Tạo bản sao', icon: <CopyIcon />, shortcut: 'Ctrl+C' },
         { id: 'share', label: 'Chia sẻ', icon: <ShareIcon />, divider: true },
         { id: 'move', label: 'Di chuyển đến thư mục', icon: <MoveIcon /> },

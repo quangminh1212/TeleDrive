@@ -189,6 +189,7 @@ class Folder(db.Model):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     path = Column(String(1000))  # Full path for quick lookups
     is_deleted = Column(Boolean, default=False)
+    is_favorite = Column(Boolean, default=False, index=True)  # For starred folders
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
@@ -214,6 +215,7 @@ class Folder(db.Model):
             'user_id': self.user_id,
             'path': self.path or self.get_full_path(),
             'is_deleted': self.is_deleted,
+            'is_favorite': self.is_favorite,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'file_count': self.files.count()

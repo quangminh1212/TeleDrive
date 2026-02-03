@@ -497,6 +497,33 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         setPreviewFile(file);
     };
 
+    const handleToggleStar = async (file: FileInfo) => {
+        try {
+            if (file.type === 'folder') {
+                const folderId = Number(String(file.id).replace('folder-', ''));
+                const response = await api.toggleFolderStar(folderId);
+                if (response.success) {
+                    toast.success(response.data?.is_favorite ? 'Đã gắn dấu sao' : 'Đã bỏ gắn dấu sao');
+                    await fetchFiles();
+                } else {
+                    toast.error('Lỗi: ' + (response.error || 'Không thể thay đổi trạng thái sao'));
+                }
+            } else {
+                const fileId = Number(file.id);
+                const response = await api.toggleFileStar(fileId);
+                if (response.success) {
+                    toast.success(response.data?.is_favorite ? 'Đã gắn dấu sao' : 'Đã bỏ gắn dấu sao');
+                    await fetchFiles();
+                } else {
+                    toast.error('Lỗi: ' + (response.error || 'Không thể thay đổi trạng thái sao'));
+                }
+            }
+        } catch (error) {
+            console.error('Toggle star error:', error);
+            toast.error('Lỗi khi thay đổi trạng thái sao');
+        }
+    };
+
     const handleSort = (column: 'name' | 'modified') => {
         if (sortColumn === column) {
             setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
@@ -806,6 +833,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                     onDropFiles={handleDropFilesToFolder}
                                     selectedFiles={selectedFiles}
                                     onFolderOpen={(folderId) => onFolderSelect?.(folderId)}
+                                    onStar={handleToggleStar}
                                 />
                             </div>
                         ))}
@@ -827,6 +855,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                 onMove={handleMoveFile}
                                 onShowInfo={handleShowInfo}
                                 onPreview={handlePreview}
+                                onStar={handleToggleStar}
                             />
                         ))}
                     </div>
