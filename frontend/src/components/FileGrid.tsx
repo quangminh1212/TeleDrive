@@ -65,6 +65,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const [folders, setFolders] = useState<FolderInfo[]>([]);
     const [moveFileTarget, setMoveFileTarget] = useState<FileInfo | null>(null);
     const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+    const [currentFolderName, setCurrentFolderName] = useState<string | null>(null);
     const toast = useToast();
 
     // Drag selection state
@@ -120,7 +121,37 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 return;
             }
 
-            // Fetch both files and folders in parallel
+            // Check if currentFolder is a numeric folder ID
+            const folderId = currentFolder ? parseInt(currentFolder) : null;
+            const isSpecificFolder = folderId !== null && !isNaN(folderId);
+
+            if (isSpecificFolder) {
+                // Fetch files from specific folder
+                const folderFilesResponse = await api.getFolderFiles(folderId, 1, 100);
+
+                if (folderFilesResponse.success && folderFilesResponse.data) {
+                    const normalizedFiles = folderFilesResponse.data.files.map(normalizeFile);
+                    setAllFiles(normalizedFiles);
+                    setFolders([]);
+                    setCurrentFolderName(folderFilesResponse.data.folder?.name || null);
+                    setPagination({
+                        page: folderFilesResponse.data.pagination.page,
+                        total: folderFilesResponse.data.pagination.total,
+                        pages: folderFilesResponse.data.pagination.pages,
+                        hasNext: folderFilesResponse.data.pagination.has_next,
+                        hasPrev: folderFilesResponse.data.pagination.has_prev,
+                    });
+                } else {
+                    setError(folderFilesResponse.error || 'Không thể tải files trong thư mục');
+                }
+                setLoading(false);
+                return;
+            }
+
+            // Clear folder name when at root
+            setCurrentFolderName(null);
+
+            // Default: Fetch both files and folders in parallel (root view)
             const [filesResponse, foldersResponse] = await Promise.all([
                 api.getFiles(1, 100),
                 api.getFolders()
@@ -168,7 +199,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [currentFolder]);
 
     useEffect(() => {
         fetchFiles();
@@ -635,6 +666,11 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     }
 
     const getFolderLabel = () => {
+        // If we have a specific folder name, use it
+        if (currentFolderName) {
+            return currentFolderName;
+        }
+
         switch (currentFolder) {
             case 'home': return 'Trang chủ';
             case null: return 'Drive của tôi';
@@ -646,6 +682,9 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
             default: return 'Drive của tôi';
         }
     };
+
+    // Check if we're inside a specific folder (numeric ID)
+    const isInFolder = currentFolderName !== null;
 
     const fileTypeFolders = files.filter(f => f.type === 'folder');
     const regularFiles = files.filter(f => f.type !== 'folder');
@@ -705,6 +744,18 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     ) : (
                         /* Normal toolbar */
                         <>
+                            {/* Back button when inside a folder */}
+                            {isInFolder && (
+                                <button
+                                    onClick={() => onFolderSelect?.(null)}
+                                    className="p-1.5 hover:bg-gray-200 rounded-full transition-colors mr-1"
+                                    title="Quay lại Drive của tôi"
+                                >
+                                    <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+                                    </svg>
+                                </button>
+                            )}
                             <button className="flex items-center gap-1 text-lg font-medium text-gray-800 hover:bg-gray-100 px-2 py-1 rounded">
                                 {getFolderLabel()}
                                 <DropdownIcon />
@@ -888,6 +939,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                 onShowInfo={handleShowInfo}
                                 onPreview={handlePreview}
                                 onStar={handleToggleStar}
+                                onFolderOpen={(folderId) => onFolderSelect?.(folderId)}
                             />
                         ))}
                     </div>
