@@ -1918,7 +1918,14 @@ def upload_file_public():
             return jsonify({'success': False, 'error': 'No files provided'}), 400
 
         files = request.files.getlist('files')
-        folder_id = request.form.get('folder_id')
+        folder_id_str = request.form.get('folder_id')
+        # Convert folder_id to integer or None properly
+        folder_id = None
+        if folder_id_str and folder_id_str.strip():
+            try:
+                folder_id = int(folder_id_str)
+            except (ValueError, TypeError):
+                folder_id = None
 
         if not files or all(f.filename == '' for f in files):
             return jsonify({'success': False, 'error': 'No files selected'}), 400
@@ -1928,7 +1935,11 @@ def upload_file_public():
             return jsonify({'success': False, 'error': 'Too many files. Maximum 50 files per upload.'}), 400
 
         # Get or create default user
-        user = get_or_create_user()
+        # Try to use logged-in user first, otherwise fallback to default user
+        if current_user.is_authenticated:
+            user = current_user
+        else:
+            user = get_or_create_user()
         uploaded_files = []
 
         # Validate folder if specified
