@@ -1315,8 +1315,9 @@ def rescan_saved_messages():
                 caption = tg_file.get('caption', '')
                 message_id = tg_file.get('message_id')
                 
-                # Check if caption already has ID
-                if '🆔 ID:' not in caption and message_id:
+                # Check if caption already has ID (support both old icon format and new plain format)
+                has_id = 'ID:' in caption
+                if not has_id and message_id:
                     # Generate unique_id for this file
                     unique_id = str(int(time.time() * 1000))
                     
@@ -1331,13 +1332,13 @@ def rescan_saved_messages():
                     # Small delay to avoid rate limiting
                     await asyncio.sleep(0.5)
                 else:
-                    # Extract existing ID from caption
-                    if '🆔 ID:' in caption:
-                        for line in caption.split('\n'):
-                            if line.startswith('🆔 ID:'):
-                                existing_id = line.replace('🆔 ID:', '').strip()
-                                tg_file['teledrive_unique_id'] = existing_id
-                                break
+                    # Extract existing ID from caption (support both formats)
+                    for line in caption.split('\n'):
+                        if 'ID:' in line:
+                            # Handle both "🆔 ID: xxx" and "ID: xxx" formats
+                            existing_id = line.split('ID:')[-1].strip()
+                            tg_file['teledrive_unique_id'] = existing_id
+                            break
             
             await telegram_storage.close()
             return files

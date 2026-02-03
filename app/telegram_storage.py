@@ -193,7 +193,7 @@ class TelegramStorageManager:
             message = await self.client.send_file(
                 'me',  # Saved Messages
                 file_path,
-                caption=f"📁 {filename}\n🆔 ID: {unique_id}\n🔗 Uploaded via TeleDrive\n👤 User: {me.first_name}",
+                caption=f"{filename}\nID: {unique_id}\nUploaded via TeleDrive\nUser: {me.first_name}",
                 attributes=[DocumentAttributeFilename(filename)]
             )
             
@@ -349,18 +349,21 @@ class TelegramStorageManager:
             
             current_caption = message.message or ''
             
-            # Check if ID already exists in caption
-            if '🆔 ID:' in current_caption:
+            # Check if ID already exists in caption (support both old icon format and new plain format)
+            if 'ID:' in current_caption:
                 print(f"[STORAGE] Message {message_id} already has ID in caption")
                 return True
             
-            # Get filename from caption (first line after 📁)
+            # Get filename from caption (first line - support both "📁 filename" and "filename" formats)
             lines = current_caption.split('\n')
             filename = ''
-            for line in lines:
-                if line.startswith('📁 '):
-                    filename = line.replace('📁 ', '').strip()
-                    break
+            if lines:
+                first_line = lines[0].strip()
+                # Remove icon prefix if present
+                if first_line.startswith('📁 '):
+                    filename = first_line.replace('📁 ', '').strip()
+                else:
+                    filename = first_line
             
             if not filename and message.file:
                 # Try to get filename from file attributes
@@ -371,7 +374,7 @@ class TelegramStorageManager:
             me = await self.client.get_me()
             
             # Build new caption with ID
-            new_caption = f"📁 {filename}\n🆔 ID: {unique_id}\n🔗 Uploaded via TeleDrive\n👤 User: {me.first_name}"
+            new_caption = f"{filename}\nID: {unique_id}\nUploaded via TeleDrive\nUser: {me.first_name}"
             
             # Edit the message caption
             await self.client.edit_message('me', message_id, new_caption)
