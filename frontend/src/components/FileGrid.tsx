@@ -77,21 +77,46 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         setError(null);
 
         try {
-            const response = await api.getFiles(1, 100);
+            // Fetch both files and folders in parallel
+            const [filesResponse, foldersResponse] = await Promise.all([
+                api.getFiles(1, 100),
+                api.getFolders()
+            ]);
 
-            if (response.success && response.data) {
-                const normalizedFiles = response.data.files.map(normalizeFile);
-                setAllFiles(normalizedFiles);
+            let allItems: FileInfo[] = [];
+
+            // Add folders first (they appear at top)
+            if (foldersResponse.success && foldersResponse.data) {
+                const folderItems = foldersResponse.data.folders.map((folder): FileInfo => ({
+                    id: `folder-${folder.id}`,
+                    name: folder.name,
+                    type: 'folder',
+                    size: 0,
+                    modified: folder.created_at || '',
+                    owner: 'tôi',
+                    folder_name: folder.parent_id ? 'Subfolder' : 'Root',
+                }));
+                allItems = [...folderItems];
+                setFolders(foldersResponse.data.folders);
+            }
+
+            // Add files
+            if (filesResponse.success && filesResponse.data) {
+                const normalizedFiles = filesResponse.data.files.map(normalizeFile);
+                allItems = [...allItems, ...normalizedFiles];
                 setPagination({
-                    page: response.data.pagination.page,
-                    total: response.data.pagination.total,
-                    pages: response.data.pagination.pages,
-                    hasNext: response.data.pagination.has_next,
-                    hasPrev: response.data.pagination.has_prev,
+                    page: filesResponse.data.pagination.page,
+                    total: filesResponse.data.pagination.total,
+                    pages: filesResponse.data.pagination.pages,
+                    hasNext: filesResponse.data.pagination.has_next,
+                    hasPrev: filesResponse.data.pagination.has_prev,
                 });
-            } else {
-                setError(response.error || 'Không thể tải danh sách file');
-                setAllFiles([]);
+            }
+
+            setAllFiles(allItems);
+
+            if (!filesResponse.success && !foldersResponse.success) {
+                setError(filesResponse.error || 'Không thể tải danh sách file');
             }
         } catch (err) {
             setError('Lỗi kết nối đến server');
