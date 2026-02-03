@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
+import CreateFolderModal from './CreateFolderModal';
 
 interface SidebarProps {
     currentFolder: string | null;
@@ -80,6 +81,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
     const [storageSizeFromAPI, setStorageSizeFromAPI] = useState<number>(0);
     const [isUploading, setIsUploading] = useState(false);
+    const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
 
     // Hidden file input refs
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -179,209 +181,217 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     const usedStorageFormatted = formatBytes(actualSize);
 
     return (
-        <aside className="w-60 bg-white flex flex-col h-full">
-            {/* Hidden file inputs */}
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileInputChange}
-                multiple
-                className="hidden"
-            />
-            <input
-                type="file"
-                ref={folderInputRef}
-                onChange={handleFolderInputChange}
-                // @ts-expect-error - webkitdirectory is not in standard types
-                webkitdirectory=""
-                multiple
-                className="hidden"
-            />
+        <>
+            <aside className="w-60 bg-white flex flex-col h-full">
+                {/* Hidden file inputs */}
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileInputChange}
+                    multiple
+                    className="hidden"
+                />
+                <input
+                    type="file"
+                    ref={folderInputRef}
+                    onChange={handleFolderInputChange}
+                    // @ts-expect-error - webkitdirectory is not in standard types
+                    webkitdirectory=""
+                    multiple
+                    className="hidden"
+                />
 
-            {/* Logo */}
-            <div className="flex items-center gap-2 px-4 py-3">
-                <TeleDriveLogo />
-                <span className="text-[22px] text-gray-600 font-normal">TeleDrive</span>
-            </div>
+                {/* Logo */}
+                <div className="flex items-center gap-2 px-4 py-3">
+                    <TeleDriveLogo />
+                    <span className="text-[22px] text-gray-600 font-normal">TeleDrive</span>
+                </div>
 
-            {/* New Button */}
-            <div className="px-3 py-2 relative">
-                <button
-                    onClick={() => setIsNewMenuOpen(!isNewMenuOpen)}
-                    disabled={isUploading}
-                    className={`flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-2xl shadow-md hover:shadow-lg hover:bg-gray-50 transition-all ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                    {isUploading ? (
-                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                        <PlusIcon />
+                {/* New Button */}
+                <div className="px-3 py-2 relative">
+                    <button
+                        onClick={() => setIsNewMenuOpen(!isNewMenuOpen)}
+                        disabled={isUploading}
+                        className={`flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-2xl shadow-md hover:shadow-lg hover:bg-gray-50 transition-all ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        {isUploading ? (
+                            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <PlusIcon />
+                        )}
+                        <span className="text-sm font-medium text-gray-700">
+                            {isUploading ? 'Đang tải...' : 'Mới'}
+                        </span>
+                    </button>
+
+                    {/* New Dropdown Menu */}
+                    {isNewMenuOpen && !isUploading && (
+                        <div className="absolute left-3 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
+                            <button
+                                className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3"
+                                onClick={() => {
+                                    setIsNewMenuOpen(false);
+                                    setIsCreateFolderModalOpen(true);
+                                }}
+                            >
+                                <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z" />
+                                </svg>
+                                Thư mục mới
+                            </button>
+                            <hr className="my-2 border-gray-200" />
+                            <button
+                                onClick={triggerFileUpload}
+                                className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3"
+                            >
+                                <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
+                                </svg>
+                                Tải tệp lên
+                            </button>
+                            <button
+                                onClick={triggerFolderUpload}
+                                className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3"
+                            >
+                                <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10zM8 13.01l1.41 1.41L11 12.84V17h2v-4.16l1.59 1.59L16 13.01 12.01 9 8 13.01z" />
+                                </svg>
+                                Tải thư mục lên
+                            </button>
+                        </div>
                     )}
-                    <span className="text-sm font-medium text-gray-700">
-                        {isUploading ? 'Đang tải...' : 'Mới'}
-                    </span>
-                </button>
+                </div>
 
-                {/* New Dropdown Menu */}
-                {isNewMenuOpen && !isUploading && (
-                    <div className="absolute left-3 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
-                        <button
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3"
-                            onClick={async () => {
-                                const folderName = prompt('Nhập tên thư mục mới:');
-                                if (folderName && folderName.trim()) {
-                                    try {
-                                        const result = await api.createFolder(folderName.trim());
-                                        if (result.success) {
-                                            alert(`Đã tạo thư mục "${folderName}" thành công!`);
-                                            setIsNewMenuOpen(false);
-                                            onFilesUploaded?.(); // Refresh file list
-                                        } else {
-                                            alert('Lỗi: ' + (result.error || 'Không thể tạo thư mục'));
-                                        }
-                                    } catch (error) {
-                                        console.error('Create folder error:', error);
-                                        alert('Lỗi khi tạo thư mục');
+                {/* Main Navigation Menu */}
+                <nav className="flex-1 overflow-y-auto px-2 py-1">
+                    {/* Main items */}
+                    {mainMenuItems.map((item) => {
+                        const IconComponent = item.icon;
+                        const isActive = currentFolder === item.id;
+                        return (
+                            <button
+                                key={item.id || 'mydrive'}
+                                onClick={() => onFolderSelect(item.id)}
+                                className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
+                            >
+                                <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
+                                    <IconComponent />
+                                </span>
+                                <span>{item.label}</span>
+                            </button>
+                        );
+                    })}
+
+                    <div className="h-2" />
+
+                    {/* Secondary items */}
+                    {secondaryMenuItems.map((item) => {
+                        const IconComponent = item.icon;
+                        const isActive = currentFolder === item.id;
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => onFolderSelect(item.id)}
+                                className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
+                            >
+                                <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
+                                    <IconComponent />
+                                </span>
+                                <span>{item.label}</span>
+                            </button>
+                        );
+                    })}
+
+                    <div className="h-2" />
+
+                    {/* Bottom items */}
+                    {bottomMenuItems.map((item) => {
+                        const IconComponent = item.icon;
+                        const isActive = currentFolder === item.id;
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => onFolderSelect(item.id)}
+                                className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
+                            >
+                                <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
+                                    <IconComponent />
+                                </span>
+                                <span>{item.label}</span>
+                            </button>
+                        );
+                    })}
+                </nav>
+
+                {/* Storage Info */}
+                <div className="px-4 py-3 border-t border-gray-200">
+                    <p className="text-xs text-gray-600">
+                        Tổng dung lượng: {usedStorageFormatted}
+                    </p>
+                </div>
+
+                {/* Logout Button */}
+                <div className="px-3 py-2 border-t border-gray-200">
+                    <button
+                        onClick={async () => {
+                            if (confirm('Bạn có chắc muốn đăng xuất khỏi Telegram?\nSau khi đăng xuất, bạn cần đăng nhập lại để sử dụng.')) {
+                                try {
+                                    const response = await fetch('http://127.0.0.1:5000/api/v2/auth/logout', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' }
+                                    });
+                                    const result = await response.json();
+                                    if (result.success) {
+                                        alert('Đăng xuất thành công!');
+                                        window.location.reload();
+                                    } else {
+                                        alert('Lỗi: ' + (result.error || 'Không thể đăng xuất'));
                                     }
+                                } catch (error) {
+                                    console.error('Logout error:', error);
+                                    alert('Lỗi kết nối đến server');
                                 }
-                            }}
-                        >
-                            <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z" />
-                            </svg>
-                            Thư mục mới
-                        </button>
-                        <hr className="my-2 border-gray-200" />
-                        <button
-                            onClick={triggerFileUpload}
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3"
-                        >
-                            <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
-                            </svg>
-                            Tải tệp lên
-                        </button>
-                        <button
-                            onClick={triggerFolderUpload}
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3"
-                        >
-                            <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10zM8 13.01l1.41 1.41L11 12.84V17h2v-4.16l1.59 1.59L16 13.01 12.01 9 8 13.01z" />
-                            </svg>
-                            Tải thư mục lên
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {/* Main Navigation Menu */}
-            <nav className="flex-1 overflow-y-auto px-2 py-1">
-                {/* Main items */}
-                {mainMenuItems.map((item) => {
-                    const IconComponent = item.icon;
-                    const isActive = currentFolder === item.id;
-                    return (
-                        <button
-                            key={item.id || 'mydrive'}
-                            onClick={() => onFolderSelect(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
-                                ? 'bg-blue-100 text-blue-700 font-medium'
-                                : 'text-gray-700 hover:bg-gray-100'
-                                }`}
-                        >
-                            <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
-                                <IconComponent />
-                            </span>
-                            <span>{item.label}</span>
-                        </button>
-                    );
-                })}
-
-                <div className="h-2" />
-
-                {/* Secondary items */}
-                {secondaryMenuItems.map((item) => {
-                    const IconComponent = item.icon;
-                    const isActive = currentFolder === item.id;
-                    return (
-                        <button
-                            key={item.id}
-                            onClick={() => onFolderSelect(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
-                                ? 'bg-blue-100 text-blue-700 font-medium'
-                                : 'text-gray-700 hover:bg-gray-100'
-                                }`}
-                        >
-                            <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
-                                <IconComponent />
-                            </span>
-                            <span>{item.label}</span>
-                        </button>
-                    );
-                })}
-
-                <div className="h-2" />
-
-                {/* Bottom items */}
-                {bottomMenuItems.map((item) => {
-                    const IconComponent = item.icon;
-                    const isActive = currentFolder === item.id;
-                    return (
-                        <button
-                            key={item.id}
-                            onClick={() => onFolderSelect(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
-                                ? 'bg-blue-100 text-blue-700 font-medium'
-                                : 'text-gray-700 hover:bg-gray-100'
-                                }`}
-                        >
-                            <span className={isActive ? 'text-blue-700' : 'text-gray-600'}>
-                                <IconComponent />
-                            </span>
-                            <span>{item.label}</span>
-                        </button>
-                    );
-                })}
-            </nav>
-
-            {/* Storage Info */}
-            <div className="px-4 py-3 border-t border-gray-200">
-                <p className="text-xs text-gray-600">
-                    Tổng dung lượng: {usedStorageFormatted}
-                </p>
-            </div>
-
-            {/* Logout Button */}
-            <div className="px-3 py-2 border-t border-gray-200">
-                <button
-                    onClick={async () => {
-                        if (confirm('Bạn có chắc muốn đăng xuất khỏi Telegram?\nSau khi đăng xuất, bạn cần đăng nhập lại để sử dụng.')) {
-                            try {
-                                const response = await fetch('http://127.0.0.1:5000/api/v2/auth/logout', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' }
-                                });
-                                const result = await response.json();
-                                if (result.success) {
-                                    alert('Đăng xuất thành công!');
-                                    window.location.reload();
-                                } else {
-                                    alert('Lỗi: ' + (result.error || 'Không thể đăng xuất'));
-                                }
-                            } catch (error) {
-                                console.error('Logout error:', error);
-                                alert('Lỗi kết nối đến server');
                             }
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+                        </svg>
+                        <span>Đăng xuất Telegram</span>
+                    </button>
+                </div>
+            </aside>
+
+            {/* Create Folder Modal */}
+            <CreateFolderModal
+                isOpen={isCreateFolderModalOpen}
+                onClose={() => setIsCreateFolderModalOpen(false)}
+                onCreateFolder={async (name: string) => {
+                    try {
+                        const result = await api.createFolder(name);
+                        if (result.success) {
+                            onFilesUploaded?.(); // Refresh file list
+                            return { success: true };
+                        } else {
+                            return { success: false, error: result.error || 'Không thể tạo thư mục' };
                         }
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors"
-                >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-                    </svg>
-                    <span>Đăng xuất Telegram</span>
-                </button>
-            </div>
-        </aside>
+                    } catch (error) {
+                        console.error('Create folder error:', error);
+                        return { success: false, error: 'Lỗi khi tạo thư mục' };
+                    }
+                }}
+            />
+        </>
     );
 };
 
