@@ -1361,11 +1361,20 @@ class TelegramAuthenticator:
     
     def has_existing_session(self) -> bool:
         """Kiểm tra có session file không"""
+        # Sử dụng đường dẫn tuyệt đối từ thư mục project
+        project_root = Path(__file__).parent.parent
         session_paths = [
-            "data/session.session",
-            "session.session"
+            project_root / "data" / "session.session",
+            project_root / "data" / "session_import.session",
+            Path("data/session.session"),
+            Path("session.session")
         ]
-        return any(os.path.exists(path) for path in session_paths)
+        exists = any(path.exists() for path in session_paths)
+        if exists:
+            print(f"[HAS_SESSION] Found session file")
+        else:
+            print(f"[HAS_SESSION] No session found in: {[str(p) for p in session_paths]}")
+        return exists
     
     async def check_existing_session(self) -> Dict[str, Any]:
         """Kiểm tra và validate session hiện có"""
@@ -1376,7 +1385,22 @@ class TelegramAuthenticator:
             }
         
         try:
-            session_path = "data/session" if os.path.exists("data/session.session") else "session"
+            # Sử dụng đường dẫn tuyệt đối
+            project_root = Path(__file__).parent.parent
+            session_file = project_root / "data" / "session.session"
+            session_import = project_root / "data" / "session_import.session"
+            
+            # Xác định đường dẫn session (không bao gồm .session)
+            if session_file.exists():
+                session_path = str(project_root / "data" / "session")
+            elif session_import.exists():
+                session_path = str(project_root / "data" / "session_import")
+            elif os.path.exists("data/session.session"):
+                session_path = "data/session"
+            else:
+                session_path = "session"
+            
+            print(f"[CHECK_SESSION] Using session path: {session_path}")
             
             # Thử với API credentials nếu có
             api_id = int(config.API_ID) if hasattr(config, 'API_ID') and config.API_ID and config.API_ID not in ['', '0'] else None
