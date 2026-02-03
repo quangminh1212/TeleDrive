@@ -62,10 +62,22 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
         }
     };
 
-    // Format số điện thoại với mã quốc gia (+)
+    // Format số điện thoại: +84936374950 -> +84 0936374950
     const formatPhone = (phone?: string) => {
         if (!phone) return '';
-        return phone.startsWith('+') ? phone : `+${phone}`;
+        // Đảm bảo có dấu +
+        let formatted = phone.startsWith('+') ? phone : `+${phone}`;
+        // Tách mã quốc gia Việt Nam (+84) và thêm số 0 trước số điện thoại
+        if (formatted.startsWith('+84')) {
+            const localNumber = formatted.substring(3); // Lấy phần sau +84
+            return `+84 0${localNumber}`;
+        }
+        // Các mã quốc gia khác: chỉ thêm dấu cách sau mã (giả sử 2-3 ký tự)
+        const match = formatted.match(/^(\+\d{1,3})(\d+)$/);
+        if (match) {
+            return `${match[1]} ${match[2]}`;
+        }
+        return formatted;
     };
 
     const displayName = userInfo?.name || formatPhone(userInfo?.phone) || 'Người dùng';
