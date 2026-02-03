@@ -246,6 +246,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         // Use upload context to handle upload with progress tracking
         await uploadFiles(files, folderId);
 
+        // Add a small delay to ensure database has committed the changes
+        // before refreshing the file list
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         // Refresh file list after upload
         fetchFiles();
     }, [currentFolder, uploadFiles, fetchFiles]);
