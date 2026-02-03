@@ -5,8 +5,8 @@ TeleDrive Web Interface
 Flask web application for Telegram file scanning with Google Drive-like UI
 """
 
-import eventlet
-eventlet.monkey_patch()
+# NOTE: Do NOT use eventlet.monkey_patch() here - it conflicts with asyncio 
+# used in auth.py for Telegram client operations
 
 import os
 import sys
