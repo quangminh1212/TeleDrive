@@ -13,6 +13,7 @@ interface HeaderProps {
         phone?: string;
         avatar?: string;
     };
+    onMenuClick?: () => void; // Callback mở mobile menu
 }
 
 // Search icon
@@ -64,7 +65,7 @@ const HelpIcon = () => (
     </svg>
 );
 
-const Header = ({ searchQuery, onSearchChange, userInfo }: HeaderProps) => {
+const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderProps) => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const toast = useToast();
 
@@ -88,10 +89,26 @@ const Header = ({ searchQuery, onSearchChange, userInfo }: HeaderProps) => {
 
     return (
         <header className="h-14 md:h-16 bg-gdrive-sidebar flex items-center px-2 md:px-4 gap-2 md:gap-4">
+            {/* Mobile Menu Button - Hamburger */}
+            <button
+                onClick={onMenuClick}
+                className="md:hidden p-2 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
+                aria-label="Mở menu"
+            >
+                <svg className="w-6 h-6 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+                </svg>
+            </button>
+
+            {/* Mobile Logo - visible only on mobile when sidebar is hidden */}
+            <div className="md:hidden flex items-center gap-1 flex-shrink-0">
+                <img src="/logo.png" alt="TeleDrive" className="w-8 h-8" />
+            </div>
+
             {/* Search Bar */}
             <div className="flex-1 max-w-3xl">
                 <div className={`relative flex items-center ${isSearchFocused ? 'bg-white shadow-md' : 'bg-white'} rounded-full transition-all`}>
-                    <div className="pl-4 pr-2">
+                    <div className="pl-3 md:pl-4 pr-2">
                         <SearchIcon />
                     </div>
                     <input
@@ -101,7 +118,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo }: HeaderProps) => {
                         onChange={(e) => onSearchChange(e.target.value)}
                         onFocus={() => setIsSearchFocused(true)}
                         onBlur={() => setIsSearchFocused(false)}
-                        className="flex-1 py-3 pr-4 bg-transparent text-sm focus:outline-none placeholder-gray-500"
+                        className="flex-1 py-2.5 md:py-3 pr-4 bg-transparent text-sm focus:outline-none placeholder-gray-500"
                     />
                 </div>
             </div>

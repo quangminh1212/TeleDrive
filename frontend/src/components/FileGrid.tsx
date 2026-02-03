@@ -961,7 +961,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     <div style={getSelectionBoxStyle()} />
 
                     {/* Table Header */}
-                    <div className="flex items-center px-4 py-2 text-sm text-gray-600 border-b border-gray-200 sticky top-0 bg-white z-10">
+                    <div className="flex items-center px-2 md:px-4 py-2 text-sm text-gray-600 border-b border-gray-200 sticky top-0 bg-white z-10">
                         <button
                             className="flex items-center flex-1 min-w-0 hover:bg-gray-50 -ml-2 px-2 py-1 rounded"
                             onClick={() => handleSort('name')}
@@ -969,15 +969,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             <span>Tên</span>
                             {sortColumn === 'name' && <SortIcon direction={sortDirection} />}
                         </button>
-                        <span className="w-32 text-left px-2">Chủ sở hữu</span>
+                        <span className="hidden sm:block w-24 md:w-32 text-left px-2">Chủ sở hữu</span>
                         <button
-                            className="w-48 text-left flex items-center hover:bg-gray-50 px-2 py-1 rounded"
+                            className="hidden md:flex w-36 lg:w-48 text-left items-center hover:bg-gray-50 px-2 py-1 rounded"
                             onClick={() => handleSort('modified')}
                         >
                             <span>Thời gian tạo</span>
                             {sortColumn === 'modified' && <SortIcon direction={sortDirection} />}
                         </button>
-                        <span className="w-32 text-left px-2">Kênh</span>
+                        <span className="hidden lg:block w-32 text-left px-2">Kênh</span>
                         <span className="w-10"></span>
                     </div>
 

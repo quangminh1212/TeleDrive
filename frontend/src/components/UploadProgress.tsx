@@ -109,7 +109,7 @@ const UploadProgress = ({ items, onClose, onClear }: UploadProgressProps) => {
     };
 
     return (
-        <div className="fixed bottom-4 right-4 w-[360px] bg-[#3c4043] rounded-lg shadow-2xl z-50 overflow-hidden">
+        <div className="fixed bottom-0 sm:bottom-4 right-0 sm:right-4 w-full sm:w-[360px] bg-[#3c4043] sm:rounded-lg shadow-2xl z-50 overflow-hidden">
             {/* Header */}
             <div
                 className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[#4a4e51] transition-colors"

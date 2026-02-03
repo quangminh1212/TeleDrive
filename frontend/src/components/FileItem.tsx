@@ -438,7 +438,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`group flex items-center px-4 py-2 cursor-pointer transition-all border-b border-gray-100 ${isSelected
+                className={`group flex items-center px-2 md:px-4 py-2 cursor-pointer transition-all border-b border-gray-100 ${isSelected
                     ? 'bg-blue-50'
                     : isDragOver
                         ? 'bg-blue-100 border-blue-300 border-2'
@@ -488,14 +488,14 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                     </span>
                 )}
 
-                {/* Owner */}
-                <span className="w-32 text-sm text-gray-500 px-2 truncate">{displayOwner}</span>
+                {/* Owner - hidden on mobile xs */}
+                <span className="hidden sm:block w-24 md:w-32 text-sm text-gray-500 px-2 truncate">{displayOwner}</span>
 
-                {/* Modified Date */}
-                <span className="w-48 text-sm text-gray-500 px-2">{displayDate}</span>
+                {/* Modified Date - hidden on mobile xs/sm */}
+                <span className="hidden md:block w-36 lg:w-48 text-sm text-gray-500 px-2">{displayDate}</span>
 
-                {/* Channel / Source */}
-                <span className="w-32 text-sm text-gray-500 px-2 truncate" title={displayChannel}>
+                {/* Channel / Source - hidden on mobile/tablet */}
+                <span className="hidden lg:block w-32 text-sm text-gray-500 px-2 truncate" title={displayChannel}>
                     {displayChannel}
                 </span>
 

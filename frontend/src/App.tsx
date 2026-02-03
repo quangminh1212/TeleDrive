@@ -24,6 +24,7 @@ function AppContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [refreshKey, setRefreshKey] = useState(0);
   const [showUploadProgress, setShowUploadProgress] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -98,11 +99,24 @@ function AppContent() {
   return (
     <>
       <div className="flex h-screen bg-white">
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
         <Sidebar
           currentFolder={currentFolder}
-          onFolderSelect={setCurrentFolder}
+          onFolderSelect={(folder) => {
+            setCurrentFolder(folder);
+            setIsSidebarOpen(false); // Đóng sidebar khi chọn folder trên mobile
+          }}
           onFilesUploaded={handleFilesUploaded}
+          isMobileOpen={isSidebarOpen}
+          onMobileClose={() => setIsSidebarOpen(false)}
         />
 
         {/* Main Content */}
@@ -114,6 +128,7 @@ function AppContent() {
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             userInfo={userInfo}
+            onMenuClick={() => setIsSidebarOpen(true)}
           />
 
           {/* File Grid */}

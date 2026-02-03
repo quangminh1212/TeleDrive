@@ -8,6 +8,8 @@ interface SidebarProps {
     onFolderSelect: (folder: string | null) => void;
     totalFileSize?: number; // Tổng dung lượng file (bytes)
     onFilesUploaded?: () => void; // Callback khi upload xong
+    isMobileOpen?: boolean; // Trạng thái mở sidebar trên mobile
+    onMobileClose?: () => void; // Callback đóng sidebar trên mobile
 }
 
 // TeleDrive Logo component using the new logo image
@@ -66,7 +68,7 @@ const PlusIcon = () => (
     </svg>
 );
 
-const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded }: SidebarProps) => {
+const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded, isMobileOpen, onMobileClose }: SidebarProps) => {
     const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
     const [storageSizeFromAPI, setStorageSizeFromAPI] = useState<number>(0);
     const [isUploading, setIsUploading] = useState(false);
@@ -171,7 +173,14 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
     return (
         <>
-            <aside className="hidden md:flex w-60 bg-white flex-col h-full">
+            <aside className={`
+                fixed md:relative z-50 md:z-auto
+                w-64 md:w-60 bg-white flex-col h-full
+                transform transition-transform duration-300 ease-in-out
+                ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                ${isMobileOpen ? 'flex' : 'hidden md:flex'}
+                shadow-xl md:shadow-none
+            `}>
                 {/* Hidden file inputs */}
                 <input
                     type="file"
@@ -190,10 +199,22 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     className="hidden"
                 />
 
-                {/* Logo */}
-                <div className="flex items-center gap-2 px-4 py-3">
-                    <TeleDriveLogo />
-                    <span className="text-[22px] text-gray-600 font-normal">TeleDrive</span>
+                {/* Logo with close button on mobile */}
+                <div className="flex items-center justify-between gap-2 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                        <TeleDriveLogo />
+                        <span className="text-[22px] text-gray-600 font-normal">TeleDrive</span>
+                    </div>
+                    {/* Close button - only visible on mobile */}
+                    <button
+                        onClick={onMobileClose}
+                        className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        aria-label="Đóng menu"
+                    >
+                        <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                        </svg>
+                    </button>
                 </div>
 
                 {/* New Button */}
