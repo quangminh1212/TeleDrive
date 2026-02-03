@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import FileItem from './FileItem';
 import FilePreview from './FilePreview';
 import { ViewModeControls } from './Header';
@@ -65,6 +65,13 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
     const [moveFileTarget, setMoveFileTarget] = useState<FileInfo | null>(null);
     const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
     const toast = useToast();
+
+    // Drag selection state
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [dragEnd, setDragEnd] = useState({ x: 0, y: 0 });
+    const containerRef = useRef<HTMLDivElement>(null);
+    const fileListRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setLocalViewMode(viewMode);
@@ -295,6 +302,112 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
     // Clear selection
     const handleClearSelection = () => {
         setSelectedFiles(new Set());
+    };
+
+    // Drag selection handlers
+    const handleMouseDown = (e: React.MouseEvent) => {
+        // Only start drag if clicking on empty space (not on a file item)
+        if ((e.target as HTMLElement).closest('[data-file-item]')) return;
+        if ((e.target as HTMLElement).closest('button')) return;
+
+        const container = containerRef.current;
+        if (!container) return;
+
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left + container.scrollLeft;
+        const y = e.clientY - rect.top + container.scrollTop;
+
+        setDragStart({ x, y });
+        setDragEnd({ x, y });
+        setIsDragging(true);
+
+        // Clear selection if not holding Ctrl/Cmd
+        if (!e.ctrlKey && !e.metaKey) {
+            setSelectedFiles(new Set());
+        }
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging) return;
+
+        const container = containerRef.current;
+        if (!container) return;
+
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left + container.scrollLeft;
+        const y = e.clientY - rect.top + container.scrollTop;
+
+        setDragEnd({ x, y });
+
+        // Calculate selection box
+        const selectionBox = {
+            left: Math.min(dragStart.x, x),
+            top: Math.min(dragStart.y, y),
+            right: Math.max(dragStart.x, x),
+            bottom: Math.max(dragStart.y, y),
+        };
+
+        // Find files within selection box
+        const fileItems = fileListRef.current?.querySelectorAll('[data-file-item]');
+        if (!fileItems) return;
+
+        const newSelected = new Set(e.ctrlKey || e.metaKey ? selectedFiles : []);
+
+        fileItems.forEach((item) => {
+            const itemRect = item.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            const itemBox = {
+                left: itemRect.left - containerRect.left + container.scrollLeft,
+                top: itemRect.top - containerRect.top + container.scrollTop,
+                right: itemRect.right - containerRect.left + container.scrollLeft,
+                bottom: itemRect.bottom - containerRect.top + container.scrollTop,
+            };
+
+            // Check intersection
+            if (
+                selectionBox.left < itemBox.right &&
+                selectionBox.right > itemBox.left &&
+                selectionBox.top < itemBox.bottom &&
+                selectionBox.bottom > itemBox.top
+            ) {
+                const fileId = item.getAttribute('data-file-id');
+                if (fileId) {
+                    // Try parsing as number first, fallback to string (for folder-xxx)
+                    const id = fileId.startsWith('folder-') ? fileId : parseInt(fileId) || fileId;
+                    newSelected.add(id);
+                }
+            }
+        });
+
+        setSelectedFiles(newSelected);
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    // Get selection box style
+    const getSelectionBoxStyle = () => {
+        if (!isDragging) return { display: 'none' };
+
+        const left = Math.min(dragStart.x, dragEnd.x);
+        const top = Math.min(dragStart.y, dragEnd.y);
+        const width = Math.abs(dragEnd.x - dragStart.x);
+        const height = Math.abs(dragEnd.y - dragStart.y);
+
+        return {
+            display: 'block',
+            position: 'absolute' as const,
+            left: `${left}px`,
+            top: `${top}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            backgroundColor: 'rgba(26, 115, 232, 0.1)',
+            border: '1px solid rgba(26, 115, 232, 0.5)',
+            pointerEvents: 'none' as const,
+            zIndex: 100,
+        };
     };
 
     // Handle file move to folder
@@ -605,7 +718,17 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                 </div>
             ) : localViewMode === 'list' ? (
                 /* List View */
-                <div className="flex-1 overflow-auto">
+                <div
+                    ref={containerRef}
+                    className="flex-1 overflow-auto relative select-none"
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                >
+                    {/* Selection Box */}
+                    <div style={getSelectionBoxStyle()} />
+
                     {/* Table Header */}
                     <div className="flex items-center px-4 py-2 text-sm text-gray-600 border-b border-gray-200 sticky top-0 bg-white z-10">
                         <button
@@ -628,20 +751,21 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                     </div>
 
                     {/* File List */}
-                    <div>
+                    <div ref={fileListRef}>
                         {[...fileTypeFolders, ...regularFiles].map(file => (
-                            <FileItem
-                                key={file.id}
-                                file={file}
-                                viewMode="list"
-                                isSelected={selectedFiles.has(file.id)}
-                                onSelect={(isMulti) => handleFileSelect(file.id, isMulti)}
-                                onRename={handleFileRename}
-                                onDelete={handleFileDelete}
-                                onMove={handleMoveFile}
-                                onShowInfo={handleShowInfo}
-                                onPreview={handlePreview}
-                            />
+                            <div key={file.id} data-file-item data-file-id={file.id}>
+                                <FileItem
+                                    file={file}
+                                    viewMode="list"
+                                    isSelected={selectedFiles.has(file.id)}
+                                    onSelect={(isMulti) => handleFileSelect(file.id, isMulti)}
+                                    onRename={handleFileRename}
+                                    onDelete={handleFileDelete}
+                                    onMove={handleMoveFile}
+                                    onShowInfo={handleShowInfo}
+                                    onPreview={handlePreview}
+                                />
+                            </div>
                         ))}
                     </div>
                 </div>
