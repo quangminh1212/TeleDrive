@@ -11,6 +11,7 @@ interface FileGridProps {
     currentFolder: string | null;
     viewMode: 'grid' | 'list';
     onViewModeChange?: (mode: 'grid' | 'list') => void;
+    onFolderSelect?: (folderId: number | null) => void;
 }
 
 // Dropdown arrow icon
@@ -42,7 +43,7 @@ const normalizeFile = (file: FileInfo): FileInfo => {
     };
 };
 
-const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: FileGridProps) => {
+const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFolderSelect }: FileGridProps) => {
     const [files, setFiles] = useState<FileInfo[]>([]);
     const [allFiles, setAllFiles] = useState<FileInfo[]>([]);
     const [selectedFiles, setSelectedFiles] = useState<Set<string | number>>(new Set());
@@ -804,6 +805,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                                     onPreview={handlePreview}
                                     onDropFiles={handleDropFilesToFolder}
                                     selectedFiles={selectedFiles}
+                                    onFolderOpen={(folderId) => onFolderSelect?.(folderId)}
                                 />
                             </div>
                         ))}

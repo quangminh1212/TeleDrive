@@ -123,6 +123,7 @@ function App() {
               currentFolder={currentFolder}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
+              onFolderSelect={(folderId) => setCurrentFolder(folderId ? String(folderId) : null)}
             />
           </main>
         </div>
