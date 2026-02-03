@@ -215,16 +215,30 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
     // Handle file delete
     const handleFileDelete = async (file: FileInfo) => {
         try {
-            const response = await api.deleteFile(file.id);
-            if (response.success) {
-                // Remove from local state
-                setAllFiles(prev => prev.filter(f => f.id !== file.id));
-                toast.success(`Đã xóa "${file.name || file.filename}"`);
+            // Check if it's a folder (id starts with 'folder-')
+            const isFolder = String(file.id).startsWith('folder-');
+
+            if (isFolder) {
+                // Extract folder ID from 'folder-123' format
+                const folderId = parseInt(String(file.id).replace('folder-', ''));
+                const response = await api.deleteFolder(folderId);
+                if (response.success) {
+                    setAllFiles(prev => prev.filter(f => f.id !== file.id));
+                    toast.success(`Đã xóa thư mục "${file.name}"`);
+                } else {
+                    toast.error(`Lỗi xóa thư mục: ${response.error}`);
+                }
             } else {
-                toast.error(`Lỗi xóa file: ${response.error}`);
+                const response = await api.deleteFile(file.id);
+                if (response.success) {
+                    setAllFiles(prev => prev.filter(f => f.id !== file.id));
+                    toast.success(`Đã xóa "${file.name || file.filename}"`);
+                } else {
+                    toast.error(`Lỗi xóa file: ${response.error}`);
+                }
             }
         } catch (err) {
-            toast.error('Lỗi xóa file');
+            toast.error('Lỗi xóa');
         }
     };
 
