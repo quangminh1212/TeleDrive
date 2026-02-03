@@ -594,9 +594,9 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     return (
         <div className="h-full flex flex-col">
             {/* Toolbar */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+            <div className="flex items-center justify-between px-2 md:px-4 py-2 border-b border-gray-100">
                 {/* Left side - Folder name and filters OR Selection toolbar */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4">
                     {selectedFiles.size > 0 ? (
                         /* Selection Toolbar - replaces folder name when files selected */
                         <div className="flex items-center gap-3">
@@ -651,8 +651,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                 <DropdownIcon />
                             </button>
 
-                            {/* Filter buttons */}
-                            <div className="flex items-center gap-2">
+                            {/* Filter buttons - hidden on mobile/tablet */}
+                            <div className="hidden lg:flex items-center gap-2">
                                 <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
                                     Loại
                                     <DropdownIcon />

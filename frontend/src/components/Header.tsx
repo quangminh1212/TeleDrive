@@ -87,7 +87,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo }: HeaderProps) => {
     };
 
     return (
-        <header className="h-16 bg-gdrive-sidebar flex items-center px-4 gap-4">
+        <header className="h-14 md:h-16 bg-gdrive-sidebar flex items-center px-2 md:px-4 gap-2 md:gap-4">
             {/* Search Bar */}
             <div className="flex-1 max-w-3xl">
                 <div className={`relative flex items-center ${isSearchFocused ? 'bg-white shadow-md' : 'bg-white'} rounded-full transition-all`}>
@@ -108,25 +108,25 @@ const Header = ({ searchQuery, onSearchChange, userInfo }: HeaderProps) => {
 
             {/* Right side actions - Google Drive style */}
             <div className="flex items-center gap-1">
-                {/* Help button */}
+                {/* Help button - hidden on mobile */}
                 <button
-                    className="p-2.5 rounded-full hover:bg-gray-200 transition-colors"
+                    className="hidden md:block p-2.5 rounded-full hover:bg-gray-200 transition-colors"
                     title="Hỗ trợ"
                 >
                     <HelpIcon />
                 </button>
 
-                {/* Settings button */}
+                {/* Settings button - hidden on mobile */}
                 <button
-                    className="p-2.5 rounded-full hover:bg-gray-200 transition-colors"
+                    className="hidden md:block p-2.5 rounded-full hover:bg-gray-200 transition-colors"
                     title="Cài đặt"
                 >
                     <SettingsIcon />
                 </button>
 
-                {/* Apps button */}
+                {/* Apps button - hidden on mobile */}
                 <button
-                    className="p-2.5 rounded-full hover:bg-gray-200 transition-colors"
+                    className="hidden md:block p-2.5 rounded-full hover:bg-gray-200 transition-colors"
                     title="Ứng dụng Google"
                 >
                     <AppsIcon />

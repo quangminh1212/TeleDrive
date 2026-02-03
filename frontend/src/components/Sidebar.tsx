@@ -54,18 +54,6 @@ const StarredIcon = () => (
     </svg>
 );
 
-const SpamIcon = () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-    </svg>
-);
-
-const TrashIcon = () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
-    </svg>
-);
-
 const StorageIcon = () => (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
         <path d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z" />
@@ -183,7 +171,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
     return (
         <>
-            <aside className="w-60 bg-white flex flex-col h-full">
+            <aside className="hidden md:flex w-60 bg-white flex-col h-full">
                 {/* Hidden file inputs */}
                 <input
                     type="file"
