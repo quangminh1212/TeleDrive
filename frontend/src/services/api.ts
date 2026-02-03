@@ -133,7 +133,7 @@ class ApiService {
             const response = await fetch(`${API_BASE_URL}/api/v2/upload`, {
                 method: 'POST',
                 body: formData,
-                // No credentials needed for public API
+                credentials: 'include',  // Include session cookie for user authentication
             });
 
             const data = await response.json();
@@ -153,6 +153,7 @@ class ApiService {
             const response = await fetch(`${API_BASE_URL}/api/v2/upload`, {
                 method: 'POST',
                 body: formData,
+                credentials: 'include',  // Include session cookie for user authentication
             });
 
             const data = await response.json();
