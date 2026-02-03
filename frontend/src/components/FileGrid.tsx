@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import FileItem from './FileItem';
 import FilePreview from './FilePreview';
 import { ViewModeControls } from './Header';
-import { api, FileInfo } from '../services/api';
+import { api, FileInfo, FolderInfo } from '../services/api';
 
 interface FileGridProps {
     searchQuery: string;
@@ -59,6 +59,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         hasNext: false,
         hasPrev: false,
     });
+    const [folders, setFolders] = useState<FolderInfo[]>([]);
+    const [moveFileTarget, setMoveFileTarget] = useState<FileInfo | null>(null);
 
     useEffect(() => {
         setLocalViewMode(viewMode);
@@ -197,6 +199,40 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         }
     };
 
+    // Handle file move to folder
+    const handleMoveFile = async (file: FileInfo) => {
+        // Fetch folders first
+        try {
+            const response = await api.getFolders();
+            if (response.success && response.data) {
+                setFolders(response.data.folders);
+            }
+        } catch (err) {
+            console.error('Error fetching folders:', err);
+        }
+        setMoveFileTarget(file);
+    };
+
+    const handleConfirmMove = async (folderId: number | null) => {
+        if (!moveFileTarget) return;
+
+        try {
+            const response = await api.moveFileToFolder(Number(moveFileTarget.id), folderId);
+            if (response.success) {
+                const folderName = folderId ? folders.find(f => f.id === folderId)?.name || 'thư mục' : 'Gốc';
+                alert(`Đã di chuyển "${moveFileTarget.name}" đến "${folderName}"`);
+                // Refresh file list
+                await fetchFiles();
+            } else {
+                alert(`Lỗi di chuyển: ${response.error}`);
+            }
+        } catch (err) {
+            alert('Lỗi di chuyển file');
+        } finally {
+            setMoveFileTarget(null);
+        }
+    };
+
     // Handle show file info
     const [infoFile, setInfoFile] = useState<FileInfo | null>(null);
 
@@ -302,7 +338,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         }
     };
 
-    const folders = files.filter(f => f.type === 'folder');
+    const fileTypeFolders = files.filter(f => f.type === 'folder');
     const regularFiles = files.filter(f => f.type !== 'folder');
 
     return (
@@ -444,7 +480,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
 
                     {/* File List */}
                     <div>
-                        {[...folders, ...regularFiles].map(file => (
+                        {[...fileTypeFolders, ...regularFiles].map(file => (
                             <FileItem
                                 key={file.id}
                                 file={file}
@@ -453,6 +489,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                                 onSelect={(isMulti) => handleFileSelect(file.id, isMulti)}
                                 onRename={handleFileRename}
                                 onDelete={handleFileDelete}
+                                onMove={handleMoveFile}
                                 onShowInfo={handleShowInfo}
                                 onPreview={handlePreview}
                             />
@@ -463,7 +500,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                 /* Grid View */
                 <div className="flex-1 overflow-auto p-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                        {[...folders, ...regularFiles].map(file => (
+                        {[...fileTypeFolders, ...regularFiles].map(file => (
                             <FileItem
                                 key={file.id}
                                 file={file}
@@ -472,6 +509,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                                 onSelect={(isMulti) => handleFileSelect(file.id, isMulti)}
                                 onRename={handleFileRename}
                                 onDelete={handleFileDelete}
+                                onMove={handleMoveFile}
                                 onShowInfo={handleShowInfo}
                                 onPreview={handlePreview}
                             />
@@ -573,6 +611,79 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                     file={previewFile}
                     onClose={() => setPreviewFile(null)}
                 />
+            )}
+
+            {/* Move File Modal */}
+            {moveFileTarget && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setMoveFileTarget(null)}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                            <h3 className="text-lg font-medium text-gray-800">Di chuyển đến thư mục</h3>
+                            <button
+                                onClick={() => setMoveFileTarget(null)}
+                                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="px-6 py-4">
+                            <p className="text-sm text-gray-600 mb-4">
+                                Di chuyển "<span className="font-medium">{moveFileTarget.name}</span>" đến:
+                            </p>
+
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {/* Root option */}
+                                <button
+                                    onClick={() => handleConfirmMove(null)}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
+                                >
+                                    <svg className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                                    </svg>
+                                    <span className="text-gray-800">Gốc (Drive của tôi)</span>
+                                </button>
+
+                                {/* Folder list */}
+                                {folders.map(folder => (
+                                    <button
+                                        key={folder.id}
+                                        onClick={() => handleConfirmMove(folder.id)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
+                                    >
+                                        <svg className="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                                        </svg>
+                                        <div>
+                                            <span className="text-gray-800">{folder.name}</span>
+                                            <span className="text-xs text-gray-400 ml-2">({folder.file_count} tệp)</span>
+                                        </div>
+                                    </button>
+                                ))}
+
+                                {folders.length === 0 && (
+                                    <p className="text-center text-gray-500 py-4">
+                                        Chưa có thư mục nào. Hãy tạo thư mục mới trước.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
+                            <button
+                                onClick={() => setMoveFileTarget(null)}
+                                className="px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                                Hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

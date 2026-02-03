@@ -14,6 +14,7 @@ import os
 import bcrypt
 import secrets
 import hashlib
+import time
 
 db = SQLAlchemy()
 
@@ -228,6 +229,7 @@ class File(db.Model):
     __tablename__ = 'files'
     
     id = Column(Integer, primary_key=True)
+    unique_id = Column(String(50), unique=True, nullable=False, index=True, default=lambda: str(int(time.time() * 1000000)))  # Epoch timestamp microseconds for unique ID
     filename = Column(String(255), nullable=False, index=True)
     original_filename = Column(String(255))
     file_path = Column(String(500))  # Path on disk
@@ -457,6 +459,7 @@ class FileVersion(db.Model):
         """Convert file to dictionary for JSON serialization"""
         return {
             'id': self.id,
+            'unique_id': self.unique_id,
             'filename': self.filename,
             'original_filename': self.original_filename,
             'file_path': self.file_path,

@@ -1672,11 +1672,13 @@ def get_files_public():
 
         files.append({
             'id': file_record.id,
+            'unique_id': file_record.unique_id,
             'name': file_record.filename,
             'filename': file_record.filename,
             'size': file_record.file_size or 0,
             'file_size': file_record.file_size or 0,
             'modified': file_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if file_record.created_at else '',
+            'folder_id': file_record.folder_id,
             'folder_name': file_record.folder.name if file_record.folder else 'Root',
             'file_type': file_type,
             'telegram_channel': channel_display,
@@ -2019,6 +2021,313 @@ def upload_file_public():
 
     except Exception as e:
         app.logger.error(f"Upload error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============== FOLDER MANAGEMENT API ==============
+
+# API endpoint to get all folders
+@app.route('/api/v2/folders')
+@csrf.exempt
+def get_folders_public():
+    """Get all folders for the current user"""
+    try:
+        user = get_or_create_user()
+        folders = Folder.query.filter_by(user_id=user.id, is_deleted=False).order_by(Folder.name).all()
+        
+        folders_list = []
+        for folder in folders:
+            folders_list.append({
+                'id': folder.id,
+                'name': folder.name,
+                'parent_id': folder.parent_id,
+                'path': folder.path or folder.get_full_path(),
+                'file_count': folder.files.filter_by(is_deleted=False).count(),
+                'created_at': folder.created_at.isoformat() if folder.created_at else None,
+                'updated_at': folder.updated_at.isoformat() if folder.updated_at else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'folders': folders_list,
+            'total': len(folders_list)
+        })
+    except Exception as e:
+        app.logger.error(f"Get folders error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# API endpoint to create a new folder
+@app.route('/api/v2/folders', methods=['POST'])
+@csrf.exempt
+def create_folder_public():
+    """Create a new folder"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        folder_name = data.get('name', '').strip()
+        if not folder_name:
+            return jsonify({'success': False, 'error': 'Folder name is required'}), 400
+        
+        # Validate folder name
+        if len(folder_name) > 255:
+            return jsonify({'success': False, 'error': 'Folder name too long (max 255 characters)'}), 400
+        
+        # Check for invalid characters
+        invalid_chars = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+        if any(char in folder_name for char in invalid_chars):
+            return jsonify({'success': False, 'error': 'Folder name contains invalid characters'}), 400
+        
+        parent_id = data.get('parent_id')
+        user = get_or_create_user()
+        
+        # Validate parent folder if specified
+        if parent_id:
+            parent_folder = Folder.query.filter_by(id=parent_id, user_id=user.id, is_deleted=False).first()
+            if not parent_folder:
+                return jsonify({'success': False, 'error': 'Parent folder not found'}), 404
+        
+        # Check if folder with same name already exists in the same parent
+        existing_folder = Folder.query.filter_by(
+            name=folder_name, 
+            parent_id=parent_id, 
+            user_id=user.id, 
+            is_deleted=False
+        ).first()
+        
+        if existing_folder:
+            return jsonify({'success': False, 'error': 'A folder with this name already exists'}), 409
+        
+        # Create new folder
+        new_folder = Folder(
+            name=folder_name,
+            parent_id=parent_id,
+            user_id=user.id,
+            path=folder_name  # Will be updated to full path
+        )
+        
+        db.session.add(new_folder)
+        db.session.commit()
+        
+        # Update path after commit to get the ID
+        new_folder.path = new_folder.get_full_path()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Folder "{folder_name}" created successfully',
+            'folder': {
+                'id': new_folder.id,
+                'name': new_folder.name,
+                'parent_id': new_folder.parent_id,
+                'path': new_folder.path,
+                'file_count': 0,
+                'created_at': new_folder.created_at.isoformat() if new_folder.created_at else None
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Create folder error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# API endpoint to move file to a folder
+@app.route('/api/v2/files/<int:file_id>/move', methods=['POST'])
+@csrf.exempt
+def move_file_to_folder(file_id):
+    """Move a file to a folder"""
+    try:
+        data = request.get_json()
+        if data is None:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        folder_id = data.get('folder_id')  # Can be None to move to root
+        user = get_or_create_user()
+        
+        # Find the file
+        file_record = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
+        if not file_record:
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+        
+        # Validate target folder if specified
+        if folder_id is not None:
+            target_folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+            if not target_folder:
+                return jsonify({'success': False, 'error': 'Target folder not found'}), 404
+        
+        # Update file's folder
+        old_folder_id = file_record.folder_id
+        file_record.folder_id = folder_id
+        db.session.commit()
+        
+        folder_name = "Root" if folder_id is None else Folder.query.get(folder_id).name
+        
+        return jsonify({
+            'success': True,
+            'message': f'File moved to "{folder_name}" successfully',
+            'file': {
+                'id': file_record.id,
+                'unique_id': file_record.unique_id,
+                'filename': file_record.filename,
+                'folder_id': file_record.folder_id,
+                'folder_name': folder_name,
+                'old_folder_id': old_folder_id
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Move file error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# API endpoint to delete a folder
+@app.route('/api/v2/folders/<int:folder_id>', methods=['DELETE'])
+@csrf.exempt
+def delete_folder_public(folder_id):
+    """Delete a folder (soft delete)"""
+    try:
+        user = get_or_create_user()
+        
+        folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+        if not folder:
+            return jsonify({'success': False, 'error': 'Folder not found'}), 404
+        
+        # Check if folder has files
+        file_count = folder.files.filter_by(is_deleted=False).count()
+        if file_count > 0:
+            # Move files to root instead of blocking deletion
+            for file in folder.files.filter_by(is_deleted=False).all():
+                file.folder_id = None
+        
+        # Soft delete the folder
+        folder.is_deleted = True
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Folder "{folder.name}" deleted successfully',
+            'files_moved_to_root': file_count
+        })
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Delete folder error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# API endpoint to rename a folder
+@app.route('/api/v2/folders/<int:folder_id>/rename', methods=['POST'])
+@csrf.exempt
+def rename_folder_public(folder_id):
+    """Rename a folder"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        new_name = data.get('name', '').strip()
+        if not new_name:
+            return jsonify({'success': False, 'error': 'New name is required'}), 400
+        
+        if len(new_name) > 255:
+            return jsonify({'success': False, 'error': 'Folder name too long'}), 400
+        
+        user = get_or_create_user()
+        
+        folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+        if not folder:
+            return jsonify({'success': False, 'error': 'Folder not found'}), 404
+        
+        # Check if folder with same name already exists in the same parent
+        existing = Folder.query.filter_by(
+            name=new_name, 
+            parent_id=folder.parent_id, 
+            user_id=user.id, 
+            is_deleted=False
+        ).filter(Folder.id != folder_id).first()
+        
+        if existing:
+            return jsonify({'success': False, 'error': 'A folder with this name already exists'}), 409
+        
+        old_name = folder.name
+        folder.name = new_name
+        folder.path = folder.get_full_path()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Folder renamed from "{old_name}" to "{new_name}"',
+            'folder': {
+                'id': folder.id,
+                'name': folder.name,
+                'path': folder.path
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Rename folder error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# API endpoint to get files in a specific folder
+@app.route('/api/v2/folders/<int:folder_id>/files')
+@csrf.exempt
+def get_folder_files_public(folder_id):
+    """Get files in a specific folder"""
+    try:
+        user = get_or_create_user()
+        
+        folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
+        if not folder:
+            return jsonify({'success': False, 'error': 'Folder not found'}), 404
+        
+        # Get pagination parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        per_page = min(per_page, 100)
+        
+        files_query = File.query.filter_by(
+            folder_id=folder_id, 
+            user_id=user.id, 
+            is_deleted=False
+        ).order_by(File.created_at.desc())
+        
+        pagination = files_query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        files = []
+        for file_record in pagination.items:
+            files.append({
+                'id': file_record.id,
+                'unique_id': file_record.unique_id,
+                'name': file_record.filename,
+                'filename': file_record.filename,
+                'size': file_record.file_size or 0,
+                'file_size': file_record.file_size or 0,
+                'modified': file_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if file_record.created_at else '',
+                'folder_id': file_record.folder_id,
+                'folder_name': folder.name,
+                'file_type': file_record.get_file_type() if hasattr(file_record, 'get_file_type') else 'unknown',
+                'storage_type': file_record.storage_type or 'local'
+            })
+        
+        return jsonify({
+            'success': True,
+            'folder': {
+                'id': folder.id,
+                'name': folder.name,
+                'path': folder.path
+            },
+            'files': files,
+            'pagination': {
+                'page': pagination.page,
+                'per_page': pagination.per_page,
+                'total': pagination.total,
+                'pages': pagination.pages
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"Get folder files error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

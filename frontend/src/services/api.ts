@@ -162,12 +162,6 @@ class ApiService {
     }
 
 
-    async createFolder(name: string, parentId?: string): Promise<ApiResponse<FileInfo>> {
-        return this.request('/api/folder', {
-            method: 'POST',
-            body: JSON.stringify({ name, parent_id: parentId }),
-        });
-    }
 
     async deleteFile(fileId: number | string): Promise<ApiResponse<void>> {
         return this.request('/api/delete_file', {
@@ -215,6 +209,67 @@ class ApiService {
     }>> {
         return this.request('/api/rescan_saved_messages', { method: 'POST' });
     }
+
+    // ============== FOLDER MANAGEMENT ==============
+
+    // Get all folders
+    async getFolders(): Promise<ApiResponse<{ folders: FolderInfo[]; total: number }>> {
+        return this.request('/api/v2/folders');
+    }
+
+    // Create a new folder
+    async createFolder(name: string, parentId?: number): Promise<ApiResponse<{ folder: FolderInfo; message: string }>> {
+        return this.request('/api/v2/folders', {
+            method: 'POST',
+            body: JSON.stringify({ name, parent_id: parentId }),
+        });
+    }
+
+    // Move file to a folder
+    async moveFileToFolder(fileId: number, folderId: number | null): Promise<ApiResponse<{
+        file: { id: number; unique_id: string; filename: string; folder_id: number | null; folder_name: string };
+        message: string;
+    }>> {
+        return this.request(`/api/v2/files/${fileId}/move`, {
+            method: 'POST',
+            body: JSON.stringify({ folder_id: folderId }),
+        });
+    }
+
+    // Delete a folder
+    async deleteFolder(folderId: number): Promise<ApiResponse<{ message: string; files_moved_to_root: number }>> {
+        return this.request(`/api/v2/folders/${folderId}`, {
+            method: 'DELETE',
+        });
+    }
+
+    // Rename a folder
+    async renameFolder(folderId: number, newName: string): Promise<ApiResponse<{ folder: FolderInfo; message: string }>> {
+        return this.request(`/api/v2/folders/${folderId}/rename`, {
+            method: 'POST',
+            body: JSON.stringify({ name: newName }),
+        });
+    }
+
+    // Get files in a specific folder
+    async getFolderFiles(folderId: number, page: number = 1, perPage: number = 20): Promise<ApiResponse<{
+        folder: FolderInfo;
+        files: FileInfo[];
+        pagination: PaginationInfo;
+    }>> {
+        return this.request(`/api/v2/folders/${folderId}/files?page=${page}&per_page=${perPage}`);
+    }
+}
+
+// Folder data interface
+export interface FolderInfo {
+    id: number;
+    name: string;
+    parent_id: number | null;
+    path: string;
+    file_count: number;
+    created_at: string | null;
+    updated_at?: string | null;
 }
 
 export const api = new ApiService();

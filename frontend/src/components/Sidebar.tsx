@@ -225,14 +225,30 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                 {isNewMenuOpen && !isUploading && (
                     <div className="absolute left-3 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
                         <button
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3 text-gray-400 cursor-not-allowed"
-                            disabled
-                            title="Tính năng đang phát triển"
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 flex items-center gap-3"
+                            onClick={async () => {
+                                const folderName = prompt('Nhập tên thư mục mới:');
+                                if (folderName && folderName.trim()) {
+                                    try {
+                                        const result = await api.createFolder(folderName.trim());
+                                        if (result.success) {
+                                            alert(`Đã tạo thư mục "${folderName}" thành công!`);
+                                            setIsNewMenuOpen(false);
+                                            onFilesUploaded?.(); // Refresh file list
+                                        } else {
+                                            alert('Lỗi: ' + (result.error || 'Không thể tạo thư mục'));
+                                        }
+                                    } catch (error) {
+                                        console.error('Create folder error:', error);
+                                        alert('Lỗi khi tạo thư mục');
+                                    }
+                                }
+                            }}
                         >
-                            <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                            <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z" />
                             </svg>
-                            Thư mục mới (sắp ra mắt)
+                            Thư mục mới
                         </button>
                         <hr className="my-2 border-gray-200" />
                         <button

@@ -77,7 +77,7 @@ const ContextMenu = ({ file, x, y, onClose, onAction }: ContextMenuProps) => {
         { id: 'rename', label: 'Đổi tên', icon: <RenameIcon />, shortcut: 'Ctrl+Alt+E', divider: true },
         { id: 'copy', label: 'Tạo bản sao', icon: <CopyIcon />, shortcut: 'Ctrl+C' },
         { id: 'share', label: 'Chia sẻ', icon: <ShareIcon />, divider: true },
-        { id: 'move', label: 'Sắp xếp', icon: <MoveIcon /> },
+        { id: 'move', label: 'Di chuyển đến thư mục', icon: <MoveIcon /> },
         { id: 'info', label: 'Thông tin về tệp', icon: <InfoIcon />, divider: true },
         { id: 'delete', label: 'Chuyển vào thùng rác', icon: <DeleteIcon />, danger: true, shortcut: 'Delete' },
     ];
