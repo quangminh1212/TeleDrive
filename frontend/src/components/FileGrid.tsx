@@ -75,6 +75,12 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const containerRef = useRef<HTMLDivElement>(null);
     const fileListRef = useRef<HTMLDivElement>(null);
 
+    // Drag & drop upload state
+    const [isDragOver, setIsDragOver] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+    const dragCounterRef = useRef(0);
+
     useEffect(() => {
         setLocalViewMode(viewMode);
     }, [viewMode]);
@@ -204,6 +210,76 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     useEffect(() => {
         fetchFiles();
     }, [fetchFiles]);
+
+    // Drag & Drop Upload handlers
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current++;
+        if (e.dataTransfer.types.includes('Files')) {
+            setIsDragOver(true);
+        }
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current--;
+        if (dragCounterRef.current === 0) {
+            setIsDragOver(false);
+        }
+    }, []);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDropUpload = useCallback(async (files: File[]) => {
+        if (files.length === 0) return;
+
+        setIsUploading(true);
+        setUploadProgress({ current: 0, total: files.length });
+
+        try {
+            // Get current folder ID for upload
+            const folderId = currentFolder && !isNaN(parseInt(currentFolder)) ? currentFolder : undefined;
+
+            let successCount = 0;
+            for (let i = 0; i < files.length; i++) {
+                setUploadProgress({ current: i + 1, total: files.length });
+                const response = await api.uploadFile(files[i], folderId);
+                if (response.success) {
+                    successCount++;
+                }
+            }
+
+            if (successCount > 0) {
+                toast.success(`Đã tải lên ${successCount}/${files.length} file thành công`);
+                fetchFiles(); // Refresh file list
+            } else {
+                toast.error('Không thể tải lên file');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error('Lỗi khi tải lên file');
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(null);
+        }
+    }, [currentFolder, fetchFiles, toast]);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current = 0;
+        setIsDragOver(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const droppedFiles = Array.from(e.dataTransfer.files);
+            handleDropUpload(droppedFiles);
+        }
+    }, [handleDropUpload]);
 
     // Filter and sort files
     useEffect(() => {
@@ -690,7 +766,51 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const regularFiles = files.filter(f => f.type !== 'folder');
 
     return (
-        <div className="h-full flex flex-col">
+        <div
+            className="h-full flex flex-col relative"
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+        >
+            {/* Drag & Drop Overlay */}
+            {isDragOver && (
+                <div className="absolute inset-0 z-50 bg-blue-500/10 border-2 border-dashed border-blue-500 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                            <svg className="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17-.53-.32-1.14-.53-1.79-.63A5.994 5.994 0 0 0 0 10c0 1.06.28 2.05.76 2.92.3.55.67 1.05 1.1 1.49C2.45 17.55 5.45 20 9 20h10c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
+                            </svg>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-lg font-semibold text-gray-800">Thả file để tải lên</p>
+                            <p className="text-sm text-gray-500">File sẽ được tải lên Telegram Saved Messages</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Upload Progress Overlay */}
+            {isUploading && uploadProgress && (
+                <div className="absolute inset-0 z-50 bg-black/30 flex items-center justify-center backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 min-w-[300px]">
+                        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="text-center">
+                            <p className="text-lg font-semibold text-gray-800">Đang tải lên...</p>
+                            <p className="text-sm text-gray-500">
+                                {uploadProgress.current} / {uploadProgress.total} file
+                            </p>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Toolbar */}
             <div className="flex items-center justify-between px-2 md:px-4 py-2 border-b border-gray-100">
                 {/* Left side - Folder name and filters OR Selection toolbar */}
