@@ -443,32 +443,83 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
         <div className="h-full flex flex-col">
             {/* Toolbar */}
             <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
-                {/* Left side - Folder name and filters */}
+                {/* Left side - Folder name and filters OR Selection toolbar */}
                 <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-1 text-lg font-medium text-gray-800 hover:bg-gray-100 px-2 py-1 rounded">
-                        {getFolderLabel()}
-                        <DropdownIcon />
-                    </button>
+                    {selectedFiles.size > 0 ? (
+                        /* Selection Toolbar - replaces folder name when files selected */
+                        <div className="flex items-center gap-3">
+                            {/* Close / Clear selection */}
+                            <button
+                                onClick={handleClearSelection}
+                                className="p-1.5 hover:bg-gray-200 rounded-full transition-colors"
+                                title="Bỏ chọn"
+                            >
+                                <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                                </svg>
+                            </button>
 
-                    {/* Filter buttons */}
-                    <div className="flex items-center gap-2">
-                        <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
-                            Loại
-                            <DropdownIcon />
-                        </button>
-                        <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
-                            Người
-                            <DropdownIcon />
-                        </button>
-                        <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
-                            Thời gian tạo
-                            <DropdownIcon />
-                        </button>
-                        <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
-                            Nguồn
-                            <DropdownIcon />
-                        </button>
-                    </div>
+                            {/* Selection count */}
+                            <span className="text-sm font-medium text-gray-800">
+                                Đã chọn {selectedFiles.size} mục
+                            </span>
+
+                            {/* Divider */}
+                            <div className="w-px h-5 bg-gray-300" />
+
+                            {/* Select All */}
+                            <button
+                                onClick={handleSelectAll}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Chọn tất cả"
+                            >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M3 5h2V3c-1.1 0-2 .9-2 2zm0 8h2v-2H3v2zm4 8h2v-2H7v2zM3 9h2V7H3v2zm10-6h-2v2h2V3zm6 0v2h2c0-1.1-.9-2-2-2zM5 21v-2H3c0 1.1.9 2 2 2zm-2-4h2v-2H3v2zM9 3H7v2h2V3zm2 18h2v-2h-2v2zm8-8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2zm0-12h2V7h-2v2zm0 8h2v-2h-2v2zm-4 4h2v-2h-2v2zm0-16h2V3h-2v2zM7 17h10V7H7v10zm2-8h6v6H9V9z" />
+                                </svg>
+                                Chọn tất cả
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                                onClick={() => setShowBulkDeleteConfirm(true)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Xóa"
+                            >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                                </svg>
+                                Xóa
+                            </button>
+                        </div>
+                    ) : (
+                        /* Normal toolbar */
+                        <>
+                            <button className="flex items-center gap-1 text-lg font-medium text-gray-800 hover:bg-gray-100 px-2 py-1 rounded">
+                                {getFolderLabel()}
+                                <DropdownIcon />
+                            </button>
+
+                            {/* Filter buttons */}
+                            <div className="flex items-center gap-2">
+                                <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Loại
+                                    <DropdownIcon />
+                                </button>
+                                <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Người
+                                    <DropdownIcon />
+                                </button>
+                                <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Thời gian tạo
+                                    <DropdownIcon />
+                                </button>
+                                <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Nguồn
+                                    <DropdownIcon />
+                                </button>
+                            </div>
+                        </>
+                    )}
 
                     {/* Rescan Saved Messages button */}
                     <div className="flex items-center gap-2">
@@ -780,55 +831,6 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange }: Fi
                                 Hủy
                             </button>
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Selection Toolbar - appears at bottom when files are selected */}
-            {selectedFiles.size > 0 && (
-                <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white rounded-full shadow-2xl px-4 py-2 flex items-center gap-4 z-50 animate-slideUp">
-                    {/* Selection count */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleClearSelection}
-                            className="p-1 hover:bg-gray-700 rounded-full transition-colors"
-                            title="Bỏ chọn"
-                        >
-                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-                            </svg>
-                        </button>
-                        <span className="text-sm font-medium">{selectedFiles.size} đã chọn</span>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="w-px h-6 bg-gray-600" />
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1">
-                        {/* Select All */}
-                        <button
-                            onClick={handleSelectAll}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm hover:bg-gray-700 rounded-full transition-colors"
-                            title="Chọn tất cả"
-                        >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M3 5h2V3c-1.1 0-2 .9-2 2zm0 8h2v-2H3v2zm4 8h2v-2H7v2zM3 9h2V7H3v2zm10-6h-2v2h2V3zm6 0v2h2c0-1.1-.9-2-2-2zM5 21v-2H3c0 1.1.9 2 2 2zm-2-4h2v-2H3v2zM9 3H7v2h2V3zm2 18h2v-2h-2v2zm8-8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2zm0-12h2V7h-2v2zm0 8h2v-2h-2v2zm-4 4h2v-2h-2v2zm0-16h2V3h-2v2zM7 17h10V7H7v10zm2-8h6v6H9V9z" />
-                            </svg>
-                            Chọn tất cả
-                        </button>
-
-                        {/* Delete */}
-                        <button
-                            onClick={() => setShowBulkDeleteConfirm(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/20 rounded-full transition-colors"
-                            title="Xóa"
-                        >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
-                            </svg>
-                            Xóa
-                        </button>
                     </div>
                 </div>
             )}
