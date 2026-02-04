@@ -7,6 +7,7 @@ import { useToast } from './Toast';
 import { useUpload } from '../contexts/UploadContext';
 import ConfirmDialog from './ConfirmDialog';
 import { logger } from '../utils/logger';
+import { useI18n } from '../i18n';
 
 interface FileGridProps {
     searchQuery: string;
@@ -69,6 +70,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
     const [currentFolderName, setCurrentFolderName] = useState<string | null>(null);
     const toast = useToast();
+    const { t } = useI18n();
 
     // Upload context
     const { uploadFiles } = useUpload();
@@ -898,7 +900,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             >
                                 <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
                             </svg>
-                            {isScanning ? 'Đang quét...' : 'Quét Telegram'}
+                            {isScanning ? t('messages.loading') : t('actions.scanTelegram')}
                         </button>
 
                         {/* Filter toggle - show when filter is active */}
@@ -959,13 +961,13 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     <svg className="w-20 h-20 mb-4 text-gray-300" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
                     </svg>
-                    <p className="text-lg mb-2">Không tìm thấy tệp nào</p>
+                    <p className="text-lg mb-2">{t('files.noFiles')}</p>
                     <p className="text-sm mb-4">Hãy quét kênh Telegram để thêm tệp vào đây</p>
                     <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17-.53-.32-1.14-.53-1.79-.63A5.994 5.994 0 0 0 0 10c0 1.06.28 2.05.76 2.92.3.55.67 1.05 1.1 1.49C2.45 17.55 5.45 20 9 20h10c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
                         </svg>
-                        <span>💡 Bạn có thể kéo thả file vào đây để tải lên</span>
+                        <span>💡 {t('files.dragAndDrop')}</span>
                     </div>
                 </div>
             ) : localViewMode === 'list' ? (
@@ -987,15 +989,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             className="flex items-center flex-1 min-w-0 hover:bg-gray-50 -ml-2 px-2 py-1 rounded"
                             onClick={() => handleSort('name')}
                         >
-                            <span>Tên</span>
+                            <span>{t('files.name')}</span>
                             {sortColumn === 'name' && <SortIcon direction={sortDirection} />}
                         </button>
-                        <span className="hidden sm:block w-24 md:w-32 text-left px-2">Chủ sở hữu</span>
+                        <span className="hidden sm:block w-24 md:w-32 text-left px-2">{t('files.owner')}</span>
                         <button
                             className="hidden md:flex w-36 lg:w-48 text-left items-center hover:bg-gray-50 px-2 py-1 rounded"
                             onClick={() => handleSort('modified')}
                         >
-                            <span>Thời gian tạo</span>
+                            <span>{t('files.lastModified')}</span>
                             {sortColumn === 'modified' && <SortIcon direction={sortDirection} />}
                         </button>
                         <span className="hidden lg:block w-32 text-left px-2">Kênh</span>
@@ -1220,10 +1222,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
             {/* Bulk Delete Confirm Dialog */}
             <ConfirmDialog
                 isOpen={showBulkDeleteConfirm}
-                title="Xóa nhiều mục"
-                message={`Bạn có chắc chắn muốn xóa ${selectedFiles.size} mục đã chọn? Thao tác này không thể hoàn tác.`}
-                confirmText="Xóa tất cả"
-                cancelText="Hủy"
+                title={t('messages.deleteConfirm')}
+                message={t('messages.itemsSelected', { count: selectedFiles.size })}
+                confirmText={t('actions.delete')}
+                cancelText={t('actions.cancel')}
                 confirmButtonColor="red"
                 onConfirm={() => {
                     setShowBulkDeleteConfirm(false);

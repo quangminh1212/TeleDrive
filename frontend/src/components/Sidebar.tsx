@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
 import CreateFolderModal from './CreateFolderModal';
 import { useToast } from './Toast';
+import { useI18n } from '../i18n';
 
 interface SidebarProps {
     currentFolder: string | null;
@@ -74,6 +75,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     const [isUploading, setIsUploading] = useState(false);
     const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
     const toast = useToast();
+    const { t } = useI18n();
 
     // Hidden file input refs
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,19 +146,19 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     };
 
     const mainMenuItems = [
-        { id: 'home', label: 'Trang chủ', icon: HomeIcon },
-        { id: null, label: 'Drive của tôi', icon: MyDriveIcon },
-        { id: 'computer', label: 'Máy tính', icon: ComputerIcon },
+        { id: 'home', label: t('sidebar.home'), icon: HomeIcon },
+        { id: null, label: t('sidebar.myDrive'), icon: MyDriveIcon },
+        { id: 'computer', label: t('sidebar.computer'), icon: ComputerIcon },
     ];
 
     const secondaryMenuItems = [
-        { id: 'shared', label: 'Được chia sẻ với tôi', icon: SharedIcon },
-        { id: 'recent', label: 'Gần đây', icon: RecentIcon },
-        { id: 'starred', label: 'Có gắn dấu sao', icon: StarredIcon },
+        { id: 'shared', label: t('sidebar.sharedWithMe'), icon: SharedIcon },
+        { id: 'recent', label: t('sidebar.recent'), icon: RecentIcon },
+        { id: 'starred', label: t('sidebar.starred'), icon: StarredIcon },
     ];
 
     const bottomMenuItems = [
-        { id: 'storage', label: 'Bộ nhớ', icon: StorageIcon },
+        { id: 'storage', label: t('sidebar.storage'), icon: StorageIcon },
     ];
 
     // Hàm format dung lượng
@@ -230,7 +232,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                             <PlusIcon />
                         )}
                         <span className="text-sm font-medium text-gray-700">
-                            {isUploading ? 'Đang tải...' : 'Mới'}
+                            {isUploading ? t('messages.loading') : t('sidebar.upload')}
                         </span>
                     </button>
 
@@ -247,7 +249,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                 <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z" />
                                 </svg>
-                                Thư mục mới
+                                {t('folders.newFolder')}
                             </button>
                             <hr className="my-2 border-gray-200" />
                             <button
@@ -257,7 +259,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                 <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
                                 </svg>
-                                Tải tệp lên
+                                {t('sidebar.uploadFiles')}
                             </button>
                             <button
                                 onClick={triggerFolderUpload}
@@ -266,7 +268,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                 <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10zM8 13.01l1.41 1.41L11 12.84V17h2v-4.16l1.59 1.59L16 13.01 12.01 9 8 13.01z" />
                                 </svg>
-                                Tải thư mục lên
+                                {t('folders.create')}
                             </button>
                         </div>
                     )}
