@@ -173,6 +173,17 @@ async def download_from_telegram_async(file_record, output_path: str = None):
         logger.error(f"Telegram download error: {e}")
         return None
 
+async def delete_from_telegram_async(file_record):
+    """Async helper to delete file from Telegram"""
+    try:
+        await telegram_storage.initialize()
+        result = await telegram_storage.delete_file(file_record)
+        await telegram_storage.close()
+        return result
+    except Exception as e:
+        logger.error(f"Telegram delete error: {e}")
+        return False
+
 # Production mode - minimal logging baseline
 logging.basicConfig(level=logging.WARNING)  # Only warnings and errors
 
@@ -2793,6 +2804,21 @@ def delete_file():
             file_record = File.query.filter_by(filename=filename, user_id=current_user.id, is_deleted=False).first()
 
         if file_record:
+            # Delete from Telegram if stored there
+            telegram_deleted = False
+            if file_record.is_stored_on_telegram():
+                try:
+                    app.logger.info(f"Deleting {file_record.filename} from Telegram...")
+                    telegram_deleted = run_async_in_thread(
+                        delete_from_telegram_async(file_record)
+                    )
+                    if telegram_deleted:
+                        app.logger.info(f"✅ Successfully deleted {file_record.filename} from Telegram")
+                    else:
+                        app.logger.warning(f"⚠️ Failed to delete {file_record.filename} from Telegram")
+                except Exception as e:
+                    app.logger.error(f"Error deleting from Telegram: {e}")
+
             # Soft delete in DB
             file_record.is_deleted = True
             db.session.commit()
@@ -2820,7 +2846,8 @@ def delete_file():
 
             return jsonify({'success': True,
                             'message': f'File {file_record.filename} deleted successfully',
-                            'removed_physical': removed_physical})
+                            'removed_physical': removed_physical,
+                            'telegram_deleted': telegram_deleted})
 
         # Legacy: delete by filename in output directory only for specific types
         if filename:
