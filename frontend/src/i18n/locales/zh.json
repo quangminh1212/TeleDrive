@@ -1,0 +1,102 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "您的文件，安全存储在Telegram上"
+  },
+  "sidebar": {
+    "myDrive": "我的云端硬盘",
+    "home": "首页",
+    "computer": "我的电脑",
+    "sharedWithMe": "与我共享",
+    "recent": "最近",
+    "starred": "已加星标",
+    "trash": "回收站",
+    "storage": "存储空间",
+    "newFolder": "新建文件夹",
+    "upload": "上传",
+    "uploadFiles": "上传文件"
+  },
+  "header": {
+    "search": "在云端硬盘中搜索",
+    "settings": "设置",
+    "help": "帮助",
+    "account": "账户"
+  },
+  "files": {
+    "name": "名称",
+    "owner": "所有者",
+    "lastModified": "修改时间",
+    "fileSize": "文件大小",
+    "noFiles": "未找到文件",
+    "dropHere": "将文件拖放到此处上传",
+    "dragAndDrop": "您可以将文件拖放到此处上传",
+    "uploading": "正在上传...",
+    "uploaded": "已上传",
+    "failed": "失败",
+    "delete": "删除",
+    "download": "下载",
+    "rename": "重命名",
+    "move": "移动",
+    "copy": "复制",
+    "share": "共享",
+    "details": "详情",
+    "preview": "预览"
+  },
+  "folders": {
+    "create": "创建文件夹",
+    "folderName": "文件夹名称",
+    "newFolder": "新建文件夹",
+    "delete": "删除文件夹",
+    "rename": "重命名文件夹",
+    "empty": "此文件夹为空"
+  },
+  "actions": {
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "close": "关闭",
+    "apply": "应用",
+    "ok": "确定",
+    "yes": "是",
+    "no": "否",
+    "retry": "重试",
+    "refresh": "刷新",
+    "scanTelegram": "扫描Telegram"
+  },
+  "messages": {
+    "deleteConfirm": "确定要删除吗？",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "uploadSuccess": "上传成功",
+    "uploadFailed": "上传失败",
+    "folderCreated": "文件夹创建成功",
+    "folderDeleted": "文件夹及所有内容已删除",
+    "noItemsSelected": "未选择任何项目",
+    "itemsSelected": "已选择 {count} 个项目",
+    "loading": "加载中...",
+    "error": "发生错误",
+    "networkError": "网络错误，请重试"
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "退出登录",
+    "loginWithTelegram": "使用Telegram登录",
+    "phoneNumber": "手机号码",
+    "verificationCode": "验证码",
+    "sendCode": "发送验证码",
+    "verify": "验证",
+    "loginSuccess": "登录成功",
+    "loginFailed": "登录失败"
+  },
+  "settings": {
+    "title": "设置",
+    "language": "语言",
+    "theme": "主题",
+    "darkMode": "深色模式",
+    "lightMode": "浅色模式",
+    "notifications": "通知",
+    "storage": "存储",
+    "about": "关于"
+  }
+}

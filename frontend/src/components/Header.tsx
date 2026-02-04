@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import UserAccountMenu from './UserAccountMenu';
+import LanguageSwitcher from './LanguageSwitcher';
 import { useToast } from './Toast';
+import { useI18n } from '../i18n';
 
 interface HeaderProps {
     searchQuery: string;
@@ -68,6 +70,7 @@ const HelpIcon = () => (
 const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderProps) => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const toast = useToast();
+    const { t } = useI18n();
 
     const handleLogout = async () => {
         try {
@@ -113,7 +116,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
                     </div>
                     <input
                         type="text"
-                        placeholder="Tìm trong Drive"
+                        placeholder={t('header.search')}
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                         onFocus={() => setIsSearchFocused(true)}
@@ -125,10 +128,15 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
 
             {/* Right side actions - Google Drive style */}
             <div className="flex items-center gap-1">
+                {/* Language Switcher */}
+                <div className="hidden md:block">
+                    <LanguageSwitcher />
+                </div>
+
                 {/* Help button - hidden on mobile */}
                 <button
                     className="hidden md:block p-2.5 rounded-full hover:bg-gray-200 transition-colors"
-                    title="Hỗ trợ"
+                    title={t('header.help')}
                 >
                     <HelpIcon />
                 </button>
@@ -136,7 +144,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
                 {/* Settings button - hidden on mobile */}
                 <button
                     className="hidden md:block p-2.5 rounded-full hover:bg-gray-200 transition-colors"
-                    title="Cài đặt"
+                    title={t('header.settings')}
                 >
                     <SettingsIcon />
                 </button>
@@ -144,7 +152,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
                 {/* Apps button - hidden on mobile */}
                 <button
                     className="hidden md:block p-2.5 rounded-full hover:bg-gray-200 transition-colors"
-                    title="Ứng dụng Google"
+                    title="Apps"
                 >
                     <AppsIcon />
                 </button>

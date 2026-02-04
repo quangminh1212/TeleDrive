@@ -1,0 +1,102 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Your files, securely stored on Telegram"
+  },
+  "sidebar": {
+    "myDrive": "My Drive",
+    "home": "Home",
+    "computer": "Computer",
+    "sharedWithMe": "Shared with me",
+    "recent": "Recent",
+    "starred": "Starred",
+    "trash": "Trash",
+    "storage": "Storage",
+    "newFolder": "New Folder",
+    "upload": "Upload",
+    "uploadFiles": "Upload Files"
+  },
+  "header": {
+    "search": "Search in Drive",
+    "settings": "Settings",
+    "help": "Help",
+    "account": "Account"
+  },
+  "files": {
+    "name": "Name",
+    "owner": "Owner",
+    "lastModified": "Last modified",
+    "fileSize": "File size",
+    "noFiles": "No files found",
+    "dropHere": "Drop files here to upload",
+    "dragAndDrop": "You can drag and drop files here to upload",
+    "uploading": "Uploading...",
+    "uploaded": "Uploaded",
+    "failed": "Failed",
+    "delete": "Delete",
+    "download": "Download",
+    "rename": "Rename",
+    "move": "Move",
+    "copy": "Copy",
+    "share": "Share",
+    "details": "Details",
+    "preview": "Preview"
+  },
+  "folders": {
+    "create": "Create folder",
+    "folderName": "Folder name",
+    "newFolder": "New Folder",
+    "delete": "Delete folder",
+    "rename": "Rename folder",
+    "empty": "This folder is empty"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "close": "Close",
+    "apply": "Apply",
+    "ok": "OK",
+    "yes": "Yes",
+    "no": "No",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "scanTelegram": "Scan Telegram"
+  },
+  "messages": {
+    "deleteConfirm": "Are you sure you want to delete this?",
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Failed to delete",
+    "uploadSuccess": "Upload successful",
+    "uploadFailed": "Upload failed",
+    "folderCreated": "Folder created successfully",
+    "folderDeleted": "Folder and all contents deleted",
+    "noItemsSelected": "No items selected",
+    "itemsSelected": "{count} items selected",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "networkError": "Network error. Please try again."
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "loginWithTelegram": "Login with Telegram",
+    "phoneNumber": "Phone number",
+    "verificationCode": "Verification code",
+    "sendCode": "Send code",
+    "verify": "Verify",
+    "loginSuccess": "Login successful",
+    "loginFailed": "Login failed"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode",
+    "notifications": "Notifications",
+    "storage": "Storage",
+    "about": "About"
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "あなたのファイルをTelegramに安全に保存"
+  },
+  "sidebar": {
+    "myDrive": "マイドライブ",
+    "home": "ホーム",
+    "computer": "パソコン",
+    "sharedWithMe": "共有アイテム",
+    "recent": "最近",
+    "starred": "スター付き",
+    "trash": "ゴミ箱",
+    "storage": "ストレージ",
+    "newFolder": "新しいフォルダ",
+    "upload": "アップロード",
+    "uploadFiles": "ファイルをアップロード"
+  },
+  "header": {
+    "search": "ドライブを検索",
+    "settings": "設定",
+    "help": "ヘルプ",
+    "account": "アカウント"
+  },
+  "files": {
+    "name": "名前",
+    "owner": "オーナー",
+    "lastModified": "最終更新",
+    "fileSize": "ファイルサイズ",
+    "noFiles": "ファイルが見つかりません",
+    "dropHere": "ここにファイルをドロップしてアップロード",
+    "dragAndDrop": "ファイルをドラッグ＆ドロップでアップロードできます",
+    "uploading": "アップロード中...",
+    "uploaded": "アップロード完了",
+    "failed": "失敗",
+    "delete": "削除",
+    "download": "ダウンロード",
+    "rename": "名前を変更",
+    "move": "移動",
+    "copy": "コピー",
+    "share": "共有",
+    "details": "詳細",
+    "preview": "プレビュー"
+  },
+  "folders": {
+    "create": "フォルダを作成",
+    "folderName": "フォルダ名",
+    "newFolder": "新しいフォルダ",
+    "delete": "フォルダを削除",
+    "rename": "フォルダ名を変更",
+    "empty": "このフォルダは空です"
+  },
+  "actions": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "delete": "削除",
+    "close": "閉じる",
+    "apply": "適用",
+    "ok": "OK",
+    "yes": "はい",
+    "no": "いいえ",
+    "retry": "再試行",
+    "refresh": "更新",
+    "scanTelegram": "Telegramをスキャン"
+  },
+  "messages": {
+    "deleteConfirm": "本当に削除しますか？",
+    "deleteSuccess": "削除しました",
+    "deleteFailed": "削除に失敗しました",
+    "uploadSuccess": "アップロードしました",
+    "uploadFailed": "アップロードに失敗しました",
+    "folderCreated": "フォルダを作成しました",
+    "folderDeleted": "フォルダとすべてのコンテンツを削除しました",
+    "noItemsSelected": "アイテムが選択されていません",
+    "itemsSelected": "{count}個のアイテムを選択中",
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "networkError": "ネットワークエラー。もう一度お試しください。"
+  },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "loginWithTelegram": "Telegramでログイン",
+    "phoneNumber": "電話番号",
+    "verificationCode": "認証コード",
+    "sendCode": "コードを送信",
+    "verify": "認証",
+    "loginSuccess": "ログインしました",
+    "loginFailed": "ログインに失敗しました"
+  },
+  "settings": {
+    "title": "設定",
+    "language": "言語",
+    "theme": "テーマ",
+    "darkMode": "ダークモード",
+    "lightMode": "ライトモード",
+    "notifications": "通知",
+    "storage": "ストレージ",
+    "about": "アプリについて"
+  }
+}

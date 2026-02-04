@@ -1,0 +1,102 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Tệp của bạn, lưu trữ an toàn trên Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Drive của tôi",
+    "home": "Trang chủ",
+    "computer": "Máy tính",
+    "sharedWithMe": "Được chia sẻ với tôi",
+    "recent": "Gần đây",
+    "starred": "Có gắn dấu sao",
+    "trash": "Thùng rác",
+    "storage": "Bộ nhớ",
+    "newFolder": "Thư mục mới",
+    "upload": "Tải lên",
+    "uploadFiles": "Tải tệp lên"
+  },
+  "header": {
+    "search": "Tìm kiếm trong Drive",
+    "settings": "Cài đặt",
+    "help": "Trợ giúp",
+    "account": "Tài khoản"
+  },
+  "files": {
+    "name": "Tên",
+    "owner": "Chủ sở hữu",
+    "lastModified": "Thời gian tạo",
+    "fileSize": "Kích thước",
+    "noFiles": "Không tìm thấy tệp nào",
+    "dropHere": "Thả tệp vào đây để tải lên",
+    "dragAndDrop": "Bạn có thể kéo thả file vào đây để tải lên",
+    "uploading": "Đang tải lên...",
+    "uploaded": "Đã tải lên",
+    "failed": "Thất bại",
+    "delete": "Xóa",
+    "download": "Tải xuống",
+    "rename": "Đổi tên",
+    "move": "Di chuyển",
+    "copy": "Sao chép",
+    "share": "Chia sẻ",
+    "details": "Chi tiết",
+    "preview": "Xem trước"
+  },
+  "folders": {
+    "create": "Tạo thư mục",
+    "folderName": "Tên thư mục",
+    "newFolder": "Thư mục mới",
+    "delete": "Xóa thư mục",
+    "rename": "Đổi tên thư mục",
+    "empty": "Thư mục này trống"
+  },
+  "actions": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "delete": "Xóa",
+    "close": "Đóng",
+    "apply": "Áp dụng",
+    "ok": "OK",
+    "yes": "Có",
+    "no": "Không",
+    "retry": "Thử lại",
+    "refresh": "Làm mới",
+    "scanTelegram": "Quét Telegram"
+  },
+  "messages": {
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa không?",
+    "deleteSuccess": "Xóa thành công",
+    "deleteFailed": "Không thể xóa các mục đã chọn",
+    "uploadSuccess": "Tải lên thành công",
+    "uploadFailed": "Tải lên thất bại",
+    "folderCreated": "Đã tạo thư mục thành công",
+    "folderDeleted": "Đã xóa thư mục và toàn bộ nội dung",
+    "noItemsSelected": "Chưa chọn mục nào",
+    "itemsSelected": "Đã chọn {count} mục",
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi",
+    "networkError": "Lỗi mạng. Vui lòng thử lại."
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "loginWithTelegram": "Đăng nhập bằng Telegram",
+    "phoneNumber": "Số điện thoại",
+    "verificationCode": "Mã xác thực",
+    "sendCode": "Gửi mã",
+    "verify": "Xác thực",
+    "loginSuccess": "Đăng nhập thành công",
+    "loginFailed": "Đăng nhập thất bại"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "language": "Ngôn ngữ",
+    "theme": "Giao diện",
+    "darkMode": "Chế độ tối",
+    "lightMode": "Chế độ sáng",
+    "notifications": "Thông báo",
+    "storage": "Bộ nhớ",
+    "about": "Giới thiệu"
+  }
+}
