@@ -3,6 +3,7 @@ import { FileInfo } from '../services/api';
 import ContextMenu from './ContextMenu';
 import ConfirmDialog from './ConfirmDialog';
 import { useToast } from './Toast';
+import { useI18n } from '../i18n';
 
 interface FileItemProps {
     file: FileInfo;
@@ -224,6 +225,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
     const toast = useToast();
+    const { t } = useI18n();
 
     const isFolder = file.type === 'folder';
 
@@ -324,7 +326,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                 // Copy share link to clipboard
                 const shareLink = `http://127.0.0.1:5000/share/${file.id}`;
                 navigator.clipboard.writeText(shareLink);
-                toast.success('Đã sao chép liên kết chia sẻ!');
+                toast.success(t('messages.uploadSuccess'));
                 break;
             case 'open':
                 handleDoubleClick();
@@ -356,7 +358,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
     const displaySize = formatFileSize(file.size || file.file_size);
     const displayDate = formatDate(file.modified);
     const displayChannel = file.telegram_channel || '-';
-    const displayOwner = file.owner || 'tôi';
+    const displayOwner = file.owner || t('files.owner');
 
     if (viewMode === 'grid') {
         return (
@@ -527,10 +529,10 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
             {/* Delete Confirmation Dialog */}
             <ConfirmDialog
                 isOpen={showDeleteConfirm}
-                title="Xóa tệp"
-                message={`Bạn có chắc chắn muốn xóa "${file.name || file.filename}"? Thao tác này không thể hoàn tác.`}
-                confirmText="Xóa"
-                cancelText="Hủy"
+                title={t('files.delete')}
+                message={t('messages.deleteConfirm')}
+                confirmText={t('actions.delete')}
+                cancelText={t('actions.cancel')}
                 confirmButtonColor="red"
                 onConfirm={() => {
                     setShowDeleteConfirm(false);
