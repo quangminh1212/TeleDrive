@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Jūsų failai, saugiai saugomi Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Mano diskas",
+    "home": "Pradžia",
+    "computer": "Kompiuteris",
+    "sharedWithMe": "Bendrinama su manimi",
+    "recent": "Naujausi",
+    "starred": "Pažymėti žvaigždute",
+    "trash": "Šiukšlinė",
+    "storage": "Saugykla",
+    "newFolder": "Naujas aplankas",
+    "upload": "Įkelti",
+    "uploadFiles": "Įkelti failus"
+  },
+  "header": {
+    "search": "Ieškoti Diske",
+    "settings": "Nustatymai",
+    "help": "Pagalba",
+    "account": "Paskyra"
+  },
+  "files": {
+    "name": "Pavadinimas",
+    "owner": "Savininkas",
+    "lastModified": "Paskutinis pakeitimas",
+    "fileSize": "Failo dydis",
+    "noFiles": "Failų nerasta",
+    "dropHere": "Nuvilkite failus čia įkelti",
+    "dragAndDrop": "Galite nuvilkti failus čia",
+    "uploading": "Įkeliama...",
+    "uploaded": "Įkelta",
+    "failed": "Nepavyko",
+    "delete": "Ištrinti",
+    "download": "Atsisiųsti",
+    "rename": "Pervadinti",
+    "move": "Perkelti",
+    "copy": "Kopijuoti",
+    "share": "Dalintis",
+    "details": "Išsami informacija",
+    "preview": "Peržiūra"
+  },
+  "folders": {
+    "create": "Sukurti aplanką",
+    "folderName": "Aplanko pavadinimas",
+    "newFolder": "Naujas aplankas",
+    "delete": "Ištrinti aplanką",
+    "rename": "Pervadinti aplanką",
+    "empty": "Šis aplankas tuščias"
+  },
+  "actions": {
+    "save": "Išsaugoti",
+    "cancel": "Atšaukti",
+    "confirm": "Patvirtinti",
+    "delete": "Ištrinti",
+    "close": "Uždaryti",
+    "apply": "Taikyti",
+    "ok": "Gerai",
+    "yes": "Taip",
+    "no": "Ne",
+    "retry": "Bandyti dar kartą",
+    "refresh": "Atnaujinti",
+    "scanTelegram": "Skenuoti Telegram",
+    "selectAll": "Pasirinkti viską",
+    "clearSelection": "Išvalyti pasirinkimą",
+    "back": "Atgal",
+    "scanHint": "Nuskenuokite Telegram, kad pridėtumėte failus"
+  },
+  "messages": {
+    "deleteConfirm": "Ar tikrai norite ištrinti?",
+    "deleteSuccess": "Sėkmingai ištrinta",
+    "deleteFailed": "Nepavyko ištrinti",
+    "uploadSuccess": "Sėkmingai įkelta",
+    "uploadFailed": "Nepavyko įkelti",
+    "folderCreated": "Aplankas sėkmingai sukurtas",
+    "folderDeleted": "Aplankas ir visas turinys ištrinti",
+    "noItemsSelected": "Nepasirinkta jokių elementų",
+    "itemsSelected": "Pasirinkta {count} elementų",
+    "loading": "Įkeliama...",
+    "error": "Įvyko klaida",
+    "networkError": "Tinklo klaida. Bandykite dar kartą."
+  },
+  "auth": {
+    "login": "Prisijungti",
+    "logout": "Atsijungti",
+    "loginWithTelegram": "Prisijungti per Telegram",
+    "phoneNumber": "Telefono numeris",
+    "verificationCode": "Patvirtinimo kodas",
+    "sendCode": "Siųsti kodą",
+    "verify": "Patvirtinti",
+    "loginSuccess": "Prisijungimas sėkmingas",
+    "loginFailed": "Prisijungimas nepavyko"
+  },
+  "settings": {
+    "title": "Nustatymai",
+    "language": "Kalba",
+    "theme": "Tema",
+    "darkMode": "Tamsusis režimas",
+    "lightMode": "Šviesusis režimas",
+    "notifications": "Pranešimai",
+    "storage": "Saugykla",
+    "about": "Apie"
+  }
+}

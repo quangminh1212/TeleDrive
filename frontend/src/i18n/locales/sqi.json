@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Skedat tuaj, të ruajtura në mënyrë të sigurt në Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Disku im",
+    "home": "Kryefaqja",
+    "computer": "Kompjuteri",
+    "sharedWithMe": "Ndarë me mua",
+    "recent": "Të fundit",
+    "starred": "Me yll",
+    "trash": "Koshi",
+    "storage": "Ruajtja",
+    "newFolder": "Dosje e re",
+    "upload": "Ngarko",
+    "uploadFiles": "Ngarko skedarë"
+  },
+  "header": {
+    "search": "Kërko në Disk",
+    "settings": "Cilësimet",
+    "help": "Ndihmë",
+    "account": "Llogaria"
+  },
+  "files": {
+    "name": "Emri",
+    "owner": "Pronari",
+    "lastModified": "Modifikuar së fundi",
+    "fileSize": "Madhësia e skedarit",
+    "noFiles": "Nuk u gjetën skedarë",
+    "dropHere": "Lëshoni skedarët këtu për të ngarkuar",
+    "dragAndDrop": "Mund të tërhiqni dhe lëshoni skedarët këtu",
+    "uploading": "Duke ngarkuar...",
+    "uploaded": "U ngarkua",
+    "failed": "Dështoi",
+    "delete": "Fshi",
+    "download": "Shkarko",
+    "rename": "Riemërto",
+    "move": "Zhvendos",
+    "copy": "Kopjo",
+    "share": "Ndaj",
+    "details": "Detaje",
+    "preview": "Parashiko"
+  },
+  "folders": {
+    "create": "Krijo dosje",
+    "folderName": "Emri i dosjes",
+    "newFolder": "Dosje e re",
+    "delete": "Fshi dosjen",
+    "rename": "Riemërto dosjen",
+    "empty": "Kjo dosje është bosh"
+  },
+  "actions": {
+    "save": "Ruaj",
+    "cancel": "Anulo",
+    "confirm": "Konfirmo",
+    "delete": "Fshi",
+    "close": "Mbyll",
+    "apply": "Apliko",
+    "ok": "OK",
+    "yes": "Po",
+    "no": "Jo",
+    "retry": "Provo përsëri",
+    "refresh": "Rifresko",
+    "scanTelegram": "Skano Telegram",
+    "selectAll": "Zgjidh të gjitha",
+    "clearSelection": "Pastro zgjedhjen",
+    "back": "Mbrapa",
+    "scanHint": "Skanoni Telegram për të shtuar skedarë"
+  },
+  "messages": {
+    "deleteConfirm": "A jeni i sigurt që doni të fshini këtë?",
+    "deleteSuccess": "U fshi me sukses",
+    "deleteFailed": "Fshirja dështoi",
+    "uploadSuccess": "U ngarkua me sukses",
+    "uploadFailed": "Ngarkimi dështoi",
+    "folderCreated": "Dosja u krijua me sukses",
+    "folderDeleted": "Dosja dhe e gjithë përmbajtja u fshinë",
+    "noItemsSelected": "Asnjë artikull i zgjedhur",
+    "itemsSelected": "{count} artikuj të zgjedhur",
+    "loading": "Duke ngarkuar...",
+    "error": "Ndodhi një gabim",
+    "networkError": "Gabim rrjeti. Ju lutemi provoni përsëri."
+  },
+  "auth": {
+    "login": "Hyr",
+    "logout": "Dil",
+    "loginWithTelegram": "Hyr me Telegram",
+    "phoneNumber": "Numri i telefonit",
+    "verificationCode": "Kodi i verifikimit",
+    "sendCode": "Dërgo kodin",
+    "verify": "Verifiko",
+    "loginSuccess": "Hyrje e suksesshme",
+    "loginFailed": "Hyrja dështoi"
+  },
+  "settings": {
+    "title": "Cilësimet",
+    "language": "Gjuha",
+    "theme": "Tema",
+    "darkMode": "Modaliteti i errët",
+    "lightMode": "Modaliteti i ndritshëm",
+    "notifications": "Njoftimet",
+    "storage": "Ruajtja",
+    "about": "Rreth"
+  }
+}

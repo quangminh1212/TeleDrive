@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Teie failid, turvaliselt salvestatud Telegramis"
+  },
+  "sidebar": {
+    "myDrive": "Minu ketas",
+    "home": "Avaleht",
+    "computer": "Arvuti",
+    "sharedWithMe": "Minuga jagatud",
+    "recent": "Hiljutised",
+    "starred": "Tärniga",
+    "trash": "Prügikast",
+    "storage": "Salvestusruum",
+    "newFolder": "Uus kaust",
+    "upload": "Laadi üles",
+    "uploadFiles": "Laadi failid üles"
+  },
+  "header": {
+    "search": "Otsi kettalt",
+    "settings": "Seaded",
+    "help": "Abi",
+    "account": "Konto"
+  },
+  "files": {
+    "name": "Nimi",
+    "owner": "Omanik",
+    "lastModified": "Viimati muudetud",
+    "fileSize": "Faili suurus",
+    "noFiles": "Faile ei leitud",
+    "dropHere": "Kukutage failid siia üleslaadimiseks",
+    "dragAndDrop": "Saate faile siia lohistada",
+    "uploading": "Üleslaadimine...",
+    "uploaded": "Üles laaditud",
+    "failed": "Ebaõnnestus",
+    "delete": "Kustuta",
+    "download": "Laadi alla",
+    "rename": "Nimeta ümber",
+    "move": "Teisalda",
+    "copy": "Kopeeri",
+    "share": "Jaga",
+    "details": "Üksikasjad",
+    "preview": "Eelvaade"
+  },
+  "folders": {
+    "create": "Loo kaust",
+    "folderName": "Kausta nimi",
+    "newFolder": "Uus kaust",
+    "delete": "Kustuta kaust",
+    "rename": "Nimeta kaust ümber",
+    "empty": "See kaust on tühi"
+  },
+  "actions": {
+    "save": "Salvesta",
+    "cancel": "Tühista",
+    "confirm": "Kinnita",
+    "delete": "Kustuta",
+    "close": "Sulge",
+    "apply": "Rakenda",
+    "ok": "OK",
+    "yes": "Jah",
+    "no": "Ei",
+    "retry": "Proovi uuesti",
+    "refresh": "Värskenda",
+    "scanTelegram": "Skaneeri Telegram",
+    "selectAll": "Vali kõik",
+    "clearSelection": "Tühjenda valik",
+    "back": "Tagasi",
+    "scanHint": "Skaneerige Telegram failide lisamiseks"
+  },
+  "messages": {
+    "deleteConfirm": "Kas olete kindel, et soovite selle kustutada?",
+    "deleteSuccess": "Edukalt kustutatud",
+    "deleteFailed": "Kustutamine ebaõnnestus",
+    "uploadSuccess": "Edukalt üles laaditud",
+    "uploadFailed": "Üleslaadimine ebaõnnestus",
+    "folderCreated": "Kaust edukalt loodud",
+    "folderDeleted": "Kaust ja kogu sisu kustutatud",
+    "noItemsSelected": "Ühtegi üksust pole valitud",
+    "itemsSelected": "{count} üksust valitud",
+    "loading": "Laadimine...",
+    "error": "Tekkis viga",
+    "networkError": "Võrgu viga. Palun proovige uuesti."
+  },
+  "auth": {
+    "login": "Logi sisse",
+    "logout": "Logi välja",
+    "loginWithTelegram": "Logi sisse Telegramiga",
+    "phoneNumber": "Telefoninumber",
+    "verificationCode": "Kinnituskood",
+    "sendCode": "Saada kood",
+    "verify": "Kinnita",
+    "loginSuccess": "Sisselogimine õnnestus",
+    "loginFailed": "Sisselogimine ebaõnnestus"
+  },
+  "settings": {
+    "title": "Seaded",
+    "language": "Keel",
+    "theme": "Teema",
+    "darkMode": "Tume režiim",
+    "lightMode": "Hele režiim",
+    "notifications": "Teavitused",
+    "storage": "Salvestusruum",
+    "about": "Teave"
+  }
+}

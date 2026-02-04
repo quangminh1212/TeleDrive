@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Jūsu faili, droši glabāti Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Mans disks",
+    "home": "Sākums",
+    "computer": "Dators",
+    "sharedWithMe": "Kopīgoti ar mani",
+    "recent": "Nesenie",
+    "starred": "Ar zvaigznīti",
+    "trash": "Miskaste",
+    "storage": "Krātuve",
+    "newFolder": "Jauna mape",
+    "upload": "Augšupielādēt",
+    "uploadFiles": "Augšupielādēt failus"
+  },
+  "header": {
+    "search": "Meklēt Diskā",
+    "settings": "Iestatījumi",
+    "help": "Palīdzība",
+    "account": "Konts"
+  },
+  "files": {
+    "name": "Nosaukums",
+    "owner": "Īpašnieks",
+    "lastModified": "Pēdējoreiz mainīts",
+    "fileSize": "Faila izmērs",
+    "noFiles": "Faili nav atrasti",
+    "dropHere": "Nometiet failus šeit, lai augšupielādētu",
+    "dragAndDrop": "Jūs varat vilkt un nomest failus šeit",
+    "uploading": "Augšupielādē...",
+    "uploaded": "Augšupielādēts",
+    "failed": "Neizdevās",
+    "delete": "Dzēst",
+    "download": "Lejupielādēt",
+    "rename": "Pārdēvēt",
+    "move": "Pārvietot",
+    "copy": "Kopēt",
+    "share": "Dalīties",
+    "details": "Detaļas",
+    "preview": "Priekšskatījums"
+  },
+  "folders": {
+    "create": "Izveidot mapi",
+    "folderName": "Mapes nosaukums",
+    "newFolder": "Jauna mape",
+    "delete": "Dzēst mapi",
+    "rename": "Pārdēvēt mapi",
+    "empty": "Šī mape ir tukša"
+  },
+  "actions": {
+    "save": "Saglabāt",
+    "cancel": "Atcelt",
+    "confirm": "Apstiprināt",
+    "delete": "Dzēst",
+    "close": "Aizvērt",
+    "apply": "Lietot",
+    "ok": "Labi",
+    "yes": "Jā",
+    "no": "Nē",
+    "retry": "Mēģināt vēlreiz",
+    "refresh": "Atsvaidzināt",
+    "scanTelegram": "Skenēt Telegram",
+    "selectAll": "Atlasīt visu",
+    "clearSelection": "Notīrīt atlasi",
+    "back": "Atpakaļ",
+    "scanHint": "Skenējiet Telegram, lai pievienotu failus"
+  },
+  "messages": {
+    "deleteConfirm": "Vai tiešām vēlaties dzēst?",
+    "deleteSuccess": "Veiksmīgi izdzēsts",
+    "deleteFailed": "Dzēšana neizdevās",
+    "uploadSuccess": "Veiksmīgi augšupielādēts",
+    "uploadFailed": "Augšupielāde neizdevās",
+    "folderCreated": "Mape veiksmīgi izveidota",
+    "folderDeleted": "Mape un viss saturs izdzēsts",
+    "noItemsSelected": "Nav atlasītu vienumu",
+    "itemsSelected": "Atlasīti {count} vienumi",
+    "loading": "Ielādē...",
+    "error": "Radās kļūda",
+    "networkError": "Tīkla kļūda. Lūdzu, mēģiniet vēlreiz."
+  },
+  "auth": {
+    "login": "Pieteikties",
+    "logout": "Izrakstīties",
+    "loginWithTelegram": "Pieteikties ar Telegram",
+    "phoneNumber": "Tālruņa numurs",
+    "verificationCode": "Verifikācijas kods",
+    "sendCode": "Nosūtīt kodu",
+    "verify": "Verificēt",
+    "loginSuccess": "Veiksmīga pieteikšanās",
+    "loginFailed": "Pieteikšanās neizdevās"
+  },
+  "settings": {
+    "title": "Iestatījumi",
+    "language": "Valoda",
+    "theme": "Tēma",
+    "darkMode": "Tumšais režīms",
+    "lightMode": "Gaišais režīms",
+    "notifications": "Paziņojumi",
+    "storage": "Krātuve",
+    "about": "Par"
+  }
+}

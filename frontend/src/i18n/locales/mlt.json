@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Il-fajls tiegħek, maħżuna b'mod sigur fuq Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Id-Drive Tiegħi",
+    "home": "Dar",
+    "computer": "Kompjuter",
+    "sharedWithMe": "Maqsum miegħi",
+    "recent": "Riċenti",
+    "starred": "Bi stilla",
+    "trash": "Żibel",
+    "storage": "Ħażna",
+    "newFolder": "Folder Ġdid",
+    "upload": "Tella'",
+    "uploadFiles": "Tella' Fajls"
+  },
+  "header": {
+    "search": "Fittex fid-Drive",
+    "settings": "Settings",
+    "help": "Għajnuna",
+    "account": "Kont"
+  },
+  "files": {
+    "name": "Isem",
+    "owner": "Sid",
+    "lastModified": "L-aħħar modifikat",
+    "fileSize": "Daqs tal-fajl",
+    "noFiles": "Ma nstabu l-ebda fajls",
+    "dropHere": "Aqla' l-fajls hawn biex ittella'",
+    "dragAndDrop": "Tista' tiġbed u taqla' fajls hawn",
+    "uploading": "Qed jittella'...",
+    "uploaded": "Ittella'",
+    "failed": "Falliet",
+    "delete": "Ħassar",
+    "download": "Niżżel",
+    "rename": "Semmi mill-ġdid",
+    "move": "Mexxi",
+    "copy": "Ikkopja",
+    "share": "Aqsam",
+    "details": "Dettalji",
+    "preview": "Ħarsa"
+  },
+  "folders": {
+    "create": "Oħloq folder",
+    "folderName": "Isem tal-folder",
+    "newFolder": "Folder Ġdid",
+    "delete": "Ħassar folder",
+    "rename": "Semmi folder mill-ġdid",
+    "empty": "Dan il-folder huwa vojt"
+  },
+  "actions": {
+    "save": "Issejvja",
+    "cancel": "Ikkanċella",
+    "confirm": "Ikkonferma",
+    "delete": "Ħassar",
+    "close": "Agħlaq",
+    "apply": "Applika",
+    "ok": "OK",
+    "yes": "Iva",
+    "no": "Le",
+    "retry": "Erġa' ipprova",
+    "refresh": "Aġġorna",
+    "scanTelegram": "Skan Telegram",
+    "selectAll": "Agħżel kollox",
+    "clearSelection": "Ħassar l-għażla",
+    "back": "Lura",
+    "scanHint": "Skan Telegram biex iżżid fajls"
+  },
+  "messages": {
+    "deleteConfirm": "Int ċert li trid tħassar dan?",
+    "deleteSuccess": "Tħassar b'suċċess",
+    "deleteFailed": "Naqset milli tħassar",
+    "uploadSuccess": "Ittella' b'suċċess",
+    "uploadFailed": "Naqset milli ttella'",
+    "folderCreated": "Folder maħluq b'suċċess",
+    "folderDeleted": "Folder u l-kontenut kollu mħassra",
+    "noItemsSelected": "L-ebda oġġetti magħżula",
+    "itemsSelected": "{count} oġġetti magħżula",
+    "loading": "Qed jillowdja...",
+    "error": "Sar żball",
+    "networkError": "Żball tan-netwerk. Jekk jogħġbok erġa' pprova."
+  },
+  "auth": {
+    "login": "Idħol",
+    "logout": "Oħroġ",
+    "loginWithTelegram": "Idħol b'Telegram",
+    "phoneNumber": "Numru tat-telefon",
+    "verificationCode": "Kodiċi ta' verifika",
+    "sendCode": "Ibgħat kodiċi",
+    "verify": "Ivverifika",
+    "loginSuccess": "Dħul b'suċċess",
+    "loginFailed": "Naqas milli jidħol"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Lingwa",
+    "theme": "Tema",
+    "darkMode": "Mod skur",
+    "lightMode": "Mod ċar",
+    "notifications": "Notifiki",
+    "storage": "Ħażna",
+    "about": "Dwar"
+  }
+}

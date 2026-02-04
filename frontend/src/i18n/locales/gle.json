@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Tá do chomhaid stóráilte go slán ar Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Mo Thiomántán",
+    "home": "Baile",
+    "computer": "Ríomhaire",
+    "sharedWithMe": "Roinnte liom",
+    "recent": "Le déanaí",
+    "starred": "Le réalta",
+    "trash": "Bruscar",
+    "storage": "Stóráil",
+    "newFolder": "Fillteán Nua",
+    "upload": "Uaslódáil",
+    "uploadFiles": "Uaslódáil Comhaid"
+  },
+  "header": {
+    "search": "Cuardaigh sa Tiomántán",
+    "settings": "Socruithe",
+    "help": "Cabhair",
+    "account": "Cuntas"
+  },
+  "files": {
+    "name": "Ainm",
+    "owner": "Úinéir",
+    "lastModified": "Athraithe go deireanach",
+    "fileSize": "Méid an chomhaid",
+    "noFiles": "Níor aimsíodh aon chomhad",
+    "dropHere": "Scaoil comhaid anseo chun uaslódáil",
+    "dragAndDrop": "Is féidir leat comhaid a tharraingt agus a scaoileadh anseo",
+    "uploading": "Ag uaslódáil...",
+    "uploaded": "Uaslódáilte",
+    "failed": "Theip",
+    "delete": "Scrios",
+    "download": "Íoslódáil",
+    "rename": "Athainmnigh",
+    "move": "Bog",
+    "copy": "Cóipeáil",
+    "share": "Roinn",
+    "details": "Sonraí",
+    "preview": "Réamhamharc"
+  },
+  "folders": {
+    "create": "Cruthaigh fillteán",
+    "folderName": "Ainm an fhillteáin",
+    "newFolder": "Fillteán Nua",
+    "delete": "Scrios fillteán",
+    "rename": "Athainmnigh fillteán",
+    "empty": "Tá an fillteán seo folamh"
+  },
+  "actions": {
+    "save": "Sábháil",
+    "cancel": "Cealaigh",
+    "confirm": "Deimhnigh",
+    "delete": "Scrios",
+    "close": "Dún",
+    "apply": "Cuir i bhfeidhm",
+    "ok": "OK",
+    "yes": "Tá",
+    "no": "Níl",
+    "retry": "Bain triail eile as",
+    "refresh": "Athnuaigh",
+    "scanTelegram": "Scan Telegram",
+    "selectAll": "Roghnaigh gach ceann",
+    "clearSelection": "Glan roghnúchán",
+    "back": "Ar ais",
+    "scanHint": "Scan Telegram chun comhaid a chur leis"
+  },
+  "messages": {
+    "deleteConfirm": "An bhfuil tú cinnte gur mian leat é seo a scriosadh?",
+    "deleteSuccess": "Scriosta go rathúil",
+    "deleteFailed": "Theip ar an scriostadh",
+    "uploadSuccess": "Uaslódáilte go rathúil",
+    "uploadFailed": "Theip ar an uaslódáil",
+    "folderCreated": "Cruthaíodh an fillteán go rathúil",
+    "folderDeleted": "Fillteán agus gach ábhar scriosta",
+    "noItemsSelected": "Níl aon mhíreanna roghnaithe",
+    "itemsSelected": "{count} míreanna roghnaithe",
+    "loading": "Ag lódáil...",
+    "error": "Tharla earráid",
+    "networkError": "Earráid líonra. Bain triail eile as."
+  },
+  "auth": {
+    "login": "Logáil isteach",
+    "logout": "Logáil amach",
+    "loginWithTelegram": "Logáil isteach le Telegram",
+    "phoneNumber": "Uimhir ghutháin",
+    "verificationCode": "Cód fíoraithe",
+    "sendCode": "Seol cód",
+    "verify": "Fíoraigh",
+    "loginSuccess": "Logáil isteach rathúil",
+    "loginFailed": "Theip ar logáil isteach"
+  },
+  "settings": {
+    "title": "Socruithe",
+    "language": "Teanga",
+    "theme": "Téama",
+    "darkMode": "Mód dorcha",
+    "lightMode": "Mód geal",
+    "notifications": "Fógraí",
+    "storage": "Stóráil",
+    "about": "Faoi"
+  }
+}
