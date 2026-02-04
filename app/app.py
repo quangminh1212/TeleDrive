@@ -663,13 +663,17 @@ def sanitize_filename(filename):
     return filename
 
 def is_allowed_file(filename, allowed_extensions=None):
-    """Check if file extension is allowed"""
+    """Check if file extension is allowed. Empty list = allow all."""
     if not filename:
         return False
 
     if allowed_extensions is None:
         upload_config = web_config.flask_config.get_upload_config()
         allowed_extensions = upload_config.get('allowed_extensions', [])
+
+    # Empty list means allow all file types
+    if not allowed_extensions:
+        return True
 
     # Get file extension
     ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''

@@ -218,11 +218,7 @@ class FlaskConfigLoader:
         return {
             'max_file_size': self.get('upload.max_file_size', 104857600),
             'upload_directory': self.get('upload.upload_directory', 'data/uploads'),
-            'allowed_extensions': self.get('upload.allowed_extensions', [
-                'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx',
-                'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z', 'mp3',
-                'mp4', 'avi', 'mkv', 'mov', 'wav', 'flac', 'json', 'csv', 'xml'
-            ]),
+            'allowed_extensions': self.get('upload.allowed_extensions', []),
             'create_subdirs': self.get('upload.create_subdirs', True),
             'timestamp_filenames': self.get('upload.timestamp_filenames', False),
             'storage_backend': self.get('upload.storage_backend', 'local'),
