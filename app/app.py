@@ -2767,10 +2767,10 @@ def download_file(filename):
 
 @app.route('/api/delete_file', methods=['POST'])
 @csrf.exempt
-@login_required
 def delete_file():
     """Delete a file from database (soft delete) and optionally remove local disk file safely.
-    Also supports deleting legacy output files by filename (json/csv/xlsx)."""
+    Also supports deleting legacy output files by filename (json/csv/xlsx).
+    Allows default user for local desktop app."""
     try:
         data = request.get_json() or {}
         filename = (data.get('filename') or '').strip()
@@ -2778,6 +2778,14 @@ def delete_file():
 
         if not filename and not file_id:
             return jsonify({'success': False, 'error': 'Filename or file ID is required'})
+
+        # Use authenticated user if available, otherwise use default user (for local desktop app)
+        if current_user.is_authenticated:
+            user = current_user
+            app.logger.info(f"Delete by authenticated user: {user.username}")
+        else:
+            user = get_or_create_user()
+            app.logger.info(f"Delete by default user: {user.username}")
 
         # Prepare roots
         from flask import current_app as _current_app
@@ -2799,9 +2807,9 @@ def delete_file():
         # Try to delete from database first (by id or by filename for current user)
         file_record = None
         if file_id:
-            file_record = File.query.filter_by(id=file_id, user_id=current_user.id, is_deleted=False).first()
+            file_record = File.query.filter_by(id=file_id, user_id=user.id, is_deleted=False).first()
         elif filename:
-            file_record = File.query.filter_by(filename=filename, user_id=current_user.id, is_deleted=False).first()
+            file_record = File.query.filter_by(filename=filename, user_id=user.id, is_deleted=False).first()
 
         if file_record:
             # Delete from Telegram if stored there
@@ -2838,7 +2846,6 @@ def delete_file():
 
             # Invalidate file list cache for this user
             try:
-                user = get_or_create_user()
                 for per_page in (20, 5, 10, 50, 100):
                     cache_delete(f"files_{user.id}_1_{per_page}")
             except Exception:
