@@ -62,7 +62,11 @@
     "no": "否",
     "retry": "重试",
     "refresh": "刷新",
-    "scanTelegram": "扫描Telegram"
+    "scanTelegram": "扫描Telegram",
+    "selectAll": "全选",
+    "clearSelection": "取消选择",
+    "back": "返回",
+    "scanHint": "扫描Telegram以添加文件"
   },
   "messages": {
     "deleteConfirm": "确定要删除吗？",

@@ -62,7 +62,11 @@
     "no": "Không",
     "retry": "Thử lại",
     "refresh": "Làm mới",
-    "scanTelegram": "Quét Telegram"
+    "scanTelegram": "Quét Telegram",
+    "selectAll": "Chọn tất cả",
+    "clearSelection": "Bỏ chọn",
+    "back": "Quay lại",
+    "scanHint": "Hãy quét Telegram để thêm tệp vào đây"
   },
   "messages": {
     "deleteConfirm": "Bạn có chắc chắn muốn xóa không?",

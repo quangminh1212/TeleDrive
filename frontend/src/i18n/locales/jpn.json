@@ -62,7 +62,11 @@
     "no": "いいえ",
     "retry": "再試行",
     "refresh": "更新",
-    "scanTelegram": "Telegramをスキャン"
+    "scanTelegram": "Telegramをスキャン",
+    "selectAll": "すべて選択",
+    "clearSelection": "選択解除",
+    "back": "戻る",
+    "scanHint": "Telegramをスキャンしてファイルを追加"
   },
   "messages": {
     "deleteConfirm": "本当に削除しますか？",
