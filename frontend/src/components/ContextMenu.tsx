@@ -137,7 +137,7 @@ const ContextMenu = ({ file, x, y, onClose, onAction }: ContextMenuProps) => {
     return (
         <div
             ref={menuRef}
-            className="fixed bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 min-w-[280px]"
+            className="fixed bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 min-w-[200px] max-w-[90vw]"
             style={{ left: position.x, top: position.y }}
         >
             {menuItems.map((item, index) => (

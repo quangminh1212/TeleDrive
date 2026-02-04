@@ -105,7 +105,7 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
 
                 {/* Dropdown Menu - Google Drive Style */}
                 {isOpen && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden animate-slideIn">
+                    <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden animate-slideIn">
                         {/* Header with gradient */}
                         <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-3 border-b border-gray-100">
                             <p className="text-xs text-gray-500 text-center">{displayEmail}</p>
