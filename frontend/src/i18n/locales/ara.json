@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "ملفاتك، مخزنة بأمان على تيليجرام"
+  },
+  "sidebar": {
+    "myDrive": "ملفاتي",
+    "home": "الرئيسية",
+    "computer": "الكمبيوتر",
+    "sharedWithMe": "تمت مشاركتها معي",
+    "recent": "الأخيرة",
+    "starred": "المميزة بنجمة",
+    "trash": "سلة المهملات",
+    "storage": "التخزين",
+    "newFolder": "مجلد جديد",
+    "upload": "رفع",
+    "uploadFiles": "رفع ملفات"
+  },
+  "header": {
+    "search": "البحث في Drive",
+    "settings": "الإعدادات",
+    "help": "المساعدة",
+    "account": "الحساب"
+  },
+  "files": {
+    "name": "الاسم",
+    "owner": "المالك",
+    "lastModified": "آخر تعديل",
+    "fileSize": "حجم الملف",
+    "noFiles": "لا توجد ملفات",
+    "dropHere": "أفلت الملفات هنا للرفع",
+    "dragAndDrop": "يمكنك سحب وإفلات الملفات هنا للرفع",
+    "uploading": "جاري الرفع...",
+    "uploaded": "تم الرفع",
+    "failed": "فشل",
+    "delete": "حذف",
+    "download": "تنزيل",
+    "rename": "إعادة تسمية",
+    "move": "نقل",
+    "copy": "نسخ",
+    "share": "مشاركة",
+    "details": "التفاصيل",
+    "preview": "معاينة"
+  },
+  "folders": {
+    "create": "إنشاء مجلد",
+    "folderName": "اسم المجلد",
+    "newFolder": "مجلد جديد",
+    "delete": "حذف المجلد",
+    "rename": "إعادة تسمية المجلد",
+    "empty": "هذا المجلد فارغ"
+  },
+  "actions": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "delete": "حذف",
+    "close": "إغلاق",
+    "apply": "تطبيق",
+    "ok": "موافق",
+    "yes": "نعم",
+    "no": "لا",
+    "retry": "إعادة المحاولة",
+    "refresh": "تحديث",
+    "scanTelegram": "فحص تيليجرام",
+    "selectAll": "تحديد الكل",
+    "clearSelection": "إلغاء التحديد",
+    "back": "رجوع",
+    "scanHint": "فحص تيليجرام لإضافة الملفات"
+  },
+  "messages": {
+    "deleteConfirm": "هل أنت متأكد أنك تريد حذف هذا؟",
+    "deleteSuccess": "تم الحذف بنجاح",
+    "deleteFailed": "فشل الحذف",
+    "uploadSuccess": "تم الرفع بنجاح",
+    "uploadFailed": "فشل الرفع",
+    "folderCreated": "تم إنشاء المجلد بنجاح",
+    "folderDeleted": "تم حذف المجلد وجميع محتوياته",
+    "noItemsSelected": "لم يتم تحديد أي عناصر",
+    "itemsSelected": "تم تحديد {count} عناصر",
+    "loading": "جاري التحميل...",
+    "error": "حدث خطأ",
+    "networkError": "خطأ في الشبكة. يرجى المحاولة مرة أخرى."
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "loginWithTelegram": "تسجيل الدخول عبر تيليجرام",
+    "phoneNumber": "رقم الهاتف",
+    "verificationCode": "رمز التحقق",
+    "sendCode": "إرسال الرمز",
+    "verify": "تحقق",
+    "loginSuccess": "تم تسجيل الدخول بنجاح",
+    "loginFailed": "فشل تسجيل الدخول"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "language": "اللغة",
+    "theme": "المظهر",
+    "darkMode": "الوضع الداكن",
+    "lightMode": "الوضع الفاتح",
+    "notifications": "الإشعارات",
+    "storage": "التخزين",
+    "about": "حول"
+  }
+}

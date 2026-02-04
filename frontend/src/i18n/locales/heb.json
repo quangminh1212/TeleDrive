@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "הקבצים שלך, מאוחסנים בבטחה בטלגרם"
+  },
+  "sidebar": {
+    "myDrive": "הדרייב שלי",
+    "home": "בית",
+    "computer": "מחשב",
+    "sharedWithMe": "שותפו איתי",
+    "recent": "אחרונים",
+    "starred": "מסומנים בכוכב",
+    "trash": "אשפה",
+    "storage": "אחסון",
+    "newFolder": "תיקייה חדשה",
+    "upload": "העלאה",
+    "uploadFiles": "העלאת קבצים"
+  },
+  "header": {
+    "search": "חיפוש ב-Drive",
+    "settings": "הגדרות",
+    "help": "עזרה",
+    "account": "חשבון"
+  },
+  "files": {
+    "name": "שם",
+    "owner": "בעלים",
+    "lastModified": "שונה לאחרונה",
+    "fileSize": "גודל קובץ",
+    "noFiles": "לא נמצאו קבצים",
+    "dropHere": "שחרר קבצים כאן להעלאה",
+    "dragAndDrop": "ניתן לגרור ולשחרר קבצים כאן",
+    "uploading": "מעלה...",
+    "uploaded": "הועלה",
+    "failed": "נכשל",
+    "delete": "מחק",
+    "download": "הורד",
+    "rename": "שנה שם",
+    "move": "העבר",
+    "copy": "העתק",
+    "share": "שתף",
+    "details": "פרטים",
+    "preview": "תצוגה מקדימה"
+  },
+  "folders": {
+    "create": "צור תיקייה",
+    "folderName": "שם התיקייה",
+    "newFolder": "תיקייה חדשה",
+    "delete": "מחק תיקייה",
+    "rename": "שנה שם תיקייה",
+    "empty": "תיקייה זו ריקה"
+  },
+  "actions": {
+    "save": "שמור",
+    "cancel": "בטל",
+    "confirm": "אשר",
+    "delete": "מחק",
+    "close": "סגור",
+    "apply": "החל",
+    "ok": "אישור",
+    "yes": "כן",
+    "no": "לא",
+    "retry": "נסה שוב",
+    "refresh": "רענן",
+    "scanTelegram": "סרוק טלגרם",
+    "selectAll": "בחר הכל",
+    "clearSelection": "נקה בחירה",
+    "back": "חזרה",
+    "scanHint": "סרוק את טלגרם להוספת קבצים"
+  },
+  "messages": {
+    "deleteConfirm": "האם אתה בטוח שברצונך למחוק?",
+    "deleteSuccess": "נמחק בהצלחה",
+    "deleteFailed": "המחיקה נכשלה",
+    "uploadSuccess": "הועלה בהצלחה",
+    "uploadFailed": "ההעלאה נכשלה",
+    "folderCreated": "התיקייה נוצרה בהצלחה",
+    "folderDeleted": "התיקייה וכל תכולתה נמחקו",
+    "noItemsSelected": "לא נבחרו פריטים",
+    "itemsSelected": "{count} פריטים נבחרו",
+    "loading": "טוען...",
+    "error": "אירעה שגיאה",
+    "networkError": "שגיאת רשת. אנא נסה שוב."
+  },
+  "auth": {
+    "login": "התחבר",
+    "logout": "התנתק",
+    "loginWithTelegram": "התחבר עם טלגרם",
+    "phoneNumber": "מספר טלפון",
+    "verificationCode": "קוד אימות",
+    "sendCode": "שלח קוד",
+    "verify": "אמת",
+    "loginSuccess": "התחברות הצליחה",
+    "loginFailed": "ההתחברות נכשלה"
+  },
+  "settings": {
+    "title": "הגדרות",
+    "language": "שפה",
+    "theme": "ערכת נושא",
+    "darkMode": "מצב כהה",
+    "lightMode": "מצב בהיר",
+    "notifications": "התראות",
+    "storage": "אחסון",
+    "about": "אודות"
+  }
+}

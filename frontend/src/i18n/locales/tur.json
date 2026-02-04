@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Dosyalarınız, Telegram'da güvenle saklanır"
+  },
+  "sidebar": {
+    "myDrive": "Drive'ım",
+    "home": "Ana Sayfa",
+    "computer": "Bilgisayar",
+    "sharedWithMe": "Benimle paylaşılan",
+    "recent": "Son kullanılanlar",
+    "starred": "Yıldızlı",
+    "trash": "Çöp kutusu",
+    "storage": "Depolama",
+    "newFolder": "Yeni klasör",
+    "upload": "Yükle",
+    "uploadFiles": "Dosya yükle"
+  },
+  "header": {
+    "search": "Drive'da ara",
+    "settings": "Ayarlar",
+    "help": "Yardım",
+    "account": "Hesap"
+  },
+  "files": {
+    "name": "Ad",
+    "owner": "Sahip",
+    "lastModified": "Son değişiklik",
+    "fileSize": "Dosya boyutu",
+    "noFiles": "Dosya bulunamadı",
+    "dropHere": "Yüklemek için dosyaları buraya bırakın",
+    "dragAndDrop": "Dosyaları buraya sürükleyip bırakabilirsiniz",
+    "uploading": "Yükleniyor...",
+    "uploaded": "Yüklendi",
+    "failed": "Başarısız",
+    "delete": "Sil",
+    "download": "İndir",
+    "rename": "Yeniden adlandır",
+    "move": "Taşı",
+    "copy": "Kopyala",
+    "share": "Paylaş",
+    "details": "Ayrıntılar",
+    "preview": "Önizleme"
+  },
+  "folders": {
+    "create": "Klasör oluştur",
+    "folderName": "Klasör adı",
+    "newFolder": "Yeni klasör",
+    "delete": "Klasörü sil",
+    "rename": "Klasörü yeniden adlandır",
+    "empty": "Bu klasör boş"
+  },
+  "actions": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "confirm": "Onayla",
+    "delete": "Sil",
+    "close": "Kapat",
+    "apply": "Uygula",
+    "ok": "Tamam",
+    "yes": "Evet",
+    "no": "Hayır",
+    "retry": "Yeniden dene",
+    "refresh": "Yenile",
+    "scanTelegram": "Telegram'ı tara",
+    "selectAll": "Tümünü seç",
+    "clearSelection": "Seçimi temizle",
+    "back": "Geri",
+    "scanHint": "Dosya eklemek için Telegram'ı tarayın"
+  },
+  "messages": {
+    "deleteConfirm": "Bunu silmek istediğinizden emin misiniz?",
+    "deleteSuccess": "Başarıyla silindi",
+    "deleteFailed": "Silinemedi",
+    "uploadSuccess": "Başarıyla yüklendi",
+    "uploadFailed": "Yüklenemedi",
+    "folderCreated": "Klasör başarıyla oluşturuldu",
+    "folderDeleted": "Klasör ve tüm içeriği silindi",
+    "noItemsSelected": "Hiçbir öğe seçilmedi",
+    "itemsSelected": "{count} öğe seçildi",
+    "loading": "Yükleniyor...",
+    "error": "Bir hata oluştu",
+    "networkError": "Ağ hatası. Lütfen tekrar deneyin."
+  },
+  "auth": {
+    "login": "Giriş yap",
+    "logout": "Çıkış yap",
+    "loginWithTelegram": "Telegram ile giriş yap",
+    "phoneNumber": "Telefon numarası",
+    "verificationCode": "Doğrulama kodu",
+    "sendCode": "Kod gönder",
+    "verify": "Doğrula",
+    "loginSuccess": "Giriş başarılı",
+    "loginFailed": "Giriş başarısız"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "language": "Dil",
+    "theme": "Tema",
+    "darkMode": "Karanlık mod",
+    "lightMode": "Aydınlık mod",
+    "notifications": "Bildirimler",
+    "storage": "Depolama",
+    "about": "Hakkında"
+  }
+}

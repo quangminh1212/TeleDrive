@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "فایل‌های شما، با امنیت در تلگرام ذخیره شده"
+  },
+  "sidebar": {
+    "myDrive": "درایو من",
+    "home": "خانه",
+    "computer": "رایانه",
+    "sharedWithMe": "به اشتراک گذاشته شده با من",
+    "recent": "اخیر",
+    "starred": "ستاره‌دار",
+    "trash": "سطل زباله",
+    "storage": "فضای ذخیره‌سازی",
+    "newFolder": "پوشه جدید",
+    "upload": "بارگذاری",
+    "uploadFiles": "بارگذاری فایل‌ها"
+  },
+  "header": {
+    "search": "جستجو در درایو",
+    "settings": "تنظیمات",
+    "help": "راهنما",
+    "account": "حساب کاربری"
+  },
+  "files": {
+    "name": "نام",
+    "owner": "مالک",
+    "lastModified": "آخرین تغییر",
+    "fileSize": "اندازه فایل",
+    "noFiles": "فایلی یافت نشد",
+    "dropHere": "فایل‌ها را اینجا رها کنید",
+    "dragAndDrop": "می‌توانید فایل‌ها را بکشید و رها کنید",
+    "uploading": "در حال بارگذاری...",
+    "uploaded": "بارگذاری شد",
+    "failed": "ناموفق",
+    "delete": "حذف",
+    "download": "دانلود",
+    "rename": "تغییر نام",
+    "move": "انتقال",
+    "copy": "کپی",
+    "share": "اشتراک‌گذاری",
+    "details": "جزئیات",
+    "preview": "پیش‌نمایش"
+  },
+  "folders": {
+    "create": "ایجاد پوشه",
+    "folderName": "نام پوشه",
+    "newFolder": "پوشه جدید",
+    "delete": "حذف پوشه",
+    "rename": "تغییر نام پوشه",
+    "empty": "این پوشه خالی است"
+  },
+  "actions": {
+    "save": "ذخیره",
+    "cancel": "لغو",
+    "confirm": "تأیید",
+    "delete": "حذف",
+    "close": "بستن",
+    "apply": "اعمال",
+    "ok": "تأیید",
+    "yes": "بله",
+    "no": "خیر",
+    "retry": "تلاش مجدد",
+    "refresh": "بازخوانی",
+    "scanTelegram": "اسکن تلگرام",
+    "selectAll": "انتخاب همه",
+    "clearSelection": "پاک کردن انتخاب",
+    "back": "بازگشت",
+    "scanHint": "تلگرام را اسکن کنید تا فایل‌ها اضافه شوند"
+  },
+  "messages": {
+    "deleteConfirm": "آیا مطمئن هستید که می‌خواهید حذف کنید؟",
+    "deleteSuccess": "با موفقیت حذف شد",
+    "deleteFailed": "حذف ناموفق بود",
+    "uploadSuccess": "با موفقیت بارگذاری شد",
+    "uploadFailed": "بارگذاری ناموفق بود",
+    "folderCreated": "پوشه با موفقیت ایجاد شد",
+    "folderDeleted": "پوشه و تمام محتویات حذف شد",
+    "noItemsSelected": "هیچ موردی انتخاب نشده",
+    "itemsSelected": "{count} مورد انتخاب شده",
+    "loading": "در حال بارگذاری...",
+    "error": "خطایی رخ داد",
+    "networkError": "خطای شبکه. لطفاً دوباره تلاش کنید."
+  },
+  "auth": {
+    "login": "ورود",
+    "logout": "خروج",
+    "loginWithTelegram": "ورود با تلگرام",
+    "phoneNumber": "شماره تلفن",
+    "verificationCode": "کد تأیید",
+    "sendCode": "ارسال کد",
+    "verify": "تأیید",
+    "loginSuccess": "ورود موفق",
+    "loginFailed": "ورود ناموفق"
+  },
+  "settings": {
+    "title": "تنظیمات",
+    "language": "زبان",
+    "theme": "تم",
+    "darkMode": "حالت تاریک",
+    "lightMode": "حالت روشن",
+    "notifications": "اعلان‌ها",
+    "storage": "فضای ذخیره‌سازی",
+    "about": "درباره"
+  }
+}
