@@ -323,19 +323,32 @@ class TelegramStorageManager:
         """Delete file from Telegram"""
         try:
             if not file_record.is_stored_on_telegram():
+                print(f"[STORAGE] File not on Telegram, skip delete")
                 return True  # Already not on Telegram
-            
+
             telegram_info = file_record.get_telegram_info()
-            channel = telegram_info['channel']
-            message_id = telegram_info['message_id']
-            
-            # Delete message from channel
-            await self.client.delete_messages(channel, message_id)
-            
+            message_id = telegram_info.get('message_id')
+
+            if not message_id:
+                print(f"[STORAGE] No message_id found for file")
+                return False
+
+            # Ensure client is connected
+            if not self.client or not self.client.is_connected():
+                print(f"[STORAGE] Client not connected, initializing...")
+                await self.initialize()
+
+            # Delete message from Saved Messages ('me')
+            print(f"[STORAGE] Deleting message {message_id} from Saved Messages...")
+            await self.client.delete_messages('me', message_id)
+            print(f"[STORAGE] ✅ Successfully deleted message {message_id}")
+
             return True
-            
+
         except Exception as e:
-            print(f"Failed to delete file from Telegram: {e}")
+            print(f"[STORAGE] Failed to delete file from Telegram: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     async def add_id_to_caption(self, message_id: int, unique_id: str) -> bool:
