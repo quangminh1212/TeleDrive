@@ -1,19 +1,19 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
-import en from './locales/en.json';
-import vi from './locales/vi.json';
-import zh from './locales/zh.json';
-import ja from './locales/ja.json';
+import eng from './locales/eng.json';
+import vie from './locales/vie.json';
+import zho from './locales/zho.json';
+import jpn from './locales/jpn.json';
 
-export type Language = 'en' | 'vi' | 'zh' | 'ja';
+export type Language = 'eng' | 'vie' | 'zho' | 'jpn';
 
-const translations: Record<Language, typeof en> = { en, vi, zh, ja };
+const translations: Record<Language, typeof eng> = { eng, vie, zho, jpn };
 
 export const languageNames: Record<Language, string> = {
-  en: 'English',
-  vi: 'Tiếng Việt',
-  zh: '中文',
-  ja: '日本語'
+  eng: 'English',
+  vie: 'Tiếng Việt',
+  zho: '中文',
+  jpn: '日本語'
 };
 
 interface I18nContextType {
@@ -38,8 +38,10 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('teledrive_language') as Language;
     if (saved && translations[saved]) return saved;
-    const browserLang = navigator.language.split('-')[0] as Language;
-    return translations[browserLang] ? browserLang : 'en';
+    // Map browser 2-char codes to our 3-char codes
+    const browserLang = navigator.language.split('-')[0];
+    const langMap: Record<string, Language> = { en: 'eng', vi: 'vie', zh: 'zho', ja: 'jpn' };
+    return langMap[browserLang] || 'eng';
   });
 
   const setLanguage = useCallback((lang: Language) => {
