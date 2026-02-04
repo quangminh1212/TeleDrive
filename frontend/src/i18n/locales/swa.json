@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Faili zako, zimehifadhiwa salama kwenye Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Hifadhi Yangu",
+    "home": "Nyumbani",
+    "computer": "Kompyuta",
+    "sharedWithMe": "Iliyoshirikiwa nami",
+    "recent": "Hivi karibuni",
+    "starred": "Zenye nyota",
+    "trash": "Takataka",
+    "storage": "Hifadhi",
+    "newFolder": "Folda Mpya",
+    "upload": "Pakia",
+    "uploadFiles": "Pakia Faili"
+  },
+  "header": {
+    "search": "Tafuta kwenye Hifadhi",
+    "settings": "Mipangilio",
+    "help": "Msaada",
+    "account": "Akaunti"
+  },
+  "files": {
+    "name": "Jina",
+    "owner": "Mmiliki",
+    "lastModified": "Ilibadilishwa mwisho",
+    "fileSize": "Ukubwa wa faili",
+    "noFiles": "Hakuna faili zilizopatikana",
+    "dropHere": "Dondosha faili hapa kupakia",
+    "dragAndDrop": "Unaweza kuburuta na kudondosha faili hapa",
+    "uploading": "Inapakia...",
+    "uploaded": "Imepakiwa",
+    "failed": "Imeshindwa",
+    "delete": "Futa",
+    "download": "Pakua",
+    "rename": "Badilisha jina",
+    "move": "Hamisha",
+    "copy": "Nakili",
+    "share": "Shiriki",
+    "details": "Maelezo",
+    "preview": "Hakiki"
+  },
+  "folders": {
+    "create": "Unda folda",
+    "folderName": "Jina la folda",
+    "newFolder": "Folda Mpya",
+    "delete": "Futa folda",
+    "rename": "Badilisha jina la folda",
+    "empty": "Folda hii haina kitu"
+  },
+  "actions": {
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "confirm": "Thibitisha",
+    "delete": "Futa",
+    "close": "Funga",
+    "apply": "Tumia",
+    "ok": "Sawa",
+    "yes": "Ndiyo",
+    "no": "Hapana",
+    "retry": "Jaribu tena",
+    "refresh": "Onyesha upya",
+    "scanTelegram": "Changanua Telegram",
+    "selectAll": "Chagua zote",
+    "clearSelection": "Futa uchaguzi",
+    "back": "Rudi",
+    "scanHint": "Changanua Telegram kuongeza faili"
+  },
+  "messages": {
+    "deleteConfirm": "Una uhakika unataka kufuta hii?",
+    "deleteSuccess": "Imefutwa kwa mafanikio",
+    "deleteFailed": "Imeshindwa kufuta",
+    "uploadSuccess": "Imepakiwa kwa mafanikio",
+    "uploadFailed": "Imeshindwa kupakia",
+    "folderCreated": "Folda imeundwa kwa mafanikio",
+    "folderDeleted": "Folda na maudhui yote yamefutwa",
+    "noItemsSelected": "Hakuna vitu vilivyochaguliwa",
+    "itemsSelected": "Vitu {count} vimechaguliwa",
+    "loading": "Inapakia...",
+    "error": "Kosa limetokea",
+    "networkError": "Kosa la mtandao. Tafadhali jaribu tena."
+  },
+  "auth": {
+    "login": "Ingia",
+    "logout": "Toka",
+    "loginWithTelegram": "Ingia na Telegram",
+    "phoneNumber": "Nambari ya simu",
+    "verificationCode": "Msimbo wa uthibitishaji",
+    "sendCode": "Tuma msimbo",
+    "verify": "Thibitisha",
+    "loginSuccess": "Umeingia kwa mafanikio",
+    "loginFailed": "Imeshindwa kuingia"
+  },
+  "settings": {
+    "title": "Mipangilio",
+    "language": "Lugha",
+    "theme": "Mandhari",
+    "darkMode": "Hali ya giza",
+    "lightMode": "Hali ya mwanga",
+    "notifications": "Arifa",
+    "storage": "Hifadhi",
+    "about": "Kuhusu"
+  }
+}

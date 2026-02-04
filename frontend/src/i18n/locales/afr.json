@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Jou lêers, veilig gestoor op Telegram"
+  },
+  "sidebar": {
+    "myDrive": "My skyf",
+    "home": "Tuis",
+    "computer": "Rekenaar",
+    "sharedWithMe": "Gedeel met my",
+    "recent": "Onlangs",
+    "starred": "Met ster",
+    "trash": "Asblik",
+    "storage": "Berging",
+    "newFolder": "Nuwe vouer",
+    "upload": "Laai op",
+    "uploadFiles": "Laai lêers op"
+  },
+  "header": {
+    "search": "Soek in Skyf",
+    "settings": "Instellings",
+    "help": "Hulp",
+    "account": "Rekening"
+  },
+  "files": {
+    "name": "Naam",
+    "owner": "Eienaar",
+    "lastModified": "Laas gewysig",
+    "fileSize": "Lêergrootte",
+    "noFiles": "Geen lêers gevind nie",
+    "dropHere": "Laat lêers hier val om op te laai",
+    "dragAndDrop": "Jy kan lêers hierheen sleep",
+    "uploading": "Laai op...",
+    "uploaded": "Opgelaai",
+    "failed": "Misluk",
+    "delete": "Vee uit",
+    "download": "Laai af",
+    "rename": "Hernoem",
+    "move": "Skuif",
+    "copy": "Kopieer",
+    "share": "Deel",
+    "details": "Besonderhede",
+    "preview": "Voorskou"
+  },
+  "folders": {
+    "create": "Skep vouer",
+    "folderName": "Vouernaam",
+    "newFolder": "Nuwe vouer",
+    "delete": "Vee vouer uit",
+    "rename": "Hernoem vouer",
+    "empty": "Hierdie vouer is leeg"
+  },
+  "actions": {
+    "save": "Stoor",
+    "cancel": "Kanselleer",
+    "confirm": "Bevestig",
+    "delete": "Vee uit",
+    "close": "Maak toe",
+    "apply": "Pas toe",
+    "ok": "OK",
+    "yes": "Ja",
+    "no": "Nee",
+    "retry": "Probeer weer",
+    "refresh": "Verfris",
+    "scanTelegram": "Skandeer Telegram",
+    "selectAll": "Kies alles",
+    "clearSelection": "Maak keuse skoon",
+    "back": "Terug",
+    "scanHint": "Skandeer Telegram om lêers by te voeg"
+  },
+  "messages": {
+    "deleteConfirm": "Is jy seker jy wil dit uitvee?",
+    "deleteSuccess": "Suksesvol uitgevee",
+    "deleteFailed": "Kon nie uitvee nie",
+    "uploadSuccess": "Suksesvol opgelaai",
+    "uploadFailed": "Kon nie oplaai nie",
+    "folderCreated": "Vouer suksesvol geskep",
+    "folderDeleted": "Vouer en alle inhoud uitgevee",
+    "noItemsSelected": "Geen items gekies nie",
+    "itemsSelected": "{count} items gekies",
+    "loading": "Laai...",
+    "error": "'n Fout het voorgekom",
+    "networkError": "Netwerkfout. Probeer asseblief weer."
+  },
+  "auth": {
+    "login": "Teken in",
+    "logout": "Teken uit",
+    "loginWithTelegram": "Teken in met Telegram",
+    "phoneNumber": "Foonnommer",
+    "verificationCode": "Verifikasiekode",
+    "sendCode": "Stuur kode",
+    "verify": "Verifieer",
+    "loginSuccess": "Suksesvol ingeteken",
+    "loginFailed": "Kon nie inteken nie"
+  },
+  "settings": {
+    "title": "Instellings",
+    "language": "Taal",
+    "theme": "Tema",
+    "darkMode": "Donker modus",
+    "lightMode": "Ligte modus",
+    "notifications": "Kennisgewings",
+    "storage": "Berging",
+    "about": "Oor"
+  }
+}
