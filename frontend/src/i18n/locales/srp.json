@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Vaši fajlovi, bezbedno sačuvani na Telegramu"
+  },
+  "sidebar": {
+    "myDrive": "Moj disk",
+    "home": "Početna",
+    "computer": "Računar",
+    "sharedWithMe": "Deljeno sa mnom",
+    "recent": "Nedavno",
+    "starred": "Sa zvezdicom",
+    "trash": "Korpa",
+    "storage": "Skladište",
+    "newFolder": "Nova fascikla",
+    "upload": "Otpremi",
+    "uploadFiles": "Otpremi fajlove"
+  },
+  "header": {
+    "search": "Pretraži Disk",
+    "settings": "Podešavanja",
+    "help": "Pomoć",
+    "account": "Nalog"
+  },
+  "files": {
+    "name": "Ime",
+    "owner": "Vlasnik",
+    "lastModified": "Poslednja izmena",
+    "fileSize": "Veličina fajla",
+    "noFiles": "Nema pronađenih fajlova",
+    "dropHere": "Prevucite fajlove ovde za otpremanje",
+    "dragAndDrop": "Možete prevući i otpustiti fajlove ovde",
+    "uploading": "Otpremanje...",
+    "uploaded": "Otpremljeno",
+    "failed": "Neuspelo",
+    "delete": "Obriši",
+    "download": "Preuzmi",
+    "rename": "Preimenuj",
+    "move": "Premesti",
+    "copy": "Kopiraj",
+    "share": "Deli",
+    "details": "Detalji",
+    "preview": "Pregled"
+  },
+  "folders": {
+    "create": "Napravi fasciklu",
+    "folderName": "Ime fascikle",
+    "newFolder": "Nova fascikla",
+    "delete": "Obriši fasciklu",
+    "rename": "Preimenuj fasciklu",
+    "empty": "Ova fascikla je prazna"
+  },
+  "actions": {
+    "save": "Sačuvaj",
+    "cancel": "Otkaži",
+    "confirm": "Potvrdi",
+    "delete": "Obriši",
+    "close": "Zatvori",
+    "apply": "Primeni",
+    "ok": "U redu",
+    "yes": "Da",
+    "no": "Ne",
+    "retry": "Pokušaj ponovo",
+    "refresh": "Osveži",
+    "scanTelegram": "Skeniraj Telegram",
+    "selectAll": "Izaberi sve",
+    "clearSelection": "Poništi izbor",
+    "back": "Nazad",
+    "scanHint": "Skenirajte Telegram da dodate fajlove"
+  },
+  "messages": {
+    "deleteConfirm": "Da li ste sigurni da želite da obrišete?",
+    "deleteSuccess": "Uspešno obrisano",
+    "deleteFailed": "Brisanje nije uspelo",
+    "uploadSuccess": "Uspešno otpremljeno",
+    "uploadFailed": "Otpremanje nije uspelo",
+    "folderCreated": "Fascikla uspešno napravljena",
+    "folderDeleted": "Fascikla i sav sadržaj obrisani",
+    "noItemsSelected": "Nema izabranih stavki",
+    "itemsSelected": "{count} stavki izabrano",
+    "loading": "Učitavanje...",
+    "error": "Došlo je do greške",
+    "networkError": "Greška mreže. Pokušajte ponovo."
+  },
+  "auth": {
+    "login": "Prijava",
+    "logout": "Odjava",
+    "loginWithTelegram": "Prijavite se putem Telegrama",
+    "phoneNumber": "Broj telefona",
+    "verificationCode": "Verifikacioni kod",
+    "sendCode": "Pošalji kod",
+    "verify": "Verifikuj",
+    "loginSuccess": "Prijava uspešna",
+    "loginFailed": "Prijava nije uspela"
+  },
+  "settings": {
+    "title": "Podešavanja",
+    "language": "Jezik",
+    "theme": "Tema",
+    "darkMode": "Tamni režim",
+    "lightMode": "Svetli režim",
+    "notifications": "Obaveštenja",
+    "storage": "Skladište",
+    "about": "O aplikaciji"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Вашите файлове, съхранени сигурно в Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Моят диск",
+    "home": "Начало",
+    "computer": "Компютър",
+    "sharedWithMe": "Споделени с мен",
+    "recent": "Скорошни",
+    "starred": "Със звезда",
+    "trash": "Кошче",
+    "storage": "Хранилище",
+    "newFolder": "Нова папка",
+    "upload": "Качване",
+    "uploadFiles": "Качи файлове"
+  },
+  "header": {
+    "search": "Търсене в Диск",
+    "settings": "Настройки",
+    "help": "Помощ",
+    "account": "Акаунт"
+  },
+  "files": {
+    "name": "Име",
+    "owner": "Собственик",
+    "lastModified": "Последна промяна",
+    "fileSize": "Размер на файла",
+    "noFiles": "Няма намерени файлове",
+    "dropHere": "Пуснете файловете тук за качване",
+    "dragAndDrop": "Можете да плъзнете и пуснете файлове тук",
+    "uploading": "Качване...",
+    "uploaded": "Качено",
+    "failed": "Неуспешно",
+    "delete": "Изтрий",
+    "download": "Изтегли",
+    "rename": "Преименувай",
+    "move": "Премести",
+    "copy": "Копирай",
+    "share": "Сподели",
+    "details": "Детайли",
+    "preview": "Преглед"
+  },
+  "folders": {
+    "create": "Създай папка",
+    "folderName": "Име на папка",
+    "newFolder": "Нова папка",
+    "delete": "Изтрий папка",
+    "rename": "Преименувай папка",
+    "empty": "Тази папка е празна"
+  },
+  "actions": {
+    "save": "Запази",
+    "cancel": "Отказ",
+    "confirm": "Потвърди",
+    "delete": "Изтрий",
+    "close": "Затвори",
+    "apply": "Приложи",
+    "ok": "ОК",
+    "yes": "Да",
+    "no": "Не",
+    "retry": "Опитай отново",
+    "refresh": "Обнови",
+    "scanTelegram": "Сканирай Telegram",
+    "selectAll": "Избери всички",
+    "clearSelection": "Изчисти избора",
+    "back": "Назад",
+    "scanHint": "Сканирайте Telegram за добавяне на файлове"
+  },
+  "messages": {
+    "deleteConfirm": "Сигурни ли сте, че искате да изтриете?",
+    "deleteSuccess": "Успешно изтрито",
+    "deleteFailed": "Неуспешно изтриване",
+    "uploadSuccess": "Успешно качено",
+    "uploadFailed": "Неуспешно качване",
+    "folderCreated": "Папката е създадена успешно",
+    "folderDeleted": "Папката и цялото съдържание са изтрити",
+    "noItemsSelected": "Няма избрани елементи",
+    "itemsSelected": "{count} елемента избрани",
+    "loading": "Зареждане...",
+    "error": "Възникна грешка",
+    "networkError": "Мрежова грешка. Моля, опитайте отново."
+  },
+  "auth": {
+    "login": "Вход",
+    "logout": "Изход",
+    "loginWithTelegram": "Влез с Telegram",
+    "phoneNumber": "Телефонен номер",
+    "verificationCode": "Код за потвърждение",
+    "sendCode": "Изпрати код",
+    "verify": "Потвърди",
+    "loginSuccess": "Успешен вход",
+    "loginFailed": "Неуспешен вход"
+  },
+  "settings": {
+    "title": "Настройки",
+    "language": "Език",
+    "theme": "Тема",
+    "darkMode": "Тъмен режим",
+    "lightMode": "Светъл режим",
+    "notifications": "Известия",
+    "storage": "Хранилище",
+    "about": "Относно"
+  }
+}

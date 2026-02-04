@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Ваші файлы, бяспечна захаваныя ў Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Мой дыск",
+    "home": "Галоўная",
+    "computer": "Камп'ютар",
+    "sharedWithMe": "Падзеленыя са мной",
+    "recent": "Апошнія",
+    "starred": "Пазначаныя",
+    "trash": "Сметніца",
+    "storage": "Сховішча",
+    "newFolder": "Новая папка",
+    "upload": "Загрузіць",
+    "uploadFiles": "Загрузіць файлы"
+  },
+  "header": {
+    "search": "Пошук на Дыску",
+    "settings": "Налады",
+    "help": "Даведка",
+    "account": "Уліковы запіс"
+  },
+  "files": {
+    "name": "Назва",
+    "owner": "Уладальнік",
+    "lastModified": "Апошняя змена",
+    "fileSize": "Памер файла",
+    "noFiles": "Файлы не знойдзены",
+    "dropHere": "Перацягніце файлы сюды",
+    "dragAndDrop": "Вы можаце перацягнуць файлы сюды",
+    "uploading": "Загрузка...",
+    "uploaded": "Загружана",
+    "failed": "Памылка",
+    "delete": "Выдаліць",
+    "download": "Спампаваць",
+    "rename": "Перайменаваць",
+    "move": "Перамясціць",
+    "copy": "Капіяваць",
+    "share": "Падзяліцца",
+    "details": "Падрабязнасці",
+    "preview": "Папярэдні прагляд"
+  },
+  "folders": {
+    "create": "Стварыць папку",
+    "folderName": "Назва папкі",
+    "newFolder": "Новая папка",
+    "delete": "Выдаліць папку",
+    "rename": "Перайменаваць папку",
+    "empty": "Гэтая папка пустая"
+  },
+  "actions": {
+    "save": "Захаваць",
+    "cancel": "Скасаваць",
+    "confirm": "Пацвердзіць",
+    "delete": "Выдаліць",
+    "close": "Закрыць",
+    "apply": "Прымяніць",
+    "ok": "ОК",
+    "yes": "Так",
+    "no": "Не",
+    "retry": "Паўтарыць",
+    "refresh": "Абнавіць",
+    "scanTelegram": "Сканаваць Telegram",
+    "selectAll": "Выбраць усё",
+    "clearSelection": "Зняць вылучэнне",
+    "back": "Назад",
+    "scanHint": "Сканіруйце Telegram для дадання файлаў"
+  },
+  "messages": {
+    "deleteConfirm": "Вы ўпэўнены, што хочаце выдаліць?",
+    "deleteSuccess": "Паспяхова выдалена",
+    "deleteFailed": "Не ўдалося выдаліць",
+    "uploadSuccess": "Паспяхова загружана",
+    "uploadFailed": "Памылка загрузкі",
+    "folderCreated": "Папка створана",
+    "folderDeleted": "Папка і ўвесь змест выдалены",
+    "noItemsSelected": "Нічога не выбрана",
+    "itemsSelected": "Выбрана: {count}",
+    "loading": "Загрузка...",
+    "error": "Адбылася памылка",
+    "networkError": "Памылка сеткі. Паспрабуйце яшчэ раз."
+  },
+  "auth": {
+    "login": "Увайсці",
+    "logout": "Выйсці",
+    "loginWithTelegram": "Увайсці праз Telegram",
+    "phoneNumber": "Нумар тэлефона",
+    "verificationCode": "Код пацверджання",
+    "sendCode": "Адправіць код",
+    "verify": "Пацвердзіць",
+    "loginSuccess": "Уваход выкананы",
+    "loginFailed": "Памылка ўваходу"
+  },
+  "settings": {
+    "title": "Налады",
+    "language": "Мова",
+    "theme": "Тэма",
+    "darkMode": "Цёмная тэма",
+    "lightMode": "Светлая тэма",
+    "notifications": "Апавяшчэнні",
+    "storage": "Сховішча",
+    "about": "Пра праграму"
+  }
+}

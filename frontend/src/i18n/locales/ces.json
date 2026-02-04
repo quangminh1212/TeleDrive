@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Vaše soubory, bezpečně uložené na Telegramu"
+  },
+  "sidebar": {
+    "myDrive": "Můj disk",
+    "home": "Domů",
+    "computer": "Počítač",
+    "sharedWithMe": "Sdíleno se mnou",
+    "recent": "Nedávné",
+    "starred": "S hvězdičkou",
+    "trash": "Koš",
+    "storage": "Úložiště",
+    "newFolder": "Nová složka",
+    "upload": "Nahrát",
+    "uploadFiles": "Nahrát soubory"
+  },
+  "header": {
+    "search": "Hledat na Disku",
+    "settings": "Nastavení",
+    "help": "Nápověda",
+    "account": "Účet"
+  },
+  "files": {
+    "name": "Název",
+    "owner": "Vlastník",
+    "lastModified": "Naposledy změněno",
+    "fileSize": "Velikost souboru",
+    "noFiles": "Nenalezeny žádné soubory",
+    "dropHere": "Přetáhněte sem soubory pro nahrání",
+    "dragAndDrop": "Můžete sem přetáhnout soubory",
+    "uploading": "Nahrávání...",
+    "uploaded": "Nahráno",
+    "failed": "Selhalo",
+    "delete": "Smazat",
+    "download": "Stáhnout",
+    "rename": "Přejmenovat",
+    "move": "Přesunout",
+    "copy": "Kopírovat",
+    "share": "Sdílet",
+    "details": "Podrobnosti",
+    "preview": "Náhled"
+  },
+  "folders": {
+    "create": "Vytvořit složku",
+    "folderName": "Název složky",
+    "newFolder": "Nová složka",
+    "delete": "Smazat složku",
+    "rename": "Přejmenovat složku",
+    "empty": "Tato složka je prázdná"
+  },
+  "actions": {
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "confirm": "Potvrdit",
+    "delete": "Smazat",
+    "close": "Zavřít",
+    "apply": "Použít",
+    "ok": "OK",
+    "yes": "Ano",
+    "no": "Ne",
+    "retry": "Zkusit znovu",
+    "refresh": "Obnovit",
+    "scanTelegram": "Skenovat Telegram",
+    "selectAll": "Vybrat vše",
+    "clearSelection": "Zrušit výběr",
+    "back": "Zpět",
+    "scanHint": "Skenujte Telegram pro přidání souborů"
+  },
+  "messages": {
+    "deleteConfirm": "Opravdu chcete toto smazat?",
+    "deleteSuccess": "Úspěšně smazáno",
+    "deleteFailed": "Smazání se nezdařilo",
+    "uploadSuccess": "Úspěšně nahráno",
+    "uploadFailed": "Nahrávání se nezdařilo",
+    "folderCreated": "Složka byla vytvořena",
+    "folderDeleted": "Složka a veškerý obsah smazán",
+    "noItemsSelected": "Nejsou vybrány žádné položky",
+    "itemsSelected": "Vybráno {count} položek",
+    "loading": "Načítání...",
+    "error": "Došlo k chybě",
+    "networkError": "Chyba sítě. Zkuste to prosím znovu."
+  },
+  "auth": {
+    "login": "Přihlásit se",
+    "logout": "Odhlásit se",
+    "loginWithTelegram": "Přihlásit se přes Telegram",
+    "phoneNumber": "Telefonní číslo",
+    "verificationCode": "Ověřovací kód",
+    "sendCode": "Odeslat kód",
+    "verify": "Ověřit",
+    "loginSuccess": "Přihlášení úspěšné",
+    "loginFailed": "Přihlášení se nezdařilo"
+  },
+  "settings": {
+    "title": "Nastavení",
+    "language": "Jazyk",
+    "theme": "Motiv",
+    "darkMode": "Tmavý režim",
+    "lightMode": "Světlý režim",
+    "notifications": "Oznámení",
+    "storage": "Úložiště",
+    "about": "O aplikaci"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Ваші файли, надійно збережені в Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Мій диск",
+    "home": "Головна",
+    "computer": "Комп'ютер",
+    "sharedWithMe": "Надано мені доступ",
+    "recent": "Останні",
+    "starred": "Позначені",
+    "trash": "Кошик",
+    "storage": "Сховище",
+    "newFolder": "Нова папка",
+    "upload": "Завантажити",
+    "uploadFiles": "Завантажити файли"
+  },
+  "header": {
+    "search": "Пошук на Диску",
+    "settings": "Налаштування",
+    "help": "Довідка",
+    "account": "Обліковий запис"
+  },
+  "files": {
+    "name": "Назва",
+    "owner": "Власник",
+    "lastModified": "Остання зміна",
+    "fileSize": "Розмір файлу",
+    "noFiles": "Файли не знайдено",
+    "dropHere": "Перетягніть файли сюди",
+    "dragAndDrop": "Ви можете перетягнути файли сюди для завантаження",
+    "uploading": "Завантаження...",
+    "uploaded": "Завантажено",
+    "failed": "Помилка",
+    "delete": "Видалити",
+    "download": "Завантажити",
+    "rename": "Перейменувати",
+    "move": "Перемістити",
+    "copy": "Копіювати",
+    "share": "Поділитися",
+    "details": "Деталі",
+    "preview": "Попередній перегляд"
+  },
+  "folders": {
+    "create": "Створити папку",
+    "folderName": "Назва папки",
+    "newFolder": "Нова папка",
+    "delete": "Видалити папку",
+    "rename": "Перейменувати папку",
+    "empty": "Ця папка порожня"
+  },
+  "actions": {
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "confirm": "Підтвердити",
+    "delete": "Видалити",
+    "close": "Закрити",
+    "apply": "Застосувати",
+    "ok": "OK",
+    "yes": "Так",
+    "no": "Ні",
+    "retry": "Повторити",
+    "refresh": "Оновити",
+    "scanTelegram": "Сканувати Telegram",
+    "selectAll": "Вибрати все",
+    "clearSelection": "Зняти виділення",
+    "back": "Назад",
+    "scanHint": "Скануйте Telegram для додавання файлів"
+  },
+  "messages": {
+    "deleteConfirm": "Ви впевнені, що хочете видалити це?",
+    "deleteSuccess": "Успішно видалено",
+    "deleteFailed": "Не вдалося видалити",
+    "uploadSuccess": "Успішно завантажено",
+    "uploadFailed": "Не вдалося завантажити",
+    "folderCreated": "Папку створено",
+    "folderDeleted": "Папку та весь вміст видалено",
+    "noItemsSelected": "Нічого не вибрано",
+    "itemsSelected": "Вибрано: {count}",
+    "loading": "Завантаження...",
+    "error": "Сталася помилка",
+    "networkError": "Помилка мережі. Спробуйте ще раз."
+  },
+  "auth": {
+    "login": "Увійти",
+    "logout": "Вийти",
+    "loginWithTelegram": "Увійти через Telegram",
+    "phoneNumber": "Номер телефону",
+    "verificationCode": "Код підтвердження",
+    "sendCode": "Надіслати код",
+    "verify": "Підтвердити",
+    "loginSuccess": "Вхід виконано",
+    "loginFailed": "Помилка входу"
+  },
+  "settings": {
+    "title": "Налаштування",
+    "language": "Мова",
+    "theme": "Тема",
+    "darkMode": "Темна тема",
+    "lightMode": "Світла тема",
+    "notifications": "Сповіщення",
+    "storage": "Сховище",
+    "about": "Про програму"
+  }
+}

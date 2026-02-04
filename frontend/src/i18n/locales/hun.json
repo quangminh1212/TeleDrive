@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Fájljaid biztonságosan tárolva a Telegramon"
+  },
+  "sidebar": {
+    "myDrive": "Saját meghajtó",
+    "home": "Kezdőlap",
+    "computer": "Számítógép",
+    "sharedWithMe": "Velem megosztva",
+    "recent": "Legutóbbi",
+    "starred": "Csillagozott",
+    "trash": "Kuka",
+    "storage": "Tárhely",
+    "newFolder": "Új mappa",
+    "upload": "Feltöltés",
+    "uploadFiles": "Fájlok feltöltése"
+  },
+  "header": {
+    "search": "Keresés a Drive-ban",
+    "settings": "Beállítások",
+    "help": "Súgó",
+    "account": "Fiók"
+  },
+  "files": {
+    "name": "Név",
+    "owner": "Tulajdonos",
+    "lastModified": "Utoljára módosítva",
+    "fileSize": "Fájlméret",
+    "noFiles": "Nem található fájl",
+    "dropHere": "Húzd ide a fájlokat a feltöltéshez",
+    "dragAndDrop": "Húzd ide a fájlokat",
+    "uploading": "Feltöltés...",
+    "uploaded": "Feltöltve",
+    "failed": "Sikertelen",
+    "delete": "Törlés",
+    "download": "Letöltés",
+    "rename": "Átnevezés",
+    "move": "Áthelyezés",
+    "copy": "Másolás",
+    "share": "Megosztás",
+    "details": "Részletek",
+    "preview": "Előnézet"
+  },
+  "folders": {
+    "create": "Mappa létrehozása",
+    "folderName": "Mappa neve",
+    "newFolder": "Új mappa",
+    "delete": "Mappa törlése",
+    "rename": "Mappa átnevezése",
+    "empty": "Ez a mappa üres"
+  },
+  "actions": {
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "confirm": "Megerősítés",
+    "delete": "Törlés",
+    "close": "Bezárás",
+    "apply": "Alkalmazás",
+    "ok": "OK",
+    "yes": "Igen",
+    "no": "Nem",
+    "retry": "Újra",
+    "refresh": "Frissítés",
+    "scanTelegram": "Telegram szkennelése",
+    "selectAll": "Összes kijelölése",
+    "clearSelection": "Kijelölés törlése",
+    "back": "Vissza",
+    "scanHint": "Szkennelje be a Telegramot fájlok hozzáadásához"
+  },
+  "messages": {
+    "deleteConfirm": "Biztosan törölni szeretnéd?",
+    "deleteSuccess": "Sikeresen törölve",
+    "deleteFailed": "Törlés sikertelen",
+    "uploadSuccess": "Sikeresen feltöltve",
+    "uploadFailed": "Feltöltés sikertelen",
+    "folderCreated": "Mappa sikeresen létrehozva",
+    "folderDeleted": "Mappa és minden tartalma törölve",
+    "noItemsSelected": "Nincs kijelölt elem",
+    "itemsSelected": "{count} elem kijelölve",
+    "loading": "Betöltés...",
+    "error": "Hiba történt",
+    "networkError": "Hálózati hiba. Kérjük, próbáld újra."
+  },
+  "auth": {
+    "login": "Bejelentkezés",
+    "logout": "Kijelentkezés",
+    "loginWithTelegram": "Bejelentkezés Telegrammal",
+    "phoneNumber": "Telefonszám",
+    "verificationCode": "Ellenőrző kód",
+    "sendCode": "Kód küldése",
+    "verify": "Ellenőrzés",
+    "loginSuccess": "Sikeres bejelentkezés",
+    "loginFailed": "Bejelentkezés sikertelen"
+  },
+  "settings": {
+    "title": "Beállítások",
+    "language": "Nyelv",
+    "theme": "Téma",
+    "darkMode": "Sötét mód",
+    "lightMode": "Világos mód",
+    "notifications": "Értesítések",
+    "storage": "Tárhely",
+    "about": "Névjegy"
+  }
+}

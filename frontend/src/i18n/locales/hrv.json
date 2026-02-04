@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Tvoji fajlovi, sigurno pohranjeni na Telegramu"
+  },
+  "sidebar": {
+    "myDrive": "Moj disk",
+    "home": "Početna",
+    "computer": "Računalo",
+    "sharedWithMe": "Podijeljeno sa mnom",
+    "recent": "Nedavno",
+    "starred": "Označeno zvjezdicom",
+    "trash": "Smeće",
+    "storage": "Pohrana",
+    "newFolder": "Nova mapa",
+    "upload": "Prenesi",
+    "uploadFiles": "Prenesi datoteke"
+  },
+  "header": {
+    "search": "Pretraži Disk",
+    "settings": "Postavke",
+    "help": "Pomoć",
+    "account": "Račun"
+  },
+  "files": {
+    "name": "Naziv",
+    "owner": "Vlasnik",
+    "lastModified": "Zadnja izmjena",
+    "fileSize": "Veličina datoteke",
+    "noFiles": "Nema pronađenih datoteka",
+    "dropHere": "Ispustite datoteke ovdje za prijenos",
+    "dragAndDrop": "Možete povući i ispustiti datoteke ovdje",
+    "uploading": "Prijenos...",
+    "uploaded": "Preneseno",
+    "failed": "Neuspjelo",
+    "delete": "Obriši",
+    "download": "Preuzmi",
+    "rename": "Preimenuj",
+    "move": "Premjesti",
+    "copy": "Kopiraj",
+    "share": "Podijeli",
+    "details": "Pojedinosti",
+    "preview": "Pregled"
+  },
+  "folders": {
+    "create": "Stvori mapu",
+    "folderName": "Naziv mape",
+    "newFolder": "Nova mapa",
+    "delete": "Obriši mapu",
+    "rename": "Preimenuj mapu",
+    "empty": "Ova mapa je prazna"
+  },
+  "actions": {
+    "save": "Spremi",
+    "cancel": "Odustani",
+    "confirm": "Potvrdi",
+    "delete": "Obriši",
+    "close": "Zatvori",
+    "apply": "Primijeni",
+    "ok": "U redu",
+    "yes": "Da",
+    "no": "Ne",
+    "retry": "Pokušaj ponovo",
+    "refresh": "Osvježi",
+    "scanTelegram": "Skeniraj Telegram",
+    "selectAll": "Odaberi sve",
+    "clearSelection": "Poništi odabir",
+    "back": "Natrag",
+    "scanHint": "Skenirajte Telegram za dodavanje datoteka"
+  },
+  "messages": {
+    "deleteConfirm": "Jeste li sigurni da želite obrisati ovo?",
+    "deleteSuccess": "Uspješno obrisano",
+    "deleteFailed": "Brisanje nije uspjelo",
+    "uploadSuccess": "Uspješno preneseno",
+    "uploadFailed": "Prijenos nije uspio",
+    "folderCreated": "Mapa uspješno stvorena",
+    "folderDeleted": "Mapa i sav sadržaj obrisani",
+    "noItemsSelected": "Nema odabranih stavki",
+    "itemsSelected": "{count} stavki odabrano",
+    "loading": "Učitavanje...",
+    "error": "Došlo je do pogreške",
+    "networkError": "Mrežna pogreška. Pokušajte ponovo."
+  },
+  "auth": {
+    "login": "Prijava",
+    "logout": "Odjava",
+    "loginWithTelegram": "Prijava putem Telegrama",
+    "phoneNumber": "Broj telefona",
+    "verificationCode": "Verifikacijski kod",
+    "sendCode": "Pošalji kod",
+    "verify": "Verificiraj",
+    "loginSuccess": "Prijava uspješna",
+    "loginFailed": "Prijava nije uspjela"
+  },
+  "settings": {
+    "title": "Postavke",
+    "language": "Jezik",
+    "theme": "Tema",
+    "darkMode": "Tamni način",
+    "lightMode": "Svijetli način",
+    "notifications": "Obavijesti",
+    "storage": "Pohrana",
+    "about": "O aplikaciji"
+  }
+}

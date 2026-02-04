@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Fișierele tale, stocate în siguranță pe Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Drive-ul meu",
+    "home": "Acasă",
+    "computer": "Computer",
+    "sharedWithMe": "Partajate cu mine",
+    "recent": "Recente",
+    "starred": "Cu stea",
+    "trash": "Coș de gunoi",
+    "storage": "Stocare",
+    "newFolder": "Folder nou",
+    "upload": "Încarcă",
+    "uploadFiles": "Încarcă fișiere"
+  },
+  "header": {
+    "search": "Caută în Drive",
+    "settings": "Setări",
+    "help": "Ajutor",
+    "account": "Cont"
+  },
+  "files": {
+    "name": "Nume",
+    "owner": "Proprietar",
+    "lastModified": "Ultima modificare",
+    "fileSize": "Dimensiune fișier",
+    "noFiles": "Nu s-au găsit fișiere",
+    "dropHere": "Plasează fișierele aici pentru încărcare",
+    "dragAndDrop": "Poți trage și plasa fișiere aici",
+    "uploading": "Se încarcă...",
+    "uploaded": "Încărcat",
+    "failed": "Eșuat",
+    "delete": "Șterge",
+    "download": "Descarcă",
+    "rename": "Redenumește",
+    "move": "Mută",
+    "copy": "Copiază",
+    "share": "Partajează",
+    "details": "Detalii",
+    "preview": "Previzualizare"
+  },
+  "folders": {
+    "create": "Crează folder",
+    "folderName": "Nume folder",
+    "newFolder": "Folder nou",
+    "delete": "Șterge folder",
+    "rename": "Redenumește folder",
+    "empty": "Acest folder este gol"
+  },
+  "actions": {
+    "save": "Salvează",
+    "cancel": "Anulează",
+    "confirm": "Confirmă",
+    "delete": "Șterge",
+    "close": "Închide",
+    "apply": "Aplică",
+    "ok": "OK",
+    "yes": "Da",
+    "no": "Nu",
+    "retry": "Reîncearcă",
+    "refresh": "Actualizează",
+    "scanTelegram": "Scanează Telegram",
+    "selectAll": "Selectează tot",
+    "clearSelection": "Șterge selecția",
+    "back": "Înapoi",
+    "scanHint": "Scanează Telegram pentru a adăuga fișiere"
+  },
+  "messages": {
+    "deleteConfirm": "Ești sigur că vrei să ștergi asta?",
+    "deleteSuccess": "Șters cu succes",
+    "deleteFailed": "Ștergerea a eșuat",
+    "uploadSuccess": "Încărcat cu succes",
+    "uploadFailed": "Încărcarea a eșuat",
+    "folderCreated": "Folder creat cu succes",
+    "folderDeleted": "Folder și tot conținutul șters",
+    "noItemsSelected": "Niciun element selectat",
+    "itemsSelected": "{count} elemente selectate",
+    "loading": "Se încarcă...",
+    "error": "A apărut o eroare",
+    "networkError": "Eroare de rețea. Te rugăm să încerci din nou."
+  },
+  "auth": {
+    "login": "Autentificare",
+    "logout": "Deconectare",
+    "loginWithTelegram": "Autentificare cu Telegram",
+    "phoneNumber": "Număr de telefon",
+    "verificationCode": "Cod de verificare",
+    "sendCode": "Trimite cod",
+    "verify": "Verifică",
+    "loginSuccess": "Autentificare reușită",
+    "loginFailed": "Autentificarea a eșuat"
+  },
+  "settings": {
+    "title": "Setări",
+    "language": "Limbă",
+    "theme": "Temă",
+    "darkMode": "Mod întunecat",
+    "lightMode": "Mod luminos",
+    "notifications": "Notificări",
+    "storage": "Stocare",
+    "about": "Despre"
+  }
+}

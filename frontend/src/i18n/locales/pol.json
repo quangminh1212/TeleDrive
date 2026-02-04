@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Twoje pliki, bezpiecznie przechowywane na Telegramie"
+  },
+  "sidebar": {
+    "myDrive": "Mój dysk",
+    "home": "Strona główna",
+    "computer": "Komputer",
+    "sharedWithMe": "Udostępnione dla mnie",
+    "recent": "Ostatnie",
+    "starred": "Oznaczone gwiazdką",
+    "trash": "Kosz",
+    "storage": "Pamięć",
+    "newFolder": "Nowy folder",
+    "upload": "Prześlij",
+    "uploadFiles": "Prześlij pliki"
+  },
+  "header": {
+    "search": "Szukaj na Dysku",
+    "settings": "Ustawienia",
+    "help": "Pomoc",
+    "account": "Konto"
+  },
+  "files": {
+    "name": "Nazwa",
+    "owner": "Właściciel",
+    "lastModified": "Ostatnia modyfikacja",
+    "fileSize": "Rozmiar pliku",
+    "noFiles": "Nie znaleziono plików",
+    "dropHere": "Upuść pliki tutaj, aby przesłać",
+    "dragAndDrop": "Możesz przeciągnąć i upuścić pliki tutaj",
+    "uploading": "Przesyłanie...",
+    "uploaded": "Przesłano",
+    "failed": "Niepowodzenie",
+    "delete": "Usuń",
+    "download": "Pobierz",
+    "rename": "Zmień nazwę",
+    "move": "Przenieś",
+    "copy": "Kopiuj",
+    "share": "Udostępnij",
+    "details": "Szczegóły",
+    "preview": "Podgląd"
+  },
+  "folders": {
+    "create": "Utwórz folder",
+    "folderName": "Nazwa folderu",
+    "newFolder": "Nowy folder",
+    "delete": "Usuń folder",
+    "rename": "Zmień nazwę folderu",
+    "empty": "Ten folder jest pusty"
+  },
+  "actions": {
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "confirm": "Potwierdź",
+    "delete": "Usuń",
+    "close": "Zamknij",
+    "apply": "Zastosuj",
+    "ok": "OK",
+    "yes": "Tak",
+    "no": "Nie",
+    "retry": "Ponów",
+    "refresh": "Odśwież",
+    "scanTelegram": "Skanuj Telegram",
+    "selectAll": "Zaznacz wszystko",
+    "clearSelection": "Wyczyść zaznaczenie",
+    "back": "Wstecz",
+    "scanHint": "Skanuj Telegram, aby dodać pliki"
+  },
+  "messages": {
+    "deleteConfirm": "Czy na pewno chcesz to usunąć?",
+    "deleteSuccess": "Pomyślnie usunięto",
+    "deleteFailed": "Nie udało się usunąć",
+    "uploadSuccess": "Pomyślnie przesłano",
+    "uploadFailed": "Nie udało się przesłać",
+    "folderCreated": "Folder został utworzony",
+    "folderDeleted": "Folder i cała zawartość zostały usunięte",
+    "noItemsSelected": "Nie wybrano żadnych elementów",
+    "itemsSelected": "Wybrano {count} elementów",
+    "loading": "Ładowanie...",
+    "error": "Wystąpił błąd",
+    "networkError": "Błąd sieci. Spróbuj ponownie."
+  },
+  "auth": {
+    "login": "Zaloguj się",
+    "logout": "Wyloguj się",
+    "loginWithTelegram": "Zaloguj się przez Telegram",
+    "phoneNumber": "Numer telefonu",
+    "verificationCode": "Kod weryfikacyjny",
+    "sendCode": "Wyślij kod",
+    "verify": "Zweryfikuj",
+    "loginSuccess": "Zalogowano pomyślnie",
+    "loginFailed": "Logowanie nie powiodło się"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "language": "Język",
+    "theme": "Motyw",
+    "darkMode": "Tryb ciemny",
+    "lightMode": "Tryb jasny",
+    "notifications": "Powiadomienia",
+    "storage": "Pamięć",
+    "about": "O aplikacji"
+  }
+}
