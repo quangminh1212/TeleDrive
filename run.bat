@@ -332,6 +332,10 @@ if not exist "data\uploads" mkdir data\uploads
 if not exist "data\temp" mkdir data\temp
 if not exist "data\backups" mkdir data\backups
 if not exist "output" mkdir output
+
+:: Xoa log cu
+echo Cleaning old logs...
+if exist "logs\teledrive.log" del /q "logs\teledrive.log"
 echo [OK] Cac thu muc da san sang
 echo.
 
