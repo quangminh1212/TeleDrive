@@ -106,17 +106,17 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
             const result = await api.uploadFiles(filesArray);
 
             if (result.success) {
-                console.log('Upload thành công:', result.data);
-                toast.success(`Upload thành công ${filesArray.length} file`);
+                console.log('Upload success:', result.data);
+                toast.success(t('messages.uploadSuccess'));
                 // Callback để refresh danh sách file
                 onFilesUploaded?.();
             } else {
-                console.error('Upload thất bại:', result.error);
-                toast.error('Upload thất bại: ' + (result.error || 'Lỗi không xác định'));
+                console.error('Upload failed:', result.error);
+                toast.error(t('messages.uploadFailed'));
             }
         } catch (error) {
             console.error('Upload error:', error);
-            toast.error('Lỗi upload file');
+            toast.error(t('messages.uploadFailed'));
         } finally {
             setIsUploading(false);
             // Reset file input
@@ -211,7 +211,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     <button
                         onClick={onMobileClose}
                         className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors"
-                        aria-label="Đóng menu"
+                        aria-label={t('actions.close')}
                     >
                         <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -346,8 +346,8 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
                 {/* Storage Info */}
                 <div className="px-4 py-3 border-t border-gray-200">
-                    <p className="text-xs text-gray-600">
-                        Tổng dung lượng: {usedStorageFormatted}
+                    <p className="text-xs text-gray-600 truncate">
+                        {t('sidebar.storage')}: {usedStorageFormatted}
                     </p>
                 </div>
             </aside>
@@ -356,18 +356,18 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
             <CreateFolderModal
                 isOpen={isCreateFolderModalOpen}
                 onClose={() => setIsCreateFolderModalOpen(false)}
-                onCreateFolder={async (name: string) => {
+                                onCreateFolder={async (name: string) => {
                     try {
                         const result = await api.createFolder(name);
                         if (result.success) {
                             onFilesUploaded?.(); // Refresh file list
                             return { success: true };
                         } else {
-                            return { success: false, error: result.error || 'Không thể tạo thư mục' };
+                            return { success: false, error: result.error || t('messages.error') };
                         }
                     } catch (error) {
                         console.error('Create folder error:', error);
-                        return { success: false, error: 'Lỗi khi tạo thư mục' };
+                        return { success: false, error: t('messages.error') };
                     }
                 }}
             />
