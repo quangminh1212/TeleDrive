@@ -77,13 +77,45 @@ class ApiService {
             const data = await response.json();
 
             if (!response.ok) {
-                return { success: false, error: data.message || data.error || 'Request failed' };
+                // Provide specific error messages based on status code
+                let errorMessage = data.message || data.error || 'Request failed';
+
+                switch (response.status) {
+                    case 401:
+                        errorMessage = 'Session expired. Please log in again.';
+                        break;
+                    case 403:
+                        errorMessage = 'You don\'t have permission to perform this action.';
+                        break;
+                    case 404:
+                        errorMessage = 'Resource not found.';
+                        break;
+                    case 413:
+                        errorMessage = 'File too large. Maximum size is 2GB.';
+                        break;
+                    case 500:
+                        errorMessage = 'Server error. Please try again later.';
+                        break;
+                    case 502:
+                    case 503:
+                    case 504:
+                        errorMessage = 'Server is temporarily unavailable. Please try again.';
+                        break;
+                }
+
+                return { success: false, error: errorMessage };
             }
 
             return { success: true, data };
         } catch (error) {
             console.error('API Error:', error);
-            return { success: false, error: 'Network error - Backend server may not be running' };
+
+            // Provide specific error message for network errors
+            if (error instanceof TypeError && error.message.includes('fetch')) {
+                return { success: false, error: 'Cannot connect to server. Please check your connection.' };
+            }
+
+            return { success: false, error: 'Network error - Please check your connection and try again.' };
         }
     }
 
