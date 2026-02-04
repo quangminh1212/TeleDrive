@@ -218,7 +218,14 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current++;
-        if (e.dataTransfer.types.includes('Files')) {
+
+        // Check if dragging files (not internal drag selection)
+        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+            const hasFiles = Array.from(e.dataTransfer.items).some(item => item.kind === 'file');
+            if (hasFiles) {
+                setIsDragOver(true);
+            }
+        } else if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
             setIsDragOver(true);
         }
     }, []);
@@ -235,6 +242,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        // Set dropEffect to indicate files can be copied here
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = 'copy';
+        }
     }, []);
 
     const handleDropUpload = useCallback(async (files: File[]) => {
@@ -760,16 +771,19 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         >
             {/* Drag & Drop Overlay */}
             {isDragOver && (
-                <div className="absolute inset-0 z-50 bg-blue-500/10 border-2 border-dashed border-blue-500 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4">
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                            <svg className="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                <div className="absolute inset-0 z-50 bg-blue-50/95 border-4 border-dashed border-blue-500 rounded-lg flex items-center justify-center backdrop-blur-sm pointer-events-none">
+                    <div className="bg-white rounded-3xl shadow-2xl p-10 flex flex-col items-center gap-6 border-2 border-blue-200 animate-pulse-slow">
+                        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                            <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17-.53-.32-1.14-.53-1.79-.63A5.994 5.994 0 0 0 0 10c0 1.06.28 2.05.76 2.92.3.55.67 1.05 1.1 1.49C2.45 17.55 5.45 20 9 20h10c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
                             </svg>
                         </div>
                         <div className="text-center">
-                            <p className="text-lg font-semibold text-gray-800">Thả file để tải lên</p>
-                            <p className="text-sm text-gray-500">File sẽ được tải lên Telegram Saved Messages</p>
+                            <p className="text-2xl font-bold text-blue-600 mb-2">Thả file để tải lên</p>
+                            <p className="text-base text-gray-600">File sẽ được tải lên Telegram Saved Messages</p>
+                            {currentFolder && currentFolder !== 'starred' && currentFolder !== 'shared' && currentFolder !== 'recent' && (
+                                <p className="text-sm text-blue-500 mt-2">📁 Tải lên vào thư mục hiện tại</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -949,7 +963,13 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                         <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
                     </svg>
                     <p className="text-lg mb-2">Không tìm thấy tệp nào</p>
-                    <p className="text-sm">Hãy quét kênh Telegram để thêm tệp vào đây</p>
+                    <p className="text-sm mb-4">Hãy quét kênh Telegram để thêm tệp vào đây</p>
+                    <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17-.53-.32-1.14-.53-1.79-.63A5.994 5.994 0 0 0 0 10c0 1.06.28 2.05.76 2.92.3.55.67 1.05 1.1 1.49C2.45 17.55 5.45 20 9 20h10c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
+                        </svg>
+                        <span>💡 Bạn có thể kéo thả file vào đây để tải lên</span>
+                    </div>
                 </div>
             ) : localViewMode === 'list' ? (
                 /* List View */
@@ -1229,6 +1249,17 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 }
                 .animate-slideUp {
                     animation: slideUp 0.2s ease-out;
+                }
+                @keyframes pulse-slow {
+                    0%, 100% {
+                        transform: scale(1);
+                    }
+                    50% {
+                        transform: scale(1.02);
+                    }
+                }
+                .animate-pulse-slow {
+                    animation: pulse-slow 2s ease-in-out infinite;
                 }
             `}</style>
         </div>
