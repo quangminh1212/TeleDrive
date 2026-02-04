@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Fail anda, disimpan dengan selamat di Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Drive Saya",
+    "home": "Laman Utama",
+    "computer": "Komputer",
+    "sharedWithMe": "Dikongsi dengan saya",
+    "recent": "Terkini",
+    "starred": "Berbintang",
+    "trash": "Tong Sampah",
+    "storage": "Storan",
+    "newFolder": "Folder Baharu",
+    "upload": "Muat Naik",
+    "uploadFiles": "Muat Naik Fail"
+  },
+  "header": {
+    "search": "Cari di Drive",
+    "settings": "Tetapan",
+    "help": "Bantuan",
+    "account": "Akaun"
+  },
+  "files": {
+    "name": "Nama",
+    "owner": "Pemilik",
+    "lastModified": "Terakhir diubah suai",
+    "fileSize": "Saiz fail",
+    "noFiles": "Tiada fail dijumpai",
+    "dropHere": "Lepaskan fail di sini untuk muat naik",
+    "dragAndDrop": "Anda boleh seret dan lepaskan fail di sini",
+    "uploading": "Memuat naik...",
+    "uploaded": "Dimuat naik",
+    "failed": "Gagal",
+    "delete": "Padam",
+    "download": "Muat turun",
+    "rename": "Namakan semula",
+    "move": "Alih",
+    "copy": "Salin",
+    "share": "Kongsi",
+    "details": "Butiran",
+    "preview": "Pratonton"
+  },
+  "folders": {
+    "create": "Cipta folder",
+    "folderName": "Nama folder",
+    "newFolder": "Folder Baharu",
+    "delete": "Padam folder",
+    "rename": "Namakan semula folder",
+    "empty": "Folder ini kosong"
+  },
+  "actions": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "confirm": "Sahkan",
+    "delete": "Padam",
+    "close": "Tutup",
+    "apply": "Gunakan",
+    "ok": "OK",
+    "yes": "Ya",
+    "no": "Tidak",
+    "retry": "Cuba lagi",
+    "refresh": "Muat semula",
+    "scanTelegram": "Imbas Telegram",
+    "selectAll": "Pilih semua",
+    "clearSelection": "Kosongkan pilihan",
+    "back": "Kembali",
+    "scanHint": "Imbas Telegram untuk menambah fail"
+  },
+  "messages": {
+    "deleteConfirm": "Adakah anda pasti mahu memadamkan ini?",
+    "deleteSuccess": "Berjaya dipadamkan",
+    "deleteFailed": "Gagal memadam",
+    "uploadSuccess": "Berjaya dimuat naik",
+    "uploadFailed": "Gagal memuat naik",
+    "folderCreated": "Folder berjaya dicipta",
+    "folderDeleted": "Folder dan semua kandungan dipadamkan",
+    "noItemsSelected": "Tiada item dipilih",
+    "itemsSelected": "{count} item dipilih",
+    "loading": "Memuatkan...",
+    "error": "Ralat berlaku",
+    "networkError": "Ralat rangkaian. Sila cuba lagi."
+  },
+  "auth": {
+    "login": "Log masuk",
+    "logout": "Log keluar",
+    "loginWithTelegram": "Log masuk dengan Telegram",
+    "phoneNumber": "Nombor telefon",
+    "verificationCode": "Kod pengesahan",
+    "sendCode": "Hantar kod",
+    "verify": "Sahkan",
+    "loginSuccess": "Log masuk berjaya",
+    "loginFailed": "Log masuk gagal"
+  },
+  "settings": {
+    "title": "Tetapan",
+    "language": "Bahasa",
+    "theme": "Tema",
+    "darkMode": "Mod gelap",
+    "lightMode": "Mod terang",
+    "notifications": "Pemberitahuan",
+    "storage": "Storan",
+    "about": "Perihal"
+  }
+}

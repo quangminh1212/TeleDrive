@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "File Anda, disimpan dengan aman di Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Drive Saya",
+    "home": "Beranda",
+    "computer": "Komputer",
+    "sharedWithMe": "Dibagikan kepada saya",
+    "recent": "Terbaru",
+    "starred": "Berbintang",
+    "trash": "Sampah",
+    "storage": "Penyimpanan",
+    "newFolder": "Folder Baru",
+    "upload": "Unggah",
+    "uploadFiles": "Unggah File"
+  },
+  "header": {
+    "search": "Cari di Drive",
+    "settings": "Pengaturan",
+    "help": "Bantuan",
+    "account": "Akun"
+  },
+  "files": {
+    "name": "Nama",
+    "owner": "Pemilik",
+    "lastModified": "Terakhir diubah",
+    "fileSize": "Ukuran file",
+    "noFiles": "Tidak ada file",
+    "dropHere": "Letakkan file di sini untuk mengunggah",
+    "dragAndDrop": "Anda dapat menarik dan meletakkan file di sini untuk mengunggah",
+    "uploading": "Mengunggah...",
+    "uploaded": "Diunggah",
+    "failed": "Gagal",
+    "delete": "Hapus",
+    "download": "Unduh",
+    "rename": "Ganti nama",
+    "move": "Pindahkan",
+    "copy": "Salin",
+    "share": "Bagikan",
+    "details": "Detail",
+    "preview": "Pratinjau"
+  },
+  "folders": {
+    "create": "Buat folder",
+    "folderName": "Nama folder",
+    "newFolder": "Folder Baru",
+    "delete": "Hapus folder",
+    "rename": "Ganti nama folder",
+    "empty": "Folder ini kosong"
+  },
+  "actions": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "confirm": "Konfirmasi",
+    "delete": "Hapus",
+    "close": "Tutup",
+    "apply": "Terapkan",
+    "ok": "OK",
+    "yes": "Ya",
+    "no": "Tidak",
+    "retry": "Coba lagi",
+    "refresh": "Segarkan",
+    "scanTelegram": "Pindai Telegram",
+    "selectAll": "Pilih semua",
+    "clearSelection": "Hapus pilihan",
+    "back": "Kembali",
+    "scanHint": "Pindai Telegram untuk menambahkan file"
+  },
+  "messages": {
+    "deleteConfirm": "Apakah Anda yakin ingin menghapus ini?",
+    "deleteSuccess": "Berhasil dihapus",
+    "deleteFailed": "Gagal menghapus",
+    "uploadSuccess": "Berhasil diunggah",
+    "uploadFailed": "Gagal mengunggah",
+    "folderCreated": "Folder berhasil dibuat",
+    "folderDeleted": "Folder dan semua isinya telah dihapus",
+    "noItemsSelected": "Tidak ada item yang dipilih",
+    "itemsSelected": "{count} item dipilih",
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan",
+    "networkError": "Kesalahan jaringan. Silakan coba lagi."
+  },
+  "auth": {
+    "login": "Masuk",
+    "logout": "Keluar",
+    "loginWithTelegram": "Masuk dengan Telegram",
+    "phoneNumber": "Nomor telepon",
+    "verificationCode": "Kode verifikasi",
+    "sendCode": "Kirim kode",
+    "verify": "Verifikasi",
+    "loginSuccess": "Berhasil masuk",
+    "loginFailed": "Gagal masuk"
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "language": "Bahasa",
+    "theme": "Tema",
+    "darkMode": "Mode gelap",
+    "lightMode": "Mode terang",
+    "notifications": "Notifikasi",
+    "storage": "Penyimpanan",
+    "about": "Tentang"
+  }
+}

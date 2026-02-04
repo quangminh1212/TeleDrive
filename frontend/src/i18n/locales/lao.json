@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "ไฟล์ของคุณ เก็บอย่างปลอดภัยบน Telegram"
+  },
+  "sidebar": {
+    "myDrive": "ไດรฟ໌ຂອງຂ້ອຍ",
+    "home": "ໜ້າຫຼັກ",
+    "computer": "ຄອມພິວເຕີ",
+    "sharedWithMe": "ແບ່ງປັນກັບຂ້ອຍ",
+    "recent": "ຫຼ້າສຸດ",
+    "starred": "ຕິດດາວ",
+    "trash": "ຖັງຂີ້ເຫຍື້ອ",
+    "storage": "ບ່ອນເກັບຂໍ້ມູນ",
+    "newFolder": "ໂຟນເດີໃໝ່",
+    "upload": "ອັບໂຫຼດ",
+    "uploadFiles": "ອັບໂຫຼດໄຟລ໌"
+  },
+  "header": {
+    "search": "ຄົ້ນຫາໃນໄດຣຟ໌",
+    "settings": "ການຕັ້ງຄ່າ",
+    "help": "ຊ່ວຍເຫຼືອ",
+    "account": "ບັນຊີ"
+  },
+  "files": {
+    "name": "ຊື່",
+    "owner": "ເຈົ້າຂອງ",
+    "lastModified": "ແກ້ໄຂຫຼ້າສຸດ",
+    "fileSize": "ຂະໜາດໄຟລ໌",
+    "noFiles": "ບໍ່ພົບໄຟລ໌",
+    "dropHere": "ວາງໄຟລ໌ທີ່ນີ້ເພື່ອອັບໂຫຼດ",
+    "dragAndDrop": "ທ່ານສາມາດລາກແລະວາງໄຟລ໌ທີ່ນີ້",
+    "uploading": "ກຳລັງອັບໂຫຼດ...",
+    "uploaded": "ອັບໂຫຼດແລ້ວ",
+    "failed": "ລົ້ມເຫລວ",
+    "delete": "ລຶບ",
+    "download": "ດາວໂຫຼດ",
+    "rename": "ປ່ຽນຊື່",
+    "move": "ຍ້າຍ",
+    "copy": "ສຳເນົາ",
+    "share": "ແບ່ງປັນ",
+    "details": "ລາຍລະອຽດ",
+    "preview": "ເບິ່ງຕົວຢ່າງ"
+  },
+  "folders": {
+    "create": "ສ້າງໂຟນເດີ",
+    "folderName": "ຊື່ໂຟນເດີ",
+    "newFolder": "ໂຟນເດີໃໝ່",
+    "delete": "ລຶບໂຟນເດີ",
+    "rename": "ປ່ຽນຊື່ໂຟນເດີ",
+    "empty": "ໂຟນເດີນີ້ຫວ່າງເປົ່າ"
+  },
+  "actions": {
+    "save": "ບັນທຶກ",
+    "cancel": "ຍົກເລີກ",
+    "confirm": "ຢືນຢັນ",
+    "delete": "ລຶບ",
+    "close": "ປິດ",
+    "apply": "ນຳໃຊ້",
+    "ok": "ຕົກລົງ",
+    "yes": "ແມ່ນ",
+    "no": "ບໍ່",
+    "retry": "ລອງໃໝ່",
+    "refresh": "ໂຫຼດໃໝ່",
+    "scanTelegram": "ສະແກນ Telegram",
+    "selectAll": "ເລືອກທັງໝົດ",
+    "clearSelection": "ລ້າງການເລືອກ",
+    "back": "ກັບຄືນ",
+    "scanHint": "ສະແກນ Telegram ເພື່ອເພີ່ມໄຟລ໌"
+  },
+  "messages": {
+    "deleteConfirm": "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບນີ້?",
+    "deleteSuccess": "ລຶບສຳເລັດແລ້ວ",
+    "deleteFailed": "ລຶບບໍ່ສຳເລັດ",
+    "uploadSuccess": "ອັບໂຫຼດສຳເລັດ",
+    "uploadFailed": "ອັບໂຫຼດບໍ່ສຳເລັດ",
+    "folderCreated": "ສ້າງໂຟນເດີສຳເລັດແລ້ວ",
+    "folderDeleted": "ລຶບໂຟນເດີແລະເນື້ອຫາທັງໝົດແລ້ວ",
+    "noItemsSelected": "ບໍ່ມີລາຍການທີ່ເລືອກ",
+    "itemsSelected": "ເລືອກ {count} ລາຍການ",
+    "loading": "ກຳລັງໂຫຼດ...",
+    "error": "ເກີດຂໍ້ຜິດພາດ",
+    "networkError": "ຂໍ້ຜິດພາດເຄືອຂ່າຍ. ກະລຸນາລອງໃໝ່."
+  },
+  "auth": {
+    "login": "ເຂົ້າສູ່ລະບົບ",
+    "logout": "ອອກຈາກລະບົບ",
+    "loginWithTelegram": "ເຂົ້າສູ່ລະບົບດ້ວຍ Telegram",
+    "phoneNumber": "ເບີໂທລະສັບ",
+    "verificationCode": "ລະຫັດຢືນຢັນ",
+    "sendCode": "ສົ່ງລະຫັດ",
+    "verify": "ຢືນຢັນ",
+    "loginSuccess": "ເຂົ້າສູ່ລະບົບສຳເລັດ",
+    "loginFailed": "ເຂົ້າສູ່ລະບົບບໍ່ສຳເລັດ"
+  },
+  "settings": {
+    "title": "ການຕັ້ງຄ່າ",
+    "language": "ພາສາ",
+    "theme": "ຮູບແບບ",
+    "darkMode": "ໂໝດມືດ",
+    "lightMode": "ໂໝດສະຫວ່າງ",
+    "notifications": "ການແຈ້ງເຕືອນ",
+    "storage": "ບ່ອນເກັບຂໍ້ມູນ",
+    "about": "ກ່ຽວກັບ"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Ang iyong mga file, ligtas na nakaimbak sa Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Aking Drive",
+    "home": "Home",
+    "computer": "Computer",
+    "sharedWithMe": "Ibinahagi sa akin",
+    "recent": "Kamakailan",
+    "starred": "May bituin",
+    "trash": "Basurahan",
+    "storage": "Storage",
+    "newFolder": "Bagong Folder",
+    "upload": "Mag-upload",
+    "uploadFiles": "Mag-upload ng mga file"
+  },
+  "header": {
+    "search": "Maghanap sa Drive",
+    "settings": "Mga Setting",
+    "help": "Tulong",
+    "account": "Account"
+  },
+  "files": {
+    "name": "Pangalan",
+    "owner": "May-ari",
+    "lastModified": "Huling binago",
+    "fileSize": "Laki ng file",
+    "noFiles": "Walang nahanap na mga file",
+    "dropHere": "I-drop ang mga file dito para mag-upload",
+    "dragAndDrop": "Maaari mong i-drag at i-drop ang mga file dito",
+    "uploading": "Nag-a-upload...",
+    "uploaded": "Na-upload",
+    "failed": "Nabigo",
+    "delete": "Tanggalin",
+    "download": "I-download",
+    "rename": "Palitan ang pangalan",
+    "move": "Ilipat",
+    "copy": "Kopyahin",
+    "share": "Ibahagi",
+    "details": "Mga detalye",
+    "preview": "Preview"
+  },
+  "folders": {
+    "create": "Gumawa ng folder",
+    "folderName": "Pangalan ng folder",
+    "newFolder": "Bagong Folder",
+    "delete": "Tanggalin ang folder",
+    "rename": "Palitan ang pangalan ng folder",
+    "empty": "Walang laman ang folder na ito"
+  },
+  "actions": {
+    "save": "I-save",
+    "cancel": "Kanselahin",
+    "confirm": "Kumpirmahin",
+    "delete": "Tanggalin",
+    "close": "Isara",
+    "apply": "Ilapat",
+    "ok": "OK",
+    "yes": "Oo",
+    "no": "Hindi",
+    "retry": "Subukan muli",
+    "refresh": "I-refresh",
+    "scanTelegram": "I-scan ang Telegram",
+    "selectAll": "Piliin lahat",
+    "clearSelection": "I-clear ang selection",
+    "back": "Bumalik",
+    "scanHint": "I-scan ang Telegram para magdagdag ng mga file"
+  },
+  "messages": {
+    "deleteConfirm": "Sigurado ka bang gusto mong tanggalin ito?",
+    "deleteSuccess": "Matagumpay na natanggal",
+    "deleteFailed": "Nabigong tanggalin",
+    "uploadSuccess": "Matagumpay na na-upload",
+    "uploadFailed": "Nabigong mag-upload",
+    "folderCreated": "Matagumpay na nagawa ang folder",
+    "folderDeleted": "Natanggal ang folder at lahat ng nilalaman",
+    "noItemsSelected": "Walang napiling mga item",
+    "itemsSelected": "{count} mga item ang napili",
+    "loading": "Naglo-load...",
+    "error": "May naganap na error",
+    "networkError": "Error sa network. Pakisubukang muli."
+  },
+  "auth": {
+    "login": "Mag-login",
+    "logout": "Mag-logout",
+    "loginWithTelegram": "Mag-login gamit ang Telegram",
+    "phoneNumber": "Numero ng telepono",
+    "verificationCode": "Code ng verification",
+    "sendCode": "Ipadala ang code",
+    "verify": "I-verify",
+    "loginSuccess": "Matagumpay na naka-login",
+    "loginFailed": "Nabigong mag-login"
+  },
+  "settings": {
+    "title": "Mga Setting",
+    "language": "Wika",
+    "theme": "Tema",
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode",
+    "notifications": "Mga notification",
+    "storage": "Storage",
+    "about": "Tungkol sa"
+  }
+}

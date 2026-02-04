@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "ไฟล์ของคุณ เก็บอย่างปลอดภัยบน Telegram"
+  },
+  "sidebar": {
+    "myDrive": "ไดรฟ์ของฉัน",
+    "home": "หน้าแรก",
+    "computer": "คอมพิวเตอร์",
+    "sharedWithMe": "แชร์กับฉัน",
+    "recent": "ล่าสุด",
+    "starred": "ติดดาว",
+    "trash": "ถังขยะ",
+    "storage": "พื้นที่เก็บข้อมูล",
+    "newFolder": "โฟลเดอร์ใหม่",
+    "upload": "อัปโหลด",
+    "uploadFiles": "อัปโหลดไฟล์"
+  },
+  "header": {
+    "search": "ค้นหาในไดรฟ์",
+    "settings": "การตั้งค่า",
+    "help": "ช่วยเหลือ",
+    "account": "บัญชี"
+  },
+  "files": {
+    "name": "ชื่อ",
+    "owner": "เจ้าของ",
+    "lastModified": "แก้ไขล่าสุด",
+    "fileSize": "ขนาดไฟล์",
+    "noFiles": "ไม่พบไฟล์",
+    "dropHere": "วางไฟล์ที่นี่เพื่ออัปโหลด",
+    "dragAndDrop": "คุณสามารถลากและวางไฟล์ที่นี่เพื่ออัปโหลด",
+    "uploading": "กำลังอัปโหลด...",
+    "uploaded": "อัปโหลดแล้ว",
+    "failed": "ล้มเหลว",
+    "delete": "ลบ",
+    "download": "ดาวน์โหลด",
+    "rename": "เปลี่ยนชื่อ",
+    "move": "ย้าย",
+    "copy": "คัดลอก",
+    "share": "แชร์",
+    "details": "รายละเอียด",
+    "preview": "ดูตัวอย่าง"
+  },
+  "folders": {
+    "create": "สร้างโฟลเดอร์",
+    "folderName": "ชื่อโฟลเดอร์",
+    "newFolder": "โฟลเดอร์ใหม่",
+    "delete": "ลบโฟลเดอร์",
+    "rename": "เปลี่ยนชื่อโฟลเดอร์",
+    "empty": "โฟลเดอร์นี้ว่างเปล่า"
+  },
+  "actions": {
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "confirm": "ยืนยัน",
+    "delete": "ลบ",
+    "close": "ปิด",
+    "apply": "นำไปใช้",
+    "ok": "ตกลง",
+    "yes": "ใช่",
+    "no": "ไม่",
+    "retry": "ลองใหม่",
+    "refresh": "รีเฟรช",
+    "scanTelegram": "สแกน Telegram",
+    "selectAll": "เลือกทั้งหมด",
+    "clearSelection": "ล้างการเลือก",
+    "back": "กลับ",
+    "scanHint": "สแกน Telegram เพื่อเพิ่มไฟล์"
+  },
+  "messages": {
+    "deleteConfirm": "คุณแน่ใจหรือไม่ว่าต้องการลบ?",
+    "deleteSuccess": "ลบสำเร็จ",
+    "deleteFailed": "ลบไม่สำเร็จ",
+    "uploadSuccess": "อัปโหลดสำเร็จ",
+    "uploadFailed": "อัปโหลดไม่สำเร็จ",
+    "folderCreated": "สร้างโฟลเดอร์สำเร็จ",
+    "folderDeleted": "ลบโฟลเดอร์และเนื้อหาทั้งหมดแล้ว",
+    "noItemsSelected": "ไม่มีรายการที่เลือก",
+    "itemsSelected": "เลือก {count} รายการ",
+    "loading": "กำลังโหลด...",
+    "error": "เกิดข้อผิดพลาด",
+    "networkError": "ข้อผิดพลาดเครือข่าย กรุณาลองใหม่"
+  },
+  "auth": {
+    "login": "เข้าสู่ระบบ",
+    "logout": "ออกจากระบบ",
+    "loginWithTelegram": "เข้าสู่ระบบด้วย Telegram",
+    "phoneNumber": "หมายเลขโทรศัพท์",
+    "verificationCode": "รหัสยืนยัน",
+    "sendCode": "ส่งรหัส",
+    "verify": "ยืนยัน",
+    "loginSuccess": "เข้าสู่ระบบสำเร็จ",
+    "loginFailed": "เข้าสู่ระบบไม่สำเร็จ"
+  },
+  "settings": {
+    "title": "การตั้งค่า",
+    "language": "ภาษา",
+    "theme": "ธีม",
+    "darkMode": "โหมดมืด",
+    "lightMode": "โหมดสว่าง",
+    "notifications": "การแจ้งเตือน",
+    "storage": "พื้นที่เก็บข้อมูล",
+    "about": "เกี่ยวกับ"
+  }
+}

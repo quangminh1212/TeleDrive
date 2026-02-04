@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Таны файлууд Telegram дээр аюулгүй хадгалагдсан"
+  },
+  "sidebar": {
+    "myDrive": "Миний Драйв",
+    "home": "Нүүр",
+    "computer": "Компьютер",
+    "sharedWithMe": "Надтай хуваалцсан",
+    "recent": "Сүүлийн",
+    "starred": "Одтой",
+    "trash": "Хогийн сав",
+    "storage": "Хадгалах сан",
+    "newFolder": "Шинэ хавтас",
+    "upload": "Байршуулах",
+    "uploadFiles": "Файл байршуулах"
+  },
+  "header": {
+    "search": "Драйваас хайх",
+    "settings": "Тохиргоо",
+    "help": "Тусламж",
+    "account": "Бүртгэл"
+  },
+  "files": {
+    "name": "Нэр",
+    "owner": "Эзэмшигч",
+    "lastModified": "Сүүлд өөрчилсөн",
+    "fileSize": "Файлын хэмжээ",
+    "noFiles": "Файл олдсонгүй",
+    "dropHere": "Байршуулахын тулд файлуудыг энд тавина уу",
+    "dragAndDrop": "Та файлуудыг энд чирж тавьж болно",
+    "uploading": "Байршуулж байна...",
+    "uploaded": "Байршуулсан",
+    "failed": "Амжилтгүй",
+    "delete": "Устгах",
+    "download": "Татах",
+    "rename": "Нэр өөрчлөх",
+    "move": "Зөөх",
+    "copy": "Хуулах",
+    "share": "Хуваалцах",
+    "details": "Дэлгэрэнгүй",
+    "preview": "Урьдчилан харах"
+  },
+  "folders": {
+    "create": "Хавтас үүсгэх",
+    "folderName": "Хавтасны нэр",
+    "newFolder": "Шинэ хавтас",
+    "delete": "Хавтас устгах",
+    "rename": "Хавтасны нэр өөрчлөх",
+    "empty": "Энэ хавтас хоосон байна"
+  },
+  "actions": {
+    "save": "Хадгалах",
+    "cancel": "Цуцлах",
+    "confirm": "Баталгаажуулах",
+    "delete": "Устгах",
+    "close": "Хаах",
+    "apply": "Хэрэглэх",
+    "ok": "OK",
+    "yes": "Тийм",
+    "no": "Үгүй",
+    "retry": "Дахин оролдох",
+    "refresh": "Сэргээх",
+    "scanTelegram": "Telegram сканнердах",
+    "selectAll": "Бүгдийг сонгох",
+    "clearSelection": "Сонголтыг арилгах",
+    "back": "Буцах",
+    "scanHint": "Файл нэмэхийн тулд Telegram-г сканнердана уу"
+  },
+  "messages": {
+    "deleteConfirm": "Та үүнийг устгахдаа итгэлтэй байна уу?",
+    "deleteSuccess": "Амжилттай устгалаа",
+    "deleteFailed": "Устгаж чадсангүй",
+    "uploadSuccess": "Амжилттай байршууллаа",
+    "uploadFailed": "Байршуулж чадсангүй",
+    "folderCreated": "Хавтас амжилттай үүслээ",
+    "folderDeleted": "Хавтас болон бүх агуулгыг устгалаа",
+    "noItemsSelected": "Ямар ч зүйл сонгогдоогүй",
+    "itemsSelected": "{count} зүйл сонгогдсон",
+    "loading": "Ачаалж байна...",
+    "error": "Алдаа гарлаа",
+    "networkError": "Сүлжээний алдаа. Дахин оролдоно уу."
+  },
+  "auth": {
+    "login": "Нэвтрэх",
+    "logout": "Гарах",
+    "loginWithTelegram": "Telegram-аар нэвтрэх",
+    "phoneNumber": "Утасны дугаар",
+    "verificationCode": "Баталгаажуулах код",
+    "sendCode": "Код илгээх",
+    "verify": "Баталгаажуулах",
+    "loginSuccess": "Амжилттай нэвтэрлээ",
+    "loginFailed": "Нэвтрэлт амжилтгүй"
+  },
+  "settings": {
+    "title": "Тохиргоо",
+    "language": "Хэл",
+    "theme": "Загвар",
+    "darkMode": "Харанхуй горим",
+    "lightMode": "Гэрэлтэй горим",
+    "notifications": "Мэдэгдэл",
+    "storage": "Хадгалах сан",
+    "about": "Тухай"
+  }
+}
