@@ -38,38 +38,37 @@ class DetailedLogger:
             '%(asctime)s - %(levelname)s - %(message)s'
         )
         
-        # Setup main logger
+        # Setup main logger - use unified teledrive.log
         self.main_logger = self._create_logger(
-            'main', 
-            self.config.get('file', 'logs/scanner.log'),
+            'main',
+            'logs/teledrive.log',
             detailed_format
         )
-        
-        # Setup specialized loggers nếu enabled
+
+        # Setup specialized loggers - all use same teledrive.log file
         if self.config.get('separate_files', {}).get('enabled', False):
-            separate_files = self.config['separate_files']
-            
+            # All loggers now point to teledrive.log for unified logging
             self.config_logger = self._create_logger(
-                'config', 
-                separate_files.get('config_log', 'logs/config.log'),
+                'config',
+                'logs/teledrive.log',
                 detailed_format
             )
-            
+
             self.api_logger = self._create_logger(
-                'api', 
-                separate_files.get('api_log', 'logs/api.log'),
+                'api',
+                'logs/teledrive.log',
                 detailed_format
             )
-            
+
             self.files_logger = self._create_logger(
-                'files', 
-                separate_files.get('files_log', 'logs/files.log'),
+                'files',
+                'logs/teledrive.log',
                 detailed_format
             )
-            
+
             self.errors_logger = self._create_logger(
-                'errors', 
-                separate_files.get('errors_log', 'logs/errors.log'),
+                'errors',
+                'logs/teledrive.log',
                 detailed_format,
                 level=logging.ERROR
             )

@@ -431,7 +431,7 @@ VERIFICATION_CODE_TIMEOUT = int(get_safe(CONFIG, 'security.verification_code_tim
 # Logging settings
 LOGGING_ENABLED = get_safe(CONFIG, 'logging.enabled', True)
 LOGGING_LEVEL = get_safe(CONFIG, 'logging.level', 'INFO')
-LOGGING_FILE = get_safe(CONFIG, 'logging.file', 'logs/scanner.log')
+LOGGING_FILE = get_safe(CONFIG, 'logging.file', 'logs/teledrive.log')
 LOGGING_MAX_SIZE_MB = int(get_safe(CONFIG, 'logging.max_size_mb', 10))
 LOGGING_BACKUP_COUNT = int(get_safe(CONFIG, 'logging.backup_count', 5))
 LOGGING_FORMAT = get_safe(CONFIG, 'logging.format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')

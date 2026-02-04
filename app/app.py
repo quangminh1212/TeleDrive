@@ -176,6 +176,25 @@ async def download_from_telegram_async(file_record, output_path: str = None):
 # Production mode - minimal logging baseline
 logging.basicConfig(level=logging.WARNING)  # Only warnings and errors
 
+# Configure unified file logging for teledrive.log
+def setup_file_logging():
+    """Setup file handler for unified teledrive.log"""
+    log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'teledrive.log')
+
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
+    file_handler.setFormatter(formatter)
+
+    # Add to root logger so all loggers write to this file
+    logging.getLogger().addHandler(file_handler)
+    logging.getLogger().setLevel(logging.INFO)
+
+setup_file_logging()
+
 # Initialize Flask app with absolute paths
 import os
 from pathlib import Path
@@ -461,12 +480,9 @@ def log_security_event(event_type, user_id=None, username=None, ip_address=None,
     import logging
 
     # Create security logger if it doesn't exist
+    # Uses root logger's teledrive.log handler (set up in setup_file_logging)
     security_logger = logging.getLogger('security')
     if not security_logger.handlers:
-        handler = logging.FileHandler('logs/security.log')
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        security_logger.addHandler(handler)
         security_logger.setLevel(logging.INFO)
 
     # Get IP address if not provided
@@ -2541,6 +2557,49 @@ def get_folder_files_public(folder_id):
         })
     except Exception as e:
         app.logger.error(f"Get folder files error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# API endpoint to receive frontend logs
+@app.route('/api/logs/frontend', methods=['POST'])
+@csrf.exempt
+def receive_frontend_logs():
+    """Receive and write frontend logs to file"""
+    try:
+        data = request.get_json()
+        logs = data.get('logs', [])
+
+        if not logs:
+            return jsonify({'success': True, 'message': 'No logs to write'})
+
+        # Ensure logs directory exists
+        log_dir = os.path.join(os.path.dirname(app.root_path), 'logs')
+        os.makedirs(log_dir, exist_ok=True)
+
+        # Write logs to file (unified teledrive.log for both frontend and backend)
+        log_file = os.path.join(log_dir, 'teledrive.log')
+
+        with open(log_file, 'a', encoding='utf-8') as f:
+            for log_entry in logs:
+                timestamp = log_entry.get('timestamp', '')
+                level = log_entry.get('level', 'INFO')
+                component = log_entry.get('component', 'Unknown')
+                message = log_entry.get('message', '')
+                data_str = ''
+
+                if 'data' in log_entry and log_entry['data']:
+                    try:
+                        data_str = f" | Data: {json.dumps(log_entry['data'])}"
+                    except:
+                        data_str = f" | Data: {str(log_entry['data'])}"
+
+                log_line = f"[{timestamp}] [{level}] [{component}] {message}{data_str}\n"
+                f.write(log_line)
+
+        return jsonify({'success': True, 'message': f'Logged {len(logs)} entries'})
+
+    except Exception as e:
+        app.logger.error(f"Error writing frontend logs: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
