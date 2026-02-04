@@ -2430,29 +2430,59 @@ def get_starred_items():
 @app.route('/api/v2/folders/<int:folder_id>', methods=['DELETE'])
 @csrf.exempt
 def delete_folder_public(folder_id):
-    """Delete a folder (soft delete)"""
+    """Delete a folder and all its contents (files + subfolders) recursively"""
     try:
         user = get_or_create_user()
-        
+
         folder = Folder.query.filter_by(id=folder_id, user_id=user.id, is_deleted=False).first()
         if not folder:
             return jsonify({'success': False, 'error': 'Folder not found'}), 404
-        
-        # Check if folder has files
-        file_count = folder.files.filter_by(is_deleted=False).count()
-        if file_count > 0:
-            # Move files to root instead of blocking deletion
-            for file in folder.files.filter_by(is_deleted=False).all():
-                file.folder_id = None
-        
-        # Soft delete the folder
+
+        deleted_files = 0
+        deleted_folders = 0
+        telegram_deleted = 0
+
+        def delete_folder_recursive(folder_to_delete):
+            """Recursively delete folder contents"""
+            nonlocal deleted_files, deleted_folders, telegram_deleted
+
+            # Delete all files in this folder
+            for file in folder_to_delete.files.filter_by(is_deleted=False).all():
+                # Delete from Telegram if stored there
+                if file.is_stored_on_telegram():
+                    try:
+                        result = run_async_in_thread(delete_from_telegram_async(file))
+                        if result:
+                            telegram_deleted += 1
+                            app.logger.info(f"✅ Deleted {file.filename} from Telegram")
+                    except Exception as e:
+                        app.logger.warning(f"Failed to delete {file.filename} from Telegram: {e}")
+
+                file.is_deleted = True
+                deleted_files += 1
+
+            # Recursively delete subfolders
+            subfolders = Folder.query.filter_by(parent_id=folder_to_delete.id, user_id=user.id, is_deleted=False).all()
+            for subfolder in subfolders:
+                delete_folder_recursive(subfolder)
+                subfolder.is_deleted = True
+                deleted_folders += 1
+
+        # Delete contents recursively
+        delete_folder_recursive(folder)
+
+        # Delete the folder itself
         folder.is_deleted = True
         db.session.commit()
-        
+
+        app.logger.info(f"Deleted folder '{folder.name}': {deleted_files} files, {deleted_folders} subfolders, {telegram_deleted} from Telegram")
+
         return jsonify({
             'success': True,
-            'message': f'Folder "{folder.name}" deleted successfully',
-            'files_moved_to_root': file_count
+            'message': f'Folder "{folder.name}" and all contents deleted',
+            'deleted_files': deleted_files,
+            'deleted_folders': deleted_folders,
+            'telegram_deleted': telegram_deleted
         })
     except Exception as e:
         db.session.rollback()
