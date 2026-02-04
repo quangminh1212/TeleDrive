@@ -1303,11 +1303,11 @@ def stop_scan():
     return jsonify({'success': True, 'message': 'Scan stopped'})
 
 @app.route('/api/rescan_saved_messages', methods=['POST'])
-@login_required  # SECURITY FIX: Require authentication
+@csrf.exempt  # CSRF exempt for Tauri frontend
 def rescan_saved_messages():
-    """Rescan Saved Messages from Telegram and sync with database"""
+    """Rescan Saved Messages from Telegram and sync with database - allows default user for local desktop app"""
     try:
-        app.logger.info("Starting rescan of Saved Messages...")
+        app.logger.info(f"Rescan request from IP: {request.remote_addr}, authenticated: {current_user.is_authenticated}")
         
         # Get current user or use default
         user = get_or_create_user()
@@ -1830,12 +1830,12 @@ def get_auth_status_public():
 # Public API endpoint to scan Saved Messages
 @app.route('/api/v2/scan/saved-messages', methods=['POST'])
 @csrf.exempt  # CSRF exempt for Tauri frontend
-@login_required  # SECURITY FIX: Require authentication
 def scan_saved_messages_public():
-    """Scan Saved Messages from Telegram for Tauri frontend - requires authentication"""
+    """Scan Saved Messages from Telegram for Tauri frontend - allows default user for local desktop app"""
     global scanner, scanning_active
-    
+
     try:
+        app.logger.info(f"Scan request from IP: {request.remote_addr}, authenticated: {current_user.is_authenticated}")
         if scanning_active:
             return jsonify({'success': False, 'error': 'Scan đang chạy'})
         
@@ -1932,12 +1932,15 @@ def auto_login_public():
 
 # Public API endpoint to upload files for Tauri frontend
 @app.route('/api/v2/upload', methods=['POST'])
-@csrf.exempt  # CSRF exempt for Tauri frontend, but requires authentication
-@login_required  # SECURITY FIX: Require authentication for uploads
+@csrf.exempt  # CSRF exempt for Tauri frontend
 def upload_file_public():
-    """Upload files to the system for Tauri frontend - requires authentication"""
+    """Upload files to the system for Tauri frontend - allows default user for local desktop app"""
     try:
+        # Log upload attempt for debugging
+        app.logger.info(f"Upload request from IP: {request.remote_addr}, authenticated: {current_user.is_authenticated}")
+
         if 'files' not in request.files:
+            app.logger.warning("Upload failed: No files provided")
             return jsonify({'success': False, 'error': 'No files provided'}), 400
 
         files = request.files.getlist('files')
@@ -1951,14 +1954,21 @@ def upload_file_public():
                 folder_id = None
 
         if not files or all(f.filename == '' for f in files):
+            app.logger.warning("Upload failed: No files selected")
             return jsonify({'success': False, 'error': 'No files selected'}), 400
 
         # Limit to 50 files per upload
         if len(files) > 50:
+            app.logger.warning(f"Upload failed: Too many files ({len(files)})")
             return jsonify({'success': False, 'error': 'Too many files. Maximum 50 files per upload.'}), 400
 
-        # SECURITY FIX: Always use authenticated user, no fallback to default user
-        user = current_user
+        # Use authenticated user if available, otherwise use default user (for local desktop app)
+        if current_user.is_authenticated:
+            user = current_user
+            app.logger.info(f"Upload by authenticated user: {user.username}")
+        else:
+            user = get_or_create_user()
+            app.logger.info(f"Upload by default user: {user.username}")
         uploaded_files = []
 
         # Validate folder if specified
@@ -2076,7 +2086,27 @@ def upload_file_public():
                     'type': mime_type
                 })
 
-        db.session.commit()
+        # Flush to assign IDs before commit
+        try:
+            db.session.flush()
+            app.logger.info(f"Flushed {len(uploaded_files)} files to database")
+        except Exception as flush_err:
+            app.logger.error(f"Database flush error: {flush_err}")
+            db.session.rollback()
+            return jsonify({'success': False, 'error': f'Database error: {str(flush_err)}'}), 500
+
+        # Commit to database
+        try:
+            db.session.commit()
+            app.logger.info(f"✅ Successfully committed {len(uploaded_files)} files to database")
+
+            # Small delay to ensure database write completes
+            import time
+            time.sleep(0.1)
+        except Exception as commit_err:
+            app.logger.error(f"Database commit error: {commit_err}")
+            db.session.rollback()
+            return jsonify({'success': False, 'error': f'Failed to save files: {str(commit_err)}'}), 500
 
         return jsonify({
             'success': True,
@@ -2086,6 +2116,7 @@ def upload_file_public():
 
     except Exception as e:
         app.logger.error(f"Upload error: {e}")
+        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -2907,14 +2938,15 @@ def bulk_file_operations():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/upload', methods=['POST'])
-@csrf.exempt  # CSRF exempt for API clients, but requires authentication
-@login_required  # SECURITY FIX: Require authentication
+@csrf.exempt  # CSRF exempt for API clients
 @handle_api_error
 def upload_file():
-    """Upload files to the system with comprehensive validation - requires authentication"""
+    """Upload files to the system with comprehensive validation - allows default user for local desktop app"""
     upload_step_id = None
     if DETAILED_LOGGING_AVAILABLE:
         upload_step_id = log_step_start("FILE_UPLOAD", f"User IP: {request.remote_addr}")
+
+    app.logger.info(f"Upload (v1) request from IP: {request.remote_addr}, authenticated: {current_user.is_authenticated}")
 
     try:
         # Rate limiting check
@@ -2963,11 +2995,13 @@ def upload_file():
     if len(files) > 50:  # Limit to 50 files per upload
         return create_error_response('validation_error', 'Too many files. Maximum 50 files per upload.', 400)
 
-    # Use current_user instead of get_or_create_user()
-    if not current_user.is_authenticated:
-        return create_error_response('auth_error', 'User not authenticated', 401)
-
-    user = current_user
+    # Use authenticated user if available, otherwise use default user (for local desktop app)
+    if current_user.is_authenticated:
+        user = current_user
+        app.logger.info(f"Upload (v1) by authenticated user: {user.username}")
+    else:
+        user = get_or_create_user()
+        app.logger.info(f"Upload (v1) by default user: {user.username}")
     uploaded_files = []
 
     # Validate folder if specified
