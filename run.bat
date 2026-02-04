@@ -358,9 +358,10 @@ echo.
 echo Thiet lap bien moi truong...
 set "FLASK_APP=app.app"
 set "FLASK_ENV=development"
+set "DEV_MODE=1"
 set "PYTHONPATH=%PROJECT_DIR%\app;%PYTHONPATH%"
 set "PYTHONIOENCODING=utf-8"
-echo [OK] Bien moi truong da duoc thiet lap
+echo [OK] Bien moi truong da duoc thiet lap (DEV_MODE=1 - Auto-reload enabled)
 echo.
 
 :: ============================================
