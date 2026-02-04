@@ -55,6 +55,25 @@ import web_config
 # Lightweight i18n
 from i18n import t as i18n_t
 
+# SECURITY FIX: Database transaction management decorator
+from functools import wraps
+
+def with_db_transaction(f):
+    """Decorator to ensure proper database transaction management with rollback on error"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            result = f(*args, **kwargs)
+            # Don't auto-commit here - let the function handle it
+            # This decorator is just for error handling
+            return result
+        except Exception as e:
+            # SECURITY: Always rollback on error to prevent inconsistent state
+            db.session.rollback()
+            logger.error(f"Database transaction error in {f.__name__}: {str(e)}")
+            raise
+    return decorated_function
+
 # Import detailed logging - with fallback
 import logging
 logger = logging.getLogger(__name__)
@@ -322,10 +341,12 @@ def add_security_headers(response):
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
 
     # Content Security Policy
+    # SECURITY FIX: Removed 'unsafe-inline' and 'unsafe-eval' to prevent XSS attacks
+    # If inline scripts are needed, use nonces or move to external files
     csp = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+        "script-src 'self' https://cdnjs.cloudflare.com; "
+        "style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: https:; "
         "connect-src 'self' ws: wss:; "
@@ -1282,7 +1303,7 @@ def stop_scan():
     return jsonify({'success': True, 'message': 'Scan stopped'})
 
 @app.route('/api/rescan_saved_messages', methods=['POST'])
-@csrf.exempt
+@login_required  # SECURITY FIX: Require authentication
 def rescan_saved_messages():
     """Rescan Saved Messages from Telegram and sync with database"""
     try:
@@ -1808,9 +1829,10 @@ def get_auth_status_public():
 
 # Public API endpoint to scan Saved Messages
 @app.route('/api/v2/scan/saved-messages', methods=['POST'])
-@csrf.exempt
+@csrf.exempt  # CSRF exempt for Tauri frontend
+@login_required  # SECURITY FIX: Require authentication
 def scan_saved_messages_public():
-    """Scan Saved Messages from Telegram for Tauri frontend"""
+    """Scan Saved Messages from Telegram for Tauri frontend - requires authentication"""
     global scanner, scanning_active
     
     try:
@@ -1910,9 +1932,10 @@ def auto_login_public():
 
 # Public API endpoint to upload files for Tauri frontend
 @app.route('/api/v2/upload', methods=['POST'])
-@csrf.exempt
+@csrf.exempt  # CSRF exempt for Tauri frontend, but requires authentication
+@login_required  # SECURITY FIX: Require authentication for uploads
 def upload_file_public():
-    """Upload files to the system for Tauri frontend - no CSRF required"""
+    """Upload files to the system for Tauri frontend - requires authentication"""
     try:
         if 'files' not in request.files:
             return jsonify({'success': False, 'error': 'No files provided'}), 400
@@ -1934,12 +1957,8 @@ def upload_file_public():
         if len(files) > 50:
             return jsonify({'success': False, 'error': 'Too many files. Maximum 50 files per upload.'}), 400
 
-        # Get or create default user
-        # Try to use logged-in user first, otherwise fallback to default user
-        if current_user.is_authenticated:
-            user = current_user
-        else:
-            user = get_or_create_user()
+        # SECURITY FIX: Always use authenticated user, no fallback to default user
+        user = current_user
         uploaded_files = []
 
         # Validate folder if specified
@@ -2888,10 +2907,11 @@ def bulk_file_operations():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/upload', methods=['POST'])
-@csrf.exempt  # Use explicit token check below for JSON 400 behavior
+@csrf.exempt  # CSRF exempt for API clients, but requires authentication
+@login_required  # SECURITY FIX: Require authentication
 @handle_api_error
 def upload_file():
-    """Upload files to the system with comprehensive validation"""
+    """Upload files to the system with comprehensive validation - requires authentication"""
     upload_step_id = None
     if DETAILED_LOGGING_AVAILABLE:
         upload_step_id = log_step_start("FILE_UPLOAD", f"User IP: {request.remote_addr}")
@@ -3900,13 +3920,23 @@ def api_qr_status():
 @app.route('/api/auth/phone/start', methods=['POST'])
 @csrf.exempt
 def api_phone_start():
-    """Start Phone Login"""
+    """Start Phone Login with rate limiting"""
+    # SECURITY FIX: Add rate limiting to prevent brute force
+    user_ip = request.remote_addr
+    rate_limit_key = f"auth_phone_start_{user_ip}"
+
+    if is_rate_limited(rate_limit_key, max_requests=5, window_seconds=300):  # 5 attempts per 5 minutes
+        return jsonify({
+            'success': False,
+            'error': 'Too many authentication attempts. Please try again in 5 minutes.'
+        }), 429
+
     data = request.get_json()
     # Frontend gửi 'phone', hỗ trợ cả 2 key để tương thích
     phone = data.get('phone') or data.get('phone_number')
     if not phone:
         return jsonify({'success': False, 'error': 'Phone number required'})
-        
+
     # Use existing auth method
     result = run_async_in_thread(telegram_auth.send_code_request(phone))
     return jsonify(result)
@@ -3914,17 +3944,27 @@ def api_phone_start():
 @app.route('/api/auth/phone/verify', methods=['POST'])
 @csrf.exempt
 def api_phone_verify():
-    """Verify Phone Login Code"""
+    """Verify Phone Login Code with rate limiting"""
+    # SECURITY FIX: Add rate limiting to prevent brute force
+    user_ip = request.remote_addr
+    rate_limit_key = f"auth_phone_verify_{user_ip}"
+
+    if is_rate_limited(rate_limit_key, max_requests=10, window_seconds=600):  # 10 attempts per 10 minutes
+        return jsonify({
+            'success': False,
+            'error': 'Too many verification attempts. Please try again in 10 minutes.'
+        }), 429
+
     data = request.get_json()
     session_id = data.get('session_id')
     code = data.get('code')
     password = data.get('password')
-    
+
     if not session_id or not code:
         return jsonify({'success': False, 'error': 'Missing session_id or code'})
-        
+
     result = run_async_in_thread(telegram_auth.verify_code(session_id, code, password))
-    
+
     if result.get('success'):
          # Finalize login
          user_data = result.get('user')
@@ -3933,7 +3973,7 @@ def api_phone_verify():
             if user:
                 login_user(user, remember=True)
                 flash(f'Đăng nhập thành công! Xin chào {user.first_name}', 'success')
-                
+
                 # Also save usage of this session for future auto-logins if desired
                 # But we just use the session file provided by auth logic.
 

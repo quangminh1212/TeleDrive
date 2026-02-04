@@ -54,6 +54,9 @@ class TelegramAuthenticator:
         self.client = None
         self.temp_sessions = {}  # Store temporary session data
         self.completed_sessions = {}  # Store completed sessions for race condition prevention
+        # SECURITY FIX: Add thread locks to prevent race conditions
+        self._session_lock = threading.Lock()
+        self._completed_lock = threading.Lock()
         # Get verification code timeout from config (default 20 minutes)
         self.session_timeout = getattr(config, 'VERIFICATION_CODE_TIMEOUT', 1200)
         # Instance ID for debugging
@@ -61,13 +64,41 @@ class TelegramAuthenticator:
         # Clean up old session files on startup
         self._cleanup_old_session_files()
         print(f"[INIT] TelegramAuthenticator instance {self.instance_id} created")
-        
+
         # Auto-login support
         self._auto_login_attempted = False
         self._telegram_desktop_paths = [
             os.path.expandvars(r"%APPDATA%\Telegram Desktop\tdata"),
             os.path.expanduser("~/AppData/Roaming/Telegram Desktop/tdata"),
         ]
+
+    # SECURITY: Thread-safe session access helpers
+    def _get_session(self, session_id: str) -> Optional[Dict]:
+        """Thread-safe get session data"""
+        with self._session_lock:
+            return self.temp_sessions.get(session_id)
+
+    def _set_session(self, session_id: str, data: Dict):
+        """Thread-safe set session data"""
+        with self._session_lock:
+            self.temp_sessions[session_id] = data
+
+    def _update_session(self, session_id: str, updates: Dict):
+        """Thread-safe update session data"""
+        with self._session_lock:
+            if session_id in self.temp_sessions:
+                self.temp_sessions[session_id].update(updates)
+
+    def _delete_session(self, session_id: str):
+        """Thread-safe delete session"""
+        with self._session_lock:
+            if session_id in self.temp_sessions:
+                del self.temp_sessions[session_id]
+
+    def _session_exists(self, session_id: str) -> bool:
+        """Thread-safe check if session exists"""
+        with self._session_lock:
+            return session_id in self.temp_sessions
 
     def is_session_valid(self) -> bool:
         """Check if main session file exists and is valid (sync check)"""
