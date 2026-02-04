@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "I tuoi file, archiviati in sicurezza su Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Il mio Drive",
+    "home": "Home",
+    "computer": "Computer",
+    "sharedWithMe": "Condivisi con me",
+    "recent": "Recenti",
+    "starred": "Speciali",
+    "trash": "Cestino",
+    "storage": "Spazio di archiviazione",
+    "newFolder": "Nuova cartella",
+    "upload": "Carica",
+    "uploadFiles": "Carica file"
+  },
+  "header": {
+    "search": "Cerca in Drive",
+    "settings": "Impostazioni",
+    "help": "Guida",
+    "account": "Account"
+  },
+  "files": {
+    "name": "Nome",
+    "owner": "Proprietario",
+    "lastModified": "Ultima modifica",
+    "fileSize": "Dimensioni file",
+    "noFiles": "Nessun file trovato",
+    "dropHere": "Trascina qui i file per caricarli",
+    "dragAndDrop": "Puoi trascinare e rilasciare i file qui",
+    "uploading": "Caricamento...",
+    "uploaded": "Caricato",
+    "failed": "Non riuscito",
+    "delete": "Elimina",
+    "download": "Scarica",
+    "rename": "Rinomina",
+    "move": "Sposta",
+    "copy": "Copia",
+    "share": "Condividi",
+    "details": "Dettagli",
+    "preview": "Anteprima"
+  },
+  "folders": {
+    "create": "Crea cartella",
+    "folderName": "Nome cartella",
+    "newFolder": "Nuova cartella",
+    "delete": "Elimina cartella",
+    "rename": "Rinomina cartella",
+    "empty": "Questa cartella è vuota"
+  },
+  "actions": {
+    "save": "Salva",
+    "cancel": "Annulla",
+    "confirm": "Conferma",
+    "delete": "Elimina",
+    "close": "Chiudi",
+    "apply": "Applica",
+    "ok": "OK",
+    "yes": "Sì",
+    "no": "No",
+    "retry": "Riprova",
+    "refresh": "Aggiorna",
+    "scanTelegram": "Scansiona Telegram",
+    "selectAll": "Seleziona tutto",
+    "clearSelection": "Cancella selezione",
+    "back": "Indietro",
+    "scanHint": "Scansiona Telegram per aggiungere file"
+  },
+  "messages": {
+    "deleteConfirm": "Sei sicuro di voler eliminare questo elemento?",
+    "deleteSuccess": "Eliminato con successo",
+    "deleteFailed": "Eliminazione non riuscita",
+    "uploadSuccess": "Caricato con successo",
+    "uploadFailed": "Caricamento non riuscito",
+    "folderCreated": "Cartella creata con successo",
+    "folderDeleted": "Cartella e tutti i contenuti eliminati",
+    "noItemsSelected": "Nessun elemento selezionato",
+    "itemsSelected": "{count} elementi selezionati",
+    "loading": "Caricamento...",
+    "error": "Si è verificato un errore",
+    "networkError": "Errore di rete. Riprova."
+  },
+  "auth": {
+    "login": "Accedi",
+    "logout": "Esci",
+    "loginWithTelegram": "Accedi con Telegram",
+    "phoneNumber": "Numero di telefono",
+    "verificationCode": "Codice di verifica",
+    "sendCode": "Invia codice",
+    "verify": "Verifica",
+    "loginSuccess": "Accesso riuscito",
+    "loginFailed": "Accesso non riuscito"
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "language": "Lingua",
+    "theme": "Tema",
+    "darkMode": "Modalità scura",
+    "lightMode": "Modalità chiara",
+    "notifications": "Notifiche",
+    "storage": "Spazio di archiviazione",
+    "about": "Informazioni"
+  }
+}

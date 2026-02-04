@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Ваши файлы надёжно хранятся в Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Мой диск",
+    "home": "Главная",
+    "computer": "Компьютер",
+    "sharedWithMe": "Доступные мне",
+    "recent": "Недавние",
+    "starred": "Помеченные",
+    "trash": "Корзина",
+    "storage": "Хранилище",
+    "newFolder": "Новая папка",
+    "upload": "Загрузить",
+    "uploadFiles": "Загрузить файлы"
+  },
+  "header": {
+    "search": "Поиск на Диске",
+    "settings": "Настройки",
+    "help": "Справка",
+    "account": "Аккаунт"
+  },
+  "files": {
+    "name": "Название",
+    "owner": "Владелец",
+    "lastModified": "Изменён",
+    "fileSize": "Размер",
+    "noFiles": "Файлы не найдены",
+    "dropHere": "Перетащите файлы сюда",
+    "dragAndDrop": "Вы можете перетащить файлы сюда для загрузки",
+    "uploading": "Загрузка...",
+    "uploaded": "Загружено",
+    "failed": "Ошибка",
+    "delete": "Удалить",
+    "download": "Скачать",
+    "rename": "Переименовать",
+    "move": "Переместить",
+    "copy": "Копировать",
+    "share": "Поделиться",
+    "details": "Сведения",
+    "preview": "Предпросмотр"
+  },
+  "folders": {
+    "create": "Создать папку",
+    "folderName": "Название папки",
+    "newFolder": "Новая папка",
+    "delete": "Удалить папку",
+    "rename": "Переименовать папку",
+    "empty": "Папка пуста"
+  },
+  "actions": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "delete": "Удалить",
+    "close": "Закрыть",
+    "apply": "Применить",
+    "ok": "ОК",
+    "yes": "Да",
+    "no": "Нет",
+    "retry": "Повторить",
+    "refresh": "Обновить",
+    "scanTelegram": "Сканировать Telegram",
+    "selectAll": "Выбрать все",
+    "clearSelection": "Снять выделение",
+    "back": "Назад",
+    "scanHint": "Сканируйте Telegram для добавления файлов"
+  },
+  "messages": {
+    "deleteConfirm": "Вы уверены, что хотите удалить?",
+    "deleteSuccess": "Успешно удалено",
+    "deleteFailed": "Не удалось удалить",
+    "uploadSuccess": "Успешно загружено",
+    "uploadFailed": "Ошибка загрузки",
+    "folderCreated": "Папка создана",
+    "folderDeleted": "Папка и всё содержимое удалены",
+    "noItemsSelected": "Ничего не выбрано",
+    "itemsSelected": "Выбрано: {count}",
+    "loading": "Загрузка...",
+    "error": "Произошла ошибка",
+    "networkError": "Ошибка сети. Попробуйте снова."
+  },
+  "auth": {
+    "login": "Войти",
+    "logout": "Выйти",
+    "loginWithTelegram": "Войти через Telegram",
+    "phoneNumber": "Номер телефона",
+    "verificationCode": "Код подтверждения",
+    "sendCode": "Отправить код",
+    "verify": "Подтвердить",
+    "loginSuccess": "Вход выполнен",
+    "loginFailed": "Ошибка входа"
+  },
+  "settings": {
+    "title": "Настройки",
+    "language": "Язык",
+    "theme": "Тема",
+    "darkMode": "Тёмная тема",
+    "lightMode": "Светлая тема",
+    "notifications": "Уведомления",
+    "storage": "Хранилище",
+    "about": "О программе"
+  }
+}

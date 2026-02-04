@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Ihre Dateien, sicher auf Telegram gespeichert"
+  },
+  "sidebar": {
+    "myDrive": "Meine Ablage",
+    "home": "Startseite",
+    "computer": "Computer",
+    "sharedWithMe": "Für mich freigegeben",
+    "recent": "Zuletzt verwendet",
+    "starred": "Markiert",
+    "trash": "Papierkorb",
+    "storage": "Speicher",
+    "newFolder": "Neuer Ordner",
+    "upload": "Hochladen",
+    "uploadFiles": "Dateien hochladen"
+  },
+  "header": {
+    "search": "In Drive suchen",
+    "settings": "Einstellungen",
+    "help": "Hilfe",
+    "account": "Konto"
+  },
+  "files": {
+    "name": "Name",
+    "owner": "Eigentümer",
+    "lastModified": "Zuletzt geändert",
+    "fileSize": "Dateigröße",
+    "noFiles": "Keine Dateien gefunden",
+    "dropHere": "Dateien hier ablegen zum Hochladen",
+    "dragAndDrop": "Sie können Dateien hierher ziehen und ablegen",
+    "uploading": "Wird hochgeladen...",
+    "uploaded": "Hochgeladen",
+    "failed": "Fehlgeschlagen",
+    "delete": "Löschen",
+    "download": "Herunterladen",
+    "rename": "Umbenennen",
+    "move": "Verschieben",
+    "copy": "Kopieren",
+    "share": "Teilen",
+    "details": "Details",
+    "preview": "Vorschau"
+  },
+  "folders": {
+    "create": "Ordner erstellen",
+    "folderName": "Ordnername",
+    "newFolder": "Neuer Ordner",
+    "delete": "Ordner löschen",
+    "rename": "Ordner umbenennen",
+    "empty": "Dieser Ordner ist leer"
+  },
+  "actions": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "delete": "Löschen",
+    "close": "Schließen",
+    "apply": "Anwenden",
+    "ok": "OK",
+    "yes": "Ja",
+    "no": "Nein",
+    "retry": "Erneut versuchen",
+    "refresh": "Aktualisieren",
+    "scanTelegram": "Telegram scannen",
+    "selectAll": "Alle auswählen",
+    "clearSelection": "Auswahl aufheben",
+    "back": "Zurück",
+    "scanHint": "Telegram scannen um Dateien hinzuzufügen"
+  },
+  "messages": {
+    "deleteConfirm": "Möchten Sie dies wirklich löschen?",
+    "deleteSuccess": "Erfolgreich gelöscht",
+    "deleteFailed": "Löschen fehlgeschlagen",
+    "uploadSuccess": "Erfolgreich hochgeladen",
+    "uploadFailed": "Hochladen fehlgeschlagen",
+    "folderCreated": "Ordner erfolgreich erstellt",
+    "folderDeleted": "Ordner und alle Inhalte gelöscht",
+    "noItemsSelected": "Keine Elemente ausgewählt",
+    "itemsSelected": "{count} Elemente ausgewählt",
+    "loading": "Wird geladen...",
+    "error": "Ein Fehler ist aufgetreten",
+    "networkError": "Netzwerkfehler. Bitte erneut versuchen."
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "loginWithTelegram": "Mit Telegram anmelden",
+    "phoneNumber": "Telefonnummer",
+    "verificationCode": "Bestätigungscode",
+    "sendCode": "Code senden",
+    "verify": "Bestätigen",
+    "loginSuccess": "Anmeldung erfolgreich",
+    "loginFailed": "Anmeldung fehlgeschlagen"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "theme": "Design",
+    "darkMode": "Dunkelmodus",
+    "lightMode": "Hellmodus",
+    "notifications": "Benachrichtigungen",
+    "storage": "Speicher",
+    "about": "Über"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Uw bestanden, veilig opgeslagen op Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Mijn Drive",
+    "home": "Startpagina",
+    "computer": "Computer",
+    "sharedWithMe": "Gedeeld met mij",
+    "recent": "Recent",
+    "starred": "Met ster",
+    "trash": "Prullenbak",
+    "storage": "Opslag",
+    "newFolder": "Nieuwe map",
+    "upload": "Uploaden",
+    "uploadFiles": "Bestanden uploaden"
+  },
+  "header": {
+    "search": "Zoeken in Drive",
+    "settings": "Instellingen",
+    "help": "Help",
+    "account": "Account"
+  },
+  "files": {
+    "name": "Naam",
+    "owner": "Eigenaar",
+    "lastModified": "Laatst gewijzigd",
+    "fileSize": "Bestandsgrootte",
+    "noFiles": "Geen bestanden gevonden",
+    "dropHere": "Zet bestanden hier neer om te uploaden",
+    "dragAndDrop": "U kunt bestanden hierheen slepen",
+    "uploading": "Uploaden...",
+    "uploaded": "Geüpload",
+    "failed": "Mislukt",
+    "delete": "Verwijderen",
+    "download": "Downloaden",
+    "rename": "Naam wijzigen",
+    "move": "Verplaatsen",
+    "copy": "Kopiëren",
+    "share": "Delen",
+    "details": "Details",
+    "preview": "Voorbeeld"
+  },
+  "folders": {
+    "create": "Map maken",
+    "folderName": "Mapnaam",
+    "newFolder": "Nieuwe map",
+    "delete": "Map verwijderen",
+    "rename": "Mapnaam wijzigen",
+    "empty": "Deze map is leeg"
+  },
+  "actions": {
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "confirm": "Bevestigen",
+    "delete": "Verwijderen",
+    "close": "Sluiten",
+    "apply": "Toepassen",
+    "ok": "OK",
+    "yes": "Ja",
+    "no": "Nee",
+    "retry": "Opnieuw proberen",
+    "refresh": "Vernieuwen",
+    "scanTelegram": "Telegram scannen",
+    "selectAll": "Alles selecteren",
+    "clearSelection": "Selectie wissen",
+    "back": "Terug",
+    "scanHint": "Scan Telegram om bestanden toe te voegen"
+  },
+  "messages": {
+    "deleteConfirm": "Weet u zeker dat u dit wilt verwijderen?",
+    "deleteSuccess": "Succesvol verwijderd",
+    "deleteFailed": "Verwijderen mislukt",
+    "uploadSuccess": "Succesvol geüpload",
+    "uploadFailed": "Uploaden mislukt",
+    "folderCreated": "Map succesvol gemaakt",
+    "folderDeleted": "Map en alle inhoud verwijderd",
+    "noItemsSelected": "Geen items geselecteerd",
+    "itemsSelected": "{count} items geselecteerd",
+    "loading": "Laden...",
+    "error": "Er is een fout opgetreden",
+    "networkError": "Netwerkfout. Probeer het opnieuw."
+  },
+  "auth": {
+    "login": "Inloggen",
+    "logout": "Uitloggen",
+    "loginWithTelegram": "Inloggen met Telegram",
+    "phoneNumber": "Telefoonnummer",
+    "verificationCode": "Verificatiecode",
+    "sendCode": "Code verzenden",
+    "verify": "Verifiëren",
+    "loginSuccess": "Succesvol ingelogd",
+    "loginFailed": "Inloggen mislukt"
+  },
+  "settings": {
+    "title": "Instellingen",
+    "language": "Taal",
+    "theme": "Thema",
+    "darkMode": "Donkere modus",
+    "lightMode": "Lichte modus",
+    "notifications": "Meldingen",
+    "storage": "Opslag",
+    "about": "Over"
+  }
+}

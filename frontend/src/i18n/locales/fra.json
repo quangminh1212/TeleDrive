@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Vos fichiers, stockés en toute sécurité sur Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Mon Drive",
+    "home": "Accueil",
+    "computer": "Ordinateur",
+    "sharedWithMe": "Partagés avec moi",
+    "recent": "Récents",
+    "starred": "Favoris",
+    "trash": "Corbeille",
+    "storage": "Stockage",
+    "newFolder": "Nouveau dossier",
+    "upload": "Importer",
+    "uploadFiles": "Importer des fichiers"
+  },
+  "header": {
+    "search": "Rechercher dans Drive",
+    "settings": "Paramètres",
+    "help": "Aide",
+    "account": "Compte"
+  },
+  "files": {
+    "name": "Nom",
+    "owner": "Propriétaire",
+    "lastModified": "Dernière modification",
+    "fileSize": "Taille du fichier",
+    "noFiles": "Aucun fichier trouvé",
+    "dropHere": "Déposez les fichiers ici pour les importer",
+    "dragAndDrop": "Vous pouvez glisser-déposer des fichiers ici",
+    "uploading": "Importation...",
+    "uploaded": "Importé",
+    "failed": "Échec",
+    "delete": "Supprimer",
+    "download": "Télécharger",
+    "rename": "Renommer",
+    "move": "Déplacer",
+    "copy": "Copier",
+    "share": "Partager",
+    "details": "Détails",
+    "preview": "Aperçu"
+  },
+  "folders": {
+    "create": "Créer un dossier",
+    "folderName": "Nom du dossier",
+    "newFolder": "Nouveau dossier",
+    "delete": "Supprimer le dossier",
+    "rename": "Renommer le dossier",
+    "empty": "Ce dossier est vide"
+  },
+  "actions": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "close": "Fermer",
+    "apply": "Appliquer",
+    "ok": "OK",
+    "yes": "Oui",
+    "no": "Non",
+    "retry": "Réessayer",
+    "refresh": "Actualiser",
+    "scanTelegram": "Scanner Telegram",
+    "selectAll": "Tout sélectionner",
+    "clearSelection": "Effacer la sélection",
+    "back": "Retour",
+    "scanHint": "Scannez Telegram pour ajouter des fichiers"
+  },
+  "messages": {
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ceci ?",
+    "deleteSuccess": "Supprimé avec succès",
+    "deleteFailed": "Échec de la suppression",
+    "uploadSuccess": "Importé avec succès",
+    "uploadFailed": "Échec de l'importation",
+    "folderCreated": "Dossier créé avec succès",
+    "folderDeleted": "Dossier et tout son contenu supprimés",
+    "noItemsSelected": "Aucun élément sélectionné",
+    "itemsSelected": "{count} éléments sélectionnés",
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "networkError": "Erreur réseau. Veuillez réessayer."
+  },
+  "auth": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "loginWithTelegram": "Se connecter avec Telegram",
+    "phoneNumber": "Numéro de téléphone",
+    "verificationCode": "Code de vérification",
+    "sendCode": "Envoyer le code",
+    "verify": "Vérifier",
+    "loginSuccess": "Connexion réussie",
+    "loginFailed": "Échec de la connexion"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "language": "Langue",
+    "theme": "Thème",
+    "darkMode": "Mode sombre",
+    "lightMode": "Mode clair",
+    "notifications": "Notifications",
+    "storage": "Stockage",
+    "about": "À propos"
+  }
+}

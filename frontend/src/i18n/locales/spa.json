@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Tus archivos, almacenados de forma segura en Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Mi unidad",
+    "home": "Inicio",
+    "computer": "Ordenador",
+    "sharedWithMe": "Compartido conmigo",
+    "recent": "Reciente",
+    "starred": "Destacados",
+    "trash": "Papelera",
+    "storage": "Almacenamiento",
+    "newFolder": "Nueva carpeta",
+    "upload": "Subir",
+    "uploadFiles": "Subir archivos"
+  },
+  "header": {
+    "search": "Buscar en Drive",
+    "settings": "Configuración",
+    "help": "Ayuda",
+    "account": "Cuenta"
+  },
+  "files": {
+    "name": "Nombre",
+    "owner": "Propietario",
+    "lastModified": "Última modificación",
+    "fileSize": "Tamaño del archivo",
+    "noFiles": "No se encontraron archivos",
+    "dropHere": "Suelta los archivos aquí para subirlos",
+    "dragAndDrop": "Puedes arrastrar y soltar archivos aquí",
+    "uploading": "Subiendo...",
+    "uploaded": "Subido",
+    "failed": "Error",
+    "delete": "Eliminar",
+    "download": "Descargar",
+    "rename": "Cambiar nombre",
+    "move": "Mover",
+    "copy": "Copiar",
+    "share": "Compartir",
+    "details": "Detalles",
+    "preview": "Vista previa"
+  },
+  "folders": {
+    "create": "Crear carpeta",
+    "folderName": "Nombre de carpeta",
+    "newFolder": "Nueva carpeta",
+    "delete": "Eliminar carpeta",
+    "rename": "Cambiar nombre de carpeta",
+    "empty": "Esta carpeta está vacía"
+  },
+  "actions": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "close": "Cerrar",
+    "apply": "Aplicar",
+    "ok": "Aceptar",
+    "yes": "Sí",
+    "no": "No",
+    "retry": "Reintentar",
+    "refresh": "Actualizar",
+    "scanTelegram": "Escanear Telegram",
+    "selectAll": "Seleccionar todo",
+    "clearSelection": "Borrar selección",
+    "back": "Atrás",
+    "scanHint": "Escanea Telegram para añadir archivos"
+  },
+  "messages": {
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar esto?",
+    "deleteSuccess": "Eliminado correctamente",
+    "deleteFailed": "Error al eliminar",
+    "uploadSuccess": "Subido correctamente",
+    "uploadFailed": "Error al subir",
+    "folderCreated": "Carpeta creada correctamente",
+    "folderDeleted": "Carpeta y todo su contenido eliminados",
+    "noItemsSelected": "No hay elementos seleccionados",
+    "itemsSelected": "{count} elementos seleccionados",
+    "loading": "Cargando...",
+    "error": "Se produjo un error",
+    "networkError": "Error de red. Por favor, inténtalo de nuevo."
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "loginWithTelegram": "Iniciar sesión con Telegram",
+    "phoneNumber": "Número de teléfono",
+    "verificationCode": "Código de verificación",
+    "sendCode": "Enviar código",
+    "verify": "Verificar",
+    "loginSuccess": "Inicio de sesión exitoso",
+    "loginFailed": "Error de inicio de sesión"
+  },
+  "settings": {
+    "title": "Configuración",
+    "language": "Idioma",
+    "theme": "Tema",
+    "darkMode": "Modo oscuro",
+    "lightMode": "Modo claro",
+    "notifications": "Notificaciones",
+    "storage": "Almacenamiento",
+    "about": "Acerca de"
+  }
+}
