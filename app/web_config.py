@@ -224,7 +224,7 @@ class FlaskConfigLoader:
                 'mp4', 'avi', 'mkv', 'mov', 'wav', 'flac', 'json', 'csv', 'xml'
             ]),
             'create_subdirs': self.get('upload.create_subdirs', True),
-            'timestamp_filenames': self.get('upload.timestamp_filenames', True),
+            'timestamp_filenames': self.get('upload.timestamp_filenames', False),
             'storage_backend': self.get('upload.storage_backend', 'local'),
             'fallback_to_local': self.get('upload.fallback_to_local', True)
         }
