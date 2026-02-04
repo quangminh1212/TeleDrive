@@ -1,0 +1,68 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "deepwiki": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.deepwiki.com/mcp"]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {},
+      "type": "stdio"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "C:\\Dev\\TeleDrive"]
+    },
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git"],
+      "env": {},
+      "type": "stdio"
+    },
+    "markdown-rules-mcp": {
+      "command": "cmd.exe",
+      "args": ["/c", "npx", "-y", "@valstro/markdown-rules-mcp@latest"],
+      "env": {
+        "PROJECT_ROOT": "C:/Dev/TeleDrive",
+        "USAGE_INSTRUCTIONS_PATH": "C:/Dev/TeleDrive/CLAUDE.md"
+      }
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"],
+      "env": {},
+      "type": "stdio"
+    },
+    "pulumi": {
+      "command": "npx",
+      "args": ["@pulumi/mcp-server", "stdio"],
+      "env": {},
+      "type": "stdio"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "snyk": {
+      "command": "npx",
+      "args": ["-y", "snyk@latest", "mcp", "-t", "stdio"]
+    },
+    "time": {
+      "command": "python",
+      "args": ["-m", "mcp_server_time"]
+    },
+    "duckduckgo": {
+      "command": "npx",
+      "args": ["-y", "@nickclyde/duckduckgo-mcp-server"]
+    }
+  }
+}
