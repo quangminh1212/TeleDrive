@@ -40,7 +40,17 @@
     "copy": "Sao chép",
     "share": "Chia sẻ",
     "details": "Chi tiết",
-    "preview": "Xem trước"
+    "preview": "Xem trước",
+    "type": "Loại",
+    "source": "Nguồn",
+    "filterByType": "Lọc theo loại",
+    "filterByOwner": "Lọc theo người",
+    "filterByDate": "Lọc theo thời gian",
+    "items": "mục",
+    "listView": "Chế độ xem danh sách",
+    "gridView": "Chế độ xem lưới",
+    "folder": "Thư mục",
+    "file": "Tệp"
   },
   "folders": {
     "create": "Tạo thư mục",
@@ -68,6 +78,11 @@
     "back": "Quay lại",
     "scanHint": "Hãy quét Telegram để thêm tệp vào đây"
   },
+  "dates": {
+    "today": "Hôm nay",
+    "yesterday": "Hôm qua",
+    "daysAgo": "{count} ngày trước"
+  },
   "messages": {
     "deleteConfirm": "Bạn có chắc chắn muốn xóa không?",
     "deleteSuccess": "Xóa thành công",
@@ -80,7 +95,23 @@
     "itemsSelected": "Đã chọn {count} mục",
     "loading": "Đang tải...",
     "error": "Đã xảy ra lỗi",
-    "networkError": "Lỗi mạng. Vui lòng thử lại."
+    "networkError": "Lỗi mạng. Vui lòng thử lại.",
+    "folderNameEmpty": "Tên thư mục không được để trống",
+    "folderNameInvalidChars": "Tên không được chứa các ký tự: / \\ : * ? \" < > |",
+    "folderNameTooLong": "Tên thư mục không được quá 255 ký tự",
+    "renaming": "Đang đổi tên...",
+    "deleting": "Đang xóa...",
+    "moving": "Đang di chuyển...",
+    "processing": "Đang xử lý...",
+    "searching": "Đang tìm kiếm...",
+    "noSearchResults": "Không tìm thấy kết quả cho \"{query}\"",
+    "connectionError": "Không thể kết nối đến server",
+    "serverError": "Lỗi server. Vui lòng thử lại sau.",
+    "authError": "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.",
+    "fileNotFound": "Không tìm thấy tệp",
+    "permissionDenied": "Bạn không có quyền thực hiện thao tác này",
+    "fileTooLarge": "Tệp quá lớn. Kích thước tối đa là 2GB.",
+    "suggestions": "Gợi ý"
   },
   "auth": {
     "login": "Đăng nhập",

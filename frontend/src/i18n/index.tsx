@@ -75,8 +75,13 @@ export type Language =
   | 'aze' | 'cat' | 'nep' | 'sin' | 'mya' | 'khm' | 'lao' | 'mon' | 'urd' | 'afr'
   | 'eus' | 'glg' | 'mlt';
 
-// All translations
-const translations: Record<Language, typeof eng> = {
+// Translation type - flexible to allow optional keys
+type TranslationType = {
+  [key: string]: string | TranslationType;
+};
+
+// All translations - use flexible type to allow different locales to have different keys
+const translations: Record<Language, TranslationType> = {
   eng, vie, zho, jpn, kor, tha, ind, hin, ara, rus,
   deu, fra, spa, por, ita, nld, pol, tur, ukr, ell,
   heb, ben, tam, msa, fil, swe, nor, dan, fin, ces,
