@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { useI18n } from '../i18n';
 
 export interface UploadItem {
     id: string;
     filename: string;
-    status: 'pending' | 'uploading' | 'completed' | 'error';
+    status: 'pending' | 'uploading' | 'completed' | 'error' | 'cancelled';
     progress: number; // 0-100
     error?: string;
 }
@@ -12,15 +13,19 @@ interface UploadProgressProps {
     items: UploadItem[];
     onClose: () => void;
     onClear: () => void;
+    onRetry?: (itemId: string) => void;
+    onCancel?: (itemId: string) => void;
 }
 
-const UploadProgress = ({ items, onClose, onClear }: UploadProgressProps) => {
+const UploadProgress = ({ items, onClose, onClear, onRetry, onCancel }: UploadProgressProps) => {
     const [isMinimized, setIsMinimized] = useState(false);
+    const { t } = useI18n();
 
     if (items.length === 0) return null;
 
     const completedCount = items.filter(item => item.status === 'completed').length;
     const errorCount = items.filter(item => item.status === 'error').length;
+    const cancelledCount = items.filter(item => item.status === 'cancelled').length;
     const uploadingCount = items.filter(item => item.status === 'uploading' || item.status === 'pending').length;
     const allCompleted = uploadingCount === 0;
 
@@ -28,11 +33,14 @@ const UploadProgress = ({ items, onClose, onClear }: UploadProgressProps) => {
     const getStatusText = () => {
         if (allCompleted) {
             if (errorCount > 0) {
-                return `${completedCount} hoàn thành, ${errorCount} lỗi`;
+                return `${completedCount} ${t('files.uploaded')}, ${errorCount} ${t('files.failed')}`;
             }
-            return `${completedCount} tải lên hoàn tất`;
+            if (cancelledCount > 0) {
+                return `${completedCount} ${t('files.uploaded')}, ${cancelledCount} ${t('actions.cancel')}`;
+            }
+            return `${completedCount} ${t('files.uploaded')}`;
         }
-        return `Đang tải ${uploadingCount} mục lên`;
+        return `${t('files.uploading')} ${uploadingCount} ${t('files.items')}`;
     };
 
     // Get file icon based on filename
@@ -93,6 +101,12 @@ const UploadProgress = ({ items, onClose, onClear }: UploadProgressProps) => {
                 return (
                     <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                    </svg>
+                );
+            case 'cancelled':
+                return (
+                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" />
                     </svg>
                 );
             case 'uploading':
@@ -172,12 +186,44 @@ const UploadProgress = ({ items, onClose, onClear }: UploadProgressProps) => {
                                     </div>
                                 )}
                                 {item.status === 'error' && (
-                                    <p className="text-xs text-red-500 mt-0.5">{item.error || 'Lỗi tải lên'}</p>
+                                    <p className="text-xs text-red-500 mt-0.5">{item.error || t('messages.uploadFailed')}</p>
+                                )}
+                                {item.status === 'cancelled' && (
+                                    <p className="text-xs text-gray-500 mt-0.5">{t('actions.cancel')}</p>
                                 )}
                             </div>
 
-                            {/* Status icon */}
-                            {getStatusIcon(item)}
+                            {/* Action buttons */}
+                            <div className="flex items-center gap-1">
+                                {/* Retry button for failed uploads */}
+                                {item.status === 'error' && onRetry && (
+                                    <button
+                                        onClick={() => onRetry(item.id)}
+                                        className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                                        title={t('actions.retry')}
+                                        aria-label={t('actions.retry')}
+                                    >
+                                        <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+                                        </svg>
+                                    </button>
+                                )}
+                                {/* Cancel button for uploading items */}
+                                {item.status === 'uploading' && onCancel && (
+                                    <button
+                                        onClick={() => onCancel(item.id)}
+                                        className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                                        title={t('actions.cancel')}
+                                        aria-label={t('actions.cancel')}
+                                    >
+                                        <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                                        </svg>
+                                    </button>
+                                )}
+                                {/* Status icon */}
+                                {getStatusIcon(item)}
+                            </div>
                         </div>
                     ))}
                 </div>
