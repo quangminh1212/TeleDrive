@@ -713,7 +713,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         return (
             <div className="flex flex-col items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gdrive-blue mb-4"></div>
-                <p className="text-gray-500">Đang tải dữ liệu từ Telegram...</p>
+                <p className="text-gray-500">{t('messages.loading')}</p>
             </div>
         );
     }
@@ -724,13 +724,13 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 <svg className="w-16 h-16 mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <p className="text-lg text-red-500 mb-2">Lỗi</p>
+                <p className="text-lg text-red-500 mb-2">{t('messages.error')}</p>
                 <p className="text-sm mb-4">{error}</p>
                 <button
                     onClick={handleRefresh}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                    Thử lại
+                    {t('actions.retry')}
                 </button>
             </div>
         );
@@ -743,14 +743,14 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         }
 
         switch (currentFolder) {
-            case 'home': return 'Trang chủ';
-            case null: return 'Drive của tôi';
-            case 'shared': return 'Được chia sẻ với tôi';
-            case 'recent': return 'Gần đây';
-            case 'starred': return 'Có gắn dấu sao';
-            case 'trash': return 'Thùng rác';
-            case 'computer': return 'Máy tính';
-            default: return 'Drive của tôi';
+            case 'home': return t('sidebar.home');
+            case null: return t('sidebar.myDrive');
+            case 'shared': return t('sidebar.sharedWithMe');
+            case 'recent': return t('sidebar.recent');
+            case 'starred': return t('sidebar.starred');
+            case 'trash': return t('sidebar.trash');
+            case 'computer': return t('sidebar.computer');
+            default: return t('sidebar.myDrive');
         }
     };
 
@@ -778,10 +778,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             </svg>
                         </div>
                         <div className="text-center">
-                            <p className="text-2xl font-bold text-blue-600 mb-2">Thả file để tải lên</p>
-                            <p className="text-base text-gray-600">File sẽ được tải lên Telegram Saved Messages</p>
+                            <p className="text-2xl font-bold text-blue-600 mb-2">{t('files.dropHere')}</p>
+                            <p className="text-base text-gray-600">{t('files.dragAndDrop')}</p>
                             {currentFolder && currentFolder !== 'starred' && currentFolder !== 'shared' && currentFolder !== 'recent' && (
-                                <p className="text-sm text-blue-500 mt-2">📁 Tải lên vào thư mục hiện tại</p>
+                                <p className="text-sm text-blue-500 mt-2">📁 {t('sidebar.upload')}</p>
                             )}
                         </div>
                     </div>
@@ -801,7 +801,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             <button
                                 onClick={handleClearSelection}
                                 className="p-1.5 hover:bg-gray-200 rounded-full transition-colors"
-                                title="Bỏ chọn"
+                                title={t('actions.clearSelection')}
                             >
                                 <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -810,7 +810,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
 
                             {/* Selection count */}
                             <span className="text-sm font-medium text-gray-800">
-                                Đã chọn {selectedFiles.size} mục
+                                {t('messages.itemsSelected', { count: selectedFiles.size })}
                             </span>
 
                             {/* Divider */}
@@ -820,24 +820,24 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             <button
                                 onClick={handleSelectAll}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                                title="Chọn tất cả"
+                                title={t('actions.selectAll')}
                             >
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M3 5h2V3c-1.1 0-2 .9-2 2zm0 8h2v-2H3v2zm4 8h2v-2H7v2zM3 9h2V7H3v2zm10-6h-2v2h2V3zm6 0v2h2c0-1.1-.9-2-2-2zM5 21v-2H3c0 1.1.9 2 2 2zm-2-4h2v-2H3v2zM9 3H7v2h2V3zm2 18h2v-2h-2v2zm8-8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2zm0-12h2V7h-2v2zm0 8h2v-2h-2v2zm-4 4h2v-2h-2v2zm0-16h2V3h-2v2zM7 17h10V7H7v10zm2-8h6v6H9V9z" />
                                 </svg>
-                                Chọn tất cả
+                                {t('actions.selectAll')}
                             </button>
 
                             {/* Delete */}
                             <button
                                 onClick={() => setShowBulkDeleteConfirm(true)}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Xóa"
+                                title={t('actions.delete')}
                             >
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
                                 </svg>
-                                Xóa
+                                {t('actions.delete')}
                             </button>
                         </div>
                     ) : (
@@ -848,7 +848,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                 <button
                                     onClick={() => onFolderSelect?.(null)}
                                     className="p-1.5 hover:bg-gray-200 rounded-full transition-colors mr-1"
-                                    title="Quay lại Drive của tôi"
+                                    title={t('actions.back')}
                                 >
                                     <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
@@ -962,7 +962,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                         <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
                     </svg>
                     <p className="text-lg mb-2">{t('files.noFiles')}</p>
-                    <p className="text-sm mb-4">Hãy quét kênh Telegram để thêm tệp vào đây</p>
+                    <p className="text-sm mb-4">{t('actions.scanHint')}</p>
                     <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17-.53-.32-1.14-.53-1.79-.63A5.994 5.994 0 0 0 0 10c0 1.06.28 2.05.76 2.92.3.55.67 1.05 1.1 1.49C2.45 17.55 5.45 20 9 20h10c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
@@ -1000,7 +1000,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             <span>{t('files.lastModified')}</span>
                             {sortColumn === 'modified' && <SortIcon direction={sortDirection} />}
                         </button>
-                        <span className="hidden lg:block w-32 text-left px-2">Kênh</span>
+                        <span className="hidden lg:block w-32 text-left px-2">{t('files.owner')}</span>
                         <span className="w-10"></span>
                     </div>
 
@@ -1066,7 +1066,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                            <h3 className="text-lg font-medium text-gray-800">Thông tin về tệp</h3>
+                            <h3 className="text-lg font-medium text-gray-800">{t('files.details')}</h3>
                             <button
                                 onClick={() => setInfoFile(null)}
                                 className="p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -1131,7 +1131,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                 onClick={() => setInfoFile(null)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             >
-                                Đóng
+                                {t('actions.close')}
                             </button>
                         </div>
                     </div>
@@ -1152,7 +1152,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                            <h3 className="text-lg font-medium text-gray-800">Di chuyển đến thư mục</h3>
+                            <h3 className="text-lg font-medium text-gray-800">{t('files.move')}</h3>
                             <button
                                 onClick={() => setMoveFileTarget(null)}
                                 className="p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -1166,7 +1166,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                         {/* Content */}
                         <div className="px-6 py-4">
                             <p className="text-sm text-gray-600 mb-4">
-                                Di chuyển "<span className="font-medium">{moveFileTarget.name}</span>" đến:
+                                {t('files.move')}: "<span className="font-medium">{moveFileTarget.name}</span>"
                             </p>
 
                             <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -1178,7 +1178,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                     <svg className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
                                     </svg>
-                                    <span className="text-gray-800">Gốc (Drive của tôi)</span>
+                                    <span className="text-gray-800">{t('sidebar.myDrive')}</span>
                                 </button>
 
                                 {/* Folder list */}
@@ -1200,7 +1200,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
 
                                 {folders.length === 0 && (
                                     <p className="text-center text-gray-500 py-4">
-                                        Chưa có thư mục nào. Hãy tạo thư mục mới trước.
+                                        {t('folders.empty')}
                                     </p>
                                 )}
                             </div>
@@ -1212,7 +1212,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                 onClick={() => setMoveFileTarget(null)}
                                 className="px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                             >
-                                Hủy
+                                {t('actions.cancel')}
                             </button>
                         </div>
                     </div>
