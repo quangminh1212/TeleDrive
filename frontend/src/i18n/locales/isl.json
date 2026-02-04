@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Skrárnar þínar, geymdar á öruggan hátt á Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Diskurinn minn",
+    "home": "Heim",
+    "computer": "Tölva",
+    "sharedWithMe": "Deilt með mér",
+    "recent": "Nýlegt",
+    "starred": "Með stjörnu",
+    "trash": "Rusl",
+    "storage": "Geymsla",
+    "newFolder": "Ný mappa",
+    "upload": "Hlaða upp",
+    "uploadFiles": "Hlaða upp skrám"
+  },
+  "header": {
+    "search": "Leita í Diski",
+    "settings": "Stillingar",
+    "help": "Hjálp",
+    "account": "Reikningur"
+  },
+  "files": {
+    "name": "Nafn",
+    "owner": "Eigandi",
+    "lastModified": "Síðast breytt",
+    "fileSize": "Skráarstærð",
+    "noFiles": "Engar skrár fundust",
+    "dropHere": "Slepptu skrám hér til að hlaða upp",
+    "dragAndDrop": "Þú getur dregið og sleppt skrám hér",
+    "uploading": "Hleður upp...",
+    "uploaded": "Hlaðið upp",
+    "failed": "Mistókst",
+    "delete": "Eyða",
+    "download": "Sækja",
+    "rename": "Endurnefna",
+    "move": "Færa",
+    "copy": "Afrita",
+    "share": "Deila",
+    "details": "Upplýsingar",
+    "preview": "Forskoðun"
+  },
+  "folders": {
+    "create": "Búa til möppu",
+    "folderName": "Nafn möppu",
+    "newFolder": "Ný mappa",
+    "delete": "Eyða möppu",
+    "rename": "Endurnefna möppu",
+    "empty": "Þessi mappa er tóm"
+  },
+  "actions": {
+    "save": "Vista",
+    "cancel": "Hætta við",
+    "confirm": "Staðfesta",
+    "delete": "Eyða",
+    "close": "Loka",
+    "apply": "Beita",
+    "ok": "Í lagi",
+    "yes": "Já",
+    "no": "Nei",
+    "retry": "Reyna aftur",
+    "refresh": "Endurhlaða",
+    "scanTelegram": "Skanna Telegram",
+    "selectAll": "Velja allt",
+    "clearSelection": "Hreinsa val",
+    "back": "Til baka",
+    "scanHint": "Skannaðu Telegram til að bæta við skrám"
+  },
+  "messages": {
+    "deleteConfirm": "Ertu viss um að þú viljir eyða þessu?",
+    "deleteSuccess": "Eytt",
+    "deleteFailed": "Eyðing mistókst",
+    "uploadSuccess": "Upphleðsla tókst",
+    "uploadFailed": "Upphleðsla mistókst",
+    "folderCreated": "Mappa búin til",
+    "folderDeleted": "Möppu og öllu innihaldi eytt",
+    "noItemsSelected": "Engin atriði valin",
+    "itemsSelected": "{count} atriði valin",
+    "loading": "Hleður...",
+    "error": "Villa kom upp",
+    "networkError": "Netvilla. Vinsamlegast reyndu aftur."
+  },
+  "auth": {
+    "login": "Innskráning",
+    "logout": "Útskráning",
+    "loginWithTelegram": "Skrá inn með Telegram",
+    "phoneNumber": "Símanúmer",
+    "verificationCode": "Staðfestingarkóði",
+    "sendCode": "Senda kóða",
+    "verify": "Staðfesta",
+    "loginSuccess": "Innskráning tókst",
+    "loginFailed": "Innskráning mistókst"
+  },
+  "settings": {
+    "title": "Stillingar",
+    "language": "Tungumál",
+    "theme": "Þema",
+    "darkMode": "Dökkur hamur",
+    "lightMode": "Ljós hamur",
+    "notifications": "Tilkynningar",
+    "storage": "Geymsla",
+    "about": "Um"
+  }
+}

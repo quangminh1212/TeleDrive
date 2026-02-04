@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Dina filer, säkert lagrade på Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Min enhet",
+    "home": "Hem",
+    "computer": "Dator",
+    "sharedWithMe": "Delat med mig",
+    "recent": "Senaste",
+    "starred": "Stjärnmärkta",
+    "trash": "Papperskorg",
+    "storage": "Lagring",
+    "newFolder": "Ny mapp",
+    "upload": "Ladda upp",
+    "uploadFiles": "Ladda upp filer"
+  },
+  "header": {
+    "search": "Sök i Drive",
+    "settings": "Inställningar",
+    "help": "Hjälp",
+    "account": "Konto"
+  },
+  "files": {
+    "name": "Namn",
+    "owner": "Ägare",
+    "lastModified": "Senast ändrad",
+    "fileSize": "Filstorlek",
+    "noFiles": "Inga filer hittades",
+    "dropHere": "Släpp filer här för att ladda upp",
+    "dragAndDrop": "Du kan dra och släppa filer här",
+    "uploading": "Laddar upp...",
+    "uploaded": "Uppladdad",
+    "failed": "Misslyckades",
+    "delete": "Ta bort",
+    "download": "Ladda ner",
+    "rename": "Byt namn",
+    "move": "Flytta",
+    "copy": "Kopiera",
+    "share": "Dela",
+    "details": "Detaljer",
+    "preview": "Förhandsgranska"
+  },
+  "folders": {
+    "create": "Skapa mapp",
+    "folderName": "Mappnamn",
+    "newFolder": "Ny mapp",
+    "delete": "Ta bort mapp",
+    "rename": "Byt namn på mapp",
+    "empty": "Denna mapp är tom"
+  },
+  "actions": {
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "confirm": "Bekräfta",
+    "delete": "Ta bort",
+    "close": "Stäng",
+    "apply": "Tillämpa",
+    "ok": "OK",
+    "yes": "Ja",
+    "no": "Nej",
+    "retry": "Försök igen",
+    "refresh": "Uppdatera",
+    "scanTelegram": "Skanna Telegram",
+    "selectAll": "Markera alla",
+    "clearSelection": "Rensa markering",
+    "back": "Tillbaka",
+    "scanHint": "Skanna Telegram för att lägga till filer"
+  },
+  "messages": {
+    "deleteConfirm": "Är du säker på att du vill ta bort detta?",
+    "deleteSuccess": "Borttaget",
+    "deleteFailed": "Kunde inte ta bort",
+    "uploadSuccess": "Uppladdning lyckades",
+    "uploadFailed": "Uppladdning misslyckades",
+    "folderCreated": "Mappen skapades",
+    "folderDeleted": "Mappen och allt innehåll har tagits bort",
+    "noItemsSelected": "Inga objekt valda",
+    "itemsSelected": "{count} objekt valda",
+    "loading": "Laddar...",
+    "error": "Ett fel uppstod",
+    "networkError": "Nätverksfel. Försök igen."
+  },
+  "auth": {
+    "login": "Logga in",
+    "logout": "Logga ut",
+    "loginWithTelegram": "Logga in med Telegram",
+    "phoneNumber": "Telefonnummer",
+    "verificationCode": "Verifieringskod",
+    "sendCode": "Skicka kod",
+    "verify": "Verifiera",
+    "loginSuccess": "Inloggning lyckades",
+    "loginFailed": "Inloggning misslyckades"
+  },
+  "settings": {
+    "title": "Inställningar",
+    "language": "Språk",
+    "theme": "Tema",
+    "darkMode": "Mörkt läge",
+    "lightMode": "Ljust läge",
+    "notifications": "Aviseringar",
+    "storage": "Lagring",
+    "about": "Om"
+  }
+}

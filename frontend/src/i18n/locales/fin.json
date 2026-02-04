@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Tiedostosi, turvallisesti tallennettuna Telegramiin"
+  },
+  "sidebar": {
+    "myDrive": "Oma Drive",
+    "home": "Etusivu",
+    "computer": "Tietokone",
+    "sharedWithMe": "Jaettu kanssani",
+    "recent": "Viimeaikaiset",
+    "starred": "Tähdellä merkityt",
+    "trash": "Roskakori",
+    "storage": "Tallennustila",
+    "newFolder": "Uusi kansio",
+    "upload": "Lataa",
+    "uploadFiles": "Lataa tiedostoja"
+  },
+  "header": {
+    "search": "Hae Drivesta",
+    "settings": "Asetukset",
+    "help": "Ohje",
+    "account": "Tili"
+  },
+  "files": {
+    "name": "Nimi",
+    "owner": "Omistaja",
+    "lastModified": "Viimeksi muokattu",
+    "fileSize": "Tiedostokoko",
+    "noFiles": "Tiedostoja ei löytynyt",
+    "dropHere": "Pudota tiedostot tähän ladataksesi",
+    "dragAndDrop": "Voit vetää ja pudottaa tiedostoja tähän",
+    "uploading": "Ladataan...",
+    "uploaded": "Ladattu",
+    "failed": "Epäonnistui",
+    "delete": "Poista",
+    "download": "Lataa",
+    "rename": "Nimeä uudelleen",
+    "move": "Siirrä",
+    "copy": "Kopioi",
+    "share": "Jaa",
+    "details": "Tiedot",
+    "preview": "Esikatselu"
+  },
+  "folders": {
+    "create": "Luo kansio",
+    "folderName": "Kansion nimi",
+    "newFolder": "Uusi kansio",
+    "delete": "Poista kansio",
+    "rename": "Nimeä kansio uudelleen",
+    "empty": "Tämä kansio on tyhjä"
+  },
+  "actions": {
+    "save": "Tallenna",
+    "cancel": "Peruuta",
+    "confirm": "Vahvista",
+    "delete": "Poista",
+    "close": "Sulje",
+    "apply": "Käytä",
+    "ok": "OK",
+    "yes": "Kyllä",
+    "no": "Ei",
+    "retry": "Yritä uudelleen",
+    "refresh": "Päivitä",
+    "scanTelegram": "Skannaa Telegram",
+    "selectAll": "Valitse kaikki",
+    "clearSelection": "Tyhjennä valinta",
+    "back": "Takaisin",
+    "scanHint": "Skannaa Telegram lisätäksesi tiedostoja"
+  },
+  "messages": {
+    "deleteConfirm": "Haluatko varmasti poistaa tämän?",
+    "deleteSuccess": "Poistettu onnistuneesti",
+    "deleteFailed": "Poistaminen epäonnistui",
+    "uploadSuccess": "Lataus onnistui",
+    "uploadFailed": "Lataus epäonnistui",
+    "folderCreated": "Kansio luotu onnistuneesti",
+    "folderDeleted": "Kansio ja kaikki sisältö poistettu",
+    "noItemsSelected": "Kohteita ei ole valittu",
+    "itemsSelected": "{count} kohdetta valittu",
+    "loading": "Ladataan...",
+    "error": "Tapahtui virhe",
+    "networkError": "Verkkovirhe. Yritä uudelleen."
+  },
+  "auth": {
+    "login": "Kirjaudu sisään",
+    "logout": "Kirjaudu ulos",
+    "loginWithTelegram": "Kirjaudu Telegramilla",
+    "phoneNumber": "Puhelinnumero",
+    "verificationCode": "Vahvistuskoodi",
+    "sendCode": "Lähetä koodi",
+    "verify": "Vahvista",
+    "loginSuccess": "Kirjautuminen onnistui",
+    "loginFailed": "Kirjautuminen epäonnistui"
+  },
+  "settings": {
+    "title": "Asetukset",
+    "language": "Kieli",
+    "theme": "Teema",
+    "darkMode": "Tumma tila",
+    "lightMode": "Vaalea tila",
+    "notifications": "Ilmoitukset",
+    "storage": "Tallennustila",
+    "about": "Tietoja"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Dine filer, sikkert gemt på Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Mit Drev",
+    "home": "Hjem",
+    "computer": "Computer",
+    "sharedWithMe": "Delt med mig",
+    "recent": "Seneste",
+    "starred": "Stjernemarkeret",
+    "trash": "Papirkurv",
+    "storage": "Lagerplads",
+    "newFolder": "Ny mappe",
+    "upload": "Upload",
+    "uploadFiles": "Upload filer"
+  },
+  "header": {
+    "search": "Søg i Drev",
+    "settings": "Indstillinger",
+    "help": "Hjælp",
+    "account": "Konto"
+  },
+  "files": {
+    "name": "Navn",
+    "owner": "Ejer",
+    "lastModified": "Sidst ændret",
+    "fileSize": "Filstørrelse",
+    "noFiles": "Ingen filer fundet",
+    "dropHere": "Slip filer her for at uploade",
+    "dragAndDrop": "Du kan trække og slippe filer her",
+    "uploading": "Uploader...",
+    "uploaded": "Uploadet",
+    "failed": "Mislykkedes",
+    "delete": "Slet",
+    "download": "Download",
+    "rename": "Omdøb",
+    "move": "Flyt",
+    "copy": "Kopiér",
+    "share": "Del",
+    "details": "Detaljer",
+    "preview": "Forhåndsvisning"
+  },
+  "folders": {
+    "create": "Opret mappe",
+    "folderName": "Mappenavn",
+    "newFolder": "Ny mappe",
+    "delete": "Slet mappe",
+    "rename": "Omdøb mappe",
+    "empty": "Denne mappe er tom"
+  },
+  "actions": {
+    "save": "Gem",
+    "cancel": "Annuller",
+    "confirm": "Bekræft",
+    "delete": "Slet",
+    "close": "Luk",
+    "apply": "Anvend",
+    "ok": "OK",
+    "yes": "Ja",
+    "no": "Nej",
+    "retry": "Prøv igen",
+    "refresh": "Opdater",
+    "scanTelegram": "Scan Telegram",
+    "selectAll": "Vælg alle",
+    "clearSelection": "Ryd valg",
+    "back": "Tilbage",
+    "scanHint": "Scan Telegram for at tilføje filer"
+  },
+  "messages": {
+    "deleteConfirm": "Er du sikker på, at du vil slette dette?",
+    "deleteSuccess": "Slettet",
+    "deleteFailed": "Kunne ikke slette",
+    "uploadSuccess": "Upload gennemført",
+    "uploadFailed": "Upload mislykkedes",
+    "folderCreated": "Mappe oprettet",
+    "folderDeleted": "Mappe og alt indhold slettet",
+    "noItemsSelected": "Ingen elementer valgt",
+    "itemsSelected": "{count} elementer valgt",
+    "loading": "Indlæser...",
+    "error": "Der opstod en fejl",
+    "networkError": "Netværksfejl. Prøv venligst igen."
+  },
+  "auth": {
+    "login": "Log ind",
+    "logout": "Log ud",
+    "loginWithTelegram": "Log ind med Telegram",
+    "phoneNumber": "Telefonnummer",
+    "verificationCode": "Bekræftelseskode",
+    "sendCode": "Send kode",
+    "verify": "Bekræft",
+    "loginSuccess": "Login gennemført",
+    "loginFailed": "Login mislykkedes"
+  },
+  "settings": {
+    "title": "Indstillinger",
+    "language": "Sprog",
+    "theme": "Tema",
+    "darkMode": "Mørk tilstand",
+    "lightMode": "Lys tilstand",
+    "notifications": "Notifikationer",
+    "storage": "Lagerplads",
+    "about": "Om"
+  }
+}

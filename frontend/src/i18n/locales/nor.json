@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Filene dine, trygt lagret på Telegram"
+  },
+  "sidebar": {
+    "myDrive": "Min disk",
+    "home": "Hjem",
+    "computer": "Datamaskin",
+    "sharedWithMe": "Delt med meg",
+    "recent": "Nylige",
+    "starred": "Stjernemerket",
+    "trash": "Papirkurv",
+    "storage": "Lagring",
+    "newFolder": "Ny mappe",
+    "upload": "Last opp",
+    "uploadFiles": "Last opp filer"
+  },
+  "header": {
+    "search": "Søk i Disk",
+    "settings": "Innstillinger",
+    "help": "Hjelp",
+    "account": "Konto"
+  },
+  "files": {
+    "name": "Navn",
+    "owner": "Eier",
+    "lastModified": "Sist endret",
+    "fileSize": "Filstørrelse",
+    "noFiles": "Ingen filer funnet",
+    "dropHere": "Slipp filer her for å laste opp",
+    "dragAndDrop": "Du kan dra og slippe filer her",
+    "uploading": "Laster opp...",
+    "uploaded": "Lastet opp",
+    "failed": "Mislyktes",
+    "delete": "Slett",
+    "download": "Last ned",
+    "rename": "Gi nytt navn",
+    "move": "Flytt",
+    "copy": "Kopier",
+    "share": "Del",
+    "details": "Detaljer",
+    "preview": "Forhåndsvisning"
+  },
+  "folders": {
+    "create": "Opprett mappe",
+    "folderName": "Mappenavn",
+    "newFolder": "Ny mappe",
+    "delete": "Slett mappe",
+    "rename": "Gi mappe nytt navn",
+    "empty": "Denne mappen er tom"
+  },
+  "actions": {
+    "save": "Lagre",
+    "cancel": "Avbryt",
+    "confirm": "Bekreft",
+    "delete": "Slett",
+    "close": "Lukk",
+    "apply": "Bruk",
+    "ok": "OK",
+    "yes": "Ja",
+    "no": "Nei",
+    "retry": "Prøv igjen",
+    "refresh": "Oppdater",
+    "scanTelegram": "Skann Telegram",
+    "selectAll": "Velg alle",
+    "clearSelection": "Fjern valg",
+    "back": "Tilbake",
+    "scanHint": "Skann Telegram for å legge til filer"
+  },
+  "messages": {
+    "deleteConfirm": "Er du sikker på at du vil slette dette?",
+    "deleteSuccess": "Slettet",
+    "deleteFailed": "Kunne ikke slette",
+    "uploadSuccess": "Opplasting vellykket",
+    "uploadFailed": "Opplasting mislyktes",
+    "folderCreated": "Mappe opprettet",
+    "folderDeleted": "Mappe og alt innhold slettet",
+    "noItemsSelected": "Ingen elementer valgt",
+    "itemsSelected": "{count} elementer valgt",
+    "loading": "Laster...",
+    "error": "En feil oppstod",
+    "networkError": "Nettverksfeil. Vennligst prøv igjen."
+  },
+  "auth": {
+    "login": "Logg inn",
+    "logout": "Logg ut",
+    "loginWithTelegram": "Logg inn med Telegram",
+    "phoneNumber": "Telefonnummer",
+    "verificationCode": "Bekreftelseskode",
+    "sendCode": "Send kode",
+    "verify": "Bekreft",
+    "loginSuccess": "Innlogging vellykket",
+    "loginFailed": "Innlogging mislyktes"
+  },
+  "settings": {
+    "title": "Innstillinger",
+    "language": "Språk",
+    "theme": "Tema",
+    "darkMode": "Mørk modus",
+    "lightMode": "Lys modus",
+    "notifications": "Varsler",
+    "storage": "Lagring",
+    "about": "Om"
+  }
+}
