@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import UserAccountMenu from './UserAccountMenu';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useToast } from './Toast';
@@ -69,8 +69,26 @@ const HelpIcon = () => (
 
 const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderProps) => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const toast = useToast();
     const { t } = useI18n();
+
+    // Debounced search with loading indicator
+    const handleSearchChange = (value: string) => {
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+
+        if (value.length > 0) {
+            setIsSearching(true);
+        }
+
+        searchTimeoutRef.current = setTimeout(() => {
+            onSearchChange(value);
+            setIsSearching(false);
+        }, 300);
+    };
 
     const handleLogout = async () => {
         try {
@@ -112,16 +130,24 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
             <div className="flex-1 max-w-3xl">
                 <div className={`relative flex items-center ${isSearchFocused ? 'bg-white shadow-md' : 'bg-white'} rounded-full transition-all`}>
                     <div className="pl-3 md:pl-4 pr-2">
-                        <SearchIcon />
+                        {isSearching ? (
+                            <svg className="w-5 h-5 text-blue-500 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                        ) : (
+                            <SearchIcon />
+                        )}
                     </div>
                     <input
                         type="text"
                         placeholder={t('header.search')}
                         value={searchQuery}
-                        onChange={(e) => onSearchChange(e.target.value)}
+                        onChange={(e) => handleSearchChange(e.target.value)}
                         onFocus={() => setIsSearchFocused(true)}
                         onBlur={() => setIsSearchFocused(false)}
                         className="flex-1 py-2.5 md:py-3 pr-4 bg-transparent text-sm focus:outline-none placeholder-gray-500"
+                        aria-label={t('header.search')}
                     />
                 </div>
             </div>
@@ -137,6 +163,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
                 <button
                     className="hidden md:block p-2.5 rounded-full hover:bg-gray-200 transition-colors"
                     title={t('header.help')}
+                    aria-label={t('header.help')}
                 >
                     <HelpIcon />
                 </button>
@@ -145,6 +172,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
                 <button
                     className="hidden md:block p-2.5 rounded-full hover:bg-gray-200 transition-colors"
                     title={t('header.settings')}
+                    aria-label={t('header.settings')}
                 >
                     <SettingsIcon />
                 </button>
@@ -153,6 +181,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
                 <button
                     className="hidden md:block p-2.5 rounded-full hover:bg-gray-200 transition-colors"
                     title="Apps"
+                    aria-label="Apps"
                 >
                     <AppsIcon />
                 </button>
@@ -170,26 +199,38 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
 };
 
 // Export the view mode controls separately for use in FileGrid
-export const ViewModeControls = ({ viewMode, onViewModeChange }: { viewMode: 'grid' | 'list'; onViewModeChange: (mode: 'grid' | 'list') => void }) => (
-    <div className="flex items-center gap-1 border border-gray-300 rounded-lg p-0.5 bg-white">
-        <button
-            onClick={() => onViewModeChange('list')}
-            className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-            title="Chế độ xem danh sách"
-        >
-            <ListViewIcon active={viewMode === 'list'} />
-        </button>
-        <button
-            onClick={() => onViewModeChange('grid')}
-            className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-            title="Chế độ xem lưới"
-        >
-            <GridViewIcon active={viewMode === 'grid'} />
-        </button>
-        <button className="p-1.5 hover:bg-gray-100 rounded" title="Chi tiết">
-            <InfoIcon />
-        </button>
-    </div>
-);
+export const ViewModeControls = ({ viewMode, onViewModeChange }: { viewMode: 'grid' | 'list'; onViewModeChange: (mode: 'grid' | 'list') => void }) => {
+    const { t } = useI18n();
+
+    return (
+        <div className="flex items-center gap-1 border border-gray-300 rounded-lg p-0.5 bg-white">
+            <button
+                onClick={() => onViewModeChange('list')}
+                className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                title={t('files.listView')}
+                aria-label={t('files.listView')}
+                aria-pressed={viewMode === 'list'}
+            >
+                <ListViewIcon active={viewMode === 'list'} />
+            </button>
+            <button
+                onClick={() => onViewModeChange('grid')}
+                className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                title={t('files.gridView')}
+                aria-label={t('files.gridView')}
+                aria-pressed={viewMode === 'grid'}
+            >
+                <GridViewIcon active={viewMode === 'grid'} />
+            </button>
+            <button
+                className="p-1.5 hover:bg-gray-100 rounded"
+                title={t('files.details')}
+                aria-label={t('files.details')}
+            >
+                <InfoIcon />
+            </button>
+        </div>
+    );
+};
 
 export default Header;

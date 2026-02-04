@@ -409,6 +409,8 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                             e.stopPropagation();
                             setContextMenu({ x: e.clientX, y: e.clientY });
                         }}
+                        aria-label={t('files.details')}
+                        title={t('files.details')}
                     >
                         <MoreIcon />
                     </button>
@@ -509,6 +511,8 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                             e.stopPropagation();
                             setContextMenu({ x: e.clientX, y: e.clientY });
                         }}
+                        aria-label={t('files.details')}
+                        title={t('files.details')}
                     >
                         <MoreIcon />
                     </button>
