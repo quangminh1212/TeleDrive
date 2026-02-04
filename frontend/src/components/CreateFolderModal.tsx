@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useI18n } from '../i18n';
 
 interface CreateFolderModalProps {
     isOpen: boolean;
@@ -21,6 +22,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
     const [error, setError] = useState('');
     const [isFocused, setIsFocused] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const { t } = useI18n();
 
     useEffect(() => {
         if (isOpen) {
@@ -36,18 +38,18 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
 
         const trimmedName = folderName.trim();
         if (!trimmedName) {
-            setError('Vui lòng nhập tên thư mục');
+            setError(t('messages.error'));
             return;
         }
 
         const invalidChars = ['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
         if (invalidChars.some(char => trimmedName.includes(char))) {
-            setError('Tên thư mục chứa ký tự không hợp lệ');
+            setError(t('messages.error'));
             return;
         }
 
         if (trimmedName.length > 255) {
-            setError('Tên thư mục quá dài (tối đa 255 ký tự)');
+            setError(t('messages.error'));
             return;
         }
 
@@ -59,10 +61,10 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
             if (result.success) {
                 onClose();
             } else {
-                setError(result.error || 'Không thể tạo thư mục');
+                setError(result.error || t('messages.error'));
             }
         } catch {
-            setError('Có lỗi xảy ra khi tạo thư mục');
+            setError(t('messages.error'));
         } finally {
             setIsCreating(false);
         }
@@ -97,10 +99,10 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                         <FolderIcon />
                         <div>
                             <h2 className="text-xl font-medium text-gray-800">
-                                Tạo thư mục mới
+                                {t('folders.newFolder')}
                             </h2>
                             <p className="text-sm text-gray-500 mt-0.5">
-                                Nhập tên cho thư mục của bạn
+                                {t('folders.folderName')}
                             </p>
                         </div>
                     </div>
@@ -110,7 +112,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                 <form onSubmit={handleSubmit} className="px-6 pb-6">
                     {/* Input Label */}
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tên thư mục
+                        {t('folders.folderName')}
                     </label>
 
                     {/* Input - Google Drive style */}
@@ -125,7 +127,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                             }}
                             onFocus={() => setIsFocused(true)}
                             onBlur={() => setIsFocused(false)}
-                            placeholder="Ví dụ: Tài liệu quan trọng"
+                            placeholder={t('folders.newFolder')}
                             className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-lg text-gray-800 placeholder-gray-400 outline-none transition-colors pr-16 ${error
                                     ? 'border-red-400'
                                     : isFocused
@@ -176,7 +178,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                             disabled={isCreating}
                             className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
                         >
-                            Hủy
+                            {t('actions.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -189,14 +191,14 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                     </svg>
-                                    Đang tạo...
+                                    {t('messages.loading')}
                                 </>
                             ) : (
                                 <>
                                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M12 5v14M5 12h14" strokeLinecap="round" />
                                     </svg>
-                                    Tạo thư mục
+                                    {t('folders.create')}
                                 </>
                             )}
                         </button>
