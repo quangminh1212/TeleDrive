@@ -21,8 +21,12 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 app_dir = os.path.join(PROJECT_ROOT, 'app')
 sys.path.insert(0, app_dir)
 
-# Change to app directory for correct relative paths
-os.chdir(app_dir)
+# Check for development mode early (before chdir)
+DEV_MODE = os.environ.get('DEV_MODE', '').lower() in ('1', 'true', 'yes')
+
+# Only change directory if NOT in dev mode (reloader needs original cwd)
+if not DEV_MODE:
+    os.chdir(app_dir)
 
 # Global flag for shutdown
 _shutdown_requested = False
@@ -32,7 +36,7 @@ def cleanup():
     """Run cleanup tasks on exit"""
     global _shutdown_requested
     _shutdown_requested = True
-    
+
     # Run stop.bat to clean up processes
     stop_bat = os.path.join(PROJECT_ROOT, 'stop.bat')
     if os.path.exists(stop_bat):
@@ -57,18 +61,18 @@ def signal_handler(signum, frame):
         # Force exit to avoid eventlet threading issues
         os._exit(0)
 
-def run_flask_server():
+def run_flask_server(dev_mode=False):
     """Run Flask API server"""
     from app import app, socketio
-    
+
     # Run API server on port 5000
-    print("🚀 Starting Flask API server on port 5000...")
+    # Note: In dev mode with reloader, this must run in main thread
     socketio.run(
         app,
         host='127.0.0.1',
         port=5000,
-        debug=False,
-        use_reloader=False
+        debug=dev_mode,
+        use_reloader=dev_mode
     )
 
 def wait_for_server(host, port, timeout=30):
@@ -90,65 +94,95 @@ def wait_for_server(host, port, timeout=30):
         time.sleep(0.5)
     return False
 
+def open_browser_delayed(url, delay=3):
+    """Open browser after a delay"""
+    time.sleep(delay)
+    webbrowser.open(url)
+
 def main():
     """Main entry point"""
     global _server_thread
-    
+
+    # Use global DEV_MODE (set early before chdir)
+    dev_mode = DEV_MODE
+
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     if sys.platform == 'win32':
         signal.signal(signal.SIGBREAK, signal_handler)
-    
+
     # Register cleanup on exit
     atexit.register(cleanup)
-    
+
     print("=" * 50)
     print("     TeleDrive Desktop - API Server")
     print("=" * 50)
     print()
-    
-    # Start Flask API server in background thread
-    _server_thread = threading.Thread(target=run_flask_server, daemon=True)
-    _server_thread.start()
-    
-    # Wait for server to start
-    print("⏳ Waiting for API server to be ready...")
-    if not wait_for_server('127.0.0.1', 5000, timeout=30):
-        if not _shutdown_requested:
-            print("❌ API Server failed to start!")
-        return
-    
-    print("✅ API Server is running at http://127.0.0.1:5000")
-    print()
-    print("=" * 50)
-    print("  Frontend: http://localhost:1420")
-    print("  API:      http://127.0.0.1:5000")
-    print("=" * 50)
-    print()
-    
-    # Open frontend in browser
-    frontend_url = "http://localhost:1420"
-    print(f"🌐 Opening frontend: {frontend_url}")
-    webbrowser.open(frontend_url)
-    
-    # Keep server running
-    print()
-    print("Press Ctrl+C to stop the server...")
-    try:
-        while not _shutdown_requested:
-            time.sleep(0.5)
-    except KeyboardInterrupt:
-        pass
-    
-    # Graceful shutdown
-    print("\n🛑 Shutting down...")
-    cleanup()
-    print("👋 TeleDrive stopped")
-    
-    # Force exit to avoid eventlet threading cleanup issues
-    os._exit(0)
+
+    if dev_mode:
+        # DEV MODE: Run Flask in main thread with reloader
+        # Reloader requires main thread for signal handling
+        print("🔧 DEVELOPMENT MODE - Auto-reload enabled")
+        print("   Changes to Python files will restart the server")
+        print()
+        print("=" * 50)
+        print("  Frontend: http://localhost:1420")
+        print("  API:      http://127.0.0.1:5000")
+        print("=" * 50)
+        print()
+
+        # Open browser in background thread after delay
+        browser_thread = threading.Thread(
+            target=open_browser_delayed,
+            args=("http://localhost:1420", 3),
+            daemon=True
+        )
+        browser_thread.start()
+
+        # Run Flask directly in main thread (required for reloader)
+        run_flask_server(dev_mode=True)
+    else:
+        # PRODUCTION MODE: Run Flask in background thread
+        _server_thread = threading.Thread(target=run_flask_server, daemon=True)
+        _server_thread.start()
+
+        # Wait for server to start
+        print("⏳ Waiting for API server to be ready...")
+        if not wait_for_server('127.0.0.1', 5000, timeout=30):
+            if not _shutdown_requested:
+                print("❌ API Server failed to start!")
+            return
+
+        print("✅ API Server is running at http://127.0.0.1:5000")
+        print()
+        print("=" * 50)
+        print("  Frontend: http://localhost:1420")
+        print("  API:      http://127.0.0.1:5000")
+        print("=" * 50)
+        print()
+
+        # Open frontend in browser
+        frontend_url = "http://localhost:1420"
+        print(f"🌐 Opening frontend: {frontend_url}")
+        webbrowser.open(frontend_url)
+
+        # Keep server running
+        print()
+        print("Press Ctrl+C to stop the server...")
+        try:
+            while not _shutdown_requested:
+                time.sleep(0.5)
+        except KeyboardInterrupt:
+            pass
+
+        # Graceful shutdown
+        print("\n🛑 Shutting down...")
+        cleanup()
+        print("👋 TeleDrive stopped")
+
+        # Force exit to avoid eventlet threading cleanup issues
+        os._exit(0)
 
 if __name__ == '__main__':
     main()
-
