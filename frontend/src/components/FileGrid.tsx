@@ -6,6 +6,7 @@ import { api, FileInfo, FolderInfo } from '../services/api';
 import { useToast } from './Toast';
 import { useUpload } from '../contexts/UploadContext';
 import ConfirmDialog from './ConfirmDialog';
+import { logger } from '../utils/logger';
 
 interface FileGridProps {
     searchQuery: string;
@@ -210,6 +211,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     }, [currentFolder]);
 
     useEffect(() => {
+        logger.info('FileGrid', 'Component mounted/updated, calling fetchFiles');
         fetchFiles();
     }, [fetchFiles]);
 
@@ -255,15 +257,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         const folderId = currentFolder && !isNaN(parseInt(currentFolder)) ? currentFolder : undefined;
 
         // Use upload context to handle upload with progress tracking
+        // Note: UploadContext will trigger onUploadComplete after a delay,
+        // which causes App to remount and refresh the file list automatically
         await uploadFiles(files, folderId);
-
-        // Add a small delay to ensure database has committed the changes
-        // before refreshing the file list
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Refresh file list after upload
-        fetchFiles();
-    }, [currentFolder, uploadFiles, fetchFiles]);
+    }, [currentFolder, uploadFiles]);
 
     const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();

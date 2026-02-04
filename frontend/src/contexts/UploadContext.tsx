@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { api } from '../services/api';
 import { UploadItem } from '../components/UploadProgress';
+import { logger } from '../utils/logger';
 
 interface UploadContextType {
     uploadItems: UploadItem[];
@@ -79,7 +80,7 @@ export const UploadProvider = ({ children, onUploadComplete }: UploadProviderPro
                     ));
                 }
             } catch (error) {
-                console.error('Upload error:', error);
+                logger.error('UploadContext', 'Upload error', { error, filename: file.name });
                 setUploadItems(prev => prev.map(item =>
                     item.id === itemId
                         ? { ...item, status: 'error' as const, error: 'Network error' }
@@ -90,7 +91,13 @@ export const UploadProvider = ({ children, onUploadComplete }: UploadProviderPro
 
         setIsUploading(false);
 
+        // Add delay to ensure database has fully committed the changes
+        // before triggering the refresh callback
+        logger.info('UploadContext', 'All uploads done, waiting 500ms before refresh...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         // Trigger refresh callback
+        logger.info('UploadContext', 'Calling onUploadComplete callback', { hasCallback: !!onUploadComplete });
         if (onUploadComplete) {
             onUploadComplete();
         }
