@@ -1970,6 +1970,7 @@ def upload_file_public():
             user = get_or_create_user()
             app.logger.info(f"Upload by default user: {user.username}")
         uploaded_files = []
+        file_records = []  # Store file records to get IDs after flush
 
         # Validate folder if specified
         if folder_id:
@@ -2079,17 +2080,23 @@ def upload_file_public():
                     # Keep local storage as fallback
 
                 db.session.add(file_record)
-                uploaded_files.append({
-                    'id': file_record.id,
-                    'filename': unique_filename,
-                    'size': file_size,
-                    'type': mime_type
-                })
+                # Store record reference to get ID after flush
+                file_records.append((file_record, unique_filename, file_size, mime_type))
 
         # Flush to assign IDs before commit
         try:
             db.session.flush()
-            app.logger.info(f"Flushed {len(uploaded_files)} files to database")
+            app.logger.info(f"Flushed {len(file_records)} files to database")
+
+            # Now build uploaded_files with actual IDs after flush
+            for file_record, unique_filename, file_size, mime_type in file_records:
+                uploaded_files.append({
+                    'id': file_record.id,  # Now has actual ID after flush
+                    'filename': unique_filename,
+                    'size': file_size,
+                    'type': mime_type
+                })
+                app.logger.info(f"File record ID: {file_record.id}, filename: {unique_filename}")
         except Exception as flush_err:
             app.logger.error(f"Database flush error: {flush_err}")
             db.session.rollback()
