@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "আপনার ফাইল, টেলিগ্রামে নিরাপদে সংরক্ষিত"
+  },
+  "sidebar": {
+    "myDrive": "আমার ড্রাইভ",
+    "home": "হোম",
+    "computer": "কম্পিউটার",
+    "sharedWithMe": "আমার সাথে শেয়ার করা",
+    "recent": "সাম্প্রতিক",
+    "starred": "তারকাচিহ্নিত",
+    "trash": "ট্র্যাশ",
+    "storage": "স্টোরেজ",
+    "newFolder": "নতুন ফোল্ডার",
+    "upload": "আপলোড",
+    "uploadFiles": "ফাইল আপলোড করুন"
+  },
+  "header": {
+    "search": "ড্রাইভে খুঁজুন",
+    "settings": "সেটিংস",
+    "help": "সাহায্য",
+    "account": "অ্যাকাউন্ট"
+  },
+  "files": {
+    "name": "নাম",
+    "owner": "মালিক",
+    "lastModified": "সর্বশেষ পরিবর্তিত",
+    "fileSize": "ফাইলের আকার",
+    "noFiles": "কোনো ফাইল পাওয়া যায়নি",
+    "dropHere": "আপলোড করতে এখানে ফাইল ড্রপ করুন",
+    "dragAndDrop": "আপনি এখানে ফাইল টেনে এনে ড্রপ করতে পারেন",
+    "uploading": "আপলোড হচ্ছে...",
+    "uploaded": "আপলোড হয়েছে",
+    "failed": "ব্যর্থ",
+    "delete": "মুছুন",
+    "download": "ডাউনলোড",
+    "rename": "নাম পরিবর্তন",
+    "move": "সরান",
+    "copy": "কপি",
+    "share": "শেয়ার",
+    "details": "বিবরণ",
+    "preview": "প্রিভিউ"
+  },
+  "folders": {
+    "create": "ফোল্ডার তৈরি করুন",
+    "folderName": "ফোল্ডারের নাম",
+    "newFolder": "নতুন ফোল্ডার",
+    "delete": "ফোল্ডার মুছুন",
+    "rename": "ফোল্ডারের নাম পরিবর্তন",
+    "empty": "এই ফোল্ডারটি খালি"
+  },
+  "actions": {
+    "save": "সংরক্ষণ",
+    "cancel": "বাতিল",
+    "confirm": "নিশ্চিত",
+    "delete": "মুছুন",
+    "close": "বন্ধ",
+    "apply": "প্রয়োগ",
+    "ok": "ঠিক আছে",
+    "yes": "হ্যাঁ",
+    "no": "না",
+    "retry": "পুনরায় চেষ্টা",
+    "refresh": "রিফ্রেশ",
+    "scanTelegram": "টেলিগ্রাম স্ক্যান",
+    "selectAll": "সব নির্বাচন",
+    "clearSelection": "নির্বাচন মুছুন",
+    "back": "পেছনে",
+    "scanHint": "ফাইল যোগ করতে টেলিগ্রাম স্ক্যান করুন"
+  },
+  "messages": {
+    "deleteConfirm": "আপনি কি নিশ্চিত যে এটি মুছতে চান?",
+    "deleteSuccess": "সফলভাবে মুছে ফেলা হয়েছে",
+    "deleteFailed": "মুছতে ব্যর্থ",
+    "uploadSuccess": "সফলভাবে আপলোড হয়েছে",
+    "uploadFailed": "আপলোড ব্যর্থ",
+    "folderCreated": "ফোল্ডার সফলভাবে তৈরি হয়েছে",
+    "folderDeleted": "ফোল্ডার এবং সমস্ত বিষয়বস্তু মুছে ফেলা হয়েছে",
+    "noItemsSelected": "কোনো আইটেম নির্বাচিত নেই",
+    "itemsSelected": "{count}টি আইটেম নির্বাচিত",
+    "loading": "লোড হচ্ছে...",
+    "error": "একটি ত্রুটি ঘটেছে",
+    "networkError": "নেটওয়ার্ক ত্রুটি। অনুগ্রহ করে আবার চেষ্টা করুন।"
+  },
+  "auth": {
+    "login": "লগইন",
+    "logout": "লগআউট",
+    "loginWithTelegram": "টেলিগ্রাম দিয়ে লগইন",
+    "phoneNumber": "ফোন নম্বর",
+    "verificationCode": "যাচাইকরণ কোড",
+    "sendCode": "কোড পাঠান",
+    "verify": "যাচাই",
+    "loginSuccess": "লগইন সফল",
+    "loginFailed": "লগইন ব্যর্থ"
+  },
+  "settings": {
+    "title": "সেটিংস",
+    "language": "ভাষা",
+    "theme": "থিম",
+    "darkMode": "ডার্ক মোড",
+    "lightMode": "লাইট মোড",
+    "notifications": "বিজ্ঞপ্তি",
+    "storage": "স্টোরেজ",
+    "about": "সম্পর্কে"
+  }
+}

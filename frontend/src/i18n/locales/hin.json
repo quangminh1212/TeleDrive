@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "आपकी फ़ाइलें, टेलीग्राम पर सुरक्षित रूप से संग्रहीत"
+  },
+  "sidebar": {
+    "myDrive": "मेरी ड्राइव",
+    "home": "होम",
+    "computer": "कंप्यूटर",
+    "sharedWithMe": "मेरे साथ साझा",
+    "recent": "हाल का",
+    "starred": "तारांकित",
+    "trash": "कचरा",
+    "storage": "संग्रहण",
+    "newFolder": "नया फ़ोल्डर",
+    "upload": "अपलोड",
+    "uploadFiles": "फ़ाइलें अपलोड करें"
+  },
+  "header": {
+    "search": "ड्राइव में खोजें",
+    "settings": "सेटिंग्स",
+    "help": "सहायता",
+    "account": "खाता"
+  },
+  "files": {
+    "name": "नाम",
+    "owner": "मालिक",
+    "lastModified": "अंतिम संशोधित",
+    "fileSize": "फ़ाइल आकार",
+    "noFiles": "कोई फ़ाइल नहीं मिली",
+    "dropHere": "अपलोड करने के लिए फ़ाइलें यहाँ छोड़ें",
+    "dragAndDrop": "आप अपलोड करने के लिए फ़ाइलों को यहाँ खींच और छोड़ सकते हैं",
+    "uploading": "अपलोड हो रहा है...",
+    "uploaded": "अपलोड हो गया",
+    "failed": "विफल",
+    "delete": "हटाएं",
+    "download": "डाउनलोड",
+    "rename": "नाम बदलें",
+    "move": "स्थानांतरित करें",
+    "copy": "कॉपी करें",
+    "share": "साझा करें",
+    "details": "विवरण",
+    "preview": "पूर्वावलोकन"
+  },
+  "folders": {
+    "create": "फ़ोल्डर बनाएं",
+    "folderName": "फ़ोल्डर का नाम",
+    "newFolder": "नया फ़ोल्डर",
+    "delete": "फ़ोल्डर हटाएं",
+    "rename": "फ़ोल्डर का नाम बदलें",
+    "empty": "यह फ़ोल्डर खाली है"
+  },
+  "actions": {
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "confirm": "पुष्टि करें",
+    "delete": "हटाएं",
+    "close": "बंद करें",
+    "apply": "लागू करें",
+    "ok": "ठीक है",
+    "yes": "हाँ",
+    "no": "नहीं",
+    "retry": "पुनः प्रयास करें",
+    "refresh": "ताज़ा करें",
+    "scanTelegram": "टेलीग्राम स्कैन करें",
+    "selectAll": "सभी चुनें",
+    "clearSelection": "चयन साफ़ करें",
+    "back": "वापस",
+    "scanHint": "फ़ाइलें जोड़ने के लिए टेलीग्राम स्कैन करें"
+  },
+  "messages": {
+    "deleteConfirm": "क्या आप वाकई इसे हटाना चाहते हैं?",
+    "deleteSuccess": "सफलतापूर्वक हटाया गया",
+    "deleteFailed": "हटाने में विफल",
+    "uploadSuccess": "अपलोड सफल",
+    "uploadFailed": "अपलोड विफल",
+    "folderCreated": "फ़ोल्डर सफलतापूर्वक बनाया गया",
+    "folderDeleted": "फ़ोल्डर और सभी सामग्री हटा दी गई",
+    "noItemsSelected": "कोई आइटम चयनित नहीं",
+    "itemsSelected": "{count} आइटम चयनित",
+    "loading": "लोड हो रहा है...",
+    "error": "एक त्रुटि हुई",
+    "networkError": "नेटवर्क त्रुटि। कृपया पुनः प्रयास करें।"
+  },
+  "auth": {
+    "login": "लॉग इन",
+    "logout": "लॉग आउट",
+    "loginWithTelegram": "टेलीग्राम से लॉग इन करें",
+    "phoneNumber": "फ़ोन नंबर",
+    "verificationCode": "सत्यापन कोड",
+    "sendCode": "कोड भेजें",
+    "verify": "सत्यापित करें",
+    "loginSuccess": "लॉग इन सफल",
+    "loginFailed": "लॉग इन विफल"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "language": "भाषा",
+    "theme": "थीम",
+    "darkMode": "डार्क मोड",
+    "lightMode": "लाइट मोड",
+    "notifications": "सूचनाएं",
+    "storage": "संग्रहण",
+    "about": "के बारे में"
+  }
+}
