@@ -38,18 +38,18 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
 
         const trimmedName = folderName.trim();
         if (!trimmedName) {
-            setError(t('messages.error'));
+            setError(t('messages.folderNameEmpty'));
             return;
         }
 
         const invalidChars = ['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
         if (invalidChars.some(char => trimmedName.includes(char))) {
-            setError(t('messages.error'));
+            setError(t('messages.folderNameInvalidChars'));
             return;
         }
 
         if (trimmedName.length > 255) {
-            setError(t('messages.error'));
+            setError(t('messages.folderNameTooLong'));
             return;
         }
 
@@ -155,7 +155,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
 
                     {/* Quick suggestions */}
                     <div className="mt-4">
-                        <p className="text-xs text-gray-500 mb-2">Gợi ý:</p>
+                        <p className="text-xs text-gray-500 mb-2">{t('messages.suggestions')}:</p>
                         <div className="flex flex-wrap gap-2">
                             {suggestions.map((suggestion) => (
                                 <button
