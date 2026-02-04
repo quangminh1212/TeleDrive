@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Els teus fitxers, emmagatzemats de forma segura a Telegram"
+  },
+  "sidebar": {
+    "myDrive": "El meu Drive",
+    "home": "Inici",
+    "computer": "Ordinador",
+    "sharedWithMe": "Compartit amb mi",
+    "recent": "Recent",
+    "starred": "Destacats",
+    "trash": "Paperera",
+    "storage": "Emmagatzematge",
+    "newFolder": "Carpeta nova",
+    "upload": "Puja",
+    "uploadFiles": "Puja fitxers"
+  },
+  "header": {
+    "search": "Cerca a Drive",
+    "settings": "Configuració",
+    "help": "Ajuda",
+    "account": "Compte"
+  },
+  "files": {
+    "name": "Nom",
+    "owner": "Propietari",
+    "lastModified": "Última modificació",
+    "fileSize": "Mida del fitxer",
+    "noFiles": "No s'han trobat fitxers",
+    "dropHere": "Deixa anar els fitxers aquí per pujar-los",
+    "dragAndDrop": "Pots arrossegar i deixar anar fitxers aquí",
+    "uploading": "Pujant...",
+    "uploaded": "Pujat",
+    "failed": "Error",
+    "delete": "Elimina",
+    "download": "Baixa",
+    "rename": "Canvia el nom",
+    "move": "Mou",
+    "copy": "Copia",
+    "share": "Comparteix",
+    "details": "Detalls",
+    "preview": "Previsualització"
+  },
+  "folders": {
+    "create": "Crea una carpeta",
+    "folderName": "Nom de la carpeta",
+    "newFolder": "Carpeta nova",
+    "delete": "Elimina la carpeta",
+    "rename": "Canvia el nom de la carpeta",
+    "empty": "Aquesta carpeta és buida"
+  },
+  "actions": {
+    "save": "Desa",
+    "cancel": "Cancel·la",
+    "confirm": "Confirma",
+    "delete": "Elimina",
+    "close": "Tanca",
+    "apply": "Aplica",
+    "ok": "D'acord",
+    "yes": "Sí",
+    "no": "No",
+    "retry": "Torna-ho a provar",
+    "refresh": "Actualitza",
+    "scanTelegram": "Escaneja Telegram",
+    "selectAll": "Selecciona-ho tot",
+    "clearSelection": "Esborra la selecció",
+    "back": "Enrere",
+    "scanHint": "Escaneja Telegram per afegir fitxers"
+  },
+  "messages": {
+    "deleteConfirm": "Segur que vols eliminar això?",
+    "deleteSuccess": "Eliminat correctament",
+    "deleteFailed": "No s'ha pogut eliminar",
+    "uploadSuccess": "Pujat correctament",
+    "uploadFailed": "No s'ha pogut pujar",
+    "folderCreated": "Carpeta creada correctament",
+    "folderDeleted": "S'ha eliminat la carpeta i tot el contingut",
+    "noItemsSelected": "No hi ha elements seleccionats",
+    "itemsSelected": "{count} elements seleccionats",
+    "loading": "Carregant...",
+    "error": "S'ha produït un error",
+    "networkError": "Error de xarxa. Torna-ho a provar."
+  },
+  "auth": {
+    "login": "Inicia sessió",
+    "logout": "Tanca sessió",
+    "loginWithTelegram": "Inicia sessió amb Telegram",
+    "phoneNumber": "Número de telèfon",
+    "verificationCode": "Codi de verificació",
+    "sendCode": "Envia el codi",
+    "verify": "Verifica",
+    "loginSuccess": "Inici de sessió correcte",
+    "loginFailed": "Error d'inici de sessió"
+  },
+  "settings": {
+    "title": "Configuració",
+    "language": "Idioma",
+    "theme": "Tema",
+    "darkMode": "Mode fosc",
+    "lightMode": "Mode clar",
+    "notifications": "Notificacions",
+    "storage": "Emmagatzematge",
+    "about": "Quant a"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Zure fitxategiak, Telegram-en modu seguruan gordetuta"
+  },
+  "sidebar": {
+    "myDrive": "Nire unitatea",
+    "home": "Hasiera",
+    "computer": "Ordenagailua",
+    "sharedWithMe": "Nirekin partekatua",
+    "recent": "Azkenak",
+    "starred": "Izardunak",
+    "trash": "Zakarrontzia",
+    "storage": "Biltegiratzea",
+    "newFolder": "Karpeta berria",
+    "upload": "Igo",
+    "uploadFiles": "Igo fitxategiak"
+  },
+  "header": {
+    "search": "Bilatu Drive-n",
+    "settings": "Ezarpenak",
+    "help": "Laguntza",
+    "account": "Kontua"
+  },
+  "files": {
+    "name": "Izena",
+    "owner": "Jabea",
+    "lastModified": "Azken aldaketa",
+    "fileSize": "Fitxategiaren tamaina",
+    "noFiles": "Ez da fitxategirik aurkitu",
+    "dropHere": "Jaregin fitxategiak hona igotzeko",
+    "dragAndDrop": "Fitxategiak hona arrastatu ditzakezu",
+    "uploading": "Igotzen...",
+    "uploaded": "Igota",
+    "failed": "Huts egin du",
+    "delete": "Ezabatu",
+    "download": "Deskargatu",
+    "rename": "Izena aldatu",
+    "move": "Mugitu",
+    "copy": "Kopiatu",
+    "share": "Partekatu",
+    "details": "Xehetasunak",
+    "preview": "Aurrebista"
+  },
+  "folders": {
+    "create": "Sortu karpeta",
+    "folderName": "Karpetaren izena",
+    "newFolder": "Karpeta berria",
+    "delete": "Ezabatu karpeta",
+    "rename": "Karpetaren izena aldatu",
+    "empty": "Karpeta hau hutsik dago"
+  },
+  "actions": {
+    "save": "Gorde",
+    "cancel": "Utzi",
+    "confirm": "Berretsi",
+    "delete": "Ezabatu",
+    "close": "Itxi",
+    "apply": "Aplikatu",
+    "ok": "Ados",
+    "yes": "Bai",
+    "no": "Ez",
+    "retry": "Saiatu berriro",
+    "refresh": "Freskatu",
+    "scanTelegram": "Eskaneatu Telegram",
+    "selectAll": "Hautatu guztiak",
+    "clearSelection": "Garbitu hautapena",
+    "back": "Atzera",
+    "scanHint": "Eskaneatu Telegram fitxategiak gehitzeko"
+  },
+  "messages": {
+    "deleteConfirm": "Ziur zaude hau ezabatu nahi duzula?",
+    "deleteSuccess": "Ondo ezabatuta",
+    "deleteFailed": "Ezin izan da ezabatu",
+    "uploadSuccess": "Ondo igota",
+    "uploadFailed": "Ezin izan da igo",
+    "folderCreated": "Karpeta ondo sortu da",
+    "folderDeleted": "Karpeta eta eduki guztia ezabatu dira",
+    "noItemsSelected": "Ez da elementurik hautatu",
+    "itemsSelected": "{count} elementu hautatu dira",
+    "loading": "Kargatzen...",
+    "error": "Errore bat gertatu da",
+    "networkError": "Sareko errorea. Saiatu berriro."
+  },
+  "auth": {
+    "login": "Hasi saioa",
+    "logout": "Amaitu saioa",
+    "loginWithTelegram": "Hasi saioa Telegram-ekin",
+    "phoneNumber": "Telefono zenbakia",
+    "verificationCode": "Egiaztapen kodea",
+    "sendCode": "Bidali kodea",
+    "verify": "Egiaztatu",
+    "loginSuccess": "Saioa ondo hasi da",
+    "loginFailed": "Ezin izan da saioa hasi"
+  },
+  "settings": {
+    "title": "Ezarpenak",
+    "language": "Hizkuntza",
+    "theme": "Gaia",
+    "darkMode": "Modu iluna",
+    "lightMode": "Modu argia",
+    "notifications": "Jakinarazpenak",
+    "storage": "Biltegiratzea",
+    "about": "Honi buruz"
+  }
+}

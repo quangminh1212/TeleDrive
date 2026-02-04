@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Os teus ficheiros, almacenados de forma segura en Telegram"
+  },
+  "sidebar": {
+    "myDrive": "O meu Drive",
+    "home": "Inicio",
+    "computer": "Ordenador",
+    "sharedWithMe": "Compartido comigo",
+    "recent": "Recente",
+    "starred": "Con estrela",
+    "trash": "Papeleira",
+    "storage": "Almacenamento",
+    "newFolder": "Novo cartafol",
+    "upload": "Subir",
+    "uploadFiles": "Subir ficheiros"
+  },
+  "header": {
+    "search": "Buscar en Drive",
+    "settings": "Configuración",
+    "help": "Axuda",
+    "account": "Conta"
+  },
+  "files": {
+    "name": "Nome",
+    "owner": "Propietario",
+    "lastModified": "Última modificación",
+    "fileSize": "Tamaño do ficheiro",
+    "noFiles": "Non se atoparon ficheiros",
+    "dropHere": "Solta os ficheiros aquí para subilos",
+    "dragAndDrop": "Podes arrastrar e soltar ficheiros aquí",
+    "uploading": "Subindo...",
+    "uploaded": "Subido",
+    "failed": "Fallou",
+    "delete": "Eliminar",
+    "download": "Descargar",
+    "rename": "Renomear",
+    "move": "Mover",
+    "copy": "Copiar",
+    "share": "Compartir",
+    "details": "Detalles",
+    "preview": "Vista previa"
+  },
+  "folders": {
+    "create": "Crear cartafol",
+    "folderName": "Nome do cartafol",
+    "newFolder": "Novo cartafol",
+    "delete": "Eliminar cartafol",
+    "rename": "Renomear cartafol",
+    "empty": "Este cartafol está baleiro"
+  },
+  "actions": {
+    "save": "Gardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "close": "Pechar",
+    "apply": "Aplicar",
+    "ok": "Aceptar",
+    "yes": "Si",
+    "no": "Non",
+    "retry": "Reintentar",
+    "refresh": "Actualizar",
+    "scanTelegram": "Escanear Telegram",
+    "selectAll": "Seleccionar todo",
+    "clearSelection": "Borrar selección",
+    "back": "Atrás",
+    "scanHint": "Escanea Telegram para engadir ficheiros"
+  },
+  "messages": {
+    "deleteConfirm": "Estás seguro de que queres eliminar isto?",
+    "deleteSuccess": "Eliminado correctamente",
+    "deleteFailed": "Erro ao eliminar",
+    "uploadSuccess": "Subido correctamente",
+    "uploadFailed": "Erro ao subir",
+    "folderCreated": "Cartafol creado correctamente",
+    "folderDeleted": "Cartafol e todo o seu contido eliminados",
+    "noItemsSelected": "Non hai elementos seleccionados",
+    "itemsSelected": "{count} elementos seleccionados",
+    "loading": "Cargando...",
+    "error": "Produciuse un erro",
+    "networkError": "Erro de rede. Por favor, téntao de novo."
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "logout": "Pechar sesión",
+    "loginWithTelegram": "Iniciar sesión con Telegram",
+    "phoneNumber": "Número de teléfono",
+    "verificationCode": "Código de verificación",
+    "sendCode": "Enviar código",
+    "verify": "Verificar",
+    "loginSuccess": "Inicio de sesión correcto",
+    "loginFailed": "Erro ao iniciar sesión"
+  },
+  "settings": {
+    "title": "Configuración",
+    "language": "Idioma",
+    "theme": "Tema",
+    "darkMode": "Modo escuro",
+    "lightMode": "Modo claro",
+    "notifications": "Notificacións",
+    "storage": "Almacenamento",
+    "about": "Acerca de"
+  }
+}
