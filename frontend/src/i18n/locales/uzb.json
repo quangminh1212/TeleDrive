@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Fayllaringiz Telegram'da xavfsiz saqlangan"
+  },
+  "sidebar": {
+    "myDrive": "Mening diskim",
+    "home": "Bosh sahifa",
+    "computer": "Kompyuter",
+    "sharedWithMe": "Men bilan ulashilgan",
+    "recent": "So'nggi",
+    "starred": "Yulduzli",
+    "trash": "Axlat",
+    "storage": "Xotira",
+    "newFolder": "Yangi papka",
+    "upload": "Yuklash",
+    "uploadFiles": "Fayllarni yuklash"
+  },
+  "header": {
+    "search": "Diskda qidirish",
+    "settings": "Sozlamalar",
+    "help": "Yordam",
+    "account": "Hisob"
+  },
+  "files": {
+    "name": "Nomi",
+    "owner": "Egasi",
+    "lastModified": "Oxirgi o'zgarish",
+    "fileSize": "Fayl hajmi",
+    "noFiles": "Fayllar topilmadi",
+    "dropHere": "Yuklash uchun fayllarni bu yerga tashlang",
+    "dragAndDrop": "Fayllarni bu yerga sudrab olib kelishingiz mumkin",
+    "uploading": "Yuklanmoqda...",
+    "uploaded": "Yuklandi",
+    "failed": "Muvaffaqiyatsiz",
+    "delete": "O'chirish",
+    "download": "Yuklab olish",
+    "rename": "Nomini o'zgartirish",
+    "move": "Ko'chirish",
+    "copy": "Nusxa olish",
+    "share": "Ulashish",
+    "details": "Tafsilotlar",
+    "preview": "Ko'rib chiqish"
+  },
+  "folders": {
+    "create": "Papka yaratish",
+    "folderName": "Papka nomi",
+    "newFolder": "Yangi papka",
+    "delete": "Papkani o'chirish",
+    "rename": "Papka nomini o'zgartirish",
+    "empty": "Bu papka bo'sh"
+  },
+  "actions": {
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "confirm": "Tasdiqlash",
+    "delete": "O'chirish",
+    "close": "Yopish",
+    "apply": "Qo'llash",
+    "ok": "OK",
+    "yes": "Ha",
+    "no": "Yo'q",
+    "retry": "Qayta urinish",
+    "refresh": "Yangilash",
+    "scanTelegram": "Telegram skanerlash",
+    "selectAll": "Hammasini tanlash",
+    "clearSelection": "Tanlovni tozalash",
+    "back": "Orqaga",
+    "scanHint": "Fayllarni qo'shish uchun Telegram-ni skanerlang"
+  },
+  "messages": {
+    "deleteConfirm": "Buni o'chirishni xohlaysizmi?",
+    "deleteSuccess": "Muvaffaqiyatli o'chirildi",
+    "deleteFailed": "O'chirib bo'lmadi",
+    "uploadSuccess": "Muvaffaqiyatli yuklandi",
+    "uploadFailed": "Yuklab bo'lmadi",
+    "folderCreated": "Papka muvaffaqiyatli yaratildi",
+    "folderDeleted": "Papka va barcha tarkib o'chirildi",
+    "noItemsSelected": "Hech qanday element tanlanmagan",
+    "itemsSelected": "{count} element tanlandi",
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik yuz berdi",
+    "networkError": "Tarmoq xatosi. Iltimos, qayta urinib ko'ring."
+  },
+  "auth": {
+    "login": "Kirish",
+    "logout": "Chiqish",
+    "loginWithTelegram": "Telegram orqali kirish",
+    "phoneNumber": "Telefon raqami",
+    "verificationCode": "Tasdiqlash kodi",
+    "sendCode": "Kod yuborish",
+    "verify": "Tasdiqlash",
+    "loginSuccess": "Muvaffaqiyatli kirish",
+    "loginFailed": "Kirib bo'lmadi"
+  },
+  "settings": {
+    "title": "Sozlamalar",
+    "language": "Til",
+    "theme": "Mavzu",
+    "darkMode": "Qorong'u rejim",
+    "lightMode": "Yorug' rejim",
+    "notifications": "Bildirishnomalar",
+    "storage": "Xotira",
+    "about": "Haqida"
+  }
+}

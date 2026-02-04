@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "თქვენი ფაილები, უსაფრთხოდ შენახული Telegram-ზე"
+  },
+  "sidebar": {
+    "myDrive": "ჩემი დისკი",
+    "home": "მთავარი",
+    "computer": "კომპიუტერი",
+    "sharedWithMe": "ჩემთან გაზიარებული",
+    "recent": "ბოლო",
+    "starred": "ვარსკვლავიანი",
+    "trash": "კალათა",
+    "storage": "საცავი",
+    "newFolder": "ახალი საქაღალდე",
+    "upload": "ატვირთვა",
+    "uploadFiles": "ფაილების ატვირთვა"
+  },
+  "header": {
+    "search": "ძიება დისკში",
+    "settings": "პარამეტრები",
+    "help": "დახმარება",
+    "account": "ანგარიში"
+  },
+  "files": {
+    "name": "სახელი",
+    "owner": "მფლობელი",
+    "lastModified": "ბოლო ცვლილება",
+    "fileSize": "ფაილის ზომა",
+    "noFiles": "ფაილები ვერ მოიძებნა",
+    "dropHere": "ჩააგდეთ ფაილები აქ ასატვირთად",
+    "dragAndDrop": "შეგიძლიათ გადმოიტანოთ ფაილები აქ",
+    "uploading": "იტვირთება...",
+    "uploaded": "ატვირთული",
+    "failed": "ვერ მოხერხდა",
+    "delete": "წაშლა",
+    "download": "ჩამოტვირთვა",
+    "rename": "სახელის შეცვლა",
+    "move": "გადატანა",
+    "copy": "კოპირება",
+    "share": "გაზიარება",
+    "details": "დეტალები",
+    "preview": "გადახედვა"
+  },
+  "folders": {
+    "create": "საქაღალდის შექმნა",
+    "folderName": "საქაღალდის სახელი",
+    "newFolder": "ახალი საქაღალდე",
+    "delete": "საქაღალდის წაშლა",
+    "rename": "საქაღალდის სახელის შეცვლა",
+    "empty": "ეს საქაღალდე ცარიელია"
+  },
+  "actions": {
+    "save": "შენახვა",
+    "cancel": "გაუქმება",
+    "confirm": "დადასტურება",
+    "delete": "წაშლა",
+    "close": "დახურვა",
+    "apply": "გამოყენება",
+    "ok": "კარგი",
+    "yes": "დიახ",
+    "no": "არა",
+    "retry": "ხელახლა ცდა",
+    "refresh": "განახლება",
+    "scanTelegram": "Telegram-ის სკანირება",
+    "selectAll": "ყველას არჩევა",
+    "clearSelection": "არჩევანის გასუფთავება",
+    "back": "უკან",
+    "scanHint": "დაასკანერეთ Telegram ფაილების დასამატებლად"
+  },
+  "messages": {
+    "deleteConfirm": "დარწმუნებული ხართ, რომ გსურთ წაშლა?",
+    "deleteSuccess": "წარმატებით წაიშალა",
+    "deleteFailed": "წაშლა ვერ მოხერხდა",
+    "uploadSuccess": "წარმატებით აიტვირთა",
+    "uploadFailed": "ატვირთვა ვერ მოხერხდა",
+    "folderCreated": "საქაღალდე წარმატებით შეიქმნა",
+    "folderDeleted": "საქაღალდე და მთელი შიგთავსი წაიშალა",
+    "noItemsSelected": "არცერთი ელემენტი არ არის არჩეული",
+    "itemsSelected": "{count} ელემენტი არჩეულია",
+    "loading": "იტვირთება...",
+    "error": "მოხდა შეცდომა",
+    "networkError": "ქსელის შეცდომა. გთხოვთ, სცადეთ ხელახლა."
+  },
+  "auth": {
+    "login": "შესვლა",
+    "logout": "გამოსვლა",
+    "loginWithTelegram": "შესვლა Telegram-ით",
+    "phoneNumber": "ტელეფონის ნომერი",
+    "verificationCode": "დამადასტურებელი კოდი",
+    "sendCode": "კოდის გაგზავნა",
+    "verify": "დადასტურება",
+    "loginSuccess": "წარმატებული შესვლა",
+    "loginFailed": "შესვლა ვერ მოხერხდა"
+  },
+  "settings": {
+    "title": "პარამეტრები",
+    "language": "ენა",
+    "theme": "თემა",
+    "darkMode": "მუქი რეჟიმი",
+    "lightMode": "ნათელი რეჟიმი",
+    "notifications": "შეტყობინებები",
+    "storage": "საცავი",
+    "about": "შესახებ"
+  }
+}

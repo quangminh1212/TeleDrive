@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Fayllarınız Telegram-da təhlükəsiz saxlanılır"
+  },
+  "sidebar": {
+    "myDrive": "Diskim",
+    "home": "Ana səhifə",
+    "computer": "Kompüter",
+    "sharedWithMe": "Mənimlə paylaşılan",
+    "recent": "Son",
+    "starred": "Ulduzlu",
+    "trash": "Zibil",
+    "storage": "Yaddaş",
+    "newFolder": "Yeni qovluq",
+    "upload": "Yüklə",
+    "uploadFiles": "Faylları yüklə"
+  },
+  "header": {
+    "search": "Diskdə axtar",
+    "settings": "Parametrlər",
+    "help": "Kömək",
+    "account": "Hesab"
+  },
+  "files": {
+    "name": "Ad",
+    "owner": "Sahib",
+    "lastModified": "Son dəyişiklik",
+    "fileSize": "Fayl ölçüsü",
+    "noFiles": "Fayl tapılmadı",
+    "dropHere": "Yükləmək üçün faylları bura atın",
+    "dragAndDrop": "Faylları bura sürükləyə bilərsiniz",
+    "uploading": "Yüklənir...",
+    "uploaded": "Yükləndi",
+    "failed": "Uğursuz",
+    "delete": "Sil",
+    "download": "Yüklə",
+    "rename": "Adını dəyiş",
+    "move": "Köçür",
+    "copy": "Kopyala",
+    "share": "Paylaş",
+    "details": "Təfərrüatlar",
+    "preview": "Önizləmə"
+  },
+  "folders": {
+    "create": "Qovluq yarat",
+    "folderName": "Qovluq adı",
+    "newFolder": "Yeni qovluq",
+    "delete": "Qovluğu sil",
+    "rename": "Qovluğun adını dəyiş",
+    "empty": "Bu qovluq boşdur"
+  },
+  "actions": {
+    "save": "Saxla",
+    "cancel": "Ləğv et",
+    "confirm": "Təsdiqlə",
+    "delete": "Sil",
+    "close": "Bağla",
+    "apply": "Tətbiq et",
+    "ok": "OK",
+    "yes": "Bəli",
+    "no": "Xeyr",
+    "retry": "Yenidən cəhd et",
+    "refresh": "Yenilə",
+    "scanTelegram": "Telegram-ı skan et",
+    "selectAll": "Hamısını seç",
+    "clearSelection": "Seçimi təmizlə",
+    "back": "Geri",
+    "scanHint": "Fayl əlavə etmək üçün Telegram-ı skan edin"
+  },
+  "messages": {
+    "deleteConfirm": "Bunu silmək istədiyinizə əminsiniz?",
+    "deleteSuccess": "Uğurla silindi",
+    "deleteFailed": "Silinmədi",
+    "uploadSuccess": "Uğurla yükləndi",
+    "uploadFailed": "Yüklənmədi",
+    "folderCreated": "Qovluq uğurla yaradıldı",
+    "folderDeleted": "Qovluq və bütün məzmun silindi",
+    "noItemsSelected": "Heç bir element seçilməyib",
+    "itemsSelected": "{count} element seçildi",
+    "loading": "Yüklənir...",
+    "error": "Xəta baş verdi",
+    "networkError": "Şəbəkə xətası. Yenidən cəhd edin."
+  },
+  "auth": {
+    "login": "Daxil ol",
+    "logout": "Çıxış",
+    "loginWithTelegram": "Telegram ilə daxil ol",
+    "phoneNumber": "Telefon nömrəsi",
+    "verificationCode": "Təsdiq kodu",
+    "sendCode": "Kod göndər",
+    "verify": "Təsdiqlə",
+    "loginSuccess": "Uğurlu giriş",
+    "loginFailed": "Giriş uğursuz"
+  },
+  "settings": {
+    "title": "Parametrlər",
+    "language": "Dil",
+    "theme": "Mövzu",
+    "darkMode": "Qaranlıq rejim",
+    "lightMode": "İşıqlı rejim",
+    "notifications": "Bildirişlər",
+    "storage": "Yaddaş",
+    "about": "Haqqında"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Файлдарыңыз Telegram-да қауіпсіз сақталған"
+  },
+  "sidebar": {
+    "myDrive": "Менің дискім",
+    "home": "Басты бет",
+    "computer": "Компьютер",
+    "sharedWithMe": "Менімен бөлісілген",
+    "recent": "Соңғы",
+    "starred": "Жұлдызшалы",
+    "trash": "Қоқыс",
+    "storage": "Сақтау орны",
+    "newFolder": "Жаңа қалта",
+    "upload": "Жүктеу",
+    "uploadFiles": "Файлдарды жүктеу"
+  },
+  "header": {
+    "search": "Дискте іздеу",
+    "settings": "Параметрлер",
+    "help": "Анықтама",
+    "account": "Есептік жазба"
+  },
+  "files": {
+    "name": "Атауы",
+    "owner": "Иесі",
+    "lastModified": "Соңғы өзгеріс",
+    "fileSize": "Файл өлшемі",
+    "noFiles": "Файлдар табылмады",
+    "dropHere": "Жүктеу үшін файлдарды осында тастаңыз",
+    "dragAndDrop": "Файлдарды осында сүйреп апаруға болады",
+    "uploading": "Жүктелуде...",
+    "uploaded": "Жүктелді",
+    "failed": "Сәтсіз",
+    "delete": "Жою",
+    "download": "Жүктеп алу",
+    "rename": "Атын өзгерту",
+    "move": "Жылжыту",
+    "copy": "Көшіру",
+    "share": "Бөлісу",
+    "details": "Мәліметтер",
+    "preview": "Алдын ала қарау"
+  },
+  "folders": {
+    "create": "Қалта жасау",
+    "folderName": "Қалта атауы",
+    "newFolder": "Жаңа қалта",
+    "delete": "Қалтаны жою",
+    "rename": "Қалта атын өзгерту",
+    "empty": "Бұл қалта бос"
+  },
+  "actions": {
+    "save": "Сақтау",
+    "cancel": "Бас тарту",
+    "confirm": "Растау",
+    "delete": "Жою",
+    "close": "Жабу",
+    "apply": "Қолдану",
+    "ok": "OK",
+    "yes": "Иә",
+    "no": "Жоқ",
+    "retry": "Қайталау",
+    "refresh": "Жаңарту",
+    "scanTelegram": "Telegram сканерлеу",
+    "selectAll": "Барлығын таңдау",
+    "clearSelection": "Таңдауды тазалау",
+    "back": "Артқа",
+    "scanHint": "Файлдарды қосу үшін Telegram-ды сканерлеңіз"
+  },
+  "messages": {
+    "deleteConfirm": "Мұны жойғыңыз келетініне сенімдісіз бе?",
+    "deleteSuccess": "Сәтті жойылды",
+    "deleteFailed": "Жою сәтсіз",
+    "uploadSuccess": "Сәтті жүктелді",
+    "uploadFailed": "Жүктеу сәтсіз",
+    "folderCreated": "Қалта сәтті жасалды",
+    "folderDeleted": "Қалта және барлық мазмұн жойылды",
+    "noItemsSelected": "Ешбір элемент таңдалмаған",
+    "itemsSelected": "{count} элемент таңдалды",
+    "loading": "Жүктелуде...",
+    "error": "Қате орын алды",
+    "networkError": "Желі қатесі. Қайталап көріңіз."
+  },
+  "auth": {
+    "login": "Кіру",
+    "logout": "Шығу",
+    "loginWithTelegram": "Telegram арқылы кіру",
+    "phoneNumber": "Телефон нөмірі",
+    "verificationCode": "Растау коды",
+    "sendCode": "Код жіберу",
+    "verify": "Растау",
+    "loginSuccess": "Сәтті кіру",
+    "loginFailed": "Кіру сәтсіз"
+  },
+  "settings": {
+    "title": "Параметрлер",
+    "language": "Тіл",
+    "theme": "Тақырып",
+    "darkMode": "Қараңғы режим",
+    "lightMode": "Жарық режим",
+    "notifications": "Хабарландырулар",
+    "storage": "Сақтау орны",
+    "about": "Туралы"
+  }
+}

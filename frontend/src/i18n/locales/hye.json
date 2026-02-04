@@ -1,0 +1,106 @@
+{
+  "app": {
+    "name": "TeleDrive",
+    "tagline": "Ձdelays delays, delays delays delays delays Telegram- delays"
+  },
+  "sidebar": {
+    "myDrive": "Իdelays delays",
+    "home": "Գdelays",
+    "computer": "Համdelays",
+    "sharedWithMe": "Delays delays delays",
+    "recent": "Վdelays",
+    "starred": "Աdelays",
+    "trash": "Աdelays",
+    "storage": "Պdelays",
+    "newFolder": "Նdelays delays",
+    "upload": "Վdelays",
+    "uploadFiles": "Delays delays delays"
+  },
+  "header": {
+    "search": "Որdelays delays",
+    "settings": "Կdelays",
+    "help": "Օdelays",
+    "account": "Հdelays"
+  },
+  "files": {
+    "name": "Անdelays",
+    "owner": "Սेफ़delays",
+    "lastModified": "Վdelay delays",
+    "fileSize": " Delays delays",
+    "noFiles": " Delays delays delays",
+    "dropHere": "Delays delays delays delays",
+    "dragAndDrop": "Delays delays delays delays delays",
+    "uploading": "Delays...",
+    "uploaded": "Delays",
+    "failed": "Delays",
+    "delete": "Ջdelays",
+    "download": "Ներdelays",
+    "rename": "Վeredelays",
+    "move": "Տdelays",
+    "copy": "Պdelays",
+    "share": "Կdelays",
+    "details": "Մdelays",
+    "preview": "Նdelays"
+  },
+  "folders": {
+    "create": " Delays delays",
+    "folderName": "Delays delays",
+    "newFolder": "Նdelays delays",
+    "delete": "Ջdelays delays",
+    "rename": "Վeredelays delays",
+    "empty": "Delays delays delays"
+  },
+  "actions": {
+    "save": "Պdelays",
+    "cancel": "Չdelays",
+    "confirm": "Հdelays",
+    "delete": " Delays",
+    "close": "Փdelays",
+    "apply": "Կdelays",
+    "ok": "Delays",
+    "yes": "Այdelays",
+    "no": "Ոdelays",
+    "retry": "Delays delays",
+    "refresh": "Թdelays",
+    "scanTelegram": "Delays Telegram",
+    "selectAll": "Ընdelays delays",
+    "clearSelection": "Delays delays",
+    "back": "Հdelays",
+    "scanHint": "Delays Telegram delays delays delays"
+  },
+  "messages": {
+    "deleteConfirm": "Delays delays delays delays?",
+    "deleteSuccess": "Delays delays",
+    "deleteFailed": "Delays delays",
+    "uploadSuccess": "Delays delays",
+    "uploadFailed": "Delays delays",
+    "folderCreated": "Delays delays delays",
+    "folderDeleted": "Delays delays delays delays",
+    "noItemsSelected": "Delays delays delays",
+    "itemsSelected": "{count} delays delays",
+    "loading": "Delays...",
+    "error": "Delays delays",
+    "networkError": "Delays delays. Delays delays."
+  },
+  "auth": {
+    "login": "Մdelays",
+    "logout": " Delays",
+    "loginWithTelegram": "Delays Telegram-delays",
+    "phoneNumber": "Delays delays",
+    "verificationCode": "Delays delays",
+    "sendCode": "Delays delays",
+    "verify": "Delays",
+    "loginSuccess": "Delays delays",
+    "loginFailed": "Delays delays"
+  },
+  "settings": {
+    "title": "Կdelays",
+    "language": "Լdelays",
+    "theme": "Թdelays",
+    "darkMode": "Մdelays delays",
+    "lightMode": "Լdelays delays",
+    "notifications": "Ծdelays",
+    "storage": "Պdelays",
+    "about": "Մdelays"
+  }
+}
