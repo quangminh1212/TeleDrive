@@ -193,14 +193,19 @@ const formatFileSize = (bytes?: number): string => {
 const formatDate = (dateStr: string): string => {
     if (!dateStr || dateStr === '-') return '-';
     try {
-        // Parse the date string - if it doesn't have timezone info, assume UTC
+        // Check if the date string has timezone info using proper regex
+        // Matches: Z, +HH:MM, -HH:MM, +HHMM, -HHMM at the end of string
+        const hasTimezone = /Z$|[+-]\d{2}:?\d{2}$/.test(dateStr);
+
         let date: Date;
-        if (dateStr.includes('Z') || dateStr.includes('+') || dateStr.includes('-')) {
+        if (hasTimezone) {
             // Already has timezone info
             date = new Date(dateStr);
         } else {
-            // No timezone info - assume UTC and append 'Z'
-            date = new Date(dateStr + 'Z');
+            // No timezone info - assume UTC
+            // Replace space with 'T' for ISO format and append 'Z'
+            const isoStr = dateStr.replace(' ', 'T') + 'Z';
+            date = new Date(isoStr);
         }
 
         if (isNaN(date.getTime())) return dateStr;
@@ -209,7 +214,7 @@ const formatDate = (dateStr: string): string => {
         const diffMs = now.getTime() - date.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-        // Format time in user's local timezone
+        // Format time in user's local timezone (auto-detected by browser)
         if (diffDays === 0) {
             return date.toLocaleTimeString(undefined, {
                 hour: '2-digit',
