@@ -24,9 +24,9 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     if (!isOpen) return null;
 
     const confirmButtonStyles = {
-        blue: 'bg-blue-600 hover:bg-blue-700 text-white',
+        blue: 'bg-blue-600 hover:bg-blue-700 text-white dark:bg-dark-blue dark:hover:bg-dark-blue-hover dark:text-dark-bg',
         red: 'bg-red-600 hover:bg-red-700 text-white',
-        gray: 'bg-gray-600 hover:bg-gray-700 text-white'
+        gray: 'bg-gray-600 hover:bg-gray-700 text-white dark:bg-dark-hover dark:hover:bg-dark-active'
     };
 
     return (
@@ -38,13 +38,13 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             />
 
             {/* Dialog - Google Drive Style */}
-            <div className="relative bg-white rounded-2xl w-full max-w-sm mx-4 overflow-hidden shadow-2xl animate-scaleIn">
+            <div className="relative bg-white dark:bg-dark-surface rounded-2xl w-full max-w-sm mx-4 overflow-hidden shadow-2xl animate-scaleIn">
                 {/* Content */}
                 <div className="px-6 py-5">
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">
+                    <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">
                         {title}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
                         {message}
                     </p>
                 </div>
@@ -53,7 +53,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 <div className="px-6 pb-5 flex items-center justify-end gap-2">
                     <button
                         onClick={onCancel}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition-colors"
                     >
                         {cancelText}
                     </button>

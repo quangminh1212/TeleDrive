@@ -137,24 +137,24 @@ const ContextMenu = ({ file, x, y, onClose, onAction }: ContextMenuProps) => {
     return (
         <div
             ref={menuRef}
-            className="fixed bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 min-w-[200px] max-w-[90vw]"
+            className="fixed bg-white dark:bg-dark-surface rounded-lg shadow-xl border border-gray-200 dark:border-dark-border py-2 z-50 min-w-[200px] max-w-[90vw]"
             style={{ left: position.x, top: position.y }}
         >
             {menuItems.map((item, index) => (
                 <div key={item.id}>
                     <button
                         onClick={() => handleItemClick(item.id)}
-                        className={`w-full flex items-center px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${item.danger ? 'text-red-600 hover:bg-red-50' : 'text-gray-700'
+                        className={`w-full flex items-center px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors ${item.danger ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-gray-700 dark:text-dark-text'
                             }`}
                     >
-                        <span className="mr-3 text-gray-500">{item.icon}</span>
+                        <span className="mr-3 text-gray-500 dark:text-dark-text-secondary">{item.icon}</span>
                         <span className="flex-1 text-left">{item.label}</span>
                         {item.shortcut && (
-                            <span className="text-xs text-gray-400 ml-4">{item.shortcut}</span>
+                            <span className="text-xs text-gray-400 dark:text-dark-text-disabled ml-4">{item.shortcut}</span>
                         )}
                     </button>
                     {item.divider && index < menuItems.length - 1 && (
-                        <div className="border-t border-gray-100 my-1" />
+                        <div className="border-t border-gray-100 dark:border-dark-border my-1" />
                     )}
                 </div>
             ))}

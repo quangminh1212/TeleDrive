@@ -9,8 +9,8 @@ interface CreateFolderModalProps {
 
 // Folder icon - Google Drive style blue
 const FolderIcon = () => (
-    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-        <svg className="w-7 h-7 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+    <div className="w-12 h-12 bg-blue-100 dark:bg-dark-selected rounded-xl flex items-center justify-center">
+        <svg className="w-7 h-7 text-blue-600 dark:text-dark-blue" viewBox="0 0 24 24" fill="currentColor">
             <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
         </svg>
     </div>
@@ -92,16 +92,16 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
             />
 
             {/* Modal - Google Drive Light Style */}
-            <div className="relative bg-white rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-2xl animate-scaleIn">
+            <div className="relative bg-white dark:bg-dark-surface rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-2xl animate-scaleIn">
                 {/* Header */}
                 <div className="px-6 pt-6 pb-4">
                     <div className="flex items-center gap-4">
                         <FolderIcon />
                         <div>
-                            <h2 className="text-xl font-medium text-gray-800">
+                            <h2 className="text-xl font-medium text-gray-800 dark:text-dark-text">
                                 {t('folders.newFolder')}
                             </h2>
-                            <p className="text-sm text-gray-500 mt-0.5">
+                            <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-0.5">
                                 {t('folders.folderName')}
                             </p>
                         </div>
@@ -111,7 +111,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="px-6 pb-6">
                     {/* Input Label */}
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                         {t('folders.folderName')}
                     </label>
 
@@ -128,17 +128,17 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                             onFocus={() => setIsFocused(true)}
                             onBlur={() => setIsFocused(false)}
                             placeholder={t('folders.newFolder')}
-                            className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-lg text-gray-800 placeholder-gray-400 outline-none transition-colors pr-16 ${error
+                            className={`w-full px-4 py-3 bg-gray-50 dark:bg-dark-elevated border-2 rounded-lg text-gray-800 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary outline-none transition-colors pr-16 ${error
                                     ? 'border-red-400'
                                     : isFocused
-                                        ? 'border-blue-500 bg-white'
-                                        : 'border-gray-200 hover:border-gray-300'
+                                        ? 'border-blue-500 dark:border-dark-blue bg-white dark:bg-dark-surface'
+                                        : 'border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-hover'
                                 }`}
                             disabled={isCreating}
                             maxLength={255}
                         />
                         {/* Character count */}
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-dark-text-disabled">
                             {folderName.length}/255
                         </span>
                     </div>
@@ -155,14 +155,14 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
 
                     {/* Quick suggestions */}
                     <div className="mt-4">
-                        <p className="text-xs text-gray-500 mb-2">{t('messages.suggestions')}:</p>
+                        <p className="text-xs text-gray-500 dark:text-dark-text-secondary mb-2">{t('messages.suggestions')}:</p>
                         <div className="flex flex-wrap gap-2">
                             {suggestions.map((suggestion) => (
                                 <button
                                     key={suggestion}
                                     type="button"
                                     onClick={() => setFolderName(suggestion)}
-                                    className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-full border border-gray-200 hover:bg-gray-200 hover:border-gray-300 transition-colors"
+                                    className="px-3 py-1.5 text-sm text-gray-600 dark:text-dark-text bg-gray-100 dark:bg-dark-elevated rounded-full border border-gray-200 dark:border-dark-border hover:bg-gray-200 dark:hover:bg-dark-hover hover:border-gray-300 dark:hover:border-dark-hover transition-colors"
                                 >
                                     {suggestion}
                                 </button>
@@ -176,14 +176,14 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                             type="button"
                             onClick={onClose}
                             disabled={isCreating}
-                            className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
+                            className="flex-1 px-4 py-2.5 text-gray-700 dark:text-dark-text bg-gray-100 dark:bg-dark-elevated rounded-lg hover:bg-gray-200 dark:hover:bg-dark-hover transition-colors font-medium disabled:opacity-50"
                         >
                             {t('actions.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={isCreating || !folderName.trim()}
-                            className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2.5 bg-blue-600 dark:bg-dark-blue text-white dark:text-dark-bg rounded-lg hover:bg-blue-700 dark:hover:bg-dark-blue-hover transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isCreating ? (
                                 <>
