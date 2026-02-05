@@ -918,69 +918,71 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                         </>
                     )}
 
-                    {/* Rescan Saved Messages button */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleRefresh}
-                            disabled={isScanning}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all ${isScanning
-                                ? 'bg-blue-100 dark:bg-dark-selected text-blue-600 dark:text-dark-blue cursor-wait'
-                                : 'text-gray-700 dark:text-dark-text border border-gray-300 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-hover'
-                                }`}
-                            title={t('actions.scanTelegram')}
-                            aria-label={t('actions.scanTelegram')}
-                        >
-                            <svg
-                                className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`}
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                            >
-                                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
-                            </svg>
-                            {isScanning ? t('messages.loading') : t('actions.scanTelegram')}
-                        </button>
-
-                        {/* Filter toggle - show when filter is active */}
-                        {filterSavedOnly && (
+                    {/* Rescan Saved Messages button - Hide on starred view */}
+                    {currentFolder !== 'starred' && (
+                        <div className="flex items-center gap-2">
                             <button
-                                onClick={() => setFilterSavedOnly(false)}
-                                className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-dark-selected text-blue-700 dark:text-dark-blue rounded-full hover:bg-blue-200 dark:hover:bg-dark-selected-hover transition-colors"
-                                title="Nhấn để hiển thị tất cả file"
+                                onClick={handleRefresh}
+                                disabled={isScanning}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all ${isScanning
+                                    ? 'bg-blue-100 dark:bg-dark-selected text-blue-600 dark:text-dark-blue cursor-wait'
+                                    : 'text-gray-700 dark:text-dark-text border border-gray-300 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-hover'
+                                    }`}
+                                title={t('actions.scanTelegram')}
+                                aria-label={t('actions.scanTelegram')}
                             >
-                                <span>Saved Messages</span>
-                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                                <svg
+                                    className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`}
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                >
+                                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
                                 </svg>
+                                {isScanning ? t('messages.loading') : t('actions.scanTelegram')}
                             </button>
-                        )}
 
-                        {/* Scan result notification */}
-                        {scanResult && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
-                                    +{scanResult.added} / -{scanResult.removed}
-                                </span>
-                                {removedFilesList.length > 0 && (
-                                    <div className="relative group">
-                                        <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded cursor-help">
-                                            🗑️ {removedFilesList.length} file đã xóa
-                                        </span>
-                                        <div className="absolute left-0 top-full mt-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg shadow-lg p-2 z-50 hidden group-hover:block min-w-48 max-w-80">
-                                            <p className="text-xs font-medium text-gray-700 dark:text-dark-text mb-1">File không còn trong Saved Messages:</p>
-                                            <ul className="text-xs text-gray-600 dark:text-dark-text-secondary max-h-32 overflow-y-auto">
-                                                {removedFilesList.slice(0, 10).map((filename, idx) => (
-                                                    <li key={idx} className="truncate py-0.5">• {filename}</li>
-                                                ))}
-                                                {removedFilesList.length > 10 && (
-                                                    <li className="text-gray-400 dark:text-dark-text-disabled italic">...và {removedFilesList.length - 10} file khác</li>
-                                                )}
-                                            </ul>
+                            {/* Filter toggle - show when filter is active */}
+                            {filterSavedOnly && (
+                                <button
+                                    onClick={() => setFilterSavedOnly(false)}
+                                    className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-dark-selected text-blue-700 dark:text-dark-blue rounded-full hover:bg-blue-200 dark:hover:bg-dark-selected-hover transition-colors"
+                                    title="Nhấn để hiển thị tất cả file"
+                                >
+                                    <span>Saved Messages</span>
+                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                                    </svg>
+                                </button>
+                            )}
+
+                            {/* Scan result notification */}
+                            {scanResult && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                        +{scanResult.added} / -{scanResult.removed}
+                                    </span>
+                                    {removedFilesList.length > 0 && (
+                                        <div className="relative group">
+                                            <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded cursor-help">
+                                                🗑️ {removedFilesList.length} file đã xóa
+                                            </span>
+                                            <div className="absolute left-0 top-full mt-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg shadow-lg p-2 z-50 hidden group-hover:block min-w-48 max-w-80">
+                                                <p className="text-xs font-medium text-gray-700 dark:text-dark-text mb-1">File không còn trong Saved Messages:</p>
+                                                <ul className="text-xs text-gray-600 dark:text-dark-text-secondary max-h-32 overflow-y-auto">
+                                                    {removedFilesList.slice(0, 10).map((filename, idx) => (
+                                                        <li key={idx} className="truncate py-0.5">• {filename}</li>
+                                                    ))}
+                                                    {removedFilesList.length > 10 && (
+                                                        <li className="text-gray-400 dark:text-dark-text-disabled italic">...và {removedFilesList.length - 10} file khác</li>
+                                                    )}
+                                                </ul>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Right side - View mode toggle */}
@@ -994,31 +996,45 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
 
             {/* Content */}
             {files.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-dark-text-secondary">
-                    <svg className="w-20 h-20 mb-4 text-gray-300 dark:text-dark-text-disabled" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
-                    </svg>
-                    <p className="text-lg mb-2">{searchQuery ? t('messages.noSearchResults').replace('{query}', searchQuery) : t('files.noFiles')}</p>
-                    <p className="text-sm mb-4">{searchQuery ? t('actions.clearSelection') : t('actions.scanHint')}</p>
-                    {!searchQuery && (
-                        <div className="flex flex-col items-center gap-3">
-                            <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-dark-blue bg-blue-50 dark:bg-dark-selected px-4 py-2 rounded-lg">
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17-.53-.32-1.14-.53-1.79-.63A5.994 5.994 0 0 0 0 10c0 1.06.28 2.05.76 2.92.3.55.67 1.05 1.1 1.49C2.45 17.55 5.45 20 9 20h10c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
-                                </svg>
-                                <span>{t('files.dragAndDrop')}</span>
-                            </div>
-                            <button
-                                onClick={handleRefresh}
-                                disabled={isScanning}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-dark-blue text-white dark:text-dark-bg rounded-lg hover:bg-blue-700 dark:hover:bg-dark-blue-hover transition-colors disabled:opacity-50"
-                            >
-                                <svg className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
-                                </svg>
-                                {isScanning ? t('messages.loading') : t('actions.scanTelegram')}
-                            </button>
-                        </div>
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-dark-text-secondary">
+                    {currentFolder === 'starred' ? (
+                        /* Empty state for Starred view */
+                        <>
+                            <svg className="w-20 h-20 mb-4 text-gray-300 dark:text-dark-text-disabled" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                            </svg>
+                            <p className="text-lg mb-2">{t('files.noStarred') || 'Chưa có mục nào được gắn dấu sao'}</p>
+                            <p className="text-sm">{t('files.starHint') || 'Gắn dấu sao cho file hoặc thư mục để tìm nhanh hơn'}</p>
+                        </>
+                    ) : (
+                        /* Empty state for other views */
+                        <>
+                            <svg className="w-20 h-20 mb-4 text-gray-300 dark:text-dark-text-disabled" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
+                            </svg>
+                            <p className="text-lg mb-2">{searchQuery ? t('messages.noSearchResults').replace('{query}', searchQuery) : t('files.noFiles')}</p>
+                            <p className="text-sm mb-4">{searchQuery ? t('actions.clearSelection') : t('actions.scanHint')}</p>
+                            {!searchQuery && (
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-dark-blue bg-blue-50 dark:bg-dark-selected px-4 py-2 rounded-lg">
+                                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17-.53-.32-1.14-.53-1.79-.63A5.994 5.994 0 0 0 0 10c0 1.06.28 2.05.76 2.92.3.55.67 1.05 1.1 1.49C2.45 17.55 5.45 20 9 20h10c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
+                                        </svg>
+                                        <span>{t('files.dragAndDrop')}</span>
+                                    </div>
+                                    <button
+                                        onClick={handleRefresh}
+                                        disabled={isScanning}
+                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-dark-blue text-white dark:text-dark-bg rounded-lg hover:bg-blue-700 dark:hover:bg-dark-blue-hover transition-colors disabled:opacity-50"
+                                    >
+                                        <svg className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+                                        </svg>
+                                        {isScanning ? t('messages.loading') : t('actions.scanTelegram')}
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             ) : localViewMode === 'list' ? (
