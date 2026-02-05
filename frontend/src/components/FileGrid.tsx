@@ -5,6 +5,7 @@ import { ViewModeControls } from './Header';
 import { api, FileInfo, FolderInfo } from '../services/api';
 import { useToast } from './Toast';
 import { useUpload } from '../contexts/UploadContext';
+import { useNotification } from '../contexts/NotificationContext';
 import ConfirmDialog from './ConfirmDialog';
 import { logger } from '../utils/logger';
 import { useI18n } from '../i18n';
@@ -73,6 +74,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const [operationMessage, setOperationMessage] = useState<string | null>(null);
     const toast = useToast();
     const { t } = useI18n();
+    const { addNotification } = useNotification();
 
     // Upload context
     const { uploadFiles } = useUpload();
@@ -420,11 +422,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     f.id === file.id ? { ...f, name: newName, filename: newName } : f
                 ));
                 toast.success(t('files.rename') + `: "${newName}"`);
+                // Add notification
+                addNotification('rename', `${t('notifications.fileRenamed')} "${newName}"`, file.name);
             } else {
                 toast.error(t('messages.error') + `: ${response.error}`);
+                addNotification('error', t('messages.error'), file.name);
             }
         } catch (err) {
             toast.error(t('messages.networkError'));
+            addNotification('error', t('messages.networkError'), file.name);
         } finally {
             setIsOperationLoading(false);
             setOperationMessage(null);
@@ -446,20 +452,27 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 if (response.success) {
                     setAllFiles(prev => prev.filter(f => f.id !== file.id));
                     toast.success(t('messages.deleteSuccess') + `: "${file.name}"`);
+                    // Add notification
+                    addNotification('delete', `${t('notifications.fileDeleted')} "${file.name}"`, file.name);
                 } else {
                     toast.error(t('messages.deleteFailed') + `: ${response.error}`);
+                    addNotification('error', t('messages.deleteFailed'), file.name);
                 }
             } else {
                 const response = await api.deleteFile(file.id);
                 if (response.success) {
                     setAllFiles(prev => prev.filter(f => f.id !== file.id));
                     toast.success(t('messages.deleteSuccess') + `: "${file.name || file.filename}"`);
+                    // Add notification
+                    addNotification('delete', `${t('notifications.fileDeleted')} "${file.name || file.filename}"`, file.name || file.filename);
                 } else {
                     toast.error(t('messages.deleteFailed') + `: ${response.error}`);
+                    addNotification('error', t('messages.deleteFailed'), file.name || file.filename);
                 }
             }
         } catch (err) {
             toast.error(t('messages.networkError'));
+            addNotification('error', t('messages.networkError'), file.name);
         } finally {
             setIsOperationLoading(false);
             setOperationMessage(null);
@@ -654,13 +667,17 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
             if (response.success) {
                 const folderName = folderId ? folders.find(f => f.id === folderId)?.name || t('folders.newFolder') : t('sidebar.myDrive');
                 toast.success(`${t('files.move')}: "${moveFileTarget.name}" → "${folderName}"`);
+                // Add notification
+                addNotification('move', `${t('notifications.fileMoved')} "${folderName}"`, moveFileTarget.name);
                 // Refresh file list
                 await fetchFiles();
             } else {
                 toast.error(t('messages.error') + `: ${response.error}`);
+                addNotification('error', t('messages.error'), moveFileTarget.name);
             }
         } catch (err) {
             toast.error(t('messages.networkError'));
+            addNotification('error', t('messages.networkError'), moveFileTarget.name);
         } finally {
             setMoveFileTarget(null);
             setIsOperationLoading(false);
@@ -726,7 +743,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 const folderId = Number(String(file.id).replace('folder-', ''));
                 const response = await api.toggleFolderStar(folderId);
                 if (response.success) {
-                    toast.success(response.data?.is_favorite ? 'Đã gắn dấu sao' : 'Đã bỏ gắn dấu sao');
+                    const isStarred = response.data?.is_favorite;
+                    toast.success(isStarred ? 'Đã gắn dấu sao' : 'Đã bỏ gắn dấu sao');
+                    // Add notification
+                    addNotification('star', isStarred ? t('notifications.fileStarred') : t('notifications.fileUnstarred'), file.name);
                     await fetchFiles();
                 } else {
                     toast.error('Lỗi: ' + (response.error || 'Không thể thay đổi trạng thái sao'));
@@ -735,7 +755,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 const fileId = Number(file.id);
                 const response = await api.toggleFileStar(fileId);
                 if (response.success) {
-                    toast.success(response.data?.is_favorite ? 'Đã gắn dấu sao' : 'Đã bỏ gắn dấu sao');
+                    const isStarred = response.data?.is_favorite;
+                    toast.success(isStarred ? 'Đã gắn dấu sao' : 'Đã bỏ gắn dấu sao');
+                    // Add notification
+                    addNotification('star', isStarred ? t('notifications.fileStarred') : t('notifications.fileUnstarred'), file.name);
                     await fetchFiles();
                 } else {
                     toast.error('Lỗi: ' + (response.error || 'Không thể thay đổi trạng thái sao'));

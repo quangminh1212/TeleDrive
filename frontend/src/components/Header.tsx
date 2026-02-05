@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import UserAccountMenu from './UserAccountMenu';
 import LanguageSwitcher from './LanguageSwitcher';
 import ThemeSwitcher from './ThemeSwitcher';
 import { useToast } from './Toast';
 import { useI18n } from '../i18n';
+import { useNotification, NotificationType } from '../contexts/NotificationContext';
 
 interface HeaderProps {
     searchQuery: string;
@@ -18,6 +19,95 @@ interface HeaderProps {
     };
     onMenuClick?: () => void;
 }
+
+// Notification bell icon
+const NotificationIcon = ({ hasUnread }: { hasUnread: boolean }) => (
+    <svg className={`w-5 h-5 ${hasUnread ? 'text-blue-600 dark:text-dark-blue' : 'text-gray-600 dark:text-dark-text-secondary'}`} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+    </svg>
+);
+
+// Get icon for notification type
+const getNotificationIcon = (type: NotificationType) => {
+    switch (type) {
+        case 'delete':
+            return (
+                <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                </svg>
+            );
+        case 'rename':
+            return (
+                <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                </svg>
+            );
+        case 'move':
+            return (
+                <svg className="w-4 h-4 text-purple-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 12l-4-4h3V10h2v4h3l-4 4z" />
+                </svg>
+            );
+        case 'upload':
+            return (
+                <svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" />
+                </svg>
+            );
+        case 'create':
+            return (
+                <svg className="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 6h-8l-2-2H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z" />
+                </svg>
+            );
+        case 'star':
+            return (
+                <svg className="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                </svg>
+            );
+        case 'download':
+            return (
+                <svg className="w-4 h-4 text-cyan-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                </svg>
+            );
+        case 'copy':
+            return (
+                <svg className="w-4 h-4 text-indigo-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                </svg>
+            );
+        case 'error':
+            return (
+                <svg className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+            );
+        default:
+            return (
+                <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                </svg>
+            );
+    }
+};
+
+// Format time ago
+const formatTimeAgo = (date: Date, t: (key: string, params?: Record<string, string | number>) => string): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffSecs < 60) return t('notifications.justNow');
+    if (diffMins < 60) return t('notifications.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('notifications.hoursAgo', { count: diffHours });
+    if (diffDays === 1) return t('dates.yesterday');
+    return t('dates.daysAgo', { count: diffDays });
+};
 
 // Search icon
 const SearchIcon = () => (
@@ -71,9 +161,28 @@ const HelpIcon = () => (
 const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderProps) => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const notificationRef = useRef<HTMLDivElement>(null);
     const toast = useToast();
     const { t } = useI18n();
+    const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotification();
+
+    // Close notification dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+                setShowNotifications(false);
+            }
+        };
+
+        if (showNotifications) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showNotifications]);
 
     // Debounced search with loading indicator
     const handleSearchChange = (value: string) => {
@@ -182,6 +291,96 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
                 >
                     <SettingsIcon />
                 </button>
+
+                {/* Notification button */}
+                <div className="relative" ref={notificationRef}>
+                    <button
+                        onClick={() => setShowNotifications(!showNotifications)}
+                        className="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-dark-hover transition-colors relative"
+                        title={t('notifications.title')}
+                        aria-label={t('notifications.title')}
+                    >
+                        <NotificationIcon hasUnread={unreadCount > 0} />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
+                    </button>
+
+                    {/* Notification Dropdown */}
+                    {showNotifications && (
+                        <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-white dark:bg-dark-surface rounded-xl shadow-xl border border-gray-200 dark:border-dark-border z-50 overflow-hidden">
+                            {/* Header */}
+                            <div className="px-4 py-3 border-b border-gray-200 dark:border-dark-border flex items-center justify-between bg-gray-50 dark:bg-dark-elevated">
+                                <h3 className="font-semibold text-gray-900 dark:text-dark-text">
+                                    {t('notifications.title')}
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                    {notifications.length > 0 && (
+                                        <>
+                                            <button
+                                                onClick={markAllAsRead}
+                                                className="text-xs text-blue-600 dark:text-dark-blue hover:underline"
+                                            >
+                                                {t('notifications.markAllRead')}
+                                            </button>
+                                            <button
+                                                onClick={clearAll}
+                                                className="text-xs text-red-500 hover:underline ml-2"
+                                            >
+                                                {t('notifications.clearAll')}
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Notification List */}
+                            <div className="max-h-80 overflow-y-auto">
+                                {notifications.length === 0 ? (
+                                    <div className="px-4 py-8 text-center text-gray-500 dark:text-dark-text-secondary">
+                                        <svg className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-dark-border" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+                                        </svg>
+                                        <p>{t('notifications.empty')}</p>
+                                    </div>
+                                ) : (
+                                    notifications.map((notification) => (
+                                        <div
+                                            key={notification.id}
+                                            onClick={() => markAsRead(notification.id)}
+                                            className={`px-4 py-3 border-b border-gray-100 dark:border-dark-border last:border-b-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                                                }`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className="flex-shrink-0 mt-0.5">
+                                                    {getNotificationIcon(notification.type)}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm text-gray-900 dark:text-dark-text line-clamp-2">
+                                                        {notification.message}
+                                                    </p>
+                                                    {notification.fileName && (
+                                                        <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-0.5 truncate">
+                                                            {notification.fileName}
+                                                        </p>
+                                                    )}
+                                                    <p className="text-xs text-gray-400 dark:text-dark-text-secondary mt-1">
+                                                        {formatTimeAgo(notification.timestamp, t)}
+                                                    </p>
+                                                </div>
+                                                {!notification.read && (
+                                                    <div className="w-2 h-2 rounded-full bg-blue-600 dark:bg-dark-blue flex-shrink-0 mt-2"></div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* Apps button - hidden on mobile */}
                 <button

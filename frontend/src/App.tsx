@@ -7,6 +7,7 @@ import UploadProgress from './components/UploadProgress';
 import { ToastProvider } from './components/Toast';
 import { UploadProvider, useUpload } from './contexts/UploadContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { I18nProvider } from './i18n';
 import { logger } from './utils/logger';
 import './index.css';
@@ -221,9 +222,11 @@ function App() {
   return (
     <ThemeProvider>
       <I18nProvider>
-        <ToastProvider>
-          <AppContent />
-        </ToastProvider>
+        <NotificationProvider>
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
+        </NotificationProvider>
       </I18nProvider>
     </ThemeProvider>
   );
