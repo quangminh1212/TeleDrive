@@ -54,6 +54,7 @@ const PlusIcon = () => (
 const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded, isMobileOpen, onMobileClose }: SidebarProps) => {
     const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
     const [storageSizeFromAPI, setStorageSizeFromAPI] = useState<number>(0);
+    const [fileCount, setFileCount] = useState<number>(0);
     const [isUploading, setIsUploading] = useState(false);
     const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
     const toast = useToast();
@@ -63,18 +64,28 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     const fileInputRef = useRef<HTMLInputElement>(null);
     const folderInputRef = useRef<HTMLInputElement>(null);
 
-    // Fetch total file size from API if not provided
+    // Fetch storage info from API
     useEffect(() => {
-        if (totalFileSize === undefined) {
-            fetch('http://127.0.0.1:5000/api/v2/files?per_page=1000')
-                .then(res => res.json())
-                .then(data => {
-                    const total = data.files?.reduce((sum: number, f: { file_size?: number }) => sum + (f.file_size || 0), 0) || 0;
-                    setStorageSizeFromAPI(total);
-                })
-                .catch(() => setStorageSizeFromAPI(0));
-        }
-    }, [totalFileSize]);
+        const fetchStorageInfo = async () => {
+            try {
+                const res = await fetch('http://127.0.0.1:5000/api/v2/storage');
+                const data = await res.json();
+                if (data.success) {
+                    setStorageSizeFromAPI(data.total_size || 0);
+                    setFileCount(data.file_count || 0);
+                }
+            } catch {
+                setStorageSizeFromAPI(0);
+                setFileCount(0);
+            }
+        };
+
+        fetchStorageInfo();
+        // Refresh storage info when files are uploaded
+        const interval = setInterval(fetchStorageInfo, 30000); // Refresh every 30s
+        return () => clearInterval(interval);
+    }, [totalFileSize, onFilesUploaded]);
+
 
     // Handle file upload
     const handleFileUpload = async (files: FileList | null) => {
@@ -322,11 +333,50 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     })}
                 </nav>
 
-                {/* Storage Info */}
-                <div className="px-4 py-3 border-t border-gray-200 dark:border-dark-border">
-                    <p className="text-xs text-gray-600 dark:text-dark-text-secondary truncate">
-                        {t('sidebar.storage')}: {usedStorageFormatted}
-                    </p>
+                {/* Storage Info - Enhanced Design */}
+                <div className="px-4 py-4 border-t border-gray-200 dark:border-dark-border">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-dark-surface dark:to-dark-hover rounded-xl p-3 transition-all hover:shadow-md">
+                        {/* Header with Cloud Icon */}
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="p-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
+                                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-xs font-medium text-gray-700 dark:text-dark-text">
+                                    {t('sidebar.storage')}
+                                </p>
+                                <p className="text-[10px] text-gray-500 dark:text-dark-text-secondary">
+                                    Telegram Cloud
+                                </p>
+                            </div>
+                            {/* Unlimited badge */}
+                            <span className="px-1.5 py-0.5 text-[9px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
+                                ∞
+                            </span>
+                        </div>
+
+                        {/* Progress Bar - Visual only (unlimited storage) */}
+                        <div className="relative h-2 bg-gray-200 dark:bg-dark-border rounded-full overflow-hidden mb-2">
+                            <div
+                                className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-500"
+                                style={{ width: `${Math.min((actualSize / (1024 * 1024 * 1024)) * 10, 100)}%` }}
+                            />
+                            {/* Animated shimmer effect */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+                        </div>
+
+                        {/* Stats */}
+                        <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-semibold text-gray-800 dark:text-dark-text">
+                                {usedStorageFormatted}
+                            </span>
+                            <span className="text-gray-500 dark:text-dark-text-secondary">
+                                {fileCount} {fileCount === 1 ? 'file' : 'files'}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </aside>
 

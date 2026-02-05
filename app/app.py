@@ -1935,6 +1935,50 @@ def get_scan_status_public():
     })
 
 
+# Public API endpoint to get storage info
+@app.route('/api/v2/storage')
+@csrf.exempt
+def get_storage_info():
+    """Get total storage usage from all files in database"""
+    try:
+        # Get total size of all files (not deleted)
+        total_size = db.session.query(db.func.sum(File.file_size)).filter(
+            File.is_deleted == False
+        ).scalar() or 0
+        
+        # Get file count
+        file_count = File.query.filter_by(is_deleted=False).count()
+        
+        # Get breakdown by storage type
+        telegram_size = db.session.query(db.func.sum(File.file_size)).filter(
+            File.is_deleted == False,
+            File.storage_type == 'telegram'
+        ).scalar() or 0
+        
+        local_size = db.session.query(db.func.sum(File.file_size)).filter(
+            File.is_deleted == False,
+            File.storage_type == 'local'
+        ).scalar() or 0
+        
+        return jsonify({
+            'success': True,
+            'total_size': int(total_size),
+            'file_count': file_count,
+            'telegram_size': int(telegram_size),
+            'local_size': int(local_size),
+            # Telegram has unlimited storage, but we can show a visual indicator
+            'unlimited': True
+        })
+    except Exception as e:
+        app.logger.error(f"Storage info error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'total_size': 0,
+            'file_count': 0
+        })
+
+
 # Public API endpoint for auto-login from Telegram Desktop
 @app.route('/api/v2/auth/auto-login', methods=['POST'])
 @csrf.exempt
