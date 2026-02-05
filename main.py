@@ -11,7 +11,6 @@ import signal
 import subprocess
 import threading
 import time
-import webbrowser
 import atexit
 
 # Get project root directory
@@ -94,10 +93,7 @@ def wait_for_server(host, port, timeout=30):
         time.sleep(0.5)
     return False
 
-def open_browser_delayed(url, delay=3):
-    """Open browser after a delay"""
-    time.sleep(delay)
-    webbrowser.open(url)
+# Browser opening removed - Tauri webview handles UI
 
 def main():
     """Main entry point"""
@@ -132,13 +128,7 @@ def main():
         print("=" * 50)
         print()
 
-        # Open browser in background thread after delay
-        browser_thread = threading.Thread(
-            target=open_browser_delayed,
-            args=("http://localhost:1420", 3),
-            daemon=True
-        )
-        browser_thread.start()
+        # Tauri webview handles UI - no browser needed
 
         # Run Flask directly in main thread (required for reloader)
         run_flask_server(dev_mode=True)
@@ -162,10 +152,8 @@ def main():
         print("=" * 50)
         print()
 
-        # Open frontend in browser
-        frontend_url = "http://localhost:1420"
-        print(f"🌐 Opening frontend: {frontend_url}")
-        webbrowser.open(frontend_url)
+        # Tauri webview handles UI - no browser needed
+        print("🖥️  Tauri webview will connect to API")
 
         # Keep server running
         print()
