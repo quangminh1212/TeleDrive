@@ -100,14 +100,17 @@ class TelegramAuthenticator:
             return session_id in self.temp_sessions
 
     def is_session_valid(self) -> bool:
-        """Check if main session file exists and is valid (sync check)"""
-        session_path = "data/session.session"
-        if not os.path.exists(session_path):
-            return False
-        # Check size (empty file is invalid)
-        if os.path.getsize(session_path) < 100:
-            return False
-        return True
+        """Check if any session file exists and is valid (sync check)"""
+        session_paths = [
+            "data/session.session",
+            "data/session_import.session"
+        ]
+        for session_path in session_paths:
+            if os.path.exists(session_path):
+                # Check size (empty file is invalid)
+                if os.path.getsize(session_path) >= 100:
+                    return True
+        return False
 
     async def __aenter__(self):
         """Async context manager entry"""

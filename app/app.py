@@ -226,6 +226,24 @@ app.config.update(flask_app_config)
 # Create necessary directories
 web_config.flask_config.create_directories()
 
+# Auto-migrate session_import.session to session.session if needed
+def migrate_session_file():
+    """Migrate session_import.session to session.session for persistence"""
+    import shutil
+    main_session = Path("data/session.session")
+    import_session = Path("data/session_import.session")
+
+    # If main session doesn't exist but import session does, copy it
+    if not main_session.exists() and import_session.exists():
+        if import_session.stat().st_size >= 100:  # Valid session file
+            try:
+                shutil.copy2(import_session, main_session)
+                print(f"✅ Migrated session from {import_session} to {main_session}")
+            except Exception as e:
+                print(f"⚠️ Failed to migrate session: {e}")
+
+migrate_session_file()
+
 # Configure database
 db.init_app(app)
 
