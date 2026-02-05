@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import CreateFolderModal from './CreateFolderModal';
 import { useToast } from './Toast';
 import { useI18n } from '../i18n';
+import { logger } from '../utils/logger';
 
 interface SidebarProps {
     currentFolder: string | null;
@@ -106,16 +107,16 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
             const result = await api.uploadFiles(filesArray);
 
             if (result.success) {
-                console.log('Upload success:', result.data);
+                logger.info('Sidebar', 'Upload success', result.data);
                 toast.success(t('messages.uploadSuccess'));
                 // Callback để refresh danh sách file
                 onFilesUploaded?.();
             } else {
-                console.error('Upload failed:', result.error);
+                logger.error('Sidebar', 'Upload failed', result.error);
                 toast.error(t('messages.uploadFailed'));
             }
         } catch (error) {
-            console.error('Upload error:', error);
+            logger.error('Sidebar', 'Upload error', error);
             toast.error(t('messages.uploadFailed'));
         } finally {
             setIsUploading(false);
@@ -356,7 +357,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
             <CreateFolderModal
                 isOpen={isCreateFolderModalOpen}
                 onClose={() => setIsCreateFolderModalOpen(false)}
-                                onCreateFolder={async (name: string) => {
+                onCreateFolder={async (name: string) => {
                     try {
                         const result = await api.createFolder(name);
                         if (result.success) {
@@ -366,7 +367,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                             return { success: false, error: result.error || t('messages.error') };
                         }
                     } catch (error) {
-                        console.error('Create folder error:', error);
+                        logger.error('Sidebar', 'Create folder error', error);
                         return { success: false, error: t('messages.error') };
                     }
                 }}

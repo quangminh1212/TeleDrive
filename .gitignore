@@ -38,6 +38,8 @@ data/*.session
 data/*.session-journal
 data/auth_session_*.session
 data/code_req_*.session
+app/data/*.session-journal
+app/instance/
 
 # Telegram Desktop session files (copied)
 data/telegram_*
