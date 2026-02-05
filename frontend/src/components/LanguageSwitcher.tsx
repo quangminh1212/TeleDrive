@@ -23,23 +23,23 @@ const languageCountryCodes: Record<Language, string> = {
 const Flag: React.FC<{ code: Language; size?: 'sm' | 'md' | 'lg' }> = ({ code, size = 'md' }) => {
   const countryCode = languageCountryCodes[code];
 
-  // Larger sizes for crisp rendering (3:2 ratio)
+  // Flag-icons uses 4:3 ratio internally, adjust accordingly
   const sizeStyles = {
-    sm: { width: '21px', height: '14px', fontSize: '14px' },
-    md: { width: '27px', height: '18px', fontSize: '18px' },
-    lg: { width: '33px', height: '22px', fontSize: '22px' }
+    sm: { width: '20px', height: '15px' },
+    md: { width: '24px', height: '18px' },
+    lg: { width: '32px', height: '24px' }
   };
 
   return (
     <span
-      className={`fi fi-${countryCode} fis inline-block flex-shrink-0`}
+      className={`fi fi-${countryCode} inline-block flex-shrink-0`}
       style={{
         ...sizeStyles[size],
-        borderRadius: '3px',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(0,0,0,0.08)',
-        backgroundSize: 'cover',
+        borderRadius: '2px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05)',
+        backgroundSize: '100% 100%',
         backgroundPosition: 'center',
-        imageRendering: 'crisp-edges'
+        backgroundRepeat: 'no-repeat'
       }}
       title={languageNames[code]}
     />
