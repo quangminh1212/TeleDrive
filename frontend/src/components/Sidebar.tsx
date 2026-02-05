@@ -45,12 +45,6 @@ const StarredIcon = () => (
     </svg>
 );
 
-const StorageIcon = () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z" />
-    </svg>
-);
-
 const PlusIcon = () => (
     <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M12 5v14M5 12h14" />
@@ -143,9 +137,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
         { id: 'starred', label: t('sidebar.starred'), icon: StarredIcon },
     ];
 
-    const bottomMenuItems = [
-        { id: 'storage', label: t('sidebar.storage'), icon: StorageIcon },
-    ];
+    const bottomMenuItems: typeof mainMenuItems = [];
 
     // Hàm format dung lượng
     const formatBytes = (bytes: number): string => {
