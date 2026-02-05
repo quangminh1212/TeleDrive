@@ -5,8 +5,18 @@ TeleDrive Desktop Application Entry Point
 Launches the Flask API server for Tauri frontend
 """
 
+# Force UTF-8 encoding before any imports (avoid cp1252 issues on Windows)
 import os
 import sys
+
+# Set UTF-8 encoding via environment (must be before other imports)
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    # Reconfigure stdout/stderr if Python 3.7+
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 import signal
 import subprocess
 import threading
