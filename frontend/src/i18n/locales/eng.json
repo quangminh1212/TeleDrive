@@ -130,6 +130,8 @@
     "theme": "Theme",
     "darkMode": "Dark mode",
     "lightMode": "Light mode",
+    "systemMode": "System",
+    "appearance": "Appearance",
     "notifications": "Notifications",
     "storage": "Storage",
     "about": "About"

@@ -130,6 +130,8 @@
     "theme": "Giao diện",
     "darkMode": "Chế độ tối",
     "lightMode": "Chế độ sáng",
+    "systemMode": "Hệ thống",
+    "appearance": "Giao diện",
     "notifications": "Thông báo",
     "storage": "Bộ nhớ",
     "about": "Giới thiệu"
