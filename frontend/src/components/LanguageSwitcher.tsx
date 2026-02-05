@@ -1,21 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useI18n, Language, languageNames } from '../i18n';
+import 'flag-icons/css/flag-icons.min.css';
 
-// Flag emoji mapping for each language
-const languageFlags: Record<Language, string> = {
-  eng: '🇬🇧', vie: '🇻🇳', zho: '🇨🇳', jpn: '🇯🇵', kor: '🇰🇷',
-  tha: '🇹🇭', ind: '🇮🇩', hin: '🇮🇳', ara: '🇸🇦', rus: '🇷🇺',
-  deu: '🇩🇪', fra: '🇫🇷', spa: '🇪🇸', por: '🇵🇹', ita: '🇮🇹',
-  nld: '🇳🇱', pol: '🇵🇱', tur: '🇹🇷', ukr: '🇺🇦', ell: '🇬🇷',
-  heb: '🇮🇱', ben: '🇧🇩', tam: '🇱🇰', msa: '🇲🇾', fil: '🇵🇭',
-  swe: '🇸🇪', nor: '🇳🇴', dan: '🇩🇰', fin: '🇫🇮', ces: '🇨🇿',
-  hun: '🇭🇺', ron: '🇷🇴', fas: '🇮🇷', swa: '🇰🇪', bel: '🇧🇾',
-  hrv: '🇭🇷', srp: '🇷🇸', slk: '🇸🇰', slv: '🇸🇮', bul: '🇧🇬',
-  gle: '🇮🇪', isl: '🇮🇸', lit: '🇱🇹', lav: '🇱🇻', est: '🇪🇪',
-  sqi: '🇦🇱', hye: '🇦🇲', kat: '🇬🇪', kaz: '🇰🇿', uzb: '🇺🇿',
-  aze: '🇦🇿', cat: '🇪🇸', nep: '🇳🇵', sin: '🇱🇰', mya: '🇲🇲',
-  khm: '🇰🇭', lao: '🇱🇦', mon: '🇲🇳', urd: '🇵🇰', afr: '🇿🇦',
-  eus: '🇪🇸', glg: '🇪🇸', mlt: '🇲🇹'
+// Country code mapping for flag-icons (ISO 3166-1 alpha-2)
+const languageCountryCodes: Record<Language, string> = {
+  eng: 'gb', vie: 'vn', zho: 'cn', jpn: 'jp', kor: 'kr',
+  tha: 'th', ind: 'id', hin: 'in', ara: 'sa', rus: 'ru',
+  deu: 'de', fra: 'fr', spa: 'es', por: 'pt', ita: 'it',
+  nld: 'nl', pol: 'pl', tur: 'tr', ukr: 'ua', ell: 'gr',
+  heb: 'il', ben: 'bd', tam: 'lk', msa: 'my', fil: 'ph',
+  swe: 'se', nor: 'no', dan: 'dk', fin: 'fi', ces: 'cz',
+  hun: 'hu', ron: 'ro', fas: 'ir', swa: 'ke', bel: 'by',
+  hrv: 'hr', srp: 'rs', slk: 'sk', slv: 'si', bul: 'bg',
+  gle: 'ie', isl: 'is', lit: 'lt', lav: 'lv', est: 'ee',
+  sqi: 'al', hye: 'am', kat: 'ge', kaz: 'kz', uzb: 'uz',
+  aze: 'az', cat: 'es-ct', nep: 'np', sin: 'lk', mya: 'mm',
+  khm: 'kh', lao: 'la', mon: 'mn', urd: 'pk', afr: 'za',
+  eus: 'es-pv', glg: 'es-ga', mlt: 'mt'
+};
+
+// Flag component using flag-icons CSS
+const Flag: React.FC<{ code: Language; size?: 'sm' | 'md' | 'lg' }> = ({ code, size = 'md' }) => {
+  const countryCode = languageCountryCodes[code];
+  const sizeClasses = {
+    sm: 'w-4 h-3',
+    md: 'w-5 h-4',
+    lg: 'w-6 h-5'
+  };
+
+  return (
+    <span
+      className={`fi fi-${countryCode} ${sizeClasses[size]} inline-block rounded-sm shadow-sm`}
+      style={{
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    />
+  );
 };
 
 const LanguageSwitcher: React.FC = () => {
@@ -72,7 +93,7 @@ const LanguageSwitcher: React.FC = () => {
                    focus:outline-none focus:ring-2 focus:ring-blue-500/50
                    transition-all duration-200 shadow-sm"
       >
-        <span className="text-lg">{languageFlags[language]}</span>
+        <Flag code={language} size="md" />
         <span className="hidden sm:inline">{languageNames[language]}</span>
         <svg
           className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
@@ -86,13 +107,13 @@ const LanguageSwitcher: React.FC = () => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 max-h-80 overflow-hidden
+        <div className="absolute right-0 mt-2 w-72 max-h-96 overflow-hidden
                         bg-white dark:bg-dark-surface
                         border border-gray-200 dark:border-dark-border
                         rounded-xl shadow-xl z-50
                         animate-in fade-in slide-in-from-top-2 duration-200">
           {/* Search Input */}
-          <div className="p-2 border-b border-gray-100 dark:border-dark-border">
+          <div className="p-3 border-b border-gray-100 dark:border-dark-border">
             <div className="relative">
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -108,52 +129,55 @@ const LanguageSwitcher: React.FC = () => {
                 placeholder="Search language..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm
+                className="w-full pl-10 pr-4 py-2.5 text-sm
                            bg-gray-50 dark:bg-dark-hover
                            border border-gray-200 dark:border-dark-border
                            rounded-lg
                            text-gray-700 dark:text-dark-text
                            placeholder-gray-400 dark:placeholder-gray-500
-                           focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                           focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
                            transition-all"
               />
             </div>
           </div>
 
           {/* Language List */}
-          <div className="max-h-56 overflow-y-auto py-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+          <div className="max-h-64 overflow-y-auto py-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
             {filteredLanguages.length > 0 ? (
               filteredLanguages.map((lang) => (
                 <button
                   key={lang}
                   onClick={() => handleSelect(lang)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm
                              transition-all duration-150
                              ${language === lang
                       ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                       : 'text-gray-700 dark:text-dark-text hover:bg-gray-50 dark:hover:bg-dark-hover'
                     }`}
                 >
-                  <span className="text-xl">{languageFlags[lang]}</span>
+                  <Flag code={lang} size="lg" />
                   <span className="flex-1 text-left font-medium">{languageNames[lang]}</span>
                   {language === lang && (
-                    <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   )}
                 </button>
               ))
             ) : (
-              <div className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+              <div className="px-4 py-6 text-sm text-gray-500 dark:text-gray-400 text-center">
+                <svg className="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 No language found
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="px-3 py-2 border-t border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-hover">
-            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              {sortedLanguages.length} languages available
+          <div className="px-4 py-2.5 border-t border-gray-100 dark:border-dark-border bg-gray-50/50 dark:bg-dark-hover/50">
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center font-medium">
+              🌍 {sortedLanguages.length} languages available
             </p>
           </div>
         </div>
