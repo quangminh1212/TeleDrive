@@ -154,6 +154,12 @@ if exist "%PROJECT_DIR%\.env.example" (
 )
 echo [OK] Config template
 
+:: Copy icon
+if exist "%PROJECT_DIR%\frontend\src-tauri\icons\icon.ico" (
+    copy /y "%PROJECT_DIR%\frontend\src-tauri\icons\icon.ico" "%PORTABLE_DIR%\icon.ico" >nul
+    echo [OK] Icon
+)
+
 :: Create launcher script
 echo @echo off > "%PORTABLE_DIR%\Start-TeleDrive.bat"
 echo setlocal >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
