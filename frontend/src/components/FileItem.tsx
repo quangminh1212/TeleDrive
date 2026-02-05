@@ -487,7 +487,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                         onClick={(e) => e.stopPropagation()}
                     />
                 ) : (
-                    <span className="flex-1 min-w-0 text-sm text-gray-700 truncate" title={displayName}>
+                    <span className="flex-1 min-w-0 text-sm text-gray-700 dark:text-dark-text truncate" title={displayName}>
                         {displayName}
                     </span>
                 )}
