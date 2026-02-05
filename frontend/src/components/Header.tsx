@@ -124,7 +124,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
 
             {/* Mobile Logo - visible only on mobile when sidebar is hidden */}
             <div className="md:hidden flex items-center gap-1 flex-shrink-0">
-                <img src="/logo.png" alt="TeleDrive" className="w-8 h-8" />
+                <img src="/logo.png" alt="TeleDrive" className="w-8 h-8 rounded-xl" />
             </div>
 
             {/* Search Bar */}

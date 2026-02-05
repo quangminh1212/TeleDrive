@@ -16,7 +16,7 @@ interface SidebarProps {
 
 // TeleDrive Logo component using the new logo image
 const TeleDriveLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
-    <img src="/logo.png" alt="TeleDrive" className={className} />
+    <img src="/logo.png" alt="TeleDrive" className={`${className} rounded-xl`} />
 );
 
 // Menu Icons as SVG components
