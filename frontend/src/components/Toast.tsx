@@ -84,10 +84,10 @@ const ToastItem: React.FC<{ toast: Toast; onClose: (id: string) => void }> = ({ 
     };
 
     const bgColors = {
-        success: 'bg-white border-l-4 border-l-green-500',
-        error: 'bg-white border-l-4 border-l-red-500',
-        info: 'bg-white border-l-4 border-l-blue-500',
-        warning: 'bg-white border-l-4 border-l-yellow-500'
+        success: 'bg-white dark:bg-dark-surface border-l-4 border-l-green-500',
+        error: 'bg-white dark:bg-dark-surface border-l-4 border-l-red-500',
+        info: 'bg-white dark:bg-dark-surface border-l-4 border-l-blue-500',
+        warning: 'bg-white dark:bg-dark-surface border-l-4 border-l-yellow-500'
     };
 
     return (
@@ -96,10 +96,10 @@ const ToastItem: React.FC<{ toast: Toast; onClose: (id: string) => void }> = ({ 
                 }`}
         >
             {getIcon(toast.type)}
-            <span className="flex-1 text-sm text-gray-700">{toast.message}</span>
+            <span className="flex-1 text-sm text-gray-700 dark:text-dark-text">{toast.message}</span>
             <button
                 onClick={handleClose}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600"
+                className="p-1 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition-colors text-gray-400 dark:text-dark-text-secondary hover:text-gray-600 dark:hover:text-dark-text"
             >
                 <CloseIcon />
             </button>

@@ -123,39 +123,39 @@ const UploadProgress = ({ items, onClose, onClear, onRetry, onCancel }: UploadPr
     };
 
     return (
-        <div className="fixed bottom-0 sm:bottom-4 right-0 sm:right-4 w-full sm:w-[360px] bg-[#3c4043] sm:rounded-lg shadow-2xl z-50 overflow-hidden">
+        <div className="fixed bottom-0 sm:bottom-4 right-0 sm:right-4 w-full sm:w-[360px] bg-dark-hover dark:bg-dark-surface sm:rounded-lg shadow-2xl z-50 overflow-hidden border border-transparent dark:border-dark-border">
             {/* Header */}
             <div
-                className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[#4a4e51] transition-colors"
+                className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-dark-active dark:hover:bg-dark-hover transition-colors"
                 onClick={() => setIsMinimized(!isMinimized)}
             >
-                <span className="text-white text-sm font-medium">
+                <span className="text-white dark:text-dark-text text-sm font-medium">
                     {getStatusText()}
                 </span>
                 <div className="flex items-center gap-2">
                     {/* Minimize/Expand button */}
                     <button
-                        className="p-1 hover:bg-[#5f6368] rounded-full transition-colors"
+                        className="p-1 hover:bg-dark-border dark:hover:bg-dark-elevated rounded-full transition-colors"
                         onClick={(e) => {
                             e.stopPropagation();
                             setIsMinimized(!isMinimized);
                         }}
                     >
-                        <svg className={`w-5 h-5 text-white transition-transform ${isMinimized ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="currentColor">
+                        <svg className={`w-5 h-5 text-white dark:text-dark-text transition-transform ${isMinimized ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="currentColor">
                             <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
                         </svg>
                     </button>
                     {/* Close button */}
                     {allCompleted && (
                         <button
-                            className="p-1 hover:bg-[#5f6368] rounded-full transition-colors"
+                            className="p-1 hover:bg-dark-border dark:hover:bg-dark-elevated rounded-full transition-colors"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onClear();
                                 onClose();
                             }}
                         >
-                            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <svg className="w-5 h-5 text-white dark:text-dark-text" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                             </svg>
                         </button>
@@ -165,22 +165,22 @@ const UploadProgress = ({ items, onClose, onClear, onRetry, onCancel }: UploadPr
 
             {/* File list */}
             {!isMinimized && (
-                <div className="max-h-[300px] overflow-y-auto bg-white">
+                <div className="max-h-[300px] overflow-y-auto bg-white dark:bg-dark-bg">
                     {items.map((item) => (
                         <div
                             key={item.id}
-                            className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                            className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-dark-border last:border-b-0 hover:bg-gray-50 dark:hover:bg-dark-hover"
                         >
                             {/* File icon */}
                             {getFileIcon(item.filename)}
 
                             {/* Filename and progress */}
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-800 truncate">{item.filename}</p>
+                                <p className="text-sm text-gray-800 dark:text-dark-text truncate">{item.filename}</p>
                                 {item.status === 'uploading' && (
-                                    <div className="mt-1 w-full bg-gray-200 rounded-full h-1">
+                                    <div className="mt-1 w-full bg-gray-200 dark:bg-dark-border rounded-full h-1">
                                         <div
-                                            className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                                            className="bg-blue-500 dark:bg-dark-blue h-1 rounded-full transition-all duration-300"
                                             style={{ width: `${item.progress}%` }}
                                         ></div>
                                     </div>
@@ -189,7 +189,7 @@ const UploadProgress = ({ items, onClose, onClear, onRetry, onCancel }: UploadPr
                                     <p className="text-xs text-red-500 mt-0.5">{item.error || t('messages.uploadFailed')}</p>
                                 )}
                                 {item.status === 'cancelled' && (
-                                    <p className="text-xs text-gray-500 mt-0.5">{t('actions.cancel')}</p>
+                                    <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-0.5">{t('actions.cancel')}</p>
                                 )}
                             </div>
 
@@ -199,11 +199,11 @@ const UploadProgress = ({ items, onClose, onClear, onRetry, onCancel }: UploadPr
                                 {item.status === 'error' && onRetry && (
                                     <button
                                         onClick={() => onRetry(item.id)}
-                                        className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                                        className="p-1 hover:bg-gray-200 dark:hover:bg-dark-hover rounded-full transition-colors"
                                         title={t('actions.retry')}
                                         aria-label={t('actions.retry')}
                                     >
-                                        <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                                        <svg className="w-4 h-4 text-blue-500 dark:text-dark-blue" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
                                         </svg>
                                     </button>
@@ -212,11 +212,11 @@ const UploadProgress = ({ items, onClose, onClear, onRetry, onCancel }: UploadPr
                                 {item.status === 'uploading' && onCancel && (
                                     <button
                                         onClick={() => onCancel(item.id)}
-                                        className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                                        className="p-1 hover:bg-gray-200 dark:hover:bg-dark-hover rounded-full transition-colors"
                                         title={t('actions.cancel')}
                                         aria-label={t('actions.cancel')}
                                     >
-                                        <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                                        <svg className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                                         </svg>
                                     </button>
