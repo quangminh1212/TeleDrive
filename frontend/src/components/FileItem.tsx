@@ -189,25 +189,39 @@ const formatFileSize = (bytes?: number): string => {
     return `${size.toFixed(1)} ${units[unitIndex]}`;
 };
 
-// Format date
+// Format date - converts to user's local timezone
 const formatDate = (dateStr: string): string => {
     if (!dateStr || dateStr === '-') return '-';
     try {
-        const date = new Date(dateStr);
+        // Parse the date string - if it doesn't have timezone info, assume UTC
+        let date: Date;
+        if (dateStr.includes('Z') || dateStr.includes('+') || dateStr.includes('-')) {
+            // Already has timezone info
+            date = new Date(dateStr);
+        } else {
+            // No timezone info - assume UTC and append 'Z'
+            date = new Date(dateStr + 'Z');
+        }
+
         if (isNaN(date.getTime())) return dateStr;
 
         const now = new Date();
         const diffMs = now.getTime() - date.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+        // Format time in user's local timezone
         if (diffDays === 0) {
-            return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString(undefined, {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
         } else if (diffDays === 1) {
             return 'Hôm qua';
         } else if (diffDays < 7) {
             return `${diffDays} ngày trước`;
         } else {
-            return date.toLocaleDateString('vi-VN', {
+            return date.toLocaleDateString(undefined, {
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric'
