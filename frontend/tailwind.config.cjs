@@ -24,7 +24,7 @@ module.exports = {
           'border': '#5f6368',       // Borders
           'divider': '#3c4043',      // Dividers
           'text': '#e8eaed',         // Primary text
-          'text-secondary': '#9aa0a6', // Secondary text
+          'text-secondary': '#bdc1c6', // Secondary text (brighter for better readability)
           'text-disabled': '#5f6368', // Disabled text
           'blue': '#8ab4f8',         // Blue accent (lighter for dark)
           'blue-hover': '#aecbfa',   // Blue hover
