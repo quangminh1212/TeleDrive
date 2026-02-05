@@ -138,8 +138,26 @@
     "appearance": "Aspect"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "Astăzi",
+    "yesterday": "Ieri",
+    "daysAgo": "Acum {count} zile"
+  },
+  "notifications": {
+    "title": "Notificări",
+    "empty": "Fără notificări",
+    "markAllRead": "Marchează toate ca citite",
+    "clearAll": "Șterge toate",
+    "justNow": "Chiar acum",
+    "minutesAgo": "Acum {count}m",
+    "hoursAgo": "Acum {count}h",
+    "fileDeleted": "Șters",
+    "fileRenamed": "Redenumit în",
+    "fileMoved": "Mutat în",
+    "fileUploaded": "Încărcat",
+    "folderCreated": "Folder creat",
+    "fileStarred": "Marcat cu stea",
+    "fileUnstarred": "Stea eliminată",
+    "fileDownloaded": "Descărcat",
+    "fileCopied": "Copiat"
   }
 }

@@ -138,8 +138,26 @@
     "appearance": "外観"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "今日",
+    "yesterday": "昨日",
+    "daysAgo": "{count}日前"
+  },
+  "notifications": {
+    "title": "通知",
+    "empty": "通知はありません",
+    "markAllRead": "すべて既読にする",
+    "clearAll": "すべてクリア",
+    "justNow": "たった今",
+    "minutesAgo": "{count}分前",
+    "hoursAgo": "{count}時間前",
+    "fileDeleted": "削除済み",
+    "fileRenamed": "名前変更",
+    "fileMoved": "移動先",
+    "fileUploaded": "アップロード済み",
+    "folderCreated": "フォルダ作成",
+    "fileStarred": "スター付き",
+    "fileUnstarred": "スター解除",
+    "fileDownloaded": "ダウンロード済み",
+    "fileCopied": "コピー済み"
   }
 }

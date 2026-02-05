@@ -141,5 +141,23 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "daysAgo": "{count} days ago"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications",
+    "markAllRead": "Mark all as read",
+    "clearAll": "Clear all",
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "fileDeleted": "Deleted",
+    "fileRenamed": "Renamed to",
+    "fileMoved": "Moved to",
+    "fileUploaded": "Uploaded",
+    "folderCreated": "Created folder",
+    "fileStarred": "Starred",
+    "fileUnstarred": "Unstarred",
+    "fileDownloaded": "Downloaded",
+    "fileCopied": "Copied"
   }
 }

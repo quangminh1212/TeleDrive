@@ -138,8 +138,26 @@
     "appearance": "รูปลักษณ์"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "วันนี้",
+    "yesterday": "เมื่อวาน",
+    "daysAgo": "{count} วันที่แล้ว"
+  },
+  "notifications": {
+    "title": "การแจ้งเตือน",
+    "empty": "ไม่มีการแจ้งเตือน",
+    "markAllRead": "ทำเครื่องหมายว่าอ่านทั้งหมด",
+    "clearAll": "ล้างทั้งหมด",
+    "justNow": "เมื่อกี้",
+    "minutesAgo": "{count} นาทีที่แล้ว",
+    "hoursAgo": "{count} ชั่วโมงที่แล้ว",
+    "fileDeleted": "ลบแล้ว",
+    "fileRenamed": "เปลี่ยนชื่อเป็น",
+    "fileMoved": "ย้ายไปยัง",
+    "fileUploaded": "อัปโหลดแล้ว",
+    "folderCreated": "สร้างโฟลเดอร์แล้ว",
+    "fileStarred": "ติดดาวแล้ว",
+    "fileUnstarred": "ยกเลิกดาว",
+    "fileDownloaded": "ดาวน์โหลดแล้ว",
+    "fileCopied": "คัดลอกแล้ว"
   }
 }

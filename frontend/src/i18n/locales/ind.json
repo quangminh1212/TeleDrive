@@ -138,8 +138,26 @@
     "appearance": "Tampilan"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "Hari ini",
+    "yesterday": "Kemarin",
+    "daysAgo": "{count} hari yang lalu"
+  },
+  "notifications": {
+    "title": "Notifikasi",
+    "empty": "Tidak ada notifikasi",
+    "markAllRead": "Tandai semua sudah dibaca",
+    "clearAll": "Hapus semua",
+    "justNow": "Baru saja",
+    "minutesAgo": "{count}m yang lalu",
+    "hoursAgo": "{count}j yang lalu",
+    "fileDeleted": "Dihapus",
+    "fileRenamed": "Diubah namanya menjadi",
+    "fileMoved": "Dipindahkan ke",
+    "fileUploaded": "Diunggah",
+    "folderCreated": "Folder dibuat",
+    "fileStarred": "Diberi bintang",
+    "fileUnstarred": "Bintang dihapus",
+    "fileDownloaded": "Diunduh",
+    "fileCopied": "Disalin"
   }
 }

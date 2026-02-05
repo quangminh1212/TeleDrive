@@ -139,5 +139,23 @@
     "notifications": "Thông báo",
     "storage": "Bộ nhớ",
     "about": "Giới thiệu"
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "empty": "Không có thông báo",
+    "markAllRead": "Đánh dấu đã đọc tất cả",
+    "clearAll": "Xóa tất cả",
+    "justNow": "Vừa xong",
+    "minutesAgo": "{count} phút trước",
+    "hoursAgo": "{count} giờ trước",
+    "fileDeleted": "Đã xóa",
+    "fileRenamed": "Đã đổi tên thành",
+    "fileMoved": "Đã di chuyển đến",
+    "fileUploaded": "Đã tải lên",
+    "folderCreated": "Đã tạo thư mục",
+    "fileStarred": "Đã gắn dấu sao",
+    "fileUnstarred": "Đã bỏ dấu sao",
+    "fileDownloaded": "Đã tải xuống",
+    "fileCopied": "Đã sao chép"
   }
 }

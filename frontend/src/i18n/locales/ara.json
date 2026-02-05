@@ -138,8 +138,26 @@
     "appearance": "المظهر"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "daysAgo": "منذ {count} أيام"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "empty": "لا توجد إشعارات",
+    "markAllRead": "تحديد الكل كمقروء",
+    "clearAll": "مسح الكل",
+    "justNow": "الآن",
+    "minutesAgo": "منذ {count} دقيقة",
+    "hoursAgo": "منذ {count} ساعة",
+    "fileDeleted": "تم الحذف",
+    "fileRenamed": "تمت إعادة التسمية إلى",
+    "fileMoved": "تم النقل إلى",
+    "fileUploaded": "تم الرفع",
+    "folderCreated": "تم إنشاء المجلد",
+    "fileStarred": "تم التمييز بنجمة",
+    "fileUnstarred": "تمت إزالة النجمة",
+    "fileDownloaded": "تم التحميل",
+    "fileCopied": "تم النسخ"
   }
 }

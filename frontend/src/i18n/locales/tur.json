@@ -138,8 +138,26 @@
     "appearance": "Görünüm"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "Bugün",
+    "yesterday": "Dün",
+    "daysAgo": "{count} gün önce"
+  },
+  "notifications": {
+    "title": "Bildirimler",
+    "empty": "Bildirim yok",
+    "markAllRead": "Tümünü okundu olarak işaretle",
+    "clearAll": "Tümünü temizle",
+    "justNow": "Az önce",
+    "minutesAgo": "{count}dk önce",
+    "hoursAgo": "{count}sa önce",
+    "fileDeleted": "Silindi",
+    "fileRenamed": "Yeniden adlandırıldı",
+    "fileMoved": "Taşındı",
+    "fileUploaded": "Yüklendi",
+    "folderCreated": "Klasör oluşturuldu",
+    "fileStarred": "Yıldızlandı",
+    "fileUnstarred": "Yıldız kaldırıldı",
+    "fileDownloaded": "İndirildi",
+    "fileCopied": "Kopyalandı"
   }
 }

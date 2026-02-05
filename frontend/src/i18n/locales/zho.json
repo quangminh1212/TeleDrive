@@ -138,8 +138,26 @@
     "appearance": "外观"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "今天",
+    "yesterday": "昨天",
+    "daysAgo": "{count}天前"
+  },
+  "notifications": {
+    "title": "通知",
+    "empty": "暂无通知",
+    "markAllRead": "全部标记为已读",
+    "clearAll": "清除全部",
+    "justNow": "刚刚",
+    "minutesAgo": "{count}分钟前",
+    "hoursAgo": "{count}小时前",
+    "fileDeleted": "已删除",
+    "fileRenamed": "已重命名为",
+    "fileMoved": "已移动至",
+    "fileUploaded": "已上传",
+    "folderCreated": "已创建文件夹",
+    "fileStarred": "已加星标",
+    "fileUnstarred": "已取消星标",
+    "fileDownloaded": "已下载",
+    "fileCopied": "已复制"
   }
 }

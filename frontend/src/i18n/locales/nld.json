@@ -138,8 +138,26 @@
     "appearance": "Uiterlijk"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "Vandaag",
+    "yesterday": "Gisteren",
+    "daysAgo": "{count} dagen geleden"
+  },
+  "notifications": {
+    "title": "Meldingen",
+    "empty": "Geen meldingen",
+    "markAllRead": "Alles als gelezen markeren",
+    "clearAll": "Alles wissen",
+    "justNow": "Zojuist",
+    "minutesAgo": "{count}m geleden",
+    "hoursAgo": "{count}u geleden",
+    "fileDeleted": "Verwijderd",
+    "fileRenamed": "Hernoemd naar",
+    "fileMoved": "Verplaatst naar",
+    "fileUploaded": "Geüpload",
+    "folderCreated": "Map aangemaakt",
+    "fileStarred": "Ster toegevoegd",
+    "fileUnstarred": "Ster verwijderd",
+    "fileDownloaded": "Gedownload",
+    "fileCopied": "Gekopieerd"
   }
 }

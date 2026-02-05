@@ -138,8 +138,26 @@
     "appearance": "Erscheinungsbild"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "daysAgo": "Vor {count} Tagen"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "empty": "Keine Benachrichtigungen",
+    "markAllRead": "Alle als gelesen markieren",
+    "clearAll": "Alle löschen",
+    "justNow": "Gerade eben",
+    "minutesAgo": "Vor {count}m",
+    "hoursAgo": "Vor {count}h",
+    "fileDeleted": "Gelöscht",
+    "fileRenamed": "Umbenannt in",
+    "fileMoved": "Verschoben nach",
+    "fileUploaded": "Hochgeladen",
+    "folderCreated": "Ordner erstellt",
+    "fileStarred": "Markiert",
+    "fileUnstarred": "Markierung entfernt",
+    "fileDownloaded": "Heruntergeladen",
+    "fileCopied": "Kopiert"
   }
 }

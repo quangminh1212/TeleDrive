@@ -138,8 +138,26 @@
     "appearance": "Оформление"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "Сегодня",
+    "yesterday": "Вчера",
+    "daysAgo": "{count} дней назад"
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "empty": "Нет уведомлений",
+    "markAllRead": "Отметить все как прочитанное",
+    "clearAll": "Очистить все",
+    "justNow": "Только что",
+    "minutesAgo": "{count}м назад",
+    "hoursAgo": "{count}ч назад",
+    "fileDeleted": "Удалено",
+    "fileRenamed": "Переименовано в",
+    "fileMoved": "Перемещено в",
+    "fileUploaded": "Загружено",
+    "folderCreated": "Папка создана",
+    "fileStarred": "Добавлено в избранное",
+    "fileUnstarred": "Удалено из избранного",
+    "fileDownloaded": "Скачано",
+    "fileCopied": "Скопировано"
   }
 }

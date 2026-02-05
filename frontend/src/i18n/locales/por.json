@@ -138,8 +138,26 @@
     "appearance": "Aparência"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "daysAgo": "Há {count} dias"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "empty": "Sem notificações",
+    "markAllRead": "Marcar tudo como lido",
+    "clearAll": "Limpar tudo",
+    "justNow": "Agora mesmo",
+    "minutesAgo": "Há {count}m",
+    "hoursAgo": "Há {count}h",
+    "fileDeleted": "Excluído",
+    "fileRenamed": "Renomeado para",
+    "fileMoved": "Movido para",
+    "fileUploaded": "Carregado",
+    "folderCreated": "Pasta criada",
+    "fileStarred": "Marcado com estrela",
+    "fileUnstarred": "Estrela removida",
+    "fileDownloaded": "Baixado",
+    "fileCopied": "Copiado"
   }
 }

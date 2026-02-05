@@ -138,8 +138,26 @@
     "appearance": "Оформлення"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "Сьогодні",
+    "yesterday": "Вчора",
+    "daysAgo": "{count} днів тому"
+  },
+  "notifications": {
+    "title": "Сповіщення",
+    "empty": "Немає сповіщень",
+    "markAllRead": "Позначити все як прочитане",
+    "clearAll": "Очистити все",
+    "justNow": "Щойно",
+    "minutesAgo": "{count}хв тому",
+    "hoursAgo": "{count}год тому",
+    "fileDeleted": "Видалено",
+    "fileRenamed": "Перейменовано на",
+    "fileMoved": "Переміщено до",
+    "fileUploaded": "Завантажено",
+    "folderCreated": "Папку створено",
+    "fileStarred": "Додано зірочку",
+    "fileUnstarred": "Зірочку видалено",
+    "fileDownloaded": "Завантажено",
+    "fileCopied": "Скопійовано"
   }
 }

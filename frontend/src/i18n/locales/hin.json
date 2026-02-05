@@ -138,8 +138,26 @@
     "appearance": "दिखावट"
   },
   "dates": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "daysAgo": "{count} days ago"
+    "today": "आज",
+    "yesterday": "कल",
+    "daysAgo": "{count} दिन पहले"
+  },
+  "notifications": {
+    "title": "सूचनाएं",
+    "empty": "कोई सूचना नहीं",
+    "markAllRead": "सभी को पढ़ा हुआ चिह्नित करें",
+    "clearAll": "सभी साफ करें",
+    "justNow": "अभी",
+    "minutesAgo": "{count} मिनट पहले",
+    "hoursAgo": "{count} घंटे पहले",
+    "fileDeleted": "हटाया गया",
+    "fileRenamed": "नाम बदला गया",
+    "fileMoved": "स्थानांतरित किया गया",
+    "fileUploaded": "अपलोड किया गया",
+    "folderCreated": "फ़ोल्डर बनाया गया",
+    "fileStarred": "तारांकित",
+    "fileUnstarred": "तारांकन हटाया",
+    "fileDownloaded": "डाउनलोड किया गया",
+    "fileCopied": "कॉपी किया गया"
   }
 }
