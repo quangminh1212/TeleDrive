@@ -335,14 +335,9 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
                 {/* Storage Info */}
                 <div className="px-4 py-3 border-t border-gray-200 dark:border-dark-border">
-                    {/* Header with Cloud Icon */}
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="p-1.5 bg-blue-600 dark:bg-dark-blue rounded-lg">
-                            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
-                            </svg>
-                        </div>
-                        <div className="flex-1">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-2">
+                        <div>
                             <p className="text-xs font-medium text-gray-700 dark:text-dark-text">
                                 {t('sidebar.storage')}
                             </p>
