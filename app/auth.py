@@ -1224,7 +1224,9 @@ class TelegramAuthenticator:
                 log_step("SESSION CLEANUP", f"Removed session {session_id} from temp_sessions")
 
     def _cleanup_old_session_files(self):
-        """Clean up old session files to prevent accumulation"""
+        """Clean up old temporary session files to prevent accumulation.
+        IMPORTANT: Never delete main session files (session.session, session_import.session)
+        """
         try:
             data_dir = Path("data")
             if not data_dir.exists():
@@ -1232,20 +1234,34 @@ class TelegramAuthenticator:
 
             current_time = time.time()
             cleaned_count = 0
+            
+            # Protected session files that should NEVER be deleted
+            protected_files = {
+                "session.session",
+                "session_import.session",
+                "session.session-journal",
+                "session_import.session-journal"
+            }
 
-            # Clean up session files older than 1 hour
+            # Clean up temporary session files older than 1 hour
+            # Only delete verification/temp sessions, NOT main sessions
             for session_file in data_dir.glob("*.session"):
                 try:
+                    # Skip protected main session files
+                    if session_file.name in protected_files:
+                        continue
+                    
                     # Check if file is older than 1 hour
                     file_age = current_time - session_file.stat().st_mtime
                     if file_age > 3600:  # 1 hour
                         session_file.unlink()
                         cleaned_count += 1
+                        print(f"[CLEANUP] Deleted old temp session: {session_file.name}")
                 except Exception as e:
                     pass  # Ignore file cleanup errors
 
             if cleaned_count > 0:
-                pass  # Files cleaned up
+                print(f"[CLEANUP] Cleaned up {cleaned_count} old temporary session files")
 
         except Exception as e:
             pass  # Ignore cleanup errors
