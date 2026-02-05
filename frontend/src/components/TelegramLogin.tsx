@@ -254,8 +254,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         setStatus('');
                     }}
                     className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${loginMethod === method.id
-                        ? 'bg-[#0088cc] text-white shadow-md'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-[#0088cc] dark:bg-dark-blue text-white dark:text-dark-bg shadow-md'
+                        : 'bg-gray-100 dark:bg-dark-elevated text-gray-600 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-hover'
                         }`}
                 >
                     {method.label}
@@ -270,8 +270,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 onClick={handleAutoLogin}
                 disabled={isLoading}
                 className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 flex items-center justify-center gap-3 ${isLoading
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-[#0088cc] hover:bg-[#006699] hover:shadow-lg hover:shadow-cyan-500/25 active:scale-[0.98]'
+                    ? 'bg-gray-300 dark:bg-dark-border cursor-not-allowed'
+                    : 'bg-[#0088cc] dark:bg-dark-blue hover:bg-[#006699] dark:hover:bg-dark-blue-hover hover:shadow-lg hover:shadow-cyan-500/25 dark:hover:shadow-dark-blue/25 active:scale-[0.98]'
                     }`}
             >
                 {isLoading ? (
@@ -287,8 +287,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 )}
             </button>
 
-            <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-600">
-                <p className="font-medium text-gray-700 mb-2">💡 Hướng dẫn:</p>
+            <div className="mt-6 p-4 bg-gray-50 dark:bg-dark-elevated rounded-xl border border-gray-100 dark:border-dark-border text-sm text-gray-600 dark:text-dark-text-secondary">
+                <p className="font-medium text-gray-700 dark:text-dark-text mb-2">💡 Hướng dẫn:</p>
                 <ol className="space-y-1 list-decimal list-inside">
                     <li>Mở Telegram Desktop trên máy tính</li>
                     <li>Đảm bảo đã đăng nhập vào tài khoản</li>
@@ -300,17 +300,17 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
     const renderQRLogin = () => (
         <div className="text-center">
-            <div className="relative inline-block p-4 bg-white rounded-2xl shadow-inner border border-gray-100 mb-4">
+            <div className="relative inline-block p-4 bg-white dark:bg-dark-elevated rounded-2xl shadow-inner border border-gray-100 dark:border-dark-border mb-4">
                 {isLoading ? (
                     <div className="w-[200px] h-[200px] flex items-center justify-center">
-                        <div className="w-10 h-10 border-3 border-[#0088cc] border-t-transparent rounded-full animate-spin" />
+                        <div className="w-10 h-10 border-3 border-[#0088cc] dark:border-dark-blue border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : qrExpired ? (
                     <div className="w-[200px] h-[200px] flex flex-col items-center justify-center gap-3">
-                        <p className="text-gray-500 text-sm">Mã QR đã hết hạn</p>
+                        <p className="text-gray-500 dark:text-dark-text-secondary text-sm">Mã QR đã hết hạn</p>
                         <button
                             onClick={startQRLogin}
-                            className="px-4 py-2 bg-[#0088cc] text-white rounded-lg text-sm hover:bg-[#006699] transition-colors"
+                            className="px-4 py-2 bg-[#0088cc] dark:bg-dark-blue text-white dark:text-dark-bg rounded-lg text-sm hover:bg-[#006699] dark:hover:bg-dark-blue-hover transition-colors"
                         >
                             Tạo mã mới
                         </button>
@@ -320,12 +320,12 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 ) : null}
             </div>
 
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                 Quét mã QR bằng ứng dụng Telegram trên điện thoại
             </p>
 
-            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-600 text-left">
-                <p className="font-medium text-gray-700 mb-2">📱 Hướng dẫn:</p>
+            <div className="p-4 bg-gray-50 dark:bg-dark-elevated rounded-xl border border-gray-100 dark:border-dark-border text-sm text-gray-600 dark:text-dark-text-secondary text-left">
+                <p className="font-medium text-gray-700 dark:text-dark-text mb-2">📱 Hướng dẫn:</p>
                 <ol className="space-y-1 list-decimal list-inside">
                     <li>Mở Telegram trên điện thoại</li>
                     <li>Vào Cài đặt → Thiết bị → Quét QR</li>
@@ -340,7 +340,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
             {!needsCode ? (
                 <form onSubmit={handlePhoneStart}>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                             Số điện thoại
                         </label>
                         <div className="flex gap-2">
@@ -348,7 +348,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             <select
                                 value={countryCode}
                                 onChange={(e) => setCountryCode(e.target.value)}
-                                className="px-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] focus:border-transparent transition-all bg-white text-gray-700 font-medium min-w-[100px]"
+                                className="px-3 py-3 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-700 dark:text-dark-text font-medium min-w-[100px]"
                             >
                                 {countryCodes.map((c) => (
                                     <option key={c.code} value={c.code}>
@@ -362,10 +362,10 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                                 value={phoneNumber}
                                 onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
                                 placeholder="Nhập số điện thoại"
-                                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] focus:border-transparent transition-all"
+                                className="flex-1 px-4 py-3 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-800 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary"
                             />
                         </div>
-                        <p className="text-xs text-gray-400 mt-2">
+                        <p className="text-xs text-gray-400 dark:text-dark-text-disabled mt-2">
                             Ví dụ: {countryCode} 912345678
                         </p>
                     </div>
@@ -373,8 +373,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         type="submit"
                         disabled={isLoading || !phoneNumber.trim()}
                         className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 ${isLoading || !phoneNumber.trim()
-                            ? 'bg-gray-300 cursor-not-allowed'
-                            : 'bg-[#0088cc] hover:bg-[#006699] active:scale-[0.98]'
+                            ? 'bg-gray-300 dark:bg-dark-border cursor-not-allowed'
+                            : 'bg-[#0088cc] dark:bg-dark-blue hover:bg-[#006699] dark:hover:bg-dark-blue-hover active:scale-[0.98]'
                             }`}
                     >
                         {isLoading ? 'Đang gửi...' : 'Gửi mã xác nhận'}
@@ -383,7 +383,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
             ) : (
                 <form onSubmit={handlePhoneVerify}>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                             Mã xác nhận
                         </label>
                         <input
@@ -391,14 +391,14 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             value={verificationCode}
                             onChange={(e) => setVerificationCode(e.target.value)}
                             placeholder="Nhập mã 5 số"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] focus:border-transparent transition-all text-center text-2xl tracking-widest"
+                            className="w-full px-4 py-3 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all text-center text-2xl tracking-widest bg-white dark:bg-dark-elevated text-gray-800 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary"
                             maxLength={5}
                         />
                     </div>
 
                     {needs2FA && (
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                                 Mật khẩu 2FA
                             </label>
                             <input
@@ -406,7 +406,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                                 value={password2FA}
                                 onChange={(e) => setPassword2FA(e.target.value)}
                                 placeholder="Nhập mật khẩu 2 lớp"
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] focus:border-transparent transition-all"
+                                className="w-full px-4 py-3 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-800 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary"
                             />
                         </div>
                     )}
@@ -415,8 +415,8 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         type="submit"
                         disabled={isLoading}
                         className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 ${isLoading
-                            ? 'bg-gray-300 cursor-not-allowed'
-                            : 'bg-[#0088cc] hover:bg-[#006699] active:scale-[0.98]'
+                            ? 'bg-gray-300 dark:bg-dark-border cursor-not-allowed'
+                            : 'bg-[#0088cc] dark:bg-dark-blue hover:bg-[#006699] dark:hover:bg-dark-blue-hover active:scale-[0.98]'
                             }`}
                     >
                         {isLoading ? 'Đang xác nhận...' : 'Xác nhận'}
@@ -430,7 +430,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             setNeeds2FA(false);
                             setPassword2FA('');
                         }}
-                        className="w-full mt-3 py-2 text-sm text-gray-500 hover:text-gray-700"
+                        className="w-full mt-3 py-2 text-sm text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text"
                     >
                         ← Quay lại
                     </button>
@@ -440,29 +440,29 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     );
 
     return (
-        <div className="min-h-screen bg-[#f8fafd] flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[#f8fafd] dark:bg-dark-bg flex items-center justify-center p-4">
             <div className="w-full max-w-md animate-fade-in-up">
                 {/* Main Card */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg border border-gray-100 dark:border-dark-border overflow-hidden">
                     {/* Header */}
                     <div className="pt-10 pb-6 px-8 text-center">
-                        <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl mb-6 shadow-lg shadow-cyan-500/20 transform hover:scale-105 transition-transform duration-200 overflow-hidden">
+                        <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl mb-6 shadow-lg shadow-cyan-500/20 dark:shadow-dark-blue/20 transform hover:scale-105 transition-transform duration-200 overflow-hidden">
                             <img src="/logo.png" alt="TeleDrive" className="w-full h-full object-cover" />
                         </div>
 
-                        <h1 className="text-2xl font-semibold text-gray-800 mb-1">
+                        <h1 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-1">
                             TeleDrive
                         </h1>
-                        <p className="text-gray-500 text-sm">
+                        <p className="text-gray-500 dark:text-dark-text-secondary text-sm">
                             Quản lý file trên Telegram
                         </p>
                     </div>
 
-                    <div className="mx-8 h-px bg-gray-100" />
+                    <div className="mx-8 h-px bg-gray-100 dark:bg-dark-border" />
 
                     {/* Body */}
                     <div className="p-8">
-                        <h2 className="text-lg font-medium text-gray-700 text-center mb-4">
+                        <h2 className="text-lg font-medium text-gray-700 dark:text-dark-text text-center mb-4">
                             Đăng nhập để tiếp tục
                         </h2>
 
@@ -471,22 +471,22 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
                         {/* Status message */}
                         {status && (
-                            <div className="mb-5 p-4 bg-cyan-50 border border-cyan-100 rounded-xl animate-fade-in">
+                            <div className="mb-5 p-4 bg-cyan-50 dark:bg-dark-selected border border-cyan-100 dark:border-dark-blue/30 rounded-xl animate-fade-in">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-5 h-5 border-2 border-[#0088cc] border-t-transparent rounded-full animate-spin" />
-                                    <span className="text-[#0088cc] text-sm font-medium">{status}</span>
+                                    <div className="w-5 h-5 border-2 border-[#0088cc] dark:border-dark-blue border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-[#0088cc] dark:text-dark-blue text-sm font-medium">{status}</span>
                                 </div>
                             </div>
                         )}
 
                         {/* Error message */}
                         {error && (
-                            <div className="mb-5 p-4 bg-red-50 border border-red-100 rounded-xl animate-shake">
+                            <div className="mb-5 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-500/30 rounded-xl animate-shake">
                                 <div className="flex items-center gap-3">
                                     <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <p className="text-red-600 text-sm font-medium">{error}</p>
+                                    <p className="text-red-600 dark:text-red-400 text-sm font-medium">{error}</p>
                                 </div>
                             </div>
                         )}
@@ -500,10 +500,10 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
                 {/* Footer */}
                 <div className="text-center mt-6 space-y-2">
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-gray-400 dark:text-dark-text-secondary text-sm">
                         TeleDrive © 2024
                     </p>
-                    <p className="text-gray-400 text-xs">
+                    <p className="text-gray-400 dark:text-dark-text-disabled text-xs">
                         Lưu trữ file không giới hạn trên Telegram
                     </p>
                 </div>
