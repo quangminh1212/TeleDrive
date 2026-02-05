@@ -103,21 +103,21 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, onClose }) => {
 
                 {/* Unsupported Type */}
                 {!isImage && !isVideo && !isPdf && (
-                    <div className="bg-white p-8 rounded-xl shadow-2xl text-center max-w-md">
-                        <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                            <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="bg-white dark:bg-dark-surface p-8 rounded-xl shadow-2xl text-center max-w-md">
+                        <div className="w-20 h-20 mx-auto bg-gray-100 dark:bg-dark-elevated rounded-full flex items-center justify-center mb-4">
+                            <svg className="w-10 h-10 text-gray-500 dark:text-dark-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         </div>
-                        <h3 className="text-xl font-medium text-gray-900 mb-2">Không có bản xem trước</h3>
-                        <p className="text-gray-500 mb-6">
+                        <h3 className="text-xl font-medium text-gray-900 dark:text-dark-text mb-2">Không có bản xem trước</h3>
+                        <p className="text-gray-500 dark:text-dark-text-secondary mb-6">
                             Định dạng tệp này không hỗ trợ xem trước trực tiếp.
                         </p>
                         <a
                             href={downloadUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 dark:bg-dark-blue hover:bg-blue-700 dark:hover:bg-dark-blue-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-dark-blue transition-colors"
                         >
                             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -130,13 +130,13 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, onClose }) => {
                 {/* Error State */}
                 {error && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-90">
-                        <div className="bg-white p-6 rounded-lg shadow-xl text-center">
+                        <div className="bg-white dark:bg-dark-surface p-6 rounded-lg shadow-xl text-center">
                             <div className="text-red-500 text-5xl mb-4">⚠️</div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">Lỗi</h3>
-                            <p className="text-gray-500 mb-4">{error}</p>
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-dark-text mb-2">Lỗi</h3>
+                            <p className="text-gray-500 dark:text-dark-text-secondary mb-4">{error}</p>
                             <button
                                 onClick={onClose}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+                                className="px-4 py-2 bg-gray-200 dark:bg-dark-elevated text-gray-800 dark:text-dark-text rounded hover:bg-gray-300 dark:hover:bg-dark-hover transition-colors"
                             >
                                 Đóng
                             </button>

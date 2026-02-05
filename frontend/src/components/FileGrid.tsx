@@ -19,14 +19,14 @@ interface FileGridProps {
 
 // Dropdown arrow icon
 const DropdownIcon = () => (
-    <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+    <svg className="w-4 h-4 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
         <path d="M7 10l5 5 5-5z" />
     </svg>
 );
 
 // Sort arrow icon
 const SortIcon = ({ direction }: { direction: 'asc' | 'desc' }) => (
-    <svg className="w-4 h-4 text-blue-600 ml-1" viewBox="0 0 24 24" fill="currentColor">
+    <svg className="w-4 h-4 text-blue-600 dark:text-dark-blue ml-1" viewBox="0 0 24 24" fill="currentColor">
         {direction === 'asc'
             ? <path d="M7 14l5-5 5 5z" />
             : <path d="M7 10l5 5 5-5z" />
@@ -733,15 +733,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gdrive-blue mb-4"></div>
-                <p className="text-gray-500">{t('messages.loading')}</p>
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gdrive-blue dark:border-dark-blue mb-4"></div>
+                <p className="text-gray-500 dark:text-dark-text-secondary">{t('messages.loading')}</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+            <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-dark-text-secondary">
                 <svg className="w-16 h-16 mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -749,7 +749,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 <p className="text-sm mb-4">{error}</p>
                 <button
                     onClick={handleRefresh}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-blue-600 dark:bg-dark-blue text-white dark:text-dark-bg rounded-lg hover:bg-blue-700 dark:hover:bg-dark-blue-hover transition-colors"
                 >
                     {t('actions.retry')}
                 </button>
@@ -791,16 +791,16 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         >
             {/* Drag & Drop Overlay */}
             {isDragOver && (
-                <div className="absolute inset-0 z-50 bg-blue-50/95 border-4 border-dashed border-blue-500 rounded-lg flex items-center justify-center backdrop-blur-sm pointer-events-none">
-                    <div className="bg-white rounded-3xl shadow-2xl p-10 flex flex-col items-center gap-6 border-2 border-blue-200 animate-pulse-slow">
-                        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                <div className="absolute inset-0 z-50 bg-blue-50/95 dark:bg-dark-selected/95 border-4 border-dashed border-blue-500 dark:border-dark-blue rounded-lg flex items-center justify-center backdrop-blur-sm pointer-events-none">
+                    <div className="bg-white dark:bg-dark-surface rounded-3xl shadow-2xl p-10 flex flex-col items-center gap-6 border-2 border-blue-200 dark:border-dark-border animate-pulse-slow">
+                        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-dark-blue dark:to-blue-400 rounded-full flex items-center justify-center shadow-lg">
                             <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17-.53-.32-1.14-.53-1.79-.63A5.994 5.994 0 0 0 0 10c0 1.06.28 2.05.76 2.92.3.55.67 1.05 1.1 1.49C2.45 17.55 5.45 20 9 20h10c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
                             </svg>
                         </div>
                         <div className="text-center">
-                            <p className="text-2xl font-bold text-blue-600 mb-2">{t('files.dropHere')}</p>
-                            <p className="text-base text-gray-600">{t('files.dragAndDrop')}</p>
+                            <p className="text-2xl font-bold text-blue-600 dark:text-dark-blue mb-2">{t('files.dropHere')}</p>
+                            <p className="text-base text-gray-600 dark:text-dark-text-secondary">{t('files.dragAndDrop')}</p>
                             {currentFolder && currentFolder !== 'starred' && currentFolder !== 'shared' && currentFolder !== 'recent' && (
                                 <p className="text-sm text-blue-500 mt-2">{t('sidebar.upload')}</p>
                             )}
@@ -811,10 +811,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
 
             {/* Operation Loading Overlay */}
             {isOperationLoading && (
-                <div className="absolute inset-0 z-40 bg-white/80 flex items-center justify-center backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-lg p-6 flex items-center gap-4 border border-gray-200">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span className="text-gray-700 font-medium">{operationMessage || t('messages.processing')}</span>
+                <div className="absolute inset-0 z-40 bg-white/80 dark:bg-dark-bg/80 flex items-center justify-center backdrop-blur-sm">
+                    <div className="bg-white dark:bg-dark-surface rounded-xl shadow-lg p-6 flex items-center gap-4 border border-gray-200 dark:border-dark-border">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-dark-blue"></div>
+                        <span className="text-gray-700 dark:text-dark-text font-medium">{operationMessage || t('messages.processing')}</span>
                     </div>
                 </div>
             )}
@@ -822,7 +822,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
             {/* Upload Progress Overlay */}
 
             {/* Toolbar */}
-            <div className="flex items-center justify-between px-2 md:px-4 py-2 border-b border-gray-100">
+            <div className="flex items-center justify-between px-2 md:px-4 py-2 border-b border-gray-100 dark:border-dark-border">
                 {/* Left side - Folder name and filters OR Selection toolbar */}
                 <div className="flex items-center gap-2 md:gap-4">
                     {selectedFiles.size > 0 ? (
@@ -840,17 +840,17 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             </button>
 
                             {/* Selection count */}
-                            <span className="text-sm font-medium text-gray-800">
+                            <span className="text-sm font-medium text-gray-800 dark:text-dark-text">
                                 {t('messages.itemsSelected', { count: selectedFiles.size })}
                             </span>
 
                             {/* Divider */}
-                            <div className="w-px h-5 bg-gray-300" />
+                            <div className="w-px h-5 bg-gray-300 dark:bg-dark-border" />
 
                             {/* Select All */}
                             <button
                                 onClick={handleSelectAll}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover rounded-lg transition-colors"
                                 title={t('actions.selectAll')}
                             >
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -862,7 +862,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             {/* Delete */}
                             <button
                                 onClick={() => setShowBulkDeleteConfirm(true)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                 title={t('actions.delete')}
                             >
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -878,15 +878,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             {isInFolder && (
                                 <button
                                     onClick={() => onFolderSelect?.(null)}
-                                    className="p-1.5 hover:bg-gray-200 rounded-full transition-colors mr-1"
+                                    className="p-1.5 hover:bg-gray-200 dark:hover:bg-dark-hover rounded-full transition-colors mr-1"
                                     title={t('actions.back')}
                                 >
-                                    <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                                    <svg className="w-5 h-5 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
                                     </svg>
                                 </button>
                             )}
-                            <button className="flex items-center gap-1 text-lg font-medium text-gray-800 hover:bg-gray-100 px-2 py-1 rounded">
+                            <button className="flex items-center gap-1 text-lg font-medium text-gray-800 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover px-2 py-1 rounded">
                                 {getFolderLabel()}
                                 <DropdownIcon />
                             </button>
@@ -894,21 +894,21 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             {/* Filter buttons - hidden on mobile/tablet */}
                             <div className="hidden lg:flex items-center gap-2">
                                 <button
-                                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 dark:text-dark-text border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover"
                                     aria-label={t('files.filterByType')}
                                 >
                                     {t('files.type')}
                                     <DropdownIcon />
                                 </button>
                                 <button
-                                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 dark:text-dark-text border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover"
                                     aria-label={t('files.filterByOwner')}
                                 >
                                     {t('files.owner')}
                                     <DropdownIcon />
                                 </button>
                                 <button
-                                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 dark:text-dark-text border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover"
                                     aria-label={t('files.filterByDate')}
                                 >
                                     {t('files.lastModified')}
@@ -924,8 +924,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             onClick={handleRefresh}
                             disabled={isScanning}
                             className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all ${isScanning
-                                ? 'bg-blue-100 text-blue-600 cursor-wait'
-                                : 'text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                ? 'bg-blue-100 dark:bg-dark-selected text-blue-600 dark:text-dark-blue cursor-wait'
+                                : 'text-gray-700 dark:text-dark-text border border-gray-300 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-hover'
                                 }`}
                             title={t('actions.scanTelegram')}
                             aria-label={t('actions.scanTelegram')}
@@ -944,7 +944,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                         {filterSavedOnly && (
                             <button
                                 onClick={() => setFilterSavedOnly(false)}
-                                className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-dark-selected text-blue-700 dark:text-dark-blue rounded-full hover:bg-blue-200 dark:hover:bg-dark-selected-hover transition-colors"
                                 title="Nhấn để hiển thị tất cả file"
                             >
                                 <span>Saved Messages</span>
@@ -965,14 +965,14 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                         <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded cursor-help">
                                             🗑️ {removedFilesList.length} file đã xóa
                                         </span>
-                                        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-50 hidden group-hover:block min-w-48 max-w-80">
-                                            <p className="text-xs font-medium text-gray-700 mb-1">File không còn trong Saved Messages:</p>
-                                            <ul className="text-xs text-gray-600 max-h-32 overflow-y-auto">
+                                        <div className="absolute left-0 top-full mt-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg shadow-lg p-2 z-50 hidden group-hover:block min-w-48 max-w-80">
+                                            <p className="text-xs font-medium text-gray-700 dark:text-dark-text mb-1">File không còn trong Saved Messages:</p>
+                                            <ul className="text-xs text-gray-600 dark:text-dark-text-secondary max-h-32 overflow-y-auto">
                                                 {removedFilesList.slice(0, 10).map((filename, idx) => (
                                                     <li key={idx} className="truncate py-0.5">• {filename}</li>
                                                 ))}
                                                 {removedFilesList.length > 10 && (
-                                                    <li className="text-gray-400 italic">...và {removedFilesList.length - 10} file khác</li>
+                                                    <li className="text-gray-400 dark:text-dark-text-disabled italic">...và {removedFilesList.length - 10} file khác</li>
                                                 )}
                                             </ul>
                                         </div>
@@ -985,7 +985,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
 
                 {/* Right side - View mode toggle */}
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
                         {files.length} {t('files.items')}
                     </span>
                     <ViewModeControls viewMode={localViewMode} onViewModeChange={handleViewModeChange} />
@@ -994,15 +994,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
 
             {/* Content */}
             {files.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                    <svg className="w-20 h-20 mb-4 text-gray-300" viewBox="0 0 24 24" fill="currentColor">
+                <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-dark-text-secondary">
+                    <svg className="w-20 h-20 mb-4 text-gray-300 dark:text-dark-text-disabled" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
                     </svg>
                     <p className="text-lg mb-2">{searchQuery ? t('messages.noSearchResults').replace('{query}', searchQuery) : t('files.noFiles')}</p>
                     <p className="text-sm mb-4">{searchQuery ? t('actions.clearSelection') : t('actions.scanHint')}</p>
                     {!searchQuery && (
                         <div className="flex flex-col items-center gap-3">
-                            <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
+                            <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-dark-blue bg-blue-50 dark:bg-dark-selected px-4 py-2 rounded-lg">
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17-.53-.32-1.14-.53-1.79-.63A5.994 5.994 0 0 0 0 10c0 1.06.28 2.05.76 2.92.3.55.67 1.05 1.1 1.49C2.45 17.55 5.45 20 9 20h10c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
                                 </svg>
@@ -1011,7 +1011,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             <button
                                 onClick={handleRefresh}
                                 disabled={isScanning}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-dark-blue text-white dark:text-dark-bg rounded-lg hover:bg-blue-700 dark:hover:bg-dark-blue-hover transition-colors disabled:opacity-50"
                             >
                                 <svg className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
@@ -1035,9 +1035,9 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     <div style={getSelectionBoxStyle()} />
 
                     {/* Table Header */}
-                    <div className="flex items-center px-2 md:px-4 py-2 text-sm text-gray-600 border-b border-gray-200 sticky top-0 bg-white z-10">
+                    <div className="flex items-center px-2 md:px-4 py-2 text-sm text-gray-600 dark:text-dark-text-secondary border-b border-gray-200 dark:border-dark-border sticky top-0 bg-white dark:bg-dark-bg z-10">
                         <button
-                            className="flex items-center flex-1 min-w-0 hover:bg-gray-50 -ml-2 px-2 py-1 rounded"
+                            className="flex items-center flex-1 min-w-0 hover:bg-gray-50 dark:hover:bg-dark-hover -ml-2 px-2 py-1 rounded"
                             onClick={() => handleSort('name')}
                         >
                             <span>{t('files.name')}</span>
@@ -1045,7 +1045,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                         </button>
                         <span className="hidden sm:block w-24 md:w-32 text-left px-2">{t('files.owner')}</span>
                         <button
-                            className="hidden md:flex w-36 lg:w-48 text-left items-center hover:bg-gray-50 px-2 py-1 rounded"
+                            className="hidden md:flex w-36 lg:w-48 text-left items-center hover:bg-gray-50 dark:hover:bg-dark-hover px-2 py-1 rounded"
                             onClick={() => handleSort('modified')}
                         >
                             <span>{t('files.lastModified')}</span>
@@ -1104,8 +1104,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
 
             {/* Pagination */}
             {pagination.pages > 1 && (
-                <div className="flex items-center justify-center gap-2 p-4 border-t border-gray-200">
-                    <span className="text-sm text-gray-500">
+                <div className="flex items-center justify-center gap-2 p-4 border-t border-gray-200 dark:border-dark-border">
+                    <span className="text-sm text-gray-500 dark:text-dark-text-secondary">
                         Trang {pagination.page} / {pagination.pages} ({pagination.total} mục)
                     </span>
                 </div>
@@ -1114,15 +1114,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
             {/* File Info Panel */}
             {infoFile && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setInfoFile(null)}>
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                            <h3 className="text-lg font-medium text-gray-800">{t('files.details')}</h3>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-dark-border">
+                            <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">{t('files.details')}</h3>
                             <button
                                 onClick={() => setInfoFile(null)}
-                                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                className="p-1 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition-colors"
                             >
-                                <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                                <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                                 </svg>
                             </button>
@@ -1131,56 +1131,56 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                         {/* Content */}
                         <div className="px-6 py-4 space-y-4">
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                                <div className="w-12 h-12 bg-blue-100 dark:bg-dark-selected rounded-lg flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-blue-600 dark:text-dark-blue" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                                     </svg>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-800 truncate">{infoFile.name}</p>
-                                    <p className="text-sm text-gray-500">{infoFile.type === 'folder' ? 'Thư mục' : 'Tệp'}</p>
+                                    <p className="font-medium text-gray-800 dark:text-dark-text truncate">{infoFile.name}</p>
+                                    <p className="text-sm text-gray-500 dark:text-dark-text-secondary">{infoFile.type === 'folder' ? 'Thư mục' : 'Tệp'}</p>
                                 </div>
                             </div>
 
                             <div className="space-y-3 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">Loại:</span>
-                                    <span className="text-gray-800">{infoFile.mimeType || infoFile.file_type || 'Không xác định'}</span>
+                                    <span className="text-gray-500 dark:text-dark-text-secondary">Loại:</span>
+                                    <span className="text-gray-800 dark:text-dark-text">{infoFile.mimeType || infoFile.file_type || 'Không xác định'}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">Kích thước:</span>
-                                    <span className="text-gray-800">
+                                    <span className="text-gray-500 dark:text-dark-text-secondary">Kích thước:</span>
+                                    <span className="text-gray-800 dark:text-dark-text">
                                         {infoFile.size ? `${(infoFile.size / 1024 / 1024).toFixed(2)} MB` : 'Không xác định'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">Ngày sửa đổi:</span>
-                                    <span className="text-gray-800">{infoFile.modified || 'Không xác định'}</span>
+                                    <span className="text-gray-500 dark:text-dark-text-secondary">Ngày sửa đổi:</span>
+                                    <span className="text-gray-800 dark:text-dark-text">{infoFile.modified || 'Không xác định'}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">Chủ sở hữu:</span>
-                                    <span className="text-gray-800">{infoFile.owner || 'tôi'}</span>
+                                    <span className="text-gray-500 dark:text-dark-text-secondary">Chủ sở hữu:</span>
+                                    <span className="text-gray-800 dark:text-dark-text">{infoFile.owner || 'tôi'}</span>
                                 </div>
                                 {infoFile.telegram_channel && (
                                     <div className="flex justify-between">
-                                        <span className="text-gray-500">Kênh Telegram:</span>
-                                        <span className="text-gray-800">{infoFile.telegram_channel}</span>
+                                        <span className="text-gray-500 dark:text-dark-text-secondary">Kênh Telegram:</span>
+                                        <span className="text-gray-800 dark:text-dark-text">{infoFile.telegram_channel}</span>
                                     </div>
                                 )}
                                 {infoFile.storage_type && (
                                     <div className="flex justify-between">
-                                        <span className="text-gray-500">Lưu trữ:</span>
-                                        <span className="text-gray-800 capitalize">{infoFile.storage_type}</span>
+                                        <span className="text-gray-500 dark:text-dark-text-secondary">Lưu trữ:</span>
+                                        <span className="text-gray-800 dark:text-dark-text capitalize">{infoFile.storage_type}</span>
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Footer */}
-                        <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+                        <div className="px-6 py-4 border-t border-gray-200 dark:border-dark-border flex justify-end">
                             <button
                                 onClick={() => setInfoFile(null)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                className="px-4 py-2 bg-blue-600 dark:bg-dark-blue text-white dark:text-dark-bg rounded-lg hover:bg-blue-700 dark:hover:bg-dark-blue-hover transition-colors"
                             >
                                 {t('actions.close')}
                             </button>
@@ -1200,15 +1200,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
             {/* Move File Modal */}
             {moveFileTarget && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setMoveFileTarget(null)}>
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                            <h3 className="text-lg font-medium text-gray-800">{t('files.move')}</h3>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-dark-border">
+                            <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text">{t('files.move')}</h3>
                             <button
                                 onClick={() => setMoveFileTarget(null)}
-                                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                className="p-1 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition-colors"
                             >
-                                <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                                <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                                 </svg>
                             </button>
@@ -1216,7 +1216,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
 
                         {/* Content */}
                         <div className="px-6 py-4">
-                            <p className="text-sm text-gray-600 mb-4">
+                            <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                                 {t('files.move')}: "<span className="font-medium">{moveFileTarget.name}</span>"
                             </p>
 
@@ -1224,12 +1224,12 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                 {/* Root option */}
                                 <button
                                     onClick={() => handleConfirmMove(null)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors border border-gray-200 dark:border-dark-border"
                                 >
-                                    <svg className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                                    <svg className="w-6 h-6 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
                                     </svg>
-                                    <span className="text-gray-800">{t('sidebar.myDrive')}</span>
+                                    <span className="text-gray-800 dark:text-dark-text">{t('sidebar.myDrive')}</span>
                                 </button>
 
                                 {/* Folder list */}
@@ -1237,20 +1237,20 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                     <button
                                         key={folder.id}
                                         onClick={() => handleConfirmMove(folder.id)}
-                                        className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors border border-gray-200 dark:border-dark-border"
                                     >
                                         <svg className="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
                                         </svg>
                                         <div>
-                                            <span className="text-gray-800">{folder.name}</span>
-                                            <span className="text-xs text-gray-400 ml-2">({folder.file_count} tệp)</span>
+                                            <span className="text-gray-800 dark:text-dark-text">{folder.name}</span>
+                                            <span className="text-xs text-gray-400 dark:text-dark-text-disabled ml-2">({folder.file_count} tệp)</span>
                                         </div>
                                     </button>
                                 ))}
 
                                 {folders.length === 0 && (
-                                    <p className="text-center text-gray-500 py-4">
+                                    <p className="text-center text-gray-500 dark:text-dark-text-secondary py-4">
                                         {t('folders.empty')}
                                     </p>
                                 )}
@@ -1258,10 +1258,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                         </div>
 
                         {/* Footer */}
-                        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
+                        <div className="px-6 py-4 border-t border-gray-200 dark:border-dark-border flex justify-end gap-2">
                             <button
                                 onClick={() => setMoveFileTarget(null)}
-                                className="px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                                className="px-4 py-2 text-gray-700 dark:text-dark-text rounded-lg hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors"
                             >
                                 {t('actions.cancel')}
                             </button>

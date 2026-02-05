@@ -171,7 +171,7 @@ const getLargeFileIcon = (file: FileInfo): React.ReactElement => {
 
 // More actions icon (3 dots)
 const MoreIcon = () => (
-    <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+    <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
     </svg>
 );
@@ -368,8 +368,8 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                     onDoubleClick={handleDoubleClick}
                     onContextMenu={handleContextMenu}
                     className={`group relative p-3 rounded-lg cursor-pointer transition-all ${isSelected
-                        ? 'bg-blue-100 ring-2 ring-blue-400'
-                        : 'hover:bg-gray-100'
+                        ? 'bg-blue-100 dark:bg-dark-selected ring-2 ring-blue-400 dark:ring-dark-blue'
+                        : 'hover:bg-gray-100 dark:hover:bg-dark-hover'
                         }`}
                 >
                     {/* File Icon */}
@@ -385,26 +385,26 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                             onChange={(e) => setNewName(e.target.value)}
                             onBlur={handleRenameSubmit}
                             onKeyDown={handleRenameKeyDown}
-                            className="w-full text-sm text-center px-1 py-0.5 border border-blue-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            className="w-full text-sm text-center px-1 py-0.5 border border-blue-400 dark:border-dark-blue rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-dark-blue bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text"
                             autoFocus
                             onClick={(e) => e.stopPropagation()}
                         />
                     ) : (
-                        <p className="text-sm text-center text-gray-700 truncate" title={displayName}>
+                        <p className="text-sm text-center text-gray-700 dark:text-dark-text truncate" title={displayName}>
                             {displayName}
                         </p>
                     )}
 
                     {/* File size (below name) */}
                     {file.type !== 'folder' && (
-                        <p className="text-xs text-center text-gray-400 mt-1">
+                        <p className="text-xs text-center text-gray-400 dark:text-dark-text-secondary mt-1">
                             {displaySize}
                         </p>
                     )}
 
                     {/* Context Menu Button */}
                     <button
-                        className="absolute top-2 right-2 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-gray-200 transition-opacity"
+                        className="absolute top-2 right-2 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-dark-hover transition-opacity"
                         onClick={(e) => {
                             e.stopPropagation();
                             setContextMenu({ x: e.clientX, y: e.clientY });
@@ -442,11 +442,11 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`group flex items-center px-2 md:px-4 py-2 cursor-pointer transition-all border-b border-gray-100 ${isSelected
-                    ? 'bg-blue-50'
+                className={`group flex items-center px-2 md:px-4 py-2 cursor-pointer transition-all border-b border-gray-100 dark:border-dark-border ${isSelected
+                    ? 'bg-blue-50 dark:bg-dark-selected'
                     : isDragOver
-                        ? 'bg-blue-100 border-blue-300 border-2'
-                        : 'hover:bg-gray-50'
+                        ? 'bg-blue-100 dark:bg-dark-selected border-blue-300 dark:border-dark-blue border-2'
+                        : 'hover:bg-gray-50 dark:hover:bg-dark-hover'
                     }`}
             >
                 {/* Checkbox - visible on hover or when selected */}
@@ -459,8 +459,8 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                 >
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors
                         ${isSelected
-                            ? 'bg-blue-600 border-blue-600'
-                            : 'border-gray-400 hover:border-blue-500'
+                            ? 'bg-blue-600 dark:bg-dark-blue border-blue-600 dark:border-dark-blue'
+                            : 'border-gray-400 dark:border-dark-border hover:border-blue-500 dark:hover:border-dark-blue'
                         }`}
                     >
                         {isSelected && (
@@ -493,20 +493,20 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                 )}
 
                 {/* Owner - hidden on mobile xs */}
-                <span className="hidden sm:block w-24 md:w-32 text-sm text-gray-500 px-2 truncate">{displayOwner}</span>
+                <span className="hidden sm:block w-24 md:w-32 text-sm text-gray-500 dark:text-dark-text-secondary px-2 truncate">{displayOwner}</span>
 
                 {/* Modified Date - hidden on mobile xs/sm */}
-                <span className="hidden md:block w-36 lg:w-48 text-sm text-gray-500 px-2">{displayDate}</span>
+                <span className="hidden md:block w-36 lg:w-48 text-sm text-gray-500 dark:text-dark-text-secondary px-2">{displayDate}</span>
 
                 {/* Channel / Source - hidden on mobile/tablet */}
-                <span className="hidden lg:block w-32 text-sm text-gray-500 px-2 truncate" title={displayChannel}>
+                <span className="hidden lg:block w-32 text-sm text-gray-500 dark:text-dark-text-secondary px-2 truncate" title={displayChannel}>
                     {displayChannel}
                 </span>
 
                 {/* Actions */}
                 <div className="w-10 flex justify-end">
                     <button
-                        className="p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-gray-200"
+                        className="p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-dark-hover"
                         onClick={(e) => {
                             e.stopPropagation();
                             setContextMenu({ x: e.clientX, y: e.clientY });
