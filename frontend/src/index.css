@@ -11,14 +11,22 @@
   box-sizing: border-box;
 }
 
+/* Light mode body */
 body {
   font-family: 'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: #f8fafd;
+  color: #202124;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Google Drive scrollbar style */
+/* Dark mode body - Google Drive exact colors */
+.dark body {
+  background-color: #1f1f1f;
+  color: #e8eaed;
+}
+
+/* Light mode scrollbar - Google Drive style */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -37,6 +45,15 @@ body {
   background: #bdc1c6;
 }
 
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: #5f6368;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #80868b;
+}
+
 /* Custom focus styles */
 button:focus-visible,
 input:focus-visible {
@@ -44,14 +61,19 @@ input:focus-visible {
   outline-offset: 2px;
 }
 
-/* Smooth transitions */
+.dark button:focus-visible,
+.dark input:focus-visible {
+  outline-color: #8ab4f8;
+}
+
+/* Smooth transitions for theme change */
 * {
   transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
   transition-duration: 150ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Google Drive button styles */
+/* Google Drive button styles - Light mode */
 .gdrive-btn {
   @apply px-4 py-2 rounded-lg font-medium text-sm transition-all;
 }
@@ -62,6 +84,15 @@ input:focus-visible {
 
 .gdrive-btn-secondary {
   @apply bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400;
+}
+
+/* Dark mode button styles */
+.dark .gdrive-btn-primary {
+  @apply bg-dark-blue hover:bg-dark-blue-hover text-dark-bg;
+}
+
+.dark .gdrive-btn-secondary {
+  @apply bg-dark-surface border-dark-border text-dark-text hover:bg-dark-hover hover:border-dark-border;
 }
 
 /* Animations */
@@ -197,7 +228,26 @@ input:focus-visible {
   transition: width 0.3s ease, height 0.3s ease;
 }
 
+.dark .ripple::after {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .ripple:active::after {
   width: 200%;
   height: 200%;
+}
+
+/* Dark mode specific utilities */
+.dark-transition {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Selection colors */
+::selection {
+  background-color: rgba(26, 115, 232, 0.3);
+  color: inherit;
+}
+
+.dark ::selection {
+  background-color: rgba(138, 180, 248, 0.3);
 }
