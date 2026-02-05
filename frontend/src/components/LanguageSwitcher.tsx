@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useI18n, Language, languageNames } from '../i18n';
 import 'flag-icons/css/flag-icons.min.css';
 
-// Country code mapping for flag-icons (ISO 3166-1 alpha-2)
+// Country code mapping for flag-icons (ISO 3166-1 alpha-2 lowercase)
 const languageCountryCodes: Record<Language, string> = {
   eng: 'gb', vie: 'vn', zho: 'cn', jpn: 'jp', kor: 'kr',
   tha: 'th', ind: 'id', hin: 'in', ara: 'sa', rus: 'ru',
@@ -19,24 +19,29 @@ const languageCountryCodes: Record<Language, string> = {
   eus: 'es-pv', glg: 'es-ga', mlt: 'mt'
 };
 
-// Flag component using flag-icons CSS
+// High-quality Flag component using flag-icons with proper sizing
 const Flag: React.FC<{ code: Language; size?: 'sm' | 'md' | 'lg' }> = ({ code, size = 'md' }) => {
   const countryCode = languageCountryCodes[code];
-  // Standard flag ratio is 3:2 (width:height)
+
+  // Larger sizes for crisp rendering (3:2 ratio)
   const sizeStyles = {
-    sm: { width: '18px', height: '12px' },
-    md: { width: '24px', height: '16px' },
-    lg: { width: '30px', height: '20px' }
+    sm: { width: '21px', height: '14px', fontSize: '14px' },
+    md: { width: '27px', height: '18px', fontSize: '18px' },
+    lg: { width: '33px', height: '22px', fontSize: '22px' }
   };
 
   return (
     <span
-      className={`fi fi-${countryCode} inline-block rounded-[2px] shadow-sm flex-shrink-0`}
+      className={`fi fi-${countryCode} fis inline-block flex-shrink-0`}
       style={{
         ...sizeStyles[size],
+        borderRadius: '3px',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(0,0,0,0.08)',
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        imageRendering: 'crisp-edges'
       }}
+      title={languageNames[code]}
     />
   );
 };
@@ -87,7 +92,7 @@ const LanguageSwitcher: React.FC = () => {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg
+        className="flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-lg
                    bg-white dark:bg-dark-surface 
                    border border-gray-200 dark:border-dark-border
                    text-gray-700 dark:text-dark-text
@@ -150,7 +155,7 @@ const LanguageSwitcher: React.FC = () => {
                 <button
                   key={lang}
                   onClick={() => handleSelect(lang)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm
+                  className={`w-full flex items-center gap-3.5 px-4 py-2.5 text-sm
                              transition-all duration-150
                              ${language === lang
                       ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
