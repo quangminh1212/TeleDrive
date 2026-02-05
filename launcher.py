@@ -59,15 +59,11 @@ def run_backend():
     global _shutdown
     
     try:
-        # Add app module to path
-        app_path = get_resource_path('app')
-        if app_path not in sys.path:
-            sys.path.insert(0, app_path)
-        
-        # Also add parent for imports
-        parent_path = os.path.dirname(app_path)
-        if parent_path not in sys.path:
-            sys.path.insert(0, parent_path)
+        # Add bundle root to path for proper imports
+        # IMPORTANT: Only add parent path, NOT app_path, to avoid import conflicts
+        bundle_root = get_resource_path('.')
+        if bundle_root not in sys.path:
+            sys.path.insert(0, bundle_root)
         
         # Set working directory
         app_data = get_app_data_dir()
