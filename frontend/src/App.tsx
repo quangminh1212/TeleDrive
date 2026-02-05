@@ -6,6 +6,7 @@ import TelegramLogin from './components/TelegramLogin';
 import UploadProgress from './components/UploadProgress';
 import { ToastProvider } from './components/Toast';
 import { UploadProvider, useUpload } from './contexts/UploadContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { I18nProvider } from './i18n';
 import { logger } from './utils/logger';
 import './index.css';
@@ -55,7 +56,7 @@ function MainAppUI({
 
   return (
     <>
-      <div className="flex h-screen bg-white">
+      <div className="flex h-screen bg-white dark:bg-dark-bg">
         {/* Mobile Sidebar Overlay */}
         {isSidebarOpen && (
           <div
@@ -77,7 +78,7 @@ function MainAppUI({
         />
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-gdrive-sidebar">
+        <div className="flex-1 flex flex-col overflow-hidden bg-gdrive-sidebar dark:bg-dark-bg">
           {/* Header */}
           <Header
             searchQuery={searchQuery}
@@ -89,7 +90,7 @@ function MainAppUI({
           />
 
           {/* File Grid */}
-          <main className="flex-1 overflow-hidden bg-white m-2 rounded-2xl">
+          <main className="flex-1 overflow-hidden bg-white dark:bg-dark-surface m-2 rounded-2xl">
             <FileGrid
               key={refreshKey}
               searchQuery={searchQuery}
@@ -179,10 +180,10 @@ function AppContent() {
   // Loading state while checking auth
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-dark-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang kiểm tra đăng nhập...</p>
+          <div className="w-12 h-12 border-4 border-blue-600 dark:border-dark-blue border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-dark-text-secondary">Đang kiểm tra đăng nhập...</p>
         </div>
       </div>
     );
@@ -218,11 +219,13 @@ function AppContent() {
 // Main App component with providers
 function App() {
   return (
-    <I18nProvider>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
-    </I18nProvider>
+    <ThemeProvider>
+      <I18nProvider>
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </I18nProvider>
+    </ThemeProvider>
   );
 }
 
