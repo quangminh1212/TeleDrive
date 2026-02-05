@@ -1,10 +1,10 @@
 @echo off
 setlocal enabledelayedexpansion
-title TeleDrive EXE Builder
+title TeleDrive Portable Builder
 
 echo.
 echo ========================================
-echo     TeleDrive EXE Builder
+echo     TeleDrive Portable Builder
 echo ========================================
 echo.
 
@@ -12,98 +12,196 @@ set "PROJECT_DIR=%~dp0"
 if "%PROJECT_DIR:~-1%"=="\" set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
 
 set "PYTHON_CMD=%PROJECT_DIR%\python311\python.exe"
-set "DIST_DIR=%PROJECT_DIR%\release"
+set "RELEASE_DIR=%PROJECT_DIR%\release"
+set "PORTABLE_DIR=%RELEASE_DIR%\TeleDrive-Portable"
+
+:: ============================================
+:: CHECK REQUIREMENTS
+:: ============================================
+
+echo [1/5] Kiem tra yeu cau...
+echo.
 
 :: Check Python
 if not exist "%PYTHON_CMD%" (
-    echo [ERROR] Python 3.11 portable not found!
-    echo Please run setup.bat first.
+    echo [ERROR] Python 3.11 portable khong tim thay!
+    echo Vui long chay setup.bat truoc.
     pause
     exit /b 1
 )
+echo [OK] Python 3.11 portable
 
-:: Check PyInstaller
-echo [1/4] Checking PyInstaller...
-"%PYTHON_CMD%" -c "import PyInstaller" >nul 2>&1
+:: Check Node.js
+where node >nul 2>&1
 if errorlevel 1 (
-    echo Installing PyInstaller...
-    "%PYTHON_CMD%" -m pip install pyinstaller --quiet
-    if errorlevel 1 (
-        echo [ERROR] Failed to install PyInstaller
-        pause
-        exit /b 1
-    )
-)
-echo [OK] PyInstaller ready
-echo.
-
-:: Clean previous builds
-echo [2/4] Cleaning previous builds...
-if exist "%PROJECT_DIR%\build" rd /s /q "%PROJECT_DIR%\build"
-if exist "%PROJECT_DIR%\dist" rd /s /q "%PROJECT_DIR%\dist"
-if not exist "%DIST_DIR%" mkdir "%DIST_DIR%"
-echo [OK] Cleaned
-echo.
-
-:: Build EXE
-echo [3/4] Building EXE (this may take several minutes)...
-echo.
-
-"%PYTHON_CMD%" -m PyInstaller --clean --noconfirm teledrive.spec
-
-if errorlevel 1 (
-    echo.
-    echo [ERROR] Build failed!
-    echo Check the output above for errors.
+    echo [ERROR] Node.js chua duoc cai dat!
+    echo Vui long cai dat: https://nodejs.org/
     pause
     exit /b 1
 )
+echo [OK] Node.js
+
+:: Check Rust
+where cargo >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Rust chua duoc cai dat!
+    echo Vui long cai dat: winget install Rustlang.Rustup
+    echo hoac: https://rustup.rs/
+    pause
+    exit /b 1
+)
+echo [OK] Rust/Cargo
 
 echo.
-echo [OK] EXE built successfully!
+
+:: ============================================
+:: CLEAN PREVIOUS BUILDS
+:: ============================================
+
+echo [2/5] Don dep build cu...
+if exist "%PORTABLE_DIR%" rd /s /q "%PORTABLE_DIR%"
+if not exist "%RELEASE_DIR%" mkdir "%RELEASE_DIR%"
+mkdir "%PORTABLE_DIR%"
+echo [OK] Da don dep
 echo.
 
-:: Copy to release folder
-echo [4/4] Copying to release folder...
+:: ============================================
+:: BUILD FRONTEND
+:: ============================================
 
-if exist "%PROJECT_DIR%\dist\TeleDrive.exe" (
-    copy /y "%PROJECT_DIR%\dist\TeleDrive.exe" "%DIST_DIR%\TeleDrive.exe" >nul
-    
-    :: Create a launcher batch file for the EXE (for data folder setup)
-    echo @echo off > "%DIST_DIR%\TeleDrive_Launcher.bat"
-    echo setlocal >> "%DIST_DIR%\TeleDrive_Launcher.bat"
-    echo set "APP_DIR=%%~dp0" >> "%DIST_DIR%\TeleDrive_Launcher.bat"
-    echo if not exist "%%APP_DIR%%data" mkdir "%%APP_DIR%%data" >> "%DIST_DIR%\TeleDrive_Launcher.bat"
-    echo if not exist "%%APP_DIR%%logs" mkdir "%%APP_DIR%%logs" >> "%DIST_DIR%\TeleDrive_Launcher.bat"
-    echo if not exist "%%APP_DIR%%output" mkdir "%%APP_DIR%%output" >> "%DIST_DIR%\TeleDrive_Launcher.bat"
-    echo start "" "%%APP_DIR%%TeleDrive.exe" >> "%DIST_DIR%\TeleDrive_Launcher.bat"
-    
-    :: Also copy config template
-    if exist "%PROJECT_DIR%\config.json" (
-        copy /y "%PROJECT_DIR%\config.json" "%DIST_DIR%\config.json.example" >nul
-    )
-    
-    :: Copy icon
-    if exist "%PROJECT_DIR%\icon.ico" (
-        copy /y "%PROJECT_DIR%\icon.ico" "%DIST_DIR%\icon.ico" >nul
-    )
-    
-    echo [OK] Files copied to release folder
+echo [3/5] Build frontend...
+pushd "%PROJECT_DIR%\frontend"
+
+:: Install dependencies if needed
+if not exist "node_modules" (
+    echo Dang cai dat dependencies...
+    call npm install --silent
+)
+
+:: Build frontend for production
+echo Dang build frontend...
+call npm run build
+if errorlevel 1 (
+    echo [ERROR] Build frontend that bai!
+    popd
+    pause
+    exit /b 1
+)
+popd
+echo [OK] Frontend da build
+echo.
+
+:: ============================================
+:: BUILD TAURI APP
+:: ============================================
+
+echo [4/5] Build Tauri app (co the mat vai phut)...
+echo.
+pushd "%PROJECT_DIR%\frontend"
+call npm run tauri build
+if errorlevel 1 (
+    echo [ERROR] Build Tauri that bai!
+    popd
+    pause
+    exit /b 1
+)
+popd
+echo.
+echo [OK] Tauri app da build
+echo.
+
+:: ============================================
+:: CREATE PORTABLE PACKAGE
+:: ============================================
+
+echo [5/5] Tao ban portable...
+
+:: Copy Tauri executable
+set "TAURI_EXE=%PROJECT_DIR%\frontend\src-tauri\target\release\TeleDrive.exe"
+if exist "%TAURI_EXE%" (
+    copy /y "%TAURI_EXE%" "%PORTABLE_DIR%\TeleDrive.exe" >nul
+    echo [OK] TeleDrive.exe
 ) else (
-    echo [ERROR] TeleDrive.exe not found in dist folder!
-    pause
-    exit /b 1
+    echo [WARNING] Khong tim thay TeleDrive.exe trong target\release
+    :: Try bundle location
+    for /r "%PROJECT_DIR%\frontend\src-tauri\target\release\bundle" %%f in (TeleDrive.exe) do (
+        copy /y "%%f" "%PORTABLE_DIR%\TeleDrive.exe" >nul
+        echo [OK] TeleDrive.exe (from bundle)
+    )
 )
+
+:: Copy Python portable
+echo Dang copy Python portable...
+xcopy /E /I /Q /Y "%PROJECT_DIR%\python311" "%PORTABLE_DIR%\python311" >nul
+echo [OK] Python 3.11 portable
+
+:: Copy backend files
+echo Dang copy backend...
+xcopy /E /I /Q /Y "%PROJECT_DIR%\app" "%PORTABLE_DIR%\app" >nul
+copy /y "%PROJECT_DIR%\main.py" "%PORTABLE_DIR%\" >nul
+copy /y "%PROJECT_DIR%\requirements.txt" "%PORTABLE_DIR%\" >nul
+echo [OK] Backend files
+
+:: Create data folders
+mkdir "%PORTABLE_DIR%\data" 2>nul
+mkdir "%PORTABLE_DIR%\logs" 2>nul
+mkdir "%PORTABLE_DIR%\output" 2>nul
+echo [OK] Data folders
+
+:: Copy config template
+if exist "%PROJECT_DIR%\.env.example" (
+    copy /y "%PROJECT_DIR%\.env.example" "%PORTABLE_DIR%\.env.example" >nul
+)
+echo [OK] Config template
+
+:: Create launcher script
+echo @echo off > "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo setlocal >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo set "APP_DIR=%%~dp0" >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo if "%%APP_DIR:~-1%%"=="\" set "APP_DIR=%%APP_DIR:~0,-1%%" >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo. >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo :: Create folders if needed >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo if not exist "%%APP_DIR%%\data" mkdir "%%APP_DIR%%\data" >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo if not exist "%%APP_DIR%%\logs" mkdir "%%APP_DIR%%\logs" >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo if not exist "%%APP_DIR%%\output" mkdir "%%APP_DIR%%\output" >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo. >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo :: Start backend >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo start /B "" "%%APP_DIR%%\python311\python.exe" "%%APP_DIR%%\main.py" ^> "%%APP_DIR%%\logs\backend.log" 2^>^&1 >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo. >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo :: Wait for backend >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo timeout /t 2 /nobreak ^>nul >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo. >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo :: Start TeleDrive app >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo start "" "%%APP_DIR%%\TeleDrive.exe" >> "%PORTABLE_DIR%\Start-TeleDrive.bat"
+echo [OK] Launcher script
+
+:: Create README
+echo TeleDrive Portable > "%PORTABLE_DIR%\README.txt"
+echo ================== >> "%PORTABLE_DIR%\README.txt"
+echo. >> "%PORTABLE_DIR%\README.txt"
+echo De chay TeleDrive: >> "%PORTABLE_DIR%\README.txt"
+echo   1. Double-click Start-TeleDrive.bat >> "%PORTABLE_DIR%\README.txt"
+echo   2. Hoac chay TeleDrive.exe (can start backend truoc) >> "%PORTABLE_DIR%\README.txt"
+echo. >> "%PORTABLE_DIR%\README.txt"
+echo Luu y: >> "%PORTABLE_DIR%\README.txt"
+echo   - Tao file .env voi API_ID va API_HASH tu my.telegram.org >> "%PORTABLE_DIR%\README.txt"
+echo   - Data se duoc luu trong folder 'data' >> "%PORTABLE_DIR%\README.txt"
+echo [OK] README
 
 echo.
 echo ========================================
 echo     Build Complete!
 echo ========================================
 echo.
-echo Output files:
-echo   - %DIST_DIR%\TeleDrive.exe
-echo   - %DIST_DIR%\TeleDrive_Launcher.bat
+echo Output folder: %PORTABLE_DIR%
 echo.
-echo To run: Double-click TeleDrive.exe or TeleDrive_Launcher.bat
+echo Files:
+dir /b "%PORTABLE_DIR%"
 echo.
+echo De chay: Double-click Start-TeleDrive.bat
+echo.
+
+:: Open release folder
+explorer "%RELEASE_DIR%"
+
 pause

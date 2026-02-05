@@ -404,10 +404,22 @@ if exist "%PROJECT_DIR%\frontend\package.json" (
     :: Kiem tra Rust cho Tauri
     where cargo >nul 2>&1
     if errorlevel 1 (
-        echo [WARNING] Rust chua duoc cai dat. Se chay web mode thay vi Tauri.
-        echo De cai Rust, truy cap: https://rustup.rs/
         echo.
-        goto :run_web_mode
+        echo ========================================
+        echo   RUST REQUIRED
+        echo ========================================
+        echo.
+        echo [ERROR] Rust chua duoc cai dat!
+        echo TeleDrive can Rust de chay Tauri webview.
+        echo.
+        echo Cai dat Rust:
+        echo   winget install Rustlang.Rustup
+        echo   hoac: https://rustup.rs/
+        echo.
+        echo Sau khi cai xong, chay lai: run.bat
+        echo.
+        pause
+        exit /b 1
     )
     
     echo [OK] Rust da san sang
@@ -431,16 +443,6 @@ if exist "%PROJECT_DIR%\frontend\package.json" (
     popd
     goto :app_stopped
     
-:run_web_mode
-    echo Khoi chay Frontend Vite dev server...
-    :: Chay frontend an trong nen (hoan toan an)
-    powershell -WindowStyle Hidden -Command "Start-Process cmd -ArgumentList '/c cd /d %PROJECT_DIR%\\frontend && npm run dev' -WindowStyle Hidden"
-    
-    :: Cho frontend khoi dong
-    echo Dang cho frontend khoi dong...
-    timeout /t 5 /nobreak >nul
-    echo [OK] Frontend da khoi dong tai http://localhost:1420
-    echo.
 ) else (
     echo [WARNING] Khong tim thay frontend\package.json
     goto :skip_frontend
