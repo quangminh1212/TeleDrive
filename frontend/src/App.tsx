@@ -4,6 +4,7 @@ import Header from './components/Header';
 import FileGrid from './components/FileGrid';
 import TelegramLogin from './components/TelegramLogin';
 import UploadProgress from './components/UploadProgress';
+import TitleBar from './components/TitleBar';
 import { ToastProvider } from './components/Toast';
 import { UploadProvider, useUpload } from './contexts/UploadContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -56,8 +57,12 @@ function MainAppUI({
   const { uploadItems, clearAll } = useUpload();
 
   return (
-    <>
-      <div className="flex h-screen bg-white dark:bg-dark-bg">
+    <div className="flex flex-col h-screen bg-white dark:bg-dark-bg">
+      {/* Custom Title Bar */}
+      <TitleBar />
+
+      {/* Main Content */}
+      <div className="flex flex-1 overflow-hidden">
         {/* Mobile Sidebar Overlay */}
         {isSidebarOpen && (
           <div
@@ -112,7 +117,7 @@ function MainAppUI({
           onClear={clearAll}
         />
       )}
-    </>
+    </div>
   );
 }
 
