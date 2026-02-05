@@ -86,7 +86,7 @@ def run_backend():
             shutil.copy2(config_src, config_dst)
         
         # Import and run Flask app
-        from app import app, socketio
+        from app.app import app, socketio
         socketio.run(
             app,
             host='127.0.0.1',
