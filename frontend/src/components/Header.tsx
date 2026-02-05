@@ -219,7 +219,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
     };
 
     return (
-        <header className="h-14 md:h-16 bg-white dark:bg-dark-bg flex items-center px-2 md:px-4 gap-2 md:gap-4 border-b border-gray-100 dark:border-dark-border">
+        <header className="h-14 md:h-16 bg-white dark:bg-dark-surface flex items-center px-2 md:px-4 gap-2 md:gap-4 border-b border-gray-100 dark:border-dark-border">
             {/* Mobile Menu Button - Hamburger */}
             <button
                 onClick={onMenuClick}
@@ -238,7 +238,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
 
             {/* Search Bar */}
             <div className="flex-1 max-w-3xl">
-                <div className={`relative flex items-center ${isSearchFocused ? 'bg-white dark:bg-dark-elevated shadow-md' : 'bg-white dark:bg-dark-surface'} rounded-full transition-all`}>
+                <div className={`relative flex items-center ${isSearchFocused ? 'bg-white dark:bg-dark-hover shadow-md' : 'bg-gray-100 dark:bg-dark-hover'} rounded-full transition-all`}>
                     <div className="pl-3 md:pl-4 pr-2">
                         {isSearching ? (
                             <svg className="w-5 h-5 text-blue-500 dark:text-dark-blue animate-spin" viewBox="0 0 24 24" fill="none">
