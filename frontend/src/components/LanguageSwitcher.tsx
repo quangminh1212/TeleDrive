@@ -22,16 +22,18 @@ const languageCountryCodes: Record<Language, string> = {
 // Flag component using flag-icons CSS
 const Flag: React.FC<{ code: Language; size?: 'sm' | 'md' | 'lg' }> = ({ code, size = 'md' }) => {
   const countryCode = languageCountryCodes[code];
-  const sizeClasses = {
-    sm: 'w-4 h-3',
-    md: 'w-5 h-4',
-    lg: 'w-6 h-5'
+  // Standard flag ratio is 3:2 (width:height)
+  const sizeStyles = {
+    sm: { width: '18px', height: '12px' },
+    md: { width: '24px', height: '16px' },
+    lg: { width: '30px', height: '20px' }
   };
 
   return (
     <span
-      className={`fi fi-${countryCode} ${sizeClasses[size]} inline-block rounded-sm shadow-sm`}
+      className={`fi fi-${countryCode} inline-block rounded-[2px] shadow-sm flex-shrink-0`}
       style={{
+        ...sizeStyles[size],
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
