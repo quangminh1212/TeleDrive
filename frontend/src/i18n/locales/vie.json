@@ -50,7 +50,9 @@
     "listView": "Chế độ xem danh sách",
     "gridView": "Chế độ xem lưới",
     "folder": "Thư mục",
-    "file": "Tệp"
+    "file": "Tệp",
+    "noStarred": "Chưa có mục nào được gắn dấu sao",
+    "starHint": "Gắn dấu sao cho file hoặc thư mục để tìm nhanh hơn"
   },
   "folders": {
     "create": "Tạo thư mục",

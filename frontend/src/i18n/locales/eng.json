@@ -50,7 +50,9 @@
     "listView": "List view",
     "gridView": "Grid view",
     "folder": "Folder",
-    "file": "File"
+    "file": "File",
+    "noStarred": "No starred items yet",
+    "starHint": "Star files or folders to find them faster"
   },
   "folders": {
     "create": "Create folder",
