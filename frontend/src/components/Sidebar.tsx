@@ -26,13 +26,6 @@ const HomeIcon = () => (
     </svg>
 );
 
-const MyDriveIcon = () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M19 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 18H5V4h14v16z" />
-        <path d="M12 6l-5 9h10z" />
-    </svg>
-);
-
 const ComputerIcon = () => (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
         <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z" />
@@ -148,7 +141,6 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
     const mainMenuItems = [
         { id: 'home', label: t('sidebar.home'), icon: HomeIcon },
-        { id: null, label: t('sidebar.myDrive'), icon: MyDriveIcon },
         { id: 'computer', label: t('sidebar.computer'), icon: ComputerIcon },
     ];
 
