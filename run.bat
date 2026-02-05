@@ -401,6 +401,37 @@ if exist "%PROJECT_DIR%\frontend\package.json" (
     )
     echo.
     
+    :: Kiem tra Rust cho Tauri
+    where cargo >nul 2>&1
+    if errorlevel 1 (
+        echo [WARNING] Rust chua duoc cai dat. Se chay web mode thay vi Tauri.
+        echo De cai Rust, truy cap: https://rustup.rs/
+        echo.
+        goto :run_web_mode
+    )
+    
+    echo [OK] Rust da san sang
+    echo.
+    
+    :: Chay Backend API trong nen
+    echo Khoi chay Backend API trong nen...
+    start /B "" %PYTHON_CMD% main.py > logs\backend.log 2>&1
+    
+    :: Cho backend khoi dong
+    echo Dang cho backend khoi dong...
+    timeout /t 3 /nobreak >nul
+    echo [OK] Backend da khoi dong tai http://127.0.0.1:5000
+    echo.
+    
+    :: Chay Tauri dev mode (hien thi cua so webview)
+    echo Khoi chay TeleDrive Desktop (Tauri)...
+    echo.
+    pushd "%PROJECT_DIR%\frontend"
+    call npm run tauri dev
+    popd
+    goto :app_stopped
+    
+:run_web_mode
     echo Khoi chay Frontend Vite dev server...
     :: Chay frontend an trong nen (hoan toan an)
     powershell -WindowStyle Hidden -Command "Start-Process cmd -ArgumentList '/c cd /d %PROJECT_DIR%\\frontend && npm run dev' -WindowStyle Hidden"
@@ -418,7 +449,7 @@ if exist "%PROJECT_DIR%\frontend\package.json" (
 :skip_frontend
 
 :: ============================================
-:: BUOC 11: CHAY UNG DUNG BACKEND
+:: BUOC 11: CHAY UNG DUNG BACKEND (WEB MODE)
 :: ============================================
 
 echo.
@@ -436,17 +467,25 @@ echo.
 echo ========================================
 echo.
 
-:: Chay Backend API
+:: Chay Backend API (chi khi web mode, Tauri mode da chay o tren)
 %PYTHON_CMD% main.py
 
-:: Neu ung dung dung
+:app_stopped
+:: Cleanup backend process when app stops
 echo.
 echo ========================================
 echo      TeleDrive stopped
 echo ========================================
 echo.
+
+:: Kill backend process if still running
+for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":5000 "') do (
+    taskkill /f /pid %%a >nul 2>&1
+)
+
 echo To restart, run: run.bat
-echo Check teledrive.log for details
+echo Check logs\backend.log for details
 echo.
 pause
 exit /b 0
+
