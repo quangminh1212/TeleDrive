@@ -40,7 +40,21 @@
     "copy": "நகலெடு",
     "share": "பகிர்",
     "details": "விவரங்கள்",
-    "preview": "முன்னோட்டம்"
+    "preview": "முன்னோட்டம்",
+    "type": "Type",
+    "source": "Source",
+    "filterByType": "Filter by type",
+    "filterByOwner": "Filter by owner",
+    "filterByDate": "Filter by date",
+    "items": "items",
+    "listView": "List view",
+    "gridView": "Grid view",
+    "folder": "Folder",
+    "file": "File",
+    "noStarred": "No starred items yet",
+    "starHint": "Star files or folders to find them faster",
+    "noRecent": "No recently accessed folders",
+    "recentHint": "Open a folder to see it here"
   },
   "folders": {
     "create": "கோப்புறை உருவாக்கு",
@@ -80,7 +94,23 @@
     "itemsSelected": "{count} உருப்படிகள் தேர்ந்தெடுக்கப்பட்டன",
     "loading": "ஏற்றுகிறது...",
     "error": "பிழை ஏற்பட்டது",
-    "networkError": "நெட்வொர்க் பிழை. மீண்டும் முயற்சிக்கவும்."
+    "networkError": "நெட்வொர்க் பிழை. மீண்டும் முயற்சிக்கவும்.",
+    "folderNameEmpty": "Folder name cannot be empty",
+    "folderNameInvalidChars": "Name cannot contain: / \\ : * ? \" < > |",
+    "folderNameTooLong": "Folder name cannot exceed 255 characters",
+    "renaming": "Renaming...",
+    "deleting": "Deleting...",
+    "moving": "Moving...",
+    "processing": "Processing...",
+    "searching": "Searching...",
+    "noSearchResults": "No results found for \"{query}\"",
+    "connectionError": "Cannot connect to server",
+    "serverError": "Server error. Please try again later.",
+    "authError": "Session expired. Please log in again.",
+    "fileNotFound": "File not found",
+    "permissionDenied": "You don't have permission to perform this action",
+    "fileTooLarge": "File too large. Maximum size is 2GB.",
+    "suggestions": "Suggestions"
   },
   "auth": {
     "login": "உள்நுழை",
@@ -101,6 +131,13 @@
     "lightMode": "ஒளி பயன்முறை",
     "notifications": "அறிவிப்புகள்",
     "storage": "சேமிப்பு",
-    "about": "பற்றி"
+    "about": "பற்றி",
+    "systemMode": "System",
+    "appearance": "Appearance"
+  },
+  "dates": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{count} days ago"
   }
 }

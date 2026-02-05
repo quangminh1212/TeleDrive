@@ -40,7 +40,21 @@
     "copy": "Kopjo",
     "share": "Ndaj",
     "details": "Detaje",
-    "preview": "Parashiko"
+    "preview": "Parashiko",
+    "type": "Type",
+    "source": "Source",
+    "filterByType": "Filter by type",
+    "filterByOwner": "Filter by owner",
+    "filterByDate": "Filter by date",
+    "items": "items",
+    "listView": "List view",
+    "gridView": "Grid view",
+    "folder": "Folder",
+    "file": "File",
+    "noStarred": "No starred items yet",
+    "starHint": "Star files or folders to find them faster",
+    "noRecent": "No recently accessed folders",
+    "recentHint": "Open a folder to see it here"
   },
   "folders": {
     "create": "Krijo dosje",
@@ -80,7 +94,23 @@
     "itemsSelected": "{count} artikuj të zgjedhur",
     "loading": "Duke ngarkuar...",
     "error": "Ndodhi një gabim",
-    "networkError": "Gabim rrjeti. Ju lutemi provoni përsëri."
+    "networkError": "Gabim rrjeti. Ju lutemi provoni përsëri.",
+    "folderNameEmpty": "Folder name cannot be empty",
+    "folderNameInvalidChars": "Name cannot contain: / \\ : * ? \" < > |",
+    "folderNameTooLong": "Folder name cannot exceed 255 characters",
+    "renaming": "Renaming...",
+    "deleting": "Deleting...",
+    "moving": "Moving...",
+    "processing": "Processing...",
+    "searching": "Searching...",
+    "noSearchResults": "No results found for \"{query}\"",
+    "connectionError": "Cannot connect to server",
+    "serverError": "Server error. Please try again later.",
+    "authError": "Session expired. Please log in again.",
+    "fileNotFound": "File not found",
+    "permissionDenied": "You don't have permission to perform this action",
+    "fileTooLarge": "File too large. Maximum size is 2GB.",
+    "suggestions": "Suggestions"
   },
   "auth": {
     "login": "Hyr",
@@ -101,6 +131,13 @@
     "lightMode": "Modaliteti i ndritshëm",
     "notifications": "Njoftimet",
     "storage": "Ruajtja",
-    "about": "Rreth"
+    "about": "Rreth",
+    "systemMode": "System",
+    "appearance": "Appearance"
+  },
+  "dates": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{count} days ago"
   }
 }

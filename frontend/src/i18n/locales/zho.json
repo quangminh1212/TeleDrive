@@ -40,7 +40,21 @@
     "copy": "复制",
     "share": "共享",
     "details": "详情",
-    "preview": "预览"
+    "preview": "预览",
+    "type": "Type",
+    "source": "Source",
+    "filterByType": "Filter by type",
+    "filterByOwner": "Filter by owner",
+    "filterByDate": "Filter by date",
+    "items": "items",
+    "listView": "List view",
+    "gridView": "Grid view",
+    "folder": "Folder",
+    "file": "File",
+    "noStarred": "No starred items yet",
+    "starHint": "Star files or folders to find them faster",
+    "noRecent": "No recently accessed folders",
+    "recentHint": "Open a folder to see it here"
   },
   "folders": {
     "create": "创建文件夹",
@@ -80,7 +94,23 @@
     "itemsSelected": "已选择 {count} 个项目",
     "loading": "加载中...",
     "error": "发生错误",
-    "networkError": "网络错误，请重试"
+    "networkError": "网络错误，请重试",
+    "folderNameEmpty": "Folder name cannot be empty",
+    "folderNameInvalidChars": "Name cannot contain: / \\ : * ? \" < > |",
+    "folderNameTooLong": "Folder name cannot exceed 255 characters",
+    "renaming": "Renaming...",
+    "deleting": "Deleting...",
+    "moving": "Moving...",
+    "processing": "Processing...",
+    "searching": "Searching...",
+    "noSearchResults": "No results found for \"{query}\"",
+    "connectionError": "Cannot connect to server",
+    "serverError": "Server error. Please try again later.",
+    "authError": "Session expired. Please log in again.",
+    "fileNotFound": "File not found",
+    "permissionDenied": "You don't have permission to perform this action",
+    "fileTooLarge": "File too large. Maximum size is 2GB.",
+    "suggestions": "Suggestions"
   },
   "auth": {
     "login": "登录",
@@ -101,6 +131,13 @@
     "lightMode": "浅色模式",
     "notifications": "通知",
     "storage": "存储",
-    "about": "关于"
+    "about": "关于",
+    "systemMode": "System",
+    "appearance": "Appearance"
+  },
+  "dates": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{count} days ago"
   }
 }

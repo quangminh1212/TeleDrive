@@ -40,7 +40,21 @@
     "copy": "පිටපත් කරන්න",
     "share": "බෙදාගන්න",
     "details": "විස්තර",
-    "preview": "පෙරදසුන"
+    "preview": "පෙරදසුන",
+    "type": "Type",
+    "source": "Source",
+    "filterByType": "Filter by type",
+    "filterByOwner": "Filter by owner",
+    "filterByDate": "Filter by date",
+    "items": "items",
+    "listView": "List view",
+    "gridView": "Grid view",
+    "folder": "Folder",
+    "file": "File",
+    "noStarred": "No starred items yet",
+    "starHint": "Star files or folders to find them faster",
+    "noRecent": "No recently accessed folders",
+    "recentHint": "Open a folder to see it here"
   },
   "folders": {
     "create": "ෆෝල්ඩරයක් සාදන්න",
@@ -80,7 +94,23 @@
     "itemsSelected": "අයිතම {count}ක් තෝරාගෙන ඇත",
     "loading": "පූරණය වෙමින්...",
     "error": "දෝෂයක් සිදුවිය",
-    "networkError": "ජාල දෝෂයක්. කරුණාකර නැවත උත්සාහ කරන්න."
+    "networkError": "ජාල දෝෂයක්. කරුණාකර නැවත උත්සාහ කරන්න.",
+    "folderNameEmpty": "Folder name cannot be empty",
+    "folderNameInvalidChars": "Name cannot contain: / \\ : * ? \" < > |",
+    "folderNameTooLong": "Folder name cannot exceed 255 characters",
+    "renaming": "Renaming...",
+    "deleting": "Deleting...",
+    "moving": "Moving...",
+    "processing": "Processing...",
+    "searching": "Searching...",
+    "noSearchResults": "No results found for \"{query}\"",
+    "connectionError": "Cannot connect to server",
+    "serverError": "Server error. Please try again later.",
+    "authError": "Session expired. Please log in again.",
+    "fileNotFound": "File not found",
+    "permissionDenied": "You don't have permission to perform this action",
+    "fileTooLarge": "File too large. Maximum size is 2GB.",
+    "suggestions": "Suggestions"
   },
   "auth": {
     "login": "පුරන්න",
@@ -101,6 +131,13 @@
     "lightMode": "ආලෝක මාදිලිය",
     "notifications": "දැනුම්දීම්",
     "storage": "ගබඩාව",
-    "about": "පිළිබඳව"
+    "about": "පිළිබඳව",
+    "systemMode": "System",
+    "appearance": "Appearance"
+  },
+  "dates": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{count} days ago"
   }
 }
