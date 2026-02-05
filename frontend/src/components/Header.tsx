@@ -219,7 +219,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
     };
 
     return (
-        <header className="h-14 md:h-16 bg-gdrive-sidebar dark:bg-dark-bg flex items-center px-2 md:px-4 gap-2 md:gap-4">
+        <header className="h-14 md:h-16 bg-white dark:bg-dark-bg flex items-center px-2 md:px-4 gap-2 md:gap-4 border-b border-gray-100 dark:border-dark-border">
             {/* Mobile Menu Button - Hamburger */}
             <button
                 onClick={onMenuClick}

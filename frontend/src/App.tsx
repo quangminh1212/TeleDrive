@@ -79,7 +79,7 @@ function MainAppUI({
         />
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-gdrive-sidebar dark:bg-dark-bg">
+        <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-dark-bg">
           {/* Header */}
           <Header
             searchQuery={searchQuery}
