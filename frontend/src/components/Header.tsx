@@ -263,7 +263,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
             </div>
 
             {/* Right side actions - Google Drive style */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 ml-auto">
                 {/* Theme Switcher */}
                 <div className="hidden md:block">
                     <ThemeSwitcher />
