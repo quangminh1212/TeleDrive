@@ -52,7 +52,9 @@
     "folder": "Thư mục",
     "file": "Tệp",
     "noStarred": "Chưa có mục nào được gắn dấu sao",
-    "starHint": "Gắn dấu sao cho file hoặc thư mục để tìm nhanh hơn"
+    "starHint": "Gắn dấu sao cho file hoặc thư mục để tìm nhanh hơn",
+    "noRecent": "Chưa có thư mục nào được truy cập gần đây",
+    "recentHint": "Mở một thư mục để nó xuất hiện ở đây"
   },
   "folders": {
     "create": "Tạo thư mục",

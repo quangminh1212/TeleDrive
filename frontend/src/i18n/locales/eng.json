@@ -52,7 +52,9 @@
     "folder": "Folder",
     "file": "File",
     "noStarred": "No starred items yet",
-    "starHint": "Star files or folders to find them faster"
+    "starHint": "Star files or folders to find them faster",
+    "noRecent": "No recently accessed folders",
+    "recentHint": "Open a folder to see it here"
   },
   "folders": {
     "create": "Create folder",

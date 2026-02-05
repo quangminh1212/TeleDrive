@@ -97,12 +97,85 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         onViewModeChange?.(mode);
     };
 
+    // Save folder to recent history
+    const saveRecentFolder = useCallback((folderId: number) => {
+        const MAX_RECENT = 20; // Keep last 20 folders
+        const recentFolders: number[] = JSON.parse(localStorage.getItem('teledrive_recent_folders') || '[]');
+
+        // Remove if already exists (to move to front)
+        const filtered = recentFolders.filter(id => id !== folderId);
+
+        // Add to front
+        filtered.unshift(folderId);
+
+        // Limit size
+        if (filtered.length > MAX_RECENT) {
+            filtered.splice(MAX_RECENT);
+        }
+
+        localStorage.setItem('teledrive_recent_folders', JSON.stringify(filtered));
+    }, []);
+
+    // Wrapper for folder open that also saves to recent
+    const handleFolderOpen = useCallback((folderId: number | null) => {
+        if (folderId !== null) {
+            saveRecentFolder(folderId);
+        }
+        onFolderSelect?.(folderId);
+    }, [onFolderSelect, saveRecentFolder]);
+
     // Fetch files from API
     const fetchFiles = useCallback(async () => {
         setLoading(true);
         setError(null);
 
         try {
+            // Special case: recent folders (accessed recently)
+            if (currentFolder === 'recent') {
+                // Get recent folder IDs from localStorage
+                const recentFolderIds: number[] = JSON.parse(localStorage.getItem('teledrive_recent_folders') || '[]');
+
+                if (recentFolderIds.length === 0) {
+                    setAllFiles([]);
+                    setFolders([]);
+                    setPagination({ page: 1, total: 0, pages: 1, hasNext: false, hasPrev: false });
+                    setLoading(false);
+                    return;
+                }
+
+                // Fetch all folders to get details
+                const foldersResponse = await api.getFolders();
+                if (foldersResponse.success && foldersResponse.data) {
+                    // Filter only recent folders that still exist (not deleted)
+                    const existingFolders = foldersResponse.data.folders.filter(
+                        folder => recentFolderIds.includes(folder.id)
+                    );
+
+                    // Sort by recent access order (most recent first)
+                    const sortedFolders = existingFolders.sort((a, b) => {
+                        return recentFolderIds.indexOf(a.id) - recentFolderIds.indexOf(b.id);
+                    });
+
+                    const folderItems = sortedFolders.map((folder): FileInfo => ({
+                        id: `folder-${folder.id}`,
+                        name: folder.name,
+                        type: 'folder',
+                        size: 0,
+                        modified: folder.created_at || '',
+                        owner: 'tôi',
+                        is_favorite: folder.is_favorite,
+                    }));
+
+                    setAllFiles(folderItems);
+                    setFolders([]);
+                    setPagination({ page: 1, total: folderItems.length, pages: 1, hasNext: false, hasPrev: false });
+                } else {
+                    setAllFiles([]);
+                }
+                setLoading(false);
+                return;
+            }
+
             // Special case: starred items
             if (currentFolder === 'starred') {
                 const starredResponse = await api.getStarredItems();
@@ -301,11 +374,6 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         // Filter by folder (if applicable)
         if (currentFolder === 'shared') {
             filtered = filtered.filter(f => f.telegram_channel);
-        } else if (currentFolder === 'recent') {
-            // Sort by modified date, most recent first
-            filtered = [...filtered].sort((a, b) =>
-                new Date(b.modified).getTime() - new Date(a.modified).getTime()
-            );
         }
 
         // Sort files
@@ -1006,6 +1074,16 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             <p className="text-lg mb-2">{t('files.noStarred') || 'Chưa có mục nào được gắn dấu sao'}</p>
                             <p className="text-sm">{t('files.starHint') || 'Gắn dấu sao cho file hoặc thư mục để tìm nhanh hơn'}</p>
                         </>
+                    ) : currentFolder === 'recent' ? (
+                        /* Empty state for Recent view */
+                        <>
+                            <svg className="w-20 h-20 mb-4 text-gray-300 dark:text-dark-text-disabled" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
+                                <path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
+                            </svg>
+                            <p className="text-lg mb-2">{t('files.noRecent')}</p>
+                            <p className="text-sm">{t('files.recentHint')}</p>
+                        </>
                     ) : (
                         /* Empty state for other views */
                         <>
@@ -1087,7 +1165,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                     onPreview={handlePreview}
                                     onDropFiles={handleDropFilesToFolder}
                                     selectedFiles={selectedFiles}
-                                    onFolderOpen={(folderId) => onFolderSelect?.(folderId)}
+                                    onFolderOpen={(folderId) => handleFolderOpen(folderId)}
                                     onStar={handleToggleStar}
                                 />
                             </div>
@@ -1111,7 +1189,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                 onShowInfo={handleShowInfo}
                                 onPreview={handlePreview}
                                 onStar={handleToggleStar}
-                                onFolderOpen={(folderId) => onFolderSelect?.(folderId)}
+                                onFolderOpen={(folderId) => handleFolderOpen(folderId)}
                             />
                         ))}
                     </div>
