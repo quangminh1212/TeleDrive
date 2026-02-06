@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
 import { logger } from '../utils/logger';
+import { useI18n, getAvailableLanguages, languageNames } from '../i18n';
 
 interface TelegramLoginProps {
     onLoginSuccess: () => void;
@@ -35,6 +36,11 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     const [needs2FA, setNeeds2FA] = useState(false);
     const [password2FA, setPassword2FA] = useState('');
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+    const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+
+    // i18n
+    const { language, setLanguage } = useI18n();
+    const availableLanguages = getAvailableLanguages();
 
     // Country codes list - full list sorted A-Z by Vietnamese name
     const countryCodes = [
@@ -720,7 +726,41 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 </div>
 
                 {/* Footer */}
-                <div className="text-center mt-6 space-y-2">
+                <div className="text-center mt-6 space-y-3">
+                    {/* Language Selector */}
+                    <div className="relative inline-block">
+                        <button
+                            type="button"
+                            onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover rounded-lg transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                            </svg>
+                            <span>{languageNames[language]}</span>
+                            <svg className={`w-3 h-3 transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        {isLanguageDropdownOpen && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white dark:bg-dark-elevated border border-gray-200 dark:border-dark-border rounded-xl shadow-lg max-h-64 overflow-y-auto z-50">
+                                {availableLanguages.map((lang) => (
+                                    <button
+                                        key={lang.code}
+                                        type="button"
+                                        onClick={() => {
+                                            setLanguage(lang.code);
+                                            setIsLanguageDropdownOpen(false);
+                                        }}
+                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors ${language === lang.code ? 'bg-blue-50 dark:bg-dark-selected text-blue-600 dark:text-dark-blue' : 'text-gray-700 dark:text-dark-text'}`}
+                                    >
+                                        {lang.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <p className="text-gray-400 dark:text-dark-text-secondary text-sm">
                         TeleDrive © 2026
                     </p>
