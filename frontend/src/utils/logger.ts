@@ -1,6 +1,6 @@
 /**
  * Frontend Logger Utility
- * Logs to console and optionally sends to backend for file logging
+ * Real-time logging - sends logs immediately to backend for file storage
  */
 
 interface LogEntry {
@@ -14,13 +14,16 @@ interface LogEntry {
 class Logger {
   private static instance: Logger;
   private logToBackend: boolean = true;
-  private logBuffer: LogEntry[] = [];
-  private flushInterval: number = 5000; // Flush every 5 seconds
-  private flushTimer: NodeJS.Timeout | null = null;
+  private pendingLogs: LogEntry[] = [];
+  private isSending: boolean = false;
+  private retryQueue: LogEntry[] = [];
 
   private constructor() {
-    // Start flush timer
-    this.startFlushTimer();
+    // Setup periodic retry for failed logs
+    setInterval(() => this.retryFailedLogs(), 10000);
+
+    // Log initialization
+    this.info('Logger', 'Frontend logger initialized - real-time mode');
   }
 
   public static getInstance(): Logger {
@@ -28,12 +31,6 @@ class Logger {
       Logger.instance = new Logger();
     }
     return Logger.instance;
-  }
-
-  private startFlushTimer() {
-    this.flushTimer = setInterval(() => {
-      this.flush();
-    }, this.flushInterval);
   }
 
   private getTimestamp(): string {
@@ -45,7 +42,11 @@ class Logger {
     const timestamp = this.getTimestamp();
     let formatted = `[${timestamp}] [${level}] [${component}] ${message}`;
     if (data !== undefined) {
-      formatted += ` | Data: ${JSON.stringify(data)}`;
+      try {
+        formatted += ` | Data: ${JSON.stringify(data)}`;
+      } catch {
+        formatted += ` | Data: [unable to serialize]`;
+      }
     }
     return formatted;
   }
@@ -71,28 +72,72 @@ class Logger {
         break;
     }
 
-    // Add to buffer for backend logging
+    // Send to backend immediately (real-time)
     if (this.logToBackend) {
-      this.logBuffer.push({
+      const logEntry: LogEntry = {
         timestamp,
         level,
         component,
         message,
         data
-      });
-
-      // If buffer is too large, flush immediately
-      if (this.logBuffer.length >= 50) {
-        this.flush();
-      }
+      };
+      this.sendLogImmediate(logEntry);
     }
   }
 
-  private async flush() {
-    if (this.logBuffer.length === 0) return;
+  private async sendLogImmediate(logEntry: LogEntry) {
+    // Add to pending queue
+    this.pendingLogs.push(logEntry);
 
-    const logsToSend = [...this.logBuffer];
-    this.logBuffer = [];
+    // Process queue if not already sending
+    if (!this.isSending) {
+      this.processQueue();
+    }
+  }
+
+  private async processQueue() {
+    if (this.pendingLogs.length === 0) {
+      this.isSending = false;
+      return;
+    }
+
+    this.isSending = true;
+
+    // Get all pending logs
+    const logsToSend = [...this.pendingLogs];
+    this.pendingLogs = [];
+
+    try {
+      const response = await fetch('/api/logs/frontend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ logs: logsToSend }),
+      });
+
+      if (!response.ok) {
+        // Add to retry queue
+        this.retryQueue.push(...logsToSend);
+      }
+    } catch {
+      // Network error - add to retry queue (silent, don't log to avoid loop)
+      this.retryQueue.push(...logsToSend);
+    }
+
+    // Continue processing if more logs arrived
+    if (this.pendingLogs.length > 0) {
+      // Small delay to batch rapid logs
+      setTimeout(() => this.processQueue(), 50);
+    } else {
+      this.isSending = false;
+    }
+  }
+
+  private async retryFailedLogs() {
+    if (this.retryQueue.length === 0) return;
+
+    const logsToRetry = this.retryQueue.splice(0, 20); // Retry max 20 at a time
 
     try {
       await fetch('/api/logs/frontend', {
@@ -100,11 +145,13 @@ class Logger {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ logs: logsToSend }),
+        body: JSON.stringify({ logs: logsToRetry }),
       });
-    } catch (error) {
-      // Don't log this error to avoid infinite loop
-      console.error('Failed to send logs to backend:', error);
+    } catch {
+      // If retry fails, discard old logs to prevent memory leak
+      if (this.retryQueue.length > 100) {
+        this.retryQueue = this.retryQueue.slice(-50);
+      }
     }
   }
 
@@ -128,10 +175,28 @@ class Logger {
     this.logToBackend = enabled;
   }
 
-  public destroy() {
-    if (this.flushTimer) {
-      clearInterval(this.flushTimer);
+  public async flush() {
+    // Force send all pending logs synchronously
+    if (this.pendingLogs.length > 0) {
+      const logsToSend = [...this.pendingLogs];
+      this.pendingLogs = [];
+
+      try {
+        await fetch('/api/logs/frontend', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ logs: logsToSend }),
+        });
+      } catch {
+        // Silent fail on flush
+      }
     }
+  }
+
+  public destroy() {
+    this.info('Logger', 'Frontend logger shutting down');
     this.flush();
   }
 }
@@ -139,9 +204,27 @@ class Logger {
 // Export singleton instance
 export const logger = Logger.getInstance();
 
-// Cleanup on page unload
+// Cleanup on page unload - use sendBeacon for reliable delivery
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {
-    logger.destroy();
+    // Use sendBeacon for guaranteed delivery on page unload
+    if (navigator.sendBeacon) {
+      const logEntry = {
+        logs: [{
+          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 23),
+          level: 'INFO',
+          component: 'Logger',
+          message: 'Frontend session ended'
+        }]
+      };
+      navigator.sendBeacon('/api/logs/frontend', JSON.stringify(logEntry));
+    }
+  });
+
+  // Also handle visibility change for tab switching
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      logger.flush();
+    }
   });
 }
