@@ -368,12 +368,12 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                             Số điện thoại
                         </label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-2">
                             {/* Country Code Dropdown */}
                             <select
                                 value={countryCode}
                                 onChange={(e) => setCountryCode(e.target.value)}
-                                className="px-3 py-3 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-700 dark:text-dark-text font-medium min-w-[160px]"
+                                className="w-full px-3 py-2.5 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-700 dark:text-dark-text font-medium text-sm"
                             >
                                 {countryCodes.map((c) => (
                                     <option key={c.code} value={c.code}>
@@ -387,17 +387,17 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                                 value={phoneNumber}
                                 onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
                                 placeholder="Nhập số điện thoại"
-                                className="flex-1 px-4 py-3 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-800 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary"
+                                className="w-full px-4 py-2.5 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-800 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary text-sm"
                             />
                         </div>
-                        <p className="text-xs text-gray-400 dark:text-dark-text-disabled mt-2">
+                        <p className="text-xs text-gray-400 dark:text-dark-text-disabled mt-1.5">
                             Ví dụ: {countryCode} 912345678
                         </p>
                     </div>
                     <button
                         type="submit"
                         disabled={isLoading || !phoneNumber.trim()}
-                        className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 ${isLoading || !phoneNumber.trim()
+                        className={`w-full py-3 px-6 rounded-xl font-medium text-white transition-all duration-200 ${isLoading || !phoneNumber.trim()
                             ? 'bg-gray-300 dark:bg-dark-border cursor-not-allowed'
                             : 'bg-[#0088cc] dark:bg-dark-blue hover:bg-[#006699] dark:hover:bg-dark-blue-hover active:scale-[0.98]'
                             }`}
