@@ -1357,6 +1357,23 @@ def chrome_devtools():
     # Return empty response to prevent 404 errors
     return '', 204
 
+@app.route('/api/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'TeleDrive',
+        'version': '1.0.0'
+    })
+
+@app.route('/api/devices')
+def list_devices():
+    """Placeholder for devices endpoint (from browser extensions)"""
+    return jsonify({
+        'devices': [],
+        'message': 'No devices connected'
+    })
+
 @app.route('/api/save_settings', methods=['POST'])
 @login_required
 def save_settings():
