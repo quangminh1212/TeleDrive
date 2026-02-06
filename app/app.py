@@ -76,6 +76,63 @@ def with_db_transaction(f):
 
 # Import detailed logging - with fallback
 import logging
+import logging.handlers
+
+def setup_file_logging():
+    """Setup file logging to teledrive.log in AppData for portable mode"""
+    try:
+        # Determine log directory
+        if sys.platform == 'win32':
+            base = os.environ.get('LOCALAPPDATA', os.path.expanduser('~'))
+        else:
+            base = os.path.expanduser('~/.local/share')
+        
+        log_dir = os.path.join(base, 'TeleDrive', 'logs')
+        os.makedirs(log_dir, exist_ok=True)
+        
+        log_file = os.path.join(log_dir, 'teledrive.log')
+        
+        # Configure root logger
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.DEBUG)
+        
+        # Clear existing handlers
+        for handler in root_logger.handlers[:]:
+            root_logger.removeHandler(handler)
+        
+        # File handler with rotation
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_file,
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5,
+            encoding='utf-8'
+        )
+        file_handler.setLevel(logging.DEBUG)
+        file_formatter = logging.Formatter(
+            '[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        file_handler.setFormatter(file_formatter)
+        root_logger.addHandler(file_handler)
+        
+        # Console handler (less verbose)
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        console_formatter = logging.Formatter(
+            '[%(levelname)s] %(message)s'
+        )
+        console_handler.setFormatter(console_formatter)
+        root_logger.addHandler(console_handler)
+        
+        logging.info(f"TeleDrive logging initialized. Log file: {log_file}")
+        return log_file
+    except Exception as e:
+        print(f"Warning: Failed to setup file logging: {e}")
+        return None
+
+# Initialize file logging
+_log_file_path = setup_file_logging()
+
 logger = logging.getLogger(__name__)
 
 # Try to import detailed logging helpers; if missing, define no-op fallbacks
