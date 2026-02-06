@@ -35,28 +35,28 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     const [needs2FA, setNeeds2FA] = useState(false);
     const [password2FA, setPassword2FA] = useState('');
 
-    // Country codes list - Vietnam first (default), then sorted alphabetically
+    // Country codes list - sorted A-Z by Vietnamese name
     const countryCodes = [
-        { code: '+84', country: '🇻🇳 Việt Nam', short: 'VN' },
-        { code: '+44', country: '🇬🇧 Anh', short: 'UK' },
-        { code: '+91', country: '🇮🇳 Ấn Độ', short: 'IN' },
-        { code: '+55', country: '🇧🇷 Brazil', short: 'BR' },
-        { code: '+886', country: '🇹🇼 Đài Loan', short: 'TW' },
-        { code: '+49', country: '🇩🇪 Đức', short: 'DE' },
-        { code: '+82', country: '🇰🇷 Hàn Quốc', short: 'KR' },
-        { code: '+852', country: '🇭🇰 Hồng Kông', short: 'HK' },
-        { code: '+62', country: '🇮🇩 Indonesia', short: 'ID' },
-        { code: '+60', country: '🇲🇾 Malaysia', short: 'MY' },
-        { code: '+1', country: '🇺🇸 Mỹ', short: 'US' },
-        { code: '+7', country: '🇷🇺 Nga', short: 'RU' },
-        { code: '+81', country: '🇯🇵 Nhật Bản', short: 'JP' },
-        { code: '+33', country: '🇫🇷 Pháp', short: 'FR' },
-        { code: '+63', country: '🇵🇭 Philippines', short: 'PH' },
-        { code: '+65', country: '🇸🇬 Singapore', short: 'SG' },
-        { code: '+66', country: '🇹🇭 Thái Lan', short: 'TH' },
-        { code: '+86', country: '🇨🇳 Trung Quốc', short: 'CN' },
-        { code: '+971', country: '🇦🇪 UAE', short: 'AE' },
-        { code: '+61', country: '🇦🇺 Úc', short: 'AU' },
+        { code: '+44', country: 'Anh', flag: '🇬🇧', short: 'GB' },
+        { code: '+91', country: 'Ấn Độ', flag: '🇮🇳', short: 'IN' },
+        { code: '+55', country: 'Brazil', flag: '🇧🇷', short: 'BR' },
+        { code: '+886', country: 'Đài Loan', flag: '🇹🇼', short: 'TW' },
+        { code: '+49', country: 'Đức', flag: '🇩🇪', short: 'DE' },
+        { code: '+82', country: 'Hàn Quốc', flag: '🇰🇷', short: 'KR' },
+        { code: '+852', country: 'Hồng Kông', flag: '🇭🇰', short: 'HK' },
+        { code: '+62', country: 'Indonesia', flag: '🇮🇩', short: 'ID' },
+        { code: '+60', country: 'Malaysia', flag: '🇲🇾', short: 'MY' },
+        { code: '+1', country: 'Mỹ', flag: '🇺🇸', short: 'US' },
+        { code: '+7', country: 'Nga', flag: '🇷🇺', short: 'RU' },
+        { code: '+81', country: 'Nhật Bản', flag: '🇯🇵', short: 'JP' },
+        { code: '+33', country: 'Pháp', flag: '🇫🇷', short: 'FR' },
+        { code: '+63', country: 'Philippines', flag: '🇵🇭', short: 'PH' },
+        { code: '+65', country: 'Singapore', flag: '🇸🇬', short: 'SG' },
+        { code: '+66', country: 'Thái Lan', flag: '🇹🇭', short: 'TH' },
+        { code: '+86', country: 'Trung Quốc', flag: '🇨🇳', short: 'CN' },
+        { code: '+971', country: 'UAE', flag: '🇦🇪', short: 'AE' },
+        { code: '+61', country: 'Úc', flag: '🇦🇺', short: 'AU' },
+        { code: '+84', country: 'Việt Nam', flag: '🇻🇳', short: 'VN' },
     ];
 
     // Check QR status periodically
@@ -377,7 +377,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             >
                                 {countryCodes.map((c) => (
                                     <option key={c.code} value={c.code}>
-                                        {c.country} ({c.code})
+                                        {c.flag} {c.country} ({c.code})
                                     </option>
                                 ))}
                             </select>
