@@ -488,11 +488,11 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
             </button>
 
             <div className="mt-6 p-4 bg-gray-50 dark:bg-dark-elevated rounded-xl border border-gray-100 dark:border-dark-border text-sm text-gray-600 dark:text-dark-text-secondary">
-                <p className="font-medium text-gray-700 dark:text-dark-text mb-2">💡 Hướng dẫn:</p>
+                <p className="font-medium text-gray-700 dark:text-dark-text mb-2">💡 {t('auth.guide')}:</p>
                 <ol className="space-y-1 list-decimal list-inside">
-                    <li>Mở Telegram Desktop trên máy tính</li>
-                    <li>Đảm bảo đã đăng nhập vào tài khoản</li>
-                    <li>Nhấn nút đăng nhập phía trên</li>
+                    <li>{t('auth.desktopStep1')}</li>
+                    <li>{t('auth.desktopStep2')}</li>
+                    <li>{t('auth.desktopStep3')}</li>
                 </ol>
             </div>
         </div>
@@ -507,12 +507,12 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                     </div>
                 ) : qrExpired ? (
                     <div className="w-[160px] h-[160px] flex flex-col items-center justify-center gap-2">
-                        <p className="text-gray-500 dark:text-dark-text-secondary text-sm">Mã QR đã hết hạn</p>
+                        <p className="text-gray-500 dark:text-dark-text-secondary text-sm">{t('auth.qrExpired')}</p>
                         <button
                             onClick={startQRLogin}
                             className="px-3 py-1.5 bg-[#0088cc] dark:bg-dark-blue text-white dark:text-dark-bg rounded-lg text-sm hover:bg-[#006699] dark:hover:bg-dark-blue-hover transition-colors"
                         >
-                            Tạo mã mới
+                            {t('auth.generateNewQR')}
                         </button>
                     </div>
                 ) : qrCode ? (
@@ -521,15 +521,15 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
             </div>
 
             <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-3">
-                Quét mã QR bằng ứng dụng Telegram trên điện thoại
+                {t('auth.scanQRDesc')}
             </p>
 
             <div className="p-3 bg-gray-50 dark:bg-dark-elevated rounded-xl border border-gray-100 dark:border-dark-border text-sm text-gray-600 dark:text-dark-text-secondary text-left">
-                <p className="font-medium text-gray-700 dark:text-dark-text mb-1.5">📱 Hướng dẫn:</p>
+                <p className="font-medium text-gray-700 dark:text-dark-text mb-1.5">📱 {t('auth.guide')}:</p>
                 <ol className="space-y-0.5 list-decimal list-inside text-xs">
-                    <li>Mở Telegram trên điện thoại</li>
-                    <li>Vào Cài đặt → Thiết bị → Quét QR</li>
-                    <li>Quét mã QR phía trên</li>
+                    <li>{t('auth.qrStep1')}</li>
+                    <li>{t('auth.qrStep2')}</li>
+                    <li>{t('auth.qrStep3')}</li>
                 </ol>
             </div>
         </div>
@@ -541,7 +541,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 <form onSubmit={handlePhoneStart}>
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
-                            Số điện thoại
+                            {t('auth.phoneNumber')}
                         </label>
                         <div className="flex flex-col gap-2">
                             {/* Country Code Dropdown with Flag Images */}
@@ -592,12 +592,12 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                                 type="tel"
                                 value={phoneNumber}
                                 onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                                placeholder="Nhập số điện thoại"
+                                placeholder={t('auth.enterPhonePlaceholder')}
                                 className="w-full px-4 py-2.5 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-800 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary text-sm"
                             />
                         </div>
                         <p className="text-xs text-gray-400 dark:text-dark-text-disabled mt-1.5">
-                            Ví dụ: {countryCode} 912345678
+                            {t('auth.phoneExample').replace('{code}', countryCode)}
                         </p>
                     </div>
                     <button
@@ -608,20 +608,20 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             : 'bg-[#0088cc] dark:bg-dark-blue hover:bg-[#006699] dark:hover:bg-dark-blue-hover active:scale-[0.98]'
                             }`}
                     >
-                        {isLoading ? 'Đang gửi...' : 'Gửi mã xác nhận'}
+                        {isLoading ? t('auth.sending') : t('auth.sendCode')}
                     </button>
                 </form>
             ) : (
                 <form onSubmit={handlePhoneVerify}>
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
-                            Mã xác nhận
+                            {t('auth.verificationCode')}
                         </label>
                         <input
                             type="text"
                             value={verificationCode}
                             onChange={(e) => setVerificationCode(e.target.value)}
-                            placeholder="Nhập mã 5 số"
+                            placeholder={t('auth.enterCodePlaceholder')}
                             className="w-full px-4 py-3 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all text-center text-2xl tracking-widest bg-white dark:bg-dark-elevated text-gray-800 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary"
                             maxLength={5}
                         />
@@ -630,13 +630,13 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                     {needs2FA && (
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
-                                Mật khẩu 2FA
+                                {t('auth.password2FA')}
                             </label>
                             <input
                                 type="password"
                                 value={password2FA}
                                 onChange={(e) => setPassword2FA(e.target.value)}
-                                placeholder="Nhập mật khẩu 2 lớp"
+                                placeholder={t('auth.enter2FAPlaceholder')}
                                 className="w-full px-4 py-3 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-800 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary"
                             />
                         </div>
@@ -650,7 +650,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             : 'bg-[#0088cc] dark:bg-dark-blue hover:bg-[#006699] dark:hover:bg-dark-blue-hover active:scale-[0.98]'
                             }`}
                     >
-                        {isLoading ? 'Đang xác nhận...' : 'Xác nhận'}
+                        {isLoading ? t('auth.verifying') : t('auth.verify')}
                     </button>
 
                     <button
@@ -663,7 +663,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         }}
                         className="w-full mt-3 py-2 text-sm text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text"
                     >
-                        ← Quay lại
+                        {t('auth.goBack')}
                     </button>
                 </form>
             )}
