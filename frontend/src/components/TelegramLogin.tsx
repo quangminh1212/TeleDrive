@@ -35,28 +35,28 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     const [needs2FA, setNeeds2FA] = useState(false);
     const [password2FA, setPassword2FA] = useState('');
 
-    // Country codes list
+    // Country codes list - Vietnam first (default), then sorted alphabetically
     const countryCodes = [
         { code: '+84', country: '🇻🇳 Việt Nam', short: 'VN' },
-        { code: '+1', country: '🇺🇸 Mỹ', short: 'US' },
         { code: '+44', country: '🇬🇧 Anh', short: 'UK' },
-        { code: '+86', country: '🇨🇳 Trung Quốc', short: 'CN' },
-        { code: '+81', country: '🇯🇵 Nhật Bản', short: 'JP' },
+        { code: '+91', country: '🇮🇳 Ấn Độ', short: 'IN' },
+        { code: '+55', country: '🇧🇷 Brazil', short: 'BR' },
+        { code: '+886', country: '🇹🇼 Đài Loan', short: 'TW' },
+        { code: '+49', country: '🇩🇪 Đức', short: 'DE' },
         { code: '+82', country: '🇰🇷 Hàn Quốc', short: 'KR' },
+        { code: '+852', country: '🇭🇰 Hồng Kông', short: 'HK' },
+        { code: '+62', country: '🇮🇩 Indonesia', short: 'ID' },
+        { code: '+60', country: '🇲🇾 Malaysia', short: 'MY' },
+        { code: '+1', country: '🇺🇸 Mỹ', short: 'US' },
+        { code: '+7', country: '🇷🇺 Nga', short: 'RU' },
+        { code: '+81', country: '🇯🇵 Nhật Bản', short: 'JP' },
+        { code: '+33', country: '🇫🇷 Pháp', short: 'FR' },
+        { code: '+63', country: '🇵🇭 Philippines', short: 'PH' },
         { code: '+65', country: '🇸🇬 Singapore', short: 'SG' },
         { code: '+66', country: '🇹🇭 Thái Lan', short: 'TH' },
-        { code: '+60', country: '🇲🇾 Malaysia', short: 'MY' },
-        { code: '+62', country: '🇮🇩 Indonesia', short: 'ID' },
-        { code: '+63', country: '🇵🇭 Philippines', short: 'PH' },
-        { code: '+91', country: '🇮🇳 Ấn Độ', short: 'IN' },
-        { code: '+49', country: '🇩🇪 Đức', short: 'DE' },
-        { code: '+33', country: '🇫🇷 Pháp', short: 'FR' },
-        { code: '+7', country: '🇷🇺 Nga', short: 'RU' },
-        { code: '+61', country: '🇦🇺 Úc', short: 'AU' },
-        { code: '+55', country: '🇧🇷 Brazil', short: 'BR' },
-        { code: '+852', country: '🇭🇰 Hồng Kông', short: 'HK' },
-        { code: '+886', country: '🇹🇼 Đài Loan', short: 'TW' },
+        { code: '+86', country: '🇨🇳 Trung Quốc', short: 'CN' },
         { code: '+971', country: '🇦🇪 UAE', short: 'AE' },
+        { code: '+61', country: '🇦🇺 Úc', short: 'AU' },
     ];
 
     // Check QR status periodically
