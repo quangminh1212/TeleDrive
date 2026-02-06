@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FileInfo } from '../services/api';
 
 interface ContextMenuProps {
@@ -97,35 +97,31 @@ const ContextMenu = ({ file, x, y, onClose, onAction }: ContextMenuProps) => {
         { id: 'delete', label: 'Chuyển vào thùng rác', icon: <DeleteIcon />, danger: true, shortcut: 'Delete' },
     ];
 
-    useEffect(() => {
-        // Adjust position if menu goes off screen - Google Drive style positioning
+    // Use useLayoutEffect to calculate position BEFORE browser paints
+    // This prevents the menu from appearing in wrong position then jumping
+    useLayoutEffect(() => {
         if (menuRef.current) {
             const rect = menuRef.current.getBoundingClientRect();
-            const menuWidth = rect.width;
-            const menuHeight = rect.height;
+            const menuWidth = rect.width || 220;
+            const menuHeight = rect.height || 350;
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            const padding = 8; // Padding from viewport edges
+            const padding = 8;
 
             let newX = x;
             let newY = y;
 
-            // Horizontal positioning: prefer right of click, flip to left if not enough space
+            // Horizontal: if menu goes off right edge, show on left of cursor
             if (x + menuWidth > viewportWidth - padding) {
                 newX = Math.max(padding, x - menuWidth);
             }
 
-            // Vertical positioning: prefer below click, flip to above if not enough space
+            // Vertical: if menu goes off bottom, show above cursor
             if (y + menuHeight > viewportHeight - padding) {
-                // Try to position above the click point
                 newY = Math.max(padding, y - menuHeight);
-                // If still doesn't fit, position at top of viewport with scroll
-                if (newY < padding) {
-                    newY = padding;
-                }
             }
 
-            // Ensure menu is fully visible
+            // Final bounds check
             newX = Math.max(padding, Math.min(newX, viewportWidth - menuWidth - padding));
             newY = Math.max(padding, Math.min(newY, viewportHeight - menuHeight - padding));
 
