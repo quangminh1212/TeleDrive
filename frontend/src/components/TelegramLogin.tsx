@@ -669,7 +669,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     return (
         <div className="h-full flex overflow-hidden">
             {/* Left Column - Branding */}
-            <div className="w-1/2 bg-slate-600 dark:bg-slate-800 p-10 flex flex-col justify-between text-white">
+            <div className="w-1/2 bg-[#2AABEE] dark:bg-[#1e88c9] p-10 flex flex-col justify-between text-white">
                 <div>
                     {/* Logo & Title */}
                     <div className="flex items-center gap-4 mb-10">
