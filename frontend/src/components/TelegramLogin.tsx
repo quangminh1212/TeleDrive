@@ -503,7 +503,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
             <div className="relative inline-block p-3 bg-white dark:bg-dark-elevated rounded-xl shadow-inner border border-gray-100 dark:border-dark-border mb-3">
                 {isLoading ? (
                     <div className="w-[160px] h-[160px] flex items-center justify-center">
-                        <div className="w-8 h-8 border-3 border-[#0088cc] dark:border-dark-blue border-t-transparent rounded-full animate-spin" />
+                        <div className="w-8 h-8 border-4 border-[#2AABEE] border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : qrExpired ? (
                     <div className="w-[160px] h-[160px] flex flex-col items-center justify-center gap-2">
@@ -755,12 +755,12 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                     {/* Login Method Selector */}
                     {renderLoginMethodSelector()}
 
-                    {/* Status message */}
-                    {status && (
+                    {/* Status message - hide for QR when loading since it has its own spinner */}
+                    {status && !(loginMethod === 'qr' && isLoading) && (
                         <div className="mb-4 p-3 bg-cyan-50 dark:bg-dark-selected border border-cyan-100 dark:border-dark-blue/30 rounded-xl animate-fade-in">
                             <div className="flex items-center gap-3">
-                                <div className="w-4 h-4 border-2 border-[#0088cc] dark:border-dark-blue border-t-transparent rounded-full animate-spin" />
-                                <span className="text-[#0088cc] dark:text-dark-blue text-sm font-medium">{status}</span>
+                                <div className="w-4 h-4 border-2 border-[#2AABEE] border-t-transparent rounded-full animate-spin" />
+                                <span className="text-[#2AABEE] text-sm font-medium">{status}</span>
                             </div>
                         </div>
                     )}
