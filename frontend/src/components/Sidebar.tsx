@@ -227,39 +227,46 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
                     {/* New Dropdown Menu */}
                     {isNewMenuOpen && !isUploading && (
-                        <div className="absolute left-3 mt-2 w-72 bg-white dark:bg-dark-surface rounded-lg shadow-lg border border-gray-200 dark:border-dark-border z-50 py-2">
-                            <button
-                                className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center gap-3 text-gray-700 dark:text-dark-text"
-                                onClick={() => {
-                                    setIsNewMenuOpen(false);
-                                    setIsCreateFolderModalOpen(true);
-                                }}
-                            >
-                                <svg className="w-5 h-5 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z" />
-                                </svg>
-                                {t('folders.newFolder')}
-                            </button>
-                            <hr className="my-2 border-gray-200 dark:border-dark-border" />
-                            <button
-                                onClick={triggerFileUpload}
-                                className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center gap-3 text-gray-700 dark:text-dark-text"
-                            >
-                                <svg className="w-5 h-5 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
-                                </svg>
-                                {t('sidebar.uploadFiles')}
-                            </button>
-                            <button
-                                onClick={triggerFolderUpload}
-                                className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center gap-3 text-gray-700 dark:text-dark-text"
-                            >
-                                <svg className="w-5 h-5 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10zM8 13.01l1.41 1.41L11 12.84V17h2v-4.16l1.59 1.59L16 13.01 12.01 9 8 13.01z" />
-                                </svg>
-                                {t('folders.create')}
-                            </button>
-                        </div>
+                        <>
+                            {/* Backdrop to close menu when clicking outside */}
+                            <div
+                                className="fixed inset-0 z-[99]"
+                                onClick={() => setIsNewMenuOpen(false)}
+                            />
+                            <div className="absolute left-3 mt-2 w-72 bg-white dark:bg-dark-surface rounded-lg shadow-lg border border-gray-200 dark:border-dark-border z-[100] py-2">
+                                <button
+                                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center gap-3 text-gray-700 dark:text-dark-text"
+                                    onClick={() => {
+                                        setIsNewMenuOpen(false);
+                                        setIsCreateFolderModalOpen(true);
+                                    }}
+                                >
+                                    <svg className="w-5 h-5 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z" />
+                                    </svg>
+                                    {t('folders.newFolder')}
+                                </button>
+                                <hr className="my-2 border-gray-200 dark:border-dark-border" />
+                                <button
+                                    onClick={triggerFileUpload}
+                                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center gap-3 text-gray-700 dark:text-dark-text"
+                                >
+                                    <svg className="w-5 h-5 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
+                                    </svg>
+                                    {t('sidebar.uploadFiles')}
+                                </button>
+                                <button
+                                    onClick={triggerFolderUpload}
+                                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center gap-3 text-gray-700 dark:text-dark-text"
+                                >
+                                    <svg className="w-5 h-5 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10zM8 13.01l1.41 1.41L11 12.84V17h2v-4.16l1.59 1.59L16 13.01 12.01 9 8 13.01z" />
+                                    </svg>
+                                    {t('folders.create')}
+                                </button>
+                            </div>
+                        </>
                     )}
                 </div>
 
