@@ -722,7 +722,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 {/* Footer */}
                 <div className="text-center mt-6 space-y-2">
                     <p className="text-gray-400 dark:text-dark-text-secondary text-sm">
-                        TeleDrive © 2024
+                        TeleDrive © 2026
                     </p>
                     <p className="text-gray-400 dark:text-dark-text-disabled text-xs">
                         Lưu trữ file không giới hạn trên Telegram
