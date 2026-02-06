@@ -27,19 +27,20 @@ if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" (
 )
 
 if "%ISCC%"=="" (
-    echo [INFO] Inno Setup chua duoc cai dat. Dang tai va cai dat...
+    echo [INFO] Inno Setup chua duoc cai dat. Dang cai dat...
     echo.
     
-    :: Download Inno Setup
-    set "INNO_URL=https://jrsoftware.org/download.php/is.exe"
-    set "INNO_INSTALLER=%TEMP%\innosetup_installer.exe"
+    :: Use local installer first, download if not exists
+    set "INNO_INSTALLER=%PROJECT_DIR%\tools\innosetup.exe"
     
-    echo Dang tai Inno Setup...
-    powershell -Command "(New-Object Net.WebClient).DownloadFile('%INNO_URL%', '%INNO_INSTALLER%')"
+    if not exist "!INNO_INSTALLER!" (
+        echo Khong tim thay tools\innosetup.exe, dang tai...
+        if not exist "%PROJECT_DIR%\tools" mkdir "%PROJECT_DIR%\tools"
+        powershell -Command "(New-Object Net.WebClient).DownloadFile('https://jrsoftware.org/download.php/is.exe', '!INNO_INSTALLER!')"
+    )
     
-    if not exist "%INNO_INSTALLER%" (
-        echo [ERROR] Khong the tai Inno Setup!
-        echo Vui long tai thu cong tu: https://jrsoftware.org/isdl.php
+    if not exist "!INNO_INSTALLER!" (
+        echo [ERROR] Khong the tim thay hoac tai Inno Setup!
         pause
         exit /b 1
     )
@@ -48,13 +49,10 @@ if "%ISCC%"=="" (
     echo Vui long chap nhan UAC prompt neu co...
     
     :: Install silently
-    "%INNO_INSTALLER%" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
+    "!INNO_INSTALLER!" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
     
     :: Wait for installation
     timeout /t 5 /nobreak >nul
-    
-    :: Clean up installer
-    del "%INNO_INSTALLER%" 2>nul
     
     :: Re-check
     if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" (
@@ -65,7 +63,6 @@ if "%ISCC%"=="" (
     
     if "!ISCC!"=="" (
         echo [ERROR] Cai dat Inno Setup that bai!
-        echo Vui long cai dat thu cong tu: https://jrsoftware.org/isdl.php
         pause
         exit /b 1
     )
