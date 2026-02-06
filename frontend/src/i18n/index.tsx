@@ -283,12 +283,14 @@ export const useI18n = () => {
   return context;
 };
 
-// Get all available languages for language selector
+// Get all available languages for language selector - sorted alphabetically
 export const getAvailableLanguages = (): { code: Language; name: string }[] => {
-  return (Object.keys(languageNames) as Language[]).map(code => ({
-    code,
-    name: languageNames[code]
-  }));
+  return (Object.keys(languageNames) as Language[])
+    .map(code => ({
+      code,
+      name: languageNames[code]
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
 };
 
 export default I18nProvider;
