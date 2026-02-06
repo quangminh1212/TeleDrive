@@ -192,5 +192,17 @@
     "fileUnstarred": "Зірочку видалено",
     "fileDownloaded": "Завантажено",
     "fileCopied": "Скопійовано"
+  },
+  "contextMenu": {
+    "open": "Open with",
+    "download": "Download",
+    "rename": "Rename",
+    "star": "Add to starred",
+    "unstar": "Remove from starred",
+    "copy": "Make a copy",
+    "share": "Share",
+    "move": "Move to folder",
+    "info": "File information",
+    "deletePermanently": "Delete permanently"
   }
 }

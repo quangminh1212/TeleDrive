@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FileInfo } from '../services/api';
+import { useI18n } from '../i18n';
 
 interface ContextMenuProps {
     file: FileInfo;
@@ -83,19 +84,20 @@ interface MenuItem {
 const ContextMenu = ({ file, x, y, onClose, onAction }: ContextMenuProps) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const [position, setPosition] = useState({ x, y });
+    const { t } = useI18n();
 
     const isStarred = file.is_favorite || false;
 
     const menuItems: MenuItem[] = [
-        { id: 'open', label: 'Mở bằng', icon: <OpenWithIcon /> },
-        { id: 'download', label: 'Tải xuống', icon: <DownloadIcon /> },
-        { id: 'rename', label: 'Đổi tên', icon: <RenameIcon />, shortcut: 'Ctrl+Alt+E', divider: true },
-        { id: 'star', label: isStarred ? 'Bỏ gắn dấu sao' : 'Thêm vào mục có gắn dấu sao', icon: isStarred ? <StarIcon /> : <StarOutlineIcon /> },
-        { id: 'copy', label: 'Tạo bản sao', icon: <CopyIcon />, shortcut: 'Ctrl+C' },
-        { id: 'share', label: 'Chia sẻ', icon: <ShareIcon />, divider: true },
-        { id: 'move', label: 'Di chuyển đến thư mục', icon: <MoveIcon /> },
-        { id: 'info', label: 'Thông tin về tệp', icon: <InfoIcon />, divider: true },
-        { id: 'delete', label: 'Chuyển vào thùng rác', icon: <DeleteIcon />, danger: true, shortcut: 'Delete' },
+        { id: 'open', label: t('contextMenu.open'), icon: <OpenWithIcon /> },
+        { id: 'download', label: t('contextMenu.download'), icon: <DownloadIcon /> },
+        { id: 'rename', label: t('contextMenu.rename'), icon: <RenameIcon />, shortcut: 'Ctrl+Alt+E', divider: true },
+        { id: 'star', label: isStarred ? t('contextMenu.unstar') : t('contextMenu.star'), icon: isStarred ? <StarIcon /> : <StarOutlineIcon /> },
+        { id: 'copy', label: t('contextMenu.copy'), icon: <CopyIcon />, shortcut: 'Ctrl+C' },
+        { id: 'share', label: t('contextMenu.share'), icon: <ShareIcon />, divider: true },
+        { id: 'move', label: t('contextMenu.move'), icon: <MoveIcon /> },
+        { id: 'info', label: t('contextMenu.info'), icon: <InfoIcon />, divider: true },
+        { id: 'delete', label: t('contextMenu.deletePermanently'), icon: <DeleteIcon />, danger: true, shortcut: 'Delete' },
     ];
 
     // Use useLayoutEffect to calculate position BEFORE browser paints

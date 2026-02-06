@@ -192,5 +192,17 @@
     "fileUnstarred": "별표 제거됨",
     "fileDownloaded": "다운로드됨",
     "fileCopied": "복사됨"
+  },
+  "contextMenu": {
+    "open": "Open with",
+    "download": "Download",
+    "rename": "Rename",
+    "star": "Add to starred",
+    "unstar": "Remove from starred",
+    "copy": "Make a copy",
+    "share": "Share",
+    "move": "Move to folder",
+    "info": "File information",
+    "deletePermanently": "Delete permanently"
   }
 }

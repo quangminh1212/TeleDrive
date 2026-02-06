@@ -192,5 +192,17 @@
     "fileUnstarred": "तारांकन हटाया",
     "fileDownloaded": "डाउनलोड किया गया",
     "fileCopied": "कॉपी किया गया"
+  },
+  "contextMenu": {
+    "open": "Open with",
+    "download": "Download",
+    "rename": "Rename",
+    "star": "Add to starred",
+    "unstar": "Remove from starred",
+    "copy": "Make a copy",
+    "share": "Share",
+    "move": "Move to folder",
+    "info": "File information",
+    "deletePermanently": "Delete permanently"
   }
 }

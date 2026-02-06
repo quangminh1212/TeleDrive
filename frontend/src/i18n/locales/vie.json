@@ -192,5 +192,17 @@
     "fileUnstarred": "Đã bỏ dấu sao",
     "fileDownloaded": "Đã tải xuống",
     "fileCopied": "Đã sao chép"
+  },
+  "contextMenu": {
+    "open": "Mở bằng",
+    "download": "Tải xuống",
+    "rename": "Đổi tên",
+    "star": "Thêm vào mục có gắn dấu sao",
+    "unstar": "Bỏ gắn dấu sao",
+    "copy": "Tạo bản sao",
+    "share": "Chia sẻ",
+    "move": "Di chuyển đến thư mục",
+    "info": "Thông tin về tệp",
+    "deletePermanently": "Xóa vĩnh viễn"
   }
 }
