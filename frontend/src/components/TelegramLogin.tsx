@@ -373,7 +373,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             <select
                                 value={countryCode}
                                 onChange={(e) => setCountryCode(e.target.value)}
-                                className="px-3 py-3 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-700 dark:text-dark-text font-medium min-w-[100px]"
+                                className="px-3 py-3 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-700 dark:text-dark-text font-medium min-w-[160px]"
                             >
                                 {countryCodes.map((c) => (
                                     <option key={c.code} value={c.code}>
