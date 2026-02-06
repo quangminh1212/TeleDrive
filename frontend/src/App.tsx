@@ -141,10 +141,14 @@ function AppContent() {
   }, []);
 
   const checkAuthStatus = async () => {
+    logger.info('App', 'Checking auth status...');
     setIsCheckingAuth(true);
     try {
+      logger.info('App', 'Calling /api/v2/auth/status');
       const response = await fetch('http://127.0.0.1:5000/api/v2/auth/status');
+      logger.info('App', 'Auth status response', { status: response.status });
       const result = await response.json();
+      logger.info('App', 'Auth status result', { authenticated: result.authenticated });
       setIsAuthenticated(result.authenticated === true);
 
       // Save user info if available
@@ -158,13 +162,16 @@ function AppContent() {
           telegram_id: user.telegram_id,
           avatar: user.avatar
         });
+        logger.info('App', 'User info saved', { name: user.first_name });
       }
     } catch (error) {
-      logger.error('App', 'Auth check failed', { error });
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error('App', 'Auth check connection failed', { error: errorMsg });
       // If server is not available, assume not authenticated
       setIsAuthenticated(false);
     } finally {
       setIsCheckingAuth(false);
+      logger.info('App', 'Auth check complete');
     }
   };
 

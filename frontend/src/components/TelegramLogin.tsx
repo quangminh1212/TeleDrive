@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
+import { logger } from '../utils/logger';
 
 interface TelegramLoginProps {
     onLoginSuccess: () => void;
@@ -92,17 +93,21 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
     // Start QR Login
     const startQRLogin = useCallback(async () => {
+        logger.info('TelegramLogin', 'Starting QR login...');
         setIsLoading(true);
         setError(null);
         setQrExpired(false);
         setStatus('Đang tạo mã QR...');
 
         try {
+            logger.info('TelegramLogin', 'Calling /api/auth/qr/start');
             const res = await fetch('http://127.0.0.1:5000/api/auth/qr/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
+            logger.info('TelegramLogin', 'QR start response status', { status: res.status });
             const data = await res.json();
+            logger.info('TelegramLogin', 'QR start response data', { success: data.success, hasUrl: !!data.url });
 
             if (data.success && data.url) {
                 setQrToken(data.token);
@@ -114,10 +119,14 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 });
                 setQrCode(qrDataUrl);
                 setStatus('');
+                logger.info('TelegramLogin', 'QR code generated successfully');
             } else {
+                logger.warn('TelegramLogin', 'QR start failed', { error: data.error });
                 setError(data.error || 'Không thể tạo mã QR');
             }
         } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            logger.error('TelegramLogin', 'QR login connection error', { error: errorMsg });
             setError('Không thể kết nối đến server');
         } finally {
             setIsLoading(false);
@@ -133,28 +142,35 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
     // Desktop Auto Login
     const handleAutoLogin = async () => {
+        logger.info('TelegramLogin', 'Starting Desktop auto-login...');
         setIsLoading(true);
         setError(null);
         setStatus('Đang kết nối với Telegram Desktop...');
 
         try {
+            logger.info('TelegramLogin', 'Calling /api/v2/auth/auto-login');
             const response = await fetch('http://127.0.0.1:5000/api/v2/auth/auto-login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
-
+            logger.info('TelegramLogin', 'Auto-login response status', { status: response.status });
             const result = await response.json();
+            logger.info('TelegramLogin', 'Auto-login response', { success: result.success, hasMessage: !!result.message });
 
             if (result.success) {
+                logger.info('TelegramLogin', 'Auto-login successful!');
                 setStatus('Đăng nhập thành công!');
                 setTimeout(() => {
                     onLoginSuccess();
                 }, 500);
             } else {
+                logger.warn('TelegramLogin', 'Auto-login failed', { message: result.message, hint: result.hint });
                 setError(result.message || result.hint || 'Không thể đăng nhập');
                 setStatus('');
             }
         } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            logger.error('TelegramLogin', 'Auto-login connection error', { error: errorMsg });
             setError('Không thể kết nối đến server');
             setStatus('');
         } finally {
@@ -170,26 +186,35 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
             return;
         }
 
+        const fullPhone = countryCode + phoneNumber;
+        logger.info('TelegramLogin', 'Starting phone login...', { phone: fullPhone.substring(0, 6) + '***' });
         setIsLoading(true);
         setError(null);
         setStatus('Đang gửi mã xác nhận...');
 
         try {
+            logger.info('TelegramLogin', 'Calling /api/auth/phone/start');
             const res = await fetch('http://127.0.0.1:5000/api/auth/phone/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: countryCode + phoneNumber })
+                body: JSON.stringify({ phone: fullPhone })
             });
+            logger.info('TelegramLogin', 'Phone start response status', { status: res.status });
             const data = await res.json();
+            logger.info('TelegramLogin', 'Phone start response', { success: data.success, hasSessionId: !!data.session_id });
 
             if (data.success) {
+                logger.info('TelegramLogin', 'OTP sent successfully');
                 setSessionId(data.session_id);
                 setNeedsCode(true);
                 setStatus('Mã xác nhận đã được gửi đến Telegram của bạn');
             } else {
+                logger.warn('TelegramLogin', 'Phone start failed', { error: data.error });
                 setError(data.error || 'Không thể gửi mã xác nhận');
             }
         } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            logger.error('TelegramLogin', 'Phone login connection error', { error: errorMsg });
             setError('Không thể kết nối đến server');
         } finally {
             setIsLoading(false);
