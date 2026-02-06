@@ -264,6 +264,23 @@ async def create_telethon_session_from_tdata(tdata_path: str, output_session_pat
         }
 
 
+def _run_async_in_thread(coro):
+    """Run async coroutine in a new thread with its own event loop"""
+    import concurrent.futures
+    
+    def run_in_thread():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(coro)
+        finally:
+            loop.close()
+    
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(run_in_thread)
+        return future.result(timeout=60)
+
+
 def import_session_sync(output_session_path: str = "data/session"):
     """Import session from Telegram Desktop - synchronous wrapper"""
     result = {
@@ -289,7 +306,14 @@ def import_session_sync(output_session_path: str = "data/session"):
         # Import using appropriate method
         if structure['version'] in ['new_multi', 'old']:
             # Use telegram_tdata_decrypter for new structure
-            return asyncio.run(create_telethon_session_from_tdata(tdata_path, output_session_path))
+            # Run in separate thread to avoid "asyncio.run() cannot be called from running event loop"
+            try:
+                loop = asyncio.get_running_loop()
+                # Already in async context - use thread
+                return _run_async_in_thread(create_telethon_session_from_tdata(tdata_path, output_session_path))
+            except RuntimeError:
+                # No running loop - safe to use asyncio.run()
+                return asyncio.run(create_telethon_session_from_tdata(tdata_path, output_session_path))
         else:
             result['message'] = 'Unknown tdata structure'
             return result
