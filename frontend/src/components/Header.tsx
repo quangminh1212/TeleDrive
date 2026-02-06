@@ -144,12 +144,7 @@ const SettingsIcon = () => (
     </svg>
 );
 
-// Apps icon (9 dots)
-const AppsIcon = () => (
-    <svg className="w-6 h-6 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M6 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM6 14c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM6 20c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z" />
-    </svg>
-);
+
 
 // Help icon
 const HelpIcon = () => (
@@ -382,14 +377,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
                     )}
                 </div>
 
-                {/* Apps button - hidden on mobile */}
-                <button
-                    className="hidden md:block p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-dark-hover transition-colors"
-                    title="Apps"
-                    aria-label="Apps"
-                >
-                    <AppsIcon />
-                </button>
+
 
                 {/* User Account Menu */}
                 <div className="ml-2">
