@@ -165,7 +165,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     return (
         <>
             <aside className={`
-                fixed md:relative z-50 md:z-auto
+                fixed md:relative z-50 md:z-10
                 w-64 md:w-60 bg-white dark:bg-dark-bg flex-col h-full
                 transform transition-transform duration-300 ease-in-out
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
