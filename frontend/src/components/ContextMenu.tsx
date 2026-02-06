@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { FileInfo } from '../services/api';
 
 interface ContextMenuProps {
@@ -142,12 +143,23 @@ const ContextMenu = ({ file, x, y, onClose, onAction }: ContextMenuProps) => {
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('keydown', handleKeyDown);
+        // Close this menu when another context menu opens
+        const handleContextMenu = () => {
+            onClose();
+        };
+
+        // Use setTimeout to ensure this handler is added after the current event
+        const timer = setTimeout(() => {
+            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('contextmenu', handleContextMenu);
+        }, 0);
 
         return () => {
+            clearTimeout(timer);
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('contextmenu', handleContextMenu);
         };
     }, [onClose]);
 
@@ -156,10 +168,10 @@ const ContextMenu = ({ file, x, y, onClose, onAction }: ContextMenuProps) => {
         onClose();
     };
 
-    return (
+    return createPortal(
         <div
             ref={menuRef}
-            className="fixed bg-white dark:bg-dark-surface rounded-lg shadow-xl border border-gray-200 dark:border-dark-border py-2 z-50 min-w-[200px] max-w-[90vw]"
+            className="fixed bg-white dark:bg-dark-surface rounded-lg shadow-xl border border-gray-200 dark:border-dark-border py-2 z-[9999] min-w-[200px] max-w-[90vw]"
             style={{ left: position.x, top: position.y }}
         >
             {menuItems.map((item, index) => (
@@ -180,7 +192,8 @@ const ContextMenu = ({ file, x, y, onClose, onAction }: ContextMenuProps) => {
                     )}
                 </div>
             ))}
-        </div>
+        </div>,
+        document.body
     );
 };
 
