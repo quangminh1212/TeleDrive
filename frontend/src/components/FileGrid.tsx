@@ -72,6 +72,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const [currentFolderName, setCurrentFolderName] = useState<string | null>(null);
     const [isOperationLoading, setIsOperationLoading] = useState(false);
     const [operationMessage, setOperationMessage] = useState<string | null>(null);
+    // Page transition animation states
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const [animationKey, setAnimationKey] = useState(0);
+    const prevFolderRef = useRef<string | null>(null);
     const toast = useToast();
     const { t } = useI18n();
     const { addNotification } = useNotification();
@@ -286,6 +290,20 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
             setAllFiles([]);
         } finally {
             setLoading(false);
+        }
+    }, [currentFolder]);
+
+    // Trigger page transition animation when folder changes
+    useEffect(() => {
+        if (prevFolderRef.current !== currentFolder) {
+            // Folder changed - trigger transition animation
+            setIsTransitioning(true);
+            const timer = setTimeout(() => {
+                setIsTransitioning(false);
+                setAnimationKey(prev => prev + 1);
+            }, 150); // Short fade out duration
+            prevFolderRef.current = currentFolder;
+            return () => clearTimeout(timer);
         }
     }, [currentFolder]);
 
@@ -1142,7 +1160,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 /* List View */
                 <div
                     ref={containerRef}
-                    className="flex-1 overflow-auto relative select-none"
+                    className={`flex-1 overflow-auto relative select-none content-transition ${isTransitioning ? 'content-entering' : 'content-visible'}`}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
@@ -1173,9 +1191,15 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     </div>
 
                     {/* File List */}
-                    <div ref={fileListRef}>
-                        {[...fileTypeFolders, ...regularFiles].map(file => (
-                            <div key={file.id} data-file-item data-file-id={file.id}>
+                    <div ref={fileListRef} key={animationKey}>
+                        {[...fileTypeFolders, ...regularFiles].map((file, index) => (
+                            <div
+                                key={file.id}
+                                data-file-item
+                                data-file-id={file.id}
+                                className="file-item-animate"
+                                style={{ animationDelay: `${Math.min(index * 0.02, 0.4)}s` }}
+                            >
                                 <FileItem
                                     file={file}
                                     viewMode="list"
@@ -1197,23 +1221,28 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 </div>
             ) : (
                 /* Grid View */
-                <div className="flex-1 overflow-auto p-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                        {[...fileTypeFolders, ...regularFiles].map(file => (
-                            <FileItem
+                <div className={`flex-1 overflow-auto p-4 content-transition ${isTransitioning ? 'content-entering' : 'content-visible'}`}>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3" key={animationKey}>
+                        {[...fileTypeFolders, ...regularFiles].map((file, index) => (
+                            <div
                                 key={file.id}
-                                file={file}
-                                viewMode="grid"
-                                isSelected={selectedFiles.has(file.id)}
-                                onSelect={(isMulti) => handleFileSelect(file.id, isMulti)}
-                                onRename={handleFileRename}
-                                onDelete={handleFileDelete}
-                                onMove={handleMoveFile}
-                                onShowInfo={handleShowInfo}
-                                onPreview={handlePreview}
-                                onStar={handleToggleStar}
-                                onFolderOpen={(folderId) => handleFolderOpen(folderId)}
-                            />
+                                className="file-item-animate"
+                                style={{ animationDelay: `${Math.min(index * 0.02, 0.4)}s` }}
+                            >
+                                <FileItem
+                                    file={file}
+                                    viewMode="grid"
+                                    isSelected={selectedFiles.has(file.id)}
+                                    onSelect={(isMulti) => handleFileSelect(file.id, isMulti)}
+                                    onRename={handleFileRename}
+                                    onDelete={handleFileDelete}
+                                    onMove={handleMoveFile}
+                                    onShowInfo={handleShowInfo}
+                                    onPreview={handlePreview}
+                                    onStar={handleToggleStar}
+                                    onFolderOpen={(folderId) => handleFolderOpen(folderId)}
+                                />
+                            </div>
                         ))}
                     </div>
                 </div>
