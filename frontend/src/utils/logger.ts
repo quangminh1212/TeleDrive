@@ -3,6 +3,9 @@
  * Real-time logging - sends logs immediately to backend for file storage
  */
 
+// Backend API URL - must be absolute for Tauri WebView
+const API_URL = 'http://127.0.0.1:5000';
+
 interface LogEntry {
   timestamp: string;
   level: string;
@@ -108,7 +111,7 @@ class Logger {
     this.pendingLogs = [];
 
     try {
-      const response = await fetch('/api/logs/frontend', {
+      const response = await fetch(`${API_URL}/api/logs/frontend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +143,7 @@ class Logger {
     const logsToRetry = this.retryQueue.splice(0, 20); // Retry max 20 at a time
 
     try {
-      await fetch('/api/logs/frontend', {
+      await fetch(`${API_URL}/api/logs/frontend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -182,7 +185,7 @@ class Logger {
       this.pendingLogs = [];
 
       try {
-        await fetch('/api/logs/frontend', {
+        await fetch(`${API_URL}/api/logs/frontend`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -217,7 +220,7 @@ if (typeof window !== 'undefined') {
           message: 'Frontend session ended'
         }]
       };
-      navigator.sendBeacon('/api/logs/frontend', JSON.stringify(logEntry));
+      navigator.sendBeacon(`${API_URL}/api/logs/frontend`, JSON.stringify(logEntry));
     }
   });
 
