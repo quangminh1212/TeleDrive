@@ -98,11 +98,37 @@ const ContextMenu = ({ file, x, y, onClose, onAction }: ContextMenuProps) => {
     ];
 
     useEffect(() => {
-        // Adjust position if menu goes off screen
+        // Adjust position if menu goes off screen - Google Drive style positioning
         if (menuRef.current) {
             const rect = menuRef.current.getBoundingClientRect();
-            const newX = x + rect.width > window.innerWidth ? window.innerWidth - rect.width - 10 : x;
-            const newY = y + rect.height > window.innerHeight ? window.innerHeight - rect.height - 10 : y;
+            const menuWidth = rect.width;
+            const menuHeight = rect.height;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const padding = 8; // Padding from viewport edges
+
+            let newX = x;
+            let newY = y;
+
+            // Horizontal positioning: prefer right of click, flip to left if not enough space
+            if (x + menuWidth > viewportWidth - padding) {
+                newX = Math.max(padding, x - menuWidth);
+            }
+
+            // Vertical positioning: prefer below click, flip to above if not enough space
+            if (y + menuHeight > viewportHeight - padding) {
+                // Try to position above the click point
+                newY = Math.max(padding, y - menuHeight);
+                // If still doesn't fit, position at top of viewport with scroll
+                if (newY < padding) {
+                    newY = padding;
+                }
+            }
+
+            // Ensure menu is fully visible
+            newX = Math.max(padding, Math.min(newX, viewportWidth - menuWidth - padding));
+            newY = Math.max(padding, Math.min(newY, viewportHeight - menuHeight - padding));
+
             setPosition({ x: newX, y: newY });
         }
     }, [x, y]);
