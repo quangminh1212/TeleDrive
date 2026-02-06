@@ -13,7 +13,7 @@ const languageCountryCodes: Record<Language, string> = {
   hun: 'hu', ron: 'ro', fas: 'ir', swa: 'ke', bel: 'by',
   hrv: 'hr', srp: 'rs', slk: 'sk', slv: 'si', bul: 'bg',
   gle: 'ie', isl: 'is', lit: 'lt', lav: 'lv', est: 'ee',
-  sqi: 'al', hye: 'am', kat: 'ge', kaz: 'kz', uzb: 'uz',
+  sqi: 'al', kat: 'ge', kaz: 'kz', uzb: 'uz',
   aze: 'az', cat: 'es-ct', nep: 'np', sin: 'lk', mya: 'mm',
   khm: 'kh', lao: 'la', mon: 'mn', urd: 'pk', afr: 'za',
   eus: 'es-pv', glg: 'es-ga', mlt: 'mt'
