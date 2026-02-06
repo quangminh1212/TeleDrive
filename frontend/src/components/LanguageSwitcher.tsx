@@ -53,9 +53,9 @@ const LanguageSwitcher: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Sort languages alphabetically by name
+  // Sort languages alphabetically by name using Intl.Collator for proper Unicode sorting
   const sortedLanguages = (Object.keys(languageNames) as Language[])
-    .sort((a, b) => languageNames[a].localeCompare(languageNames[b]));
+    .sort((a, b) => languageNames[a].localeCompare(languageNames[b], 'en', { sensitivity: 'base' }));
 
   // Filter languages based on search query
   const filteredLanguages = sortedLanguages.filter(lang =>
