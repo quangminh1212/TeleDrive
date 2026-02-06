@@ -113,7 +113,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 setQrToken(data.token);
                 // Generate QR code image
                 const qrDataUrl = await QRCode.toDataURL(data.url, {
-                    width: 200,
+                    width: 160,
                     margin: 2,
                     color: { dark: '#000000', light: '#ffffff' }
                 });
@@ -325,33 +325,33 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
     const renderQRLogin = () => (
         <div className="text-center">
-            <div className="relative inline-block p-4 bg-white dark:bg-dark-elevated rounded-2xl shadow-inner border border-gray-100 dark:border-dark-border mb-4">
+            <div className="relative inline-block p-3 bg-white dark:bg-dark-elevated rounded-xl shadow-inner border border-gray-100 dark:border-dark-border mb-3">
                 {isLoading ? (
-                    <div className="w-[200px] h-[200px] flex items-center justify-center">
-                        <div className="w-10 h-10 border-3 border-[#0088cc] dark:border-dark-blue border-t-transparent rounded-full animate-spin" />
+                    <div className="w-[160px] h-[160px] flex items-center justify-center">
+                        <div className="w-8 h-8 border-3 border-[#0088cc] dark:border-dark-blue border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : qrExpired ? (
-                    <div className="w-[200px] h-[200px] flex flex-col items-center justify-center gap-3">
+                    <div className="w-[160px] h-[160px] flex flex-col items-center justify-center gap-2">
                         <p className="text-gray-500 dark:text-dark-text-secondary text-sm">Mã QR đã hết hạn</p>
                         <button
                             onClick={startQRLogin}
-                            className="px-4 py-2 bg-[#0088cc] dark:bg-dark-blue text-white dark:text-dark-bg rounded-lg text-sm hover:bg-[#006699] dark:hover:bg-dark-blue-hover transition-colors"
+                            className="px-3 py-1.5 bg-[#0088cc] dark:bg-dark-blue text-white dark:text-dark-bg rounded-lg text-sm hover:bg-[#006699] dark:hover:bg-dark-blue-hover transition-colors"
                         >
                             Tạo mã mới
                         </button>
                     </div>
                 ) : qrCode ? (
-                    <img src={qrCode} alt="QR Code" className="w-[200px] h-[200px]" />
+                    <img src={qrCode} alt="QR Code" className="w-[160px] h-[160px]" />
                 ) : null}
             </div>
 
-            <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
+            <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-3">
                 Quét mã QR bằng ứng dụng Telegram trên điện thoại
             </p>
 
-            <div className="p-4 bg-gray-50 dark:bg-dark-elevated rounded-xl border border-gray-100 dark:border-dark-border text-sm text-gray-600 dark:text-dark-text-secondary text-left">
-                <p className="font-medium text-gray-700 dark:text-dark-text mb-2">📱 Hướng dẫn:</p>
-                <ol className="space-y-1 list-decimal list-inside">
+            <div className="p-3 bg-gray-50 dark:bg-dark-elevated rounded-xl border border-gray-100 dark:border-dark-border text-sm text-gray-600 dark:text-dark-text-secondary text-left">
+                <p className="font-medium text-gray-700 dark:text-dark-text mb-1.5">📱 Hướng dẫn:</p>
+                <ol className="space-y-0.5 list-decimal list-inside text-xs">
                     <li>Mở Telegram trên điện thoại</li>
                     <li>Vào Cài đặt → Thiết bị → Quét QR</li>
                     <li>Quét mã QR phía trên</li>
@@ -470,24 +470,24 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 {/* Main Card */}
                 <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg border border-gray-100 dark:border-dark-border overflow-hidden">
                     {/* Header */}
-                    <div className="pt-10 pb-6 px-8 text-center">
-                        <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl mb-6 shadow-lg shadow-cyan-500/20 dark:shadow-dark-blue/20 transform hover:scale-105 transition-transform duration-200 overflow-hidden">
+                    <div className="pt-6 pb-4 px-6 text-center">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4 shadow-lg shadow-cyan-500/20 dark:shadow-dark-blue/20 transform hover:scale-105 transition-transform duration-200 overflow-hidden">
                             <img src="/logo.png" alt="TeleDrive" className="w-full h-full object-cover" />
                         </div>
 
-                        <h1 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-1">
+                        <h1 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-0.5">
                             TeleDrive
                         </h1>
-                        <p className="text-gray-500 dark:text-dark-text-secondary text-sm">
+                        <p className="text-gray-500 dark:text-dark-text-secondary text-xs">
                             Quản lý file trên Telegram
                         </p>
                     </div>
 
-                    <div className="mx-8 h-px bg-gray-100 dark:bg-dark-border" />
+                    <div className="mx-6 h-px bg-gray-100 dark:bg-dark-border" />
 
                     {/* Body */}
-                    <div className="p-8">
-                        <h2 className="text-lg font-medium text-gray-700 dark:text-dark-text text-center mb-4">
+                    <div className="p-6">
+                        <h2 className="text-base font-medium text-gray-700 dark:text-dark-text text-center mb-3">
                             Đăng nhập để tiếp tục
                         </h2>
 
