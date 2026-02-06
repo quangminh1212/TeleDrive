@@ -54,7 +54,9 @@
     "noStarred": "No starred items yet",
     "starHint": "Star files or folders to find them faster",
     "noRecent": "No recently accessed folders",
-    "recentHint": "Open a folder to see it here"
+    "recentHint": "Open a folder to see it here",
+    "modified": "Modified",
+    "channel": "Channel"
   },
   "folders": {
     "create": "Create folder",
