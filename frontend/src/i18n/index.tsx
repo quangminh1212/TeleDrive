@@ -47,7 +47,6 @@ import lit from './locales/lit.json';
 import lav from './locales/lav.json';
 import est from './locales/est.json';
 import sqi from './locales/sqi.json';
-import hye from './locales/hye.json';
 import kat from './locales/kat.json';
 import kaz from './locales/kaz.json';
 import uzb from './locales/uzb.json';
@@ -71,7 +70,7 @@ export type Language =
   | 'deu' | 'fra' | 'spa' | 'por' | 'ita' | 'nld' | 'pol' | 'tur' | 'ukr' | 'ell'
   | 'heb' | 'ben' | 'tam' | 'msa' | 'fil' | 'swe' | 'nor' | 'dan' | 'fin' | 'ces'
   | 'hun' | 'ron' | 'fas' | 'swa' | 'bel' | 'hrv' | 'srp' | 'slk' | 'slv' | 'bul'
-  | 'gle' | 'isl' | 'lit' | 'lav' | 'est' | 'sqi' | 'hye' | 'kat' | 'kaz' | 'uzb'
+  | 'gle' | 'isl' | 'lit' | 'lav' | 'est' | 'sqi' | 'kat' | 'kaz' | 'uzb'
   | 'aze' | 'cat' | 'nep' | 'sin' | 'mya' | 'khm' | 'lao' | 'mon' | 'urd' | 'afr'
   | 'eus' | 'glg' | 'mlt';
 
@@ -86,7 +85,7 @@ const translations: Record<Language, TranslationType> = {
   deu, fra, spa, por, ita, nld, pol, tur, ukr, ell,
   heb, ben, tam, msa, fil, swe, nor, dan, fin, ces,
   hun, ron, fas, swa, bel, hrv, srp, slk, slv, bul,
-  gle, isl, lit, lav, est, sqi, hye, kat, kaz, uzb,
+  gle, isl, lit, lav, est, sqi, kat, kaz, uzb,
   aze, cat, nep, sin, mya, khm, lao, mon, urd, afr,
   eus, glg, mlt
 };
@@ -139,7 +138,6 @@ export const languageNames: Record<Language, string> = {
   lav: 'Latviešu',
   est: 'Eesti',
   sqi: 'Shqip',
-  hye: 'Հայdelays',
   kat: 'ქართული',
   kaz: 'Қазақша',
   uzb: "O'zbek",
@@ -206,7 +204,7 @@ const browserLangMap: Record<string, Language> = {
   lv: 'lav',
   et: 'est',
   sq: 'sqi',
-  hy: 'hye',
+
   ka: 'kat',
   kk: 'kaz',
   uz: 'uzb',
