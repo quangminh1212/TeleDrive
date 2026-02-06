@@ -78,8 +78,18 @@ def with_db_transaction(f):
 import logging
 import logging.handlers
 
+# Flag to ensure logging is only setup once
+_logging_initialized = False
+_log_file_path = None
+
 def setup_file_logging():
     """Setup file logging to teledrive.log in AppData for portable mode"""
+    global _logging_initialized, _log_file_path
+    
+    # Avoid duplicate initialization
+    if _logging_initialized:
+        return _log_file_path
+    
     try:
         # Determine log directory
         if sys.platform == 'win32':
@@ -92,13 +102,14 @@ def setup_file_logging():
         
         log_file = os.path.join(log_dir, 'teledrive.log')
         
-        # Configure root logger
-        root_logger = logging.getLogger()
-        root_logger.setLevel(logging.DEBUG)
+        # Get app logger (not root to avoid duplicates)
+        app_logger = logging.getLogger('app')
+        app_logger.setLevel(logging.DEBUG)
+        app_logger.propagate = False  # Prevent duplicate logs
         
         # Clear existing handlers
-        for handler in root_logger.handlers[:]:
-            root_logger.removeHandler(handler)
+        for handler in app_logger.handlers[:]:
+            app_logger.removeHandler(handler)
         
         # File handler with rotation
         file_handler = logging.handlers.RotatingFileHandler(
@@ -113,25 +124,31 @@ def setup_file_logging():
             datefmt='%Y-%m-%d %H:%M:%S'
         )
         file_handler.setFormatter(file_formatter)
-        root_logger.addHandler(file_handler)
+        app_logger.addHandler(file_handler)
         
-        # Console handler (less verbose)
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(logging.INFO)
-        console_formatter = logging.Formatter(
-            '[%(levelname)s] %(message)s'
-        )
-        console_handler.setFormatter(console_formatter)
-        root_logger.addHandler(console_handler)
+        # Also setup root logger for other modules
+        root_logger = logging.getLogger()
+        if not root_logger.handlers:
+            root_logger.setLevel(logging.INFO)
+            root_handler = logging.handlers.RotatingFileHandler(
+                log_file,
+                maxBytes=10 * 1024 * 1024,
+                backupCount=5,
+                encoding='utf-8'
+            )
+            root_handler.setFormatter(file_formatter)
+            root_logger.addHandler(root_handler)
         
-        logging.info(f"TeleDrive logging initialized. Log file: {log_file}")
+        _logging_initialized = True
+        _log_file_path = log_file
+        app_logger.info(f"TeleDrive logging initialized. Log file: {log_file}")
         return log_file
     except Exception as e:
         print(f"Warning: Failed to setup file logging: {e}")
         return None
 
 # Initialize file logging
-_log_file_path = setup_file_logging()
+setup_file_logging()
 
 logger = logging.getLogger(__name__)
 
