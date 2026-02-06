@@ -11,11 +11,13 @@ import json
 import asyncio
 from pathlib import Path
 
-# Fix encoding for Windows console
-if sys.platform == 'win32':
+# Fix encoding for Windows console (only if console exists)
+if sys.platform == 'win32' and sys.stdout is not None and sys.stderr is not None:
     import codecs
-    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'replace')
-    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'replace')
+    if hasattr(sys.stdout, 'buffer'):
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'replace')
+    if hasattr(sys.stderr, 'buffer'):
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'replace')
 
 
 def find_telegram_desktop_tdata():
