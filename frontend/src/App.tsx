@@ -193,9 +193,9 @@ function AppContent() {
   // Loading state while checking auth
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-white dark:bg-dark-bg flex flex-col">
+      <div className="h-screen bg-white dark:bg-dark-bg flex flex-col overflow-hidden">
         <TitleBar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center overflow-hidden">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-blue-600 dark:border-dark-blue border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600 dark:text-dark-text-secondary">Đang kiểm tra đăng nhập...</p>
@@ -208,9 +208,9 @@ function AppContent() {
   // Show login if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-white dark:bg-dark-bg flex flex-col">
+      <div className="h-screen bg-white dark:bg-dark-bg flex flex-col overflow-hidden">
         <TitleBar />
-        <div className="flex-1">
+        <div className="flex-1 overflow-hidden">
           <TelegramLogin onLoginSuccess={handleLoginSuccess} />
         </div>
       </div>
