@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
 import { logger } from '../utils/logger';
 import { useI18n, getAvailableLanguages, languageNames } from '../i18n';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface TelegramLoginProps {
     onLoginSuccess: () => void;
@@ -41,6 +42,9 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     // i18n
     const { language, setLanguage } = useI18n();
     const availableLanguages = getAvailableLanguages();
+
+    // Theme
+    const { resolvedTheme, toggleTheme } = useTheme();
 
     // Country codes list - full list sorted A-Z by Vietnamese name
     const countryCodes = [
@@ -780,39 +784,60 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         {loginMethod === 'phone' && renderPhoneLogin()}
                     </div>
 
-                    {/* Language Selector */}
+                    {/* Language & Theme Selector */}
                     <div className="mt-8 pt-4 border-t border-gray-100 dark:border-dark-border">
-                        <div className="relative flex justify-center">
+                        <div className="flex items-center justify-center gap-3">
+                            {/* Language Dropdown */}
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover rounded-lg transition-colors"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                    </svg>
+                                    <span>{languageNames[language]}</span>
+                                    <svg className={`w-3 h-3 transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                {isLanguageDropdownOpen && (
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white dark:bg-dark-elevated border border-gray-200 dark:border-dark-border rounded-xl shadow-lg max-h-64 overflow-y-auto z-50">
+                                        {availableLanguages.map((lang) => (
+                                            <button
+                                                key={lang.code}
+                                                type="button"
+                                                onClick={() => {
+                                                    setLanguage(lang.code);
+                                                    setIsLanguageDropdownOpen(false);
+                                                }}
+                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors ${language === lang.code ? 'bg-blue-50 dark:bg-dark-selected text-blue-600 dark:text-dark-blue' : 'text-gray-700 dark:text-dark-text'}`}
+                                            >
+                                                {lang.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Theme Toggle */}
                             <button
                                 type="button"
-                                onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover rounded-lg transition-colors"
+                                onClick={toggleTheme}
+                                className="p-2 text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover rounded-lg transition-colors"
+                                title={resolvedTheme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối'}
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                                </svg>
-                                <span>{languageNames[language]}</span>
-                                <svg className={`w-3 h-3 transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
+                                {resolvedTheme === 'dark' ? (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                    </svg>
+                                )}
                             </button>
-                            {isLanguageDropdownOpen && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white dark:bg-dark-elevated border border-gray-200 dark:border-dark-border rounded-xl shadow-lg max-h-64 overflow-y-auto z-50">
-                                    {availableLanguages.map((lang) => (
-                                        <button
-                                            key={lang.code}
-                                            type="button"
-                                            onClick={() => {
-                                                setLanguage(lang.code);
-                                                setIsLanguageDropdownOpen(false);
-                                            }}
-                                            className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors ${language === lang.code ? 'bg-blue-50 dark:bg-dark-selected text-blue-600 dark:text-dark-blue' : 'text-gray-700 dark:text-dark-text'}`}
-                                        >
-                                            {lang.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
