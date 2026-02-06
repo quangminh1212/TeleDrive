@@ -40,7 +40,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
 
     // i18n
-    const { language, setLanguage } = useI18n();
+    const { t, language, setLanguage } = useI18n();
     const availableLanguages = getAvailableLanguages();
 
     // Theme
@@ -442,9 +442,9 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     const renderLoginMethodSelector = () => (
         <div className="flex gap-2 mb-6">
             {[
-                { id: 'desktop' as LoginMethod, label: 'Desktop' },
-                { id: 'qr' as LoginMethod, label: 'QR Code' },
-                { id: 'phone' as LoginMethod, label: 'Số điện thoại' }
+                { id: 'desktop' as LoginMethod, label: t('auth.desktop') },
+                { id: 'qr' as LoginMethod, label: t('auth.qrCode') },
+                { id: 'phone' as LoginMethod, label: t('auth.phone') }
             ].map(method => (
                 <button
                     key={method.id}
@@ -477,12 +477,12 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 {isLoading ? (
                     <>
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Đang kết nối...</span>
+                        <span>{t('auth.openingTelegram')}</span>
                     </>
                 ) : (
                     <>
                         <TelegramIcon className="w-5 h-5" />
-                        <span>Đăng nhập từ Telegram Desktop</span>
+                        <span>{t('auth.desktopLoginBtn')}</span>
                     </>
                 )}
             </button>
@@ -688,10 +688,10 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
                     {/* Description */}
                     <h2 className="text-2xl font-semibold mb-4">
-                        Lưu trữ không giới hạn
+                        {t('auth.unlimitedStorage')}
                     </h2>
                     <p className="text-white/70 text-sm mb-8 leading-relaxed max-w-sm">
-                        Sử dụng Telegram làm nền tảng lưu trữ đám mây miễn phí, không giới hạn dung lượng.
+                        {t('auth.unlimitedStorageDesc')}
                     </p>
 
                     {/* Features */}
@@ -702,7 +702,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
-                            <span className="text-sm">Không giới hạn dung lượng</span>
+                            <span className="text-sm">{t('auth.featureUnlimited')}</span>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
@@ -710,7 +710,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
                             </div>
-                            <span className="text-sm">Mã hóa đầu cuối</span>
+                            <span className="text-sm">{t('auth.featureEncryption')}</span>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
@@ -718,7 +718,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
                                 </svg>
                             </div>
-                            <span className="text-sm">Truy cập mọi lúc mọi nơi</span>
+                            <span className="text-sm">{t('auth.featureAccess')}</span>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
@@ -726,7 +726,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                             </div>
-                            <span className="text-sm">Tốc độ tải nhanh</span>
+                            <span className="text-sm">{t('auth.featureSpeed')}</span>
                         </div>
                     </div>
                 </div>
@@ -734,7 +734,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 {/* Footer info */}
                 <div className="pt-6 border-t border-white/20">
                     <p className="text-white/50 text-xs">
-                        © 2026 TeleDrive. Lưu trữ an toàn trên Telegram.
+                        {t('auth.copyright')}
                     </p>
                 </div>
             </div>
@@ -745,10 +745,10 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                     {/* Header */}
                     <div className="text-center mb-8">
                         <h2 className="text-2xl font-semibold text-gray-800 dark:text-dark-text mb-2">
-                            Đăng nhập
+                            {t('auth.login')}
                         </h2>
                         <p className="text-gray-500 dark:text-dark-text-secondary text-sm">
-                            Chọn phương thức đăng nhập
+                            {t('auth.selectMethod')}
                         </p>
                     </div>
 
