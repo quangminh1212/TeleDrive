@@ -210,28 +210,18 @@ const formatDate = (dateStr: string): string => {
 
         if (isNaN(date.getTime())) return dateStr;
 
-        const now = new Date();
-        const diffMs = now.getTime() - date.getTime();
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-        // Format time in user's local timezone (auto-detected by browser)
-        if (diffDays === 0) {
-            return date.toLocaleTimeString(undefined, {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
-        } else if (diffDays === 1) {
-            return 'Hôm qua';
-        } else if (diffDays < 7) {
-            return `${diffDays} ngày trước`;
-        } else {
-            return date.toLocaleDateString(undefined, {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
-        }
+        // Always show full date and time: dd/mm/yyyy HH:mm
+        const dateFormatted = date.toLocaleDateString(undefined, {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+        const timeFormatted = date.toLocaleTimeString(undefined, {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        return `${dateFormatted} ${timeFormatted}`;
     } catch {
         return dateStr;
     }
