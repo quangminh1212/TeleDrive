@@ -12,12 +12,11 @@ set "PROJECT_DIR=%~dp0"
 if "%PROJECT_DIR:~-1%"=="\" set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
 
 :: ============================================
-:: CHECK REQUIREMENTS
+:: CHECK AND INSTALL INNO SETUP
 :: ============================================
 
-echo [1/5] Kiem tra yeu cau...
+echo [1/6] Kiem tra Inno Setup...
 
-:: Check Inno Setup
 set "ISCC="
 if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" (
     set "ISCC=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
@@ -28,27 +27,93 @@ if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" (
 )
 
 if "%ISCC%"=="" (
-    echo [ERROR] Inno Setup khong duoc cai dat!
+    echo [INFO] Inno Setup chua duoc cai dat. Dang tai va cai dat...
     echo.
-    echo Vui long tai va cai dat Inno Setup tu:
-    echo https://jrsoftware.org/isdl.php
-    echo.
+    
+    :: Download Inno Setup
+    set "INNO_URL=https://jrsoftware.org/download.php/is.exe"
+    set "INNO_INSTALLER=%TEMP%\innosetup_installer.exe"
+    
+    echo Dang tai Inno Setup...
+    powershell -Command "(New-Object Net.WebClient).DownloadFile('%INNO_URL%', '%INNO_INSTALLER%')"
+    
+    if not exist "%INNO_INSTALLER%" (
+        echo [ERROR] Khong the tai Inno Setup!
+        echo Vui long tai thu cong tu: https://jrsoftware.org/isdl.php
+        pause
+        exit /b 1
+    )
+    
+    echo Dang cai dat Inno Setup (can quyen Admin)...
+    echo Vui long chap nhan UAC prompt neu co...
+    
+    :: Install silently
+    "%INNO_INSTALLER%" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
+    
+    :: Wait for installation
+    timeout /t 5 /nobreak >nul
+    
+    :: Clean up installer
+    del "%INNO_INSTALLER%" 2>nul
+    
+    :: Re-check
+    if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" (
+        set "ISCC=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+    ) else if exist "C:\Program Files\Inno Setup 6\ISCC.exe" (
+        set "ISCC=C:\Program Files\Inno Setup 6\ISCC.exe"
+    )
+    
+    if "!ISCC!"=="" (
+        echo [ERROR] Cai dat Inno Setup that bai!
+        echo Vui long cai dat thu cong tu: https://jrsoftware.org/isdl.php
+        pause
+        exit /b 1
+    )
+    
+    echo [OK] Inno Setup da duoc cai dat thanh cong!
+) else (
+    echo [OK] Inno Setup da co san
+)
+
+echo.
+
+:: ============================================
+:: CHECK PYTHON
+:: ============================================
+
+echo [2/6] Kiem tra Python...
+
+set "PYTHON_CMD=%PROJECT_DIR%\python311\python.exe"
+
+if not exist "%PYTHON_CMD%" (
+    echo [ERROR] Python 3.11 portable khong tim thay!
+    echo Chay setup.bat truoc de cai Python.
     pause
     exit /b 1
 )
-echo [OK] Inno Setup
+echo [OK] Python 3.11
 
-:: Check if portable exe exists
+echo.
+
+:: ============================================
+:: BUILD PORTABLE EXE (if needed)
+:: ============================================
+
+echo [3/6] Kiem tra/Build Portable EXE...
+
 if not exist "%PROJECT_DIR%\release\TeleDrive-Portable.exe" (
     echo [INFO] Portable exe chua co, dang build...
+    echo.
     call "%PROJECT_DIR%\portable.bat"
     if errorlevel 1 (
         echo [ERROR] Build portable that bai!
         pause
         exit /b 1
     )
+    echo.
+) else (
+    echo [OK] TeleDrive-Portable.exe da co san
 )
-echo [OK] TeleDrive-Portable.exe
 
 echo.
 
@@ -56,7 +121,7 @@ echo.
 :: CREATE INNO SETUP SCRIPT
 :: ============================================
 
-echo [2/5] Tao Inno Setup script...
+echo [4/6] Tao Inno Setup script...
 
 set "ISS_FILE=%PROJECT_DIR%\teledrive-setup.iss"
 
@@ -122,7 +187,7 @@ echo.
 :: BUILD INSTALLER
 :: ============================================
 
-echo [3/5] Build Windows Installer...
+echo [5/6] Build Windows Installer...
 echo (Co the mat 1-2 phut...)
 echo.
 
@@ -130,6 +195,7 @@ echo.
 
 if errorlevel 1 (
     echo [ERROR] Inno Setup build that bai!
+    del "%ISS_FILE%" 2>nul
     pause
     exit /b 1
 )
@@ -138,25 +204,18 @@ echo.
 echo [OK] Build installer thanh cong!
 
 :: ============================================
-:: CLEANUP
+:: CLEANUP AND RESULT
 :: ============================================
 
 echo.
-echo [4/5] Cleanup...
+echo [6/6] Ket qua...
 
+:: Cleanup
 del "%ISS_FILE%" 2>nul
-echo [OK] Removed temporary files
-
-:: ============================================
-:: SHOW RESULT
-:: ============================================
-
-echo.
-echo [5/5] Ket qua...
-echo.
 
 set "OUTPUT=%PROJECT_DIR%\release\TeleDrive-Setup.exe"
 if exist "%OUTPUT%" (
+    echo.
     echo ========================================
     echo         INSTALLER BUILD COMPLETE!
     echo ========================================
