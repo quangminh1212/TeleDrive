@@ -3475,10 +3475,10 @@ def upload_file():
         for per_page in [20, 50, 100]:
             cache_delete(f"files_{user.id}_{page}_{per_page}")
 
-        return create_success_response({
-            'message': f'Successfully uploaded {len(uploaded_files)} files',
-            'files': uploaded_files
-        })
+    return create_success_response({
+        'message': f'Successfully uploaded {len(uploaded_files)} files',
+        'files': uploaded_files
+    })
 
 @app.route('/api/csrf-token', methods=['GET'])
 def get_csrf_token():
