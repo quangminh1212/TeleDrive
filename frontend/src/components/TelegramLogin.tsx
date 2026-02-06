@@ -34,6 +34,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     const [needsCode, setNeedsCode] = useState(false);
     const [needs2FA, setNeeds2FA] = useState(false);
     const [password2FA, setPassword2FA] = useState('');
+    const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
 
     // Country codes list - sorted A-Z by Vietnamese name
     const countryCodes = [
@@ -369,18 +370,49 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                             Số điện thoại
                         </label>
                         <div className="flex flex-col gap-2">
-                            {/* Country Code Dropdown */}
-                            <select
-                                value={countryCode}
-                                onChange={(e) => setCountryCode(e.target.value)}
-                                className="w-full px-3 py-2.5 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue focus:border-transparent transition-all bg-white dark:bg-dark-elevated text-gray-700 dark:text-dark-text font-medium text-sm"
-                            >
-                                {countryCodes.map((c) => (
-                                    <option key={c.code} value={c.code}>
-                                        {c.flag} {c.country} ({c.code})
-                                    </option>
-                                ))}
-                            </select>
+                            {/* Country Code Dropdown with Flag Images */}
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
+                                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0088cc] dark:focus:ring-dark-blue transition-all bg-white dark:bg-dark-elevated text-gray-700 dark:text-dark-text font-medium text-sm flex items-center justify-between"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <img
+                                            src={`https://flagcdn.com/24x18/${countryCodes.find(c => c.code === countryCode)?.short.toLowerCase()}.png`}
+                                            alt=""
+                                            className="w-6 h-4 object-cover rounded-sm"
+                                        />
+                                        <span>{countryCodes.find(c => c.code === countryCode)?.country} ({countryCode})</span>
+                                    </span>
+                                    <svg className={`w-4 h-4 transition-transform ${isCountryDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                {isCountryDropdownOpen && (
+                                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-dark-elevated border border-gray-200 dark:border-dark-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                                        {countryCodes.map((c) => (
+                                            <button
+                                                type="button"
+                                                key={c.code}
+                                                onClick={() => {
+                                                    setCountryCode(c.code);
+                                                    setIsCountryDropdownOpen(false);
+                                                }}
+                                                className={`w-full px-3 py-2 flex items-center gap-2 text-sm hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors ${countryCode === c.code ? 'bg-blue-50 dark:bg-dark-selected' : ''}`}
+                                            >
+                                                <img
+                                                    src={`https://flagcdn.com/24x18/${c.short.toLowerCase()}.png`}
+                                                    alt={c.country}
+                                                    className="w-6 h-4 object-cover rounded-sm"
+                                                />
+                                                <span className="text-gray-700 dark:text-dark-text">{c.country}</span>
+                                                <span className="text-gray-400 dark:text-dark-text-secondary">({c.code})</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                             {/* Phone Number Input */}
                             <input
                                 type="tel"
