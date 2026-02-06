@@ -190,7 +190,14 @@ logging.basicConfig(level=logging.WARNING)  # Only warnings and errors
 # Configure unified file logging for teledrive.log
 def setup_file_logging():
     """Setup file handler for unified teledrive.log"""
-    log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+    # In portable mode (PyInstaller), use current working directory
+    # which is set to app_data by launcher.py before importing this module
+    if hasattr(sys, '_MEIPASS'):
+        # Portable mode: cwd is %LOCALAPPDATA%\TeleDrive (set by launcher)
+        log_dir = os.path.join(os.getcwd(), 'logs')
+    else:
+        # Development mode: use project root/logs
+        log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, 'teledrive.log')
 
