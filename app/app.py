@@ -2760,8 +2760,13 @@ def receive_frontend_logs():
         if not logs:
             return jsonify({'success': True, 'message': 'No logs to write'})
 
-        # Ensure logs directory exists
-        log_dir = os.path.join(os.path.dirname(app.root_path), 'logs')
+        # Get log directory from AppData (same as backend logging)
+        if sys.platform == 'win32':
+            base = os.environ.get('LOCALAPPDATA', os.path.expanduser('~'))
+        else:
+            base = os.path.expanduser('~/.local/share')
+        
+        log_dir = os.path.join(base, 'TeleDrive', 'logs')
         os.makedirs(log_dir, exist_ok=True)
 
         # Write logs to file (unified teledrive.log for both frontend and backend)
@@ -2781,7 +2786,7 @@ def receive_frontend_logs():
                     except:
                         data_str = f" | Data: {str(log_entry['data'])}"
 
-                log_line = f"[{timestamp}] [{level}] [{component}] {message}{data_str}\n"
+                log_line = f"[{timestamp}] [FRONTEND] [{level}] [{component}] {message}{data_str}\n"
                 f.write(log_line)
 
         return jsonify({'success': True, 'message': f'Logged {len(logs)} entries'})
