@@ -465,7 +465,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
     );
 
     return (
-        <div className="min-h-screen bg-[#f8fafd] dark:bg-dark-bg flex items-center justify-center p-4">
+        <div className="h-full bg-[#f8fafd] dark:bg-dark-bg flex items-center justify-center p-4 overflow-hidden">
             <div className="w-full max-w-md animate-fade-in-up">
                 {/* Main Card */}
                 <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg border border-gray-100 dark:border-dark-border overflow-hidden">
