@@ -454,7 +454,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                         setStatus('');
                     }}
                     className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${loginMethod === method.id
-                        ? 'bg-[#0088cc] dark:bg-dark-blue text-white dark:text-dark-bg shadow-md'
+                        ? 'bg-[#2AABEE] dark:bg-[#2AABEE] text-white shadow-md'
                         : 'bg-gray-100 dark:bg-dark-elevated text-gray-600 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-hover'
                         }`}
                 >
@@ -471,7 +471,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
                 disabled={isLoading}
                 className={`w-full py-3.5 px-6 rounded-xl font-medium text-white transition-all duration-200 flex items-center justify-center gap-3 ${isLoading
                     ? 'bg-gray-300 dark:bg-dark-border cursor-not-allowed'
-                    : 'bg-[#0088cc] dark:bg-dark-blue hover:bg-[#006699] dark:hover:bg-dark-blue-hover hover:shadow-lg hover:shadow-cyan-500/25 dark:hover:shadow-dark-blue/25 active:scale-[0.98]'
+                    : 'bg-[#2AABEE] hover:bg-[#229ED9] hover:shadow-lg hover:shadow-[#2AABEE]/25 active:scale-[0.98]'
                     }`}
             >
                 {isLoading ? (
