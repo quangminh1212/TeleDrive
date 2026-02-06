@@ -668,105 +668,158 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
     return (
         <div className="h-full bg-[#f8fafd] dark:bg-dark-bg flex items-center justify-center p-4 overflow-hidden">
-            <div className="w-full max-w-md animate-fade-in-up">
-                {/* Main Card */}
+            <div className="w-full max-w-4xl animate-fade-in-up">
+                {/* Main Card - Two Column Layout */}
                 <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg border border-gray-100 dark:border-dark-border overflow-hidden">
-                    {/* Header */}
-                    <div className="pt-6 pb-4 px-6 text-center">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4 shadow-lg shadow-cyan-500/20 dark:shadow-dark-blue/20 transform hover:scale-105 transition-transform duration-200 overflow-hidden">
-                            <img src="/logo.png" alt="TeleDrive" className="w-full h-full object-cover" />
+                    <div className="flex flex-row">
+                        {/* Left Column - Branding */}
+                        <div className="w-1/2 bg-gradient-to-br from-cyan-500 to-blue-600 dark:from-dark-blue dark:to-blue-900 p-8 flex flex-col justify-between text-white">
+                            <div>
+                                {/* Logo & Title */}
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="w-16 h-16 rounded-xl shadow-lg overflow-hidden bg-white/10 backdrop-blur-sm">
+                                        <img src="/logo.png" alt="TeleDrive" className="w-full h-full object-cover" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-2xl font-bold">TeleDrive</h1>
+                                        <p className="text-cyan-100 text-sm">Cloud Storage 2026</p>
+                                    </div>
+                                </div>
+
+                                {/* Description */}
+                                <h2 className="text-xl font-semibold mb-4">
+                                    Lưu trữ không giới hạn
+                                </h2>
+                                <p className="text-cyan-100 text-sm mb-6 leading-relaxed">
+                                    Sử dụng Telegram làm nền tảng lưu trữ đám mây miễn phí, không giới hạn dung lượng.
+                                </p>
+
+                                {/* Features */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-sm">Không giới hạn dung lượng</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-sm">Mã hóa đầu cuối</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-sm">Truy cập mọi lúc mọi nơi</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-sm">Tốc độ tải nhanh</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer info */}
+                            <div className="mt-8 pt-6 border-t border-white/20">
+                                <p className="text-cyan-100 text-xs">
+                                    © 2026 TeleDrive. Lưu trữ an toàn trên Telegram.
+                                </p>
+                            </div>
                         </div>
 
-                        <h1 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-0.5">
-                            TeleDrive
-                        </h1>
-                        <p className="text-gray-500 dark:text-dark-text-secondary text-xs">
-                            Quản lý file trên Telegram
-                        </p>
-                    </div>
-
-                    <div className="mx-6 h-px bg-gray-100 dark:bg-dark-border" />
-
-                    {/* Body */}
-                    <div className="p-6">
-                        <h2 className="text-base font-medium text-gray-700 dark:text-dark-text text-center mb-3">
-                            Đăng nhập để tiếp tục
-                        </h2>
-
-                        {/* Login Method Selector */}
-                        {renderLoginMethodSelector()}
-
-                        {/* Status message */}
-                        {status && (
-                            <div className="mb-5 p-4 bg-cyan-50 dark:bg-dark-selected border border-cyan-100 dark:border-dark-blue/30 rounded-xl animate-fade-in">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-5 h-5 border-2 border-[#0088cc] dark:border-dark-blue border-t-transparent rounded-full animate-spin" />
-                                    <span className="text-[#0088cc] dark:text-dark-blue text-sm font-medium">{status}</span>
-                                </div>
+                        {/* Right Column - Login Form */}
+                        <div className="w-1/2 p-8 flex flex-col">
+                            {/* Header */}
+                            <div className="text-center mb-6">
+                                <h2 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-1">
+                                    Đăng nhập
+                                </h2>
+                                <p className="text-gray-500 dark:text-dark-text-secondary text-sm">
+                                    Chọn phương thức đăng nhập
+                                </p>
                             </div>
-                        )}
 
-                        {/* Error message */}
-                        {error && (
-                            <div className="mb-5 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-500/30 rounded-xl animate-shake">
-                                <div className="flex items-center gap-3">
-                                    <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <p className="text-red-600 dark:text-red-400 text-sm font-medium">{error}</p>
+                            {/* Login Method Selector */}
+                            {renderLoginMethodSelector()}
+
+                            {/* Status message */}
+                            {status && (
+                                <div className="mb-4 p-3 bg-cyan-50 dark:bg-dark-selected border border-cyan-100 dark:border-dark-blue/30 rounded-xl animate-fade-in">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-4 h-4 border-2 border-[#0088cc] dark:border-dark-blue border-t-transparent rounded-full animate-spin" />
+                                        <span className="text-[#0088cc] dark:text-dark-blue text-sm font-medium">{status}</span>
+                                    </div>
                                 </div>
+                            )}
+
+                            {/* Error message */}
+                            {error && (
+                                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-500/30 rounded-xl animate-shake">
+                                    <div className="flex items-center gap-3">
+                                        <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <p className="text-red-600 dark:text-red-400 text-sm font-medium">{error}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Render Login Form based on method */}
+                            <div className="flex-1">
+                                {loginMethod === 'desktop' && renderDesktopLogin()}
+                                {loginMethod === 'qr' && renderQRLogin()}
+                                {loginMethod === 'phone' && renderPhoneLogin()}
                             </div>
-                        )}
 
-                        {/* Render Login Form based on method */}
-                        {loginMethod === 'desktop' && renderDesktopLogin()}
-                        {loginMethod === 'qr' && renderQRLogin()}
-                        {loginMethod === 'phone' && renderPhoneLogin()}
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="text-center mt-6 space-y-3">
-                    {/* Language Selector */}
-                    <div className="relative inline-block">
-                        <button
-                            type="button"
-                            onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover rounded-lg transition-colors"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                            </svg>
-                            <span>{languageNames[language]}</span>
-                            <svg className={`w-3 h-3 transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        {isLanguageDropdownOpen && (
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white dark:bg-dark-elevated border border-gray-200 dark:border-dark-border rounded-xl shadow-lg max-h-64 overflow-y-auto z-50">
-                                {availableLanguages.map((lang) => (
+                            {/* Language Selector */}
+                            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-dark-border">
+                                <div className="relative flex justify-center">
                                     <button
-                                        key={lang.code}
                                         type="button"
-                                        onClick={() => {
-                                            setLanguage(lang.code);
-                                            setIsLanguageDropdownOpen(false);
-                                        }}
-                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors ${language === lang.code ? 'bg-blue-50 dark:bg-dark-selected text-blue-600 dark:text-dark-blue' : 'text-gray-700 dark:text-dark-text'}`}
+                                        onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                                        className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover rounded-lg transition-colors"
                                     >
-                                        {lang.name}
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                        </svg>
+                                        <span>{languageNames[language]}</span>
+                                        <svg className={`w-3 h-3 transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
                                     </button>
-                                ))}
+                                    {isLanguageDropdownOpen && (
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white dark:bg-dark-elevated border border-gray-200 dark:border-dark-border rounded-xl shadow-lg max-h-64 overflow-y-auto z-50">
+                                            {availableLanguages.map((lang) => (
+                                                <button
+                                                    key={lang.code}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setLanguage(lang.code);
+                                                        setIsLanguageDropdownOpen(false);
+                                                    }}
+                                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors ${language === lang.code ? 'bg-blue-50 dark:bg-dark-selected text-blue-600 dark:text-dark-blue' : 'text-gray-700 dark:text-dark-text'}`}
+                                                >
+                                                    {lang.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        )}
+                        </div>
                     </div>
-
-                    <p className="text-gray-400 dark:text-dark-text-secondary text-sm">
-                        TeleDrive © 2026
-                    </p>
-                    <p className="text-gray-400 dark:text-dark-text-disabled text-xs">
-                        Lưu trữ file không giới hạn trên Telegram
-                    </p>
                 </div>
             </div>
         </div>
