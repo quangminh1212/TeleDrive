@@ -1303,50 +1303,40 @@ class TelegramAuthenticator:
             
             print(f"[AUTO_LOGIN] Tìm thấy Telegram Desktop: {tdata_path}")
             
-            # Sử dụng script import để tạo session riêng cho TeleDrive
-            project_root = Path(__file__).parent.parent
-            python311_path = project_root / "python311" / "python.exe"
-            import_script = project_root / "app" / "session_import.py"
-            session_output = project_root / "data" / "session_import"
-            
-            if not python311_path.exists():
-                return {
-                    'success': False,
-                    'message': 'Không tìm thấy Python 3.11 portable',
-                    'hint': 'Chạy setup-python.bat để cài Python 3.11'
-                }
-            
-            if not import_script.exists():
-                return {
-                    'success': False,
-                    'message': 'Không tìm thấy script import session',
-                    'hint': 'File app/session_import.py bị thiếu'
-                }
-            
+            # Import session trực tiếp thay vì dùng subprocess
+            # Hoạt động trong cả development mode và portable mode
             print("[AUTO_LOGIN] Import session từ Telegram Desktop...")
             
-            result = subprocess.run(
-                [str(python311_path), str(import_script), str(session_output)],
-                capture_output=True,
-                text=True,
-                timeout=60,
-                cwd=str(project_root)
-            )
-            
-            if result.returncode != 0:
-                print(f"[AUTO_LOGIN] Script error: {result.stderr}")
-                return {
-                    'success': False,
-                    'message': 'Lỗi import session',
-                    'hint': result.stderr or 'Không có thông tin lỗi'
-                }
-            
             try:
-                import_result = json.loads(result.stdout.strip())
-            except json.JSONDecodeError as e:
+                from app.session_import import import_session_sync
+                
+                # Xác định output path dựa vào môi trường
+                if hasattr(sys, '_MEIPASS'):
+                    # Portable mode: lưu vào app data
+                    import_base = os.environ.get('LOCALAPPDATA', os.path.expanduser('~'))
+                    session_output = os.path.join(import_base, 'TeleDrive', 'data', 'session_import')
+                else:
+                    # Development mode
+                    project_root = Path(__file__).parent.parent
+                    session_output = str(project_root / "data" / "session_import")
+                
+                # Đảm bảo thư mục tồn tại
+                os.makedirs(os.path.dirname(session_output), exist_ok=True)
+                
+                import_result = import_session_sync(session_output)
+                
+            except ImportError as e:
+                print(f"[AUTO_LOGIN] Import error: {e}")
                 return {
                     'success': False,
-                    'message': 'Lỗi parse kết quả import'
+                    'message': 'Không thể import session module',
+                    'hint': f'Lỗi: {str(e)}'
+                }
+            except Exception as e:
+                print(f"[AUTO_LOGIN] Error: {e}")
+                return {
+                    'success': False,
+                    'message': f'Lỗi import session: {str(e)}'
                 }
             
             if not import_result.get('success'):
@@ -1369,12 +1359,21 @@ class TelegramAuthenticator:
                 mock_user = MockTelegramUser(user_info)
                 db_user = self.create_or_update_user(mock_user, mock_user.phone or '')
                 
-                # Copy session to main session file
+                # Copy session to main session file - hoạt động trong cả 2 mode
                 import shutil
-                src_session = project_root / "data" / "session_import.session"
-                dst_session = project_root / "data" / "session.session"
-                if src_session.exists():
-                    shutil.copy2(str(src_session), str(dst_session))
+                if hasattr(sys, '_MEIPASS'):
+                    # Portable mode
+                    app_data = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'TeleDrive', 'data')
+                    src_session = os.path.join(app_data, "session_import.session")
+                    dst_session = os.path.join(app_data, "session.session")
+                else:
+                    # Development mode
+                    project_root = Path(__file__).parent.parent
+                    src_session = str(project_root / "data" / "session_import.session")
+                    dst_session = str(project_root / "data" / "session.session")
+                
+                if os.path.exists(src_session):
+                    shutil.copy2(src_session, dst_session)
                     print(f"[AUTO_LOGIN] Session đã lưu vào {dst_session}")
                 
                 print(f"[AUTO_LOGIN] Thành công! User: {user_info.get('first_name')}")
@@ -1396,11 +1395,6 @@ class TelegramAuthenticator:
                 'message': 'Import thành công nhưng không có thông tin user'
             }
             
-        except subprocess.TimeoutExpired:
-            return {
-                'success': False,
-                'message': 'Timeout khi import session'
-            }
         except Exception as e:
             print(f"[AUTO_LOGIN] Lỗi: {e}")
             return {
