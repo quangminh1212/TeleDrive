@@ -408,8 +408,8 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                 </nav>
 
                 {/* Bottom info — soft minimal */}
-                <div className="px-4 py-4 border-t border-gray-100/80 dark:border-dark-border/30">
-                    <div className="flex items-baseline gap-1.5">
+                <div className="px-4 py-4 border-t border-gray-100/80 dark:border-dark-border/30 text-center">
+                    <div className="flex items-baseline justify-center gap-1.5">
                         <span className="text-[13px] font-semibold text-gray-700 dark:text-dark-text tracking-tight">
                             {usedStorageFormatted}
                         </span>
