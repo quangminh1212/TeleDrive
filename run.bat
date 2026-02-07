@@ -20,6 +20,9 @@ echo.
 
 echo [CLEANUP] Dang dung cac process TeleDrive cu...
 
+:: Kill Tauri/TeleDrive executable
+taskkill /f /im TeleDrive.exe >nul 2>&1
+
 :: Kill Python processes on ports 5000, 8000
 for %%p in (5000 8000) do (
     for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":%%p "') do (
@@ -34,8 +37,13 @@ for %%p in (1420 3000) do (
     )
 )
 
-:: Kill any cmd.exe running npm or vite
-for /f "tokens=2" %%a in ('tasklist /fi "imagename eq cmd.exe" /v 2^>nul ^| findstr /i "npm vite"') do (
+:: Kill any cmd.exe running npm, vite, tauri, or TeleDrive
+for /f "tokens=2" %%a in ('tasklist /fi "imagename eq cmd.exe" /v 2^>nul ^| findstr /i "npm vite tauri TeleDrive"') do (
+    taskkill /f /pid %%a >nul 2>&1
+)
+
+:: Kill any remaining node.exe processes related to vite/tauri
+for /f "tokens=2" %%a in ('tasklist /fi "imagename eq node.exe" /v 2^>nul ^| findstr /i "vite tauri"') do (
     taskkill /f /pid %%a >nul 2>&1
 )
 
