@@ -56,7 +56,12 @@
     "noRecent": "No recently accessed folders",
     "recentHint": "Open a folder to see it here",
     "modified": "Modified",
-    "channel": "Channel"
+    "channel": "Channel",
+    "detailsView": "Details",
+    "smallIcons": "Small Icons",
+    "mediumIcons": "Medium Icons",
+    "largeIcons": "Large Icons",
+    "viewMode": "View Mode"
   },
   "folders": {
     "create": "Create folder",

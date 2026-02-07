@@ -56,7 +56,12 @@
     "noRecent": "Chưa có thư mục nào được truy cập gần đây",
     "recentHint": "Mở một thư mục để nó xuất hiện ở đây",
     "modified": "Đã sửa đổi",
-    "channel": "Kênh"
+    "channel": "Kênh",
+    "detailsView": "Chi tiết",
+    "smallIcons": "Biểu tượng nhỏ",
+    "mediumIcons": "Biểu tượng vừa",
+    "largeIcons": "Biểu tượng lớn",
+    "viewMode": "Chế độ xem"
   },
   "folders": {
     "create": "Tạo thư mục",
