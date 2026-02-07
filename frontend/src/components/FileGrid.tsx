@@ -99,8 +99,18 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     }, [viewMode]);
 
     const handleViewModeChange = (mode: ViewMode) => {
-        setLocalViewMode(mode);
-        onViewModeChange?.(mode);
+        if (mode === localViewMode) return;
+        setIsTransitioning(true);
+        // Wait for fade-out, then switch mode
+        setTimeout(() => {
+            setLocalViewMode(mode);
+            onViewModeChange?.(mode);
+            setAnimationKey(prev => prev + 1);
+            // Wait a frame for DOM to update, then fade in
+            requestAnimationFrame(() => {
+                setIsTransitioning(false);
+            });
+        }, 150);
     };
 
     // Map ViewMode to FileItem viewMode prop

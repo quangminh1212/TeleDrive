@@ -447,17 +447,17 @@ input:focus-visible {
 
 /* Smooth content wrapper transition */
 .content-transition {
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
 }
 
 .content-entering {
   opacity: 0;
-  transform: translateY(8px);
+  transform: scale(0.98) translateY(4px);
 }
 
 .content-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: scale(1) translateY(0);
 }
 
 /* Loading skeleton animation */
