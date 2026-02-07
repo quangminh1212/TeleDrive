@@ -75,6 +75,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     // Page transition animation states
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [animationKey, setAnimationKey] = useState(0);
+    const [skipItemAnimation, setSkipItemAnimation] = useState(false);
     const prevFolderRef = useRef<string | null>(null);
     const toast = useToast();
     const { t } = useI18n();
@@ -101,16 +102,20 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const handleViewModeChange = (mode: ViewMode) => {
         if (mode === localViewMode) return;
         setIsTransitioning(true);
-        // Wait for fade-out, then switch mode
+        setSkipItemAnimation(true); // Skip per-item stagger, use container fade only
+        // Wait for fade-out animation to complete
         setTimeout(() => {
             setLocalViewMode(mode);
             onViewModeChange?.(mode);
             setAnimationKey(prev => prev + 1);
-            // Wait a frame for DOM to update, then fade in
+            // Double rAF: ensure browser paints the new DOM with entering state,
+            // then remove transitioning to trigger fade-in
             requestAnimationFrame(() => {
-                setIsTransitioning(false);
+                requestAnimationFrame(() => {
+                    setIsTransitioning(false);
+                });
             });
-        }, 150);
+        }, 120);
     };
 
     // Map ViewMode to FileItem viewMode prop
@@ -332,6 +337,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     useEffect(() => {
         if (prevFolderRef.current !== currentFolder) {
             // Folder changed - trigger transition animation
+            setSkipItemAnimation(false); // Re-enable per-item stagger for folder navigation
             setIsTransitioning(true);
             const timer = setTimeout(() => {
                 setIsTransitioning(false);
@@ -1234,8 +1240,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                 key={file.id}
                                 data-file-item
                                 data-file-id={file.id}
-                                className="file-item-animate"
-                                style={{ animationDelay: `${Math.min(index * 0.02, 0.4)}s` }}
+                                className={skipItemAnimation ? '' : 'file-item-animate'}
+                                style={skipItemAnimation ? undefined : { animationDelay: `${Math.min(index * 0.02, 0.4)}s` }}
                             >
                                 <FileItem
                                     file={file}
@@ -1276,8 +1282,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                 key={file.id}
                                 data-file-item
                                 data-file-id={file.id}
-                                className="file-item-animate"
-                                style={{ animationDelay: `${Math.min(index * 0.02, 0.4)}s` }}
+                                className={skipItemAnimation ? '' : 'file-item-animate'}
+                                style={skipItemAnimation ? undefined : { animationDelay: `${Math.min(index * 0.02, 0.4)}s` }}
                             >
                                 <FileItem
                                     file={file}
