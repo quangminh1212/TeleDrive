@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
-import Header from './components/Header';
+import Header, { ViewMode } from './components/Header';
 import FileGrid from './components/FileGrid';
 import TelegramLogin from './components/TelegramLogin';
 import UploadProgress from './components/UploadProgress';
@@ -28,8 +28,8 @@ interface MainAppUIProps {
   setSearchQuery: (query: string) => void;
   currentFolder: string | null;
   setCurrentFolder: (folder: string | null) => void;
-  viewMode: 'grid' | 'list';
-  setViewMode: (mode: 'grid' | 'list') => void;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
   refreshKey: number;
   showUploadProgress: boolean;
   setShowUploadProgress: (show: boolean) => void;
@@ -125,7 +125,7 @@ function MainAppUI({
 function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>('details');
   const [refreshKey, setRefreshKey] = useState(0);
   const [showUploadProgress, setShowUploadProgress] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
