@@ -340,6 +340,36 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     })}
                 </nav>
 
+                {/* Rate Limits Info */}
+                <div className="px-4 py-2 border-t border-gray-200 dark:border-dark-border">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                        <svg className="w-3.5 h-3.5 text-amber-500" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7 2v11h3v9l7-12h-4l4-8z" />
+                        </svg>
+                        <p className="text-[10px] font-semibold text-gray-600 dark:text-dark-text-secondary uppercase tracking-wider">
+                            Rate Limits
+                        </p>
+                    </div>
+                    <div className="space-y-1">
+                        {[
+                            { label: 'Upload', limit: '50 req', window: '5 min', color: 'bg-blue-500' },
+                            { label: 'Search', limit: '100 req', window: '1 min', color: 'bg-green-500' },
+                            { label: 'Auth Login', limit: '5 req', window: '5 min', color: 'bg-orange-500' },
+                            { label: 'Auth Verify', limit: '10 req', window: '5 min', color: 'bg-purple-500' },
+                        ].map((item) => (
+                            <div key={item.label} className="flex items-center justify-between text-[10px]">
+                                <div className="flex items-center gap-1.5">
+                                    <span className={`w-1.5 h-1.5 rounded-full ${item.color} flex-shrink-0`} />
+                                    <span className="text-gray-600 dark:text-dark-text-secondary">{item.label}</span>
+                                </div>
+                                <span className="text-gray-500 dark:text-dark-text-secondary font-mono">
+                                    {item.limit}/{item.window}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Storage Info */}
                 <div className="px-4 py-3 border-t border-gray-200 dark:border-dark-border">
                     {/* Header */}
