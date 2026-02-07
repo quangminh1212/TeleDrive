@@ -473,37 +473,29 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                         Telegram Cloud — Không giới hạn
                     </p>
 
-                    {/* Rate Limits — collapsible */}
+                    {/* Rate Limits */}
                     {rateLimits.length > 0 && (
-                        <details className="mt-2.5 group">
-                            <summary className="text-[11px] text-gray-400 dark:text-dark-text-secondary cursor-pointer hover:text-gray-600 dark:hover:text-dark-text select-none list-none flex items-center gap-1">
-                                <svg className="w-3 h-3 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
-                                </svg>
-                                API limits
-                            </summary>
-                            <div className="mt-1.5 space-y-1">
-                                {rateLimits.map((item) => {
-                                    const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
-                                    const isDanger = pct >= 100;
-                                    const isWarning = pct > 50 && !isDanger;
-                                    return (
-                                        <div key={item.name} className="flex items-center gap-2 text-[10px]">
-                                            <span className="text-gray-500 dark:text-dark-text-secondary w-20 truncate">{item.name}</span>
-                                            <div className="flex-1 h-[3px] bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
-                                                <div
-                                                    className={`h-full rounded-full transition-all duration-300 ${isDanger ? 'bg-red-500' : isWarning ? 'bg-amber-400' : 'bg-gray-300 dark:bg-gray-600'}`}
-                                                    style={{ width: `${Math.min(pct, 100)}%` }}
-                                                />
-                                            </div>
-                                            <span className={`font-mono tabular-nums w-12 text-right ${isDanger ? 'text-red-500' : 'text-gray-400 dark:text-dark-text-secondary'}`}>
-                                                {item.used}/{item.max}
-                                            </span>
+                        <div className="mt-2.5 space-y-1">
+                            {rateLimits.map((item) => {
+                                const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
+                                const isDanger = pct >= 100;
+                                const isWarning = pct > 50 && !isDanger;
+                                return (
+                                    <div key={item.name} className="flex items-center gap-2 text-[10px]">
+                                        <span className="text-gray-500 dark:text-dark-text-secondary w-20 truncate">{item.name}</span>
+                                        <div className="flex-1 h-[3px] bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-300 ${isDanger ? 'bg-red-500' : isWarning ? 'bg-amber-400' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                                style={{ width: `${Math.min(pct, 100)}%` }}
+                                            />
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </details>
+                                        <span className={`font-mono tabular-nums w-12 text-right ${isDanger ? 'text-red-500' : 'text-gray-400 dark:text-dark-text-secondary'}`}>
+                                            {item.used}/{item.max}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
                 </div>
             </aside>
