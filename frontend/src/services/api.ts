@@ -1,7 +1,11 @@
-// Auto-detect API base URL from current window location for portable mode
-export const API_BASE_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-    ? window.location.origin
-    : 'http://127.0.0.1:5000';
+// Auto-detect API base URL
+// In Tauri production: origin = "https://tauri.localhost" or "tauri://localhost" → must use backend URL
+// In dev mode: origin = "http://localhost:1420" → use origin (proxied to backend)
+// In web mode: origin = "http://127.0.0.1:5000" → use origin
+const origin = window.location.origin;
+const isTauri = origin.includes('tauri.localhost') || origin.startsWith('tauri://');
+const isDevOrWeb = !isTauri && (origin.includes('localhost') || origin.includes('127.0.0.1'));
+export const API_BASE_URL = isDevOrWeb ? origin : 'http://127.0.0.1:5000';
 
 interface ApiResponse<T> {
     success: boolean;
