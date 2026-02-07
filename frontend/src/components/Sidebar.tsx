@@ -65,6 +65,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     const [isUploading, setIsUploading] = useState(false);
     const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
     const [rateLimits, setRateLimits] = useState<RateLimitItem[]>([]);
+    const [showDocs, setShowDocs] = useState(false);
     const toast = useToast();
     const { t } = useI18n();
 
@@ -368,19 +369,38 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
                 {/* Rate Limits Info */}
                 <div className="px-4 py-2 border-t border-gray-200 dark:border-dark-border">
-                    <p className="text-[10px] font-semibold text-gray-600 dark:text-dark-text-secondary uppercase tracking-wider mb-1.5">
-                        Rate Limits
-                    </p>
-                    <div className="space-y-1">
-                        {rateLimits.map((item) => (
-                            <div key={item.name} className="flex items-center justify-between text-[10px]">
-                                <span className="text-gray-600 dark:text-dark-text-secondary">{item.name}</span>
-                                <span className="font-mono" style={{ color: item.used > 0 ? (item.used >= item.max ? '#ef4444' : '#f59e0b') : '#6b7280' }}>
-                                    {item.used}/{item.max}
-                                    <span className="text-gray-400 dark:text-dark-text-secondary font-sans"> / {item.window}</span>
-                                </span>
-                            </div>
-                        ))}
+                    <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-[10px] font-semibold text-gray-600 dark:text-dark-text-secondary uppercase tracking-wider">
+                            Rate Limits
+                        </p>
+                        <button
+                            onClick={() => setShowDocs(true)}
+                            className="text-[10px] text-blue-500 hover:text-blue-600 dark:text-dark-blue dark:hover:text-blue-400 hover:underline transition-colors"
+                        >
+                            Tài liệu
+                        </button>
+                    </div>
+                    <div className="space-y-1.5">
+                        {rateLimits.map((item) => {
+                            const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
+                            const barColor = pct >= 100 ? '#ef4444' : pct > 50 ? '#f59e0b' : '#3b82f6';
+                            return (
+                                <div key={item.name}>
+                                    <div className="flex items-center justify-between text-[10px] mb-0.5">
+                                        <span className="text-gray-600 dark:text-dark-text-secondary">{item.name}</span>
+                                        <span className="font-mono text-gray-500 dark:text-dark-text-secondary">
+                                            {item.used}/{item.max} <span className="font-sans text-gray-400">/ {item.window}</span>
+                                        </span>
+                                    </div>
+                                    <div className="h-1 bg-gray-200 dark:bg-dark-border rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full rounded-full transition-all duration-300"
+                                            style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor }}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -436,6 +456,162 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     }
                 }}
             />
+
+            {/* Documentation Modal */}
+            {showDocs && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50" onClick={() => setShowDocs(false)}>
+                    <div
+                        className="bg-white dark:bg-dark-surface rounded-2xl shadow-2xl w-[90vw] max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-dark-border">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                                    </svg>
+                                </div>
+                                <h2 className="text-lg font-semibold text-gray-800 dark:text-dark-text">Tài liệu TeleDrive</h2>
+                            </div>
+                            <button
+                                onClick={() => setShowDocs(false)}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition-colors"
+                            >
+                                <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto px-6 py-4 text-sm text-gray-700 dark:text-dark-text leading-relaxed space-y-5">
+                            {/* Giới thiệu */}
+                            <section>
+                                <h3 className="text-base font-semibold text-gray-800 dark:text-dark-text mb-2">📌 Giới thiệu</h3>
+                                <p>TeleDrive là ứng dụng quản lý file cá nhân sử dụng <strong>Telegram</strong> làm nơi lưu trữ đám mây. File của bạn được lưu vào tin nhắn Telegram (Saved Messages) với dung lượng <strong>không giới hạn</strong> và <strong>miễn phí hoàn toàn</strong>.</p>
+                            </section>
+
+                            {/* Upload */}
+                            <section>
+                                <h3 className="text-base font-semibold text-gray-800 dark:text-dark-text mb-2">📤 Upload File</h3>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li>Kích thước tối đa: <strong>2 GB</strong> mỗi file (giới hạn của Telegram API)</li>
+                                    <li>Hỗ trợ <strong>tất cả định dạng file</strong> — không giới hạn loại file</li>
+                                    <li>Upload nhiều file cùng lúc hoặc upload cả thư mục</li>
+                                    <li>File được mã hóa và lưu trên máy chủ Telegram</li>
+                                </ul>
+                            </section>
+
+                            {/* Storage */}
+                            <section>
+                                <h3 className="text-base font-semibold text-gray-800 dark:text-dark-text mb-2">💾 Bộ nhớ</h3>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li>Dung lượng: <strong>Không giới hạn (∞)</strong> — Telegram cung cấp lưu trữ đám mây miễn phí</li>
+                                    <li>Không có giới hạn băng thông hàng ngày cho upload/download</li>
+                                    <li>File được đồng bộ tự động qua Telegram API</li>
+                                </ul>
+                            </section>
+
+                            {/* Rate Limits */}
+                            <section>
+                                <h3 className="text-base font-semibold text-gray-800 dark:text-dark-text mb-2">⚡ Giới hạn Rate Limit</h3>
+                                <p className="mb-2">Để bảo vệ hệ thống khỏi lạm dụng, các giới hạn sau được áp dụng cho mỗi IP:</p>
+                                <div className="bg-gray-50 dark:bg-dark-bg rounded-lg overflow-hidden">
+                                    <table className="w-full text-xs">
+                                        <thead>
+                                            <tr className="bg-gray-100 dark:bg-dark-hover">
+                                                <th className="text-left px-3 py-2 font-medium text-gray-600 dark:text-dark-text-secondary">Endpoint</th>
+                                                <th className="text-center px-3 py-2 font-medium text-gray-600 dark:text-dark-text-secondary">Giới hạn</th>
+                                                <th className="text-center px-3 py-2 font-medium text-gray-600 dark:text-dark-text-secondary">Cửa sổ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr className="border-t border-gray-200 dark:border-dark-border">
+                                                <td className="px-3 py-2">Upload</td>
+                                                <td className="px-3 py-2 text-center font-mono">50 request</td>
+                                                <td className="px-3 py-2 text-center">5 phút</td>
+                                            </tr>
+                                            <tr className="border-t border-gray-200 dark:border-dark-border">
+                                                <td className="px-3 py-2">Search (Tìm kiếm)</td>
+                                                <td className="px-3 py-2 text-center font-mono">100 request</td>
+                                                <td className="px-3 py-2 text-center">1 phút</td>
+                                            </tr>
+                                            <tr className="border-t border-gray-200 dark:border-dark-border">
+                                                <td className="px-3 py-2">Auth Login (Đăng nhập)</td>
+                                                <td className="px-3 py-2 text-center font-mono">5 request</td>
+                                                <td className="px-3 py-2 text-center">5 phút</td>
+                                            </tr>
+                                            <tr className="border-t border-gray-200 dark:border-dark-border">
+                                                <td className="px-3 py-2">Auth Verify (Xác minh)</td>
+                                                <td className="px-3 py-2 text-center font-mono">10 request</td>
+                                                <td className="px-3 py-2 text-center">10 phút</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500 dark:text-dark-text-secondary">
+                                    Thanh màu hiển thị mức sử dụng: <span style={{ color: '#3b82f6' }}>■</span> Bình thường — <span style={{ color: '#f59e0b' }}>■</span> Trên 50% — <span style={{ color: '#ef4444' }}>■</span> Đã hết
+                                </p>
+                            </section>
+
+                            {/* Share Links */}
+                            <section>
+                                <h3 className="text-base font-semibold text-gray-800 dark:text-dark-text mb-2">🔗 Chia sẻ File</h3>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li>Tạo link chia sẻ công khai cho bất kỳ file nào</li>
+                                    <li>Tùy chọn giới hạn số lần tải xuống cho mỗi link</li>
+                                    <li>Đặt thời gian hết hạn cho link chia sẻ</li>
+                                    <li>Bảo vệ link bằng mật khẩu (tùy chọn)</li>
+                                </ul>
+                            </section>
+
+                            {/* Security */}
+                            <section>
+                                <h3 className="text-base font-semibold text-gray-800 dark:text-dark-text mb-2">🔐 Bảo mật</h3>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li>Xác thực qua <strong>Telegram</strong> — không cần tạo tài khoản riêng</li>
+                                    <li>Chống tấn công brute-force với rate limiting</li>
+                                    <li>CSRF protection trên tất cả các form</li>
+                                    <li>File được truyền qua kênh mã hóa của Telegram</li>
+                                </ul>
+                            </section>
+
+                            {/* Telegram Limits */}
+                            <section>
+                                <h3 className="text-base font-semibold text-gray-800 dark:text-dark-text mb-2">📱 Giới hạn Telegram</h3>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    <li>Telegram Free: Upload tối đa <strong>2 GB</strong> / file</li>
+                                    <li>Telegram Premium: Upload tối đa <strong>4 GB</strong> / file</li>
+                                    <li>Nếu gửi quá nhiều request, Telegram sẽ tạm khóa (FloodWait) — hệ thống tự động chờ và thử lại</li>
+                                    <li>Không có giới hạn tổng dung lượng lưu trữ</li>
+                                </ul>
+                            </section>
+
+                            {/* Tips */}
+                            <section className="bg-blue-50 dark:bg-blue-900/10 rounded-lg p-4">
+                                <h3 className="text-base font-semibold text-blue-700 dark:text-blue-400 mb-2">💡 Mẹo sử dụng</h3>
+                                <ul className="list-disc pl-5 space-y-1 text-blue-800 dark:text-blue-300">
+                                    <li>Dùng chức năng tìm kiếm để nhanh chóng tìm file trong hàng nghìn file</li>
+                                    <li>Tạo thư mục để tổ chức file theo dự án hoặc chủ đề</li>
+                                    <li>Đánh dấu sao (⭐) cho các file quan trọng để truy cập nhanh</li>
+                                    <li>Sử dụng chế độ xem danh sách để xem nhiều file hơn cùng lúc</li>
+                                </ul>
+                            </section>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-3 border-t border-gray-200 dark:border-dark-border flex justify-end">
+                            <button
+                                onClick={() => setShowDocs(false)}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                            >
+                                Đã hiểu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
