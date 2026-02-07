@@ -458,44 +458,44 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     </div>
                 </nav>
 
-                {/* Storage — Google Drive style */}
-                <div className="px-4 py-3 border-t border-gray-200 dark:border-dark-border">
-                    <div className="h-1 bg-gray-200 dark:bg-dark-border rounded-full overflow-hidden mb-2.5">
-                        <div
-                            className="h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.min(Math.max((actualSize / (2 * 1024 * 1024 * 1024)) * 100, actualSize > 0 ? 2 : 0), 100)}%` }}
-                        />
-                    </div>
-                    <p className="text-[13px] text-gray-700 dark:text-dark-text">
-                        {usedStorageFormatted} · {fileCount} {fileCount === 1 ? 'file' : 'files'}
-                    </p>
-                    <p className="text-[11px] text-gray-500 dark:text-dark-text-secondary mt-0.5">
-                        Telegram Cloud — Không giới hạn
-                    </p>
-
-                    {/* Rate Limits */}
-                    {rateLimits.length > 0 && (
-                        <div className="mt-2.5 space-y-1">
-                            {rateLimits.map((item) => {
-                                const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
-                                const isDanger = pct >= 100;
-                                const isWarning = pct > 50 && !isDanger;
-                                return (
-                                    <div key={item.name} className="flex items-center gap-2 text-[10px]">
-                                        <span className="text-gray-500 dark:text-dark-text-secondary w-20 truncate">{item.name}</span>
-                                        <div className="flex-1 h-[3px] bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full rounded-full transition-all duration-300 ${isDanger ? 'bg-red-500' : isWarning ? 'bg-amber-400' : 'bg-gray-300 dark:bg-gray-600'}`}
-                                                style={{ width: `${Math.min(pct, 100)}%` }}
-                                            />
-                                        </div>
-                                        <span className={`font-mono tabular-nums w-12 text-right ${isDanger ? 'text-red-500' : 'text-gray-400 dark:text-dark-text-secondary'}`}>
-                                            {item.used}/{item.max}
-                                        </span>
-                                    </div>
-                                );
-                            })}
+                {/* Bottom info */}
+                <div className="px-4 py-3 border-t border-gray-200 dark:border-dark-border space-y-3">
+                    {/* Storage */}
+                    <div className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 mt-0.5 text-gray-400 dark:text-dark-text-secondary flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
+                        </svg>
+                        <div className="min-w-0">
+                            <p className="text-[13px] text-gray-800 dark:text-dark-text leading-tight">
+                                {usedStorageFormatted} <span className="text-gray-400 dark:text-dark-text-secondary">·</span> {fileCount} {fileCount === 1 ? 'file' : 'files'}
+                            </p>
+                            <p className="text-[11px] text-gray-400 dark:text-dark-text-secondary mt-0.5">
+                                Không giới hạn dung lượng
+                            </p>
                         </div>
+                    </div>
+
+                    {/* Divider */}
+                    {rateLimits.length > 0 && (
+                        <>
+                            <div className="border-t border-gray-100 dark:border-dark-border" />
+                            {/* Rate Limits */}
+                            <div className="space-y-1.5">
+                                {rateLimits.map((item) => {
+                                    const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
+                                    const isDanger = pct >= 100;
+                                    const isWarning = pct > 50 && !isDanger;
+                                    return (
+                                        <div key={item.name} className="flex items-center justify-between text-[11px]">
+                                            <span className="text-gray-500 dark:text-dark-text-secondary">{item.name}</span>
+                                            <span className={`font-mono tabular-nums ${isDanger ? 'text-red-500 font-medium' : isWarning ? 'text-amber-500' : 'text-gray-400 dark:text-dark-text-secondary'}`}>
+                                                {item.used}<span className="text-gray-300 dark:text-gray-600">/{item.max}</span>
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
                     )}
                 </div>
             </aside>
