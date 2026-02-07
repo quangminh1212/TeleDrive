@@ -460,16 +460,10 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
                 {/* Rate Limits Info */}
                 <div className="px-4 py-2 border-t border-gray-200 dark:border-dark-border">
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="mb-1.5">
                         <p className="text-[10px] font-semibold text-gray-600 dark:text-dark-text-secondary uppercase tracking-wider">
                             Rate Limits
                         </p>
-                        <button
-                            onClick={() => setShowDocs(true)}
-                            className="text-[10px] text-blue-500 hover:text-blue-600 dark:text-dark-blue dark:hover:text-blue-400 hover:underline transition-colors"
-                        >
-                            Tài liệu
-                        </button>
                     </div>
                     <div className="space-y-1.5">
                         {rateLimits.map((item) => {
