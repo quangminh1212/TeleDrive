@@ -76,7 +76,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
         }
     };
 
-    const suggestions = ['Tài liệu', 'Hình ảnh', 'Video', 'Công việc', 'Cá nhân'];
+    const suggestions = t('common.folderSuggestions').split(',');
 
     if (!isOpen) return null;
 
@@ -129,10 +129,10 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, onClose, 
                             onBlur={() => setIsFocused(false)}
                             placeholder={t('folders.newFolder')}
                             className={`w-full px-4 py-3 bg-gray-50 dark:bg-dark-elevated border-2 rounded-lg text-gray-800 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary outline-none transition-colors pr-16 ${error
-                                    ? 'border-red-400'
-                                    : isFocused
-                                        ? 'border-blue-500 dark:border-dark-blue bg-white dark:bg-dark-surface'
-                                        : 'border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-hover'
+                                ? 'border-red-400'
+                                : isFocused
+                                    ? 'border-blue-500 dark:border-dark-blue bg-white dark:bg-dark-surface'
+                                    : 'border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-hover'
                                 }`}
                             disabled={isCreating}
                             maxLength={255}

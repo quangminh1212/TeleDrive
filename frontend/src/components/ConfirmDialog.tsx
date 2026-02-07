@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../i18n';
 
 interface ConfirmDialogProps {
     isOpen: boolean;
@@ -13,14 +14,18 @@ interface ConfirmDialogProps {
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     isOpen,
-    title = 'Xác nhận',
+    title,
     message,
-    confirmText = 'Xác nhận',
-    cancelText = 'Hủy',
+    confirmText,
+    cancelText,
     confirmButtonColor = 'blue',
     onConfirm,
     onCancel
 }) => {
+    const { t } = useI18n();
+    const resolvedTitle = title || t('actions.confirm');
+    const resolvedConfirmText = confirmText || t('actions.confirm');
+    const resolvedCancelText = cancelText || t('actions.cancel');
     if (!isOpen) return null;
 
     const confirmButtonStyles = {
@@ -42,7 +47,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 {/* Content */}
                 <div className="px-6 py-5">
                     <h3 className="text-lg font-medium text-gray-800 dark:text-dark-text mb-2">
-                        {title}
+                        {resolvedTitle}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
                         {message}
@@ -55,13 +60,13 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                         onClick={onCancel}
                         className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition-colors"
                     >
-                        {cancelText}
+                        {resolvedCancelText}
                     </button>
                     <button
                         onClick={onConfirm}
                         className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${confirmButtonStyles[confirmButtonColor]}`}
                     >
-                        {confirmText}
+                        {resolvedConfirmText}
                     </button>
                 </div>
             </div>

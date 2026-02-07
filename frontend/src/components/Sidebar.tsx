@@ -379,7 +379,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                             <span className="text-gray-600 dark:text-dark-text-secondary">
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" /></svg>
                             </span>
-                            <span>Tài liệu</span>
+                            <span>{t('common.docs')}</span>
                         </button>
 
 
@@ -391,7 +391,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                             <span className="text-gray-600 dark:text-dark-text-secondary">
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z" /></svg>
                             </span>
-                            <span>Cài đặt</span>
+                            <span>{t('header.settings')}</span>
                         </button>
                     </div>
                 </nav>
@@ -481,7 +481,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                         <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                                     </svg>
                                 </div>
-                                <h2 className="text-lg font-semibold text-gray-800 dark:text-dark-text">Tài liệu TeleDrive</h2>
+                                <h2 className="text-lg font-semibold text-gray-800 dark:text-dark-text">{t('common.docsTitle')}</h2>
                             </div>
                             <button
                                 onClick={() => setShowDocs(false)}
@@ -497,7 +497,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                         <div className="flex-1 overflow-y-auto px-6 py-4 text-sm text-gray-700 dark:text-dark-text leading-relaxed space-y-5">
                             {/* Giới thiệu */}
                             <section>
-                                <h3 className="text-base font-semibold text-gray-800 dark:text-dark-text mb-2">📌 Giới thiệu</h3>
+                                <h3 className="text-base font-semibold text-gray-800 dark:text-dark-text mb-2">📌 {t('common.about')}</h3>
                                 <p>TeleDrive là ứng dụng quản lý file cá nhân sử dụng <strong>Telegram</strong> làm nơi lưu trữ đám mây. File của bạn được lưu vào tin nhắn Telegram (Saved Messages) với dung lượng <strong>không giới hạn</strong> và <strong>miễn phí hoàn toàn</strong>.</p>
                             </section>
 
@@ -637,7 +637,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                         <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z" />
                                     </svg>
                                 </div>
-                                <h2 className="text-lg font-semibold text-gray-800 dark:text-dark-text">Cài đặt</h2>
+                                <h2 className="text-lg font-semibold text-gray-800 dark:text-dark-text">{t('header.settings')}</h2>
                             </div>
                             <button
                                 onClick={() => setShowSettings(false)}
@@ -653,12 +653,12 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
                             {/* Theme */}
                             <section>
-                                <h3 className="text-sm font-semibold text-gray-800 dark:text-dark-text mb-3">Giao diện</h3>
+                                <h3 className="text-sm font-semibold text-gray-800 dark:text-dark-text mb-3">{t('account.theme')}</h3>
                                 <div className="grid grid-cols-3 gap-2">
                                     {([
-                                        { value: 'light' as Theme, label: 'Sáng', icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z" /></svg> },
-                                        { value: 'dark' as Theme, label: 'Tối', icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51A7.35 7.35 0 009.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0112 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" /></svg> },
-                                        { value: 'system' as Theme, label: 'Hệ thống', icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v2h12v-2l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z" /></svg> },
+                                        { value: 'light' as Theme, label: t('account.themeLight'), icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z" /></svg> },
+                                        { value: 'dark' as Theme, label: t('account.themeDark'), icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51A7.35 7.35 0 009.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0112 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" /></svg> },
+                                        { value: 'system' as Theme, label: t('settings.systemMode'), icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v2h12v-2l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z" /></svg> },
                                     ]).map((opt) => (
                                         <button
                                             key={opt.value}
@@ -677,7 +677,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
                             {/* Language */}
                             <section>
-                                <h3 className="text-sm font-semibold text-gray-800 dark:text-dark-text mb-3">Ngôn ngữ</h3>
+                                <h3 className="text-sm font-semibold text-gray-800 dark:text-dark-text mb-3">{t('account.language')}</h3>
                                 <select
                                     value={language}
                                     onChange={(e) => setLanguage(e.target.value as any)}
@@ -691,9 +691,9 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
                             {/* App Info */}
                             <section className="bg-gray-50 dark:bg-dark-bg rounded-lg p-4">
-                                <h3 className="text-sm font-semibold text-gray-800 dark:text-dark-text mb-2">Thông tin ứng dụng</h3>
+                                <h3 className="text-sm font-semibold text-gray-800 dark:text-dark-text mb-2">{t('common.appInfo')}</h3>
                                 <div className="space-y-1.5 text-xs text-gray-600 dark:text-dark-text-secondary">
-                                    <div className="flex justify-between"><span>Phiên bản</span><span className="font-mono">1.0.0</span></div>
+                                    <div className="flex justify-between"><span>{t('account.version')}</span><span className="font-mono">1.0.0</span></div>
                                     <div className="flex justify-between"><span>Backend</span><span className="font-mono">Flask + Python</span></div>
                                     <div className="flex justify-between"><span>Storage</span><span className="font-mono">Telegram Cloud</span></div>
                                     <div className="flex justify-between"><span>Max file</span><span className="font-mono">2 GB</span></div>
@@ -707,7 +707,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                 onClick={() => setShowSettings(false)}
                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
                             >
-                                Đóng
+                                {t('account.close')}
                             </button>
                         </div>
                     </div>
