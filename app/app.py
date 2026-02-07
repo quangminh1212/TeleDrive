@@ -2106,11 +2106,14 @@ def get_rate_limits_info():
         result = []
         for limit in limits:
             timestamps = [ts for ts in rate_limit_storage.get(limit['key'], []) if now - ts < limit['window']]
+            oldest = min(timestamps) if timestamps else now
+            reset_in = max(0, int(limit['window'] - (now - oldest))) if timestamps else 0
             result.append({
                 'name': limit['name'],
                 'used': len(timestamps),
                 'max': limit['max'],
                 'window': limit['window_label'],
+                'reset_in': reset_in,
             })
 
         return jsonify({'success': True, 'limits': result})

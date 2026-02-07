@@ -58,6 +58,7 @@ interface RateLimitItem {
     used: number;
     max: number;
     window: string;
+    reset_in: number;
 }
 
 const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded, isMobileOpen, onMobileClose }: SidebarProps) => {
@@ -482,9 +483,11 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                                 <span className={`text-[11px] tabular-nums ${isDanger ? 'text-red-500 font-medium' : isWarning ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600'}`}>
                                                     {item.used}/{item.max}
                                                 </span>
-                                                <span className="text-[9px] text-gray-300 dark:text-gray-600">
-                                                    {item.window}
-                                                </span>
+                                                {item.used > 0 && item.reset_in > 0 && (
+                                                    <span className="text-[9px] text-gray-300 dark:text-gray-600">
+                                                        {Math.floor(item.reset_in / 60)}:{String(item.reset_in % 60).padStart(2, '0')}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="h-[2px] bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
