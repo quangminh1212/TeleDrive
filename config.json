@@ -86,6 +86,14 @@
     "file_extensions": [],
     "exclude_extensions": []
   },
+  "upload": {
+    "max_file_size": 2147483648,
+    "max_content_length": 2147483648,
+    "upload_directory": "data/uploads",
+    "allowed_extensions": [],
+    "storage_backend": "local",
+    "fallback_to_local": true
+  },
   "database": {
     "url": "sqlite:///data/teledrive.db",
     "track_modifications": false,
