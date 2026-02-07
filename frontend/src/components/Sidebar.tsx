@@ -272,7 +272,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                 className="fixed inset-0 z-[99]"
                                 onClick={() => setIsNewMenuOpen(false)}
                             />
-                            <div className="absolute left-3 mt-2 w-72 bg-white dark:bg-dark-surface rounded-lg shadow-lg border border-gray-200 dark:border-dark-border z-[100] py-2">
+                            <div className="absolute left-3 top-full mt-1 w-72 bg-white dark:bg-dark-surface rounded-lg shadow-lg border border-gray-200 dark:border-dark-border z-[100] py-2">
                                 <button
                                     className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center gap-3 text-gray-700 dark:text-dark-text"
                                     onClick={() => {
