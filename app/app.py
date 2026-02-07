@@ -806,7 +806,7 @@ def validate_file_content(file_path):
     try:
         # Check file size
         file_size = os.path.getsize(file_path)
-        max_size = web_config.flask_config.get('upload.max_file_size', 104857600)  # 100MB default
+        max_size = web_config.flask_config.get('upload.max_file_size', 2147483648)  # 2GB default
 
         if file_size > max_size:
             return False, f"File size ({file_size} bytes) exceeds maximum allowed size ({max_size} bytes)"
