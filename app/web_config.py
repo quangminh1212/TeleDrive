@@ -299,7 +299,7 @@ class FlaskConfigLoader:
                 "debug": False,
                 "threaded": True,
                 "use_reloader": False,
-                "cors_allowed_origins": "*",
+                "cors_allowed_origins": "",  # Empty = use localhost-only defaults
                 "socketio_async_mode": "eventlet"
             },
             "database": {
