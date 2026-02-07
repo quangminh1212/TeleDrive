@@ -205,8 +205,8 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
         <>
             <aside className={`
                 fixed md:relative z-50 md:z-10
-                w-64 md:w-60 bg-white dark:bg-dark-bg flex-col h-full
-                transform transition-transform duration-300 ease-in-out
+                w-64 md:w-60 bg-white/95 dark:bg-dark-bg/95 backdrop-blur-sm flex-col h-full
+                transform transition-all duration-300 ease-in-out
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
                 ${isMobileOpen ? 'flex' : 'hidden md:flex'}
                 shadow-xl md:shadow-none
@@ -230,10 +230,10 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                 />
 
                 {/* Logo with close button on mobile */}
-                <div className="flex items-center justify-between gap-2 px-4 py-3">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2 px-4 py-4">
+                    <div className="flex items-center gap-2.5">
                         <TeleDriveLogo />
-                        <span className="text-[22px] text-gray-600 dark:text-dark-text font-normal">TeleDrive</span>
+                        <span className="text-[21px] text-gray-700 dark:text-dark-text font-light tracking-tight">TeleDrive</span>
                     </div>
                     {/* Close button - only visible on mobile */}
                     <button
@@ -248,18 +248,18 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                 </div>
 
                 {/* New Button */}
-                <div className="px-3 py-2 relative">
+                <div className="px-3 py-2.5 relative flex justify-center">
                     <button
                         onClick={() => setIsNewMenuOpen(!isNewMenuOpen)}
                         disabled={isUploading}
-                        className={`flex items-center gap-2 px-4 py-3 bg-white dark:bg-dark-surface border border-gray-300 dark:border-dark-border rounded-2xl shadow-md hover:shadow-lg hover:bg-gray-50 dark:hover:bg-dark-hover transition-all ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border/70 rounded-2xl shadow-sm hover:shadow-md hover:bg-gray-50/80 dark:hover:bg-dark-hover/80 transition-all duration-200 ${isUploading ? 'opacity-50 cursor-not-allowed' : 'active:scale-[0.98]'}`}
                     >
                         {isUploading ? (
-                            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                         ) : (
                             <PlusIcon />
                         )}
-                        <span className="text-sm font-medium text-gray-700 dark:text-dark-text">
+                        <span className="text-sm font-medium text-gray-600 dark:text-dark-text">
                             {isUploading ? t('messages.loading') : t('sidebar.upload')}
                         </span>
                     </button>
@@ -310,7 +310,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                 </div>
 
                 {/* Main Navigation Menu */}
-                <nav className="flex-1 overflow-y-auto px-2 py-1">
+                <nav className="flex-1 overflow-y-auto px-2.5 py-2">
                     {/* Main items */}
                     {mainMenuItems.map((item) => {
                         const IconComponent = item.icon;
@@ -319,9 +319,9 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                             <button
                                 key={item.id || 'mydrive'}
                                 onClick={() => onFolderSelect(item.id)}
-                                className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
-                                    ? 'bg-blue-100 dark:bg-dark-selected text-blue-700 dark:text-dark-blue font-medium'
-                                    : 'text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover'
+                                className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] transition-all duration-150 mb-0.5 ${isActive
+                                    ? 'bg-blue-50/80 dark:bg-dark-selected/80 text-blue-600 dark:text-dark-blue font-medium'
+                                    : 'text-gray-600 dark:text-dark-text hover:bg-gray-100/70 dark:hover:bg-dark-hover/70'
                                     }`}
                             >
                                 <span className={isActive ? 'text-blue-700 dark:text-dark-blue' : 'text-gray-600 dark:text-dark-text-secondary'}>
@@ -332,7 +332,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                         );
                     })}
 
-                    <div className="h-2" />
+                    <div className="h-1.5" />
 
                     {/* Secondary items */}
                     {secondaryMenuItems.map((item) => {
@@ -342,9 +342,9 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                             <button
                                 key={item.id}
                                 onClick={() => onFolderSelect(item.id)}
-                                className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
-                                    ? 'bg-blue-100 dark:bg-dark-selected text-blue-700 dark:text-dark-blue font-medium'
-                                    : 'text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover'
+                                className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] transition-all duration-150 mb-0.5 ${isActive
+                                    ? 'bg-blue-50/80 dark:bg-dark-selected/80 text-blue-600 dark:text-dark-blue font-medium'
+                                    : 'text-gray-600 dark:text-dark-text hover:bg-gray-100/70 dark:hover:bg-dark-hover/70'
                                     }`}
                             >
                                 <span className={isActive ? 'text-blue-700 dark:text-dark-blue' : 'text-gray-600 dark:text-dark-text-secondary'}>
@@ -355,7 +355,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                         );
                     })}
 
-                    <div className="h-2" />
+                    <div className="h-1.5" />
 
                     {/* Bottom items */}
                     {bottomMenuItems.map((item) => {
@@ -365,9 +365,9 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                             <button
                                 key={item.id}
                                 onClick={() => onFolderSelect(item.id)}
-                                className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 ${isActive
-                                    ? 'bg-blue-100 dark:bg-dark-selected text-blue-700 dark:text-dark-blue font-medium'
-                                    : 'text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover'
+                                className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] transition-all duration-150 mb-0.5 ${isActive
+                                    ? 'bg-blue-50/80 dark:bg-dark-selected/80 text-blue-600 dark:text-dark-blue font-medium'
+                                    : 'text-gray-600 dark:text-dark-text hover:bg-gray-100/70 dark:hover:bg-dark-hover/70'
                                     }`}
                             >
                                 <span className={isActive ? 'text-blue-700 dark:text-dark-blue' : 'text-gray-600 dark:text-dark-text-secondary'}>
@@ -378,14 +378,14 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                         );
                     })}
 
-                    <div className="h-2" />
+                    <div className="h-1.5" />
 
                     {/* Settings items */}
-                    <div className="border-t border-gray-200 dark:border-dark-border pt-2 mt-1">
+                    <div className="border-t border-gray-100 dark:border-dark-border/50 pt-2.5 mt-1.5">
                         {/* Tài liệu */}
                         <button
                             onClick={() => setShowDocs(true)}
-                            className="w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover"
+                            className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] transition-all duration-150 mb-0.5 text-gray-500 dark:text-dark-text-secondary hover:bg-gray-100/70 dark:hover:bg-dark-hover/70 hover:text-gray-700 dark:hover:text-dark-text"
                         >
                             <span className="text-gray-600 dark:text-dark-text-secondary">
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" /></svg>
@@ -397,7 +397,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                         {/* Cài đặt */}
                         <button
                             onClick={() => setShowSettings(true)}
-                            className="w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover"
+                            className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] transition-all duration-150 mb-0.5 text-gray-500 dark:text-dark-text-secondary hover:bg-gray-100/70 dark:hover:bg-dark-hover/70 hover:text-gray-700 dark:hover:text-dark-text"
                         >
                             <span className="text-gray-600 dark:text-dark-text-secondary">
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z" /></svg>
@@ -407,40 +407,45 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     </div>
                 </nav>
 
-                {/* Bottom info — ultra minimal */}
-                <div className="px-4 py-3.5 border-t border-gray-200 dark:border-dark-border">
-                    <p className="text-sm font-medium text-gray-800 dark:text-dark-text">
-                        {usedStorageFormatted}
-                        <span className="font-normal text-gray-400 dark:text-dark-text-secondary"> · {fileCount} {fileCount === 1 ? 'file' : 'files'}</span>
-                    </p>
-                    <p className="text-[11px] text-gray-400 dark:text-dark-text-secondary mt-1">
+                {/* Bottom info — soft minimal */}
+                <div className="px-4 py-4 border-t border-gray-100/80 dark:border-dark-border/30">
+                    <div className="flex items-baseline gap-1.5">
+                        <span className="text-[13px] font-semibold text-gray-700 dark:text-dark-text tracking-tight">
+                            {usedStorageFormatted}
+                        </span>
+                        <span className="text-[11px] text-gray-400 dark:text-dark-text-disabled">·</span>
+                        <span className="text-[11px] text-gray-400 dark:text-dark-text-disabled">
+                            {fileCount} {fileCount === 1 ? 'file' : 'files'}
+                        </span>
+                    </div>
+                    <p className="text-[10px] text-gray-300 dark:text-dark-text-disabled mt-1 tracking-wide">
                         Telegram Cloud · Không giới hạn
                     </p>
 
                     {rateLimits.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-dark-border/50 space-y-2">
+                        <div className="mt-3 pt-3 border-t border-gray-100/60 dark:border-dark-border/20 space-y-2.5">
                             {rateLimits.map((item) => {
                                 const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
                                 const isDanger = pct >= 100;
                                 const isWarning = pct > 50 && !isDanger;
                                 return (
-                                    <div key={item.name}>
-                                        <div className="flex items-center justify-between mb-0.5">
-                                            <span className="text-[11px] text-gray-400 dark:text-dark-text-secondary">{item.name}</span>
+                                    <div key={item.name} className="group">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-[10px] text-gray-400 dark:text-dark-text-disabled font-medium tracking-wide uppercase">{item.name}</span>
                                             <div className="flex items-center gap-1.5">
-                                                <span className={`text-[11px] tabular-nums ${isDanger ? 'text-red-500 font-medium' : isWarning ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600'}`}>
+                                                <span className={`text-[10px] tabular-nums font-medium ${isDanger ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'}`}>
                                                     {item.used}/{item.max}
                                                 </span>
                                                 {item.used > 0 && item.reset_in > 0 && (
-                                                    <span className="text-[9px] text-gray-300 dark:text-gray-600">
+                                                    <span className="text-[9px] text-gray-300/80 dark:text-gray-700 tabular-nums">
                                                         {Math.floor(item.reset_in / 60)}:{String(item.reset_in % 60).padStart(2, '0')}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="h-[2px] bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
+                                        <div className="h-[3px] bg-gray-100/80 dark:bg-dark-border/40 rounded-full overflow-hidden">
                                             <div
-                                                className={`h-full rounded-full transition-all duration-300 ${isDanger ? 'bg-red-500' : isWarning ? 'bg-amber-400' : 'bg-gray-200 dark:bg-gray-700'}`}
+                                                className={`h-full rounded-full transition-all duration-500 ease-out ${isDanger ? 'bg-red-400/90' : isWarning ? 'bg-amber-300/80' : 'bg-gray-200/60 dark:bg-gray-700/50'}`}
                                                 style={{ width: `${Math.min(pct, 100)}%` }}
                                             />
                                         </div>
