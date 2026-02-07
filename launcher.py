@@ -145,7 +145,8 @@ def run_backend():
             host='127.0.0.1',
             port=5000,
             debug=False,
-            use_reloader=False
+            use_reloader=False,
+            allow_unsafe_werkzeug=True
         )
     except Exception as e:
         launcher_logger.error(f"Backend error: {e}")
