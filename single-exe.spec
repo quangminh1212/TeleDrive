@@ -90,6 +90,7 @@ hiddenimports = [
     'eventlet.support',
     'eventlet.support.greendns',
     'engineio.async_drivers.eventlet',
+    'engineio.async_drivers.threading',
     'socketio',
     
     # DNS - include all submodules
