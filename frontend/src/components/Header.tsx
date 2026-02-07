@@ -244,6 +244,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
                         onFocus={() => setIsSearchFocused(true)}
                         onBlur={() => setIsSearchFocused(false)}
                         className="flex-1 py-2.5 md:py-3 pr-4 bg-transparent text-sm focus:outline-none placeholder-gray-500 dark:placeholder-dark-text-secondary text-gray-900 dark:text-dark-text"
+                        style={{ outline: 'none' }}
                         aria-label={t('header.search')}
                     />
                 </div>
