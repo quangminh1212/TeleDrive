@@ -2087,6 +2087,38 @@ def get_storage_info():
         })
 
 
+# Rate limits status API
+@app.route('/api/v2/rate-limits')
+@csrf.exempt
+def get_rate_limits_info():
+    """Get current rate limit usage for the requesting IP"""
+    try:
+        user_ip = request.remote_addr
+        now = time.time()
+
+        limits = [
+            {'name': 'Upload', 'key': f'upload_{user_ip}', 'max': 50, 'window': 300, 'window_label': '5 min'},
+            {'name': 'Search', 'key': f'search_{user_ip}', 'max': 100, 'window': 60, 'window_label': '1 min'},
+            {'name': 'Auth Login', 'key': f'auth_phone_start_{user_ip}', 'max': 5, 'window': 300, 'window_label': '5 min'},
+            {'name': 'Auth Verify', 'key': f'auth_phone_verify_{user_ip}', 'max': 10, 'window': 600, 'window_label': '10 min'},
+        ]
+
+        result = []
+        for limit in limits:
+            timestamps = [ts for ts in rate_limit_storage.get(limit['key'], []) if now - ts < limit['window']]
+            result.append({
+                'name': limit['name'],
+                'used': len(timestamps),
+                'max': limit['max'],
+                'window': limit['window_label'],
+            })
+
+        return jsonify({'success': True, 'limits': result})
+    except Exception as e:
+        app.logger.error(f"Rate limits info error: {e}")
+        return jsonify({'success': False, 'limits': []})
+
+
 # Public API endpoint for auto-login from Telegram Desktop
 @app.route('/api/v2/auth/auto-login', methods=['POST'])
 @csrf.exempt
