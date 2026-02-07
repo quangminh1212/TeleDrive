@@ -7,7 +7,7 @@ SQLAlchemy models for users, files, folders, and scan sessions
 from datetime import datetime, timedelta, timezone
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, LargeBinary, Index, Float, JSON
+from sqlalchemy import Column, Integer, BigInteger, String, Text, DateTime, ForeignKey, Boolean, LargeBinary, Index, Float, JSON
 from sqlalchemy.orm import relationship
 import json
 import os
@@ -235,7 +235,7 @@ class File(db.Model):
     filename = Column(String(255), nullable=False, index=True)
     original_filename = Column(String(255))
     file_path = Column(String(500))  # Path on disk
-    file_size = Column(Integer, default=0)
+    file_size = Column(BigInteger, default=0)
     mime_type = Column(String(100), index=True)  # Index for file type filtering
     folder_id = Column(Integer, ForeignKey('folders.id'), nullable=True, index=True)  # Index for folder queries
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)  # Index for user queries
@@ -385,7 +385,7 @@ class FileVersion(db.Model):
     # File metadata for this version
     filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=False)  # Path to version file
-    file_size = Column(Integer, default=0)
+    file_size = Column(BigInteger, default=0)
     mime_type = Column(String(100))
     file_hash = Column(String(64))  # SHA-256 hash for integrity
 
