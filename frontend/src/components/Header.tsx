@@ -190,7 +190,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
     };
 
     return (
-        <header className="h-14 md:h-16 bg-white dark:bg-dark-surface flex items-center px-2 md:px-4 gap-2 md:gap-4 border-b border-gray-100 dark:border-dark-border">
+        <header className="h-14 md:h-16 bg-white dark:bg-dark-surface flex items-center px-2 md:px-4 gap-2 md:gap-4 border-b border-gray-100 dark:border-dark-border rounded-2xl mx-2 mt-2">
             {/* Mobile Menu Button - Hamburger */}
             <button
                 onClick={onMenuClick}
