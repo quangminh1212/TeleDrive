@@ -118,6 +118,12 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
         return () => clearInterval(interval);
     }, []);
 
+    // Listen for openDocs event from UserAccountMenu
+    useEffect(() => {
+        const handler = () => setShowDocs(true);
+        window.addEventListener('openDocs', handler);
+        return () => window.removeEventListener('openDocs', handler);
+    }, []);
 
     // Handle file upload
     const handleFileUpload = async (files: FileList | null) => {
@@ -740,8 +746,8 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                             key={opt.value}
                                             onClick={() => setTheme(opt.value)}
                                             className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all text-xs font-medium ${theme === opt.value
-                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                                                    : 'border-gray-200 dark:border-dark-border text-gray-600 dark:text-dark-text-secondary hover:border-gray-300 dark:hover:border-gray-500'
+                                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                                                : 'border-gray-200 dark:border-dark-border text-gray-600 dark:text-dark-text-secondary hover:border-gray-300 dark:hover:border-gray-500'
                                                 }`}
                                         >
                                             {opt.icon}

@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
+import type { Theme } from '../contexts/ThemeContext';
+import { useI18n, getAvailableLanguages } from '../i18n';
 
 interface UserAccountMenuProps {
     userInfo?: {
@@ -36,7 +39,10 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
     const [isOpen, setIsOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    const [showSettingsPanel, setShowSettingsPanel] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const { theme, setTheme } = useTheme();
+    const { language, setLanguage } = useI18n();
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -138,16 +144,72 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                         <div className="py-2">
                             <button
                                 className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center gap-3 transition-colors"
-                                onClick={() => {
-                                    setIsOpen(false);
-                                    // Add settings action
-                                }}
+                                onClick={() => setShowSettingsPanel(!showSettingsPanel)}
                             >
                                 <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
                                 </svg>
-                                Cài đặt
+                                <span className="flex-1">Cài đặt</span>
+                                <svg className={`w-4 h-4 text-gray-400 transition-transform ${showSettingsPanel ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                                </svg>
                             </button>
+
+                            {/* Settings Sub-panel */}
+                            {showSettingsPanel && (
+                                <div className="mx-3 mb-2 bg-gray-50 dark:bg-dark-elevated rounded-xl p-3 space-y-3">
+                                    {/* Theme Toggle */}
+                                    <div>
+                                        <label className="text-[11px] font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Giao diện</label>
+                                        <div className="flex gap-1 mt-1.5">
+                                            {([
+                                                { value: 'light' as Theme, label: 'Sáng', icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z" /></svg> },
+                                                { value: 'dark' as Theme, label: 'Tối', icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51A7.35 7.35 0 009.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0112 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" /></svg> },
+                                                { value: 'system' as Theme, label: 'Auto', icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v2h12v-2l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z" /></svg> },
+                                            ]).map((opt) => (
+                                                <button
+                                                    key={opt.value}
+                                                    onClick={() => setTheme(opt.value)}
+                                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all ${theme === opt.value
+                                                        ? 'bg-blue-500 text-white shadow-sm'
+                                                        : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover border border-gray-200 dark:border-dark-border'
+                                                        }`}
+                                                >
+                                                    {opt.icon}
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Language Selector */}
+                                    <div>
+                                        <label className="text-[11px] font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Ngôn ngữ</label>
+                                        <select
+                                            value={language}
+                                            onChange={(e) => setLanguage(e.target.value as any)}
+                                            className="w-full mt-1.5 px-3 py-2 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg text-xs text-gray-700 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {getAvailableLanguages().map((lang) => (
+                                                <option key={lang.code} value={lang.code}>{lang.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Documentation Link */}
+                                    <button
+                                        onClick={() => {
+                                            setIsOpen(false);
+                                            // Dispatch custom event to open docs modal in Sidebar
+                                            window.dispatchEvent(new CustomEvent('openDocs'));
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg text-xs text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors"
+                                    >
+                                        <svg className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" /></svg>
+                                        Xem tài liệu hướng dẫn
+                                    </button>
+                                </div>
+                            )}
 
                             <button
                                 className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center gap-3 transition-colors"
