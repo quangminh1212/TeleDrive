@@ -332,18 +332,19 @@ db.init_app(app)
 csrf = CSRFProtect(app)
 
 # Initialize CORS for frontend Tauri app
-# Support all possible Tauri WebView origins in development and portable mode
+# SECURITY: Only allow specific localhost origins - no wildcard
 CORS(app, resources={
     r"/api/*": {
         "origins": [
-            "http://localhost:1420", 
-            "http://127.0.0.1:1420", 
+            "http://localhost:1420",
+            "http://127.0.0.1:1420",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
             "http://localhost:5000",
             "http://127.0.0.1:5000",
             "tauri://localhost",
             "https://tauri.localhost",
-            "null",  # For file:// origins
-            "*"  # Allow all in case of other origins
+            "null",  # For file:// origins in portable mode
         ],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization", "X-CSRF-Token"],
