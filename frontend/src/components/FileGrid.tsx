@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import FileItem from './FileItem';
 import FilePreview from './FilePreview';
-import { ViewModeControls } from './Header';
+import { ViewModeControls, ViewMode } from './Header';
 import { api, FileInfo, FolderInfo } from '../services/api';
 import { useToast } from './Toast';
 import { useUpload } from '../contexts/UploadContext';
@@ -13,8 +13,8 @@ import { useI18n } from '../i18n';
 interface FileGridProps {
     searchQuery: string;
     currentFolder: string | null;
-    viewMode: 'grid' | 'list';
-    onViewModeChange?: (mode: 'grid' | 'list') => void;
+    viewMode: ViewMode;
+    onViewModeChange?: (mode: ViewMode) => void;
     onFolderSelect?: (folderId: number | null) => void;
 }
 
@@ -55,7 +55,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
     const [error, setError] = useState<string | null>(null);
     const [sortColumn, setSortColumn] = useState<'name' | 'modified'>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-    const [localViewMode, setLocalViewMode] = useState<'grid' | 'list'>(viewMode);
+    const [localViewMode, setLocalViewMode] = useState<ViewMode>(viewMode);
     const [isScanning, setIsScanning] = useState(false);
     const [scanResult, setScanResult] = useState<{ added: number; removed: number } | null>(null);
     const [filterSavedOnly, setFilterSavedOnly] = useState(false);
@@ -98,9 +98,34 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         setLocalViewMode(viewMode);
     }, [viewMode]);
 
-    const handleViewModeChange = (mode: 'grid' | 'list') => {
+    const handleViewModeChange = (mode: ViewMode) => {
         setLocalViewMode(mode);
         onViewModeChange?.(mode);
+    };
+
+    // Map ViewMode to FileItem viewMode prop
+    const getFileItemViewMode = (mode: ViewMode): 'grid' | 'list' => {
+        switch (mode) {
+            case 'details':
+            case 'list':
+                return 'list';
+            default:
+                return 'grid';
+        }
+    };
+
+    // Get grid classes based on view mode
+    const getGridClasses = (mode: ViewMode): string => {
+        switch (mode) {
+            case 'small-icons':
+                return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2';
+            case 'medium-icons':
+                return 'grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3';
+            case 'large-icons':
+                return 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4';
+            default:
+                return '';
+        }
     };
 
     // Save folder to recent history
@@ -1156,8 +1181,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                         </>
                     )}
                 </div>
-            ) : localViewMode === 'list' ? (
-                /* List View */
+            ) : (localViewMode === 'details' || localViewMode === 'list') ? (
+                /* Details View / Compact List View */
                 <div
                     ref={containerRef}
                     className={`flex-1 overflow-auto relative select-none content-transition ${isTransitioning ? 'content-entering' : 'content-visible'}`}
@@ -1169,29 +1194,31 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     {/* Selection Box */}
                     <div style={getSelectionBoxStyle()} />
 
-                    {/* Table Header */}
-                    <div className="flex items-center px-2 md:px-4 py-2 text-sm text-gray-600 dark:text-dark-text-secondary border-b border-gray-200 dark:border-dark-border sticky top-0 bg-white dark:bg-dark-bg z-10">
-                        <button
-                            className="flex items-center flex-1 min-w-0 hover:bg-gray-50 dark:hover:bg-dark-hover -ml-2 px-2 py-1 rounded"
-                            onClick={() => handleSort('name')}
-                        >
-                            <span>{t('files.name')}</span>
-                            {sortColumn === 'name' && <SortIcon direction={sortDirection} />}
-                        </button>
-                        <span className="hidden sm:block w-24 md:w-32 text-left px-2">{t('files.owner')}</span>
-                        <button
-                            className="hidden md:flex w-36 lg:w-48 text-left items-center hover:bg-gray-50 dark:hover:bg-dark-hover px-2 py-1 rounded"
-                            onClick={() => handleSort('modified')}
-                        >
-                            <span>{t('files.lastModified')}</span>
-                            {sortColumn === 'modified' && <SortIcon direction={sortDirection} />}
-                        </button>
-                        <span className="hidden lg:block w-32 text-left px-2">{t('files.owner')}</span>
-                        <span className="w-10"></span>
-                    </div>
+                    {/* Table Header - only for details view */}
+                    {localViewMode === 'details' && (
+                        <div className="flex items-center px-2 md:px-4 py-2 text-sm text-gray-600 dark:text-dark-text-secondary border-b border-gray-200 dark:border-dark-border sticky top-0 bg-white dark:bg-dark-bg z-10">
+                            <button
+                                className="flex items-center flex-1 min-w-0 hover:bg-gray-50 dark:hover:bg-dark-hover -ml-2 px-2 py-1 rounded"
+                                onClick={() => handleSort('name')}
+                            >
+                                <span>{t('files.name')}</span>
+                                {sortColumn === 'name' && <SortIcon direction={sortDirection} />}
+                            </button>
+                            <span className="hidden sm:block w-24 md:w-32 text-left px-2">{t('files.owner')}</span>
+                            <button
+                                className="hidden md:flex w-36 lg:w-48 text-left items-center hover:bg-gray-50 dark:hover:bg-dark-hover px-2 py-1 rounded"
+                                onClick={() => handleSort('modified')}
+                            >
+                                <span>{t('files.lastModified')}</span>
+                                {sortColumn === 'modified' && <SortIcon direction={sortDirection} />}
+                            </button>
+                            <span className="hidden lg:block w-32 text-left px-2">{t('files.owner')}</span>
+                            <span className="w-10"></span>
+                        </div>
+                    )}
 
                     {/* File List */}
-                    <div ref={fileListRef} key={animationKey}>
+                    <div ref={fileListRef} key={animationKey} className={localViewMode === 'list' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : ''}>
                         {[...fileTypeFolders, ...regularFiles].map((file, index) => (
                             <div
                                 key={file.id}
@@ -1202,7 +1229,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                             >
                                 <FileItem
                                     file={file}
-                                    viewMode="list"
+                                    viewMode={getFileItemViewMode(localViewMode)}
                                     isSelected={selectedFiles.has(file.id)}
                                     onSelect={(isMulti) => handleFileSelect(file.id, isMulti)}
                                     onRename={handleFileRename}
@@ -1214,15 +1241,16 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                     selectedFiles={selectedFiles}
                                     onFolderOpen={(folderId) => handleFolderOpen(folderId)}
                                     onStar={handleToggleStar}
+                                    compact={localViewMode === 'list'}
                                 />
                             </div>
                         ))}
                     </div>
                 </div>
             ) : (
-                /* Grid View */
+                /* Icon Views (small, medium, large) */
                 <div className={`flex-1 overflow-auto p-4 content-transition ${isTransitioning ? 'content-entering' : 'content-visible'}`}>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3" key={animationKey}>
+                    <div className={getGridClasses(localViewMode)} key={animationKey}>
                         {[...fileTypeFolders, ...regularFiles].map((file, index) => (
                             <div
                                 key={file.id}
@@ -1241,6 +1269,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                     onPreview={handlePreview}
                                     onStar={handleToggleStar}
                                     onFolderOpen={(folderId) => handleFolderOpen(folderId)}
+                                    iconSize={localViewMode === 'small-icons' ? 'small' : localViewMode === 'large-icons' ? 'large' : 'medium'}
                                 />
                             </div>
                         ))}
