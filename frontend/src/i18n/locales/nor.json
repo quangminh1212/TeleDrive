@@ -155,7 +155,7 @@
     "qrStep2": "Gå til Innstillinger → Enheter → Skann QR",
     "qrStep3": "Skann QR-koden ovenfor",
     "enterPhonePlaceholder": "Skriv inn telefonnummer",
-    "phoneExample": "Eksempel: {code} 912345678",
+    "phoneExample": "Eksempel: {code} 0912345678",
     "sending": "Sender...",
     "enterCodePlaceholder": "Skriv inn 5-sifret kode",
     "password2FA": "2FA-passord",

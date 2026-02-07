@@ -155,7 +155,7 @@
     "qrStep2": "Отидете на Настройки → Устройства → Сканиране на QR",
     "qrStep3": "Сканирайте QR кода по-горе",
     "enterPhonePlaceholder": "Въведете телефонен номер",
-    "phoneExample": "Пример: {code} 912345678",
+    "phoneExample": "Пример: {code} 0912345678",
     "sending": "Изпращане...",
     "enterCodePlaceholder": "Въведете 5-цифрен код",
     "password2FA": "2FA парола",

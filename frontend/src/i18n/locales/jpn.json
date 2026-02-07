@@ -155,7 +155,7 @@
     "qrStep2": "設定 → デバイス → QRスキャンへ",
     "qrStep3": "上のQRコードをスキャン",
     "enterPhonePlaceholder": "電話番号を入力",
-    "phoneExample": "例: {code} 912345678",
+    "phoneExample": "例: {code} 0912345678",
     "sending": "送信中...",
     "enterCodePlaceholder": "5桁のコードを入力",
     "password2FA": "2FA パスワード",

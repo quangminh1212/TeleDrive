@@ -155,7 +155,7 @@
     "qrStep2": "Μεταβείτε στις Ρυθμίσεις → Συσκευές → Σάρωση QR",
     "qrStep3": "Σαρώστε τον κωδικό QR παραπάνω",
     "enterPhonePlaceholder": "Εισάγετε αριθμό τηλεφώνου",
-    "phoneExample": "Παράδειγμα: {code} 912345678",
+    "phoneExample": "Παράδειγμα: {code} 0912345678",
     "sending": "Αποστολή...",
     "enterCodePlaceholder": "Εισάγετε 5ψήφιο κωδικό",
     "password2FA": "Κωδικός 2FA",

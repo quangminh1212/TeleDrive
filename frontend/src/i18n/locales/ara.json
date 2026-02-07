@@ -155,7 +155,7 @@
     "qrStep2": "انتقل إلى الإعدادات ← الأجهزة ← مسح QR",
     "qrStep3": "امسح رمز QR أعلاه",
     "enterPhonePlaceholder": "أدخل رقم الهاتف",
-    "phoneExample": "مثال: {code} 912345678",
+    "phoneExample": "مثال: {code} 0912345678",
     "sending": "جاري الإرسال...",
     "enterCodePlaceholder": "أدخل الرمز المكون من 5 أرقام",
     "password2FA": "كلمة مرور 2FA",

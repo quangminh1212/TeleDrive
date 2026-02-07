@@ -155,7 +155,7 @@
     "qrStep2": "Aneu a Configuració → Dispositius → Escanejar QR",
     "qrStep3": "Escanegeu el codi QR de dalt",
     "enterPhonePlaceholder": "Introduïu el número de telèfon",
-    "phoneExample": "Exemple: {code} 912345678",
+    "phoneExample": "Exemple: {code} 0912345678",
     "sending": "Enviant...",
     "enterCodePlaceholder": "Introduïu el codi de 5 dígits",
     "password2FA": "Contrasenya 2FA",

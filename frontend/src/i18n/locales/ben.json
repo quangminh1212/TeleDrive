@@ -155,7 +155,7 @@
     "qrStep2": "সেটিংস → ডিভাইস → QR স্ক্যান এ যান",
     "qrStep3": "উপরের QR কোড স্ক্যান করুন",
     "enterPhonePlaceholder": "ফোন নম্বর লিখুন",
-    "phoneExample": "উদাহরণ: {code} 912345678",
+    "phoneExample": "উদাহরণ: {code} 0912345678",
     "sending": "পাঠানো হচ্ছে...",
     "enterCodePlaceholder": "5 সংখ্যার কোড লিখুন",
     "password2FA": "2FA পাসওয়ার্ড",

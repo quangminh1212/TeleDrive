@@ -155,7 +155,7 @@
     "qrStep2": "ไปที่ ตั้งค่า → อุปกรณ์ → สแกน QR",
     "qrStep3": "สแกนรหัส QR ด้านบน",
     "enterPhonePlaceholder": "กรอกหมายเลขโทรศัพท์",
-    "phoneExample": "ตัวอย่าง: {code} 912345678",
+    "phoneExample": "ตัวอย่าง: {code} 0912345678",
     "sending": "กำลังส่ง...",
     "enterCodePlaceholder": "กรอกรหัส 5 หลัก",
     "password2FA": "รหัสผ่าน 2FA",

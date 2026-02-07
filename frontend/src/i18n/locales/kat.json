@@ -155,7 +155,7 @@
     "qrStep2": "გადადით პარამეტრები → მოწყობილობები → QR სკანირება",
     "qrStep3": "დაასკანირეთ ზემოთ მოცემული QR კოდი",
     "enterPhonePlaceholder": "შეიყვანეთ ტელეფონის ნომერი",
-    "phoneExample": "მაგალითი: {code} 912345678",
+    "phoneExample": "მაგალითი: {code} 0912345678",
     "sending": "იგზავნება...",
     "enterCodePlaceholder": "შეიყვანეთ 5-ნიშნა კოდი",
     "password2FA": "2FA პაროლი",

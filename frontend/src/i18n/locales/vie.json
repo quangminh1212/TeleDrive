@@ -160,7 +160,7 @@
     "qrStep2": "Vào Cài đặt → Thiết bị → Quét QR",
     "qrStep3": "Quét mã QR phía trên",
     "enterPhonePlaceholder": "Nhập số điện thoại",
-    "phoneExample": "Ví dụ: {code} 912345678",
+    "phoneExample": "Ví dụ: {code} 0912345678",
     "sending": "Đang gửi...",
     "enterCodePlaceholder": "Nhập mã 5 số",
     "password2FA": "Mật khẩu 2FA",

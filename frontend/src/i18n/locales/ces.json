@@ -155,7 +155,7 @@
     "qrStep2": "Přejděte do Nastavení → Zařízení → Skenovat QR",
     "qrStep3": "Naskenujte QR kód výše",
     "enterPhonePlaceholder": "Zadejte telefonní číslo",
-    "phoneExample": "Příklad: {code} 912345678",
+    "phoneExample": "Příklad: {code} 0912345678",
     "sending": "Odesílání...",
     "enterCodePlaceholder": "Zadejte 5místný kód",
     "password2FA": "Heslo 2FA",

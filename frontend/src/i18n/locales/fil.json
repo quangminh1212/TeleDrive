@@ -155,7 +155,7 @@
     "qrStep2": "Pumunta sa Settings → Devices → Scan QR",
     "qrStep3": "I-scan ang QR code sa itaas",
     "enterPhonePlaceholder": "Ilagay ang numero ng telepono",
-    "phoneExample": "Halimbawa: {code} 912345678",
+    "phoneExample": "Halimbawa: {code} 0912345678",
     "sending": "Nagpapadala...",
     "enterCodePlaceholder": "Ilagay ang 5-digit code",
     "password2FA": "2FA Password",

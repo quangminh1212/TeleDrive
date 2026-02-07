@@ -155,7 +155,7 @@
     "qrStep2": "ဆက်တင် → စက်များ → QR စကင် သို့သွားပါ",
     "qrStep3": "အထက်ပါ QR ကုဒ်ကို စကင်ဖတ်ပါ",
     "enterPhonePlaceholder": "ဖုန်းနံပါတ်ထည့်ပါ",
-    "phoneExample": "ဥပမာ: {code} 912345678",
+    "phoneExample": "ဥပမာ: {code} 0912345678",
     "sending": "ပို့နေသည်...",
     "enterCodePlaceholder": "ဂဏန်း ၅ လုံးကုဒ်ထည့်ပါ",
     "password2FA": "2FA စကားဝှက်",

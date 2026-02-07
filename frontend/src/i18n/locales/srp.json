@@ -155,7 +155,7 @@
     "qrStep2": "Идите на Подешавања → Уређаји → Скенирај QR",
     "qrStep3": "Скенирајте QR код изнад",
     "enterPhonePlaceholder": "Унесите телефонски број",
-    "phoneExample": "Пример: {code} 912345678",
+    "phoneExample": "Пример: {code} 0912345678",
     "sending": "Слање...",
     "enterCodePlaceholder": "Унесите 5-цифрени код",
     "password2FA": "2FA лозинка",

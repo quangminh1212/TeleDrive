@@ -155,7 +155,7 @@
     "qrStep2": "Idite na Postavke → Uređaji → Skeniraj QR",
     "qrStep3": "Skenirajte QR kod iznad",
     "enterPhonePlaceholder": "Unesite telefonski broj",
-    "phoneExample": "Primjer: {code} 912345678",
+    "phoneExample": "Primjer: {code} 0912345678",
     "sending": "Slanje...",
     "enterCodePlaceholder": "Unesite 5-znamenkasti kod",
     "password2FA": "2FA lozinka",

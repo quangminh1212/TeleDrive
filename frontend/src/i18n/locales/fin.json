@@ -155,7 +155,7 @@
     "qrStep2": "Mene Asetukset → Laitteet → Skannaa QR",
     "qrStep3": "Skannaa yllä oleva QR-koodi",
     "enterPhonePlaceholder": "Syötä puhelinnumero",
-    "phoneExample": "Esimerkki: {code} 912345678",
+    "phoneExample": "Esimerkki: {code} 0912345678",
     "sending": "Lähetetään...",
     "enterCodePlaceholder": "Syötä 5-numeroinen koodi",
     "password2FA": "2FA-salasana",

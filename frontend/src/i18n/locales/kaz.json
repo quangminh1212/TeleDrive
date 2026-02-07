@@ -155,7 +155,7 @@
     "qrStep2": "Параметрлер → Құрылғылар → QR сканерлеу бөліміне өтіңіз",
     "qrStep3": "Жоғарыдағы QR кодты сканерлеңіз",
     "enterPhonePlaceholder": "Телефон нөмірін енгізіңіз",
-    "phoneExample": "Мысал: {code} 912345678",
+    "phoneExample": "Мысал: {code} 0912345678",
     "sending": "Жіберілуде...",
     "enterCodePlaceholder": "5 санды код енгізіңіз",
     "password2FA": "2FA құпия сөз",

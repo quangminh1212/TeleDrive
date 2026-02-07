@@ -155,7 +155,7 @@
     "qrStep2": "Minge Seaded → Seadmed → Skanni QR",
     "qrStep3": "Skannige ülalolev QR-kood",
     "enterPhonePlaceholder": "Sisestage telefoninumber",
-    "phoneExample": "Näide: {code} 912345678",
+    "phoneExample": "Näide: {code} 0912345678",
     "sending": "Saatmine...",
     "enterCodePlaceholder": "Sisestage 5-kohaline kood",
     "password2FA": "2FA parool",

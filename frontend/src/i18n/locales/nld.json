@@ -155,7 +155,7 @@
     "qrStep2": "Ga naar Instellingen → Apparaten → QR scannen",
     "qrStep3": "Scan de QR-code hierboven",
     "enterPhonePlaceholder": "Voer telefoonnummer in",
-    "phoneExample": "Voorbeeld: {code} 912345678",
+    "phoneExample": "Voorbeeld: {code} 0912345678",
     "sending": "Verzenden...",
     "enterCodePlaceholder": "Voer 5-cijferige code in",
     "password2FA": "2FA-wachtwoord",

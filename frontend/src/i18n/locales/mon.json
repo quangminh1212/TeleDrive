@@ -155,7 +155,7 @@
     "qrStep2": "Тохиргоо → Төхөөрөмжүүд → QR скан руу очно уу",
     "qrStep3": "Дээрх QR кодыг уншина уу",
     "enterPhonePlaceholder": "Утасны дугаар оруулна уу",
-    "phoneExample": "Жишээ: {code} 912345678",
+    "phoneExample": "Жишээ: {code} 0912345678",
     "sending": "Илгээж байна...",
     "enterCodePlaceholder": "5 оронтой код оруулна уу",
     "password2FA": "2FA нууц үг",

@@ -155,7 +155,7 @@
     "qrStep2": "به تنظیمات ← دستگاه‌ها ← اسکن QR بروید",
     "qrStep3": "کد QR بالا را اسکن کنید",
     "enterPhonePlaceholder": "شماره تلفن را وارد کنید",
-    "phoneExample": "مثال: {code} 912345678",
+    "phoneExample": "مثال: {code} 0912345678",
     "sending": "در حال ارسال...",
     "enterCodePlaceholder": "کد 5 رقمی را وارد کنید",
     "password2FA": "رمز عبور 2FA",

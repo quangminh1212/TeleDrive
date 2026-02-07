@@ -155,7 +155,7 @@
     "qrStep2": "Mergeți la Setări → Dispozitive → Scanare QR",
     "qrStep3": "Scanați codul QR de mai sus",
     "enterPhonePlaceholder": "Introduceți numărul de telefon",
-    "phoneExample": "Exemplu: {code} 912345678",
+    "phoneExample": "Exemplu: {code} 0912345678",
     "sending": "Se trimite...",
     "enterCodePlaceholder": "Introduceți codul de 5 cifre",
     "password2FA": "Parolă 2FA",

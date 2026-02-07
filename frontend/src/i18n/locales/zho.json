@@ -155,7 +155,7 @@
     "qrStep2": "进入设置 → 设备 → 扫描二维码",
     "qrStep3": "扫描上方二维码",
     "enterPhonePlaceholder": "输入手机号码",
-    "phoneExample": "例如: {code} 912345678",
+    "phoneExample": "例如: {code} 0912345678",
     "sending": "发送中...",
     "enterCodePlaceholder": "输入5位验证码",
     "password2FA": "两步验证密码",

@@ -155,7 +155,7 @@
     "qrStep2": "ໄປທີ່ ການຕັ້ງຄ່າ → ອຸປະກອນ → ສະແກນ QR",
     "qrStep3": "ສະແກນລະຫັດ QR ຂ້າງເທິງ",
     "enterPhonePlaceholder": "ປ້ອນເບີໂທລະສັບ",
-    "phoneExample": "ຕົວຢ່າງ: {code} 912345678",
+    "phoneExample": "ຕົວຢ່າງ: {code} 0912345678",
     "sending": "ກຳລັງສົ່ງ...",
     "enterCodePlaceholder": "ປ້ອນລະຫັດ 5 ຕົວເລກ",
     "password2FA": "ລະຫັດຜ່ານ 2FA",

@@ -155,7 +155,7 @@
     "qrStep2": "සැකසීම් → උපාංග → QR පරිලෝකනය වෙත යන්න",
     "qrStep3": "ඉහත QR කේතය පරිලෝකනය කරන්න",
     "enterPhonePlaceholder": "දුරකථන අංකය ඇතුළත් කරන්න",
-    "phoneExample": "උදාහරණය: {code} 912345678",
+    "phoneExample": "උදාහරණය: {code} 0912345678",
     "sending": "යවමින්...",
     "enterCodePlaceholder": "ඉලක්කම් 5ක කේතය ඇතුළත් කරන්න",
     "password2FA": "2FA මුරපදය",

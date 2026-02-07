@@ -155,7 +155,7 @@
     "qrStep2": "설정 → 기기 → QR 스캔으로 이동",
     "qrStep3": "위의 QR 코드를 스캔하세요",
     "enterPhonePlaceholder": "전화번호 입력",
-    "phoneExample": "예: {code} 912345678",
+    "phoneExample": "예: {code} 0912345678",
     "sending": "전송 중...",
     "enterCodePlaceholder": "5자리 코드 입력",
     "password2FA": "2단계 인증 비밀번호",

@@ -155,7 +155,7 @@
     "qrStep2": "Menjen a Beállítások → Eszközök → QR beolvasása",
     "qrStep3": "Olvassa be a fenti QR-kódot",
     "enterPhonePlaceholder": "Adja meg a telefonszámot",
-    "phoneExample": "Példa: {code} 912345678",
+    "phoneExample": "Példa: {code} 0912345678",
     "sending": "Küldés...",
     "enterCodePlaceholder": "Adja meg az 5 jegyű kódot",
     "password2FA": "2FA jelszó",

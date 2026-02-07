@@ -155,7 +155,7 @@
     "qrStep2": "Mur għal Settings → Apparati → Iskenja QR",
     "qrStep3": "Iskenja l-kodiċi QR ta' hawn fuq",
     "enterPhonePlaceholder": "Daħħal in-numru tat-telefon",
-    "phoneExample": "Eżempju: {code} 912345678",
+    "phoneExample": "Eżempju: {code} 0912345678",
     "sending": "Qed jibgħat...",
     "enterCodePlaceholder": "Daħħal kodiċi ta' 5 ċifri",
     "password2FA": "Password 2FA",

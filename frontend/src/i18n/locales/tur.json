@@ -155,7 +155,7 @@
     "qrStep2": "Ayarlar → Cihazlar → QR Tara'ya gidin",
     "qrStep3": "Yukarıdaki QR kodunu tarayın",
     "enterPhonePlaceholder": "Telefon numarasını girin",
-    "phoneExample": "Örnek: {code} 912345678",
+    "phoneExample": "Örnek: {code} 0912345678",
     "sending": "Gönderiliyor...",
     "enterCodePlaceholder": "5 haneli kodu girin",
     "password2FA": "2FA Şifresi",

@@ -155,7 +155,7 @@
     "qrStep2": "Buka Pengaturan → Perangkat → Pindai QR",
     "qrStep3": "Pindai kode QR di atas",
     "enterPhonePlaceholder": "Masukkan nomor telepon",
-    "phoneExample": "Contoh: {code} 912345678",
+    "phoneExample": "Contoh: {code} 0912345678",
     "sending": "Mengirim...",
     "enterCodePlaceholder": "Masukkan kode 5 digit",
     "password2FA": "Kata Sandi 2FA",

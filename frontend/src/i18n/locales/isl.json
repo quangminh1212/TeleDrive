@@ -155,7 +155,7 @@
     "qrStep2": "Farðu í Stillingar → Tæki → Skanna QR",
     "qrStep3": "Skannaðu QR kóðann hér að ofan",
     "enterPhonePlaceholder": "Sláðu inn símanúmer",
-    "phoneExample": "Dæmi: {code} 912345678",
+    "phoneExample": "Dæmi: {code} 0912345678",
     "sending": "Sendir...",
     "enterCodePlaceholder": "Sláðu inn 5 stafa kóða",
     "password2FA": "2FA lykilorð",

@@ -160,7 +160,7 @@
     "qrStep2": "Go to Settings → Devices → Scan QR",
     "qrStep3": "Scan the QR code above",
     "enterPhonePlaceholder": "Enter phone number",
-    "phoneExample": "Example: {code} 912345678",
+    "phoneExample": "Example: {code} 0912345678",
     "sending": "Sending...",
     "enterCodePlaceholder": "Enter 5-digit code",
     "password2FA": "2FA Password",

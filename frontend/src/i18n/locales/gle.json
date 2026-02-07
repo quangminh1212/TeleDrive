@@ -155,7 +155,7 @@
     "qrStep2": "Téigh go Socruithe → Gléasanna → Scanáil QR",
     "qrStep3": "Scanáil an cód QR thuas",
     "enterPhonePlaceholder": "Cuir uimhir fóin isteach",
-    "phoneExample": "Sampla: {code} 912345678",
+    "phoneExample": "Sampla: {code} 0912345678",
     "sending": "Ag seoladh...",
     "enterCodePlaceholder": "Cuir cód 5 dhigit isteach",
     "password2FA": "Pasfhocal 2FA",

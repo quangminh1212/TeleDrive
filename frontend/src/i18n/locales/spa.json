@@ -155,7 +155,7 @@
     "qrStep2": "Ve a Ajustes → Dispositivos → Escanear QR",
     "qrStep3": "Escanea el código QR de arriba",
     "enterPhonePlaceholder": "Introduce el número de teléfono",
-    "phoneExample": "Ejemplo: {code} 912345678",
+    "phoneExample": "Ejemplo: {code} 0912345678",
     "sending": "Enviando...",
     "enterCodePlaceholder": "Introduce el código de 5 dígitos",
     "password2FA": "Contraseña 2FA",

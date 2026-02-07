@@ -155,7 +155,7 @@
     "qrStep2": "सेटिंग्स → डिवाइस → QR स्कैन पर जाएं",
     "qrStep3": "ऊपर QR कोड स्कैन करें",
     "enterPhonePlaceholder": "फ़ोन नंबर दर्ज करें",
-    "phoneExample": "उदाहरण: {code} 912345678",
+    "phoneExample": "उदाहरण: {code} 0912345678",
     "sending": "भेज रहा है...",
     "enterCodePlaceholder": "5 अंकों का कोड दर्ज करें",
     "password2FA": "2FA पासवर्ड",

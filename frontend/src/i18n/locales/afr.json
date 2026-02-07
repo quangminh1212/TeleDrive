@@ -155,7 +155,7 @@
     "qrStep2": "Gaan na Instellings → Toestelle → Skandeer QR",
     "qrStep3": "Skandeer die QR-kode hierbo",
     "enterPhonePlaceholder": "Voer foonnommer in",
-    "phoneExample": "Voorbeeld: {code} 912345678",
+    "phoneExample": "Voorbeeld: {code} 0912345678",
     "sending": "Stuur tans...",
     "enterCodePlaceholder": "Voer 5-syfer kode in",
     "password2FA": "2FA Wagwoord",

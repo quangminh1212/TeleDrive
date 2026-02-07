@@ -155,7 +155,7 @@
     "qrStep2": "Sozlamalar → Qurilmalar → QR skanerlash ga o'ting",
     "qrStep3": "Yuqoridagi QR kodni skanerlang",
     "enterPhonePlaceholder": "Telefon raqamini kiriting",
-    "phoneExample": "Misol: {code} 912345678",
+    "phoneExample": "Misol: {code} 0912345678",
     "sending": "Jo'natilmoqda...",
     "enterCodePlaceholder": "5 xonali kodni kiriting",
     "password2FA": "2FA parol",

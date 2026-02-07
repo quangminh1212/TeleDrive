@@ -155,7 +155,7 @@
     "qrStep2": "Dodieties uz Iestatījumi → Ierīces → Skenēt QR",
     "qrStep3": "Skenējiet QR kodu augšpusē",
     "enterPhonePlaceholder": "Ievadiet tālruņa numuru",
-    "phoneExample": "Piemērs: {code} 912345678",
+    "phoneExample": "Piemērs: {code} 0912345678",
     "sending": "Sūta...",
     "enterCodePlaceholder": "Ievadiet 5 ciparu kodu",
     "password2FA": "2FA parole",
