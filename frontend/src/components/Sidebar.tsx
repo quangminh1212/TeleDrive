@@ -478,9 +478,14 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                     <div key={item.name}>
                                         <div className="flex items-center justify-between mb-0.5">
                                             <span className="text-[11px] text-gray-400 dark:text-dark-text-secondary">{item.name}</span>
-                                            <span className={`text-[11px] tabular-nums ${isDanger ? 'text-red-500 font-medium' : isWarning ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600'}`}>
-                                                {item.used}/{item.max}
-                                            </span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className={`text-[11px] tabular-nums ${isDanger ? 'text-red-500 font-medium' : isWarning ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600'}`}>
+                                                    {item.used}/{item.max}
+                                                </span>
+                                                <span className="text-[9px] text-gray-300 dark:text-gray-600">
+                                                    {item.window}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className="h-[2px] bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
                                             <div
