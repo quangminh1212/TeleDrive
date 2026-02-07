@@ -156,3 +156,7 @@ release/
 build_temp/
 *.zip
 tools/innosetup.exe  
+
+# Secrets
+.flask_secret
+data/.flask_secret
