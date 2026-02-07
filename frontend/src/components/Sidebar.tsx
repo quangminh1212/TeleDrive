@@ -230,7 +230,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                 />
 
                 {/* Logo with close button on mobile */}
-                <div className="flex items-center justify-between gap-2 px-4 py-4">
+                <div className="relative flex items-center justify-center gap-2 px-4 py-4">
                     <div className="flex items-center gap-2.5">
                         <TeleDriveLogo />
                         <span className="text-[21px] text-gray-700 dark:text-dark-text font-light tracking-tight">TeleDrive</span>
@@ -238,7 +238,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     {/* Close button - only visible on mobile */}
                     <button
                         onClick={onMobileClose}
-                        className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition-colors"
+                        className="md:hidden absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition-colors"
                         aria-label={t('actions.close')}
                     >
                         <svg className="w-5 h-5 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
