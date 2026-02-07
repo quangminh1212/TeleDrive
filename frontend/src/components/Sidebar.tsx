@@ -5,6 +5,7 @@ import { useToast } from './Toast';
 import { useI18n, getAvailableLanguages } from '../i18n';
 import { useTheme } from '../contexts/ThemeContext';
 import type { Theme } from '../contexts/ThemeContext';
+import { useUpload } from '../contexts/UploadContext';
 import { logger } from '../utils/logger';
 
 interface SidebarProps {
@@ -65,7 +66,6 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
     const [storageSizeFromAPI, setStorageSizeFromAPI] = useState<number>(0);
     const [fileCount, setFileCount] = useState<number>(0);
-    const [isUploading, setIsUploading] = useState(false);
     const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
     const [rateLimits, setRateLimits] = useState<RateLimitItem[]>([]);
     const [showDocs, setShowDocs] = useState(false);
@@ -74,6 +74,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     const toast = useToast();
     const { t, language, setLanguage } = useI18n();
     const { theme, setTheme } = useTheme();
+    const { uploadFiles: contextUploadFiles, isUploading } = useUpload();
 
     // Hidden file input refs
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -126,31 +127,19 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
         return () => window.removeEventListener('openDocs', handler);
     }, []);
 
-    // Handle file upload
+    // Handle file upload - dùng UploadContext để hiển thị progress panel
     const handleFileUpload = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
 
-        setIsUploading(true);
         setIsNewMenuOpen(false);
 
         try {
             const filesArray = Array.from(files);
-            const result = await api.uploadFiles(filesArray);
-
-            if (result.success) {
-                logger.info('Sidebar', 'Upload success', result.data);
-                toast.success(t('messages.uploadSuccess'));
-                // Callback để refresh danh sách file
-                onFilesUploaded?.();
-            } else {
-                logger.error('Sidebar', 'Upload failed', result.error);
-                toast.error(t('messages.uploadFailed'));
-            }
+            await contextUploadFiles(filesArray);
         } catch (error) {
             logger.error('Sidebar', 'Upload error', error);
             toast.error(t('messages.uploadFailed'));
         } finally {
-            setIsUploading(false);
             // Reset file input
             if (fileInputRef.current) fileInputRef.current.value = '';
             if (folderInputRef.current) folderInputRef.current.value = '';
