@@ -838,7 +838,7 @@ try:
                 admin_user.set_password(admin_config['default_password'])
                 db.session.add(admin_user)
                 db.session.commit()
-                print(f"✅ Created admin user (username: {admin_config['username']}, password: {admin_config['default_password']})")
+                print(f"✅ Created admin user (username: {admin_config['username']}, password: {'*' * 8})")
 
         # Ensure default user exists for backward compatibility
         default_user = get_or_create_user()
@@ -4418,7 +4418,7 @@ def telegram_verify():
     phone_number = session.get('telegram_phone', '')
     requires_password = request.args.get('requires_password', False)
 
-    app.logger.info(f"Phone from session: {phone_number}")
+    app.logger.info(f"Phone from session: {phone_number[:3]}***{phone_number[-2:] if len(phone_number) > 5 else '***'}")
     app.logger.info(f"Requires password: {requires_password}")
     app.logger.info(f"Initial processing time: {(time.time() - request_start_time)*1000:.1f}ms")
 
