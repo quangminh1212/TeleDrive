@@ -480,11 +480,30 @@ echo      TeleDrive stopped
 echo ========================================
 echo.
 
-:: Kill backend process if still running
-for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":5000 "') do (
+:: Kill all TeleDrive processes
+echo Dang dung tat ca process TeleDrive...
+
+:: Kill Python backend (ports 5000, 8000)
+for %%p in (5000 8000) do (
+    for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":%%p "') do (
+        taskkill /f /pid %%a >nul 2>&1
+    )
+)
+
+:: Kill Node.js/Vite (ports 1420, 3000)
+for %%p in (1420 3000) do (
+    for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":%%p "') do (
+        taskkill /f /pid %%a >nul 2>&1
+    )
+)
+
+:: Kill any remaining npm/vite/tauri CMD processes
+for /f "tokens=2" %%a in ('tasklist /fi "imagename eq cmd.exe" /v 2^>nul ^| findstr /i "npm vite tauri TeleDrive"') do (
     taskkill /f /pid %%a >nul 2>&1
 )
 
+echo [OK] Tat ca process da duoc dung
+echo.
 echo To restart, run: run.bat
 echo Check logs\backend.log for details
 echo.
