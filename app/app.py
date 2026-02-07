@@ -6485,10 +6485,13 @@ if __name__ == '__main__':
     print("⏹️  Press Ctrl+C to stop")
 
     # Remove incompatible parameters for socketio.run()
+    # use_reloader=False prevents exclude_patterns error with eventlet 0.40+
     socketio_config = {
         'host': server_config['host'],
         'port': server_config['port'],
-        'debug': server_config['debug']
+        'debug': server_config['debug'],
+        'use_reloader': False,
+        'allow_unsafe_werkzeug': True
     }
 
     try:
