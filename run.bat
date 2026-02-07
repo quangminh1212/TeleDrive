@@ -425,9 +425,9 @@ if exist "%PROJECT_DIR%\frontend\package.json" (
     echo [OK] Rust da san sang
     echo.
     
-    :: Chay Backend API trong cua so rieng (tranh signal conflict voi Vite/Tauri)
-    echo Khoi chay Backend API trong cua so rieng...
-    start /MIN "TeleDrive Backend" cmd /c "%PYTHON_CMD% main.py > logs\backend.log 2>&1"
+    :: Chay Backend API an hoan toan (khong hien CMD window)
+    echo Khoi chay Backend API (hidden)...
+    powershell -Command "Start-Process cmd -ArgumentList '/c %PYTHON_CMD% main.py > logs\backend.log 2>&1' -WindowStyle Hidden"
     
     :: Cho backend khoi dong
     echo Dang cho backend khoi dong...
