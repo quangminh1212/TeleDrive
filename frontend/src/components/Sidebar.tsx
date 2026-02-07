@@ -458,44 +458,32 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     </div>
                 </nav>
 
-                {/* Bottom info */}
-                <div className="px-4 py-3 border-t border-gray-200 dark:border-dark-border space-y-3">
-                    {/* Storage */}
-                    <div className="flex items-start gap-2.5">
-                        <svg className="w-4 h-4 mt-0.5 text-gray-400 dark:text-dark-text-secondary flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
-                        </svg>
-                        <div className="min-w-0">
-                            <p className="text-[13px] text-gray-800 dark:text-dark-text leading-tight">
-                                {usedStorageFormatted} <span className="text-gray-400 dark:text-dark-text-secondary">·</span> {fileCount} {fileCount === 1 ? 'file' : 'files'}
-                            </p>
-                            <p className="text-[11px] text-gray-400 dark:text-dark-text-secondary mt-0.5">
-                                Không giới hạn dung lượng
-                            </p>
-                        </div>
-                    </div>
+                {/* Bottom info — ultra minimal */}
+                <div className="px-4 py-3.5 border-t border-gray-200 dark:border-dark-border">
+                    <p className="text-sm font-medium text-gray-800 dark:text-dark-text">
+                        {usedStorageFormatted}
+                        <span className="font-normal text-gray-400 dark:text-dark-text-secondary"> · {fileCount} {fileCount === 1 ? 'file' : 'files'}</span>
+                    </p>
+                    <p className="text-[11px] text-gray-400 dark:text-dark-text-secondary mt-1">
+                        Telegram Cloud · Không giới hạn
+                    </p>
 
-                    {/* Divider */}
                     {rateLimits.length > 0 && (
-                        <>
-                            <div className="border-t border-gray-100 dark:border-dark-border" />
-                            {/* Rate Limits */}
-                            <div className="space-y-1.5">
-                                {rateLimits.map((item) => {
-                                    const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
-                                    const isDanger = pct >= 100;
-                                    const isWarning = pct > 50 && !isDanger;
-                                    return (
-                                        <div key={item.name} className="flex items-center justify-between text-[11px]">
-                                            <span className="text-gray-500 dark:text-dark-text-secondary">{item.name}</span>
-                                            <span className={`font-mono tabular-nums ${isDanger ? 'text-red-500 font-medium' : isWarning ? 'text-amber-500' : 'text-gray-400 dark:text-dark-text-secondary'}`}>
-                                                {item.used}<span className="text-gray-300 dark:text-gray-600">/{item.max}</span>
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </>
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-dark-border/50 space-y-1">
+                            {rateLimits.map((item) => {
+                                const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
+                                const isDanger = pct >= 100;
+                                const isWarning = pct > 50 && !isDanger;
+                                return (
+                                    <div key={item.name} className="flex items-center justify-between">
+                                        <span className="text-[11px] text-gray-400 dark:text-dark-text-secondary">{item.name}</span>
+                                        <span className={`text-[11px] tabular-nums ${isDanger ? 'text-red-500 font-medium' : isWarning ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600'}`}>
+                                            {item.used}/{item.max}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
                 </div>
             </aside>
