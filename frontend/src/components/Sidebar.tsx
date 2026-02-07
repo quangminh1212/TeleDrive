@@ -469,17 +469,25 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     </p>
 
                     {rateLimits.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-dark-border/50 space-y-1">
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-dark-border/50 space-y-2">
                             {rateLimits.map((item) => {
                                 const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
                                 const isDanger = pct >= 100;
                                 const isWarning = pct > 50 && !isDanger;
                                 return (
-                                    <div key={item.name} className="flex items-center justify-between">
-                                        <span className="text-[11px] text-gray-400 dark:text-dark-text-secondary">{item.name}</span>
-                                        <span className={`text-[11px] tabular-nums ${isDanger ? 'text-red-500 font-medium' : isWarning ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600'}`}>
-                                            {item.used}/{item.max}
-                                        </span>
+                                    <div key={item.name}>
+                                        <div className="flex items-center justify-between mb-0.5">
+                                            <span className="text-[11px] text-gray-400 dark:text-dark-text-secondary">{item.name}</span>
+                                            <span className={`text-[11px] tabular-nums ${isDanger ? 'text-red-500 font-medium' : isWarning ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600'}`}>
+                                                {item.used}/{item.max}
+                                            </span>
+                                        </div>
+                                        <div className="h-[2px] bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-300 ${isDanger ? 'bg-red-500' : isWarning ? 'bg-amber-400' : 'bg-gray-200 dark:bg-gray-700'}`}
+                                                style={{ width: `${Math.min(pct, 100)}%` }}
+                                            />
+                                        </div>
                                     </div>
                                 );
                             })}
