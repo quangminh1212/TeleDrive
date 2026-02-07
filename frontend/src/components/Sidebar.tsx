@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { api } from '../services/api';
+import { api, API_BASE_URL } from '../services/api';
 import CreateFolderModal from './CreateFolderModal';
 import { useToast } from './Toast';
 import { useI18n, getAvailableLanguages } from '../i18n';
@@ -84,7 +84,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     useEffect(() => {
         const fetchStorageInfo = async () => {
             try {
-                const res = await fetch('http://127.0.0.1:5000/api/v2/storage');
+                const res = await fetch(`${API_BASE_URL}/api/v2/storage`);
                 const data = await res.json();
                 if (data.success) {
                     setStorageSizeFromAPI(data.total_size || 0);
@@ -105,7 +105,7 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     useEffect(() => {
         const fetchRateLimits = async () => {
             try {
-                const res = await fetch('http://127.0.0.1:5000/api/v2/rate-limits');
+                const res = await fetch(`${API_BASE_URL}/api/v2/rate-limits`);
                 const data = await res.json();
                 if (data.success && data.limits) {
                     setRateLimits(data.limits);

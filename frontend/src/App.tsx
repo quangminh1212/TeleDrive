@@ -8,6 +8,7 @@ import TitleBar from './components/TitleBar';
 import { ToastProvider } from './components/Toast';
 import { UploadProvider, useUpload } from './contexts/UploadContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { API_BASE_URL } from './services/api';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { I18nProvider } from './i18n';
 import { logger } from './utils/logger';
@@ -154,7 +155,7 @@ function AppContent() {
     setIsCheckingAuth(true);
     try {
       logger.info('App', 'Calling /api/v2/auth/status');
-      const response = await fetch('http://127.0.0.1:5000/api/v2/auth/status');
+      const response = await fetch(`${API_BASE_URL}/api/v2/auth/status`);
       logger.info('App', 'Auth status response', { status: response.status });
       const result = await response.json();
       logger.info('App', 'Auth status result', { authenticated: result.authenticated });

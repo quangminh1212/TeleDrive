@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileInfo } from '../services/api';
+import { FileInfo, API_BASE_URL } from '../services/api';
 import ContextMenu from './ContextMenu';
 import ConfirmDialog from './ConfirmDialog';
 import { useToast } from './Toast';
@@ -301,7 +301,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
         } else {
             // Open download link (fallback)
             const filename = file.filename || file.name;
-            window.open(`http://127.0.0.1:5000/download/${encodeURIComponent(filename)}`, '_blank');
+            window.open(`${API_BASE_URL}/download/${encodeURIComponent(filename)}`, '_blank');
         }
     };
 
@@ -314,7 +314,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
         switch (action) {
             case 'download':
                 const filename = file.filename || file.name;
-                window.open(`http://127.0.0.1:5000/download/${filename}`, '_blank');
+                window.open(`${API_BASE_URL}/download/${filename}`, '_blank');
                 break;
             case 'rename':
                 setIsRenaming(true);
@@ -335,7 +335,7 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                 break;
             case 'share':
                 // Copy share link to clipboard
-                const shareLink = `http://127.0.0.1:5000/share/${file.id}`;
+                const shareLink = `${API_BASE_URL}/share/${file.id}`;
                 navigator.clipboard.writeText(shareLink);
                 toast.success(t('messages.uploadSuccess'));
                 break;

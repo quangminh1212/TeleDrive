@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
 import { logger } from '../utils/logger';
+import { API_BASE_URL } from '../services/api';
 import { useI18n, getAvailableLanguages, languageNames } from '../i18n';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -241,7 +242,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
         if (loginMethod === 'qr' && qrToken && !qrExpired) {
             interval = setInterval(async () => {
                 try {
-                    const res = await fetch('http://127.0.0.1:5000/api/auth/qr/status', {
+                    const res = await fetch(`${API_BASE_URL}/api/auth/qr/status`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ token: qrToken })
@@ -276,7 +277,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
         try {
             logger.info('TelegramLogin', 'Calling /api/auth/qr/start');
-            const res = await fetch('http://127.0.0.1:5000/api/auth/qr/start', {
+            const res = await fetch(`${API_BASE_URL}/api/auth/qr/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -324,7 +325,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
         try {
             logger.info('TelegramLogin', 'Calling /api/v2/auth/auto-login');
-            const response = await fetch('http://127.0.0.1:5000/api/v2/auth/auto-login', {
+            const response = await fetch(`${API_BASE_URL}/api/v2/auth/auto-login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -369,7 +370,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
 
         try {
             logger.info('TelegramLogin', 'Calling /api/auth/phone/start');
-            const res = await fetch('http://127.0.0.1:5000/api/auth/phone/start', {
+            const res = await fetch(`${API_BASE_URL}/api/auth/phone/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone: fullPhone })
@@ -409,7 +410,7 @@ const TelegramLogin = ({ onLoginSuccess }: TelegramLoginProps) => {
         setStatus('Đang xác nhận...');
 
         try {
-            const res = await fetch('http://127.0.0.1:5000/api/auth/phone/verify', {
+            const res = await fetch(`${API_BASE_URL}/api/auth/phone/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

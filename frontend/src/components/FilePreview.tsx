@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileInfo } from '../services/api';
+import { FileInfo, API_BASE_URL } from '../services/api';
 import { useI18n } from '../i18n';
 
 interface FilePreviewProps {
@@ -13,7 +13,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, onClose }) => {
     const { t } = useI18n();
 
     const filename = file.filename || file.name;
-    const downloadUrl = `http://127.0.0.1:5000/download/${encodeURIComponent(filename)}`;
+    const downloadUrl = `${API_BASE_URL}/download/${encodeURIComponent(filename)}`;
     const previewUrl = `${downloadUrl}?inline=true`;
 
     const mimeType = file.mimeType || file.mime_type || '';

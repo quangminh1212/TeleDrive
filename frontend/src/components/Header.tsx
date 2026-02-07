@@ -4,6 +4,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import ThemeSwitcher from './ThemeSwitcher';
 import { useToast } from './Toast';
 import { useI18n } from '../i18n';
+import { API_BASE_URL } from '../services/api';
 import { useNotification, NotificationType } from '../contexts/NotificationContext';
 
 // View mode types - Windows File Explorer style
@@ -173,7 +174,7 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
 
     const handleLogout = async () => {
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/v2/auth/logout', {
+            const response = await fetch(`${API_BASE_URL}/api/v2/auth/logout`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });

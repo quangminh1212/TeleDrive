@@ -3,8 +3,9 @@
  * Real-time logging - sends logs immediately to backend for file storage
  */
 
-// Backend API URL - must be absolute for Tauri WebView
-const API_URL = 'http://127.0.0.1:5000';
+// Backend API URL - imported from central config
+import { API_BASE_URL } from '../services/api';
+const API_URL = API_BASE_URL;
 
 interface LogEntry {
   timestamp: string;
