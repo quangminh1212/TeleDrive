@@ -76,13 +76,38 @@ def run_flask_server(dev_mode=False):
 
     # Run API server on port 5000
     # Note: In dev mode with reloader, this must run in main thread
-    socketio.run(
-        app,
-        host='127.0.0.1',
-        port=5000,
-        debug=dev_mode,
-        use_reloader=dev_mode
-    )
+    if dev_mode:
+        # Exclude non-Python directories from watchdog reloader
+        # This prevents Flask from restarting when files are uploaded to data/uploads/
+        exclude_patterns = [
+            os.path.join(PROJECT_ROOT, 'data', '*'),
+            os.path.join(PROJECT_ROOT, 'logs', '*'),
+            os.path.join(PROJECT_ROOT, 'output', '*'),
+            os.path.join(PROJECT_ROOT, 'frontend', '*'),
+            os.path.join(PROJECT_ROOT, 'node_modules', '*'),
+            os.path.join(PROJECT_ROOT, '.git', '*'),
+            os.path.join(PROJECT_ROOT, 'python311', '*'),
+            os.path.join(PROJECT_ROOT, 'static', '*'),
+            os.path.join(PROJECT_ROOT, 'templates', '*'),
+            '*.pyc',
+            '__pycache__/*',
+        ]
+        socketio.run(
+            app,
+            host='127.0.0.1',
+            port=5000,
+            debug=True,
+            use_reloader=True,
+            exclude_patterns=exclude_patterns,
+        )
+    else:
+        socketio.run(
+            app,
+            host='127.0.0.1',
+            port=5000,
+            debug=False,
+            use_reloader=False,
+        )
 
 def wait_for_server(host, port, timeout=30):
     """Wait for server to be ready"""
