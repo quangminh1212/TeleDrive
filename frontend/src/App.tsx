@@ -54,7 +54,14 @@ function MainAppUI({
   userInfo,
   handleFilesUploaded,
 }: MainAppUIProps) {
-  const { uploadItems, clearAll } = useUpload();
+  const { uploadItems, clearAll, cancelUpload, retryUpload } = useUpload();
+
+  // Tự động hiện panel khi có upload mới
+  useEffect(() => {
+    if (uploadItems.length > 0) {
+      setShowUploadProgress(true);
+    }
+  }, [uploadItems.length, setShowUploadProgress]);
 
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-dark-bg">
@@ -115,6 +122,8 @@ function MainAppUI({
           items={uploadItems}
           onClose={() => setShowUploadProgress(false)}
           onClear={clearAll}
+          onRetry={retryUpload}
+          onCancel={cancelUpload}
         />
       )}
     </div>
