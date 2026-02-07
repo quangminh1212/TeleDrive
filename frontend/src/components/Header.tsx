@@ -6,11 +6,14 @@ import { useToast } from './Toast';
 import { useI18n } from '../i18n';
 import { useNotification, NotificationType } from '../contexts/NotificationContext';
 
+// View mode types - Windows File Explorer style
+export type ViewMode = 'details' | 'list' | 'small-icons' | 'medium-icons' | 'large-icons';
+
 interface HeaderProps {
     searchQuery: string;
     onSearchChange: (query: string) => void;
-    viewMode: 'grid' | 'list';
-    onViewModeChange: (mode: 'grid' | 'list') => void;
+    viewMode: ViewMode;
+    onViewModeChange: (mode: ViewMode) => void;
     userInfo?: {
         name?: string;
         email?: string;
@@ -116,26 +119,7 @@ const SearchIcon = () => (
     </svg>
 );
 
-// List view icon
-const ListViewIcon = ({ active }: { active: boolean }) => (
-    <svg className={`w-5 h-5 ${active ? 'text-gray-700 dark:text-dark-text' : 'text-gray-500 dark:text-dark-text-secondary'}`} viewBox="0 0 24 24" fill="currentColor">
-        <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
-    </svg>
-);
 
-// Grid view icon
-const GridViewIcon = ({ active }: { active: boolean }) => (
-    <svg className={`w-5 h-5 ${active ? 'text-gray-700 dark:text-dark-text' : 'text-gray-500 dark:text-dark-text-secondary'}`} viewBox="0 0 24 24" fill="currentColor">
-        <path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z" />
-    </svg>
-);
-
-// Info icon
-const InfoIcon = () => (
-    <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-    </svg>
-);
 
 
 // Help icon
@@ -375,37 +359,151 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
     );
 };
 
+
+// View mode icons
+const DetailsViewIcon = ({ active }: { active: boolean }) => (
+    <svg className={`w-4 h-4 ${active ? 'text-blue-600 dark:text-dark-blue' : 'text-gray-500 dark:text-dark-text-secondary'}`} viewBox="0 0 16 16" fill="currentColor">
+        <path d="M1 2h14v2H1V2zm0 4h14v2H1V6zm0 4h14v2H1v-2zm0 4h14v2H1v-2z" />
+    </svg>
+);
+
+const CompactListIcon = ({ active }: { active: boolean }) => (
+    <svg className={`w-4 h-4 ${active ? 'text-blue-600 dark:text-dark-blue' : 'text-gray-500 dark:text-dark-text-secondary'}`} viewBox="0 0 16 16" fill="currentColor">
+        <path d="M1 2h6v2H1V2zm8 0h6v2H9V2zM1 6h6v2H1V6zm8 0h6v2H9V6zM1 10h6v2H1v-2zm8 0h6v2H9v-2zM1 14h6v2H1v-2zm8 0h6v2H9v-2z" />
+    </svg>
+);
+
+const SmallIconsIcon = ({ active }: { active: boolean }) => (
+    <svg className={`w-4 h-4 ${active ? 'text-blue-600 dark:text-dark-blue' : 'text-gray-500 dark:text-dark-text-secondary'}`} viewBox="0 0 16 16" fill="currentColor">
+        <path d="M1 1h3v3H1V1zm5 0h3v3H6V1zm5 0h3v3h-3V1zM1 6h3v3H1V6zm5 0h3v3H6V6zm5 0h3v3h-3V6zM1 11h3v3H1v-3zm5 0h3v3H6v-3zm5 0h3v3h-3v-3z" />
+    </svg>
+);
+
+const MediumIconsIcon = ({ active }: { active: boolean }) => (
+    <svg className={`w-4 h-4 ${active ? 'text-blue-600 dark:text-dark-blue' : 'text-gray-500 dark:text-dark-text-secondary'}`} viewBox="0 0 16 16" fill="currentColor">
+        <path d="M1 1h6v6H1V1zm8 0h6v6H9V1zM1 9h6v6H1V9zm8 0h6v6H9V9z" />
+    </svg>
+);
+
+const LargeIconsIcon = ({ active }: { active: boolean }) => (
+    <svg className={`w-4 h-4 ${active ? 'text-blue-600 dark:text-dark-blue' : 'text-gray-500 dark:text-dark-text-secondary'}`} viewBox="0 0 16 16" fill="currentColor">
+        <rect x="1" y="1" width="14" height="14" rx="1" />
+    </svg>
+);
+
+const VIEW_MODES: { mode: ViewMode; icon: typeof DetailsViewIcon; labelKey: string }[] = [
+    { mode: 'large-icons', icon: LargeIconsIcon, labelKey: 'files.largeIcons' },
+    { mode: 'medium-icons', icon: MediumIconsIcon, labelKey: 'files.mediumIcons' },
+    { mode: 'small-icons', icon: SmallIconsIcon, labelKey: 'files.smallIcons' },
+    { mode: 'list', icon: CompactListIcon, labelKey: 'files.listView' },
+    { mode: 'details', icon: DetailsViewIcon, labelKey: 'files.detailsView' },
+];
+
+// Get the current active icon for the dropdown button
+const getActiveIcon = (viewMode: ViewMode) => {
+    switch (viewMode) {
+        case 'details': return <DetailsViewIcon active />;
+        case 'list': return <CompactListIcon active />;
+        case 'small-icons': return <SmallIconsIcon active />;
+        case 'medium-icons': return <MediumIconsIcon active />;
+        case 'large-icons': return <LargeIconsIcon active />;
+    }
+};
+
 // Export the view mode controls separately for use in FileGrid
-export const ViewModeControls = ({ viewMode, onViewModeChange }: { viewMode: 'grid' | 'list'; onViewModeChange: (mode: 'grid' | 'list') => void }) => {
+export const ViewModeControls = ({ viewMode, onViewModeChange }: { viewMode: ViewMode; onViewModeChange: (mode: ViewMode) => void }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const { t } = useI18n();
 
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen]);
+
+    const currentIndex = VIEW_MODES.findIndex(v => v.mode === viewMode);
+
     return (
-        <div className="flex items-center gap-1 border border-gray-300 dark:border-dark-border rounded-lg p-0.5 bg-white dark:bg-dark-surface">
+        <div className="relative" ref={dropdownRef}>
+            {/* Toggle Button */}
             <button
-                onClick={() => onViewModeChange('list')}
-                className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-blue-100 dark:bg-dark-selected' : 'hover:bg-gray-100 dark:hover:bg-dark-hover'}`}
-                title={t('files.listView')}
-                aria-label={t('files.listView')}
-                aria-pressed={viewMode === 'list'}
+                onClick={() => setIsOpen(!isOpen)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${isOpen
+                    ? 'border-blue-400 dark:border-dark-blue bg-blue-50 dark:bg-dark-selected shadow-sm'
+                    : 'border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface hover:bg-gray-50 dark:hover:bg-dark-hover'
+                    }`}
+                title={t('files.viewMode')}
+                aria-label={t('files.viewMode')}
+                aria-expanded={isOpen}
             >
-                <ListViewIcon active={viewMode === 'list'} />
+                {getActiveIcon(viewMode)}
+                <svg className={`w-3 h-3 text-gray-500 dark:text-dark-text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 10l5 5 5-5z" />
+                </svg>
             </button>
-            <button
-                onClick={() => onViewModeChange('grid')}
-                className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-blue-100 dark:bg-dark-selected' : 'hover:bg-gray-100 dark:hover:bg-dark-hover'}`}
-                title={t('files.gridView')}
-                aria-label={t('files.gridView')}
-                aria-pressed={viewMode === 'grid'}
-            >
-                <GridViewIcon active={viewMode === 'grid'} />
-            </button>
-            <button
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-dark-hover rounded"
-                title={t('files.details')}
-                aria-label={t('files.details')}
-            >
-                <InfoIcon />
-            </button>
+
+            {/* Dropdown */}
+            {isOpen && (
+                <div className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-dark-surface rounded-xl shadow-xl border border-gray-200 dark:border-dark-border z-50 overflow-hidden animate-fade-in">
+                    {/* Slider indicator */}
+                    <div className="px-3 pt-3 pb-2">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-gray-400 dark:text-dark-text-disabled uppercase tracking-wider font-medium">
+                                {t('files.viewMode')}
+                            </span>
+                        </div>
+                        {/* Visual slider */}
+                        <div className="relative h-1 bg-gray-200 dark:bg-dark-border rounded-full mb-1">
+                            <div
+                                className="absolute h-1 bg-blue-500 dark:bg-dark-blue rounded-full transition-all duration-200"
+                                style={{
+                                    left: '0%',
+                                    width: `${((VIEW_MODES.length - 1 - currentIndex) / (VIEW_MODES.length - 1)) * 100}%`,
+                                }}
+                            />
+                            <div
+                                className="absolute w-3 h-3 bg-blue-500 dark:bg-dark-blue rounded-full -top-1 shadow-md transition-all duration-200 border-2 border-white dark:border-dark-surface"
+                                style={{
+                                    left: `calc(${((VIEW_MODES.length - 1 - currentIndex) / (VIEW_MODES.length - 1)) * 100}% - 6px)`,
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Mode options */}
+                    <div className="py-1">
+                        {VIEW_MODES.map(({ mode, icon: Icon, labelKey }) => (
+                            <button
+                                key={mode}
+                                onClick={() => {
+                                    onViewModeChange(mode);
+                                    setIsOpen(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors ${viewMode === mode
+                                    ? 'bg-blue-50 dark:bg-dark-selected text-blue-700 dark:text-dark-blue font-medium'
+                                    : 'text-gray-700 dark:text-dark-text hover:bg-gray-50 dark:hover:bg-dark-hover'
+                                    }`}
+                            >
+                                <Icon active={viewMode === mode} />
+                                <span>{t(labelKey)}</span>
+                                {viewMode === mode && (
+                                    <svg className="w-4 h-4 ml-auto text-blue-600 dark:text-dark-blue" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                    </svg>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
