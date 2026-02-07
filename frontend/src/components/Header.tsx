@@ -181,11 +181,11 @@ const Header = ({ searchQuery, onSearchChange, userInfo, onMenuClick }: HeaderPr
             if (result.success) {
                 window.location.reload();
             } else {
-                toast.error('Lỗi: ' + (result.error || 'Không thể đăng xuất'));
+                toast.error(t('account.logoutError', { error: result.error || t('account.logoutDefaultError') }));
             }
         } catch (error) {
             console.error('Logout error:', error);
-            toast.error('Lỗi kết nối đến server');
+            toast.error(t('common.connectionError'));
         }
     };
 
