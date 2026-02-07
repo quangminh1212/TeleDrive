@@ -458,78 +458,53 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                     </div>
                 </nav>
 
-                {/* Rate Limits Info */}
-                <div className="px-4 py-2.5 border-t border-gray-200 dark:border-dark-border">
-                    <div className="flex items-center gap-1.5 mb-2">
-                        <svg className="w-3.5 h-3.5 text-gray-400 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
-                        </svg>
-                        <p className="text-[10px] font-semibold text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
-                            Rate Limits
-                        </p>
+                {/* Storage — Google Drive style */}
+                <div className="px-4 py-3 border-t border-gray-200 dark:border-dark-border">
+                    <div className="h-1 bg-gray-200 dark:bg-dark-border rounded-full overflow-hidden mb-2.5">
+                        <div
+                            className="h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(Math.max((actualSize / (2 * 1024 * 1024 * 1024)) * 100, actualSize > 0 ? 2 : 0), 100)}%` }}
+                        />
                     </div>
-                    <div className="space-y-2">
-                        {rateLimits.map((item) => {
-                            const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
-                            const isWarning = pct > 50 && pct < 100;
-                            const isDanger = pct >= 100;
-                            const statusColor = isDanger ? 'text-red-500' : isWarning ? 'text-amber-500' : 'text-emerald-500';
-                            const barGradient = isDanger
-                                ? 'from-red-400 to-red-600'
-                                : isWarning
-                                    ? 'from-amber-400 to-orange-500'
-                                    : 'from-blue-400 to-blue-600';
-                            return (
-                                <div key={item.name} className="group">
-                                    <div className="flex items-center justify-between text-[10px] mb-0.5">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className={`w-1.5 h-1.5 rounded-full ${isDanger ? 'bg-red-500' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-                                            <span className="text-gray-700 dark:text-dark-text font-medium">{item.name}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <span className={`font-mono font-semibold ${statusColor}`}>
-                                                {item.used}
-                                            </span>
-                                            <span className="text-gray-400 dark:text-dark-text-secondary font-mono">/{item.max}</span>
-                                            <span className="text-gray-300 dark:text-gray-600 mx-0.5">·</span>
-                                            <span className="text-gray-400 dark:text-dark-text-secondary">{item.window}</span>
-                                        </div>
-                                    </div>
-                                    <div className="h-1.5 bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full rounded-full bg-gradient-to-r ${barGradient} transition-all duration-500 ease-out`}
-                                            style={{ width: `${Math.max(Math.min(pct, 100), pct > 0 ? 4 : 0)}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+                    <p className="text-[13px] text-gray-700 dark:text-dark-text">
+                        {usedStorageFormatted} · {fileCount} {fileCount === 1 ? 'file' : 'files'}
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-dark-text-secondary mt-0.5">
+                        Telegram Cloud — Không giới hạn
+                    </p>
 
-                {/* Storage Info */}
-                <div className="px-4 py-2.5 border-t border-gray-200 dark:border-dark-border">
-                    <div className="flex items-center gap-1.5 mb-2">
-                        <svg className="w-3.5 h-3.5 text-gray-400 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
-                        </svg>
-                        <p className="text-[10px] font-semibold text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider flex-1">
-                            {t('sidebar.storage')}
-                        </p>
-                        <span className="text-[9px] px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full font-semibold">
-                            ∞ Unlimited
-                        </span>
-                    </div>
-                    <div className="flex gap-2">
-                        <div className="flex-1 bg-gray-50 dark:bg-dark-elevated rounded-lg px-2.5 py-1.5 text-center">
-                            <p className="text-[11px] font-semibold text-gray-800 dark:text-dark-text">{usedStorageFormatted}</p>
-                            <p className="text-[9px] text-gray-400 dark:text-dark-text-secondary">Đã dùng</p>
-                        </div>
-                        <div className="flex-1 bg-gray-50 dark:bg-dark-elevated rounded-lg px-2.5 py-1.5 text-center">
-                            <p className="text-[11px] font-semibold text-gray-800 dark:text-dark-text">{fileCount}</p>
-                            <p className="text-[9px] text-gray-400 dark:text-dark-text-secondary">{fileCount === 1 ? 'file' : 'files'}</p>
-                        </div>
-                    </div>
+                    {/* Rate Limits — collapsible */}
+                    {rateLimits.length > 0 && (
+                        <details className="mt-2.5 group">
+                            <summary className="text-[11px] text-gray-400 dark:text-dark-text-secondary cursor-pointer hover:text-gray-600 dark:hover:text-dark-text select-none list-none flex items-center gap-1">
+                                <svg className="w-3 h-3 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+                                </svg>
+                                API limits
+                            </summary>
+                            <div className="mt-1.5 space-y-1">
+                                {rateLimits.map((item) => {
+                                    const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
+                                    const isDanger = pct >= 100;
+                                    const isWarning = pct > 50 && !isDanger;
+                                    return (
+                                        <div key={item.name} className="flex items-center gap-2 text-[10px]">
+                                            <span className="text-gray-500 dark:text-dark-text-secondary w-20 truncate">{item.name}</span>
+                                            <div className="flex-1 h-[3px] bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full transition-all duration-300 ${isDanger ? 'bg-red-500' : isWarning ? 'bg-amber-400' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                                    style={{ width: `${Math.min(pct, 100)}%` }}
+                                                />
+                                            </div>
+                                            <span className={`font-mono tabular-nums w-12 text-right ${isDanger ? 'text-red-500' : 'text-gray-400 dark:text-dark-text-secondary'}`}>
+                                                {item.used}/{item.max}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </details>
+                    )}
                 </div>
             </aside>
 
