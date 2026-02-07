@@ -78,11 +78,30 @@ class FlaskConfigLoader:
         """Get Flask-specific configuration"""
         flask_config = {}
 
-        # Basic Flask settings - Use environment variable or generate secure key
+        # Basic Flask settings - Persist secret key to survive restarts
         import os
         import secrets
-        default_secret = os.environ.get('FLASK_SECRET_KEY') or secrets.token_hex(32)
-        flask_config['SECRET_KEY'] = self.get('flask.secret_key', default_secret)
+        secret_key_file = self.project_root / 'data' / '.flask_secret'
+        
+        # Priority: config > env > file > generate new
+        configured_key = self.get('flask.secret_key', '')
+        if configured_key:
+            flask_secret = configured_key
+        elif os.environ.get('FLASK_SECRET_KEY'):
+            flask_secret = os.environ['FLASK_SECRET_KEY']
+        elif secret_key_file.exists():
+            flask_secret = secret_key_file.read_text().strip()
+        else:
+            # Generate and save for persistence
+            flask_secret = secrets.token_hex(32)
+            try:
+                secret_key_file.parent.mkdir(parents=True, exist_ok=True)
+                secret_key_file.write_text(flask_secret)
+                print(f"🔑 Generated new Flask secret key (saved to data/.flask_secret)")
+            except Exception as e:
+                print(f"⚠️  Could not save secret key: {e}")
+        
+        flask_config['SECRET_KEY'] = flask_secret
         flask_config['DEBUG'] = self.get('flask.debug', False)
 
         # Database settings - Use absolute path
