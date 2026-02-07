@@ -242,7 +242,7 @@ class FlaskConfigLoader:
         # If still using weak default, generate a random one and warn
         if not default_pwd or default_pwd == 'admin123':
             default_pwd = secrets.token_urlsafe(12)  # Generate secure random password
-            print(f"⚠️  SECURITY WARNING: Using auto-generated admin password: {default_pwd}")
+            print(f"⚠️  SECURITY WARNING: Using auto-generated admin password: {default_pwd[:4]}{'*' * (len(default_pwd)-4)}")
             print(f"⚠️  Please change this password immediately after first login!")
         
         return {
