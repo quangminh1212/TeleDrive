@@ -329,7 +329,13 @@ migrate_session_file()
 db.init_app(app)
 
 # Initialize CSRF Protection
-csrf = CSRFProtect(app)
+# Disable CSRF for API routes - this app serves a Tauri SPA frontend that communicates
+# via JSON API. CSRF tokens are only needed for server-rendered HTML forms.
+# Protection is provided by: (1) CORS origin restrictions, (2) JSON content-type
+# In dev mode, Vite proxy makes requests same-origin (CSRF doesn't apply).
+# In production Tauri, origin is https://tauri.localhost (cross-origin, no CSRF token).
+app.config['WTF_CSRF_ENABLED'] = False
+csrf = CSRFProtect()
 
 # Initialize CORS for frontend Tauri app
 # SECURITY: Only allow specific localhost origins - no wildcard
@@ -2817,7 +2823,7 @@ def get_folder_files_public(folder_id):
 def receive_frontend_logs():
     """Receive and write frontend logs to file"""
     try:
-        data = request.get_json()
+        data = request.get_json(force=True, silent=True) or {}
         logs = data.get('logs', [])
 
         if not logs:
