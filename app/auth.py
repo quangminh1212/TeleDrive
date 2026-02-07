@@ -236,7 +236,7 @@ class TelegramAuthenticator:
                 session_created_time = time.time()
 
                 # Debug: Print session creation info
-                print(f"[DEBUG] Creating session ID: {session_id}")
+                print(f"[DEBUG] Creating session ID: {session_id[:8]}...")
                 print(f"[DEBUG] Phone code hash length: {len(sent_code.phone_code_hash)}")
 
                 # Use longer timeout for session storage (10 minutes) but rely on Telegram API for code expiration
@@ -252,7 +252,7 @@ class TelegramAuthenticator:
 
                 # Debug: Print after storing
                 print(f"[DEBUG] Session stored. Total sessions: {len(self.temp_sessions)}")
-                print(f"[DEBUG] All session IDs: {list(self.temp_sessions.keys())}")
+                print(f"[DEBUG] Active session count: {len(self.temp_sessions)}")
 
                 if DETAILED_LOGGING_AVAILABLE:
                     log_step("SESSION STORE", f"Session stored with ID: {session_id}, storage timeout: {session_storage_timeout} seconds ({session_storage_timeout/60:.1f} minutes)")
@@ -447,7 +447,7 @@ class TelegramAuthenticator:
             
             # Get user info
             me = await client.get_me()
-            print(f"[QR_ASYNC] User: {me.first_name} (@{me.username or 'no_username'}), phone: {me.phone}")
+            print(f"[QR_ASYNC] User: {me.first_name} (@{me.username or 'no_username'}), phone: ***{me.phone[-4:] if me.phone else 'N/A'}")
             
             # DON'T call create_or_update_user here - no Flask app context in thread!
             # Just save Telegram user info, DB user will be created in check_qr_login_status
@@ -1054,7 +1054,7 @@ class TelegramAuthenticator:
 
             print(f"[ERROR] Session age: {session_age:.2f}s, Send code took: {send_code_duration:.2f}s")
             print(f"[ERROR] Session created at: {created_at}, Current time: {current_time}")
-            print(f"[ERROR] Phone code hash: {session_data.get('phone_code_hash', 'N/A')[:20]}...")
+            print(f"[ERROR] Phone code hash length: {len(session_data.get('phone_code_hash', ''))}")
 
             # Clean up verification client
             try:
