@@ -17,7 +17,7 @@ interface SidebarProps {
 }
 
 // TeleDrive Logo component using the new logo image
-const TeleDriveLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
+const TeleDriveLogo = ({ className = "w-14 h-14" }: { className?: string }) => (
     <img src="/logo.png" alt="TeleDrive" className={`${className} rounded-xl`} />
 );
 
