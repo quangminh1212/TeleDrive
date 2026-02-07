@@ -221,7 +221,7 @@ class FlaskConfigLoader:
         
         return {
             'cors_allowed_origins': configured_origins if configured_origins else default_origins,
-            'async_mode': self.get('flask.socketio_async_mode', 'eventlet')
+            'async_mode': self.get('flask.socketio_async_mode', 'threading')
         }
     
     def get_login_config(self) -> Dict[str, Any]:
@@ -319,7 +319,7 @@ class FlaskConfigLoader:
                 "threaded": True,
                 "use_reloader": False,
                 "cors_allowed_origins": "",  # Empty = use localhost-only defaults
-                "socketio_async_mode": "eventlet"
+                "socketio_async_mode": "threading"
             },
             "database": {
                 "url": f"sqlite:///{default_db_path.absolute()}",

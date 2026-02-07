@@ -32,7 +32,7 @@ from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
 from flask_cors import CORS
-import eventlet
+# eventlet removed - using threading mode for SocketIO compatibility
 
 # Import existing modules
 from scanner import TelegramFileScanner

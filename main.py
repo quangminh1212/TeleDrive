@@ -98,7 +98,8 @@ def run_flask_server(dev_mode=False):
             port=5000,
             debug=True,
             use_reloader=True,
-            exclude_patterns=exclude_patterns,
+            reloader_options={'exclude_patterns': exclude_patterns},
+            allow_unsafe_werkzeug=True,
         )
     else:
         socketio.run(
@@ -107,6 +108,7 @@ def run_flask_server(dev_mode=False):
             port=5000,
             debug=False,
             use_reloader=False,
+            allow_unsafe_werkzeug=True,
         )
 
 def wait_for_server(host, port, timeout=30):
