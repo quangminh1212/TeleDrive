@@ -20,6 +20,8 @@ interface FileItemProps {
     selectedFiles?: Set<string | number>;
     onFolderOpen?: (folderId: number) => void;
     onStar?: (file: FileInfo) => void;
+    compact?: boolean;
+    iconSize?: 'small' | 'medium' | 'large';
 }
 
 // Google Drive folder icon
@@ -227,7 +229,7 @@ const formatDate = (dateStr: string): string => {
     }
 };
 
-const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, onCopy, onMove, onShowInfo, onPreview, onDropFiles, selectedFiles, onFolderOpen, onStar }: FileItemProps) => {
+const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, onCopy, onMove, onShowInfo, onPreview, onDropFiles, selectedFiles, onFolderOpen, onStar, compact, iconSize }: FileItemProps) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [isRenaming, setIsRenaming] = useState(false);
     const [newName, setNewName] = useState(file.name || file.filename || '');
@@ -369,6 +371,23 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
     const displayChannel = file.telegram_channel || '-';
     const displayOwner = file.owner || t('files.owner');
 
+    // Get icon based on size
+    const getIconBySize = () => {
+        const size = iconSize || 'medium';
+        if (file.type === 'folder' || file.file_type === 'folder') {
+            const iconClass = size === 'small' ? 'w-8 h-8' : size === 'large' ? 'w-16 h-16' : 'w-12 h-12';
+            return (
+                <svg className={iconClass} viewBox="0 0 24 24" fill="#5f6368">
+                    <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                </svg>
+            );
+        }
+        if (size === 'small') return getFileIcon(file);
+        return getLargeFileIcon(file);
+    };
+
+    const iconContainerHeight = iconSize === 'small' ? 'h-10' : iconSize === 'large' ? 'h-24' : 'h-16';
+
     if (viewMode === 'grid') {
         return (
             <>
@@ -376,14 +395,14 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                     onClick={handleClick}
                     onDoubleClick={handleDoubleClick}
                     onContextMenu={handleContextMenu}
-                    className={`group relative p-3 rounded-lg cursor-pointer transition-all ${isSelected
+                    className={`group relative ${iconSize === 'small' ? 'p-2' : 'p-3'} rounded-lg cursor-pointer transition-all ${isSelected
                         ? 'bg-blue-100 dark:bg-dark-selected ring-2 ring-blue-400 dark:ring-dark-blue'
                         : 'hover:bg-gray-100 dark:hover:bg-dark-hover'
                         }`}
                 >
                     {/* File Icon */}
-                    <div className="flex items-center justify-center h-16 mb-2">
-                        {getLargeFileIcon(file)}
+                    <div className={`flex items-center justify-center ${iconContainerHeight} mb-2`}>
+                        {getIconBySize()}
                     </div>
 
                     {/* File Name - with rename input */}
@@ -394,18 +413,18 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                             onChange={(e) => setNewName(e.target.value)}
                             onBlur={handleRenameSubmit}
                             onKeyDown={handleRenameKeyDown}
-                            className="w-full text-sm text-center px-1 py-0.5 border border-blue-400 dark:border-dark-blue rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-dark-blue bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text"
+                            className={`w-full ${iconSize === 'small' ? 'text-xs' : 'text-sm'} text-center px-1 py-0.5 border border-blue-400 dark:border-dark-blue rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-dark-blue bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text`}
                             autoFocus
                             onClick={(e) => e.stopPropagation()}
                         />
                     ) : (
-                        <p className="text-sm text-center text-gray-700 dark:text-dark-text truncate" title={displayName}>
+                        <p className={`${iconSize === 'small' ? 'text-xs' : 'text-sm'} text-center text-gray-700 dark:text-dark-text truncate`} title={displayName}>
                             {displayName}
                         </p>
                     )}
 
-                    {/* File size (below name) */}
-                    {file.type !== 'folder' && (
+                    {/* File size (below name) - hide for small icons */}
+                    {file.type !== 'folder' && iconSize !== 'small' && (
                         <p className="text-xs text-center text-gray-400 dark:text-dark-text-secondary mt-1">
                             {displaySize}
                         </p>
@@ -501,31 +520,44 @@ const FileItem = ({ file, viewMode, isSelected, onSelect, onRename, onDelete, on
                     </span>
                 )}
 
-                {/* Owner - hidden on mobile xs */}
-                <span className="hidden sm:block w-24 md:w-32 text-sm text-gray-500 dark:text-dark-text-secondary px-2 truncate">{displayOwner}</span>
+                {/* Owner - hidden on mobile xs and in compact mode */}
+                {!compact && (
+                    <span className="hidden sm:block w-24 md:w-32 text-sm text-gray-500 dark:text-dark-text-secondary px-2 truncate">{displayOwner}</span>
+                )}
 
-                {/* Modified Date - hidden on mobile xs/sm */}
-                <span className="hidden md:block w-36 lg:w-48 text-sm text-gray-500 dark:text-dark-text-secondary px-2">{displayDate}</span>
+                {/* Modified Date - hidden on mobile xs/sm and in compact mode */}
+                {!compact && (
+                    <span className="hidden md:block w-36 lg:w-48 text-sm text-gray-500 dark:text-dark-text-secondary px-2">{displayDate}</span>
+                )}
 
-                {/* Channel / Source - hidden on mobile/tablet */}
-                <span className="hidden lg:block w-32 text-sm text-gray-500 dark:text-dark-text-secondary px-2 truncate" title={displayChannel}>
-                    {displayChannel}
-                </span>
+                {/* Size - show in compact mode */}
+                {compact && file.type !== 'folder' && (
+                    <span className="w-16 text-xs text-gray-400 dark:text-dark-text-secondary text-right flex-shrink-0">{displaySize}</span>
+                )}
+
+                {/* Channel / Source - hidden on mobile/tablet and in compact mode */}
+                {!compact && (
+                    <span className="hidden lg:block w-32 text-sm text-gray-500 dark:text-dark-text-secondary px-2 truncate" title={displayChannel}>
+                        {displayChannel}
+                    </span>
+                )}
 
                 {/* Actions */}
-                <div className="w-10 flex justify-end">
-                    <button
-                        className="p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-dark-hover"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setContextMenu({ x: e.clientX, y: e.clientY });
-                        }}
-                        aria-label={t('files.details')}
-                        title={t('files.details')}
-                    >
-                        <MoreIcon />
-                    </button>
-                </div>
+                {!compact && (
+                    <div className="w-10 flex justify-end">
+                        <button
+                            className="p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-dark-hover"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setContextMenu({ x: e.clientX, y: e.clientY });
+                            }}
+                            aria-label={t('files.details')}
+                            title={t('files.details')}
+                        >
+                            <MoreIcon />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Context Menu */}
