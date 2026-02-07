@@ -1249,11 +1249,23 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 </div>
             ) : (
                 /* Icon Views (small, medium, large) */
-                <div className={`flex-1 overflow-auto p-4 content-transition ${isTransitioning ? 'content-entering' : 'content-visible'}`}>
+                <div
+                    ref={containerRef}
+                    className={`flex-1 overflow-auto p-4 relative select-none content-transition ${isTransitioning ? 'content-entering' : 'content-visible'}`}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                >
+                    {/* Selection Box */}
+                    <div style={getSelectionBoxStyle()} />
+
                     <div className={getGridClasses(localViewMode)} key={animationKey}>
                         {[...fileTypeFolders, ...regularFiles].map((file, index) => (
                             <div
                                 key={file.id}
+                                data-file-item
+                                data-file-id={file.id}
                                 className="file-item-animate"
                                 style={{ animationDelay: `${Math.min(index * 0.02, 0.4)}s` }}
                             >
@@ -1268,6 +1280,8 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                                     onShowInfo={handleShowInfo}
                                     onPreview={handlePreview}
                                     onStar={handleToggleStar}
+                                    onDropFiles={handleDropFilesToFolder}
+                                    selectedFiles={selectedFiles}
                                     onFolderOpen={(folderId) => handleFolderOpen(folderId)}
                                     iconSize={localViewMode === 'small-icons' ? 'small' : localViewMode === 'large-icons' ? 'large' : 'medium'}
                                 />
