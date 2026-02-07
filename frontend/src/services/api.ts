@@ -1,4 +1,7 @@
-const API_BASE_URL = 'http://127.0.0.1:5000';
+// Auto-detect API base URL from current window location for portable mode
+export const API_BASE_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+    ? window.location.origin
+    : 'http://127.0.0.1:5000';
 
 interface ApiResponse<T> {
     success: boolean;
