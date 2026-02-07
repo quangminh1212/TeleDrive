@@ -42,7 +42,7 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
     const [showSettingsPanel, setShowSettingsPanel] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const { theme, setTheme } = useTheme();
-    const { language, setLanguage } = useI18n();
+    const { t, language, setLanguage } = useI18n();
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -86,7 +86,7 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
         return formatted;
     };
 
-    const displayName = userInfo?.name || formatPhone(userInfo?.phone) || 'Người dùng';
+    const displayName = userInfo?.name || formatPhone(userInfo?.phone) || t('account.user');
     const displayEmail = userInfo?.email || formatPhone(userInfo?.phone) || '';
 
     return (
@@ -96,7 +96,7 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className="flex items-center justify-center p-1 rounded-full hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-dark-blue focus:ring-offset-2"
-                    title="Tài khoản"
+                    title={t('header.account')}
                 >
                     {userInfo?.avatar ? (
                         <img
@@ -131,12 +131,12 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                                 </div>
                             )}
                             <h3 className="mt-3 text-lg font-medium text-gray-900 dark:text-dark-text">
-                                Xin chào, {displayName.split(' ')[0]}!
+                                {t('account.hello', { name: displayName.split(' ')[0] })}
                             </h3>
 
                             {/* Manage Account Button - Google Style */}
                             <button className="mt-3 px-4 py-2 text-sm text-blue-600 dark:text-dark-blue border border-gray-300 dark:border-dark-border rounded-full hover:bg-blue-50 dark:hover:bg-dark-selected hover:border-blue-300 dark:hover:border-dark-blue transition-colors font-medium">
-                                Quản lý tài khoản Telegram
+                                {t('account.manageTelegram')}
                             </button>
                         </div>
 
@@ -149,7 +149,7 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                                 <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
                                 </svg>
-                                <span className="flex-1">Cài đặt</span>
+                                <span className="flex-1">{t('header.settings')}</span>
                                 <svg className={`w-4 h-4 text-gray-400 transition-transform ${showSettingsPanel ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
                                 </svg>
@@ -160,12 +160,12 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                                 <div className="mx-3 mb-2 bg-gray-50 dark:bg-dark-elevated rounded-xl p-3 space-y-3">
                                     {/* Theme Toggle */}
                                     <div>
-                                        <label className="text-[11px] font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Giao diện</label>
+                                        <label className="text-[11px] font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">{t('account.theme')}</label>
                                         <div className="flex gap-1 mt-1.5">
                                             {([
-                                                { value: 'light' as Theme, label: 'Sáng', icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z" /></svg> },
-                                                { value: 'dark' as Theme, label: 'Tối', icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51A7.35 7.35 0 009.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0112 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" /></svg> },
-                                                { value: 'system' as Theme, label: 'Auto', icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v2h12v-2l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z" /></svg> },
+                                                { value: 'light' as Theme, label: t('account.themeLight'), icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z" /></svg> },
+                                                { value: 'dark' as Theme, label: t('account.themeDark'), icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51A7.35 7.35 0 009.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0112 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" /></svg> },
+                                                { value: 'system' as Theme, label: t('account.themeAuto'), icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v2h12v-2l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z" /></svg> },
                                             ]).map((opt) => (
                                                 <button
                                                     key={opt.value}
@@ -184,7 +184,7 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
 
                                     {/* Language Selector */}
                                     <div>
-                                        <label className="text-[11px] font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">Ngôn ngữ</label>
+                                        <label className="text-[11px] font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">{t('account.language')}</label>
                                         <select
                                             value={language}
                                             onChange={(e) => setLanguage(e.target.value as any)}
@@ -206,7 +206,7 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                                         className="w-full flex items-center gap-2 px-3 py-2 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg text-xs text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors"
                                     >
                                         <svg className="w-4 h-4 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" /></svg>
-                                        Xem tài liệu hướng dẫn
+                                        {t('account.viewDocs')}
                                     </button>
                                 </div>
                             )}
@@ -217,7 +217,7 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                                 <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z" />
                                 </svg>
-                                Trợ giúp
+                                {t('account.help')}
                             </button>
 
                             <button
@@ -226,7 +226,7 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                                 <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z" />
                                 </svg>
-                                Gửi phản hồi
+                                {t('account.sendFeedback')}
                             </button>
                         </div>
 
@@ -239,15 +239,15 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
                                 </svg>
-                                Đăng xuất
+                                {t('account.logout')}
                             </button>
                         </div>
 
                         {/* Footer */}
                         <div className="border-t border-gray-100 dark:border-dark-border px-4 py-3 flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-dark-text-secondary bg-gray-50 dark:bg-dark-elevated">
-                            <a href="#" className="hover:text-gray-700 dark:hover:text-dark-text">Chính sách bảo mật</a>
+                            <a href="#" className="hover:text-gray-700 dark:hover:text-dark-text">{t('account.privacyPolicy')}</a>
                             <span>•</span>
-                            <a href="#" className="hover:text-gray-700 dark:hover:text-dark-text">Điều khoản dịch vụ</a>
+                            <a href="#" className="hover:text-gray-700 dark:hover:text-dark-text">{t('account.termsOfService')}</a>
                         </div>
                     </div>
                 )}
@@ -276,10 +276,10 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                         {/* Content */}
                         <div className="px-6 py-4 text-center">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text">
-                                Đăng xuất khỏi TeleDrive?
+                                {t('account.logoutConfirm')}
                             </h3>
                             <p className="mt-2 text-sm text-gray-500 dark:text-dark-text-secondary">
-                                Bạn sẽ cần đăng nhập lại bằng Telegram để tiếp tục sử dụng ứng dụng.
+                                {t('account.logoutDesc')}
                             </p>
                         </div>
 
@@ -290,7 +290,7 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                                 disabled={isLoggingOut}
                                 className="flex-1 px-4 py-2.5 text-gray-700 dark:text-dark-text bg-gray-100 dark:bg-dark-elevated rounded-xl hover:bg-gray-200 dark:hover:bg-dark-hover transition-colors font-medium disabled:opacity-50"
                             >
-                                Hủy
+                                {t('actions.cancel')}
                             </button>
                             <button
                                 onClick={handleLogout}
@@ -303,10 +303,10 @@ const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ userInfo, onLogout })
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                         </svg>
-                                        Đang xuất...
+                                        {t('account.loggingOut')}
                                     </>
                                 ) : (
-                                    'Đăng xuất'
+                                    t('account.logout')
                                 )}
                             </button>
                         </div>
