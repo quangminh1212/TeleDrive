@@ -459,28 +459,46 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                 </nav>
 
                 {/* Rate Limits Info */}
-                <div className="px-4 py-2 border-t border-gray-200 dark:border-dark-border">
-                    <div className="mb-1.5">
-                        <p className="text-[10px] font-semibold text-gray-600 dark:text-dark-text-secondary uppercase tracking-wider">
+                <div className="px-4 py-2.5 border-t border-gray-200 dark:border-dark-border">
+                    <div className="flex items-center gap-1.5 mb-2">
+                        <svg className="w-3.5 h-3.5 text-gray-400 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
+                        </svg>
+                        <p className="text-[10px] font-semibold text-gray-500 dark:text-dark-text-secondary uppercase tracking-wider">
                             Rate Limits
                         </p>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                         {rateLimits.map((item) => {
                             const pct = item.max > 0 ? (item.used / item.max) * 100 : 0;
-                            const barColor = pct >= 100 ? '#ef4444' : pct > 50 ? '#f59e0b' : '#3b82f6';
+                            const isWarning = pct > 50 && pct < 100;
+                            const isDanger = pct >= 100;
+                            const statusColor = isDanger ? 'text-red-500' : isWarning ? 'text-amber-500' : 'text-emerald-500';
+                            const barGradient = isDanger
+                                ? 'from-red-400 to-red-600'
+                                : isWarning
+                                    ? 'from-amber-400 to-orange-500'
+                                    : 'from-blue-400 to-blue-600';
                             return (
-                                <div key={item.name}>
+                                <div key={item.name} className="group">
                                     <div className="flex items-center justify-between text-[10px] mb-0.5">
-                                        <span className="text-gray-600 dark:text-dark-text-secondary">{item.name}</span>
-                                        <span className="font-mono text-gray-500 dark:text-dark-text-secondary">
-                                            {item.used}/{item.max} <span className="font-sans text-gray-400">/ {item.window}</span>
-                                        </span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className={`w-1.5 h-1.5 rounded-full ${isDanger ? 'bg-red-500' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                                            <span className="text-gray-700 dark:text-dark-text font-medium">{item.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <span className={`font-mono font-semibold ${statusColor}`}>
+                                                {item.used}
+                                            </span>
+                                            <span className="text-gray-400 dark:text-dark-text-secondary font-mono">/{item.max}</span>
+                                            <span className="text-gray-300 dark:text-gray-600 mx-0.5">·</span>
+                                            <span className="text-gray-400 dark:text-dark-text-secondary">{item.window}</span>
+                                        </div>
                                     </div>
-                                    <div className="h-1 bg-gray-200 dark:bg-dark-border rounded-full overflow-hidden">
+                                    <div className="h-1.5 bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
                                         <div
-                                            className="h-full rounded-full transition-all duration-300"
-                                            style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor }}
+                                            className={`h-full rounded-full bg-gradient-to-r ${barGradient} transition-all duration-500 ease-out`}
+                                            style={{ width: `${Math.max(Math.min(pct, 100), pct > 0 ? 4 : 0)}%` }}
                                         />
                                     </div>
                                 </div>
