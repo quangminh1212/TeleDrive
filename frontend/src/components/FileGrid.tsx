@@ -1276,7 +1276,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                     {/* Selection Box */}
                     <div style={getSelectionBoxStyle()} />
 
-                    <div className={getGridClasses(localViewMode)} key={animationKey}>
+                    <div ref={fileListRef} className={getGridClasses(localViewMode)} key={animationKey}>
                         {[...fileTypeFolders, ...regularFiles].map((file, index) => (
                             <div
                                 key={file.id}
