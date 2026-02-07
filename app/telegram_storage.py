@@ -181,7 +181,7 @@ class TelegramStorageManager:
         try:
             # Verify and log current user before upload
             me = await self.client.get_me()
-            print(f"[STORAGE] ✅ Uploading to Saved Messages of: {me.first_name} (ID: {me.id}, Phone: {me.phone})")
+            print(f"[STORAGE] ✅ Uploading to Saved Messages of: {me.first_name} (ID: {me.id}, Phone: ***{me.phone[-4:] if me.phone else 'N/A'})")
             
             # Generate unique_id (epoch timestamp ms) if not provided
             import time
