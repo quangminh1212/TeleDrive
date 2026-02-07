@@ -323,10 +323,10 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
             setAllFiles(allItems);
 
             if (!filesResponse.success && !foldersResponse.success) {
-                setError(filesResponse.error || 'Không thể tải danh sách file');
+                setError(filesResponse.error || t('messages.error'));
             }
         } catch (err) {
-            setError('Lỗi kết nối đến server');
+            setError(t('common.connectionError'));
             setAllFiles([]);
         } finally {
             setLoading(false);
@@ -750,7 +750,7 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         const validFileIds = fileIds.filter(id => !String(id).startsWith('folder-')).map(id => Number(id));
 
         if (validFileIds.length === 0) {
-            toast.error('Không thể di chuyển folder vào folder');
+            toast.error(t('common.cannotMoveFolder'));
             return;
         }
 
@@ -772,13 +772,13 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
         }
 
         if (successCount > 0) {
-            toast.success(`Đã di chuyển ${successCount} file vào folder`);
+            toast.success(t('common.movedFiles', { count: successCount }));
             // Clear selection and refresh
             setSelectedFiles(new Set());
             await fetchFiles();
         }
         if (errorCount > 0) {
-            toast.error(`Lỗi di chuyển ${errorCount} file`);
+            toast.error(t('common.moveError', { count: errorCount }));
         }
     };
 
@@ -803,29 +803,29 @@ const FileGrid = ({ searchQuery, currentFolder, viewMode, onViewModeChange, onFo
                 const response = await api.toggleFolderStar(folderId);
                 if (response.success) {
                     const isStarred = response.data?.is_favorite;
-                    toast.success(isStarred ? 'Đã gắn dấu sao' : 'Đã bỏ gắn dấu sao');
+                    toast.success(isStarred ? t('notifications.fileStarred') : t('notifications.fileUnstarred'));
                     // Add notification
                     addNotification('star', isStarred ? t('notifications.fileStarred') : t('notifications.fileUnstarred'), file.name);
                     await fetchFiles();
                 } else {
-                    toast.error('Lỗi: ' + (response.error || 'Không thể thay đổi trạng thái sao'));
+                    toast.error(t('common.starError', { error: response.error || t('common.starDefaultError') }));
                 }
             } else {
                 const fileId = Number(file.id);
                 const response = await api.toggleFileStar(fileId);
                 if (response.success) {
                     const isStarred = response.data?.is_favorite;
-                    toast.success(isStarred ? 'Đã gắn dấu sao' : 'Đã bỏ gắn dấu sao');
+                    toast.success(isStarred ? t('notifications.fileStarred') : t('notifications.fileUnstarred'));
                     // Add notification
                     addNotification('star', isStarred ? t('notifications.fileStarred') : t('notifications.fileUnstarred'), file.name);
                     await fetchFiles();
                 } else {
-                    toast.error('Lỗi: ' + (response.error || 'Không thể thay đổi trạng thái sao'));
+                    toast.error(t('common.starError', { error: response.error || t('common.starDefaultError') }));
                 }
             }
         } catch (error) {
             console.error('Toggle star error:', error);
-            toast.error('Lỗi khi thay đổi trạng thái sao');
+            toast.error(t('common.starChangeError'));
         }
     };
 
