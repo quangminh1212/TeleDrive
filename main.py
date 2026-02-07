@@ -89,8 +89,6 @@ def run_flask_server(dev_mode=False):
             os.path.join(PROJECT_ROOT, 'python311', '*'),
             os.path.join(PROJECT_ROOT, 'static', '*'),
             os.path.join(PROJECT_ROOT, 'templates', '*'),
-            '*.pyc',
-            '__pycache__/*',
         ]
         socketio.run(
             app,
