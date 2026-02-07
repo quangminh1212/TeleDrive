@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
 import CreateFolderModal from './CreateFolderModal';
 import { useToast } from './Toast';
-import { useI18n } from '../i18n';
+import { useI18n, getAvailableLanguages } from '../i18n';
+import { useTheme } from '../contexts/ThemeContext';
+import type { Theme } from '../contexts/ThemeContext';
 import { logger } from '../utils/logger';
 
 interface SidebarProps {
@@ -66,8 +68,11 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
     const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
     const [rateLimits, setRateLimits] = useState<RateLimitItem[]>([]);
     const [showDocs, setShowDocs] = useState(false);
+    const [showLangMenu, setShowLangMenu] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const toast = useToast();
-    const { t } = useI18n();
+    const { t, language, setLanguage } = useI18n();
+    const { theme, resolvedTheme, setTheme } = useTheme();
 
     // Hidden file input refs
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -365,6 +370,86 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                             </button>
                         );
                     })}
+
+                    <div className="h-2" />
+
+                    {/* Settings items */}
+                    <div className="border-t border-gray-200 dark:border-dark-border pt-2 mt-1">
+                        {/* Tài liệu */}
+                        <button
+                            onClick={() => setShowDocs(true)}
+                            className="w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover"
+                        >
+                            <span className="text-gray-600 dark:text-dark-text-secondary">
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" /></svg>
+                            </span>
+                            <span>Tài liệu</span>
+                        </button>
+
+                        {/* Ngôn ngữ */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowLangMenu(!showLangMenu)}
+                                className="w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover"
+                            >
+                                <span className="text-gray-600 dark:text-dark-text-secondary">
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" /></svg>
+                                </span>
+                                <span className="flex-1 text-left">Ngôn ngữ</span>
+                                <span className="text-[10px] text-gray-400 dark:text-dark-text-secondary">
+                                    {getAvailableLanguages().find(l => l.code === language)?.name}
+                                </span>
+                            </button>
+                            {showLangMenu && (
+                                <>
+                                    <div className="fixed inset-0 z-[99]" onClick={() => setShowLangMenu(false)} />
+                                    <div className="absolute left-2 right-2 bottom-8 z-[100] bg-white dark:bg-dark-surface rounded-lg shadow-lg border border-gray-200 dark:border-dark-border max-h-60 overflow-y-auto py-1">
+                                        {getAvailableLanguages().map((lang) => (
+                                            <button
+                                                key={lang.code}
+                                                onClick={() => { setLanguage(lang.code); setShowLangMenu(false); }}
+                                                className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors ${language === lang.code ? 'bg-blue-50 dark:bg-dark-selected text-blue-600 dark:text-dark-blue font-medium' : 'text-gray-700 dark:text-dark-text'
+                                                    }`}
+                                            >
+                                                {lang.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Dark/Light mode */}
+                        <button
+                            onClick={() => {
+                                const modes: Theme[] = ['light', 'dark', 'system'];
+                                const idx = modes.indexOf(theme);
+                                setTheme(modes[(idx + 1) % 3]);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover"
+                        >
+                            <span className="text-gray-600 dark:text-dark-text-secondary">
+                                {resolvedTheme === 'dark' ? (
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51A7.35 7.35 0 009.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0112 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" /></svg>
+                                ) : (
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z" /></svg>
+                                )}
+                            </span>
+                            <span className="flex-1 text-left">{resolvedTheme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+                            <span className="text-[10px] text-gray-400 dark:text-dark-text-secondary capitalize">{theme}</span>
+                        </button>
+
+                        {/* Cài đặt */}
+                        <button
+                            onClick={() => setShowSettings(true)}
+                            className="w-full flex items-center gap-3 px-3 py-1.5 rounded-full text-sm transition-colors mb-0.5 text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-hover"
+                        >
+                            <span className="text-gray-600 dark:text-dark-text-secondary">
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z" /></svg>
+                            </span>
+                            <span>Cài đặt</span>
+                        </button>
+                    </div>
                 </nav>
 
                 {/* Rate Limits Info */}
@@ -607,6 +692,98 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
                             >
                                 Đã hiểu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Settings Modal */}
+            {showSettings && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50" onClick={() => setShowSettings(false)}>
+                    <div
+                        className="bg-white dark:bg-dark-surface rounded-2xl shadow-2xl w-[90vw] max-w-md max-h-[85vh] overflow-hidden flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-dark-border">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-gray-100 dark:bg-dark-hover rounded-lg flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-gray-600 dark:text-dark-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z" />
+                                    </svg>
+                                </div>
+                                <h2 className="text-lg font-semibold text-gray-800 dark:text-dark-text">Cài đặt</h2>
+                            </div>
+                            <button
+                                onClick={() => setShowSettings(false)}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition-colors"
+                            >
+                                <svg className="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+                            {/* Theme */}
+                            <section>
+                                <h3 className="text-sm font-semibold text-gray-800 dark:text-dark-text mb-3">Giao diện</h3>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {([
+                                        { value: 'light' as Theme, label: 'Sáng', icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z" /></svg> },
+                                        { value: 'dark' as Theme, label: 'Tối', icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51A7.35 7.35 0 009.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0112 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" /></svg> },
+                                        { value: 'system' as Theme, label: 'Hệ thống', icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v2h12v-2l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z" /></svg> },
+                                    ]).map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            onClick={() => setTheme(opt.value)}
+                                            className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all text-xs font-medium ${theme === opt.value
+                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                                                    : 'border-gray-200 dark:border-dark-border text-gray-600 dark:text-dark-text-secondary hover:border-gray-300 dark:hover:border-gray-500'
+                                                }`}
+                                        >
+                                            {opt.icon}
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Language */}
+                            <section>
+                                <h3 className="text-sm font-semibold text-gray-800 dark:text-dark-text mb-3">Ngôn ngữ</h3>
+                                <select
+                                    value={language}
+                                    onChange={(e) => setLanguage(e.target.value as any)}
+                                    className="w-full px-3 py-2 bg-white dark:bg-dark-bg border border-gray-300 dark:border-dark-border rounded-lg text-sm text-gray-700 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    {getAvailableLanguages().map((lang) => (
+                                        <option key={lang.code} value={lang.code}>{lang.name}</option>
+                                    ))}
+                                </select>
+                            </section>
+
+                            {/* App Info */}
+                            <section className="bg-gray-50 dark:bg-dark-bg rounded-lg p-4">
+                                <h3 className="text-sm font-semibold text-gray-800 dark:text-dark-text mb-2">Thông tin ứng dụng</h3>
+                                <div className="space-y-1.5 text-xs text-gray-600 dark:text-dark-text-secondary">
+                                    <div className="flex justify-between"><span>Phiên bản</span><span className="font-mono">1.0.0</span></div>
+                                    <div className="flex justify-between"><span>Backend</span><span className="font-mono">Flask + Python</span></div>
+                                    <div className="flex justify-between"><span>Storage</span><span className="font-mono">Telegram Cloud</span></div>
+                                    <div className="flex justify-between"><span>Max file</span><span className="font-mono">2 GB</span></div>
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-3 border-t border-gray-200 dark:border-dark-border flex justify-end">
+                            <button
+                                onClick={() => setShowSettings(false)}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                            >
+                                Đóng
                             </button>
                         </div>
                     </div>
