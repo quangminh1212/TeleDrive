@@ -99,7 +99,7 @@ class FlaskConfigLoader:
         flask_config['SQLALCHEMY_TRACK_MODIFICATIONS'] = self.get('database.track_modifications', False)
         
         # Upload settings
-        flask_config['MAX_CONTENT_LENGTH'] = self.get('upload.max_content_length', 104857600)  # 100MB
+        flask_config['MAX_CONTENT_LENGTH'] = self.get('upload.max_content_length', 2147483648)  # 2GB
         flask_config['UPLOAD_FOLDER'] = self.get('upload.upload_directory', 'data/uploads')
         
         # Session settings
@@ -216,7 +216,7 @@ class FlaskConfigLoader:
     def get_upload_config(self) -> Dict[str, Any]:
         """Get file upload configuration"""
         return {
-            'max_file_size': self.get('upload.max_file_size', 104857600),
+            'max_file_size': self.get('upload.max_file_size', 2147483648),  # 2GB
             'upload_directory': self.get('upload.upload_directory', 'data/uploads'),
             'allowed_extensions': self.get('upload.allowed_extensions', []),
             'create_subdirs': self.get('upload.create_subdirs', True),
@@ -307,9 +307,9 @@ class FlaskConfigLoader:
                 "track_modifications": False
             },
             "upload": {
-                "max_file_size": 104857600,
+                "max_file_size": 2147483648,
                 "upload_directory": "data/uploads",
-                "allowed_extensions": ["txt", "pdf", "png", "jpg", "jpeg", "gif"]
+                "allowed_extensions": []
             },
             "directories": {
                 "data": "data",
