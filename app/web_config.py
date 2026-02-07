@@ -212,7 +212,7 @@ class FlaskConfigLoader:
         Add production domains to config if needed.
         """
         # Default to localhost origins only for security
-        default_origins = ["http://localhost:1420", "http://127.0.0.1:1420", "http://localhost:3000", "http://127.0.0.1:3000", "tauri://localhost"]
+        default_origins = ["http://localhost:1420", "http://127.0.0.1:1420", "http://localhost:3000", "http://127.0.0.1:3000", "tauri://localhost", "https://tauri.localhost"]
         configured_origins = self.get('flask.cors_allowed_origins')
         
         # Only use '*' if explicitly configured (not recommended for production)
