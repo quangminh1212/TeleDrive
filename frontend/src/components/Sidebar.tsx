@@ -51,12 +51,20 @@ const PlusIcon = () => (
     </svg>
 );
 
+interface RateLimitItem {
+    name: string;
+    used: number;
+    max: number;
+    window: string;
+}
+
 const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded, isMobileOpen, onMobileClose }: SidebarProps) => {
     const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
     const [storageSizeFromAPI, setStorageSizeFromAPI] = useState<number>(0);
     const [fileCount, setFileCount] = useState<number>(0);
     const [isUploading, setIsUploading] = useState(false);
     const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+    const [rateLimits, setRateLimits] = useState<RateLimitItem[]>([]);
     const toast = useToast();
     const { t } = useI18n();
 
@@ -81,10 +89,28 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
         };
 
         fetchStorageInfo();
-        // Refresh storage info when files are uploaded
-        const interval = setInterval(fetchStorageInfo, 30000); // Refresh every 30s
+        const interval = setInterval(fetchStorageInfo, 30000);
         return () => clearInterval(interval);
     }, [totalFileSize, onFilesUploaded]);
+
+    // Fetch rate limits info from API
+    useEffect(() => {
+        const fetchRateLimits = async () => {
+            try {
+                const res = await fetch('http://127.0.0.1:5000/api/v2/rate-limits');
+                const data = await res.json();
+                if (data.success && data.limits) {
+                    setRateLimits(data.limits);
+                }
+            } catch {
+                // Silent fail - rate limits are informational
+            }
+        };
+
+        fetchRateLimits();
+        const interval = setInterval(fetchRateLimits, 10000); // Refresh every 10s
+        return () => clearInterval(interval);
+    }, []);
 
 
     // Handle file upload
@@ -342,28 +368,16 @@ const Sidebar = ({ currentFolder, onFolderSelect, totalFileSize, onFilesUploaded
 
                 {/* Rate Limits Info */}
                 <div className="px-4 py-2 border-t border-gray-200 dark:border-dark-border">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                        <svg className="w-3.5 h-3.5 text-amber-500" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M7 2v11h3v9l7-12h-4l4-8z" />
-                        </svg>
-                        <p className="text-[10px] font-semibold text-gray-600 dark:text-dark-text-secondary uppercase tracking-wider">
-                            Rate Limits
-                        </p>
-                    </div>
+                    <p className="text-[10px] font-semibold text-gray-600 dark:text-dark-text-secondary uppercase tracking-wider mb-1.5">
+                        Rate Limits
+                    </p>
                     <div className="space-y-1">
-                        {[
-                            { label: 'Upload', limit: '50 req', window: '5 min', color: 'bg-blue-500' },
-                            { label: 'Search', limit: '100 req', window: '1 min', color: 'bg-green-500' },
-                            { label: 'Auth Login', limit: '5 req', window: '5 min', color: 'bg-orange-500' },
-                            { label: 'Auth Verify', limit: '10 req', window: '5 min', color: 'bg-purple-500' },
-                        ].map((item) => (
-                            <div key={item.label} className="flex items-center justify-between text-[10px]">
-                                <div className="flex items-center gap-1.5">
-                                    <span className={`w-1.5 h-1.5 rounded-full ${item.color} flex-shrink-0`} />
-                                    <span className="text-gray-600 dark:text-dark-text-secondary">{item.label}</span>
-                                </div>
-                                <span className="text-gray-500 dark:text-dark-text-secondary font-mono">
-                                    {item.limit}/{item.window}
+                        {rateLimits.map((item) => (
+                            <div key={item.name} className="flex items-center justify-between text-[10px]">
+                                <span className="text-gray-600 dark:text-dark-text-secondary">{item.name}</span>
+                                <span className="font-mono" style={{ color: item.used > 0 ? (item.used >= item.max ? '#ef4444' : '#f59e0b') : '#6b7280' }}>
+                                    {item.used}/{item.max}
+                                    <span className="text-gray-400 dark:text-dark-text-secondary font-sans"> / {item.window}</span>
                                 </span>
                             </div>
                         ))}
